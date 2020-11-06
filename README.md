@@ -1,8 +1,8 @@
-[![PyPi Version](https://img.shields.io/pypi/v/s2-control.svg)](https://pypi.python.org/pypi/s2-control/)
+[![PyPi Version](https://img.shields.io/pypi/v/modlunky2.svg)](https://pypi.python.org/pypi/modlunky2/)
 
-# s2-control
+# modlunky2
 
-Repository building tools related to controlling Spelunky at run time.
+Repository for modding interface for Spelunky 2.
 
 ## Installation
 
@@ -15,17 +15,17 @@ If you've already installed Python without doing this you can either re-install 
 Once you have python installed you can open `cmd` and run the following:
 
 ```console
-pip install --upgrade s2-control
+pip install --upgrade modlunky2
 ```
 
 > :warning: This currently only works on version 1.14+ of Spelunky 2.
 
-Once installed you should have a command called `s2-control`.
+Once installed you should have a command called `modlunky2`.
 
 
 ## Development
 
-If you'd like to contribute to s2-data here are some steps to setup your environment.
+If you'd like to contribute to `modlunky2` here are some steps to setup your environment.
 
 ### Creating VirtualEnv
 In the root directory you can make a virtualenv. It will be excluded from commits by default

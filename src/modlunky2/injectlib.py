@@ -1,7 +1,6 @@
 import ctypes
-import struct
-
 import psutil
+import struct
 
 
 kernel32 = ctypes.windll.kernel32
@@ -118,7 +117,7 @@ class Injector:
     def call(self, addr, args):
         assert addr
         tid = (ctypes.c_uint32 * 1)()
-        kernel32.CreateRemoteThread(self.handle,
+        handle = kernel32.CreateRemoteThread(self.handle,
             None,
             0,
             ctypes.c_void_p(addr),
@@ -126,18 +125,16 @@ class Injector:
             0,
             tid)
         assert tid[0]
-        kernel32.WaitForSingleObject(tid[0])
+        kernel32.WaitForSingleObject(ctypes.c_void_p(handle), 0xFFFFFFFF)
 
     def run(self, code):
+        py = ctypes.windll.python38
         if not self.python_loaded:
-            py = ctypes.windll.python38
             buf = ctypes.create_string_buffer(0x1000)
             kernel32.GetModuleFileNameA(ctypes.c_void_p(py._handle), buf, ctypes.c_uint64(0x1000))
 
             self.load_lib(buf.raw)
-
             self.call(gpa(py._handle, b'Py_Initialize'), 0)
-            import time; time.sleep(0.5)
             self.python_loaded = True
 
         self.call(gpa(py._handle, b'PyRun_SimpleString'), self.alloc(payload=code))

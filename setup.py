@@ -7,9 +7,9 @@ VERSION = (HERE / 'VERSION').read_text(encoding='utf-8').strip()
 
 
 setup(
-    name='s2-control',
+    name='modlunky2',
     version=VERSION,
-    description='Spelunky 2 Data Utilities.',
+    description='Spelunky 2 Modding.',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     classifiers=[  # Optional
@@ -37,7 +37,7 @@ setup(
     keywords='games',
     package_dir={'': 'src'},  # Optional
     packages=find_packages(where='src'),  # Required
-    python_requires='>=3.7, <4',
+    python_requires='>=3.7, <3.9',
 
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
@@ -47,7 +47,6 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         "psutil==5.7.3",
-        "lief==0.10.1",
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -72,7 +71,7 @@ setup(
     # executes the function `main` from this package when invoked:
     entry_points={  # Optional
         'console_scripts': [
-            's2-control=s2_control.cli:main',
+            'modlunky2=modlunky2.cli:main',
         ],
     },
     include_package_data = True,
