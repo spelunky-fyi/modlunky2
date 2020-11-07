@@ -6,7 +6,9 @@ Repository for modding interface for Spelunky 2.
 
 ## Installation
 
-Copy the modlunky2.exe to your Spelunky 2 installation directory and run it.
+Grabbed the latest release from https://github.com/spelunky-fyi/modlunky2/releases . Copy the modlunky2.exe to your
+Spelunky 2 installation directory and run it. A terminal will appear with a link to webpage. It should be
+http://127.0.0.1:8040/ . Leave this running while you're using the modding UI.
 
 
 ## Development
