@@ -9,8 +9,6 @@ error = kernel32.GetLastError
 gpa = kernel32.GetProcAddress
 gpa.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 gpa.restype = ctypes.c_void_p
-ldlib = kernel32.LoadLibraryA
-ldlib.restype = ctypes.c_void_p
 alloc = kernel32.VirtualAllocEx
 alloc.restype = ctypes.c_void_p
 

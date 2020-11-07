@@ -31,7 +31,7 @@ def ensure_attached(method):
             proc = find_process(self.proc_name)
             if proc is None:
                 raise ProcessNotRunning("Can't find Spel2.exe running")
-            logging.info("Found process. Attaching...")
+            logging.info("Found process (%s). Attaching...", proc)
             self.code_executor = CodeExecutor(proc)
         try:
             method(self, *args, **kwargs)
@@ -104,16 +104,13 @@ class CodeExecutor:
         #print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")
         
         self.proc.run(textwrap.dedent(rf"""
-        import ctypes
-        import sys
         import os
+        import sys
 
-        def hook(name, *args):
-            if name != 'ctypes.seh_exception':
-                return
-            os.system("cmd")
-
-        sys.addaudithook(hook)
+        try:
+            import ctypes
+        except Exception as err:
+            os.system('''msg * "%s"''' % err)
 
         class CriticalSection:
             def __enter__(self, *args):
@@ -131,5 +128,5 @@ class CodeExecutor:
                 load_item({layer}, {item_num}, {x}, {y})
         except Exception as e:
             import os
-            os.system("msg * \"%s\"" % e)
+            os.system("msg * \"Failed: %s\"" % e)
         """).strip().encode())
