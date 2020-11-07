@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6">
+    <h1>Welcome to Spelunky FYI</h1>
+    <hr />
+    <div class="mt-2">
+      Welcome to the entry page of Modlunky 2. This is a frontend tool to assist
+      with modifying your experience with Spelunky 2.
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3 rounded-0">
+        <div class="card-header rounded-0">
+          Tools
+        </div>
+        <div class="card-body">
+        <ul class="list-unstyled">
+          <li><a href="/assets/">Asset Management (Extraction / Repacking)</a></li>
+          <!--<li><a href="/spawn-items/">Spawn Items</a></li>-->
+        </ul>
+        </div>
+      </div>
+  </div>    
+</div>
+{% endblock %}

@@ -6,21 +6,7 @@ Repository for modding interface for Spelunky 2.
 
 ## Installation
 
-You'll need to have [Python 3.7 or 3.8](https://www.python.org/downloads/) installed to install these tools. Make sure when you're installing Python that you click the checkbox to add Python to your `PATH`:
-
-![Add Python to PATH](https://cdn.discordapp.com/attachments/756241793753809106/771016197424152576/0001_add_Python_to_Path.png).
-
-If you've already installed Python without doing this you can either re-install or follow the instructions at this site: https://datatofish.com/add-python-to-windows-path/
-
-Once you have python installed you can open `cmd` and run the following:
-
-```console
-pip install --upgrade modlunky2
-```
-
-> :warning: This currently only works on version 1.14+ of Spelunky 2.
-
-Once installed you should have a command called `modlunky2`.
+Copy the modlunky2.exe to your Spelunky 2 installation directory and run it.
 
 
 ## Development
@@ -57,6 +43,7 @@ You'll want to activate the virtual environment whenever you're testing any comm
 Once you have your virtual environment setup and activated you'll want to finish setting up the development environment.
 
 ```console
+> pip install -r requirements.txt
 > python setup.py develop
 ```
 
