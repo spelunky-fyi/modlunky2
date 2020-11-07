@@ -6,12 +6,11 @@ import binascii
 import shutil
 import os
 
-import psutil
 from flask import Flask, Response, redirect, render_template, request
 
 from s2_data.assets.assets import KNOWN_ASSETS, AssetStore, EXTRACTED_DIR, OVERRIDES_DIR, MissingAsset
 from s2_data.assets.patcher import Patcher  
-from modlunky2.spawn_item import ItemSpawner
+from modlunky2.code_execution import CodeExecutionManager, ProcessNotRunning
 
 # Setup static files to work with onefile exe
 BASE_DIR = Path(__file__).resolve().parent
@@ -153,11 +152,19 @@ def assets_repack():
 
     return render_template("assets_repack.html", exe=dest_exe)
 
-def find_process(name):
-    for proc in psutil.process_iter(["name", "pid"]):
-        if proc.name() == name:
-            return proc
 
+@app.route('/spawn-items/')
+def spawn_items():
+    return render_template("spawn_items.html")
+
+@app.route('/spawn-items/spawn', methods=["POST"])
+def spawn_items_spawn():
+    item_num = int(request.form['spawn-item-number'])
+    try:
+        app.config.SPELUNKY_CEM.spawn_item(item_num)
+    except ProcessNotRunning as err:
+        logging.error("Failed to spawn item. Process isn't running: %s", err)
+    return redirect("/spawn-items/")
 
 def main():
     import argparse
@@ -179,15 +186,5 @@ def main():
                         datefmt="%H:%M:%S")
 
     app.config.SPELUNKY_INSTALL_DIR = Path(args.install_dir)
+    app.config.SPELUNKY_CEM = CodeExecutionManager(args.process_name)
     app.run(host=args.host, port=args.port, debug=args.debug)
-
-#    proc = find_process(args.process_name)
-#    if proc is None:
-#        print(f"{args.process_name} isn't running...")
-#        sys.exit(1)
-#
-#    spawner = ItemSpawner(proc)
-#    while True:
-#        item_num = input("item? ")
-#        spawner.spawn(item_num)
-#

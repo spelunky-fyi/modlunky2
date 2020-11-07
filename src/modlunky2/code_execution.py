@@ -2,6 +2,10 @@ import struct
 import time
 import textwrap
 from pathlib import Path
+import logging
+
+import psutil
+
 from .injectlib import Injector
 
 DELTA = 0xc00
@@ -9,8 +13,48 @@ DELTA = 0xc00
 def signed(x):
     return x if x & 0x80000000 == 0 else x - 0x100000000
 
-class ItemSpawner:
+
+def find_process(name):
+    for proc in psutil.process_iter(["name", "pid"]):
+        if proc.name() == name:
+            return proc
+
+
+class ProcessNotRunning(Exception):
+    pass
+
+
+def ensure_attached(method):
+    def inner(self, *args, **kwargs):
+        if self.code_executor is None:
+            logging.info("No process attached. Looking for Spel2.exe")
+            proc = find_process(self.proc_name)
+            if proc is None:
+                raise ProcessNotRunning("Can't find Spel2.exe running")
+            logging.info("Found process. Attaching...")
+            self.code_executor = CodeExecutor(proc)
+        try:
+            method(self, *args, **kwargs)
+        except Exception:
+            self.code_executor = None
+            raise ProcessNotRunning("Previously attached process has gone away. Try again.")
+    return inner
+
+
+class CodeExecutionManager:
+    def __init__(self, proc_name):
+        self.proc_name = proc_name
+        self.code_executor = None
+
+    @ensure_attached
+    def spawn_item(self, item_num):
+        self.code_executor.spawn_item(item_num)
+
+
+class CodeExecutor:
     def __init__(self, proc):
+        """Attach to a process for allowing code execution."""
+
         with Path(proc.cmdline()[0]).open('rb') as proc_file:
             self.data = proc_file.read()
 
@@ -43,7 +87,7 @@ class ItemSpawner:
             gm = off + offset + 7 + off2 + DELTA
         return off + DELTA, gm
 
-    def spawn(self, item_num):
+    def spawn_item(self, item_num, rel_x=1, rel_y=1):
         layer = self.proc.r64(self.state + self.layer_off)
         items = self.proc.r64(self.state + self.items_off)
 
@@ -52,9 +96,9 @@ class ItemSpawner:
         player = self.proc.r64(items + 8 + player_index * 8)
 
         # Player X, Y
-        
         x, y = struct.unpack("<2f", self.proc.read(player + 0x40, 8))
-        x += 2
+        x += rel_x
+        y += rel_y
 
         #print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Item: {self.load_item}")
         #print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")

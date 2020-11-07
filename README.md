@@ -52,3 +52,22 @@ Once you have your virtual environment setup and activated you'll want to finish
 This will install any dependencies as well as setting up links on your path to your local source files. Once this is done
 you'll be able to execute the binaries right from your path after any changes to the source without the need to build or
 install anything. If you add new source files you may have to run `python setup.py develop` again to make sure they're linked.
+
+### Running Locally
+
+```
+modlunky2 --install-dir="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2" --debug
+```
+
+### Building Distributions
+
+#### PyPI
+```
+python setup.py sdist
+python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
+```
+
+#### EXE
+```
+pyinstaller modlunky2.spec
+```
