@@ -9,6 +9,22 @@
       Welcome to the entry page of Modlunky 2. This is a frontend tool to assist
       with modifying your experience with Spelunky 2.
     </div>
+
+    <h3 class="mt-5">Credits</h3>
+    <hr />
+    Without these people, this project would not exist.
+    <ul>
+      {% for person in people %}
+        <li>
+          {{person.name}}
+          {% if person.links %}
+          {% for link in person.links %}
+            <a href="{{link.link}}"><i class="fab fa-{{link.site}}"></i></a>
+          {% endfor %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
   </div>
   <div class="col-lg-6">
     <div class="card mb-3 rounded-0">

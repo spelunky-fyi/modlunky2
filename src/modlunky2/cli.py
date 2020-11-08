@@ -2,11 +2,12 @@ import logging
 import sys
 from pathlib import Path
 
-from flask import Flask, render_template
+from flask import Flask
 
 from .code_execution import CodeExecutionManager
 from .views.assets import blueprint as assets_blueprint
 from .views.entities import blueprint as entities_blueprint
+from .views.index import blueprint as index_blueprint
 
 PROCESS_NAME = "Spel2.exe"
 # Setup static files to work with onefile exe
@@ -22,13 +23,9 @@ app = Flask(
     static_folder=f"{BASE_DIR / 'static'}",
     template_folder=f"{BASE_DIR / 'templates'}",
 )
+app.register_blueprint(index_blueprint)
 app.register_blueprint(entities_blueprint, url_prefix="/entities")
 app.register_blueprint(assets_blueprint, url_prefix="/assets")
-
-
-@app.route('/')
-def index():
-    return render_template("index.html")
 
 
 def main():
