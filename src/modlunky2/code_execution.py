@@ -36,9 +36,9 @@ def ensure_attached(method):
 
         try:
             method(self, *args, **kwargs)
-        except Exception:
+        except Exception as err:
             self.code_executor = None
-            logging.warning("Failed to run command. Process might have gone away. Attempting to reconnect.")
+            logging.warning(f"Failed to run command ({err}). Process might have gone away. Attempting to reconnect.")
             proc = find_process(self.proc_name)
             if proc is None:
                 raise ProcessNotRunning("Can't find Spel2.exe running")
@@ -80,10 +80,10 @@ class CodeExecutor:
         _, self.layer_off = self.find('C6 80 58 44 06 00 01 ', -7, 'imm')
 
         inst, _ = self.find('BA 88 02 00 00', 1, 'off')
-        self.load_entity, _ = self.find('BA 88 02 00 00', 8, 'off', start=inst)
-        self.load_entity += signed(struct.unpack_from("<L", self.data, self.load_entity + 1)[0]) + 5
-        self.load_entity += DELTA
-        self.load_entity += self.base
+        self.load_entity_addr, _ = self.find('BA 88 02 00 00', 8, 'off', start=inst)
+        self.load_entity_addr += signed(struct.unpack_from("<L", self.data, self.load_entity_addr + 1)[0]) + 5
+        self.load_entity_addr += DELTA
+        self.load_entity_addr += self.base
 
         _, self.items_off = self.find('33 D2 8B 41 28 01', -7, 'imm')
 
@@ -132,7 +132,7 @@ class CodeExecutor:
             ctypes.c_int64,
             ctypes.c_float,
             ctypes.c_float
-        ))({self.load_entity}))
+        ))({self.load_entity_addr}))
 
         """).strip().encode())
 

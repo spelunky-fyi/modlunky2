@@ -24,8 +24,8 @@ ASSET_DIRS = [
 ]
 
 
-def get_overrides():
-    dir_ = current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR
+def get_overrides(install_dir):
+    dir_ = install_dir / OVERRIDES_DIR
 
     if not dir_.exists():
         return None
@@ -52,19 +52,19 @@ def assets():
         for exe in exes
         if exe.name not in ["modlunky2.exe"]
     ]
-    overrides = get_overrides()
+    overrides = get_overrides(current_app.config.SPELUNKY_INSTALL_DIR)
 
     return render_template("assets.html", exes=exes, overrides=overrides)
 
 
-def extract_assets(exe_filename):
+def extract_assets(install_dir, exe_filename):
     # Make all directories for extraction and overrides
     for dir_ in ASSET_DIRS:
-        (current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / ".compressed" / dir_).mkdir(
+        (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (install_dir / EXTRACTED_DIR / ".compressed" / dir_).mkdir(
             parents=True, exist_ok=True)
-        (current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR / ".compressed" / dir_).mkdir(
+        (install_dir / OVERRIDES_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (install_dir / OVERRIDES_DIR / ".compressed" / dir_).mkdir(
             parents=True, exist_ok=True)
 
     with exe_filename.open('rb') as exe:
@@ -86,14 +86,14 @@ def extract_assets(exe_filename):
 
             filepath = Path(filename.decode())
             logging.info("Extracting %s.. ", filepath)
-            asset.extract(current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR, exe, asset_store.key)
+            asset.extract(install_dir / EXTRACTED_DIR, exe, asset_store.key)
 
     for asset in sorted(asset_store.assets, key=lambda a: a.offset):
         name_hash = asset_store.filename_hash(asset.filename)
         if asset.name_hash not in seen:
             logging.warning("Un-extracted Asset %s. Things might not work. :X", asset)
 
-    dest = current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / "Spel2.exe"
+    dest = install_dir / EXTRACTED_DIR / "Spel2.exe"
     logging.info("Backing up exe to %s", dest)
     shutil.copy2(exe_filename, dest)
 
@@ -104,16 +104,15 @@ def extract_assets(exe_filename):
 def assets_extract():
 
     exe = current_app.config.SPELUNKY_INSTALL_DIR / request.form['extract-target']
-    thread = threading.Thread(target=extract_assets, args=(exe,))
+    thread = threading.Thread(target=extract_assets, args=(current_app.config.SPELUNKY_INSTALL_DIR, exe))
     thread.start()
 
     return render_template("assets_extract.html", exe=exe)
 
 
-def repack_assets(source_exe, dest_exe):
+def repack_assets(mods_dir, source_exe, dest_exe):
     shutil.copy2(source_exe, dest_exe)
 
-    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / ASSETS_ROOT
     with dest_exe.open("rb+") as dest_file:
         asset_store = AssetStore.load_from_file(dest_file)
         try:
@@ -132,8 +131,9 @@ def assets_repack():
 
     source_exe = current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / "Spel2.exe"
     dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
+    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / ASSETS_ROOT
 
-    thread = threading.Thread(target=repack_assets, args=(source_exe, dest_exe))
+    thread = threading.Thread(target=repack_assets, args=(mods_dir, source_exe, dest_exe))
     thread.start()
 
     return render_template("assets_repack.html", exe=dest_exe)
