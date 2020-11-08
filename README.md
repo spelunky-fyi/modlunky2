@@ -6,7 +6,7 @@ Repository for modding interface for Spelunky 2.
 
 # Credits
 
-Special thanks to SciresM, Cloppershy, iojonmbnmb, and Dregu for all of the help
+Special thanks to  `SciresM`, `Cloppershy`, `iojonmbnmb`, and `Dregu` for all of the help
 in making this tool a reality.
 
 ## Installation
