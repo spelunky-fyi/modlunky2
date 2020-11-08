@@ -4,6 +4,11 @@
 
 Repository for modding interface for Spelunky 2.
 
+# Credits
+
+Special thanks to SciresM, Cloppershy, iojonmbnmb, and Dregu for all of the help
+in making this tool a reality.
+
 ## Installation
 
 Grabbed the latest release from https://github.com/spelunky-fyi/modlunky2/releases . Copy the modlunky2.exe to your

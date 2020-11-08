@@ -60,8 +60,8 @@ class CodeExecutionManager:
         self.code_executor = None
 
     @ensure_attached
-    def spawn_item(self, item_num):
-        self.code_executor.spawn_item(item_num)
+    def load_entity(self, entity_num):
+        self.code_executor.load_entity(entity_num)
 
 
 class CodeExecutor:
@@ -81,10 +81,10 @@ class CodeExecutor:
         _, self.layer_off = self.find('C6 80 58 44 06 00 01 ', -7, 'imm')
 
         inst, _ = self.find('BA 88 02 00 00', 1, 'off')
-        self.load_item, _ = self.find('BA 88 02 00 00', 8, 'off', start=inst)
-        self.load_item += signed(struct.unpack_from("<L", self.data, self.load_item + 1)[0]) + 5
-        self.load_item += DELTA
-        self.load_item += self.base
+        self.load_entity, _ = self.find('BA 88 02 00 00', 8, 'off', start=inst)
+        self.load_entity += signed(struct.unpack_from("<L", self.data, self.load_entity + 1)[0]) + 5
+        self.load_entity += DELTA
+        self.load_entity += self.base
 
         _, self.items_off = self.find('33 D2 8B 41 28 01', -7, 'imm')
 
@@ -101,6 +101,7 @@ class CodeExecutor:
         elif type == 'pc':
             gm = off + offset + 7 + off2 + DELTA
         return off + DELTA, gm
+
 
     def load_code(self):
         self.proc.run(textwrap.dedent(rf"""
@@ -128,16 +129,16 @@ class CodeExecutor:
                     os.system("msg * \"Failed: %s\"" % e)
             return inner
 
-        load_item = with_critical((ctypes.CFUNCTYPE(ctypes.c_void_p,
+        load_entity = with_critical((ctypes.CFUNCTYPE(ctypes.c_void_p,
             ctypes.c_void_p,
             ctypes.c_int64,
             ctypes.c_float,
             ctypes.c_float
-        ))({self.load_item}))
+        ))({self.load_entity}))
 
         """).strip().encode())
 
-    def spawn_item(self, item_num, rel_x=1, rel_y=1):
+    def load_entity(self, entity_num, rel_x=1, rel_y=1):
         layer = self.proc.r64(self.state + self.layer_off)
         items = self.proc.r64(self.state + self.items_off)
 
@@ -150,7 +151,7 @@ class CodeExecutor:
         x += rel_x
         y += rel_y
 
-        #print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Item: {self.load_item}")
+        #print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Entity: {self.load_entity}")
         #print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")
         
-        self.proc.run(rf"load_item({layer}, {item_num}, {x}, {y})".encode())
+        self.proc.run(rf"load_entity({layer}, {entity_num}, {x}, {y})".encode())
