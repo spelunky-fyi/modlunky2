@@ -1,8 +1,7 @@
+import logging
 import struct
-import time
 import textwrap
 from pathlib import Path
-import logging
 
 import psutil
 
@@ -102,7 +101,6 @@ class CodeExecutor:
             gm = off + offset + 7 + off2 + DELTA
         return off + DELTA, gm
 
-
     def load_code(self):
         self.proc.run(textwrap.dedent(rf"""
         import os
@@ -143,7 +141,7 @@ class CodeExecutor:
         items = self.proc.r64(self.state + self.items_off)
 
         player_index = self.proc.r8(items)
-        size = self.proc.r8(items + 1)
+        # size = self.proc.r8(items + 1)
         player = self.proc.r64(items + 8 + player_index * 8)
 
         # Player X, Y
@@ -151,7 +149,7 @@ class CodeExecutor:
         x += rel_x
         y += rel_y
 
-        #print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Entity: {self.load_entity}")
-        #print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")
-        
+        # print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Entity: {self.load_entity}")
+        # print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")
+
         self.proc.run(rf"load_entity({layer}, {entity_num}, {x}, {y})".encode())

@@ -1,7 +1,7 @@
 import ctypes
-import psutil
 import struct
 
+import psutil
 
 kernel32 = ctypes.windll.kernel32
 
@@ -72,7 +72,7 @@ class Injector:
 
     def w64(self, addr, p):
         res = struct.pack("<Q", p)
-        write(addr, res)
+        self.write(addr, res)
 
     def r32(self, addr):
         return struct.unpack("<L", self.read(addr, 4))[0]
@@ -115,7 +115,8 @@ class Injector:
     def call(self, addr, args):
         assert addr
         tid = (ctypes.c_uint32 * 1)()
-        handle = kernel32.CreateRemoteThread(self.handle,
+        handle = kernel32.CreateRemoteThread(
+            self.handle,
             None,
             0,
             ctypes.c_void_p(addr),

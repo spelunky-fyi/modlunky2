@@ -1,16 +1,15 @@
-from pathlib import Path
-import sys
-import logging
-import threading
 import binascii
-import shutil
+import logging
 import os
+import shutil
+import threading
+from pathlib import Path
 
-from flask import Blueprint, current_app, Response, redirect, render_template, request
+from flask import Blueprint, current_app, render_template, request
 
-from s2_data.assets.assets import KNOWN_ASSETS, AssetStore, EXTRACTED_DIR, OVERRIDES_DIR, MissingAsset
-from s2_data.assets.patcher import Patcher  
-from modlunky2.code_execution import CodeExecutionManager, ProcessNotRunning
+from s2_data.assets.assets import (EXTRACTED_DIR, KNOWN_ASSETS, OVERRIDES_DIR,
+                                   AssetStore, MissingAsset)
+from s2_data.assets.patcher import Patcher
 
 blueprint = Blueprint("assets", __name__)
 
@@ -62,9 +61,11 @@ def extract_assets(exe_filename):
     # Make all directories for extraction and overrides
     for dir_ in ASSET_DIRS:
         (current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / ".compressed" / dir_).mkdir(parents=True, exist_ok=True)
+        (current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / ".compressed" / dir_).mkdir(
+            parents=True, exist_ok=True)
         (current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR / ".compressed" / dir_).mkdir(parents=True, exist_ok=True)
+        (current_app.config.SPELUNKY_INSTALL_DIR / OVERRIDES_DIR / ".compressed" / dir_).mkdir(
+            parents=True, exist_ok=True)
 
     with exe_filename.open('rb') as exe:
         asset_store = AssetStore.load_from_file(exe)
@@ -73,7 +74,8 @@ def extract_assets(exe_filename):
             asset = asset_store.find_asset(filename)
             name_hash = asset_store.filename_hash(filename)
             if asset is None:
-                logging.info("Asset %s not found with hash %s...",
+                logging.info(
+                    "Asset %s not found with hash %s...",
                     filename.decode(),
                     repr(binascii.hexlify(name_hash))
                 )
@@ -103,7 +105,7 @@ def assets_extract():
 
     exe = current_app.config.SPELUNKY_INSTALL_DIR / request.form['extract-target']
     thread = threading.Thread(target=extract_assets, args=(exe,))
-    thread.start()    
+    thread.start()
 
     return render_template("assets_extract.html", exe=exe)
 
@@ -132,6 +134,6 @@ def assets_repack():
     dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
 
     thread = threading.Thread(target=repack_assets, args=(source_exe, dest_exe))
-    thread.start()    
+    thread.start()
 
     return render_template("assets_repack.html", exe=dest_exe)
