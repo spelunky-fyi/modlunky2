@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "crates/modlunky2_dll",
+    "crates/dll_injector",
+]

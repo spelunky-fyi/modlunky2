@@ -1,2 +1,5 @@
 include VERSION
 include LICENSE
+include Cargo.toml
+recursive-include crates *
+recrusive-exclude crates target Cargo.lock
