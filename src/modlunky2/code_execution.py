@@ -10,6 +10,7 @@ from .injectlib import Injector
 
 DELTA = 0xc00
 
+
 def signed(x):
     return x if x & 0x80000000 == 0 else x - 0x100000000
 
@@ -33,11 +34,23 @@ def ensure_attached(method):
                 raise ProcessNotRunning("Can't find Spel2.exe running")
             logging.info("Found process (%s). Attaching...", proc)
             self.code_executor = CodeExecutor(proc)
+
         try:
             method(self, *args, **kwargs)
         except Exception:
             self.code_executor = None
-            raise ProcessNotRunning("Previously attached process has gone away. Try again.")
+            logging.warning("Failed to run command. Process might have gone away. Attempting to reconnect.")
+            proc = find_process(self.proc_name)
+            if proc is None:
+                raise ProcessNotRunning("Can't find Spel2.exe running")
+            logging.info("Found process (%s). Attaching...", proc)
+
+            try:
+                self.code_executor = CodeExecutor(proc)
+                method(self, *args, **kwargs)
+            except Exception:
+                self.code_exector = None
+                raise ProcessNotRunning("Failed to run command. Attached process has gone away?")
     return inner
 
 
@@ -75,6 +88,8 @@ class CodeExecutor:
 
         _, self.items_off = self.find('33 D2 8B 41 28 01', -7, 'imm')
 
+        self.load_code()
+
     def find(self, sep, offset=-7, type='pc', start=0):
         off = self.data.find(bytes.fromhex(sep), start)
         if type == 'off':
@@ -86,6 +101,41 @@ class CodeExecutor:
         elif type == 'pc':
             gm = off + offset + 7 + off2 + DELTA
         return off + DELTA, gm
+
+    def load_code(self):
+        self.proc.run(textwrap.dedent(rf"""
+        import os
+        import sys
+
+        try:
+            import ctypes
+        except Exception as err:
+            os.system('''msg * "%s"''' % err)
+
+        class CriticalSection:
+            def __enter__(self, *args):
+                ctypes.windll.kernel32.SuspendThread({self.main_thread})
+
+            def __exit__(self, *args):
+                ctypes.windll.kernel32.ResumeThread({self.main_thread})
+
+        def with_critical(f):
+            def inner(*args, **kwargs):
+                try:
+                    with CriticalSection():
+                        f(*args, **kwargs)
+                except Exception as e:
+                    os.system("msg * \"Failed: %s\"" % e)
+            return inner
+
+        load_item = with_critical((ctypes.CFUNCTYPE(ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int64,
+            ctypes.c_float,
+            ctypes.c_float
+        ))({self.load_item}))
+
+        """).strip().encode())
 
     def spawn_item(self, item_num, rel_x=1, rel_y=1):
         layer = self.proc.r64(self.state + self.layer_off)
@@ -103,30 +153,4 @@ class CodeExecutor:
         #print(f"State: {self.state}, Layer Offset: {self.layer_off}, Load Item: {self.load_item}")
         #print(f"Layer: {layer}, Items: {items}, Player Index: {player_index}, Size: {size}, Player: {player}")
         
-        self.proc.run(textwrap.dedent(rf"""
-        import os
-        import sys
-
-        try:
-            import ctypes
-        except Exception as err:
-            os.system('''msg * "%s"''' % err)
-
-        class CriticalSection:
-            def __enter__(self, *args):
-                ctypes.windll.kernel32.SuspendThread({self.main_thread})
-
-            def __exit__(self, *args):
-                ctypes.windll.kernel32.ResumeThread({self.main_thread})
-        try:
-            with CriticalSection():
-                load_item = (ctypes.CFUNCTYPE(ctypes.c_void_p,
-                    ctypes.c_void_p,
-                    ctypes.c_int64,
-                    ctypes.c_float,
-                    ctypes.c_float))({self.load_item})
-                load_item({layer}, {item_num}, {x}, {y})
-        except Exception as e:
-            import os
-            os.system("msg * \"Failed: %s\"" % e)
-        """).strip().encode())
+        self.proc.run(rf"load_item({layer}, {item_num}, {x}, {y})".encode())

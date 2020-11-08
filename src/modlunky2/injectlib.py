@@ -106,7 +106,7 @@ class Injector:
                 self.write(addr, payload)
             return addr
         else:
-            raise Exception("Allocation failed!")
+            raise Exception("Allocation failed: %d" % error())
 
     def load_lib(self, name):
         ldw = gpa(kernel32._handle, b'LoadLibraryA')
