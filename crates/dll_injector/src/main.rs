@@ -1,4 +1,4 @@
-use ::dll_injector::Process;
+use ::dll_injector::{rpc, Process};
 
 fn main() {
     env_logger::Builder::new()
@@ -17,12 +17,13 @@ fn main() {
     }
 
     unsafe {
-        match Process::from_name("Spel2.exe", "modlunky2.dll".into()) {
+        match Process::from_name("Spel2.exe", path.to_str().unwrap().into()) {
             None => println!("Cannot find process!"),
-            Some(proc) => {
+            Some(mut proc) => {
                 log::info!("Found spelunky 2 PID: {}", proc.pid);
-                proc.inject_dll(path.to_str().unwrap());
-                proc.main();
+                proc.inject_dll();
+                proc.main(std::process::id());
+                rpc("load_entity|514|1|1");
             }
         }
     }
