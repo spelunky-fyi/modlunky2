@@ -1,4 +1,4 @@
-use ::dll_injector::{find_process, inject_dll};
+use ::dll_injector::Process;
 
 fn main() {
     env_logger::Builder::new()
@@ -16,24 +16,13 @@ fn main() {
         return;
     }
 
-    let (_, temp_path) = tempfile::Builder::new()
-        .suffix(".dll")
-        .tempfile()
-        .unwrap()
-        .keep()
-        .unwrap();
-
-    match std::fs::copy(path, temp_path.clone()) {
-        Err(_) => panic!("Error!"),
-        Ok(_) => {}
-    }
-
     unsafe {
-        match find_process("Spel2.exe") {
+        match Process::from_name("Spel2.exe", "modlunky2.dll".into()) {
             None => println!("Cannot find process!"),
             Some(proc) => {
                 log::info!("Found spelunky 2 PID: {}", proc.pid);
-                inject_dll(&proc, temp_path.to_str().unwrap());
+                proc.inject_dll(path.to_str().unwrap());
+                proc.main();
             }
         }
     }

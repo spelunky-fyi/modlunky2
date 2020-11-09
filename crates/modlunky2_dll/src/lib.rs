@@ -11,18 +11,10 @@ use std::ffi::CString;
 use std::process::Command;
 use std::ptr;
 use winapi::um::libloaderapi::LoadLibraryA;
-use winapi::um::winnt::DLL_PROCESS_ATTACH;
 
 #[no_mangle]
-unsafe extern "C" fn DllMain(_: *const u8, reason: u32, _: *const u8) -> bool {
-    match reason {
-        DLL_PROCESS_ATTACH => {
-            set_panic_hook();
-            main();
-        }
-        _ => {}
-    }
-    true
+unsafe extern "C" fn DllMain(_: *const u8, _reason: u32, _: *const u8) -> u32 {
+    1
 }
 
 fn message(payload: String) {
@@ -50,6 +42,8 @@ fn get_load_item(exe: &[u8], start: usize) -> usize {
 }
 
 pub unsafe fn main() {
+    set_panic_hook();
+
     let spel2_name = CString::new("Spel2.exe").unwrap();
     let spel2_ptr = LoadLibraryA(spel2_name.as_ptr());
     let exe = memory_view(std::mem::transmute(spel2_ptr));
