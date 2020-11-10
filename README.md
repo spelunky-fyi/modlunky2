@@ -51,6 +51,7 @@ Once you have your virtual environment setup and activated you'll want to finish
 
 ```console
 > pip install -r requirements.txt
+> cargo build --release
 > python setup.py develop
 ```
 

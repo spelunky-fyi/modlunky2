@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from setuptools_rust import Binding, RustExtension
 import pathlib
 
 HERE = pathlib.Path(__file__).parent.resolve()
@@ -73,4 +74,11 @@ setup(
         ],
     },
     include_package_data = True,
+    package_data = {
+        '': ['target/release/modlunky2.dll'],
+    },
+    rust_extensions=[
+        RustExtension("dll_injector", "crates/dll_injector/Cargo.toml", debug=False),
+    ],
+    zip_safe=False,
 )

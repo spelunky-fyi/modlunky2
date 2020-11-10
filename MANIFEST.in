@@ -1,5 +1,6 @@
 include VERSION
 include LICENSE
 include Cargo.toml
+include target/release/modlunky2.dll
 recursive-include crates *
-recrusive-exclude crates target Cargo.lock
+recursive-exclude crates target Cargo.lock

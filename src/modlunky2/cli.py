@@ -1,3 +1,4 @@
+import atexit
 import logging
 import sys
 from pathlib import Path
@@ -49,6 +50,9 @@ def main():
     logging.basicConfig(format=format, level=logging.INFO,
                         datefmt="%H:%M:%S")
 
+    dll = (BASE_DIR.parent.parent / 'target/release/modlunky2.dll')
     app.config.SPELUNKY_INSTALL_DIR = Path(args.install_dir)
-    app.config.SPELUNKY_CEM = CodeExecutionManager(args.process_name)
+    app.config.SPELUNKY_CEM = CodeExecutionManager(args.process_name, dll)
+    atexit.register(app.config.SPELUNKY_CEM.shutdown)
+
     app.run(host=args.host, port=args.port, debug=args.debug)

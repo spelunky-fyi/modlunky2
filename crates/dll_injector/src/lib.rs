@@ -3,12 +3,15 @@ use std::ffi;
 use std::mem;
 use std::ptr;
 use std::str;
+use std::sync::Mutex;
+use std::time::Duration;
 
 use log;
 
+use pyo3::prelude::*;
+use pyo3::types::PyType;
+
 use sysinfo::{Pid, ProcessExt, System, SystemExt};
-//use pyo3::prelude::*;
-//use pyo3::wrap_pyfunction;
 use winapi::shared::minwindef::{DWORD, LPVOID};
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::libloaderapi::{GetProcAddress, LoadLibraryA};
@@ -32,6 +35,8 @@ pub struct Process {
     dll: String,
     remote_handle: Option<u64>,
 }
+
+unsafe impl Send for Process {}
 
 impl Process {
     pub unsafe fn from_name(name: &str, dll: String) -> Option<Process> {
@@ -103,9 +108,12 @@ impl Process {
     }
 
     pub unsafe fn eject_dll(&self) {
-        log::debug!("Ejecting DLL from process...");
+        log::info!("Ejecting DLL from process...");
         if let Some(handle) = self.remote_handle {
+            log::info!("Asking dll to shutdown...");
             rpc("shutdown");
+
+            log::info!("Freeing DLL...");
             self.call(
                 self.find_function("kernel32.dll", "FreeLibrary"),
                 handle as *mut winapi::ctypes::c_void,
@@ -185,6 +193,8 @@ use std::net::UdpSocket;
 
 pub fn rpc(cmd: &str) -> Vec<u8> {
     let socket = UdpSocket::bind("127.0.0.1:0").expect("couldn't bind to address");
+    socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+    socket.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
     socket
         .connect("127.0.0.1:8041")
         .expect("connect function failed");
@@ -199,7 +209,46 @@ pub fn rpc(cmd: &str) -> Vec<u8> {
 impl Drop for Process {
     fn drop(&mut self) {
         unsafe {
+            println!("EJECTED");
             self.eject_dll();
         };
     }
+}
+
+#[pyclass]
+struct Injector {
+    process: Mutex<Process>,
+}
+
+#[pymethods]
+impl Injector {
+    #[classmethod]
+    fn from_name(_cls: &PyType, name: &str, dll: String) -> PyResult<Option<Injector>> {
+        match unsafe { Process::from_name(name, dll) } {
+            Some(process) => Ok(Some(Injector {
+                process: Mutex::new(process),
+            })),
+            None => Ok(None),
+        }
+    }
+
+    fn inject(&self) -> PyResult<()> {
+        let mut proc = self.process.lock().unwrap();
+        unsafe {
+            proc.inject_dll();
+            proc.main(std::process::id());
+        }
+
+        Ok(())
+    }
+
+    fn load_entity(&self, item_num: usize, rel_x: f32, rel_y: f32) -> PyResult<()> {
+        rpc(&format!("load_entity|{}|{}|{}", item_num, rel_x, rel_y));
+        Ok(())
+    }
+}
+#[pymodule]
+fn dll_injector(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Injector>()?;
+    Ok(())
 }
