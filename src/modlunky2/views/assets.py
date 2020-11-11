@@ -3,10 +3,11 @@ import logging
 import os
 import shutil
 import threading
+from concurrent.futures import ThreadPoolExecutor, wait
+
 from pathlib import Path
 
 from flask import Blueprint, current_app, render_template, request
-
 from s2_data.assets.assets import (EXTRACTED_DIR, KNOWN_ASSETS, OVERRIDES_DIR,
                                    AssetStore, MissingAsset)
 from s2_data.assets.patcher import Patcher
@@ -86,7 +87,19 @@ def extract_assets(install_dir, exe_filename):
 
             filepath = Path(filename.decode())
             logging.info("Extracting %s.. ", filepath)
-            asset.extract(install_dir / EXTRACTED_DIR, exe, asset_store.key)
+            asset.load_data(exe)
+
+        def extract_single(asset):
+            try:
+                logging.info("Extracting %s... ", asset.filename.decode())
+                asset.extract(install_dir / EXTRACTED_DIR, asset_store.key)
+
+            except Exception as err:
+                logging.error(err)
+
+        pool = ThreadPoolExecutor()
+        futures = [pool.submit(extract_single, asset) for asset in seen.values()]
+        wait(futures, timeout=300)
 
     for asset in sorted(asset_store.assets, key=lambda a: a.offset):
         name_hash = asset_store.filename_hash(asset.filename)
@@ -94,8 +107,9 @@ def extract_assets(install_dir, exe_filename):
             logging.warning("Un-extracted Asset %s. Things might not work. :X", asset)
 
     dest = install_dir / EXTRACTED_DIR / "Spel2.exe"
-    logging.info("Backing up exe to %s", dest)
-    shutil.copy2(exe_filename, dest)
+    if exe_filename != dest:
+        logging.info("Backing up exe to %s", dest)
+        shutil.copy2(exe_filename, dest)
 
     logging.info("Extraction complete!")
 

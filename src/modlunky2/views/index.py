@@ -21,7 +21,7 @@ class Person:
 @blueprint.route('/')
 def index():
     people = [
-        Person("iojonmbnmb"),
+        Person("iojonmbnmb", [Link("github", "https://github.com/iojon")]),
         Person("Cloppershy", [Link("github", "https://github.com/Cloppershy")]),
         Person("Dregu", [Link("github", "https://github.com/Dregu")]),
         Person("SciresM", [Link("github", "https://github.com/SciresM")]),

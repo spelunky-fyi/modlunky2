@@ -39,6 +39,13 @@
 
     <div class="container h-100">
         <div id="content" class="content h-100">
+            {% if config.MODLUNKY_NEEDS_UPDATE %}
+            <div class="alert alert-warning" role="alert">
+                You're using an old version of Modlunky 2. Grab the latest release
+                <a href="https://github.com/spelunky-fyi/modlunky2/releases/tag/{{config.MODLUNKY_LATEST_VERSION}}" class="alert-link">here!</a>
+            </div>
+            {% endif %}
+              
             {% block content %} {% endblock %}
         </div>
     </div>

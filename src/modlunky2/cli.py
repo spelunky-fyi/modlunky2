@@ -1,8 +1,10 @@
 import logging
 import sys
 from pathlib import Path
+from packaging import version
 
 from flask import Flask
+import requests
 
 from .code_execution import CodeExecutionManager
 from .views.assets import blueprint as assets_blueprint
@@ -13,9 +15,11 @@ PROCESS_NAME = "Spel2.exe"
 # Setup static files to work with onefile exe
 BASE_DIR = Path(__file__).resolve().parent
 APP_DIR = BASE_DIR
+ROOT_DIR = BASE_DIR.parent.parent
 if hasattr(sys, '_MEIPASS'):
     BASE_DIR = BASE_DIR / sys._MEIPASS
     APP_DIR = Path(sys.executable).resolve().parent
+    ROOT_DIR = BASE_DIR
 
 
 app = Flask(
@@ -26,6 +30,18 @@ app = Flask(
 app.register_blueprint(index_blueprint)
 app.register_blueprint(entities_blueprint, url_prefix="/entities")
 app.register_blueprint(assets_blueprint, url_prefix="/assets")
+
+def get_latest_version():
+    try:
+        return version.parse(requests.get(
+            "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
+        ).json()["tag_name"])
+    except Exception:
+        return None
+
+def get_current_version():
+    with (ROOT_DIR / "VERSION").open() as version_file:
+        return version.parse(version_file.read().strip())
 
 
 def main():
@@ -49,6 +65,12 @@ def main():
     logging.basicConfig(format=format, level=logging.INFO,
                         datefmt="%H:%M:%S")
 
-    app.config.SPELUNKY_INSTALL_DIR = Path(args.install_dir)
-    app.config.SPELUNKY_CEM = CodeExecutionManager(args.process_name)
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    try:
+        app.config.SPELUNKY_INSTALL_DIR = Path(args.install_dir)
+        app.config.SPELUNKY_CEM = CodeExecutionManager(args.process_name)
+        app.config.MODLUNKY_CURRENT_VERSION = get_current_version()
+        app.config.MODLUNKY_LATEST_VERSION = get_latest_version()
+        app.config.MODLUNKY_NEEDS_UPDATE = app.config.MODLUNKY_CURRENT_VERSION < app.config.MODLUNKY_LATEST_VERSION
+        app.run(host=args.host, port=args.port, debug=args.debug)
+    except Exception as err:
+        input(f"Failed to start ({err}). Press enter to exit... :(")
