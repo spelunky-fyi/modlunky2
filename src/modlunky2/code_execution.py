@@ -5,7 +5,7 @@ from pathlib import Path
 
 import psutil
 
-from .injectlib import Injector
+from injectlib import Injector
 
 DELTA = 0xc00
 
