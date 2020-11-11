@@ -23,7 +23,7 @@ If you'd like to contribute to `modlunky2` here are some steps to setup your env
 ### Creating VirtualEnv
 In the root directory you can make a virtualenv. It will be excluded from commits by default
 ```console
-> python -m venv venv
+python -m venv venv
 ```
 
 ### Activate VirtualEnv
@@ -31,18 +31,28 @@ In the root directory you can make a virtualenv. It will be excluded from commit
 You'll want to activate the virtual environment whenever you're testing any commands from this package
 
 #### Powershell
+
+please check here first https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7
+and after this type in whatever scope chosen, minimum being remotesigned
 ```console
-> venv\Scripts\activate.bat
+python -m venv venv
+Get-ExecutionPolicy
+Get-ExecutionPolicy -List
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+or
+Set-ExecutionPolicy -ExecutionPolicy <PolicyName>
+SAY YES TO ALL
+venv\Scripts\activate.ps1
 ```
 
 #### cmd
 ```console
-> venv/Scripts/Activate.ps1
+venv/Scripts/Activate.bat
 ```
 
 #### bash/zsh
 ```console
-> source venv/bin/activate
+source venv/bin/activate
 ```
 
 ### Setup
@@ -50,6 +60,8 @@ You'll want to activate the virtual environment whenever you're testing any comm
 Once you have your virtual environment setup and activated you'll want to finish setting up the development environment.
 
 ```console
+> git clone https://github.com/spelunky-fyi/modlunky2/
+> cd modlunky2
 > pip install -r requirements.txt
 > python setup.py develop
 ```
