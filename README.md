@@ -20,40 +20,28 @@ http://127.0.0.1:8040/ . Leave this running while you're using the modding UI.
 
 If you'd like to contribute to `modlunky2` here are some steps to setup your environment.
 
-### Creating VirtualEnv
+### VirtualEnv
+
+*While not required, a virtualenv is a nice way to keep this projects dependencies isolated from the rest of your system. This step is optional but recommended*
+
 In the root directory you can make a virtualenv. It will be excluded from commits by default
+
 ```console
 python -m venv venv
 ```
+Whenever developing the project you'll want to activate the virtualenv in your terminal. This is platform dependent and there are more comprehensive docs available here: https://docs.python.org/3/library/venv.html
 
-### Activate VirtualEnv
+> :warning: If you're using PowerShell on Windows you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`. More information on execution policy is available in the link above.
 
-You'll want to activate the virtual environment whenever you're testing any commands from this package
+| Platform | Shell           | Command to activate virtual environment |
+|----------|-----------------|-----------------------------------------|
+| POSIX    | bash/zsh        | $ source <venv>/bin/activate            |
+|          | fish            | $ source <venv>/bin/activate.fish       |
+|          | csh/tcsh        | $ source <venv>/bin/activate.csh        |
+|          | PowerShell Core | $ <venv>/bin/Activate.ps1               |
+| Windows  | cmd.exe         | C:\> <venv>\Scripts\activate.bat        |
+|          | PowerShell      | PS C:\> <venv>\Scripts\Activate.ps1     |
 
-#### Powershell
-
-please check <a href="https://docs.python.org/3/library/venv.html">here</a> first about making a venv
-and after this type in whatever scope chosen, minimum being remotesigned. 
-```console
-python -m venv venv
-Get-ExecutionPolicy
-Get-ExecutionPolicy -List
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
-or
-Set-ExecutionPolicy -ExecutionPolicy <PolicyName>
-SAY YES TO ALL
-venv\Scripts\activate.ps1
-```
-
-#### cmd
-```console
-venv/Scripts/Activate.bat
-```
-
-#### bash/zsh
-```console
-source venv/bin/activate
-```
 
 ### Setup
 
