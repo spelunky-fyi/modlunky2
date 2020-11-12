@@ -32,8 +32,8 @@ You'll want to activate the virtual environment whenever you're testing any comm
 
 #### Powershell
 
-please check here first https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7
-and after this type in whatever scope chosen, minimum being remotesigned
+please check <a href="https://docs.python.org/3/library/venv.html">here</a> first about making a venv
+and after this type in whatever scope chosen, minimum being remotesigned. 
 ```console
 python -m venv venv
 Get-ExecutionPolicy
