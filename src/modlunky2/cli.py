@@ -4,10 +4,10 @@ from pathlib import Path
 
 from flask import Flask
 
-from code_execution import CodeExecutionManager
-from views.assets import blueprint as assets_blueprint
-from views.entities import blueprint as entities_blueprint
-from views.index import blueprint as index_blueprint
+from .code_execution import CodeExecutionManager
+from .views.assets import blueprint as assets_blueprint
+from .views.entities import blueprint as entities_blueprint
+from .views.index import blueprint as index_blueprint
 
 PROCESS_NAME = "Spel2.exe"
 # Setup static files to work with onefile exe
