@@ -55,8 +55,8 @@ def assets():
 
 def extract_assets(install_dir, exe_filename):
     # Make all directories for extraction and overrides
-    (install_dir / "Packs").mkdir(parents=True, exist_ok=True)
-    (install_dir / "Overrides").mkdir(parents=True, exist_ok=True)
+    (install_dir / "Mods" / "Packs").mkdir(parents=True, exist_ok=True)
+    (install_dir / "Mods" / "Overrides").mkdir(parents=True, exist_ok=True)
     for dir_ in ASSET_DIRS:
         (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
         (install_dir / "Mods" / ".compressed" / "Extracted" / dir_).mkdir(parents=True, exist_ok=True)
