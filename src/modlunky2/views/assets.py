@@ -4,7 +4,6 @@ import os
 import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
-
 from pathlib import Path
 
 from flask import Blueprint, current_app, render_template, request
@@ -18,11 +17,7 @@ blueprint = Blueprint("assets", __name__)
 ASSETS_ROOT = Path("Mods")
 EXTRACTED_DIR = ASSETS_ROOT / EXTRACTED_DIR
 OVERRIDES_DIR = ASSETS_ROOT / OVERRIDES_DIR
-ASSET_DIRS = [
-    "Data/Fonts",
-    "Data/Levels/Arena",
-    "Data/Textures/OldTextures"
-]
+ASSET_DIRS = ["Data/Fonts", "Data/Levels/Arena", "Data/Textures/OldTextures"]
 
 
 def get_overrides(install_dir):
@@ -41,7 +36,7 @@ def get_overrides(install_dir):
     return overrides
 
 
-@blueprint.route('/')
+@blueprint.route("/")
 def assets():
     exes = []
     # Don't recurse forever. 3 levels should be enough
@@ -63,12 +58,14 @@ def extract_assets(install_dir, exe_filename):
     for dir_ in ASSET_DIRS:
         (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
         (install_dir / EXTRACTED_DIR / ".compressed" / dir_).mkdir(
-            parents=True, exist_ok=True)
+            parents=True, exist_ok=True
+        )
         (install_dir / OVERRIDES_DIR / dir_).mkdir(parents=True, exist_ok=True)
         (install_dir / OVERRIDES_DIR / ".compressed" / dir_).mkdir(
-            parents=True, exist_ok=True)
+            parents=True, exist_ok=True
+        )
 
-    with exe_filename.open('rb') as exe:
+    with exe_filename.open("rb") as exe:
         asset_store = AssetStore.load_from_file(exe)
         seen = {}
         for filename in KNOWN_ASSETS:
@@ -78,7 +75,7 @@ def extract_assets(install_dir, exe_filename):
                 logging.info(
                     "Asset %s not found with hash %s...",
                     filename.decode(),
-                    repr(binascii.hexlify(name_hash))
+                    repr(binascii.hexlify(name_hash)),
                 )
                 continue
 
@@ -93,8 +90,7 @@ def extract_assets(install_dir, exe_filename):
             try:
                 logging.info("Extracting %s... ", asset.filename.decode())
                 asset.extract(install_dir / EXTRACTED_DIR, asset_store.key)
-
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 logging.error(err)
 
         pool = ThreadPoolExecutor()
@@ -114,11 +110,13 @@ def extract_assets(install_dir, exe_filename):
     logging.info("Extraction complete!")
 
 
-@blueprint.route('/extract/', methods=["POST"])
+@blueprint.route("/extract/", methods=["POST"])
 def assets_extract():
 
-    exe = current_app.config.SPELUNKY_INSTALL_DIR / request.form['extract-target']
-    thread = threading.Thread(target=extract_assets, args=(current_app.config.SPELUNKY_INSTALL_DIR, exe))
+    exe = current_app.config.SPELUNKY_INSTALL_DIR / request.form["extract-target"]
+    thread = threading.Thread(
+        target=extract_assets, args=(current_app.config.SPELUNKY_INSTALL_DIR, exe)
+    )
     thread.start()
 
     return render_template("assets_extract.html", exe=exe)
@@ -132,7 +130,9 @@ def repack_assets(mods_dir, source_exe, dest_exe):
         try:
             asset_store.repackage(Path(mods_dir))
         except MissingAsset as err:
-            logging.error("Failed to find expected asset: %s. Unabled to proceed...", err)
+            logging.error(
+                "Failed to find expected asset: %s. Unabled to proceed...", err
+            )
             return
 
         patcher = Patcher(dest_file)
@@ -140,14 +140,16 @@ def repack_assets(mods_dir, source_exe, dest_exe):
     logging.info("Repacking complete!")
 
 
-@blueprint.route('/repack/', methods=["POST"])
+@blueprint.route("/repack/", methods=["POST"])
 def assets_repack():
 
     source_exe = current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / "Spel2.exe"
     dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
     mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / ASSETS_ROOT
 
-    thread = threading.Thread(target=repack_assets, args=(mods_dir, source_exe, dest_exe))
+    thread = threading.Thread(
+        target=repack_assets, args=(mods_dir, source_exe, dest_exe)
+    )
     thread.start()
 
     return render_template("assets_repack.html", exe=dest_exe)

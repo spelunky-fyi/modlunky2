@@ -18,7 +18,7 @@ class Person:
     links: List[Link] = None
 
 
-@blueprint.route('/')
+@blueprint.route("/")
 def index():
     people = [
         Person("iojonmbnmb", [Link("github", "https://github.com/iojon")]),
