@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+disable=missing-docstring,empty-docstring,too-few-public-methods
+
+[MISCELLANEOUS]
+notes=FIXME,XXX
