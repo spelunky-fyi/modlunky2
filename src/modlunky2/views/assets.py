@@ -55,15 +55,12 @@ def assets():
 
 def extract_assets(install_dir, exe_filename):
     # Make all directories for extraction and overrides
+    (install_dir / "Packs").mkdir(parents=True, exist_ok=True)
+    (install_dir / "Overrides").mkdir(parents=True, exist_ok=True)
     for dir_ in ASSET_DIRS:
         (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (install_dir / EXTRACTED_DIR / ".compressed" / dir_).mkdir(
-            parents=True, exist_ok=True
-        )
-        (install_dir / OVERRIDES_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (install_dir / OVERRIDES_DIR / ".compressed" / dir_).mkdir(
-            parents=True, exist_ok=True
-        )
+        (install_dir / "Mods" / ".compressed" / "Extracted" / dir_).mkdir(parents=True, exist_ok=True)
+
 
     with exe_filename.open("rb") as exe:
         asset_store = AssetStore.load_from_file(exe)
@@ -89,7 +86,7 @@ def extract_assets(install_dir, exe_filename):
         def extract_single(asset):
             try:
                 logging.info("Extracting %s... ", asset.filename.decode())
-                asset.extract(install_dir / EXTRACTED_DIR, asset_store.key)
+                asset.extract(install_dir / "Mods", "Extracted", asset_store.key)
             except Exception as err:  # pylint: disable=broad-except
                 logging.error(err)
 
@@ -122,13 +119,13 @@ def assets_extract():
     return render_template("assets_extract.html", exe=exe)
 
 
-def repack_assets(mods_dir, source_exe, dest_exe):
+def repack_assets(mods_dir, search_dirs, extract_dir, source_exe, dest_exe):
     shutil.copy2(source_exe, dest_exe)
 
     with dest_exe.open("rb+") as dest_file:
         asset_store = AssetStore.load_from_file(dest_file)
         try:
-            asset_store.repackage(Path(mods_dir))
+            asset_store.repackage(Path(mods_dir), search_dirs, extract_dir)
         except MissingAsset as err:
             logging.error(
                 "Failed to find expected asset: %s. Unabled to proceed...", err
@@ -147,8 +144,11 @@ def assets_repack():
     dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
     mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / ASSETS_ROOT
 
+    search_dirs = ["Overrides"]
+    extract_dir = "Extracted"
+
     thread = threading.Thread(
-        target=repack_assets, args=(mods_dir, source_exe, dest_exe)
+        target=repack_assets, args=(mods_dir, search_dirs, extract_dir, source_exe, dest_exe)
     )
     thread.start()
 
