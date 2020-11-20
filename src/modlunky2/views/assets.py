@@ -61,7 +61,6 @@ def extract_assets(install_dir, exe_filename):
         (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
         (install_dir / "Mods" / ".compressed" / "Extracted" / dir_).mkdir(parents=True, exist_ok=True)
 
-
     with exe_filename.open("rb") as exe:
         asset_store = AssetStore.load_from_file(exe)
         seen = {}
