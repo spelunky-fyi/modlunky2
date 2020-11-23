@@ -1,27 +1,30 @@
-import binascii
 import logging
 import os
 import shutil
 import threading
-from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 
 from flask import Blueprint, current_app, render_template, request
-from s2_data.assets.assets import (EXTRACTED_DIR, KNOWN_ASSETS, OVERRIDES_DIR,
-                                   AssetStore, MissingAsset)
-from s2_data.assets.patcher import Patcher
+
+from modlunky2.assets.assets import AssetStore
+from modlunky2.assets.constants import (EXTRACTED_DIR,
+                                        OVERRIDES_DIR, FILEPATH_DIRS, PACKS_DIR)
+from modlunky2.assets.exc import MissingAsset
+from modlunky2.assets.patcher import Patcher
 
 blueprint = Blueprint("assets", __name__)
 
 
-ASSETS_ROOT = Path("Mods")
-EXTRACTED_DIR = ASSETS_ROOT / EXTRACTED_DIR
-OVERRIDES_DIR = ASSETS_ROOT / OVERRIDES_DIR
-ASSET_DIRS = ["Data/Fonts", "Data/Levels/Arena", "Data/Textures/OldTextures"]
+MODS = Path("Mods")
 
+TOP_LEVEL_DIRS = [
+    EXTRACTED_DIR,
+    PACKS_DIR,
+    OVERRIDES_DIR
+]
 
 def get_overrides(install_dir):
-    dir_ = install_dir / OVERRIDES_DIR
+    dir_ = install_dir / MODS / OVERRIDES_DIR
 
     if not dir_.exists():
         return None
@@ -54,51 +57,26 @@ def assets():
 
 
 def extract_assets(install_dir, exe_filename):
-    # Make all directories for extraction and overrides
-    (install_dir / "Mods" / "Packs").mkdir(parents=True, exist_ok=True)
-    (install_dir / "Mods" / "Overrides").mkdir(parents=True, exist_ok=True)
-    for dir_ in ASSET_DIRS:
-        (install_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (install_dir / "Mods" / ".compressed" / "Extracted" / dir_).mkdir(parents=True, exist_ok=True)
+    mods_dir = install_dir / MODS
+
+    for dir_ in TOP_LEVEL_DIRS:
+        (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
+
+    for dir_ in FILEPATH_DIRS:
+        (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
 
     with exe_filename.open("rb") as exe:
         asset_store = AssetStore.load_from_file(exe)
-        seen = {}
-        for filename in KNOWN_ASSETS:
-            asset = asset_store.find_asset(filename)
-            name_hash = asset_store.filename_hash(filename)
-            if asset is None:
-                logging.info(
-                    "Asset %s not found with hash %s...",
-                    filename.decode(),
-                    repr(binascii.hexlify(name_hash)),
-                )
-                continue
+        unextracted = asset_store.extract(
+            mods_dir / EXTRACTED_DIR,
+            mods_dir / ".compressed" / EXTRACTED_DIR,
+        )
 
-            asset.filename = filename
-            seen[asset.name_hash] = asset
+    for asset in unextracted:
+        logging.warning("Un-extracted Asset %s", asset)
 
-            filepath = Path(filename.decode())
-            logging.info("Extracting %s.. ", filepath)
-            asset.load_data(exe)
-
-        def extract_single(asset):
-            try:
-                logging.info("Extracting %s... ", asset.filename.decode())
-                asset.extract(install_dir / "Mods", "Extracted", asset_store.key)
-            except Exception as err:  # pylint: disable=broad-except
-                logging.error(err)
-
-        pool = ThreadPoolExecutor()
-        futures = [pool.submit(extract_single, asset) for asset in seen.values()]
-        wait(futures, timeout=300)
-
-    for asset in sorted(asset_store.assets, key=lambda a: a.offset):
-        name_hash = asset_store.filename_hash(asset.filename)
-        if asset.name_hash not in seen:
-            logging.warning("Un-extracted Asset %s. Things might not work. :X", asset)
-
-    dest = install_dir / EXTRACTED_DIR / "Spel2.exe"
+    dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
     if exe_filename != dest:
         logging.info("Backing up exe to %s", dest)
         shutil.copy2(exe_filename, dest)
@@ -124,7 +102,11 @@ def repack_assets(mods_dir, search_dirs, extract_dir, source_exe, dest_exe):
     with dest_exe.open("rb+") as dest_file:
         asset_store = AssetStore.load_from_file(dest_file)
         try:
-            asset_store.repackage(Path(mods_dir), search_dirs, extract_dir)
+            asset_store.repackage(
+                search_dirs,
+                extract_dir,
+                mods_dir / ".compressed",
+            )
         except MissingAsset as err:
             logging.error(
                 "Failed to find expected asset: %s. Unabled to proceed...", err
@@ -139,12 +121,12 @@ def repack_assets(mods_dir, search_dirs, extract_dir, source_exe, dest_exe):
 @blueprint.route("/repack/", methods=["POST"])
 def assets_repack():
 
-    source_exe = current_app.config.SPELUNKY_INSTALL_DIR / EXTRACTED_DIR / "Spel2.exe"
+    source_exe = current_app.config.SPELUNKY_INSTALL_DIR / MODS/ EXTRACTED_DIR / "Spel2.exe"
     dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
-    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / ASSETS_ROOT
+    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / MODS
 
-    search_dirs = ["Overrides"]
-    extract_dir = "Extracted"
+    search_dirs = [mods_dir / "Overrides"]
+    extract_dir = mods_dir / "Extracted"
 
     thread = threading.Thread(
         target=repack_assets, args=(mods_dir, search_dirs, extract_dir, source_exe, dest_exe)

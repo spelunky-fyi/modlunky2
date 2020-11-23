@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import pathlib
+
+from setuptools import find_packages, setup
 
 HERE = pathlib.Path(__file__).parent.resolve()
 LONG_DESCRIPTION = (HERE / 'README.md').read_text(encoding='utf-8')
@@ -70,6 +71,8 @@ setup(
     entry_points={  # Optional
         'console_scripts': [
             'modlunky2=modlunky2.cli:main',
+            'modlunky2-asset-extract=modlunky2.assets.extractor:main',
+            'modlunky2-asset-pack=modlunky2.assets.packer:main',
         ],
     },
     include_package_data = True,
