@@ -1,7 +1,9 @@
 Flask==1.1.2
-psutil==5.7.3
-pyinstaller==4.0
+Flask-Sockets==0.2.1
+ppyinstaller==4.0
 packaging==20.4
 requests==2.25.0
 zstandard==0.14.0
 Pillow==8.0.1
+gevent==20.9.0
+gevent-websocket==0.10.1

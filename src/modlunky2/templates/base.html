@@ -2,53 +2,64 @@
 <html lang="en">
 
 <head>
-    <title>{% block title %} Modlunky 2 {% endblock %}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-    <link href="/static/css/modlunky2.css" rel="stylesheet" media="screen">
-    <link rel="icon" type="image/png" href="https://cdn.spelunky.fyi/static/images/favicon.pngimages/favicon.png"> {% block extra_head %} {% endblock %}
+  <title>{% block title %} Modlunky 2 {% endblock %}</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css"
+    integrity="sha512-vebUliqxrVkBy3gucMhClmyQP9On/HAWQdKDXRaAlb/FKuTbxkjPKUyqVOxAcGwFDka79eTF+YXwfke1h3/wfg=="
+    crossorigin="anonymous"
+  />
+  <link href="/static/css/modlunky2.css" rel="stylesheet" media="screen">
+  <link rel="icon" type="image/png" href="https://cdn.spelunky.fyi/static/images/favicon.png">
+  {% block extra_head %} {% endblock %}
 </head>
 
 <body>
-    <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #9d110e;">
-        <a class="navbar-brand" href="/">Modlunky 2</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/assets/">
-              Assets
-            </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-dark nav-link" style="color: white;" href="https://spelunky.fyi/">
-                Spelunky.FYI
-              </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-
-    <div class="container h-100">
-        <div id="content" class="content h-100">
-            {% if config.MODLUNKY_NEEDS_UPDATE %}
-            <div class="alert alert-warning" role="alert">
-                You're using an old version of Modlunky 2. Grab the latest release
-                <a href="https://github.com/spelunky-fyi/modlunky2/releases/tag/{{config.MODLUNKY_LATEST_VERSION}}" class="alert-link">here!</a>
-            </div>
-            {% endif %}
-            {% block content %} {% endblock %}
-        </div>
+  <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #9d110e;">
+    <a class="navbar-brand" href="/">Modlunky 2</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="/assets/extract/">
+            Extract Assets
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/assets/pack/">
+            Pack Assets
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="btn btn-sm btn-outline-dark nav-link" style="color: white;" href="https://spelunky.fyi/">
+            Spelunky.FYI
+          </a>
+        </li>
+      </ul>
     </div>
+  </nav>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
-    <script src="https://kit.fontawesome.com/782e4263b7.js" crossorigin="anonymous"></script>
-    {% block script %} {% endblock %}
+  <div class="container h-100">
+    <div id="content" class="content h-100">
+      {% if config.MODLUNKY_NEEDS_UPDATE %}
+        <div class="alert alert-warning" role="alert">
+          You're using an old version of Modlunky 2. Grab the latest release
+          <a href="https://github.com/spelunky-fyi/modlunky2/releases/tag/{{config.MODLUNKY_LATEST_VERSION}}" class="alert-link">here!</a>
+        </div>
+      {% endif %}
+      {% block content %} {% endblock %}
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+  {% block script %} {% endblock %}
 </body>
 
 </html>

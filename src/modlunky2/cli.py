@@ -1,33 +1,36 @@
 import argparse
 import logging
 import sys
+import threading
 from pathlib import Path
 
 import requests
 from flask import Flask
+from flask_sockets import Sockets
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 from packaging import version
+from PIL import Image, ImageTk
 
+from .constants import APP_DIR, BASE_DIR, ROOT_DIR
+from .native import NativeUI
 from .views.assets import blueprint as assets_blueprint
+from .views.assets import ws_blueprint as assets_ws_blueprint
 from .views.index import blueprint as index_blueprint
-
-PROCESS_NAME = "Spel2.exe"
-# Setup static files to work with onefile exe
-BASE_DIR = Path(__file__).resolve().parent
-APP_DIR = BASE_DIR
-ROOT_DIR = BASE_DIR.parent.parent
-if hasattr(sys, "_MEIPASS"):
-    BASE_DIR = BASE_DIR / getattr(sys, "_MEIPASS")
-    APP_DIR = Path(sys.executable).resolve().parent
-    ROOT_DIR = BASE_DIR
-
 
 app = Flask(
     __name__,
     static_folder=f"{BASE_DIR / 'static'}",
     template_folder=f"{BASE_DIR / 'templates'}",
 )
+sockets = Sockets(app)
+
 app.register_blueprint(index_blueprint)
 app.register_blueprint(assets_blueprint, url_prefix="/assets")
+sockets.register_blueprint(assets_ws_blueprint, url_prefix="/ws/assets")
+
+
+#WebSocketHandler.log_request = lambda _: None
 
 
 def get_latest_version():
@@ -54,11 +57,6 @@ def main():
     parser.add_argument("--port", type=int, default=8040, help="Port to listen on.")
     parser.add_argument("--debug", default=False, action="store_true")
     parser.add_argument(
-        "--process-name",
-        default=PROCESS_NAME,
-        help="Name of Spelunky Process. (Default: %(default)s",
-    )
-    parser.add_argument(
         "--install-dir",
         default=APP_DIR,
         help="Path to Spelunky 2 installation. (Default: %(default)s",
@@ -75,6 +73,21 @@ def main():
         app.config.MODLUNKY_NEEDS_UPDATE = (
             app.config.MODLUNKY_CURRENT_VERSION < app.config.MODLUNKY_LATEST_VERSION
         )
-        app.run(host=args.host, port=args.port, debug=args.debug)
+        #folder_selected = filedialog.askdirectory()
+
+        native_ui = NativeUI("http://localhost:8040/")
+
+        def run_webserver():
+            webserver = pywsgi.WSGIServer(
+                (args.host, args.port), app,
+                log=None,
+                handler_class=WebSocketHandler,
+            )
+            native_ui.register_shutdown_handler(webserver.stop)
+            webserver.serve_forever()
+        webserver_thread = threading.Thread(target=run_webserver, daemon=True)
+        webserver_thread.start()
+
+        native_ui.mainloop()
     except Exception as err:  # pylint: disable=broad-except
         input(f"Failed to start ({err}). Press enter to exit... :(")

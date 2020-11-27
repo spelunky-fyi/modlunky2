@@ -18,9 +18,9 @@
         <li>
           {{person.name}}
           {% if person.links %}
-          {% for link in person.links %}
-            <a href="{{link.link}}"><i class="fab fa-{{link.site}}"></i></a>
-          {% endfor %}
+            {% for link in person.links %}
+              <a href="{{link.link}}"><i class="lab la-{{link.site}}"></i></a>
+            {% endfor %}
           {% endif %}
         </li>
       {% endfor %}
@@ -28,15 +28,16 @@
   </div>
   <div class="col-lg-6">
     <div class="card mb-3 rounded-0">
-        <div class="card-header rounded-0">
-          Tools
-        </div>
-        <div class="card-body">
-        <ul class="list-unstyled">
-          <li><a href="/assets/">Asset Management (Extraction / Repacking)</a></li>
-        </ul>
-        </div>
+      <div class="card-header rounded-0">
+        Tools
       </div>
+      <div class="card-body">
+        <ul class="list-unstyled">
+          <li><a href="/assets/extract/">Extract Assets</a></li>
+          <li><a href="/assets/pack/">Pack Assets</a></li>
+        </ul>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

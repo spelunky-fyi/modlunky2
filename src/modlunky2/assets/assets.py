@@ -22,6 +22,17 @@ from .constants import (BANK_ALIGNMENT, DEFAULT_COMPRESSION_LEVEL,
 from .converters import dds_to_png, png_to_dds
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 
+class NullExtractCtx:
+    @staticmethod
+    def alert(_level, _msg):
+        return
+
+    @staticmethod
+    def extract_complete(_filepath):
+        return
+
+null_extract_ctx = NullExtractCtx()
+
 
 @dataclass
 class ExeAssetBlock:
@@ -108,7 +119,7 @@ class ExeAssetBlock:
         exe_handle.write(data)
 
 
-class ExeAsset(object):
+class ExeAsset:
     def __init__(self, asset_block, filepath):
         self.asset_block = asset_block
         self.filepath = filepath
@@ -242,17 +253,22 @@ class AssetStore:
             asset.filepath = filepath
 
     @staticmethod
-    def _extract_single(asset, *args, **kwargs):
+    def _extract_single(asset, extract_ctx, *args, **kwargs):
         try:
             logging.info("Extracting %s... ", asset.filepath)
             asset.extract(*args, **kwargs)
-        except Exception:  # pylint: disable=broad-except
+            extract_ctx.extract_complete(asset.filepath)
+        except Exception as err:  # pylint: disable=broad-except
+            extract_ctx.alert('danger', f"Failed to extract {asset.filepath}: {err}")
             logging.exception("Failed Extraction")
 
-    def extract(self, extract_dir, compressed_dir, compression_level=DEFAULT_COMPRESSION_LEVEL):
+    def extract(
+        self, extract_dir, compressed_dir,
+        compression_level=DEFAULT_COMPRESSION_LEVEL,
+        extract_ctx=null_extract_ctx
+    ):
         unextracted = []
         for asset in self.assets:
-
             if asset.filepath is None:
                 # No known filepaths matched this asset.
                 unextracted.append(asset)
@@ -264,11 +280,12 @@ class AssetStore:
             futures = [
                 pool.submit(
                     self._extract_single,
-                     asset,
-                     extract_dir,
-                     compressed_dir,
-                     self.key,
-                     compression_level,
+                    asset,
+                    extract_ctx,
+                    extract_dir,
+                    compressed_dir,
+                    self.key,
+                    compression_level,
                 )
                 for asset in self.assets
                 if asset.filepath
@@ -339,7 +356,9 @@ class AssetStore:
 
             asset.asset_block.offset = offset
             asset.asset_block.asset_len = disk_asset.get_asset_len()
-            asset.asset_block.asset_offset = asset.asset_block.offset + 8 + asset.asset_block.filepath_len + 1
+            asset.asset_block.asset_offset = (
+                asset.asset_block.offset + 8 + asset.asset_block.filepath_len + 1
+            )
 
             # The name hash of soundbank files is padded such that the asset_offset
             # is divisible by 32.
