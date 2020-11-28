@@ -31,6 +31,28 @@ def is_patched(exe_filename):
         return Patcher(exe).is_patched()
 
 
+class BaseContext:
+    def __init__(self, socket):
+        self.socket = socket
+        self._socket_failed = False
+
+    def alert(self, level, msg):
+        if self._socket_failed:
+            return
+
+        try:
+            self.socket.send(json.dumps({
+                "cmd": "alert",
+                "data": {
+                    "level": level,
+                    "msg": str(msg),
+                }
+            }))
+        except Exception:  # pylint: disable=broad-except
+            logging.exception("Failed to call alert callback, socket likely went away.")
+            self._socket_failed = True
+
+
 # Extract
 
 @blueprint.route("/extract/", methods=["GET"])
@@ -48,28 +70,11 @@ def extract():
     return render_template("extract.html", exes=exes)
 
 
-class ExtractContext:
+class ExtractContext(BaseContext):
     def __init__(self, socket):
-        self.socket = socket
-        self._socket_failed = False
+        super().__init__(socket)
         self.known_filepaths = set(KNOWN_FILEPATHS)
         self.extracted = set()
-
-    def alert(self, level, msg):
-        if self._socket_failed:
-            return
-
-        try:
-            self.socket.send(json.dumps({
-                "cmd": "alert",
-                "data": {
-                    "level": level,
-                    "msg": str(msg),
-                }
-            }))
-        except Exception:  # pylint: disable=broad-except
-            logging.exception("Failed to call alert callback, socket likely went away.")
-            self._socket_failed = True
 
     def extract_complete(self, filepath):
         if self._socket_failed:
@@ -187,6 +192,17 @@ def pack():
 
 
 def repack_assets(mods_dir, search_dirs, extract_dir, source_exe, dest_exe):
+    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / MODS
+    search_dirs = [mods_dir / "Overrides"]
+    extract_dir = mods_dir / "Extracted"
+
+    source_exe = current_app.config.SPELUNKY_INSTALL_DIR / MODS/ EXTRACTED_DIR / "Spel2.exe"
+    dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
+
+    if is_patched(source_exe):
+        # FIXME: return error
+        return
+
     shutil.copy2(source_exe, dest_exe)
 
     with dest_exe.open("rb+") as dest_file:
@@ -215,20 +231,3 @@ def ws_pack(socket):
         if message is None:
             return
         socket.send(message)
-
-@blueprint.route("/pack/", methods=["POST"])
-def assets_repack():
-
-    source_exe = current_app.config.SPELUNKY_INSTALL_DIR / MODS/ EXTRACTED_DIR / "Spel2.exe"
-    dest_exe = current_app.config.SPELUNKY_INSTALL_DIR / "Spel2.exe"
-    mods_dir = current_app.config.SPELUNKY_INSTALL_DIR / MODS
-
-    search_dirs = [mods_dir / "Overrides"]
-    extract_dir = mods_dir / "Extracted"
-
-    thread = threading.Thread(
-        target=repack_assets, args=(mods_dir, search_dirs, extract_dir, source_exe, dest_exe)
-    )
-    thread.start()
-
-    return render_template("assets_repack.html", exe=dest_exe)
