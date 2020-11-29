@@ -15,6 +15,78 @@ PROCESS_NAME = "Spel2.exe"
 BASE_DIR = Path(__file__).resolve().parent
 APP_DIR = BASE_DIR
 ROOT_DIR = BASE_DIR.parent.parent
+
+##------------------------------------------------------------------------------ UI
+import tkinter as tk
+from tkinter import ttk
+from tkinter import *
+from PIL import ImageTk, Image
+
+# intializing the window
+window = tk.Tk()
+window.title("Modlunky2")
+# configuring the window
+window.geometry('750x450')
+window.minsize(750,450)
+#window.resizable(False, False)
+window.configure(bg='black')
+#Create Tab Control
+TAB_CONTROL = ttk.Notebook(window)
+
+#Tab1 Setup ---------------------------------
+TAB1 = ttk.Frame(TAB_CONTROL)
+TAB_CONTROL.add(TAB1, text='Setup')
+TAB1.columnconfigure(1, minsize=290,weight=1)
+TAB1.columnconfigure(0, minsize=450)
+TAB1.rowconfigure(1, minsize=275,weight=1)
+TAB1.rowconfigure(2, minsize=60)
+TAB1.rowconfigure(3, minsize=60)
+
+labelSetup = ttk.Label(TAB1, text="Select your mods")
+labelSetup.grid(row=0,column=0, pady = 5, padx = 5, sticky="nswe")
+
+# Create a label radiobutton frame exe list which will only be visible in debug mode
+radioGroupExes = ttk.LabelFrame(TAB1, text = "Select an exe")
+radioGroupExes.grid(row=0,column=1, rowspan=2, pady = 5, padx = 5, sticky="nswe")
+
+# Logo that normally goes where the radiobutton list of exes is
+#img = ImageTk.PhotoImage(Image.open(str(APP_DIR) + "/ddmods.png"))
+#panel = tk.Label(TAB1, image = img, width=285, height=285)
+#panel.grid(row=0, column=1, rowspan=2, pady = 5, padx = 5, sticky="nswe")
+
+buttonPack = tk.Button(TAB1, text="Repack")
+buttonPack.grid(row=2, column=1, pady = 5, padx = 5, sticky="nswe")
+
+buttonUnPack = tk.Button(TAB1, text="Unpack")
+buttonUnPack.grid(row=3, column=1, pady = 5, padx = 5, sticky="nswe")
+
+Lb1 = Listbox(TAB1)
+Lb1.grid(row=1, column=0, rowspan=4, columnspan=1, sticky="nswe")
+Lb1.insert(1, "Mod 1")
+Lb1.insert(2, "Skin Mod thing")
+Lb1.insert(3, "Woah a mod")
+Lb1.insert(4, "lol mod")
+Lb1.insert(5, "mod mod")
+Lb1.insert(6, "Guy")
+
+#Tab2 Characters -----------------------
+TAB2 = ttk.Frame(TAB_CONTROL)
+TAB_CONTROL.add(TAB2, text='Characters')
+
+#Tab3 Asset Mangement
+TAB3 = ttk.Frame(TAB_CONTROL)
+TAB_CONTROL.add(TAB3, text='Assets')
+
+#Tab4 Level Editor
+TAB4 = ttk.Frame(TAB_CONTROL)
+TAB_CONTROL.add(TAB4, text='Levels')
+TAB_CONTROL.pack(expand=1, fill="both")
+
+#Tab Name Labels
+ttk.Label(TAB2, text="This is Tab 2").grid(column=0, row=0, padx=10, pady=10)
+
+##---------------------------------------------------------------------------------- UI Loaded via end of the script
+
 if hasattr(sys, "_MEIPASS"):
     BASE_DIR = BASE_DIR / getattr(sys, "_MEIPASS")
     APP_DIR = Path(sys.executable).resolve().parent
@@ -78,3 +150,26 @@ def main():
         app.run(host=args.host, port=args.port, debug=args.debug)
     except Exception as err:  # pylint: disable=broad-except
         input(f"Failed to start ({err}). Press enter to exit... :(")
+
+def get_exes(install_dir):
+    exes = []
+    # Don't recurse forever. 3 levels should be enough
+    exes.extend(install_dir.glob("*.exe"))
+    exes.extend(install_dir.glob("*/*.exe"))
+    exes.extend(install_dir.glob("*/*/*.exe"))
+    return [
+        exe.relative_to(install_dir)
+        for exe in exes
+        if exe.name not in ["modlunky2.exe"]
+    ]
+
+
+#Calling Main()------------------------------------------------------------------ Loads Ui
+import os
+
+i=0
+for spel in get_exes(APP_DIR):
+    ttk.Radiobutton(radioGroupExes, text = spel.name).grid(row=i, column=0)
+    i=i+1
+
+window.mainloop() # ---------------------------------------------------------------------------------------------------------- UNcomment me
