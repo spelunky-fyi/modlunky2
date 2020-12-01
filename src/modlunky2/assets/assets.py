@@ -22,16 +22,8 @@ from .constants import (BANK_ALIGNMENT, DEFAULT_COMPRESSION_LEVEL,
 from .converters import dds_to_png, png_to_dds
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 
-class NullExtractCtx:
-    @staticmethod
-    def alert(_level, _msg):
-        return
 
-    @staticmethod
-    def extract_complete(_filepath):
-        return
-
-null_extract_ctx = NullExtractCtx()
+logger = logging.getLogger("modlunky2")
 
 
 @dataclass
@@ -161,14 +153,14 @@ class ExeAsset:
 
                 # Recompress at higher compression level to give
                 # better chance of assets fitting in binary
-                logging.info("Storing compressed asset %s...", compressed_filepath)
+                logger.info("Storing compressed asset %s...", compressed_filepath)
                 with compressed_filepath.open("wb") as compressed_file:
                     cctx = zstd.ZstdCompressor(level=compression_level)
                     compressed_data = cctx.compress(self.data)
                     compressed_file.write(compressed_data)
 
             except Exception:  # pylint: disable=broad-except
-                logging.exception("Failed compression")
+                logger.exception("Failed compression")
                 return None
 
 
@@ -182,7 +174,7 @@ class ExeAsset:
         with md5sum_filepath.open("w") as md5sum_file:
             md5sum_file.write(md5sum)
 
-        logging.info("Storing asset %s...", filepath)
+        logger.info("Storing asset %s...", filepath)
         if self.filepath in PNGS:
             filepath = filepath.with_suffix(".png")
 
@@ -253,19 +245,16 @@ class AssetStore:
             asset.filepath = filepath
 
     @staticmethod
-    def _extract_single(asset, extract_ctx, *args, **kwargs):
+    def _extract_single(asset, *args, **kwargs):
         try:
-            logging.info("Extracting %s... ", asset.filepath)
+            logger.info("Extracting %s... ", asset.filepath)
             asset.extract(*args, **kwargs)
-            extract_ctx.extract_complete(asset.filepath)
-        except Exception as err:  # pylint: disable=broad-except
-            extract_ctx.alert('danger', f"Failed to extract {asset.filepath}: {err}")
-            logging.exception("Failed Extraction")
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Failed Extraction")
 
     def extract(
         self, extract_dir, compressed_dir,
-        compression_level=DEFAULT_COMPRESSION_LEVEL,
-        extract_ctx=null_extract_ctx
+        compression_level=DEFAULT_COMPRESSION_LEVEL
     ):
         unextracted = []
         for asset in self.assets:
@@ -281,7 +270,6 @@ class AssetStore:
                 pool.submit(
                     self._extract_single,
                     asset,
-                    extract_ctx,
                     extract_dir,
                     compressed_dir,
                     self.key,
@@ -305,10 +293,10 @@ class AssetStore:
             data = asset.disk_asset.get_asset_data()
 
             if asset.asset_block.is_encrypted:
-                logging.info("Encrypting file %s", asset.disk_asset.asset_path)
+                logger.info("Encrypting file %s", asset.disk_asset.asset_path)
                 data = chacha(asset.filepath.encode(), data, self.key)
 
-            logging.info("Packing file %s", asset.disk_asset.asset_path)
+            logger.info("Packing file %s", asset.disk_asset.asset_path)
             self.exe_handle.write(pack(
                 "<II", asset.asset_block.data_len, asset.asset_block.filepath_len
             ))
@@ -551,7 +539,7 @@ class DiskAsset:
         self.md5sum_path.parent.mkdir(parents=True, exist_ok=True)
 
         if self.asset_path.suffix == ".png":
-            logging.info('Converting image "%s" to DDS', self.asset_path)
+            logger.info('Converting image "%s" to DDS', self.asset_path)
             with Image.open(self.asset_path) as img:
                 data = png_to_dds(img)
         else:
@@ -562,7 +550,7 @@ class DiskAsset:
         with self.md5sum_path.open("wb") as md5sum_file:
             md5sum_file.write(md5sum)
 
-        logging.info("Compressing %s...", self.asset_path)
+        logger.info("Compressing %s...", self.asset_path)
         cctx = zstd.ZstdCompressor(level=compression_level)
         data = cctx.compress(data)
         with open(self.compressed_path, "wb") as compressed_file:

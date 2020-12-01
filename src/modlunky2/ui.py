@@ -1,0 +1,315 @@
+import logging
+import tkinter as tk
+import shutil
+import threading
+import queue
+from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
+from pathlib import Path
+
+from modlunky2.assets.assets import AssetStore
+from modlunky2.assets.constants import (EXTRACTED_DIR, FILEPATH_DIRS,
+                                        KNOWN_FILEPATHS, OVERRIDES_DIR,
+                                        PACKS_DIR)
+from modlunky2.assets.exc import MissingAsset
+from modlunky2.assets.patcher import Patcher
+
+
+logger = logging.getLogger("modlunky2")
+
+
+MODS = Path("Mods")
+
+TOP_LEVEL_DIRS = [
+    EXTRACTED_DIR,
+    PACKS_DIR,
+    OVERRIDES_DIR
+]
+
+def console_popup():
+    win = tk.Toplevel()
+    win.wm_title("Window")
+    win.geometry("800x600")
+
+    label = ttk.Label(win, text="Input")
+    label.grid(row=0, column=0)
+
+    button = ttk.Button(win, text="Okay", command=win.destroy)
+    button.grid(row=1, column=0)
+
+
+class QueueHandler(logging.Handler):
+    def __init__(self, log_queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.log_queue.put(record)
+
+
+class ConsoleWindow(tk.Toplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wm_title("Modlunky2 Console")
+        self.geometry("1024x600")
+        #self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.close)
+
+        # Create a ScrolledText wdiget
+        self.scrolled_text = ScrolledText(self, state='disabled')
+        self.scrolled_text.pack(expand=True, fill="both")
+        self.scrolled_text.configure(font='TkFixedFont')
+        self.scrolled_text.tag_config('INFO', foreground='black')
+        self.scrolled_text.tag_config('DEBUG', foreground='gray')
+        self.scrolled_text.tag_config('WARNING', foreground='orange')
+        self.scrolled_text.tag_config('ERROR', foreground='red')
+        self.scrolled_text.tag_config('CRITICAL', foreground='red', underline=1)
+
+        # Create a logging handler using a queue
+        self.log_queue = queue.Queue()
+        self.queue_handler = QueueHandler(self.log_queue)
+        formatter = logging.Formatter('%(asctime)s: %(message)s')
+        self.queue_handler.setFormatter(formatter)
+        logger.addHandler(self.queue_handler)
+
+        # Start polling messages from the queue
+        self.after(100, self.poll_log_queue)
+
+    def display(self, record):
+        msg = self.queue_handler.format(record)
+        self.scrolled_text.configure(state='normal')
+        self.scrolled_text.insert(tk.END, msg + '\n', record.levelname)
+        self.scrolled_text.configure(state='disabled')
+        self.scrolled_text.yview(tk.END)
+
+    def poll_log_queue(self):
+        # Check every 100ms if there is a new message in the queue to display
+        while True:
+            try:
+                record = self.log_queue.get(block=False)
+            except queue.Empty:
+                break
+            else:
+                self.display(record)
+        self.after(100, self.poll_log_queue)
+
+    def close(self):
+        pass
+
+
+class Tab(ttk.Frame):
+    """ Base class that all tabs should inherit from."""
+
+    def on_load(self):
+        """ Called whenever the tab is loaded."""
+
+
+class PackTab(Tab):
+    def __init__(self, tab_control, install_dir, *args, **kwargs):
+        super().__init__(tab_control, *args, **kwargs)
+        self.tab_control = tab_control
+        self.install_dir = install_dir
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, minsize=60)
+
+        self.label_frame = ttk.LabelFrame(self, text="Select Mods to pack")
+        self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.label_frame.rowconfigure(0, weight=1)
+        self.label_frame.columnconfigure(0, weight=1)
+
+        self.scrollbar = ttk.Scrollbar(self.label_frame)
+        self.scrollbar.grid(row=0, column=1, sticky="nes")
+
+        self.list_box = tk.Listbox(self.label_frame, selectmode=tk.MULTIPLE)
+        self.list_box.grid(row=0, column=0, sticky="nswe")
+
+        self.list_box.config(yscrollcommand = self.scrollbar.set)
+        self.scrollbar.config(command = self.list_box.yview)
+
+        self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
+        self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+
+    def pack(self):
+        packs = [self.list_box.get(idx) for idx in self.list_box.curselection()]
+
+    def get_packs(self):
+        pack_dirs = []
+        overrides_dir = self.install_dir / "Mods" / "Overrides"
+        if overrides_dir.exists():
+            pack_dirs.append(overrides_dir.relative_to(self.install_dir / "Mods"))
+
+        for dir_ in (self.install_dir / "Mods" / "Packs").iterdir():
+            if not dir_.is_dir():
+                continue
+            pack_dirs.append(dir_.relative_to(self.install_dir / "Mods"))
+
+        return pack_dirs
+
+    def on_load(self):
+        self.list_box.delete(0, tk.END)
+        for exe in self.get_packs():
+            self.list_box.insert(tk.END, str(exe))
+
+
+class ExtractTab(Tab):
+    def __init__(self, tab_control, install_dir, *args, **kwargs):
+        super().__init__(tab_control, *args, **kwargs)
+        self.tab_control = tab_control
+        self.install_dir = install_dir
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, minsize=60)
+
+        self.label_frame = ttk.LabelFrame(self, text="Select exe to Extract")
+        self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.label_frame.rowconfigure(0, weight=1)
+        self.label_frame.columnconfigure(0, weight=1)
+
+
+        self.scrollbar = ttk.Scrollbar(self.label_frame)
+        self.scrollbar.grid(row=0, column=1, sticky="nes")
+
+        self.list_box = tk.Listbox(self.label_frame)
+        self.list_box.grid(row=0, column=0, sticky="nswe")
+
+        self.list_box.config(yscrollcommand = self.scrollbar.set)
+        self.scrollbar.config(command = self.list_box.yview)
+
+        self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
+        self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+
+    def extract(self):
+        idx = self.list_box.curselection()
+        if not idx:
+            return
+
+        selected_exe = self.list_box.get(idx)
+        thread = threading.Thread(
+            target=self.extract_assets, args=(selected_exe,)
+        )
+        thread.start()
+
+    def get_exes(self):
+        exes = []
+        # Don't recurse forever. 3 levels should be enough
+        exes.extend(self.install_dir.glob("*.exe"))
+        exes.extend(self.install_dir.glob("*/*.exe"))
+        exes.extend(self.install_dir.glob("*/*/*.exe"))
+        return [
+            exe.relative_to(self.install_dir)
+            for exe in exes
+            # Exclude modlunky2 which is likely in the install directory
+            if exe.name not in ["modlunky2.exe"]
+        ]
+
+    def on_load(self):
+        self.list_box.delete(0, tk.END)
+        for exe in self.get_exes():
+            self.list_box.insert(tk.END, str(exe))
+
+    def is_patched(self, exe_filename):
+        with exe_filename.open("rb") as exe:
+            return Patcher(exe).is_patched()
+
+    def extract_assets(self, target):
+
+        exe_filename = self.install_dir / target
+
+        if self.is_patched(exe_filename):
+            logger.critical("%s is a patched exe. Can't extract.", exe_filename)
+            return
+
+        mods_dir = self.install_dir / MODS
+
+        for dir_ in TOP_LEVEL_DIRS:
+            (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
+
+        for dir_ in FILEPATH_DIRS:
+            (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+            (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+
+        with exe_filename.open("rb") as exe:
+            asset_store = AssetStore.load_from_file(exe)
+            unextracted = asset_store.extract(
+                mods_dir / EXTRACTED_DIR,
+                mods_dir / ".compressed" / EXTRACTED_DIR,
+            )
+
+        for asset in unextracted:
+            logger.warning("Un-extracted Asset %s", asset.asset_block)
+
+        dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
+        if exe_filename != dest:
+            logger.info("Backing up exe to %s", dest)
+            shutil.copy2(exe_filename, dest)
+
+        logger.info("Extraction complete!")
+
+
+
+
+class ModlunkyUI:
+    def __init__(self, install_dir, needs_update):
+        self.install_dir = install_dir
+        self.needs_update = needs_update
+
+        self._shutdown_handlers = []
+        self._shutting_down = False
+
+        self.root = tk.Tk()
+        self.root.title("Modlunky 2")
+        self.root.geometry('750x450')
+        self.root.resizable(False, False)
+        self.root.configure(bg="black")
+
+        # Handle shutting down cleanly
+        self.root.protocol("WM_DELETE_WINDOW", self.quit)
+
+        self.tabs = {}
+        self.tab_control = ttk.Notebook(self.root)
+
+        self.register_tab("Pack Assets", PackTab(
+            tab_control=self.tab_control,
+            install_dir=install_dir,
+        ))
+        self.register_tab("Extract Assets", ExtractTab(
+            tab_control=self.tab_control,
+            install_dir=install_dir,
+        ))
+
+        self.tab_control.bind('<<NotebookTabChanged>>', self.on_tab_change)
+        self.tab_control.pack(expand=1, fill="both")
+
+        self.console = ConsoleWindow()
+
+    def on_tab_change(self, event):
+        tab = event.widget.tab('current')['text']
+        self.tabs[tab].on_load()
+
+    def register_tab(self, name, obj):
+        self.tabs[name] = obj
+        self.tab_control.add(obj, text=name)
+
+    def quit(self):
+        if self._shutting_down:
+            return
+
+        self._shutting_down = True
+        logging.info("Shutting Down.")
+        for handler in self._shutdown_handlers:
+            handler()
+
+        self.root.quit()
+        self.root.destroy()
+
+    def register_shutdown_handler(self, func):
+        self._shutdown_handlers.append(func)
+
+    def mainloop(self):
+        try:
+            self.root.mainloop()
+        except KeyboardInterrupt:
+            self.quit()
