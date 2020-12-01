@@ -1,49 +1,9 @@
 import argparse
 import logging
-import sys
 from pathlib import Path
 
-import requests
-from flask import Flask
-from packaging import version
-
-from .views.assets import blueprint as assets_blueprint
-from .views.index import blueprint as index_blueprint
-
-PROCESS_NAME = "Spel2.exe"
-# Setup static files to work with onefile exe
-BASE_DIR = Path(__file__).resolve().parent
-APP_DIR = BASE_DIR
-ROOT_DIR = BASE_DIR.parent.parent
-if hasattr(sys, "_MEIPASS"):
-    BASE_DIR = BASE_DIR / getattr(sys, "_MEIPASS")
-    APP_DIR = Path(sys.executable).resolve().parent
-    ROOT_DIR = BASE_DIR
-
-
-app = Flask(
-    __name__,
-    static_folder=f"{BASE_DIR / 'static'}",
-    template_folder=f"{BASE_DIR / 'templates'}",
-)
-app.register_blueprint(index_blueprint)
-app.register_blueprint(assets_blueprint, url_prefix="/assets")
-
-
-def get_latest_version():
-    try:
-        return version.parse(
-            requests.get(
-                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
-            ).json()["tag_name"]
-        )
-    except Exception:  # pylint: disable=broad-except
-        return None
-
-
-def get_current_version():
-    with (ROOT_DIR / "VERSION").open() as version_file:
-        return version.parse(version_file.read().strip())
+from .constants import APP_DIR
+from .ui import ModlunkyUI
 
 
 def main():
@@ -54,11 +14,6 @@ def main():
     parser.add_argument("--port", type=int, default=8040, help="Port to listen on.")
     parser.add_argument("--debug", default=False, action="store_true")
     parser.add_argument(
-        "--process-name",
-        default=PROCESS_NAME,
-        help="Name of Spelunky Process. (Default: %(default)s",
-    )
-    parser.add_argument(
         "--install-dir",
         default=APP_DIR,
         help="Path to Spelunky 2 installation. (Default: %(default)s",
@@ -68,13 +23,7 @@ def main():
     log_format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
 
-    try:
-        app.config.SPELUNKY_INSTALL_DIR = Path(args.install_dir)
-        app.config.MODLUNKY_CURRENT_VERSION = get_current_version()
-        app.config.MODLUNKY_LATEST_VERSION = get_latest_version()
-        app.config.MODLUNKY_NEEDS_UPDATE = (
-            app.config.MODLUNKY_CURRENT_VERSION < app.config.MODLUNKY_LATEST_VERSION
-        )
-        app.run(host=args.host, port=args.port, debug=args.debug)
-    except Exception as err:  # pylint: disable=broad-except
-        input(f"Failed to start ({err}). Press enter to exit... :(")
+    install_dir = Path(args.install_dir)
+
+    native_ui = ModlunkyUI(install_dir)
+    native_ui.mainloop()

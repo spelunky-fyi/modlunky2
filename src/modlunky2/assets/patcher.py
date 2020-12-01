@@ -19,6 +19,9 @@ PATCH_END = 0xCC
 PATCH_REPLACE = b"\x48\x3B\xC1\x74\x09" + b"\x90" * 9
 
 
+logger = logging.getLogger("modlunky2")
+
+
 class Patcher:
     def __init__(self, exe_handle):
         self.exe_handle = exe_handle
@@ -55,23 +58,23 @@ class Patcher:
     def patch(self):
         self.exe_handle.seek(0)
 
-        logging.info("Patching asset checksum check")
+        logger.info("Patching asset checksum check")
         index = self.find(PATCH_START)
         if index == -1:
-            logging.warning("Didn't find instructions to patch. Is game unmodified?")
+            logger.warning("Didn't find instructions to patch. Is game unmodified?")
             return False
 
         self.exe_handle.seek(index)
         ops = self.exe_handle.read(14)
 
         if ops[-1] != PATCH_END:
-            logging.warning(
+            logger.warning(
                 "Checksum check has unexpected form, this script has "
                 "to be updated for the current game version."
             )
-            logging.warning("(Expected 0x{:02x}, found 0x{:02x})".format(PATCH_END, ops[-1]))
+            logger.warning("(Expected 0x{:02x}, found 0x{:02x})".format(PATCH_END, ops[-1]))
             return False
 
-        logging.info("Found check at 0x{:08x}, replacing with NOPs".format(index))
+        logger.info("Found check at 0x{:08x}, replacing with NOPs".format(index))
         self.exe_handle.seek(index)
         self.exe_handle.write(PATCH_REPLACE)

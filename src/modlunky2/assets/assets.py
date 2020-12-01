@@ -23,6 +23,9 @@ from .converters import dds_to_png, png_to_dds
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 
 
+logger = logging.getLogger("modlunky2")
+
+
 @dataclass
 class ExeAssetBlock:
     """ Represent a block of information about an asset in the exe."""
@@ -108,7 +111,7 @@ class ExeAssetBlock:
         exe_handle.write(data)
 
 
-class ExeAsset(object):
+class ExeAsset:
     def __init__(self, asset_block, filepath):
         self.asset_block = asset_block
         self.filepath = filepath
@@ -150,14 +153,14 @@ class ExeAsset(object):
 
                 # Recompress at higher compression level to give
                 # better chance of assets fitting in binary
-                logging.info("Storing compressed asset %s...", compressed_filepath)
+                logger.info("Storing compressed asset %s...", compressed_filepath)
                 with compressed_filepath.open("wb") as compressed_file:
                     cctx = zstd.ZstdCompressor(level=compression_level)
                     compressed_data = cctx.compress(self.data)
                     compressed_file.write(compressed_data)
 
             except Exception:  # pylint: disable=broad-except
-                logging.exception("Failed compression")
+                logger.exception("Failed compression")
                 return None
 
 
@@ -171,7 +174,7 @@ class ExeAsset(object):
         with md5sum_filepath.open("w") as md5sum_file:
             md5sum_file.write(md5sum)
 
-        logging.info("Storing asset %s...", filepath)
+        logger.info("Storing asset %s...", filepath)
         if self.filepath in PNGS:
             filepath = filepath.with_suffix(".png")
 
@@ -244,15 +247,17 @@ class AssetStore:
     @staticmethod
     def _extract_single(asset, *args, **kwargs):
         try:
-            logging.info("Extracting %s... ", asset.filepath)
+            logger.info("Extracting %s... ", asset.filepath)
             asset.extract(*args, **kwargs)
         except Exception:  # pylint: disable=broad-except
-            logging.exception("Failed Extraction")
+            logger.exception("Failed Extraction")
 
-    def extract(self, extract_dir, compressed_dir, compression_level=DEFAULT_COMPRESSION_LEVEL):
+    def extract(
+        self, extract_dir, compressed_dir,
+        compression_level=DEFAULT_COMPRESSION_LEVEL
+    ):
         unextracted = []
         for asset in self.assets:
-
             if asset.filepath is None:
                 # No known filepaths matched this asset.
                 unextracted.append(asset)
@@ -264,11 +269,11 @@ class AssetStore:
             futures = [
                 pool.submit(
                     self._extract_single,
-                     asset,
-                     extract_dir,
-                     compressed_dir,
-                     self.key,
-                     compression_level,
+                    asset,
+                    extract_dir,
+                    compressed_dir,
+                    self.key,
+                    compression_level,
                 )
                 for asset in self.assets
                 if asset.filepath
@@ -288,10 +293,10 @@ class AssetStore:
             data = asset.disk_asset.get_asset_data()
 
             if asset.asset_block.is_encrypted:
-                logging.info("Encrypting file %s", asset.disk_asset.asset_path)
+                logger.info("Encrypting file %s", asset.disk_asset.asset_path)
                 data = chacha(asset.filepath.encode(), data, self.key)
 
-            logging.info("Packing file %s", asset.disk_asset.asset_path)
+            logger.info("Packing file %s", asset.disk_asset.asset_path)
             self.exe_handle.write(pack(
                 "<II", asset.asset_block.data_len, asset.asset_block.filepath_len
             ))
@@ -339,7 +344,9 @@ class AssetStore:
 
             asset.asset_block.offset = offset
             asset.asset_block.asset_len = disk_asset.get_asset_len()
-            asset.asset_block.asset_offset = asset.asset_block.offset + 8 + asset.asset_block.filepath_len + 1
+            asset.asset_block.asset_offset = (
+                asset.asset_block.offset + 8 + asset.asset_block.filepath_len + 1
+            )
 
             # The name hash of soundbank files is padded such that the asset_offset
             # is divisible by 32.
@@ -431,7 +438,7 @@ class DiskBundle:
 
             if resolution_policy == ResolutionPolicy.RaiseError and len(modpack_files) >= 2:
                 raise FileConflict(
-                    f"{filepath} found in multiple packs: {', '.join(modpack_files)}"
+                    f"{filepath} found in multiple packs: {', '.join(map(str, modpack_files))}"
                 )
 
             idx = 0
@@ -532,7 +539,7 @@ class DiskAsset:
         self.md5sum_path.parent.mkdir(parents=True, exist_ok=True)
 
         if self.asset_path.suffix == ".png":
-            logging.info('Converting image "%s" to DDS', self.asset_path)
+            logger.info('Converting image "%s" to DDS', self.asset_path)
             with Image.open(self.asset_path) as img:
                 data = png_to_dds(img)
         else:
@@ -543,7 +550,7 @@ class DiskAsset:
         with self.md5sum_path.open("wb") as md5sum_file:
             md5sum_file.write(md5sum)
 
-        logging.info("Compressing %s...", self.asset_path)
+        logger.info("Compressing %s...", self.asset_path)
         cctx = zstd.ZstdCompressor(level=compression_level)
         data = cctx.compress(data)
         with open(self.compressed_path, "wb") as compressed_file:
