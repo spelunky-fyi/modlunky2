@@ -1,19 +1,23 @@
 import logging
-import tkinter as tk
+import queue
 import shutil
 import threading
-import queue
+import tkinter as tk
+import webbrowser
+from functools import wraps
+from pathlib import Path
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
-from pathlib import Path
+
+import requests
+from packaging import version
 
 from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.constants import (EXTRACTED_DIR, FILEPATH_DIRS,
-                                        KNOWN_FILEPATHS, OVERRIDES_DIR,
-                                        PACKS_DIR)
+                                        OVERRIDES_DIR, PACKS_DIR)
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
-
+from modlunky2.constants import ROOT_DIR
 
 logger = logging.getLogger("modlunky2")
 
@@ -26,16 +30,36 @@ TOP_LEVEL_DIRS = [
     OVERRIDES_DIR
 ]
 
-def console_popup():
-    win = tk.Toplevel()
-    win.wm_title("Window")
-    win.geometry("800x600")
 
-    label = ttk.Label(win, text="Input")
-    label.grid(row=0, column=0)
+def is_patched(exe_filename):
+    with exe_filename.open("rb") as exe:
+        return Patcher(exe).is_patched()
 
-    button = ttk.Button(win, text="Okay", command=win.destroy)
-    button.grid(row=1, column=0)
+
+def log_exception(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unexpected failure")
+    return wrapper
+
+
+def get_latest_version():
+    try:
+        return version.parse(
+            requests.get(
+                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
+            ).json()["tag_name"]
+        )
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+
+def get_current_version():
+    with (ROOT_DIR / "VERSION").open() as version_file:
+        return version.parse(version_file.read().strip())
 
 
 class QueueHandler(logging.Handler):
@@ -47,6 +71,7 @@ class QueueHandler(logging.Handler):
         self.log_queue.put(record)
 
 
+# Adapted from https://beenje.github.io/blog/posts/logging-to-a-tkinter-scrolledtext-widget/
 class ConsoleWindow(tk.Toplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,7 +84,7 @@ class ConsoleWindow(tk.Toplevel):
         self.scrolled_text = ScrolledText(self, state='disabled')
         self.scrolled_text.pack(expand=True, fill="both")
         self.scrolled_text.configure(font='TkFixedFont')
-        self.scrolled_text.tag_config('INFO', foreground='black')
+        self.scrolled_text.tag_config('INFO', foreground='green')
         self.scrolled_text.tag_config('DEBUG', foreground='gray')
         self.scrolled_text.tag_config('WARNING', foreground='orange')
         self.scrolled_text.tag_config('ERROR', foreground='red')
@@ -132,7 +157,14 @@ class PackTab(Tab):
         self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
     def pack(self):
-        packs = [self.list_box.get(idx) for idx in self.list_box.curselection()]
+        packs = [
+            self.install_dir / "Mods" / self.list_box.get(idx)
+            for idx in self.list_box.curselection()
+        ]
+        thread = threading.Thread(
+            target=self.repack_assets, args=(packs,)
+        )
+        thread.start()
 
     def get_packs(self):
         pack_dirs = []
@@ -152,6 +184,38 @@ class PackTab(Tab):
         for exe in self.get_packs():
             self.list_box.insert(tk.END, str(exe))
 
+    @log_exception
+    def repack_assets(self, packs):
+        mods_dir = self.install_dir / MODS
+        extract_dir = mods_dir / "Extracted"
+        source_exe = extract_dir / "Spel2.exe"
+        dest_exe = self.install_dir / "Spel2.exe"
+
+        if is_patched(source_exe):
+            logger.critical("Source exe (%s) is somehow patched. You need to re-extract.")
+            return
+
+        shutil.copy2(source_exe, dest_exe)
+
+        with dest_exe.open("rb+") as dest_file:
+            asset_store = AssetStore.load_from_file(dest_file)
+            try:
+                asset_store.repackage(
+                    packs,
+                    extract_dir,
+                    mods_dir / ".compressed",
+                )
+            except MissingAsset as err:
+                logger.error(
+                    "Failed to find expected asset: %s. Unabled to proceed...", err
+                )
+                return
+
+            patcher = Patcher(dest_file)
+            patcher.patch()
+        logger.info("Repacking complete!")
+
+
 
 class ExtractTab(Tab):
     def __init__(self, tab_control, install_dir, *args, **kwargs):
@@ -167,7 +231,6 @@ class ExtractTab(Tab):
         self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
         self.label_frame.rowconfigure(0, weight=1)
         self.label_frame.columnconfigure(0, weight=1)
-
 
         self.scrollbar = ttk.Scrollbar(self.label_frame)
         self.scrollbar.grid(row=0, column=1, sticky="nes")
@@ -210,15 +273,12 @@ class ExtractTab(Tab):
         for exe in self.get_exes():
             self.list_box.insert(tk.END, str(exe))
 
-    def is_patched(self, exe_filename):
-        with exe_filename.open("rb") as exe:
-            return Patcher(exe).is_patched()
-
+    @log_exception
     def extract_assets(self, target):
 
         exe_filename = self.install_dir / target
 
-        if self.is_patched(exe_filename):
+        if is_patched(exe_filename):
             logger.critical("%s is a patched exe. Can't extract.", exe_filename)
             return
 
@@ -249,12 +309,12 @@ class ExtractTab(Tab):
         logger.info("Extraction complete!")
 
 
-
-
 class ModlunkyUI:
-    def __init__(self, install_dir, needs_update):
+    def __init__(self, install_dir):
         self.install_dir = install_dir
-        self.needs_update = needs_update
+        self.current_version = get_current_version()
+        self.latest_version = get_latest_version()
+        self.needs_update = self.current_version < self.latest_version
 
         self._shutdown_handlers = []
         self._shutting_down = False
@@ -263,7 +323,12 @@ class ModlunkyUI:
         self.root.title("Modlunky 2")
         self.root.geometry('750x450')
         self.root.resizable(False, False)
-        self.root.configure(bg="black")
+
+        if self.needs_update:
+            update_button = ttk.Button(
+                self.root, text="Update Modlunky2!", command=self.update,
+            )
+            update_button.pack()
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -285,6 +350,11 @@ class ModlunkyUI:
 
         self.console = ConsoleWindow()
 
+    def update(self):
+        webbrowser.open_new_tab(
+            f"https://github.com/spelunky-fyi/modlunky2/releases/tag/{self.latest_version}"
+        )
+
     def on_tab_change(self, event):
         tab = event.widget.tab('current')['text']
         self.tabs[tab].on_load()
@@ -298,7 +368,7 @@ class ModlunkyUI:
             return
 
         self._shutting_down = True
-        logging.info("Shutting Down.")
+        logger.info("Shutting Down.")
         for handler in self._shutdown_handlers:
             handler()
 

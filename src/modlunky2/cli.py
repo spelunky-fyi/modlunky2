@@ -2,27 +2,8 @@ import argparse
 import logging
 from pathlib import Path
 
-import requests
-from packaging import version
-
-from .constants import APP_DIR, ROOT_DIR
+from .constants import APP_DIR
 from .ui import ModlunkyUI
-
-
-def get_latest_version():
-    try:
-        return version.parse(
-            requests.get(
-                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
-            ).json()["tag_name"]
-        )
-    except Exception:  # pylint: disable=broad-except
-        return None
-
-
-def get_current_version():
-    with (ROOT_DIR / "VERSION").open() as version_file:
-        return version.parse(version_file.read().strip())
 
 
 def main():
@@ -44,9 +25,5 @@ def main():
 
     install_dir = Path(args.install_dir)
 
-    current_version = get_current_version()
-    latest_version = get_latest_version()
-    needs_update = current_version < latest_version
-
-    native_ui = ModlunkyUI(install_dir, needs_update)
+    native_ui = ModlunkyUI(install_dir)
     native_ui.mainloop()

@@ -438,7 +438,7 @@ class DiskBundle:
 
             if resolution_policy == ResolutionPolicy.RaiseError and len(modpack_files) >= 2:
                 raise FileConflict(
-                    f"{filepath} found in multiple packs: {', '.join(modpack_files)}"
+                    f"{filepath} found in multiple packs: {', '.join(map(str, modpack_files))}"
                 )
 
             idx = 0
