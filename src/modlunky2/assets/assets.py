@@ -254,7 +254,8 @@ class AssetStore:
 
     def extract(
         self, extract_dir, compressed_dir,
-        compression_level=DEFAULT_COMPRESSION_LEVEL
+        compression_level=DEFAULT_COMPRESSION_LEVEL,
+        max_workers=max(os.cpu_count()-2, 1),
     ):
         unextracted = []
         for asset in self.assets:
@@ -265,7 +266,7 @@ class AssetStore:
 
             asset.load_data(self.exe_handle)
 
-        with ThreadPoolExecutor() as pool:
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
             futures = [
                 pool.submit(
                     self._extract_single,
@@ -454,8 +455,11 @@ class DiskBundle:
 
         return cls(disk_assets)
 
-    def compress_if_needed(self, compression_level=DEFAULT_COMPRESSION_LEVEL):
-        with ThreadPoolExecutor() as pool:
+    def compress_if_needed(
+        self, compression_level=DEFAULT_COMPRESSION_LEVEL,
+        max_workers=max(os.cpu_count()-2, 1),
+    ):
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
             futures = [
                 pool.submit(disk_asset.compress, compression_level)
                 for disk_asset in self.disk_assets.values()
