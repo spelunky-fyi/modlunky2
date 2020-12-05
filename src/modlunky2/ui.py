@@ -3,11 +3,14 @@ import queue
 import shutil
 import threading
 import tkinter as tk
+import os
 import webbrowser
 from functools import wraps
 from pathlib import Path
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
+from tkinter import font
+from PIL import ImageTk, Image
 
 import requests
 from packaging import version
@@ -21,6 +24,7 @@ from modlunky2.constants import ROOT_DIR
 
 logger = logging.getLogger("modlunky2")
 
+cwd = os.getcwd()
 
 MODS = Path("Mods")
 
@@ -128,6 +132,44 @@ class Tab(ttk.Frame):
     def on_load(self):
         """ Called whenever the tab is loaded."""
 
+class ScrollableFrame(ttk.LabelFrame):
+
+    def __init__(self, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
+        canvas = tk.Canvas(self)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = ttk.Frame(canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+class Table(ttk.Frame):
+    def CreateUI(self):
+        tv = Treeview(self)
+        tv['columns'] = ('Name', 'Mobile', 'course')
+        tv.heading("#0", text='RollNo', anchor='w')
+        tv.column("#0", anchor="w")
+        tv.heading('Name', text='Name')
+        tv.column('Name', anchor='center', width=100)
+        tv.heading('Mobile', text='Mobile')
+        tv.column('Mobile', anchor='center', width=100)
+        tv.heading('course', text='course')
+        tv.column('course', anchor='center', width=100)
+        tv.grid(sticky = (N,S,W,E))
+        self.treeview = tv
+        self.grid_rowconfigure(0, weight = 1)
+        self.grid_columnconfigure(0, weight = 1)
 
 class PackTab(Tab):
     def __init__(self, tab_control, install_dir, *args, **kwargs):
@@ -135,26 +177,21 @@ class PackTab(Tab):
         self.tab_control = tab_control
         self.install_dir = install_dir
 
-        self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, minsize=60)
+        self.rowconfigure(1, minsize=30)
+        self.rowconfigure(2, minsize=60)
+        self.columnconfigure(0, weight=1)
 
-        self.label_frame = ttk.LabelFrame(self, text="Select Mods to pack")
-        self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
-        self.label_frame.rowconfigure(0, weight=1)
-        self.label_frame.columnconfigure(0, weight=1)
+        self.frame = ScrollableFrame(self, text="Select mods to pack")
+        self.frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.frame.rowconfigure(0, weight=1)
+        self.frame.columnconfigure(0, weight=1)
 
-        self.scrollbar = ttk.Scrollbar(self.label_frame)
-        self.scrollbar.grid(row=0, column=1, sticky="nes")
-
-        self.list_box = tk.Listbox(self.label_frame, selectmode=tk.MULTIPLE)
-        self.list_box.grid(row=0, column=0, sticky="nswe")
-
-        self.list_box.config(yscrollcommand = self.scrollbar.set)
-        self.scrollbar.config(command = self.list_box.yview)
+        self.progress=ttk.Progressbar(self,length=100,mode='determinate')
+        self.progress.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
         self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
-        self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_pack.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
 
     def pack(self):
         packs = [
@@ -180,19 +217,28 @@ class PackTab(Tab):
         return pack_dirs
 
     def on_load(self):
-        self.list_box.delete(0, tk.END)
-        for exe in self.get_packs():
-            self.list_box.insert(tk.END, str(exe))
+        path = cwd + "/noicon.png" #default
+        self.img = ImageTk.PhotoImage(Image.open(path))
+        for idx, exe in enumerate(self.get_packs()):
+            self.item = tk.Checkbutton(
+                self.frame.scrollable_frame,
+                text=f" {exe}",
+                image=self.img,
+                font=("Segoe UI",12,"bold"),
+                variable=idx,
+                compound="left",
+            )
+            self.item.grid(row=idx, column=0, pady=5, padx=5, sticky="w")
 
     @log_exception
-    def repack_assets(self, packs):
+    def repack_assets(self, packs, progressbar):
         mods_dir = self.install_dir / MODS
         extract_dir = mods_dir / "Extracted"
         source_exe = extract_dir / "Spel2.exe"
         dest_exe = self.install_dir / "Spel2.exe"
 
         if is_patched(source_exe):
-            logger.critical("Source exe (%s) is somehow patched. You need to re-extract.")
+            #tk.messagebox.showerror(title=None, message="Source exe (%s) is somehow patched. You need to re-extract.", **options)
             return
 
         shutil.copy2(source_exe, dest_exe)
@@ -206,14 +252,12 @@ class PackTab(Tab):
                     mods_dir / ".compressed",
                 )
             except MissingAsset as err:
-                logger.error(
-                    "Failed to find expected asset: %s. Unabled to proceed...", err
-                )
+                #tk.messagebox.showerror(title=None, message="Failed to find expected asset: %s. Unabled to proceed..." + str(err), **options)
                 return
 
             patcher = Patcher(dest_file)
             patcher.patch()
-        logger.info("Repacking complete!")
+        #tkinter.messagebox.showinfo(title=None, message="Repacking complete!", **options)
 
 
 
@@ -308,13 +352,237 @@ class ExtractTab(Tab):
 
         logger.info("Extraction complete!")
 
+class ToggledFrame(tk.Frame):
+
+    def __init__(self, parent, text="", *args, **options):
+        tk.Frame.__init__(self, parent, *args, **options)
+
+        self.show = tk.IntVar()
+        self.show.set(0)
+
+        self.title_frame = ttk.Frame(self)
+        self.title_frame.pack(fill="x", expand=1)
+
+        ttk.Label(self.title_frame, text=text).pack(side="left", fill="x", expand=1)
+
+        self.toggle_button = ttk.Checkbutton(self.title_frame, width=2, text='+', command=self.toggle,
+                                            variable=self.show, style='Toolbutton')
+        self.toggle_button.pack(side="left")
+
+        self.sub_frame = tk.Frame(self, relief="sunken", borderwidth=1)
+
+    def toggle(self):
+        if bool(self.show.get()):
+            self.sub_frame.pack(fill="x", expand=1)
+            self.toggle_button.configure(text='-')
+        else:
+            self.sub_frame.forget()
+            self.toggle_button.configure(text='+')
+
+class LevelsTab(Tab):
+    def __init__(self, tab_control, install_dir, *args, **kwargs):
+        super().__init__(tab_control, *args, **kwargs)
+        self.tab_control = tab_control
+        self.install_dir = install_dir
+
+        self.columnconfigure(0, minsize=200)    # Column 0 = Level List
+        self.columnconfigure(1, weight=1)       # Column 1 = Everything Else
+        self.rowconfigure(0, weight=1)        # Row 0 = List box / Label
+
+        # Loads lvl Files
+        self.treeFiles = ttk.Treeview(self, selectmode='browse')
+        self.treeFiles.place(x=30, y=95)
+        self.vsbTreeFiles = ttk.Scrollbar(self, orient="vertical", command=self.treeFiles.yview)
+        self.vsbTreeFiles.place(x=30+200+2, y=95, height=200+20)
+        self.treeFiles.configure(yscrollcommand=self.vsbTreeFiles.set)
+        self.treeFiles["columns"] = ("1",)
+        self.treeFiles['show'] = 'headings'
+        self.treeFiles.column("1", width=100, anchor='w')
+        self.treeFiles.heading("1", text="Level Files")
+        self.myList = os.listdir(self.install_dir / "Mods" / "Extracted" / "Data" / "Levels")
+        self.treeFiles.grid(row=0, column=0, rowspan=4, sticky="nswe")
+        self.vsbTreeFiles.grid(row=0, column=0, sticky="nse")
+
+        for file in self.myList:
+            self.treeFiles.insert("", 'end', values=str(file), text=str(file))
+
+
+        # Seperates Level Rules and Level Editor into two tabs
+        self.tabControl = ttk.Notebook(self)
+
+        self.tab1 = ttk.Frame(self.tabControl)
+        self.tab2 = ttk.Frame(self.tabControl)
+
+        self.tabControl.add(self.tab1, text ='Rules') # Rules Tab ----------------------------
+
+        self.tab1.columnconfigure(0, weight=1)       # Column 1 = Everything Else
+        self.tab1.rowconfigure(0, weight=1)        # Row 0 = List box / Label
+
+        self.tree = ttk.Treeview(self.tab1, selectmode='browse')
+        self.tree.place(x=30, y=95)
+        self.vsb = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree.yview)
+        self.vsb.place(x=30+200+2, y=95, height=200+20)
+        self.tree.configure(yscrollcommand=self.vsb.set)
+        self.tree["columns"] = ("1", "2", "3")
+        self.tree['show'] = 'headings'
+        self.tree.column("1", width=100, anchor='w')
+        self.tree.column("2", width=10, anchor='w')
+        self.tree.column("3", width=100, anchor='w')
+        self.tree.heading("1", text="Entry")
+        self.tree.heading("2", text="Value")
+        self.tree.heading("3", text="Notes")
+        self.tree.grid(row=0, column=0, sticky="nwse")
+        self.vsb.grid(row=0, column=1, sticky="nse")
+
+
+        self.tabControl.add(self.tab2, text ='Level Editor') # Level Editor Tab ----------------------------
+        self.tab2.columnconfigure(0, minsize=200)    # Column 0 = Level List
+        self.tab2.columnconfigure(1, weight=1)       # Column 1 = Everything Else
+        self.tab2.rowconfigure(0, weight=1)        # Row 0 = List box / Label
+
+        self.treeLevels = ttk.Treeview(self.tab2, selectmode='browse')
+        self.treeLevels.place(x=30, y=95)
+        self.vsbTreeLevels = ttk.Scrollbar(self, orient="vertical", command=self.treeLevels.yview)
+        self.vsbTreeLevels.place(x=30+200+2, y=95, height=200+20)
+        self.treeLevels.configure(yscrollcommand=self.vsbTreeFiles.set)
+        self.myList = os.listdir(self.install_dir / "Mods" / "Extracted" / "Data" / "Levels")
+        self.treeLevels.grid(row=0, column=0, rowspan=4, sticky="nswe")
+        self.vsbTreeLevels.grid(row=0, column=0, sticky="nse")
+        self.tabControl.grid(row=0, column=1, sticky="nwse")
+
+        self.mag = 70
+        self.rows = 6
+        self.cols = 7
+
+        self.c = tk.Canvas(self.tab2, width=self.mag*self.cols, height = self.mag*self.rows,\
+        bg='white')
+
+        # Create a grid of None to store the references to the tiles
+        tiles = [[None for _ in range(self.cols)] for _ in range(self.rows)]
+        def callback(event):
+            # Get rectangle diameters
+            col_width = self.mag
+            row_height = self.mag
+            # Calculate column and row number
+            col = event.x//col_width
+            row = event.y//row_height
+            # If the tile is not filled, create a rectangle
+            if not tiles[int(row)][int(col)]:
+                tiles[int(row)][int(col)] = self.c.create_rectangle(col*col_width, row*row_height, (col+1)*col_width, (row+1)*row_height, fill="black")
+            # If the tile is filled, delete the rectangle and clear the reference
+            else:
+                self.c.delete(tiles[int(row)][int(col)])
+                tiles[int(row)][int(col)] = None
+        self.c.bind("<Button-1>", callback)
+
+        self.__draw_grid()
+        self.c.grid(row=0,column=1,columnspan=1)
+
+
+        def treeFilesitemclick(event):
+            # Using readlines()
+            item_text = ""
+            for item in self.treeFiles.selection():
+                item_text = self.treeFiles.item(item,"text")
+                self.readLvlFile(item_text)
+        self.treeFiles.bind("<ButtonRelease-1>",  treeFilesitemclick)
+
+
+
+
+    def readLvlFile(self, lvl):
+        file1 = open(self.install_dir / "Mods" / "Extracted" / "Data" / "Levels" / lvl, 'r')
+        Lines = file1.readlines()
+
+        # Strips the newline character
+        self.tree.delete(*self.tree.get_children())
+        self.treeLevels.delete(*self.treeLevels.get_children())
+        pointer = 0
+        pointed = False
+        LoadMode = ""
+        blocks = []
+        curItem = self.tree.focus()
+        self.node = self.treeLevels.insert("", 'end', text="placeholder")
+        self.child = None
+        self.rooms = []
+        roomFound = False
+        for line in Lines:
+            line = ' '.join(line.split()) #remove duplicate spaces
+            print (line)
+            if line.strip()=="// ------------------------------" and pointed==False and pointer == 0 and LoadMode!="Templates" and line.strip():
+                    pointer = pointer + 1
+            elif pointer == 1 and pointed==False and LoadMode!="Templates" and line.strip():
+                LoadMode="RoomChances" #default because its usually at the top
+                pointed = True
+                if line.strip()== "// TILE CODES" and line.strip():
+                    LoadMode="TileCodes"
+                elif line.strip()== "// LEVEL CHANCES" and line.strip():
+                    LoadMode="LevelChances"
+                elif line.strip()== "// MONSTER CHANCES" and line.strip():
+                    LoadMode="MonsterChances"
+                elif line.strip()== "// TEMPLATES" and line.strip():
+                    LoadMode="Templates"
+            elif line.strip()=="// ------------------------------" and pointer==True and pointer == 1 and LoadMode!="Templates" and line.strip():
+                pointer = 0
+                pointed = False
+            elif LoadMode=="RoomChances" and pointed == False and pointer == 0 and line.strip():
+                data = (line.strip().split(" ", 4 ))
+                comment = (line.strip().split('//', 1 ))
+                self.tree.insert("",'end',text="L1",values=(str(data[0]),str(data[1]),str(comment[0])))
+            elif LoadMode=="TileCodes" and pointed == False and pointer == 0 and line.strip():
+                data = (line.strip().split(" ", 4 ))
+                blocks.append(str(data[0]))
+            elif LoadMode=="LevelChances" and pointed == False and pointer == 0 and line.strip():
+                data = (line.strip().split(" ", 4 ))
+                comment = (line.strip().split('//', 1 ))
+                self.tree.insert("",'end',text="L1",values=(str(data[0]),str(data[1]),str(comment[0])))
+            elif LoadMode=="MonsterChances" and pointed == False and pointer == 0 and line.strip():
+                data = (line.strip().split(' ', 3 ))
+                comment = (line.strip().split('//', 1 ))
+                self.tree.insert("",'end',text="L1",values=(str(data[0]),str(data[1]),str(comment[0])))
+            elif LoadMode=="Templates":
+                if line.strip().startswith('// '):
+                    self.tree.insert("",'end',text="L1",values=("",line.strip(),""))
+                elif line.strip()=="////////////////////////////////////////////////////////////////////////////////" and pointed==False and pointer == 0 and line.strip():
+                    pointer = pointer + 1
+                elif pointed == False and pointer == 1 and line.strip():
+                    self.node = self.treeLevels.insert("", 'end', values=line.strip(), text=line.strip())
+                    pointed=True
+                elif line.strip()=="////////////////////////////////////////////////////////////////////////////////" and pointed==True and pointer == 1 and line.strip():
+                    pointed = False
+                    pointer = 0
+                elif not line.strip() and self.rooms!=None:
+                    self.treeLevels.insert(self.node, 'end', values=self.rooms, text="room template")
+                    self.rooms.clear()
+                else:
+                    self.rooms.append(line.strip)
+
+
+
+#b = tree.insert(a, "end", text="Subitem1",open=True)
+
+    def __draw_grid(self):
+        for i in range(0,self.cols):
+            self.c.create_line((i)*self.mag,0,\
+                            (i)*self.mag,(self.rows)*self.mag)
+        for i in range(0,self.rows):
+         self.c.create_line(0,(i)*self.mag,\
+                            self.mag*(self.cols),(i)*self.mag)
+
+    def DrawCircle(self,row,col,player_num): # for testing purposes
+        if player_num == 1:
+            fill_color = 'red'
+        elif player_num == 2:
+            fill_color = 'black'
+        #(startx, starty, endx, endy)
+        self.c.create_oval(col*self.mag,row*self.mag,(col+1)*self.mag,(row+1)*self.mag,fill=fill_color)
 
 class ModlunkyUI:
     def __init__(self, install_dir):
         self.install_dir = install_dir
         self.current_version = get_current_version()
         self.latest_version = get_latest_version()
-        self.needs_update = self.current_version < self.latest_version
+        self.needs_update =  False #self.current_version < self.latest_version
 
         self._shutdown_handlers = []
         self._shutting_down = False
@@ -322,13 +590,14 @@ class ModlunkyUI:
         self.root = tk.Tk()
         self.root.title("Modlunky 2")
         self.root.geometry('750x450')
-        self.root.resizable(False, False)
+        #self.root.resizable(False, False)
+        self.root.iconbitmap(cwd + '/icon.ico')
 
         if self.needs_update:
-            update_button = ttk.Button(
-                self.root, text="Update Modlunky2!", command=self.update,
-            )
-            update_button.pack()
+            from tkinter import messagebox as mb
+            MsgBox = mb.askquestion ('Update Needed','Would you like to update to the latest version of Modlunky?',icon = 'warning')
+            if MsgBox == 'yes':
+                self.update()
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -344,16 +613,32 @@ class ModlunkyUI:
             tab_control=self.tab_control,
             install_dir=install_dir,
         ))
+        self.register_tab("Levels", LevelsTab(
+            tab_control=self.tab_control,
+            install_dir=install_dir,
+        ))
 
         self.tab_control.bind('<<NotebookTabChanged>>', self.on_tab_change)
         self.tab_control.pack(expand=1, fill="both")
+        #root = tk.Tk()
 
-        self.console = ConsoleWindow()
+        #self.console = ConsoleWindow()
 
     def update(self):
-        webbrowser.open_new_tab(
-            f"https://github.com/spelunky-fyi/modlunky2/releases/tag/{self.latest_version}"
-        )
+        import subprocess
+        from pathlib import Path
+
+        updater = Path(cwd + '/updater.exe')
+        if my_file.is_file(updater):
+            subprocess.call([updater])# if file exists
+        else:
+            import urllib.request
+            url = "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/updater.exe" #downlaods latest release on github
+            urllib.request.urlretrieve(url, updater)
+            subprocess.call([updater])# file exists
+
+        self.root.quit()
+        self.root.destroy()
 
     def on_tab_change(self, event):
         tab = event.widget.tab('current')['text']
