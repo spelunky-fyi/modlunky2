@@ -230,10 +230,12 @@ class PackTab(Tab):
         if overrides_dir.exists():
             pack_dirs.append(overrides_dir.relative_to(self.install_dir / "Mods"))
 
-        for dir_ in (self.install_dir / "Mods" / "Packs").iterdir():
-            if not dir_.is_dir():
-                continue
-            pack_dirs.append(dir_.relative_to(self.install_dir / "Mods"))
+        packs_dir = self.install_dir / "Mods" / "Packs"
+        if packs_dir.exists():
+            for dir_ in packs_dir.iterdir():
+                if not dir_.is_dir():
+                    continue
+                pack_dirs.append(dir_.relative_to(self.install_dir / "Mods"))
 
         return pack_dirs
 
@@ -316,8 +318,11 @@ class ExtractTab(Tab):
         self.list_box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.list_box.yview)
 
+        self.progress = ttk.Progressbar(self, length=100, mode="determinate")
+        self.progress.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+
         self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
-        self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_extract.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
 
     def extract(self):
         idx = self.list_box.curselection()
@@ -757,14 +762,14 @@ class ModlunkyUI:
                 install_dir=install_dir,
             ),
         )
-        self.register_tab(
-            "Levels",
-            LevelsTab(
-                tab_control=self.tab_control,
-                install_dir=install_dir,
-            ),
-            self.beta
-        )
+        if beta:
+            self.register_tab(
+                "Levels",
+                LevelsTab(
+                    tab_control=self.tab_control,
+                    install_dir=install_dir,
+                ),
+            )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.pack(expand=1, fill="both")
@@ -786,9 +791,7 @@ class ModlunkyUI:
         tab = event.widget.tab("current")["text"]
         self.tabs[tab].on_load()
 
-    def register_tab(self, name, obj, display=True):
-        if not display:
-            return
+    def register_tab(self, name, obj):
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)
 

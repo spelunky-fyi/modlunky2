@@ -76,5 +76,5 @@ python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
 
 #### EXE
 ```
-pyinstaller --clean .\pyinstaller-cli.py --add-data "src\modlunky2\static;static" --add-data "src\modlunky2\templates;templates" --name modlunky2 --onefile
+pyinstaller.exe --clean .\pyinstaller-cli.py --add-data "VERSION;." --add-data "src/modlunky2/static;static" --name modlunky2 --onefile --noconsole
 ```
