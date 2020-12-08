@@ -14,9 +14,12 @@ We overwrite the exit() call with NOPs
 
 import logging
 
-PATCH_START = b"\x48\x3B\xC1\x74\x09\x33\xC9\xFF"
-PATCH_END = 0xCC
-PATCH_REPLACE = b"\x48\x3B\xC1\x74\x09" + b"\x90" * 9
+CHECKSUM_PATCH_START = b"\x48\x3B\xC1\x74\x09\x33\xC9\xFF"
+CHECKSUM_PATCH_END = 0xCC
+CHECKSUM_PATCH_REPLACE = b"\x48\x3B\xC1\x74\x09" + b"\x90" * 9
+
+RELEASE_AOB_PRODUCTION = b'\x00\x50\x72\x6F\x64\x75\x63\x74\x69\x6F\x6E\x00'
+RELEASE_AOB_REPLACE = b'\x00\x4D\x6F\x64\x6C\x75\x6E\x6B\x79\x32\x00\x00'
 
 
 logger = logging.getLogger("modlunky2")
@@ -49,17 +52,16 @@ class Patcher:
 
             self.exe_handle.seek(self.exe_handle.tell() - overlap)
 
-    def is_patched(self) -> bool:
+    def is_checksum_patched(self) -> bool:
         """ Returns true of the binary has already been patched."""
         self.exe_handle.seek(0)
-        return self.find(PATCH_START) == -1
+        return self.find(CHECKSUM_PATCH_START) == -1
 
-
-    def patch(self):
+    def patch_checksum(self):
         self.exe_handle.seek(0)
 
         logger.info("Patching asset checksum check")
-        index = self.find(PATCH_START)
+        index = self.find(CHECKSUM_PATCH_START)
         if index == -1:
             logger.warning("Didn't find instructions to patch. Is game unmodified?")
             return False
@@ -67,14 +69,28 @@ class Patcher:
         self.exe_handle.seek(index)
         ops = self.exe_handle.read(14)
 
-        if ops[-1] != PATCH_END:
+        if ops[-1] != CHECKSUM_PATCH_END:
             logger.warning(
                 "Checksum check has unexpected form, this script has "
                 "to be updated for the current game version."
             )
-            logger.warning("(Expected 0x{:02x}, found 0x{:02x})".format(PATCH_END, ops[-1]))
+            logger.warning(
+                "(Expected 0x{:02x}, found 0x{:02x})".format(CHECKSUM_PATCH_END, ops[-1])
+            )
             return False
 
         logger.info("Found check at 0x{:08x}, replacing with NOPs".format(index))
         self.exe_handle.seek(index)
-        self.exe_handle.write(PATCH_REPLACE)
+        self.exe_handle.write(CHECKSUM_PATCH_REPLACE)
+
+    def patch_release(self):
+        self.exe_handle.seek(0)
+        index = self.find(RELEASE_AOB_PRODUCTION)
+        if index == -1:
+            logger.warning(
+                "Didn't find production string in release. Is this a vanilla binary being patched?"
+            )
+            return False
+
+        self.exe_handle.seek(index)
+        self.exe_handle.write(RELEASE_AOB_REPLACE)

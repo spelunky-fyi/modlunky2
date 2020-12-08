@@ -13,6 +13,10 @@ def main():
         default=APP_DIR,
         help="Path to Spelunky 2 installation. (Default: %(default)s",
     )
+    parser.add_argument(
+        "--beta", default=False, action="store_true",
+        help="Display beta features."
+    )
     args = parser.parse_args()
 
     log_format = "%(asctime)s: %(message)s"
@@ -20,5 +24,5 @@ def main():
 
     install_dir = Path(args.install_dir)
 
-    native_ui = ModlunkyUI(install_dir)
+    native_ui = ModlunkyUI(install_dir, args.beta)
     native_ui.mainloop()

@@ -8,7 +8,6 @@ KNOWN_FILEPATHS = [
     "Data/Fonts/fontnewrodin.fnb",
     "Data/Fonts/fontrodincattleya.fnb",
     "Data/Fonts/fontyorkten.fnb",
-
     # Level Files
     "Data/Levels/abzu.lvl",
     "Data/Levels/Arena/dm1-1.lvl",
@@ -99,7 +98,6 @@ KNOWN_FILEPATHS = [
     "Data/Levels/tidepoolarea.lvl",
     "Data/Levels/vladscastle.lvl",
     "Data/Levels/volcanoarea.lvl",
-
     # Textures
     "Data/Textures/base_eggship2.DDS",
     "Data/Textures/base_eggship3.DDS",
@@ -288,14 +286,11 @@ KNOWN_FILEPATHS = [
     "Data/Textures/splash0.DDS",
     "Data/Textures/splash1.DDS",
     "Data/Textures/splash2.DDS",
-
     # Shaders
     "shaders.hlsl",
-
     # FMOD Audio
     "soundbank.bank",
     "soundbank.strings.bank",
-
     # Strings
     "strings00.str",
     "strings01.str",
@@ -310,17 +305,16 @@ KNOWN_FILEPATHS = [
 
 # Mapping of filenames to their file paths
 # Example: {'splash1.DDS': 'Data/Textures/splash1.DDS'}
-FILENAMES_TO_FILEPATHS = {
-    Path(path).name: path
-    for path in KNOWN_FILEPATHS
-}
+FILENAMES_TO_FILEPATHS = {Path(path).name: path for path in KNOWN_FILEPATHS}
 
 # Most of the textures convert cleanly to .png but not all of them.
 # This is the list of assets we want to convert to/from png.
 PNGS = set(
     asset
     for asset in KNOWN_FILEPATHS
-    if asset.endswith(".DDS") and asset not in [
+    if asset.endswith(".DDS")
+    and asset
+    not in [
         "Data/Textures/bayer8.DDS",
         "Data/Textures/fontdebug.DDS",
         "Data/Textures/fontfirasans.DDS",
@@ -334,7 +328,7 @@ PNGS = set(
 
 # Mapping of png file names to DDS file names
 # Example: {'monstersbig06.png': 'monstersbig06.DDS'}
-PNG_NAMES_TO_DDS_NAMES= {
+PNG_NAMES_TO_DDS_NAMES = {
     str(Path(filepath).with_suffix(".png").name): str(Path(filepath).name)
     for filepath in KNOWN_FILEPATHS
     if filepath in PNGS
@@ -345,9 +339,7 @@ PACKS_DIR = Path("Packs")
 OVERRIDES_DIR = Path("Overrides")
 
 FILEPATH_DIRS = [
-    Path(path).parent
-    for path in KNOWN_FILEPATHS
-    if Path(path).parent != Path(".")
+    Path(path).parent for path in KNOWN_FILEPATHS if Path(path).parent != Path(".")
 ]
 
 DEFAULT_COMPRESSION_LEVEL = 20

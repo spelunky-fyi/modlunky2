@@ -45,7 +45,7 @@ def png_to_dds(img):
     data = b"DDS "  # magic bytes
     data += pack("<II", header_size, flags)
     data += pack("<5I", height, width, pitch, depth, mipmaps)
-    data += pack("<11I", *((0,)*11))  # reserved
+    data += pack("<11I", *((0,) * 11))  # reserved
     data += pack("<4I", pfsize, pfflags, fourcc, bitcount)
     data += pack(">4I", rmask, gmask, bmask, amask)  # masks are stored in big endian
     data += pack("<4I", caps, caps2, caps3, caps4)
@@ -55,7 +55,7 @@ def png_to_dds(img):
         (
             byte if rgba[3] != 0 else 0
         )  # Hack to force all transparent pixels to be (0, 0, 0, 0)
-           # instead of (255, 255, 255, 0)
+        # instead of (255, 255, 255, 0)
         for rgba in img.getdata()
         for byte in rgba
     )
