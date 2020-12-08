@@ -16,12 +16,16 @@ from PIL import Image
 from modlunky2.assets.exc import NonSiblingAsset
 
 from .chacha import Key, chacha, hash_filepath
-from .constants import (BANK_ALIGNMENT, DEFAULT_COMPRESSION_LEVEL,
-                        FILENAMES_TO_FILEPATHS, KNOWN_FILEPATHS,
-                        PNG_NAMES_TO_DDS_NAMES, PNGS)
+from .constants import (
+    BANK_ALIGNMENT,
+    DEFAULT_COMPRESSION_LEVEL,
+    FILENAMES_TO_FILEPATHS,
+    KNOWN_FILEPATHS,
+    PNG_NAMES_TO_DDS_NAMES,
+    PNGS,
+)
 from .converters import dds_to_png, png_to_dds
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
-
 
 logger = logging.getLogger("modlunky2")
 
@@ -57,15 +61,15 @@ class ExeAssetBlock:
     @property
     def total_size(self):
         return (
-            8                    # 8 bytes for header (asset_len, filepath_len)
+            8  # 8 bytes for header (asset_len, filepath_len)
             + self.filepath_len  # The size of the filepath
-            + 1                  # The byte for whether the asset is encrypted
-            + self.asset_len     # The size of the asset
+            + 1  # The byte for whether the asset is encrypted
+            + self.asset_len  # The size of the asset
         )
 
     @classmethod
     def from_exe_handle(cls, exe_handle):
-        """ From an exe file handle, construct an AssetInfo object.
+        """From an exe file handle, construct an AssetInfo object.
 
         The exe handle should already be seeked to the appropriate position to
         begin reading.
@@ -103,7 +107,9 @@ class ExeAssetBlock:
 
     def write_data(self, exe_handle, data):
         if self.asset_len != len(data):
-            raise RuntimeError(f"Data passed was size {len(data)}, expected {self.asset_len}")
+            raise RuntimeError(
+                f"Data passed was size {len(data)}, expected {self.asset_len}"
+            )
 
         exe_handle.write(pack("<II", self.data_len, self.filepath_len))
         exe_handle.write(self.filepath_hash)
@@ -128,8 +134,11 @@ class ExeAsset:
         self.data = handle.read(self.asset_block.asset_len)
 
     def extract(
-        self, extract_dir: Path, compressed_dir: Path, key: Key,
-        compression_level=DEFAULT_COMPRESSION_LEVEL
+        self,
+        extract_dir: Path,
+        compressed_dir: Path,
+        key: Key,
+        compression_level=DEFAULT_COMPRESSION_LEVEL,
     ):
         if not self.filepath:
             raise RuntimeError("Asset doesn't have filepath.")
@@ -162,7 +171,6 @@ class ExeAsset:
             except Exception:  # pylint: disable=broad-except
                 logger.exception("Failed compression")
                 return None
-
 
         if self.filepath in PNGS:
             image = Image.open(io.BytesIO(self.data))
@@ -253,9 +261,11 @@ class AssetStore:
             logger.exception("Failed Extraction")
 
     def extract(
-        self, extract_dir, compressed_dir,
+        self,
+        extract_dir,
+        compressed_dir,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
-        max_workers=max(os.cpu_count()-2, 1),
+        max_workers=max(os.cpu_count() - 2, 1),
     ):
         unextracted = []
         for asset in self.assets:
@@ -298,9 +308,9 @@ class AssetStore:
                 data = chacha(asset.filepath.encode(), data, self.key)
 
             logger.info("Packing file %s", asset.disk_asset.asset_path)
-            self.exe_handle.write(pack(
-                "<II", asset.asset_block.data_len, asset.asset_block.filepath_len
-            ))
+            self.exe_handle.write(
+                pack("<II", asset.asset_block.data_len, asset.asset_block.filepath_len)
+            )
             self.exe_handle.write(asset.asset_block.filepath_hash)
             self.exe_handle.write(pack("<b", asset.asset_block.is_encrypted))
             self.exe_handle.write(data)
@@ -325,11 +335,17 @@ class AssetStore:
             )
 
     def repackage(
-        self, search_dirs, fallback_dir, compressed_dir,
-        compression_level=DEFAULT_COMPRESSION_LEVEL
+        self,
+        search_dirs,
+        fallback_dir,
+        compressed_dir,
+        compression_level=DEFAULT_COMPRESSION_LEVEL,
     ):
         disk_bundle = DiskBundle.from_dirs(
-            self.assets, search_dirs, fallback_dir, compressed_dir,
+            self.assets,
+            search_dirs,
+            fallback_dir,
+            compressed_dir,
         )
         disk_bundle.compress_if_needed(compression_level=compression_level)
 
@@ -354,7 +370,9 @@ class AssetStore:
             #
             # Padding is between 1 and 32 bytes
             if disk_asset.asset_path.suffix == ".bank":
-                padding = BANK_ALIGNMENT - asset.asset_block.asset_offset % BANK_ALIGNMENT
+                padding = (
+                    BANK_ALIGNMENT - asset.asset_block.asset_offset % BANK_ALIGNMENT
+                )
                 asset.asset_block.filepath_len += padding
                 asset.asset_block.asset_offset += padding
 
@@ -398,7 +416,9 @@ class DiskBundle:
                     continue
 
                 if file_ in out_files:
-                    raise MultipleMatchingAssets(f"Found {file_} multiple times in {search_dir}")
+                    raise MultipleMatchingAssets(
+                        f"Found {file_} multiple times in {search_dir}"
+                    )
 
                 out_files[file_] = Path(root) / file_
 
@@ -406,15 +426,21 @@ class DiskBundle:
 
     @classmethod
     def from_dirs(
-        cls, exe_assets, search_dirs, fallback_dir, compressed_dir,
-        resolution_policy=ResolutionPolicy.RaiseError
+        cls,
+        exe_assets,
+        search_dirs,
+        fallback_dir,
+        compressed_dir,
+        resolution_policy=ResolutionPolicy.RaiseError,
     ):
 
         modfiles_by_filename = defaultdict(list)
         disk_assets = {}
 
         for search_dir in search_dirs:
-            for file_, file_path in cls.get_files_from_search_dir(Path(search_dir)).items():
+            for file_, file_path in cls.get_files_from_search_dir(
+                Path(search_dir)
+            ).items():
                 modfiles_by_filename[file_].append(file_path)
 
         for asset in exe_assets:
@@ -437,7 +463,10 @@ class DiskBundle:
                 )
                 continue
 
-            if resolution_policy == ResolutionPolicy.RaiseError and len(modpack_files) >= 2:
+            if (
+                resolution_policy == ResolutionPolicy.RaiseError
+                and len(modpack_files) >= 2
+            ):
                 raise FileConflict(
                     f"{filepath} found in multiple packs: {', '.join(map(str, modpack_files))}"
                 )
@@ -456,8 +485,9 @@ class DiskBundle:
         return cls(disk_assets)
 
     def compress_if_needed(
-        self, compression_level=DEFAULT_COMPRESSION_LEVEL,
-        max_workers=max(os.cpu_count()-2, 1),
+        self,
+        compression_level=DEFAULT_COMPRESSION_LEVEL,
+        max_workers=max(os.cpu_count() - 2, 1),
     ):
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             futures = [
@@ -511,11 +541,17 @@ class DiskAsset:
 
     @property
     def compressed_path(self):
-        return self.compressed_dir / f"{self.rel_asset_path.with_suffix(self.real_suffix)}.zst"
+        return (
+            self.compressed_dir
+            / f"{self.rel_asset_path.with_suffix(self.real_suffix)}.zst"
+        )
 
     @property
     def md5sum_path(self):
-        return self.compressed_dir / f"{self.rel_asset_path.with_suffix(self.real_suffix)}.md5sum"
+        return (
+            self.compressed_dir
+            / f"{self.rel_asset_path.with_suffix(self.real_suffix)}.md5sum"
+        )
 
     def needs_compression(self):
         if not self.exe_asset.asset_block.is_encrypted:

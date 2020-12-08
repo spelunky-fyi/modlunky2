@@ -11,6 +11,7 @@ from .patcher import Patcher
 
 DEFAULT_MODS_DIR = "Mods"
 
+
 def main():
     parser = argparse.ArgumentParser(description="Extract Spelunky 2 Assets.")
 
@@ -75,7 +76,7 @@ def main():
                 search_dirs,
                 mods_dir / EXTRACTED_DIR,
                 mods_dir / ".compressed",
-                args.compression_level
+                args.compression_level,
             )
         except MissingAsset as err:
             print("")
@@ -85,7 +86,8 @@ def main():
             sys.exit(1)
 
         patcher = Patcher(dest_file)
-        patcher.patch()
+        patcher.patch_checksum()
+        patcher.patch_release()
 
 
 if __name__ == "__main__":

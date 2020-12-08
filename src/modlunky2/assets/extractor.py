@@ -3,16 +3,17 @@ import logging
 from pathlib import Path
 
 from .assets import AssetStore
-from .constants import (DEFAULT_COMPRESSION_LEVEL, EXTRACTED_DIR,
-                        FILEPATH_DIRS, OVERRIDES_DIR, PACKS_DIR)
+from .constants import (
+    DEFAULT_COMPRESSION_LEVEL,
+    EXTRACTED_DIR,
+    FILEPATH_DIRS,
+    OVERRIDES_DIR,
+    PACKS_DIR,
+)
 
 DEFAULT_MODS_DIR = "Mods"
 
-TOP_LEVEL_DIRS = [
-    EXTRACTED_DIR,
-    PACKS_DIR,
-    OVERRIDES_DIR
-]
+TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
 
 
 def main():
@@ -46,7 +47,9 @@ def main():
 
     for dir_ in FILEPATH_DIRS:
         (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-        (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
+            parents=True, exist_ok=True
+        )
 
     asset_store = AssetStore.load_from_file(args.exe)
     unextracted = asset_store.extract(
@@ -59,6 +62,5 @@ def main():
         logging.warning("Un-extracted Asset %s", asset)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
