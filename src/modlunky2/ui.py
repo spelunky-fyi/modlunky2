@@ -198,22 +198,43 @@ class PackTab(Tab):
         self.rowconfigure(1, minsize=30)
         self.rowconfigure(2, minsize=60)
         self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+
 
         self.frame = ScrollableFrame(self, text="Select mods to pack")
-        self.frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.frame.grid(row=0, column=0, columnspan=2, pady=5, padx=5, sticky="nswe")
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
 
         self.progress = ttk.Progressbar(self, length=100, mode="determinate")
-        self.progress.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.progress.grid(row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe")
 
         self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
         self.button_pack.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_restore = ttk.Button(self, text="Restore EXE", command=self.restore)
+        self.button_restore.grid(row=2, column=1, pady=5, padx=5, sticky="nswe")
 
         default_icon_path = BASE_DIR / "static/images/noicon.png"
         self.default_icon = ImageTk.PhotoImage(Image.open(default_icon_path))
 
         self.checkbox_vars = []
+
+    def restore(self):
+        mods_dir = self.install_dir / MODS
+        extract_dir = mods_dir / "Extracted"
+        source_exe = extract_dir / "Spel2.exe"
+        dest_exe = self.install_dir / "Spel2.exe"
+
+        if is_patched(source_exe):
+            logger.critical(
+                "Source exe (%s) is somehow patched. You need to validate game files in steam and re-extract."
+            )
+            return
+
+        logger.info("Copying exe from %s to %s", source_exe, dest_exe)
+        shutil.copy2(source_exe, dest_exe)
+        logger.info("Done")
+
 
     def pack(self):
         packs = [
