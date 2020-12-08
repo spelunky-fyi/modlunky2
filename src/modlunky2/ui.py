@@ -1,26 +1,25 @@
 import logging
+import os
 import queue
 import shutil
 import threading
 import tkinter as tk
-import os
 import webbrowser
 from functools import wraps
 from pathlib import Path
-from tkinter import ttk
+from tkinter import font, ttk
 from tkinter.scrolledtext import ScrolledText
-from tkinter import font
-from PIL import ImageTk, Image
 
 import requests
 from packaging import version
+from PIL import Image, ImageTk
 
 from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.constants import (EXTRACTED_DIR, FILEPATH_DIRS,
                                         OVERRIDES_DIR, PACKS_DIR)
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
-from modlunky2.constants import ROOT_DIR
+from modlunky2.constants import BASE_DIR, ROOT_DIR
 
 logger = logging.getLogger("modlunky2")
 
@@ -217,7 +216,7 @@ class PackTab(Tab):
         return pack_dirs
 
     def on_load(self):
-        path = cwd + "/noicon.png" #default
+        path = BASE_DIR / "static/images/noicon.png" #default
         self.img = ImageTk.PhotoImage(Image.open(path))
         for idx, exe in enumerate(self.get_packs()):
             self.item = tk.Checkbutton(
@@ -587,11 +586,13 @@ class ModlunkyUI:
         self._shutdown_handlers = []
         self._shutting_down = False
 
-        self.root = tk.Tk()
+        self.root = tk.Tk(className="Modlunky2")
         self.root.title("Modlunky 2")
         self.root.geometry('750x450')
         #self.root.resizable(False, False)
-        self.root.iconbitmap(cwd + '/icon.ico')
+        self.icon_png = PhotoImage(file=BASE_DIR / 'static/images/icon.png')
+        self.root.iconphoto(False, self.icon_png)
+
 
         if self.needs_update:
             from tkinter import messagebox as mb
@@ -668,3 +669,5 @@ class ModlunkyUI:
             self.root.mainloop()
         except KeyboardInterrupt:
             self.quit()
+
+from tkinter import PhotoImage

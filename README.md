@@ -63,7 +63,7 @@ install anything. If you add new source files you may have to run `python setup.
 ### Running Locally
 
 ```
-modlunky2 --install-dir="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2" --debug
+modlunky2 --install-dir="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2"
 ```
 
 ### Building Distributions
