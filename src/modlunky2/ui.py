@@ -323,7 +323,8 @@ class ExtractTab(Tab):
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, minsize=60)
+        self.rowconfigure(1, minsize=30)
+        self.rowconfigure(2, minsize=60)
 
         self.label_frame = ttk.LabelFrame(self, text="Select exe to Extract")
         self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")

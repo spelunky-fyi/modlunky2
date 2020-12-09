@@ -76,5 +76,5 @@ python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
 
 #### EXE
 ```
-pyinstaller.exe --clean .\pyinstaller-cli.py --add-data "VERSION;." --add-data "src/modlunky2/static;static" --name modlunky2 --onefile --noconsole
+pyinstaller.exe --clean .\pyinstaller-cli.py --add-data "VERSION;." --add-data "src/modlunky2/static;static" --name modlunky2 --onefile --noconsole --icon=.\src\modlunky2\static\images\icon.ico
 ```
