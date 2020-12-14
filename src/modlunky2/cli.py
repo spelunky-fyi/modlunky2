@@ -14,8 +14,7 @@ def main():
         help="Path to Spelunky 2 installation. (Default: %(default)s",
     )
     parser.add_argument(
-        "--beta", default=False, action="store_true",
-        help="Display beta features."
+        "--beta", default=False, action="store_true", help="Display beta features."
     )
     args = parser.parse_args()
 

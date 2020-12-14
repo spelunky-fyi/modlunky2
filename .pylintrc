@@ -3,3 +3,6 @@ disable=missing-docstring,empty-docstring,too-few-public-methods
 
 [MISCELLANEOUS]
 notes=FIXME,XXX
+
+[FORMAT]
+max-line-length=120

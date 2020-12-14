@@ -18,8 +18,8 @@ CHECKSUM_PATCH_START = b"\x48\x3B\xC1\x74\x09\x33\xC9\xFF"
 CHECKSUM_PATCH_END = 0xCC
 CHECKSUM_PATCH_REPLACE = b"\x48\x3B\xC1\x74\x09" + b"\x90" * 9
 
-RELEASE_AOB_PRODUCTION = b'\x00\x50\x72\x6F\x64\x75\x63\x74\x69\x6F\x6E\x00'
-RELEASE_AOB_REPLACE = b'\x00\x4D\x6F\x64\x6C\x75\x6E\x6B\x79\x32\x00\x00'
+RELEASE_AOB_PRODUCTION = b"\x00\x50\x72\x6F\x64\x75\x63\x74\x69\x6F\x6E\x00"
+RELEASE_AOB_REPLACE = b"\x00\x4D\x6F\x64\x6C\x75\x6E\x6B\x79\x32\x00\x00"
 
 
 logger = logging.getLogger("modlunky2")
@@ -75,7 +75,9 @@ class Patcher:
                 "to be updated for the current game version."
             )
             logger.warning(
-                "(Expected 0x{:02x}, found 0x{:02x})".format(CHECKSUM_PATCH_END, ops[-1])
+                "(Expected 0x{:02x}, found 0x{:02x})".format(
+                    CHECKSUM_PATCH_END, ops[-1]
+                )
             )
             return False
 
