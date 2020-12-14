@@ -455,6 +455,7 @@ class LevelsTab(Tab):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.install_dir = install_dir
+        self.textures_dir = install_dir / "Mods/Extracted/Data/Textures"
 
         self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
@@ -683,65 +684,65 @@ class LevelsTab(Tab):
         )
         lines = file1.readlines()
 
-        self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+        self.lvlbgPath = self.textures_dir / "bg_cave.png"
         if (lvl=="abzu.lvl"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_tidepool.png"
+                self.lvlbgPath = self.textures_dir / "bg_tidepool.png"
         elif lvl.startswith("babylon"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_babylon.png"
+                self.lvlbgPath = self.textures_dir / "bg_babylon.png"
         elif lvl.startswith("basecamp"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("beehive"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_beehive.png"
+                self.lvlbgPath = self.textures_dir / "bg_beehive.png"
         elif lvl.startswith("blackmark"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_jungle.png"
+                self.lvlbgPath = self.textures_dir / "bg_jungle.png"
         elif lvl.startswith("caveboss"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("challenge_moon"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_jungle.png"
+                self.lvlbgPath = self.textures_dir / "bg_jungle.png"
         elif lvl.startswith("challenge_star"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_temple.png"
+                self.lvlbgPath = self.textures_dir / "bg_temple.png"
         elif lvl.startswith("challenge_sun"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_sunken.png"
+                self.lvlbgPath = self.textures_dir / "bg_sunken.png"
         elif lvl.startswith("city"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_gold.png"
+                self.lvlbgPath = self.textures_dir / "bg_gold.png"
         elif lvl.startswith("cosmic"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("duat"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("dwelling"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("egg"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_eggplant.png"
+                self.lvlbgPath = self.textures_dir / "bg_eggplant.png"
         elif lvl.startswith("ending_hard"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("end"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("hallofu"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_babylon.png"
+                self.lvlbgPath = self.textures_dir / "bg_babylon.png"
         elif lvl.startswith("hundun"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_sunken.png"
+                self.lvlbgPath = self.textures_dir / "bg_sunken.png"
         elif lvl.startswith("ice"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_ice.png"
+                self.lvlbgPath = self.textures_dir / "bg_ice.png"
         elif lvl.startswith("jungle"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_jungle.png"
+                self.lvlbgPath = self.textures_dir / "bg_jungle.png"
         elif lvl.startswith("lake"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_tidepool.png"
+                self.lvlbgPath = self.textures_dir / "bg_tidepool.png"
         elif lvl.startswith("olmec"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_stone.png"
+                self.lvlbgPath = self.textures_dir / "bg_stone.png"
         elif lvl.startswith("palace"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_cave.png"
+                self.lvlbgPath = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("sunken"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_sunken.png"
+                self.lvlbgPath = self.textures_dir / "bg_sunken.png"
         elif lvl.startswith("tiamat"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_tidepool.png"
+                self.lvlbgPath = self.textures_dir / "bg_tidepool.png"
         elif lvl.startswith("temple"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_temple.png"
+                self.lvlbgPath = self.textures_dir / "bg_temple.png"
         elif lvl.startswith("tide"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_tidepool.png"
+                self.lvlbgPath = self.textures_dir / "bg_tidepool.png"
         elif lvl.startswith("vlad"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_vlad.png"
+                self.lvlbgPath = self.textures_dir / "bg_vlad.png"
         elif lvl.startswith("volcano"):
-                self.lvlbgPath = BASE_DIR / "static/images/bg_volcano.png"
+                self.lvlbgPath = self.textures_dir / "bg_volcano.png"
 
         self.lvlbg = ImageTk.PhotoImage(Image.open(self.lvlbgPath))
         self.canvas.create_image(0, 0, image = self.lvlbg, anchor='nw')
