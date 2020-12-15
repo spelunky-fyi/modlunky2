@@ -1,5 +1,4 @@
 import hashlib
-import io
 import logging
 import os
 from collections import defaultdict
@@ -13,18 +12,14 @@ from struct import pack, unpack
 import zstandard as zstd
 from PIL import Image
 
+from modlunky2.assets.constants import KNOWN_TEXTURES_V1
 from modlunky2.assets.exc import NonSiblingAsset
 
 from .chacha import Key, chacha, hash_filepath
-from .constants import (
-    BANK_ALIGNMENT,
-    DEFAULT_COMPRESSION_LEVEL,
-    FILENAMES_TO_FILEPATHS,
-    KNOWN_FILEPATHS,
-    PNG_NAMES_TO_DDS_NAMES,
-    PNGS,
-)
-from .converters import dds_to_png, png_to_dds
+from .constants import (BANK_ALIGNMENT, DEFAULT_COMPRESSION_LEVEL,
+                        FILENAMES_TO_FILEPATHS, KNOWN_FILEPATHS,
+                        PNG_NAMES_TO_DDS_NAMES, DDS_PNGS)
+from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 
 logger = logging.getLogger("modlunky2")
@@ -174,9 +169,10 @@ class ExeAsset:
                 logger.exception("Failed compression")
                 return None
 
-        if self.filepath in PNGS:
-            image = Image.open(io.BytesIO(self.data))
-            self.data = dds_to_png(image)
+        if self.filepath in KNOWN_TEXTURES_V1:
+            self.data = rgba_to_png(self.data)
+        elif self.filepath in DDS_PNGS:
+            self.data = dds_to_png(self.data)
 
         if recompress:
             # Get a hash of the the uncompressed file to be used
@@ -186,7 +182,7 @@ class ExeAsset:
                 md5sum_file.write(md5sum)
 
         logger.info("Storing asset %s...", filepath)
-        if self.filepath in PNGS:
+        if self.filepath in DDS_PNGS:
             filepath = filepath.with_suffix(".png")
 
         with filepath.open("wb") as asset_file:
@@ -414,7 +410,7 @@ class DiskBundle:
             dirs[:] = [d for d in dirs if d not in [".compressed"]]
 
             for file_ in files:
-                # For PNGS we need to convert to actual name to test
+                # For DDS_PNGS we need to convert to actual name to test
                 # for validity of files
                 real_name = PNG_NAMES_TO_DDS_NAMES.get(file_, file_)
                 if real_name not in FILENAMES_TO_FILEPATHS:
@@ -452,7 +448,7 @@ class DiskBundle:
             if asset.filepath is None:
                 continue
             filepath = Path(asset.filepath)
-            if asset.filepath in PNGS:
+            if asset.filepath in DDS_PNGS:
                 filepath = filepath.with_suffix(".png")
             modpack_files = modfiles_by_filename.get(filepath.name)
 
@@ -540,7 +536,7 @@ class DiskAsset:
 
     @property
     def real_suffix(self):
-        if self.exe_asset.filepath in PNGS:
+        if self.exe_asset.filepath in DDS_PNGS:
             return ".DDS"
         return Path(self.exe_asset.filepath).suffix
 
