@@ -269,7 +269,7 @@ class AssetStore:
         compressed_dir,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
         max_workers=max(os.cpu_count() - 2, 1),
-        recompress=True
+        recompress=True,
     ):
         unextracted = []
         for asset in self.assets:

@@ -8,7 +8,6 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 
 from modlunky2.assets.assets import AssetStore
-
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR

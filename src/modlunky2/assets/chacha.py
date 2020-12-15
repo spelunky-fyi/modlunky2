@@ -99,7 +99,7 @@ def mix_in(h, s):
 
 def hash_filepath_v1(filepath):
     # Generate initial hash from the string
-    h0 = mix_in(b'\x00'*0x40, filepath)
+    h0 = mix_in(b"\x00" * 0x40, filepath)
 
     # Advance h0 by four round pairs to get h1
     h1 = quad_rounds(h0)
@@ -130,6 +130,7 @@ def hash_filepath(filepath, key=None, version="v2"):
         return hash_filepath_v2(filepath, key)
 
     raise ValueError("Invalid version provided.")
+
 
 def keyed_hashing(filepath, key):
     # Do keyed hashing
@@ -167,8 +168,8 @@ class Key:
 def mix_in_filepath(filepath, h):
     # Mix the filename in to tweak the key
     for i in range(0, len(filepath), 0x40):
-        partial = filepath[i:i+0x40]
-        h = quad_rounds(sxor(h[:len(partial)], partial[::-1]) + h[len(partial):])
+        partial = filepath[i : i + 0x40]
+        h = quad_rounds(sxor(h[: len(partial)], partial[::-1]) + h[len(partial) :])
     return h
 
 
@@ -186,9 +187,10 @@ def chacha_rest(data, key):
 
     return out
 
+
 def chacha_v1(filepath, data):
     # Untweaked key begins as half-advanced "0xBABE"
-    h = two_rounds(pack(b'<QQQQQQQQ', 0xBABE, 0, 0, 0, 0, 0, 0, 0))
+    h = two_rounds(pack(b"<QQQQQQQQ", 0xBABE, 0, 0, 0, 0, 0, 0, 0))
 
     h = mix_in_filepath(filepath, h)
 

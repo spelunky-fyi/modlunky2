@@ -1,5 +1,15 @@
 import io
-from struct import pack
+from struct import pack, unpack
+
+from PIL import Image
+
+
+def rgba_to_png(data):
+    width, height = unpack(b"<II", data[:8])
+    image = Image.frombytes("RGBA", (width, height), data[8:], "raw")
+    new_data = io.BytesIO()
+    image.save(new_data, format="PNG")
+    return new_data.getvalue()
 
 
 def dds_to_png(img):
