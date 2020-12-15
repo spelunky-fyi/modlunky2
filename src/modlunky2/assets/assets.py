@@ -139,6 +139,7 @@ class ExeAsset:
         compressed_dir: Path,
         key: Key,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
+        recompress=True,
     ):
         if not self.filepath:
             raise RuntimeError("Asset doesn't have filepath.")
@@ -160,13 +161,14 @@ class ExeAsset:
                 cctx = zstd.ZstdDecompressor()
                 self.data = cctx.decompress(self.data)
 
-                # Recompress at higher compression level to give
-                # better chance of assets fitting in binary
-                logger.info("Storing compressed asset %s...", compressed_filepath)
-                with compressed_filepath.open("wb") as compressed_file:
-                    cctx = zstd.ZstdCompressor(level=compression_level)
-                    compressed_data = cctx.compress(self.data)
-                    compressed_file.write(compressed_data)
+                if recompress:
+                    # Recompress at higher compression level to give
+                    # better chance of assets fitting in binary
+                    logger.info("Storing compressed asset %s...", compressed_filepath)
+                    with compressed_filepath.open("wb") as compressed_file:
+                        cctx = zstd.ZstdCompressor(level=compression_level)
+                        compressed_data = cctx.compress(self.data)
+                        compressed_file.write(compressed_data)
 
             except Exception:  # pylint: disable=broad-except
                 logger.exception("Failed compression")
@@ -176,11 +178,12 @@ class ExeAsset:
             image = Image.open(io.BytesIO(self.data))
             self.data = dds_to_png(image)
 
-        # Get a hash of the the uncompressed file to be used
-        # to detect if the source file changed
-        md5sum = hashlib.md5(self.data).hexdigest()
-        with md5sum_filepath.open("w") as md5sum_file:
-            md5sum_file.write(md5sum)
+        if recompress:
+            # Get a hash of the the uncompressed file to be used
+            # to detect if the source file changed
+            md5sum = hashlib.md5(self.data).hexdigest()
+            with md5sum_filepath.open("w") as md5sum_file:
+                md5sum_file.write(md5sum)
 
         logger.info("Storing asset %s...", filepath)
         if self.filepath in PNGS:
@@ -266,6 +269,7 @@ class AssetStore:
         compressed_dir,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
         max_workers=max(os.cpu_count() - 2, 1),
+        recompress=True
     ):
         unextracted = []
         for asset in self.assets:
@@ -285,6 +289,7 @@ class AssetStore:
                     compressed_dir,
                     self.key,
                     compression_level,
+                    recompress,
                 )
                 for asset in self.assets
                 if asset.filepath
