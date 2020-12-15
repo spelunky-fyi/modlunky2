@@ -3,15 +3,12 @@ import os
 import random
 import tkinter as tk
 import tkinter.messagebox as tkMessageBox
-from tkinter import ttk
-from tkinter import filedialog
-
+from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.widgets import Tab, ScrollableFrame
-
+from modlunky2.ui.widgets import ScrollableFrame, Tab
 
 logger = logging.getLogger("modlunky2")
 

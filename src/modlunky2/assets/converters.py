@@ -1,9 +1,20 @@
 import io
-from struct import pack
+from struct import pack, unpack
+
+from PIL import Image
 
 
-def dds_to_png(img):
+def rgba_to_png(data):
+    width, height = unpack(b"<II", data[:8])
+    img = Image.frombytes("RGBA", (width, height), data[8:], "raw")
+    new_data = io.BytesIO()
+    img.save(new_data, format="PNG")
+    return new_data.getvalue()
+
+
+def dds_to_png(data):
     """ Takes a .DDS `Image` and returns .png data."""
+    img = Image.open(io.BytesIO(data))
     img.tile[0] = img.tile[0][:-1] + ((img.tile[0][-1][0][::-1], 0, 1),)
     new_data = io.BytesIO()
     img.save(new_data, format="PNG")

@@ -97,7 +97,19 @@ def mix_in(h, s):
     return h
 
 
-def hash_filepath(filepath, key):
+def hash_filepath_v1(filepath):
+    # Generate initial hash from the string
+    h0 = mix_in(b"\x00" * 0x40, filepath)
+
+    # Advance h0 by four round pairs to get h1
+    h1 = quad_rounds(h0)
+    # Add the two together, and advance by four round pairs.
+    key = quad_rounds(add_qwords(h0, h1))
+
+    return keyed_hashing(filepath, key)
+
+
+def hash_filepath_v2(filepath, key):
     # Generate initial hash from the string
     h = two_rounds(pack(b"<QQQQQQQQ", key, len(filepath), 0, 0, 0, 0, 0, 0))
     h = mix_in(h, filepath)
@@ -107,10 +119,25 @@ def hash_filepath(filepath, key):
     tmp = s_to_q(tmp)
     key = quad_rounds(q_to_s([tmp[0] ^ len(filepath)] + tmp[1:]))
 
+    return keyed_hashing(filepath, key)
+
+
+def hash_filepath(filepath, key=None, version="v2"):
+    if version == "v1":
+        return hash_filepath_v1(filepath)
+
+    if version == "v2":
+        return hash_filepath_v2(filepath, key)
+
+    raise ValueError("Invalid version provided.")
+
+
+def keyed_hashing(filepath, key):
     # Do keyed hashing
     # NOTE: This appears to be an implementation mistake on the Spelunky 2 dev's part
     # They generate a quad_round advanced version of (nonce'd key), but then they
     # xor with the untweaked key instead of the tweaked key...
+
     h = b""
     for i in range(0, len(filepath), 0x40):
         partial = filepath[i : i + 0x40]
@@ -138,20 +165,15 @@ class Key:
         self.key ^= v4 ^ ((v4 ^ (v4 >> 28)) >> 23)
 
 
-def chacha(name, data, key):
-    # Untweaked key begins as half-advanced `key`
-    h = two_rounds(pack(b"<QQQQQQQQ", key, len(name), 0, 0, 0, 0, 0, 0))
-
+def mix_in_filepath(filepath, h):
     # Mix the filename in to tweak the key
-    for i in range(0, len(name), 0x40):
-        partial = name[i : i + 0x40]
+    for i in range(0, len(filepath), 0x40):
+        partial = filepath[i : i + 0x40]
         h = quad_rounds(sxor(h[: len(partial)], partial[::-1]) + h[len(partial) :])
+    return h
 
-    # Add the tweaked key and its advancement, then advance by four round pairs.
-    tmp = add_qwords(h, quad_rounds(h))
-    tmp = s_to_q(tmp)
-    key = quad_rounds(q_to_s([tmp[0] ^ key + len(data)] + tmp[1:]))
 
+def chacha_rest(data, key):
     # NOTE: This appears to be an implementation mistake on the Spelunky 2 dev's part
     # They generate a quad_round advanced version of (nonce'd key), but then they
     # xor with the untweaked key instead of the tweaked key...
@@ -164,3 +186,39 @@ def chacha(name, data, key):
         out += sxor(data, key[: len(data)][::-1])
 
     return out
+
+
+def chacha_v1(filepath, data):
+    # Untweaked key begins as half-advanced "0xBABE"
+    h = two_rounds(pack(b"<QQQQQQQQ", 0xBABE, 0, 0, 0, 0, 0, 0, 0))
+
+    h = mix_in_filepath(filepath, h)
+
+    # Add the tweaked key and its advancement, then advance by four round pairs.
+    key = quad_rounds(add_qwords(h, quad_rounds(h)))
+
+    return chacha_rest(data, key)
+
+
+def chacha_v2(filepath, data, key):
+    # Untweaked key begins as half-advanced `key`
+    h = two_rounds(pack(b"<QQQQQQQQ", key, len(filepath), 0, 0, 0, 0, 0, 0))
+
+    h = mix_in_filepath(filepath, h)
+
+    # Add the tweaked key and its advancement, then advance by four round pairs.
+    tmp = add_qwords(h, quad_rounds(h))
+    tmp = s_to_q(tmp)
+    key = quad_rounds(q_to_s([tmp[0] ^ key + len(data)] + tmp[1:]))
+
+    return chacha_rest(data, key)
+
+
+def chacha(filepath, data, key=None, version="v2"):
+    if version == "v1":
+        return chacha_v1(filepath, data)
+
+    if version == "v2":
+        return chacha_v2(filepath, data, key)
+
+    raise ValueError("Invalid version provided.")
