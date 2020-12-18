@@ -100,14 +100,13 @@ class ModlunkyUI:
                 install_dir=install_dir,
             ),
         )
-        if beta:
-            self.register_tab(
-                "Levels",
-                LevelsTab(
-                    tab_control=self.tab_control,
-                    install_dir=install_dir,
-                ),
-            )
+        self.register_tab(
+            "Levels",
+            LevelsTab(
+                tab_control=self.tab_control,
+                install_dir=install_dir,
+            ),
+        )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.pack(expand=1, fill="both")
