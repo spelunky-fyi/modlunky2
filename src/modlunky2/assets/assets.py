@@ -16,9 +16,14 @@ from modlunky2.assets.constants import KNOWN_TEXTURES_V1
 from modlunky2.assets.exc import NonSiblingAsset
 
 from .chacha import Key, chacha, hash_filepath
-from .constants import (BANK_ALIGNMENT, DEFAULT_COMPRESSION_LEVEL,
-                        FILENAMES_TO_FILEPATHS, KNOWN_FILEPATHS,
-                        PNG_NAMES_TO_DDS_NAMES, DDS_PNGS)
+from .constants import (
+    BANK_ALIGNMENT,
+    DDS_PNGS,
+    DEFAULT_COMPRESSION_LEVEL,
+    FILENAMES_TO_FILEPATHS,
+    KNOWN_FILEPATHS,
+    PNG_NAMES_TO_DDS_NAMES,
+)
 from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 
