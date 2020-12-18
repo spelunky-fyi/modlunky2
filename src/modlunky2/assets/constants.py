@@ -316,10 +316,7 @@ KNOWN_TEXTURES_V1 = [
     "Data/Textures/splash2.png",
 ]
 
-KNOWN_TEXTURES_V2 = [
-    str(Path(path).with_suffix(".DDS"))
-    for path in KNOWN_TEXTURES_V1
-]
+KNOWN_TEXTURES_V2 = [str(Path(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1]
 
 KNOWN_FILEPATHS = [
     *KNOWN_FONTS_V2,
@@ -343,7 +340,8 @@ FILENAMES_TO_FILEPATHS = {Path(path).name: path for path in KNOWN_FILEPATHS}
 DDS_PNGS = set(
     asset
     for asset in KNOWN_TEXTURES_V2
-    if asset not in [
+    if asset
+    not in [
         "Data/Textures/bayer8.DDS",
         "Data/Textures/fontdebug.DDS",
         "Data/Textures/fontfirasans.DDS",

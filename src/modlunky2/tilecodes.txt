@@ -226,5 +226,5 @@
 \?dog_sign Ī
 \?telescope ī
 \?zoo_exhibit Ĭ
-\?\?dm_spawn_point ĭ
-\?\?idol_hold Į
+\?dm_spawn_point ĭ
+\?idol_hold Į

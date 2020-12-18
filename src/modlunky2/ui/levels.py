@@ -1,18 +1,16 @@
 import logging
 import os
 import os.path
-from os import path
 import random
 import tkinter as tk
-import tkinter.messagebox as tkMessageBox
-from tkinter import ttk
-from tkinter import filedialog
 import tkinter.font as font
+import tkinter.messagebox as tkMessageBox
+from os import path
+from tkinter import filedialog, ttk
+
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
 from ttkthemes import ThemedTk
-
 from win32api import GetSystemMetrics
-
-from PIL import Image, ImageTk, ImageEnhance, ImageDraw, ImageFont
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableFrame, Tab
@@ -28,8 +26,7 @@ class LevelsTab(Tab):
         self.install_dir = install_dir
         self.textures_dir = install_dir / "Mods/Extracted/Data/Textures"
 
-        self.lvl_editor_start_canvas = tk.Canvas(self,
-        bg="black")
+        self.lvl_editor_start_canvas = tk.Canvas(self, bg="black")
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -50,7 +47,7 @@ class LevelsTab(Tab):
             ),
             anchor="center",
             bg="black",
-            fg="white"
+            fg="white",
         )
         self.welcome_label.grid(row=0, column=0, sticky="nswe", ipady=30, padx=(10, 10))
 
@@ -102,7 +99,9 @@ class LevelsTab(Tab):
         self.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
         # Loads lvl Files
-        self.tree_files = ttk.Treeview(self, selectmode="browse") # This tree shows all the lvl files loaded from the chosen dir
+        self.tree_files = ttk.Treeview(
+            self, selectmode="browse"
+        )  # This tree shows all the lvl files loaded from the chosen dir
         self.tree_files.place(x=30, y=95)
         self.vsb_tree_files = ttk.Scrollbar(
             self, orient="vertical", command=self.tree_files.yview
@@ -117,7 +116,11 @@ class LevelsTab(Tab):
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
-        for ( file ) in ( self.my_list ):  # Loads list of all the lvl files in the left farthest treeview
+        for (
+            file
+        ) in (
+            self.my_list
+        ):  # Loads list of all the lvl files in the left farthest treeview
             if str(file).endswith(".lvl"):
                 self.tree_files.insert("", "end", values=str(file), text=str(file))
 
@@ -128,10 +131,18 @@ class LevelsTab(Tab):
         self.tab1 = ttk.Frame(self.tab_control)  # Tab 1 shows a lvl files rules
         self.tab2 = ttk.Frame(self.tab_control)  # Tab 2 is the actual level editor
 
-        self.button_back = tk.Button(self, text="Go Back", bg = "black",fg="white", command=lambda : self.go_back())
+        self.button_back = tk.Button(
+            self, text="Go Back", bg="black", fg="white", command=lambda: self.go_back()
+        )
         self.button_back.grid(row=1, column=0, sticky="nswe")
 
-        self.button_save = tk.Button(self, text="Save", bg = "purple", fg="white", command=lambda : self.save_changes())
+        self.button_save = tk.Button(
+            self,
+            text="Save",
+            bg="purple",
+            fg="white",
+            command=lambda: self.save_changes(),
+        )
         self.button_save.grid(row=2, column=0, sticky="nswe")
 
         self.tab_control.add(  # Rules Tab ----------------------------------------------------
@@ -141,10 +152,12 @@ class LevelsTab(Tab):
         self.tab1.columnconfigure(0, weight=1)  # Column 1 = Everything Else
         self.tab1.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
-        self.tree = ttk.Treeview(self.tab1, selectmode="browse") # This tree shows rules parses from the lvl file
+        self.tree = ttk.Treeview(
+            self.tab1, selectmode="browse"
+        )  # This tree shows rules parses from the lvl file
         self.tree.bind("<Double-1>", lambda e: self.OnDoubleClick(self.tree))
         self.tree.place(x=30, y=95)
-        #style = ttk.Style(self)
+        # style = ttk.Style(self)
         self.vsb = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree.yview)
         self.vsb.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree.configure(yscrollcommand=self.vsb.set)
@@ -166,7 +179,9 @@ class LevelsTab(Tab):
         self.tab2.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
-        self.tree_levels = ttk.Treeview(self.tab2, selectmode="browse") # This tree shows the rooms in the level editor
+        self.tree_levels = ttk.Treeview(
+            self.tab2, selectmode="browse"
+        )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
             self.tab2, orient="vertical", command=self.tree_levels.yview
@@ -191,7 +206,7 @@ class LevelsTab(Tab):
             self.tab2,
             bg="#292929",
         )
-        self.canvas_grids.grid(row = 0, column=1, rowspan=4, columnspan = 2, sticky="nwse")
+        self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=2, sticky="nwse")
 
         self.canvas_grids.columnconfigure(0, weight=1)
         self.canvas_grids.rowconfigure(0, weight=1)
@@ -199,23 +214,41 @@ class LevelsTab(Tab):
         self.scrollable_canvas_frame = tk.Frame(self.canvas_grids, bg="#343434")
 
         # offsets the screen so user can freely scroll around work area
-        self.scrollable_canvas_frame.columnconfigure(0, minsize=int(int(GetSystemMetrics(0))/2))
+        self.scrollable_canvas_frame.columnconfigure(
+            0, minsize=int(int(GetSystemMetrics(0)) / 2)
+        )
         self.scrollable_canvas_frame.columnconfigure(1, weight=1)
         self.scrollable_canvas_frame.columnconfigure(2, minsize=50)
-        self.scrollable_canvas_frame.columnconfigure(4, minsize=int(int(GetSystemMetrics(0))/2))
-        self.scrollable_canvas_frame.rowconfigure(0, minsize=int(int(GetSystemMetrics(1))/2))
+        self.scrollable_canvas_frame.columnconfigure(
+            4, minsize=int(int(GetSystemMetrics(0)) / 2)
+        )
+        self.scrollable_canvas_frame.rowconfigure(
+            0, minsize=int(int(GetSystemMetrics(1)) / 2)
+        )
         self.scrollable_canvas_frame.rowconfigure(1, weight=1)
         self.scrollable_canvas_frame.rowconfigure(2, minsize=100)
         self.scrollable_canvas_frame.rowconfigure(2, minsize=100)
-        self.scrollable_canvas_frame.rowconfigure(4, minsize=int(int(GetSystemMetrics(1))/2))
+        self.scrollable_canvas_frame.rowconfigure(
+            4, minsize=int(int(GetSystemMetrics(1)) / 2)
+        )
 
-        self.scrollable_canvas_frame.grid(row = 0, column=0, sticky="nwes")
+        self.scrollable_canvas_frame.grid(row=0, column=0, sticky="nwes")
 
-        self.foreground_label = tk.Label(self.scrollable_canvas_frame, text="Foreground Area", fg="white", bg="#343434")
+        self.foreground_label = tk.Label(
+            self.scrollable_canvas_frame,
+            text="Foreground Area",
+            fg="white",
+            bg="#343434",
+        )
         self.foreground_label.grid(row=2, column=1, sticky="nwse")
         self.foreground_label.grid_remove()
 
-        self.background_label = tk.Label(self.scrollable_canvas_frame, text="Background Area", fg="white", bg="#343434")
+        self.background_label = tk.Label(
+            self.scrollable_canvas_frame,
+            text="Background Area",
+            fg="white",
+            bg="#343434",
+        )
         self.background_label.grid(row=2, column=3, sticky="nwse")
         self.background_label.grid_remove()
 
@@ -228,13 +261,19 @@ class LevelsTab(Tab):
         )
         self.hbar.grid(row=0, column=1, rowspan=4, columnspan=2, sticky="wes")
 
-        self.canvas_grids.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-        x0 = self.canvas_grids.winfo_screenwidth()/2
-        y0 = self.canvas_grids.winfo_screenheight()/2
-        self.canvas_grids.create_window((x0,y0), window=self.scrollable_canvas_frame, anchor="center")
+        self.canvas_grids.config(
+            xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set
+        )
+        x0 = self.canvas_grids.winfo_screenwidth() / 2
+        y0 = self.canvas_grids.winfo_screenheight() / 2
+        self.canvas_grids.create_window(
+            (x0, y0), window=self.scrollable_canvas_frame, anchor="center"
+        )
         self.scrollable_canvas_frame.bind(
             "<Configure>",
-            lambda e: self.canvas_grids.configure(scrollregion=self.canvas_grids.bbox("all")),
+            lambda e: self.canvas_grids.configure(
+                scrollregion=self.canvas_grids.bbox("all")
+            ),
         )
 
         self.canvas = tk.Canvas(  # this is the main level editor grid
@@ -249,7 +288,7 @@ class LevelsTab(Tab):
             bg="yellow",
         )
         self.canvas_dual.grid(row=1, column=3, padx=(0, 50))
-        self.canvas_dual.grid_remove() # hides it for now
+        self.canvas_dual.grid_remove()  # hides it for now
 
         self.tile_pallete = ScrollableFrame(  # the tile palletes are loaded into here as buttons with their image as a tile and txt as their value to grab when needed
             self.tab2, text="Tile Pallete", width=50
@@ -258,13 +297,21 @@ class LevelsTab(Tab):
         self.tile_pallete.scrollable_frame["width"] = 50
 
         self.tile_label = tk.Label(
-            self.tab2, text="Selected Tile:",
+            self.tab2,
+            text="Selected Tile:",
         )  # shows selected tile. Important because this is used for more than just user convenience; we can grab the currently used tile here
         self.tile_label.grid(row=0, column=4, columnspan=1, sticky="we")
 
-        self.button_tilecode_del = tk.Button(self.tab2, text="Del", bg = "red", fg="white", width=10, command=lambda : self.del_tilecode())
+        self.button_tilecode_del = tk.Button(
+            self.tab2,
+            text="Del",
+            bg="red",
+            fg="white",
+            width=10,
+            command=lambda: self.del_tilecode(),
+        )
         self.button_tilecode_del.grid(row=0, column=3, sticky="e")
-        self.button_tilecode_del['state']=tk.DISABLED
+        self.button_tilecode_del["state"] = tk.DISABLED
 
         self.img_sel = ImageTk.PhotoImage(
             Image.open(BASE_DIR / "static/images/tilecodetextures.png")
@@ -276,21 +323,30 @@ class LevelsTab(Tab):
 
         self.combobox = ttk.Combobox(self.tab2, height=20)
         self.combobox.grid(row=4, column=3, columnspan=1, sticky="nswe")
-        self.combobox['state']=tk.DISABLED
+        self.combobox["state"] = tk.DISABLED
         self.combobox_alt = ttk.Combobox(self.tab2, height=40)
         self.combobox_alt.grid(row=4, column=4, columnspan=1, sticky="nswe")
         self.combobox_alt.grid_remove()
-        self.combobox_alt['state']=tk.DISABLED
+        self.combobox_alt["state"] = tk.DISABLED
 
         self.scale = tk.Scale(
             self.tab2, from_=0, to=100, orient=tk.HORIZONTAL, command=self.updateValue
         )  # scale for the percent of a selected tile
         self.scale.grid(row=3, column=3, columnspan=2, sticky="we")
         self.scale.set(100)
-        self.scale['state']=tk.DISABLED
+        self.scale["state"] = tk.DISABLED
 
-        self.button_tilecode_add = tk.Button(self.tab2, text="Add TileCode", bg = "yellow", command=lambda : self.add_tilecode(str(self.combobox.get()), str(self.scale.get()) , self.combobox_alt.get()))
-        self.button_tilecode_add.grid(row=3, column=5, rowspan=2, columnspan=2, sticky="nswe")
+        self.button_tilecode_add = tk.Button(
+            self.tab2,
+            text="Add TileCode",
+            bg="yellow",
+            command=lambda: self.add_tilecode(
+                str(self.combobox.get()), str(self.scale.get()), self.combobox_alt.get()
+            ),
+        )
+        self.button_tilecode_add.grid(
+            row=3, column=5, rowspan=2, columnspan=2, sticky="nswe"
+        )
 
         self.tags = tk.Text(
             self.tab2, height=2, width=30, bg="black", fg="white"
@@ -338,7 +394,7 @@ class LevelsTab(Tab):
             col = 0
             row = 0
             if canvas == self.canvas_dual:
-                col = (((event.x+int(self.canvas['width']))+col_width)// col_width)
+                col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
                 row = event.y // row_height
             else:
                 # Calculate column and row number
@@ -358,7 +414,7 @@ class LevelsTab(Tab):
                 + " replaced with "
                 + self.tile_label["text"].split(" ", 4)[3]
             )
-            self.remember_changes() # remember changes made
+            self.remember_changes()  # remember changes made
 
         self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas))
         self.canvas_dual.bind(
@@ -366,9 +422,15 @@ class LevelsTab(Tab):
         )
 
         def tree_filesitemclick(_event):
-            if self.save_needed and self.last_selected_file!=None:
-                MsgBox = tk.messagebox.askquestion ('Continue?','You have unsaved changes to ' + str(self.tree_files.item(self.last_selected_file, option="text")) + "\nContinue without saving?",icon = 'warning')
-                if MsgBox == 'yes':
+            if self.save_needed and self.last_selected_file != None:
+                MsgBox = tk.messagebox.askquestion(
+                    "Continue?",
+                    "You have unsaved changes to "
+                    + str(self.tree_files.item(self.last_selected_file, option="text"))
+                    + "\nContinue without saving?",
+                    icon="warning",
+                )
+                if MsgBox == "yes":
                     self.save_needed = False
                     print("Entered new files witout saving")
                 else:
@@ -385,7 +447,6 @@ class LevelsTab(Tab):
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
                 self.read_lvl_file(item_text)
-
 
         self.tree_files.bind("<ButtonRelease-1>", tree_filesitemclick)
 
@@ -409,41 +470,61 @@ class LevelsTab(Tab):
             file_content = ""
             skip_line = False
             for entry in self.tree.get_children():
-                values = self.tree.item(entry)['values']
-                if str(values[0])=="COMMENT":
+                values = self.tree.item(entry)["values"]
+                if str(values[0]) == "COMMENT":
                     if not skip_line:
-                        file_content+= str(values[2])
+                        file_content += str(values[2])
                     else:
                         skip_line = False
-                    if str(values[0])=="//" or str(values[0]).startswith("// !") or str(values[0]).startswith("// S"):
-                        file_content+="\n"
+                    if (
+                        str(values[0]) == "//"
+                        or str(values[0]).startswith("// !")
+                        or str(values[0]).startswith("// S")
+                    ):
+                        file_content += "\n"
                     if str(values[2]).startswith("//  TILE CODES"):
-                        file_content+="// ------------------------------"
+                        file_content += "// ------------------------------"
                         for tilecode in self.tile_pallete_ref_in_use:
-                            file_content+="\n" + str(tilecode[0])
+                            file_content += "\n" + str(tilecode[0])
                         skip_line = True
-                        file_content+="\n"
+                        file_content += "\n"
                 else:
-                    file_content+= str(values[0]) + " " + str(values[1]) + " " + str(values[2]) + "\n"
+                    file_content += (
+                        str(values[0])
+                        + " "
+                        + str(values[1])
+                        + " "
+                        + str(values[2])
+                        + "\n"
+                    )
 
-            file_content+="\n"
+            file_content += "\n"
             for room_parent in self.tree_levels.get_children():
-                file_content+="\n////////////////////////////////////////////////////////////////////////////////\n"
-                file_content+=str(self.tree_levels.item(room_parent)["text"])
-                file_content+="\n////////////////////////////////////////////////////////////////////////////////\n"
+                file_content += "\n////////////////////////////////////////////////////////////////////////////////\n"
+                file_content += str(self.tree_levels.item(room_parent)["text"])
+                file_content += "\n////////////////////////////////////////////////////////////////////////////////\n"
                 for room in self.tree_levels.get_children(room_parent):
                     room_check = self.tree_levels.item(room)["text"]
                     if room_check == "room" or room_check == "room (edited)":
                         room_data = self.tree_levels.item(room, option="values")
 
-                        listToStr = '\n'.join([str(save_row) for save_row in room_data])
-                        file_content+= "\n" + listToStr + "\n"
-            path=None
+                        listToStr = "\n".join([str(save_row) for save_row in room_data])
+                        file_content += "\n" + listToStr + "\n"
+            path = None
             if self.extracts_mode == False:
-                path = self.lvls_path + "/" + str(self.tree_files.item(self.last_selected_file, option="text"))
+                path = (
+                    self.lvls_path
+                    + "/"
+                    + str(self.tree_files.item(self.last_selected_file, option="text"))
+                )
             else:
                 print("adding to overrides")
-                path = self.install_dir / "Mods" / "Overrides" / str(self.tree_files.item(self.last_selected_file, option="text"))
+                path = (
+                    self.install_dir
+                    / "Mods"
+                    / "Overrides"
+                    / str(self.tree_files.item(self.last_selected_file, option="text"))
+                )
             f = open(path, "w")
             f.write(file_content)
             f.close()
@@ -453,19 +534,19 @@ class LevelsTab(Tab):
         else:
             print("No changes to save")
 
-    def remember_changes(self): # remembers changes made to rooms
+    def remember_changes(self):  # remembers changes made to rooms
         try:
             item_iid = self.tree_levels.selection()[0]
-            parent_iid = self.tree_levels.parent(item_iid) # gets selected room
+            parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
             if parent_iid:
                 self.canvas.delete("all")
                 self.canvas_dual.delete("all")
                 new_room_data = ""
-                if len(self.tags.get(1.0,tk.END).split("!", 5)) <= 1:
+                if len(self.tags.get(1.0, tk.END).split("!", 5)) <= 1:
                     new_room_data = ""
                 else:
                     tag_count = -1
-                    for tag in self.tags.get(1.0,tk.END).strip().split(" ", 6):
+                    for tag in self.tags.get(1.0, tk.END).strip().split(" ", 6):
                         if str(tag).startswith("\!"):
                             if tag_count >= 0:
                                 new_room_data += "\n" + str(tag)
@@ -484,7 +565,12 @@ class LevelsTab(Tab):
                 for line in new_room_data.split("\n", 100):
                     room_save.append(line)
                 # Put it back in with the upated values
-                edited = self.tree_levels.insert(parent_iid, self.tree_levels.index(item_iid), text="room (edited)", values = room_save)
+                edited = self.tree_levels.insert(
+                    parent_iid,
+                    self.tree_levels.index(item_iid),
+                    text="room (edited)",
+                    values=room_save,
+                )
                 # Remove it from the tree
                 self.tree_levels.delete(item_iid)
                 self.tree_levels.selection_set(edited)
@@ -496,14 +582,16 @@ class LevelsTab(Tab):
             print("No room to temp save " + str(aa))
 
     def del_tilecode(self):
-        MsgBox = tk.messagebox.askquestion ('Delete Tilecode?','Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air',icon = 'warning')
-        if MsgBox == 'yes':
-            tile_id = self.tile_label['text'].split(" ", 3)[2]
-            tile_code = self.tile_label['text'].split(" ", 3)[3]
-            if tile_id=="\?empty":
-                tkMessageBox.showinfo(
-                    "Uh Oh!", "Can't delete empty!"
-                )
+        MsgBox = tk.messagebox.askquestion(
+            "Delete Tilecode?",
+            "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
+            icon="warning",
+        )
+        if MsgBox == "yes":
+            tile_id = self.tile_label["text"].split(" ", 3)[2]
+            tile_code = self.tile_label["text"].split(" ", 3)[3]
+            if tile_id == "\?empty":
+                tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
                 return
 
             for room_parent in self.tree_levels.get_children():
@@ -517,29 +605,37 @@ class LevelsTab(Tab):
                             for replace_code in row:
                                 if replace_code == tile_code:
                                     replace_code = "0"
-                                    new_row+="0"
+                                    new_row += "0"
                                 else:
                                     new_row += str(replace_code)
                         else:
                             new_row = str(row)
                         room_data.append(new_row)
                     # Put it back in with the upated values
-                    edited = self.tree_levels.insert(room_parent, self.tree_levels.index(room), text=str(room_name), values = room_data)
+                    edited = self.tree_levels.insert(
+                        room_parent,
+                        self.tree_levels.index(room),
+                        text=str(room_name),
+                        values=room_data,
+                    )
                     # Remove it from the tree
                     self.tree_levels.delete(room)
-                    if room==self.last_selected_room:
+                    if room == self.last_selected_room:
                         self.tree_levels.selection_set(edited)
                         self.last_selected_room = edited
                         self.room_select(None)
             print("Replaced " + tile_id + " in all rooms with air/empty")
 
-
             self.usable_codes.append(str(tile_code))
-            print(str(tile_code) + " is now available for use") # adds tilecode back to list to be reused
+            print(
+                str(tile_code) + " is now available for use"
+            )  # adds tilecode back to list to be reused
             ii = 0
             for id in self.tile_pallete_ref_in_use:
-                if str(tile_id) == str(id[0].split(" ", 2)[0]): # removes tilecode from list in use
-                    #self.usable_codes.pop(ii)
+                if str(tile_id) == str(
+                    id[0].split(" ", 2)[0]
+                ):  # removes tilecode from list in use
+                    # self.usable_codes.pop(ii)
                     self.tile_pallete_ref_in_use.remove(id)
                     print("Deleted " + str(tile_id))
                 ii = ii + 1
@@ -553,61 +649,66 @@ class LevelsTab(Tab):
         usable_code = None
 
         tile = str(tile.split(" ", 3)[0])
-        alt_tile = str(alt_tile.split(" ", 3)[0]).split("?",2)[1] # isolates the id
+        alt_tile = str(alt_tile.split(" ", 3)[0]).split("?", 2)[1]  # isolates the id
         new_tile_code = tile
 
         tile_image = None
         tile_image_alt = None
-        if any( tile + " " in self.e[0] for self.e in self.tile_pallete_ref ): # compares tile id to tile ids in universal pallete list
-            tile_image =  self.e[1]
+        if any(
+            tile + " " in self.e[0] for self.e in self.tile_pallete_ref
+        ):  # compares tile id to tile ids in universal pallete list
+            tile_image = self.e[1]
 
-        if (int(percent)<100):
+        if int(percent) < 100:
             new_tile_code += "%" + percent
-            tile_image._PhotoImage__photo.write('temp.png')
-            self.ImageTk_image1 = Image.open('temp.png').convert("RGBA")
-            tile_text = percent+"%"
-            if (alt_tile!="empty"):
-                if any( alt_tile + " " in self.g[0] for self.g in self.tile_pallete_ref ): # compares tile id to tile ids in pallete list
-                    tile_image_alt =  self.g[1]
+            tile_image._PhotoImage__photo.write("temp.png")
+            self.ImageTk_image1 = Image.open("temp.png").convert("RGBA")
+            tile_text = percent + "%"
+            if alt_tile != "empty":
+                if any(
+                    alt_tile + " " in self.g[0] for self.g in self.tile_pallete_ref
+                ):  # compares tile id to tile ids in pallete list
+                    tile_image_alt = self.g[1]
                 new_tile_code += "%" + alt_tile
-                tile_text+="/" + str(100-int(percent)) + "%"
+                tile_text += "/" + str(100 - int(percent)) + "%"
 
-                tile_image_alt._PhotoImage__photo.write('temp2.png')
+                tile_image_alt._PhotoImage__photo.write("temp2.png")
 
-                self.ImageTk_image2 = Image.open('temp2.png').convert("RGBA")
-                self.ImageTk_image2.crop([25,0,50,50]).save("temp2.png")
-                self.ImageTk_image2 = Image.open('temp2.png').convert("RGBA")
+                self.ImageTk_image2 = Image.open("temp2.png").convert("RGBA")
+                self.ImageTk_image2.crop([25, 0, 50, 50]).save("temp2.png")
+                self.ImageTk_image2 = Image.open("temp2.png").convert("RGBA")
 
-                offset = ((25,0))
+                offset = (25, 0)
                 self.ImageTk_image1.paste(self.ImageTk_image2, offset)
             # make a blank image for the text, initialized to transparent text color
-            txt = Image.new("RGBA", (50,50), (255,255,255,0))
+            txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
 
             # get a drawing context
             d = ImageDraw.Draw(txt)
 
             # draw text, half opacity
-            d.text((6,34), tile_text, fill=(0,0,0,255))
-            d.text((4,34), tile_text, fill=(0,0,0,255))
-            d.text((6,36), tile_text, fill=(0,0,0,255))
-            d.text((4,36), tile_text, fill=(0,0,0,255))
-            d.text((5,35), tile_text, fill=(255,255,255,255))
+            d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
+            d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
+            d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
+            d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
+            d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
 
             out = Image.alpha_composite(self.ImageTk_image1, txt)
             self.done = ImageTk.PhotoImage(out)
             tile_image = self.done
 
-        if any( str(new_tile_code) in str(self.g[0].split(" ", 3)) for self.g in self.tile_pallete_ref_in_use ): # compares tile id to tile ids in pallete list
-            tkMessageBox.showinfo(
-                "Uh Oh!", "You already have that!"
-            )
+        if any(
+            str(new_tile_code) in str(self.g[0].split(" ", 3))
+            for self.g in self.tile_pallete_ref_in_use
+        ):  # compares tile id to tile ids in pallete list
+            tkMessageBox.showinfo("Uh Oh!", "You already have that!")
             return
 
-        if len(self.usable_codes)>0:
+        if len(self.usable_codes) > 0:
             usable_code = self.usable_codes[0]
             i = 0
             for ii in self.usable_codes:
-                if ii==usable_code:
+                if ii == usable_code:
                     self.usable_codes.remove(ii)
                 i = i + 1
         else:
@@ -616,10 +717,10 @@ class LevelsTab(Tab):
             )
             return
 
-        count_row=0
-        count_col=0
+        count_row = 0
+        count_col = 0
         for i in self.tile_pallete_ref_in_use:
-            if count_col==7:
+            if count_col == 7:
                 count_col = -1
                 count_row = count_row + 1
             count_col = count_col + 1
@@ -630,7 +731,9 @@ class LevelsTab(Tab):
         self.tile_pallete_ref_in_use.append(ref_tile)
         tk.Button(
             self.tile_pallete.scrollable_frame,
-            text=str(new_tile_code + " " + str(usable_code)), # keep seperate by space cause I use that for splitting
+            text=str(
+                new_tile_code + " " + str(usable_code)
+            ),  # keep seperate by space cause I use that for splitting
             width=40,
             height=40,
             image=tile_image,
@@ -646,10 +749,18 @@ class LevelsTab(Tab):
         for code in self.usable_codes_string:
             self.usable_codes.append(code)
 
-        for widget in self.tile_pallete.scrollable_frame.winfo_children(): # removes any old tiles that might be there from the last file
+        for (
+            widget
+        ) in (
+            self.tile_pallete.scrollable_frame.winfo_children()
+        ):  # removes any old tiles that might be there from the last file
             widget.destroy()
 
-        for i in self.tree.get_children(): # removes any old rules that might be there from the last file
+        for (
+            i
+        ) in (
+            self.tree.get_children()
+        ):  # removes any old rules that might be there from the last file
             self.tree.delete(i)
 
         if self.extracts_mode == False:
@@ -662,20 +773,32 @@ class LevelsTab(Tab):
                 file1 = open(self.lvls_path / lvl)
         lines = file1.readlines()
 
-        self.lvl_bg_path = self.textures_dir / "bg_cave.png" # bg of main level grid
+        self.lvl_bg_path = self.textures_dir / "bg_cave.png"  # bg of main level grid
         if lvl == "abzu.lvl" or lvl.startswith("lake") or lvl.startswith("tide"):
             self.lvl_bg_path = self.textures_dir / "bg_tidepool.png"
-        elif lvl.startswith("babylon") or lvl.startswith("hallofu") or lvl.startswith("tiamat"):
+        elif (
+            lvl.startswith("babylon")
+            or lvl.startswith("hallofu")
+            or lvl.startswith("tiamat")
+        ):
             self.lvl_bg_path = self.textures_dir / "bg_babylon.png"
         elif lvl.startswith("basecamp"):
             self.lvl_bg_path = self.textures_dir / "bg_cave.png"
         elif lvl.startswith("beehive"):
             self.lvl_bg_path = self.textures_dir / "bg_beehive.png"
-        elif lvl.startswith("blackmark") or lvl.startswith("jungle") or lvl.startswith("challenge_moon"):
+        elif (
+            lvl.startswith("blackmark")
+            or lvl.startswith("jungle")
+            or lvl.startswith("challenge_moon")
+        ):
             self.lvl_bg_path = self.textures_dir / "bg_jungle.png"
         elif lvl.startswith("challenge_star"):
             self.lvl_bg_path = self.textures_dir / "bg_temple.png"
-        elif lvl.startswith("challenge_sun") or lvl.startswith("sunken") or lvl.startswith("hundun"):
+        elif (
+            lvl.startswith("challenge_sun")
+            or lvl.startswith("sunken")
+            or lvl.startswith("hundun")
+        ):
             self.lvl_bg_path = self.textures_dir / "bg_sunken.png"
         elif lvl.startswith("city"):
             self.lvl_bg_path = self.textures_dir / "bg_gold.png"
@@ -703,20 +826,20 @@ class LevelsTab(Tab):
         pointed = False
 
         # Enables widgets to use
-        self.scale['state']=tk.NORMAL
-        self.combobox['state']=tk.NORMAL
-        self.combobox_alt['state']=tk.NORMAL
-        self.button_tilecode_del['state']=tk.NORMAL
+        self.scale["state"] = tk.NORMAL
+        self.combobox["state"] = tk.NORMAL
+        self.combobox_alt["state"] = tk.NORMAL
+        self.button_tilecode_del["state"] = tk.NORMAL
 
         self.combobox_alt.grid_remove()
         self.scale.set(100)
         self.combobox.set("\?empty a")
         self.combobox_alt.set("\?empty a")
 
-
         self.tree_levels.bind("<ButtonRelease-1>", self.room_select)
         self.tile_pallete_ref_in_use = []
         self.node = self.tree_levels.insert("", "end", text="placeholder")
+
         def parse_lvl_file(lines, grab_parent_tilecode):
             load_mode = ""
             blocks = []
@@ -743,7 +866,7 @@ class LevelsTab(Tab):
                 line_raw = line
                 line = " ".join(line.split())  # remove duplicate spaces
                 line = line.strip()
-                line_count=line_count + 1
+                line_count = line_count + 1
                 print("parsing " + line)
                 if (
                     line == "// ------------------------------"
@@ -769,7 +892,12 @@ class LevelsTab(Tab):
                         load_mode = "LevelChances"
                     elif line == "// MONSTER CHANCES" and line:
                         load_mode = "MonsterChances"
-                    elif line == "// TEMPLATES" and line or line == "// BASE CAMP (UNLOCKED SURFACE)" and line:
+                    elif (
+                        line == "// TEMPLATES"
+                        and line
+                        or line == "// BASE CAMP (UNLOCKED SURFACE)"
+                        and line
+                    ):
                         load_mode = "Templates"
                     if not grab_parent_tilecode:
                         self.tree.insert(
@@ -793,12 +921,18 @@ class LevelsTab(Tab):
                             text="L1",
                             values=("COMMENT", "", str(line_raw)),
                         )
-                elif load_mode == "RoomChances" and not pointed and pointer == 0 and line and not grab_parent_tilecode:
+                elif (
+                    load_mode == "RoomChances"
+                    and not pointed
+                    and pointer == 0
+                    and line
+                    and not grab_parent_tilecode
+                ):
                     data = line.split(" ", 3)
                     comment = ""
                     value = ""
-                    if len(data)>1:
-                        if str(data[0])!="\-size":
+                    if len(data) > 1:
+                        if str(data[0]) != "\-size":
                             value = str(data[1])
                         else:
                             value = str(data[1]) + " " + str(data[2])
@@ -812,16 +946,31 @@ class LevelsTab(Tab):
                         values=(str(data[0]), str(value), str(comment)),
                     )
                 elif load_mode == "TileCodes" and not pointed and pointer == 0 and line:
-                    data = line.split(" ", 2) # [0] = id [1] = tilecode [2] = comment if it exists
-                    if not (str(data[0]).startswith("//")): # doesn't add tilecodes commented out
-                        if not any( " " + str(data[1]) in self.t[0] for self.t in self.tile_pallete_ref_in_use ): # makes sure the code isn't in use already
+                    data = line.split(
+                        " ", 2
+                    )  # [0] = id [1] = tilecode [2] = comment if it exists
+                    if not (
+                        str(data[0]).startswith("//")
+                    ):  # doesn't add tilecodes commented out
+                        if not any(
+                            " " + str(data[1]) in self.t[0]
+                            for self.t in self.tile_pallete_ref_in_use
+                        ):  # makes sure the code isn't in use already
                             tile_image = self.tile_pallete_ref[0][1]
-                            if any(str(data[0] + " ") in self.d for self.d in self.uni_tile_code_list):  # compares tilecode id to its universal tilecode counterpart
-                                if any( str(data[0] + " ") in self.b[0] for self.b in self.tile_pallete_ref ): # compares tile id to tile ids in pallete list
-                                    tile_image =  self.b[1]
+                            if any(
+                                str(data[0] + " ") in self.d
+                                for self.d in self.uni_tile_code_list
+                            ):  # compares tilecode id to its universal tilecode counterpart
+                                if any(
+                                    str(data[0] + " ") in self.b[0]
+                                    for self.b in self.tile_pallete_ref
+                                ):  # compares tile id to tile ids in pallete list
+                                    tile_image = self.b[1]
                                 ii = 0
                                 for code in self.usable_codes:
-                                    if str(data[1]) == str(code): # this removes the codes from the usable codes list cause it is now taken
+                                    if str(data[1]) == str(
+                                        code
+                                    ):  # this removes the codes from the usable codes list cause it is now taken
                                         self.usable_codes.remove(code)
                                         print(str(code) + " is now taken!")
                                     ii = ii + 1
@@ -830,113 +979,267 @@ class LevelsTab(Tab):
                                 tile_ref.append(tile_image)
                                 self.tile_pallete_ref_in_use.append(tile_ref)
                                 self.panel_sel["image"] = tile_image
-                                self.tile_label["text"] = "Selected Tile: " + str(data[0]) + " " + str(data[1])
+                                self.tile_label["text"] = (
+                                    "Selected Tile: "
+                                    + str(data[0])
+                                    + " "
+                                    + str(data[1])
+                                )
                             else:
                                 try:
-                                    if ( len(str(data[0]).split("%", 2)) == 2 ):  # tile with already existing percent
-                                        if any( str(data[0]).split("%", 2)[0] + " " in self.e[0] for self.e in self.tile_pallete_ref ): # compares tile id to tile ids in pallete list
-                                            tile_image =  self.e[1]
-                                        tile_image._PhotoImage__photo.write('temp.png')
-                                        self.ImageTk_image = Image.open('temp.png').convert("RGBA")
+                                    if (
+                                        len(str(data[0]).split("%", 2)) == 2
+                                    ):  # tile with already existing percent
+                                        if any(
+                                            str(data[0]).split("%", 2)[0] + " "
+                                            in self.e[0]
+                                            for self.e in self.tile_pallete_ref
+                                        ):  # compares tile id to tile ids in pallete list
+                                            tile_image = self.e[1]
+                                        tile_image._PhotoImage__photo.write("temp.png")
+                                        self.ImageTk_image = Image.open(
+                                            "temp.png"
+                                        ).convert("RGBA")
                                         # make a blank image for the text, initialized to transparent text color
-                                        txt = Image.new("RGBA", self.ImageTk_image.size, (255,255,255,0))
+                                        txt = Image.new(
+                                            "RGBA",
+                                            self.ImageTk_image.size,
+                                            (255, 255, 255, 0),
+                                        )
 
                                         # get a drawing context
                                         d = ImageDraw.Draw(txt)
 
                                         # draw text, half opacity
-                                        d.text((4,36), str(str(data[0]).split("%", 2)[1]+"%"), fill=(0,0,0,255))
-                                        d.text((6,36), str(str(data[0]).split("%", 2)[1]+"%"), fill=(0,0,0,255))
-                                        d.text((4,34), str(str(data[0]).split("%", 2)[1]+"%"), fill=(0,0,0,255))
-                                        d.text((6,34), str(str(data[0]).split("%", 2)[1]+"%"), fill=(0,0,0,255))
-                                        d.text((5,35), str(str(data[0]).split("%", 2)[1]+"%"), fill=(255,255,255,255))
+                                        d.text(
+                                            (4, 36),
+                                            str(str(data[0]).split("%", 2)[1] + "%"),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (6, 36),
+                                            str(str(data[0]).split("%", 2)[1] + "%"),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (4, 34),
+                                            str(str(data[0]).split("%", 2)[1] + "%"),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (6, 34),
+                                            str(str(data[0]).split("%", 2)[1] + "%"),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (5, 35),
+                                            str(str(data[0]).split("%", 2)[1] + "%"),
+                                            fill=(255, 255, 255, 255),
+                                        )
 
-                                        out = Image.alpha_composite(self.ImageTk_image, txt)
+                                        out = Image.alpha_composite(
+                                            self.ImageTk_image, txt
+                                        )
                                         self.done = ImageTk.PhotoImage(out)
                                         ii = 0
                                         for code in self.usable_codes:
-                                            if str(data[1]) == str(code): # this removes the codes from the usable codes list cause it is now taken
+                                            if str(data[1]) == str(
+                                                code
+                                            ):  # this removes the codes from the usable codes list cause it is now taken
                                                 self.usable_codes.remove(code)
                                                 print(str(code) + " is now taken!")
                                             ii = ii + 1
                                         tile_ref = []
-                                        tile_ref.append(str(data[0]) + " " + str(data[1]))
+                                        tile_ref.append(
+                                            str(data[0]) + " " + str(data[1])
+                                        )
                                         tile_ref.append(self.done)
                                         self.tile_pallete_ref_in_use.append(tile_ref)
                                         self.panel_sel["image"] = tile_image
-                                        self.tile_label["text"] = "Selected Tile: " + str(data[0]) + " " + str(data[1])
-                                        if any( str(data[0]) + " " in self.e[0] for self.e in self.tile_pallete_ref_in_use ): # compares tile id to tile ids in pallete list
-                                            tile_image =  self.e[1]
-                                    elif ( len(str(data[0]).split("%", 3)) == 3 ):  # tile with already existing percent and alt tile
+                                        self.tile_label["text"] = (
+                                            "Selected Tile: "
+                                            + str(data[0])
+                                            + " "
+                                            + str(data[1])
+                                        )
+                                        if any(
+                                            str(data[0]) + " " in self.e[0]
+                                            for self.e in self.tile_pallete_ref_in_use
+                                        ):  # compares tile id to tile ids in pallete list
+                                            tile_image = self.e[1]
+                                    elif (
+                                        len(str(data[0]).split("%", 3)) == 3
+                                    ):  # tile with already existing percent and alt tile
                                         tile_image = self.tile_pallete_ref[0][1]
-                                        if any( str(data[0]).split("%", 2)[0] + " " in self.e[0] for self.e in self.tile_pallete_ref ): # compares tile id to tile ids in pallete list
-                                            tile_image =  self.e[1]
-                                        if any( "\?" + str(data[0]).split("%", 2)[2] + " " in self.g[0] for self.g in self.tile_pallete_ref ): # compares tile id to tile ids in pallete list
-                                            tile_image_alt =  self.g[1]
+                                        if any(
+                                            str(data[0]).split("%", 2)[0] + " "
+                                            in self.e[0]
+                                            for self.e in self.tile_pallete_ref
+                                        ):  # compares tile id to tile ids in pallete list
+                                            tile_image = self.e[1]
+                                        if any(
+                                            "\?" + str(data[0]).split("%", 2)[2] + " "
+                                            in self.g[0]
+                                            for self.g in self.tile_pallete_ref
+                                        ):  # compares tile id to tile ids in pallete list
+                                            tile_image_alt = self.g[1]
 
-                                        tile_image._PhotoImage__photo.write('temp.png')
-                                        tile_image_alt._PhotoImage__photo.write('temp2.png')
+                                        tile_image._PhotoImage__photo.write("temp.png")
+                                        tile_image_alt._PhotoImage__photo.write(
+                                            "temp2.png"
+                                        )
 
-                                        self.ImageTk_image1 = Image.open('temp.png').convert("RGBA")
-                                        self.ImageTk_image2 = Image.open('temp2.png').convert("RGBA")
-                                        self.ImageTk_image2.crop([25,0,50,50]).save("temp2.png")
-                                        self.ImageTk_image2 = Image.open('temp2.png').convert("RGBA")
+                                        self.ImageTk_image1 = Image.open(
+                                            "temp.png"
+                                        ).convert("RGBA")
+                                        self.ImageTk_image2 = Image.open(
+                                            "temp2.png"
+                                        ).convert("RGBA")
+                                        self.ImageTk_image2.crop([25, 0, 50, 50]).save(
+                                            "temp2.png"
+                                        )
+                                        self.ImageTk_image2 = Image.open(
+                                            "temp2.png"
+                                        ).convert("RGBA")
 
-                                        offset = ((25,0))
-                                        self.ImageTk_image1.paste(self.ImageTk_image2, offset)
+                                        offset = (25, 0)
+                                        self.ImageTk_image1.paste(
+                                            self.ImageTk_image2, offset
+                                        )
                                         # make a blank image for the text, initialized to transparent text color
-                                        txt = Image.new("RGBA", (50,50), (255,255,255,0))
+                                        txt = Image.new(
+                                            "RGBA", (50, 50), (255, 255, 255, 0)
+                                        )
 
                                         # get a drawing context
                                         d = ImageDraw.Draw(txt)
 
                                         # draw text, half opacity
-                                        d.text((6,34), str(str(data[0]).split("%", 2)[1]+"%/" + str(100-int(str(data[0]).split("%", 2)[1])) + "%"), fill=(0,0,0,255))
-                                        d.text((4,34), str(str(data[0]).split("%", 2)[1]+"%/" + str(100-int(str(data[0]).split("%", 2)[1])) + "%"), fill=(0,0,0,255))
-                                        d.text((6,36), str(str(data[0]).split("%", 2)[1]+"%/" + str(100-int(str(data[0]).split("%", 2)[1])) + "%"), fill=(0,0,0,255))
-                                        d.text((4,36), str(str(data[0]).split("%", 2)[1]+"%/" + str(100-int(str(data[0]).split("%", 2)[1])) + "%"), fill=(0,0,0,255))
-                                        d.text((5,35), str(str(data[0]).split("%", 2)[1]+"%/" + str(100-int(str(data[0]).split("%", 2)[1])) + "%"), fill=(255,255,255,255))
+                                        d.text(
+                                            (6, 34),
+                                            str(
+                                                str(data[0]).split("%", 2)[1]
+                                                + "%/"
+                                                + str(
+                                                    100
+                                                    - int(str(data[0]).split("%", 2)[1])
+                                                )
+                                                + "%"
+                                            ),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (4, 34),
+                                            str(
+                                                str(data[0]).split("%", 2)[1]
+                                                + "%/"
+                                                + str(
+                                                    100
+                                                    - int(str(data[0]).split("%", 2)[1])
+                                                )
+                                                + "%"
+                                            ),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (6, 36),
+                                            str(
+                                                str(data[0]).split("%", 2)[1]
+                                                + "%/"
+                                                + str(
+                                                    100
+                                                    - int(str(data[0]).split("%", 2)[1])
+                                                )
+                                                + "%"
+                                            ),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (4, 36),
+                                            str(
+                                                str(data[0]).split("%", 2)[1]
+                                                + "%/"
+                                                + str(
+                                                    100
+                                                    - int(str(data[0]).split("%", 2)[1])
+                                                )
+                                                + "%"
+                                            ),
+                                            fill=(0, 0, 0, 255),
+                                        )
+                                        d.text(
+                                            (5, 35),
+                                            str(
+                                                str(data[0]).split("%", 2)[1]
+                                                + "%/"
+                                                + str(
+                                                    100
+                                                    - int(str(data[0]).split("%", 2)[1])
+                                                )
+                                                + "%"
+                                            ),
+                                            fill=(255, 255, 255, 255),
+                                        )
 
-                                        out = Image.alpha_composite(self.ImageTk_image1, txt)
+                                        out = Image.alpha_composite(
+                                            self.ImageTk_image1, txt
+                                        )
                                         self.done = ImageTk.PhotoImage(out)
                                         ii = 0
                                         for code in self.usable_codes:
-                                            if str(data[1]) == str(code): # this removes the codes from the usable codes list cause it is now taken
+                                            if str(data[1]) == str(
+                                                code
+                                            ):  # this removes the codes from the usable codes list cause it is now taken
                                                 self.usable_codes.remove(code)
                                                 print(str(code) + " is now taken!")
                                             ii = ii + 1
                                         tile_ref = []
-                                        tile_ref.append(str(data[0]) + " " + str(data[1]))
+                                        tile_ref.append(
+                                            str(data[0]) + " " + str(data[1])
+                                        )
                                         tile_ref.append(self.done)
                                         self.tile_pallete_ref_in_use.append(tile_ref)
                                         self.panel_sel["image"] = tile_image
-                                        self.tile_label["text"] = "Selected Tile: " + str(data[0]) + " " + str(data[1])
-                                        if any( str(data[0]) + " " in self.r[0] for self.r in self.tile_pallete_ref_in_use ): # compares tile id to tile ids in pallete list
-                                            tile_image =  self.r[1]
+                                        self.tile_label["text"] = (
+                                            "Selected Tile: "
+                                            + str(data[0])
+                                            + " "
+                                            + str(data[1])
+                                        )
+                                        if any(
+                                            str(data[0]) + " " in self.r[0]
+                                            for self.r in self.tile_pallete_ref_in_use
+                                        ):  # compares tile id to tile ids in pallete list
+                                            tile_image = self.r[1]
                                 except Exception as ee:
                                     tkMessageBox.showinfo(
-                                        "Uh Oh!", "skipped " + str(data[0]) + "\n" + str(ee)
+                                        "Uh Oh!",
+                                        "skipped " + str(data[0]) + "\n" + str(ee),
                                     )  # A tilecode id thats missing from the universal database and needs to be added
                                     # structure (id tilecode percent-without-percent-sign second-tile)
 
-                            #new_image = ImageTk.PhotoImage(tile_image)
-                            #new_image = new_image.text((10,10), "My Text", font=self.myFont, fill=(255,255,0))
-                            if tile_image!=None:
-                                count_row=0
-                                count_col=-1
+                            # new_image = ImageTk.PhotoImage(tile_image)
+                            # new_image = new_image.text((10,10), "My Text", font=self.myFont, fill=(255,255,0))
+                            if tile_image != None:
+                                count_row = 0
+                                count_col = -1
                                 for i in self.tile_pallete_ref_in_use:
-                                    if count_col==7:
+                                    if count_col == 7:
                                         count_col = -1
                                         count_row = count_row + 1
                                     count_col = count_col + 1
 
                                 tk.Button(
                                     self.tile_pallete.scrollable_frame,
-                                    text=str(data[0] + " " + data[1]), # keep seperate by space cause I use that for splitting
+                                    text=str(
+                                        data[0] + " " + data[1]
+                                    ),  # keep seperate by space cause I use that for splitting
                                     width=40,
                                     height=40,
                                     image=tile_image,
-                                    command=lambda r=count_row, c=count_col: self.tile_pick(r, c),
+                                    command=lambda r=count_row, c=count_col: self.tile_pick(
+                                        r, c
+                                    ),
                                 ).grid(row=count_row, column=count_col)
                                 count = count + 1
                                 self.count_col = self.count_col + 1
@@ -945,11 +1248,17 @@ class LevelsTab(Tab):
                                     self.count_row = self.count_row + 1
                                     self.count_col = 0
                                 count_total = count_total + 1
-                elif load_mode == "LevelChances" and not pointed and pointer == 0 and line and not grab_parent_tilecode:
+                elif (
+                    load_mode == "LevelChances"
+                    and not pointed
+                    and pointer == 0
+                    and line
+                    and not grab_parent_tilecode
+                ):
                     data = line.split(" ", 4)
                     comment = ""
                     value = ""
-                    if len(data)>1:
+                    if len(data) > 1:
                         value = str(data[1])
                     comments = line.split("//", 1)
                     if len(comments) > 1:  # Makes sure a comment even exists
@@ -961,12 +1270,16 @@ class LevelsTab(Tab):
                         values=(str(data[0]), str(value), str(comment)),
                     )
                 elif (
-                    load_mode == "MonsterChances" and not pointed and pointer == 0 and line and not grab_parent_tilecode
+                    load_mode == "MonsterChances"
+                    and not pointed
+                    and pointer == 0
+                    and line
+                    and not grab_parent_tilecode
                 ):
                     data = line.split(" ", 1)
                     comment = ""
                     value = ""
-                    if len(data)>1:
+                    if len(data) > 1:
                         value = str(data[1])
                     comments = line.split("//", 1)
                     if len(comments) > 1:  # Makes sure a comment even exists
@@ -1001,7 +1314,9 @@ class LevelsTab(Tab):
                         pointed = False
                         pointer = 0
                     elif line.startswith("//") and not pointed and line:
-                        self.tree.insert("", "end", text="L1", values=("COMMENT", "", line_raw))
+                        self.tree.insert(
+                            "", "end", text="L1", values=("COMMENT", "", line_raw)
+                        )
                     elif not line and len(self.rooms) > 0:
                         self.new_room = self.tree_levels.insert(
                             self.node, "end", values=self.rooms, text="room"
@@ -1021,43 +1336,76 @@ class LevelsTab(Tab):
                         print(str(line) + " parsed")
 
             file_id = self.tree_files.selection()[0]
-            if str(self.tree_files.item(file_id, option="text")).startswith("generic"): # adds tilecodes to generic that it relies on yet doesn't provide
-                generic_needs = [["4","\?push_block"],["t","\?treasure"],["1","\?floor"],["6","\?chunk_air"],["=","\?minewood_floor"]]
+            if str(self.tree_files.item(file_id, option="text")).startswith(
+                "generic"
+            ):  # adds tilecodes to generic that it relies on yet doesn't provide
+                generic_needs = [
+                    ["4", "\?push_block"],
+                    ["t", "\?treasure"],
+                    ["1", "\?floor"],
+                    ["6", "\?chunk_air"],
+                    ["=", "\?minewood_floor"],
+                ]
                 for need in generic_needs:
                     for code in self.usable_codes:
-                        if str(code)==need[0] and not any(need[0] in str(code_in_use[0].split(" ", 3)[1]) for code_in_use in self.tile_pallete_ref_in_use):
-                            if any(need[1] in str(str(self.universal_code[0]).split(" ", 3)[0]) for self.universal_code in self.tile_pallete_ref):
+                        if str(code) == need[0] and not any(
+                            need[0] in str(code_in_use[0].split(" ", 3)[1])
+                            for code_in_use in self.tile_pallete_ref_in_use
+                        ):
+                            if any(
+                                need[1]
+                                in str(str(self.universal_code[0]).split(" ", 3)[0])
+                                for self.universal_code in self.tile_pallete_ref
+                            ):
                                 tile_ref = []
-                                tile_ref.append(str(str(self.universal_code[0]).split(" ", 3)[0]) + " " + need[0])
+                                tile_ref.append(
+                                    str(str(self.universal_code[0]).split(" ", 3)[0])
+                                    + " "
+                                    + need[0]
+                                )
                                 tile_ref.append(self.universal_code[1])
                                 self.tile_pallete_ref_in_use.append(tile_ref)
                                 print("Gave generic needed tilecode: " + need[1])
                 self.populate_tilecode_pallete()
 
-
-
-        parse_lvl_file(lines, False) # parses to levels contents
+        parse_lvl_file(lines, False)  # parses to levels contents
         file_id = self.tree_files.selection()[0]
         lines_again = ""
-        if str(self.tree_files.item(file_id, option="text")).startswith("blackmark"): # goes back to grab levels parent data used in game
+        if str(self.tree_files.item(file_id, option="text")).startswith(
+            "blackmark"
+        ):  # goes back to grab levels parent data used in game
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "junglearea.lvl")
             else:
                 lines_again = open(self.lvls_path / "junglearea.lvl")
             parse_lvl_file(lines_again.readlines(), True)
-        elif str(self.tree_files.item(file_id, option="text")).startswith("vlads") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_moon"):
+        elif str(self.tree_files.item(file_id, option="text")).startswith(
+            "vlads"
+        ) or str(self.tree_files.item(file_id, option="text")).startswith(
+            "challenge_moon"
+        ):
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "volcanoarea.lvl")
             else:
                 lines_again = open(self.lvls_path / "volcanoarea.lvl")
             parse_lvl_file(lines_again.readlines(), True)
-        elif str(self.tree_files.item(file_id, option="text")).startswith("hallofush") or str(self.tree_files.item(file_id, option="text")).startswith("babylonarea_1") or str(self.tree_files.item(file_id, option="text")).startswith("palace"):
+        elif (
+            str(self.tree_files.item(file_id, option="text")).startswith("hallofush")
+            or str(self.tree_files.item(file_id, option="text")).startswith(
+                "babylonarea_1"
+            )
+            or str(self.tree_files.item(file_id, option="text")).startswith("palace")
+        ):
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "babylonarea.lvl")
             else:
                 lines_again = open(self.lvls_path / "babylonarea.lvl")
             parse_lvl_file(lines_again.readlines(), True)
-        elif str(self.tree_files.item(file_id, option="text")).startswith("lake") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_star"):
+        elif str(self.tree_files.item(file_id, option="text")).startswith(
+            "lake"
+        ) or str(self.tree_files.item(file_id, option="text")).startswith(
+            "challenge_star"
+        ):
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "tidepoolarea.lvl")
             else:
@@ -1069,25 +1417,33 @@ class LevelsTab(Tab):
             else:
                 lines_again = open(self.lvls_path / "basecamp.lvl")
             parse_lvl_file(lines_again.readlines(), True)
-        elif str(self.tree_files.item(file_id, option="text")).startswith("challenge_sun"):
+        elif str(self.tree_files.item(file_id, option="text")).startswith(
+            "challenge_sun"
+        ):
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "sunkencityarea.lvl")
             else:
                 lines_again = open(self.lvls_path / "sunkencityarea.lvl")
             parse_lvl_file(lines_again.readlines(), True)
-        if not str(self.tree_files.item(file_id, option="text")).startswith("basecamp") and not str(self.tree_files.item(file_id, option="text")).startswith("generic"):
+        if not str(self.tree_files.item(file_id, option="text")).startswith(
+            "basecamp"
+        ) and not str(self.tree_files.item(file_id, option="text")).startswith(
+            "generic"
+        ):
             if self.extracts_mode == False:
                 lines_again = open(self.lvls_path + "/" + "generic.lvl")
             else:
                 lines_again = open(self.lvls_path / "generic.lvl")
-            parse_lvl_file(lines_again.readlines(), True) # finishes by grabbing parent generics tildecode data
-        self.combobox['values'] = self.uni_tile_code_list
-        self.combobox_alt['values'] = self.uni_tile_code_list
-        #if self.tree.item(0, option="text")=="placeholder":
-            #tree.delete(0)
+            parse_lvl_file(
+                lines_again.readlines(), True
+            )  # finishes by grabbing parent generics tildecode data
+        self.combobox["values"] = self.uni_tile_code_list
+        self.combobox_alt["values"] = self.uni_tile_code_list
+        # if self.tree.item(0, option="text")=="placeholder":
+        # tree.delete(0)
 
     def updateValue(self, event):
-        if int(self.scale.get())==100:
+        if int(self.scale.get()) == 100:
             self.combobox_alt.grid_remove()
             self.combobox.grid(columnspan=2)
         else:
@@ -1099,48 +1455,106 @@ class LevelsTab(Tab):
         canvas["width"] = self.mag * cols
         canvas["height"] = self.mag * rows
 
-        if not dual: # applies normal bg image settings to main grid
-            self.cur_lvl_bg_path = self.lvl_bg_path # store as a temp dif variable so it can switch back to the normal bg when needed
+        if not dual:  # applies normal bg image settings to main grid
+            self.cur_lvl_bg_path = (
+                self.lvl_bg_path
+            )  # store as a temp dif variable so it can switch back to the normal bg when needed
 
             file_id = self.tree_files.selection()[0]
             room_item = self.tree_levels.selection()[0]
-            room_id = self.tree_levels.parent(room_item) # checks which room is being opened to see if a special bg is needed
-            factor = 1.0 # keeps image the same
-            if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(self.tree_levels.item(room_id, option="text")).startswith("\.setroom1"): # mothership rooms are setroom10-1 to setroom13-2
+            room_id = self.tree_levels.parent(
+                room_item
+            )  # checks which room is being opened to see if a special bg is needed
+            factor = 1.0  # keeps image the same
+            if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
+                self.tree_levels.item(room_id, option="text")
+            ).startswith(
+                "\.setroom1"
+            ):  # mothership rooms are setroom10-1 to setroom13-2
                 self.cur_lvl_bg_path = self.textures_dir / "bg_mothership.png"
-            elif str(self.tree_files.item(file_id, option="text")).startswith("blackmark"):
-                    factor = 2.5 # brightens the image for black market
-            elif str(self.tree_files.item(file_id, option="text")).startswith("generic") or str(self.tree_files.item(file_id, option="text")).startswith("cosmic") or str(self.tree_files.item(file_id, option="text")).startswith("duat") or str(self.tree_files.item(file_id, option="text")).startswith("palace") or str(self.tree_files.item(file_id, option="text")).startswith("ending_hard") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_m") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_st"):
-                    factor = 0 # darkens the image for cosmic ocean and duat and others
+            elif str(self.tree_files.item(file_id, option="text")).startswith(
+                "blackmark"
+            ):
+                factor = 2.5  # brightens the image for black market
+            elif (
+                str(self.tree_files.item(file_id, option="text")).startswith("generic")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "cosmic"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith("duat")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "palace"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "ending_hard"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_m"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_st"
+                )
+            ):
+                factor = 0  # darkens the image for cosmic ocean and duat and others
 
             image = Image.open(self.cur_lvl_bg_path)
-            image = image.resize((int(canvas["width"]), int(canvas["height"])), Image.BILINEAR) ## The (250, 250) is (height, width)
+            image = image.resize(
+                (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
+            )  ## The (250, 250) is (height, width)
             enhancer = ImageEnhance.Brightness(image)
 
             self.im_output = enhancer.enhance(factor)
 
             self.lvl_bg = ImageTk.PhotoImage(self.im_output)
             canvas.create_image(0, 0, image=self.lvl_bg, anchor="nw")
-        else: # applies special image settings if working with dual grid
-            self.lvl_bgbg_path = self.lvl_bg_path # Creates seperate image path variable for bgbg image
+        else:  # applies special image settings if working with dual grid
+            self.lvl_bgbg_path = (
+                self.lvl_bg_path
+            )  # Creates seperate image path variable for bgbg image
 
             file_id = self.tree_files.selection()[0]
             room_item = self.tree_levels.selection()[0]
-            room_id = self.tree_levels.parent(room_item) # checks which room is being opened to see if a special bg is needed
-            factor = 0.6 # darkens the image
+            room_id = self.tree_levels.parent(
+                room_item
+            )  # checks which room is being opened to see if a special bg is needed
+            factor = 0.6  # darkens the image
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png":
-                if str(self.tree_levels.item(room_id, option="text")).startswith("\.mothership"):
+                if str(self.tree_levels.item(room_id, option="text")).startswith(
+                    "\.mothership"
+                ):
                     self.lvl_bgbg_path = self.textures_dir / "bg_mothership.png"
-                    factor = 1.0 # keeps image the same
+                    factor = 1.0  # keeps image the same
                 else:
-                    factor = 2.5 # brightens the image for ices caves
-            elif str(self.tree_files.item(file_id, option="text")).startswith("blackmark"):
-                    factor = 2.5 # brightens the image for black market
-            elif str(self.tree_files.item(file_id, option="text")).startswith("generic") or str(self.tree_files.item(file_id, option="text")).startswith("cosmic") or str(self.tree_files.item(file_id, option="text")).startswith("duat") or str(self.tree_files.item(file_id, option="text")).startswith("palace") or str(self.tree_files.item(file_id, option="text")).startswith("ending_hard") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_m") or str(self.tree_files.item(file_id, option="text")).startswith("challenge_st"):
-                    factor = 0 # darkens the image for cosmic ocean and duat and others
+                    factor = 2.5  # brightens the image for ices caves
+            elif str(self.tree_files.item(file_id, option="text")).startswith(
+                "blackmark"
+            ):
+                factor = 2.5  # brightens the image for black market
+            elif (
+                str(self.tree_files.item(file_id, option="text")).startswith("generic")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "cosmic"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith("duat")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "palace"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "ending_hard"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_m"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_st"
+                )
+            ):
+                factor = 0  # darkens the image for cosmic ocean and duat and others
 
             image_dual = Image.open(self.lvl_bgbg_path)
-            image_dual = image_dual.resize((int(canvas["width"]), int(canvas["height"])), Image.BILINEAR) ## The (250, 250) is (height, width)
+            image_dual = image_dual.resize(
+                (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
+            )  ## The (250, 250) is (height, width)
             enhancer = ImageEnhance.Brightness(image_dual)
 
             self.im_output_dual = enhancer.enhance(factor)
@@ -1148,14 +1562,22 @@ class LevelsTab(Tab):
             self.lvl_bgbg = ImageTk.PhotoImage(self.im_output_dual)
             canvas.create_image(0, 0, image=self.lvl_bgbg, anchor="nw")
 
-        #finishes by drawing grid on top
+        # finishes by drawing grid on top
         for i in range(0, cols + 2):
             canvas.create_line(
-                (i) * self.mag, 0, (i) * self.mag, (rows) * self.mag, fill="#F0F0F0",
+                (i) * self.mag,
+                0,
+                (i) * self.mag,
+                (rows) * self.mag,
+                fill="#F0F0F0",
             )
         for i in range(0, rows):
             canvas.create_line(
-                0, (i) * self.mag, self.mag * (cols + 2), (i) * self.mag, fill="#F0F0F0",
+                0,
+                (i) * self.mag,
+                self.mag * (cols + 2),
+                (i) * self.mag,
+                fill="#F0F0F0",
             )
 
     def room_select(self, _event):  # Loads room when click if not parent node
@@ -1195,17 +1617,21 @@ class LevelsTab(Tab):
 
             # self.mag = self.canvas.winfo_height() / self.rows - 30
             if not self.dual_mode:
-                self.__draw_grid(self.cols, self.rows, self.canvas, False) # cols rows canvas dual(True/False)
+                self.__draw_grid(
+                    self.cols, self.rows, self.canvas, False
+                )  # cols rows canvas dual(True/False)
                 self.canvas_dual["width"] = 0
                 self.canvas_dual["height"] = 0
                 self.canvas.grid()
-                self.canvas_dual.grid_remove() # hides it for now
+                self.canvas_dual.grid_remove()  # hides it for now
                 self.foreground_label.grid_remove()
                 self.background_label.grid_remove()
             else:
                 self.canvas.grid()
-                self.canvas_dual.grid() # brings it back
-                self.__draw_grid(int((self.cols - 1) / 2), self.rows, self.canvas, False) # cols rows canvas dual(True/False)
+                self.canvas_dual.grid()  # brings it back
+                self.__draw_grid(
+                    int((self.cols - 1) / 2), self.rows, self.canvas, False
+                )  # cols rows canvas dual(True/False)
                 self.__draw_grid(
                     int((self.cols - 1) / 2), self.rows, self.canvas_dual, True
                 )
@@ -1230,7 +1656,10 @@ class LevelsTab(Tab):
                 for block in str(room_row):
                     if str(block) != " ":
                         for pallete_block in self.tile_pallete_ref_in_use:
-                            if any( str(" " + block) in str(self.c[0]) for self.c in self.tile_pallete_ref_in_use ):
+                            if any(
+                                str(" " + block) in str(self.c[0])
+                                for self.c in self.tile_pallete_ref_in_use
+                            ):
                                 tile_image = self.c[1]
                             else:
                                 print(
@@ -1238,9 +1667,7 @@ class LevelsTab(Tab):
                                 )  # There's a missing tile id somehow
                         if self.dual_mode and curcol > int((self.cols - 1) / 2):
                             x = int(curcol - ((self.cols - 1) / 2) - 1)
-                            self.tiles[currow][
-                                curcol
-                            ] = self.canvas_dual.create_image(
+                            self.tiles[currow][curcol] = self.canvas_dual.create_image(
                                 x * self.mag,
                                 currow * self.mag,
                                 image=tile_image,
@@ -1271,11 +1698,11 @@ class LevelsTab(Tab):
 
                     curcol = curcol + 1
 
-
     def OnDoubleClick(self, treeView):
         # First check if a blank space was selected
         entryIndex = treeView.focus()
-        if '' == entryIndex: return
+        if "" == entryIndex:
+            return
 
         # Set up window
         win = tk.Toplevel()
@@ -1293,35 +1720,35 @@ class LevelsTab(Tab):
                 values = treeView.item(child)["values"]
                 break
 
-        col1Lbl = tk.Label(win, text = "Entry: ")
+        col1Lbl = tk.Label(win, text="Entry: ")
         col1Ent = tk.Entry(win)
-        col1Ent.insert(0, values[0]) # Default is column 1's current value
-        col1Lbl.grid(row = 0, column = 0)
-        col1Ent.grid(row = 0, column = 1)
+        col1Ent.insert(0, values[0])  # Default is column 1's current value
+        col1Lbl.grid(row=0, column=0)
+        col1Ent.grid(row=0, column=1)
 
-        col2Lbl = tk.Label(win, text = "Value: ")
+        col2Lbl = tk.Label(win, text="Value: ")
         col2Ent = tk.Entry(win)
-        col2Ent.insert(0, values[1]) # Default is column 2's current value
-        col2Lbl.grid(row = 0, column = 2)
-        col2Ent.grid(row = 0, column = 3)
+        col2Ent.insert(0, values[1])  # Default is column 2's current value
+        col2Lbl.grid(row=0, column=2)
+        col2Ent.grid(row=0, column=3)
 
-        col3Lbl = tk.Label(win, text = "Note: ")
+        col3Lbl = tk.Label(win, text="Note: ")
         col3Ent = tk.Entry(win)
-        col3Ent.insert(0, values[2]) # Default is column 3's current value
-        col3Lbl.grid(row = 0, column = 4)
-        col3Ent.grid(row = 0, column = 5)
+        col3Ent.insert(0, values[2])  # Default is column 3's current value
+        col3Lbl.grid(row=0, column=4)
+        col3Ent.grid(row=0, column=5)
 
         def UpdateThenDestroy():
             if self.ConfirmEntry(treeView, col1Ent.get(), col2Ent.get(), col3Ent.get()):
                 win.destroy()
 
-        okButt = tk.Button(win, text = "Ok")
+        okButt = tk.Button(win, text="Ok")
         okButt.bind("<Button-1>", lambda e: UpdateThenDestroy())
-        okButt.grid(row = 1, column = 2)
+        okButt.grid(row=1, column=2)
 
-        canButt = tk.Button(win, text = "Cancel")
+        canButt = tk.Button(win, text="Cancel")
         canButt.bind("<Button-1>", lambda c: win.destroy())
-        canButt.grid(row = 1, column = 4)
+        canButt.grid(row=1, column=4)
 
     def ConfirmEntry(self, treeView, entry1, entry2, entry3):
         ####
@@ -1335,7 +1762,7 @@ class LevelsTab(Tab):
         self.DeleteCurrentEntry(treeView)
 
         # Put it back in with the upated values
-        treeView.insert('', currInd, values = (entry1, entry2, entry3))
+        treeView.insert("", currInd, values=(entry1, entry2, entry3))
         self.save_needed = True
 
         return True
@@ -1343,7 +1770,8 @@ class LevelsTab(Tab):
     def DeleteCurrentEntry(self, treeView):
         curr = treeView.focus()
 
-        if '' == curr: return
+        if "" == curr:
+            return
 
         treeView.delete(curr)
 
@@ -1358,26 +1786,34 @@ class LevelsTab(Tab):
         screen_width = int(GetSystemMetrics(0))
         screen_height = int(GetSystemMetrics(1))
 
-        size = tuple(int(_) for _ in toplevel.geometry().split('+')[0].split('x'))
-        x = screen_width/2 - size[0]/2
-        y = screen_height/2 - size[1]/2
+        size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
+        x = screen_width / 2 - size[0] / 2
+        y = screen_height / 2 - size[1] / 2
 
         toplevel.geometry("+%d+%d" % (x, y))
 
     def populate_tilecode_pallete(self):
-        for widget in self.tile_pallete.scrollable_frame.winfo_children(): # resets tile pallete to add them all back without the deleted one
+        for (
+            widget
+        ) in (
+            self.tile_pallete.scrollable_frame.winfo_children()
+        ):  # resets tile pallete to add them all back without the deleted one
             widget.destroy()
-        count_row=0
-        count_col=-1
+        count_row = 0
+        count_col = -1
         for tile_keep in self.tile_pallete_ref_in_use:
-            if count_col==7:
+            if count_col == 7:
                 count_col = -1
                 count_row = count_row + 1
             count_col = count_col + 1
 
             tk.Button(
                 self.tile_pallete.scrollable_frame,
-                text=str(tile_keep[0].split(" ", 2)[0]) + " " + str(tile_keep[0].split(" ", 2)[1]), # keep seperate by space cause I use that for splitting
+                text=str(tile_keep[0].split(" ", 2)[0])
+                + " "
+                + str(
+                    tile_keep[0].split(" ", 2)[1]
+                ),  # keep seperate by space cause I use that for splitting
                 width=40,
                 height=40,
                 image=tile_keep[1],
@@ -1389,10 +1825,10 @@ class LevelsTab(Tab):
         self.tab_control.grid_remove()
         self.tree_files.grid_remove()
         # Resets widgets
-        self.scale['state']=tk.DISABLED
-        self.combobox['state']=tk.DISABLED
-        self.combobox_alt['state']=tk.DISABLED
-        self.button_tilecode_del['state']=tk.DISABLED
+        self.scale["state"] = tk.DISABLED
+        self.combobox["state"] = tk.DISABLED
+        self.combobox_alt["state"] = tk.DISABLED
+        self.button_tilecode_del["state"] = tk.DISABLED
         self.canvas.delete("all")
         self.canvas_dual.delete("all")
         self.canvas.grid_remove()
@@ -1402,5 +1838,9 @@ class LevelsTab(Tab):
         self.button_back.grid_remove()
         self.button_save.grid_remove()
         self.vsb_tree_files.grid_remove()
-        for widget in self.tile_pallete.scrollable_frame.winfo_children(): # removes any old tiles that might be there from the last file
+        for (
+            widget
+        ) in (
+            self.tile_pallete.scrollable_frame.winfo_children()
+        ):  # removes any old tiles that might be there from the last file
             widget.destroy()
