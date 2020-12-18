@@ -15,7 +15,6 @@ from tkinter.scrolledtext import ScrolledText
 import requests
 from packaging import version
 from PIL import Image, ImageTk
-from ttkthemes import ThemedTk
 
 from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.constants import (
@@ -67,7 +66,7 @@ class ModlunkyUI:
         self._shutdown_handlers = []
         self._shutting_down = False
 
-        self.root = ThemedTk(className="Modlunky2")  # Equilux Black
+        self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
         self.root.geometry("950x650")
         # self.root.resizable(False, False)

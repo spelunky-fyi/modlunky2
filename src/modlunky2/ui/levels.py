@@ -8,7 +8,6 @@ import tkinter.messagebox as tkMessageBox
 from tkinter import filedialog, ttk
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
-from ttkthemes import ThemedTk
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableFrame, Tab
@@ -20,8 +19,8 @@ class LevelsTab(Tab):
     def __init__(self, tab_control, install_dir, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         # TODO: Get actual resolution
-        self.screen_width = 1920
-        self.screen_height = 1080
+        self.screen_width = 400
+        self.screen_height = 300
         self.extracts_mode = True
         self.tab_control = tab_control
         self.install_dir = install_dir
