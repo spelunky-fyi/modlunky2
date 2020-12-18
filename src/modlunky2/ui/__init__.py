@@ -67,7 +67,7 @@ class ModlunkyUI:
         self._shutdown_handlers = []
         self._shutting_down = False
 
-        self.root = ThemedTk(className="Modlunky2", theme="black")  # Equilux Black
+        self.root = ThemedTk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
         self.root.geometry("950x650")
         # self.root.resizable(False, False)

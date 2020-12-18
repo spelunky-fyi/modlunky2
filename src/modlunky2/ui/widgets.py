@@ -22,7 +22,7 @@ class ConsoleWindow(tk.Toplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.wm_title("Modlunky2 Console")
-        self.geometry("1024x600")
+        self.geometry("1280x600")
         # self.resizable(False, False)
         self.protocol("WM_DELETE_WINDOW", self.close)
 
