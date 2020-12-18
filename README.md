@@ -11,9 +11,11 @@ in making this tool a reality.
 
 ## Installation
 
-Grabbed the latest release from https://github.com/spelunky-fyi/modlunky2/releases . Copy the modlunky2.exe to your
-Spelunky 2 installation directory and run it. A terminal will appear with a link to webpage. It should be
-http://127.0.0.1:8040/ . Leave this running while you're using the modding UI.
+[Download the latest version](https://github.com/spelunky-fyi/modlunky2/releases) of modlunky2.exe to your Spelunky 2 installation directory.
+
+## Usage
+
+Follow the instructions in the [Modlunky 2 Wiki](https://github.com/spelunky-fyi/modlunky2/wiki).
 
 ## Disclaimer
 You are strongly discouraged from using any modding tools in your actual online Steam installation as to prevent unlocking achievements, corrupting your savefile and cheating in the leaderboards. You should make a copy of your game somewhere else and install [Mr. Goldbergs Steam Emulator](https://gitlab.com/Mr_Goldberg/goldberg_emulator/-/releases) in the game directory. (TL;DR: Copy the steam_api64.dll from the zip to the offline game directory and create steam_appid.txt with the text `418530` in it.) Also block the modded installation in your firewall. If you break anything using this tool you get to keep both pieces. Do not report modding related bugs to Blitworks.
