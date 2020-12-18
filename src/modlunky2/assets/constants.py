@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import PurePosixPath
 
 KNOWN_FONTS_V1 = [
     "Data/Fonts/fontdebug.fnb",
@@ -316,7 +316,7 @@ KNOWN_TEXTURES_V1 = [
     "Data/Textures/splash2.png",
 ]
 
-KNOWN_TEXTURES_V2 = [str(Path(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1]
+KNOWN_TEXTURES_V2 = [str(PurePosixPath(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1]
 
 KNOWN_FILEPATHS = [
     *KNOWN_FONTS_V2,
@@ -333,7 +333,7 @@ KNOWN_FILEPATHS = [
 
 # Mapping of filenames to their file paths
 # Example: {'splash1.DDS': 'Data/Textures/splash1.DDS'}
-FILENAMES_TO_FILEPATHS = {Path(path).name: path for path in KNOWN_FILEPATHS}
+FILENAMES_TO_FILEPATHS = {PurePosixPath(path).name: path for path in KNOWN_FILEPATHS}
 
 # Most of the textures convert cleanly to .png but not all of them.
 # This is the list of assets we want to convert to/from png.
@@ -356,17 +356,17 @@ DDS_PNGS = set(
 # Mapping of png file names to DDS file names
 # Example: {'monstersbig06.png': 'monstersbig06.DDS'}
 PNG_NAMES_TO_DDS_NAMES = {
-    str(Path(filepath).with_suffix(".png").name): str(Path(filepath).name)
+    str(PurePosixPath(filepath).with_suffix(".png").name): str(PurePosixPath(filepath).name)
     for filepath in KNOWN_TEXTURES_V2
     if filepath in DDS_PNGS
 }
 
-EXTRACTED_DIR = Path("Extracted")
-PACKS_DIR = Path("Packs")
-OVERRIDES_DIR = Path("Overrides")
+EXTRACTED_DIR = PurePosixPath("Extracted")
+PACKS_DIR = PurePosixPath("Packs")
+OVERRIDES_DIR = PurePosixPath("Overrides")
 
 FILEPATH_DIRS = [
-    Path(path).parent for path in KNOWN_FILEPATHS if Path(path).parent != Path(".")
+    PurePosixPath(path).parent for path in KNOWN_FILEPATHS if PurePosixPath(path).parent != PurePosixPath(".")
 ]
 
 DEFAULT_COMPRESSION_LEVEL = 20
