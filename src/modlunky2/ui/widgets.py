@@ -78,11 +78,11 @@ class Tab(ttk.Frame):
 class ScrollableFrame(ttk.LabelFrame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
-        self.canvas = tk.Canvas(self, bg="black")
+        self.canvas = tk.Canvas(self)
         self.scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
-        self.scrollable_frame = tk.Frame(self.canvas, bg="black")
+        self.scrollable_frame = tk.Frame(self.canvas)
         self.canvas.pack(side="left", fill="both", expand=True)
 
         self.scrollable_frame.bind(
