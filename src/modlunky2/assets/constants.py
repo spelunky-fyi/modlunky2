@@ -316,7 +316,9 @@ KNOWN_TEXTURES_V1 = [
     "Data/Textures/splash2.png",
 ]
 
-KNOWN_TEXTURES_V2 = [str(PurePosixPath(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1]
+KNOWN_TEXTURES_V2 = [
+    str(PurePosixPath(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1
+]
 
 KNOWN_FILEPATHS = [
     *KNOWN_FONTS_V2,
@@ -356,7 +358,9 @@ DDS_PNGS = set(
 # Mapping of png file names to DDS file names
 # Example: {'monstersbig06.png': 'monstersbig06.DDS'}
 PNG_NAMES_TO_DDS_NAMES = {
-    str(PurePosixPath(filepath).with_suffix(".png").name): str(PurePosixPath(filepath).name)
+    str(PurePosixPath(filepath).with_suffix(".png").name): str(
+        PurePosixPath(filepath).name
+    )
     for filepath in KNOWN_TEXTURES_V2
     if filepath in DDS_PNGS
 }
@@ -366,7 +370,9 @@ PACKS_DIR = PurePosixPath("Packs")
 OVERRIDES_DIR = PurePosixPath("Overrides")
 
 FILEPATH_DIRS = [
-    PurePosixPath(path).parent for path in KNOWN_FILEPATHS if PurePosixPath(path).parent != PurePosixPath(".")
+    PurePosixPath(path).parent
+    for path in KNOWN_FILEPATHS
+    if PurePosixPath(path).parent != PurePosixPath(".")
 ]
 
 DEFAULT_COMPRESSION_LEVEL = 20
