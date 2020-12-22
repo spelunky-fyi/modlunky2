@@ -1145,10 +1145,10 @@ class LevelsTab(Tab):
                         if str(data[0]) != r"\-size":
                             value = str(data[1])
                         else:
-                            value = str(data[1]) + " " + str(data[2])
+                            value = str(data[1]) + " " + str(str(data[2]).split("//", 1)[0])
                     comments = line.split("//", 1)
                     if len(comments) > 1:  # Makes sure a comment even exists
-                        comment = "//   " + comments[1]
+                        comment = "//   " + str(comments[1]).split("//", 2)[0]
                     self.tree.insert(
                         "",
                         "end",
