@@ -925,7 +925,7 @@ class LevelsTab(Tab):
             count_col = count_col + 1
 
         ref_tile = []
-        ref_tile.append(r"\?" + new_tile_code + " " + str(usable_code))
+        ref_tile.append(new_tile_code + " " + str(usable_code))
         ref_tile.append(tile_image)
         self.tile_pallete_ref_in_use.append(ref_tile)
         new_tile = tk.Button(
