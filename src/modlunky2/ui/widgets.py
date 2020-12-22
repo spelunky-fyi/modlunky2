@@ -162,18 +162,18 @@ class ToggledFrame(tk.Frame):
             self.sub_frame.forget()
             self.toggle_button.configure(text="+")
 
-class LevelsTree(ttk.Treeview):
 
+class LevelsTree(ttk.Treeview):
     def __init__(self, parent, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)
 
         self.popup_menu = tk.Menu(self, tearoff=0)
-        #self.popup_menu.add_command(label="Rename List Node",
+        # self.popup_menu.add_command(label="Rename List Node",
         #            command=self.rename)
-        #self.popup_menu.add_command(label="Delete Room", command=self.delete_selected)
-        #self.popup_menu.add_command(label="Add Room", command=self.add_room)
+        # self.popup_menu.add_command(label="Delete Room", command=self.delete_selected)
+        # self.popup_menu.add_command(label="Add Room", command=self.add_room)
 
-        self.bind("<Button-3>", self.popup) # Button-2 on Aqua
+        self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
 
     def popup(self, event):
         try:
@@ -185,28 +185,28 @@ class LevelsTree(ttk.Treeview):
         for i in self.selection()[::-1]:
             self.rename_dialog()
 
-    def delete_selected(self):
-        item_iid = self.selection()[0]
-        parent_iid = self.parent(item_iid)  # gets selected room
-        if parent_iid:
-            if (item_iid==LevelsTab.last_selected_room):
-                LevelsTab.canvas.grid_remove()
-                LevelsTab.canvas_dual.grid_remove()
-                LevelsTab.foreground_label.grid_remove()
-                LevelsTab.background_label.grid_remove()
-            self.delete(item_iid)
-
-    def add_room(self):
-        item_iid = self.tree_levels.selection()[0]
-        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
-        if parent_iid:
-            edited = self.insert(
-                parent_iid,
-                self.tree_levels.index(item_iid),
-                text="room",
-                values=room_save,
-            )
-        #self.selection_set(0, 'end')
+    # def delete_selected(self):
+    #    item_iid = self.selection()[0]
+    #    parent_iid = self.parent(item_iid)  # gets selected room
+    #    if parent_iid:
+    #        if (item_iid==LevelsTab.last_selected_room):
+    #            LevelsTab.canvas.grid_remove()
+    #            LevelsTab.canvas_dual.grid_remove()
+    #            LevelsTab.foreground_label.grid_remove()
+    #            LevelsTab.background_label.grid_remove()
+    #        self.delete(item_iid)
+    #
+    # def add_room(self):
+    #    item_iid = self.tree_levels.selection()[0]
+    #    parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
+    #    if parent_iid:
+    #        edited = self.insert(
+    #            parent_iid,
+    #            self.tree_levels.index(item_iid),
+    #            text="room",
+    #            values=room_save,
+    #        )
+    #    #self.selection_set(0, 'end')
 
     def rename_dialog(self):
         # First check if a blank space was selected
@@ -233,7 +233,7 @@ class LevelsTree(ttk.Treeview):
         entry_name = str(values[0])
         entry_note = ""
         entry = str(values[0]).split("//", 2)
-        if len(entry)>1:
+        if len(entry) > 1:
             entry_name = entry[0]
             entry_note = entry[1]
 
@@ -273,7 +273,9 @@ class LevelsTree(ttk.Treeview):
         self.delete(self.focus())
 
         # Put it back in with the upated values
-        self.insert("", current_index, values=(str("\\" + str(entry1) + " //" + str(entry2))))
+        self.insert(
+            "", current_index, values=(str("\\" + str(entry1) + " //" + str(entry2)))
+        )
         self.save_needed = True
 
         return True
@@ -295,18 +297,16 @@ class LevelsTree(ttk.Treeview):
 
         toplevel.geometry("+%d+%d" % (x, y))
 
-class RulesTree(ttk.Treeview):
 
+class RulesTree(ttk.Treeview):
     def __init__(self, parent, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)
 
         self.popup_menu = tk.Menu(self, tearoff=0)
-        self.popup_menu.add_command(label="Add",
-            command=self.add)
-        self.popup_menu.add_command(label="Delete",
-            command=self.delete_selected)
+        self.popup_menu.add_command(label="Add", command=self.add)
+        self.popup_menu.add_command(label="Delete", command=self.delete_selected)
 
-        self.bind("<Button-3>", self.popup) # Button-2 on Aqua
+        self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
 
     def popup(self, event):
         try:
@@ -326,7 +326,8 @@ class RulesTree(ttk.Treeview):
 
     def add(self):
         edited = self.insert(
-            "", "end",
+            "",
+            "end",
             values=["COMMENT", "VAL", "// COMMENT"],
         )
-        #self.selection_set(0, 'end')
+        # self.selection_set(0, 'end')

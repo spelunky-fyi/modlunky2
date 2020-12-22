@@ -10,7 +10,7 @@ from tkinter import filedialog, ttk
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
 
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.widgets import ScrollableFrame, Tab, LevelsTree, RulesTree
+from modlunky2.ui.widgets import LevelsTree, RulesTree, ScrollableFrame, Tab
 
 logger = logging.getLogger("modlunky2")
 
@@ -429,7 +429,7 @@ class LevelsTab(Tab):
                 row = event.y // row_height
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
-                if int(col) == int((len(self.tiles[0])-1)/2):
+                if int(col) == int((len(self.tiles[0]) - 1) / 2):
                     print("Middle of dual detected; not tile placed")
                     return
 
@@ -448,7 +448,9 @@ class LevelsTab(Tab):
             )
             self.remember_changes()  # remember changes made
 
-        def canvas_click_secondary(event, canvas):  # when the level editor grid is clicked
+        def canvas_click_secondary(
+            event, canvas
+        ):  # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
             row_height = self.mag
@@ -463,7 +465,7 @@ class LevelsTab(Tab):
                 row = event.y // row_height
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
-                if int(col) == int((len(self.tiles[0])-1)/2):
+                if int(col) == int((len(self.tiles[0]) - 1) / 2):
                     print("Middle of dual detected; not tile placed")
                     return
 
@@ -474,7 +476,9 @@ class LevelsTab(Tab):
                 image=self.panel_sel_secondary["image"],
                 anchor="nw",
             )
-            self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[3]
+            self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[
+                3
+            ]
             print(
                 str(self.tiles_meta[row][col])
                 + " replaced with "
@@ -483,9 +487,15 @@ class LevelsTab(Tab):
             self.remember_changes()  # remember changes made
 
         self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas))
-        self.canvas.bind("<B1-Motion>", lambda event: canvas_click(event, self.canvas)) # These second binds are so the user can hold down their mouse button when painting tiles
-        self.canvas.bind("<Button-3>", lambda event: canvas_click_secondary(event, self.canvas))
-        self.canvas.bind("<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas)) # These second binds are so the user can hold down their mouse button when painting tiles
+        self.canvas.bind(
+            "<B1-Motion>", lambda event: canvas_click(event, self.canvas)
+        )  # These second binds are so the user can hold down their mouse button when painting tiles
+        self.canvas.bind(
+            "<Button-3>", lambda event: canvas_click_secondary(event, self.canvas)
+        )
+        self.canvas.bind(
+            "<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas)
+        )  # These second binds are so the user can hold down their mouse button when painting tiles
         self.canvas_dual.bind(
             "<Button-1>", lambda event: canvas_click(event, self.canvas_dual)
         )
@@ -546,7 +556,6 @@ class LevelsTab(Tab):
         self.panel_sel_secondary["image"] = selected_tile["image"]
         self.tile_label_secondary["text"] = "Secondary Tile: " + selected_tile["text"]
 
-
     def get_codes_left(self):
         codes = ""
         for code in self.usable_codes:
@@ -596,7 +605,9 @@ class LevelsTab(Tab):
                     if room_check == "room" or room_check == "room (edited)":
                         room_data = self.tree_levels.item(room, option="values")
 
-                        list_to_str = "\n".join([str(save_row) for save_row in room_data])
+                        list_to_str = "\n".join(
+                            [str(save_row) for save_row in room_data]
+                        )
                         file_content += "\n" + list_to_str + "\n"
             path = None
             if not self.extracts_mode:
@@ -729,7 +740,7 @@ class LevelsTab(Tab):
                 ii = ii + 1
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
-            if str(self.tile_label['text']).split(" ", 3)[2]==tile_id:
+            if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label["text"] = (
                     "Primary Tile: "
                     + str(new_selection[0]).split(" ", 2)[0]
@@ -737,7 +748,7 @@ class LevelsTab(Tab):
                     + str(new_selection[0]).split(" ", 2)[1]
                 )
                 self.panel_sel["image"] = new_selection[1]
-            if str(self.tile_label_secondary['text']).split(" ", 3)[2]==tile_id:
+            if str(self.tile_label_secondary["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label_secondary["text"] = (
                     "Secondary Tile: "
                     + str(new_selection[0]).split(" ", 2)[0]
@@ -811,7 +822,7 @@ class LevelsTab(Tab):
                 ii = ii + 1
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
-            if str(self.tile_label['text']).split(" ", 3)[2]==tile_id:
+            if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label["text"] = (
                     "Primary Tile: "
                     + str(new_selection[0]).split(" ", 2)[0]
@@ -819,7 +830,7 @@ class LevelsTab(Tab):
                     + str(new_selection[0]).split(" ", 2)[1]
                 )
                 self.panel_sel["image"] = new_selection[1]
-            if str(self.tile_label_secondary['text']).split(" ", 3)[2]==tile_id:
+            if str(self.tile_label_secondary["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label_secondary["text"] = (
                     "Secondary Tile: "
                     + str(new_selection[0]).split(" ", 2)[0]
@@ -838,7 +849,7 @@ class LevelsTab(Tab):
 
         tile = str(tile.split(" ", 3)[0])
         alt_tile = str(alt_tile.split(" ", 3)[0])  # isolates the id
-        new_tile_code = "\?" + tile
+        new_tile_code = r"\?" + tile
 
         tile_image = None
         tile_image_alt = None
@@ -886,7 +897,7 @@ class LevelsTab(Tab):
             tile_image = self.done
 
         if any(
-            str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0])+" "
+            str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0]) + " "
             for self.g in self.tile_pallete_ref_in_use
         ):  # compares tile id to tile ids in pallete list
             tkMessageBox.showinfo("Uh Oh!", "You already have that!")
@@ -914,7 +925,7 @@ class LevelsTab(Tab):
             count_col = count_col + 1
 
         ref_tile = []
-        ref_tile.append("\?" + new_tile_code + " " + str(usable_code))
+        ref_tile.append(r"\?" + new_tile_code + " " + str(usable_code))
         ref_tile.append(tile_image)
         self.tile_pallete_ref_in_use.append(ref_tile)
         new_tile = tk.Button(
@@ -927,8 +938,16 @@ class LevelsTab(Tab):
             image=tile_image,
         )
         new_tile.grid(row=count_row, column=count_col)
-        new_tile.bind("<Button-1>", lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c))
-        new_tile.bind("<Button-3>", lambda event, r=count_row, c=count_col: self.tile_pick_secondary(event, r, c))
+        new_tile.bind(
+            "<Button-1>",
+            lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+        )
+        new_tile.bind(
+            "<Button-3>",
+            lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
+                event, r, c
+            ),
+        )
         self.get_codes_left()
         self.save_needed = True
 
@@ -1012,8 +1031,8 @@ class LevelsTab(Tab):
         # Strips the newline character
         self.tree.delete(*self.tree.get_children())
         self.tree_levels.delete(*self.tree_levels.get_children())
-        #pointer = 0
-        #pointed = False
+        # pointer = 0
+        # pointed = False
 
         # Enables widgets to use
         self.scale["state"] = tk.NORMAL
@@ -1033,15 +1052,15 @@ class LevelsTab(Tab):
 
         def parse_lvl_file(lines, grab_parent_tilecode):
             load_mode = ""
-            #blocks = []
+            # blocks = []
             # cur_item = self.tree.focus()
             self.child = None
             self.rooms = []
             pointer = 0
             pointed = False
-            #tile_count = 0
-            #tl_col = 0
-            #color_base = int(random.random())
+            # tile_count = 0
+            # tl_col = 0
+            # color_base = int(random.random())
             self.tile_convert = []
             line_count = 0
             line_total_count = len(lines)
@@ -1051,7 +1070,7 @@ class LevelsTab(Tab):
             self.count_row = 0
             count_total = 0
             x = 99
-            #y = 0
+            # y = 0
 
             for line in lines:
                 line_raw = line
@@ -1171,10 +1190,7 @@ class LevelsTab(Tab):
                                 self.tile_pallete_ref_in_use.append(tile_ref)
                                 self.panel_sel["image"] = tile_image
                                 self.tile_label["text"] = (
-                                    "Primary Tile: "
-                                    + str(data[0])
-                                    + " "
-                                    + str(data[1])
+                                    "Primary Tile: " + str(data[0]) + " " + str(data[1])
                                 )
                                 self.panel_sel_secondary["image"] = tile_image
                                 self.tile_label_secondary["text"] = (
@@ -1451,8 +1467,18 @@ class LevelsTab(Tab):
                                     image=tile_image,
                                 )
                                 new_tile.grid(row=count_row, column=count_col)
-                                new_tile.bind("<Button-1>", lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c))
-                                new_tile.bind("<Button-3>", lambda event, r=count_row, c=count_col: self.tile_pick_secondary(event, r, c))
+                                new_tile.bind(
+                                    "<Button-1>",
+                                    lambda event, r=count_row, c=count_col: self.tile_pick(
+                                        event, r, c
+                                    ),
+                                )
+                                new_tile.bind(
+                                    "<Button-3>",
+                                    lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
+                                        event, r, c
+                                    ),
+                                )
                                 count = count + 1
                                 self.count_col = self.count_col + 1
                                 x -= 1
@@ -1590,7 +1616,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "junglearea.lvl"):
                     lines_again = open(self.lvls_path + "/" + "junglearea.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "junglearea.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "junglearea.lvl"):
@@ -1607,7 +1635,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "volcanoarea.lvl"):
                     lines_again = open(self.lvls_path + "/" + "volcanoarea.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "volcanoarea.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "volcanoarea.lvl"):
@@ -1626,7 +1656,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "babylonarea.lvl"):
                     lines_again = open(self.lvls_path + "/" + "babylonarea.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "babylonarea.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "babylonarea.lvl"):
@@ -1643,7 +1675,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "tidepoolarea.lvl"):
                     lines_again = open(self.lvls_path + "/" + "tidepoolarea.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "tidepoolarea.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "tidepoolarea.lvl"):
@@ -1656,7 +1690,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "basecamp.lvl"):
                     lines_again = open(self.lvls_path + "/" + "basecamp.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "basecamp.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "basecamp.lvl"):
@@ -1671,7 +1707,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "sunkencityarea.lvl"):
                     lines_again = open(self.lvls_path + "/" + "sunkencityarea.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "sunkencityarea.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "sunkencityarea.lvl"):
@@ -1688,7 +1726,9 @@ class LevelsTab(Tab):
                 if os.path.isdir(self.lvls_path + "/" + "generic.lvl"):
                     lines_again = open(self.lvls_path + "/" + "generic.lvl")
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
                     lines_again = open(self.extracts_path / "generic.lvl")
             else:
                 if os.path.isdir(self.overrides_path / "generic.lvl"):
@@ -1701,8 +1741,7 @@ class LevelsTab(Tab):
 
         combo_tile_ids = []
         for tile_info in self.uni_tile_code_list:
-            combo_tile_ids.append(str(tile_info).split(" ", 2)[0].replace('\?', ''))
-
+            combo_tile_ids.append(str(tile_info).split(" ", 2)[0].replace(r"\?", ""))
 
         self.combobox["values"] = sorted(combo_tile_ids, key=str.lower)
         self.combobox_alt["values"] = sorted(combo_tile_ids, key=str.lower)
@@ -1719,8 +1758,8 @@ class LevelsTab(Tab):
 
     def _draw_grid(self, cols, rows, canvas, dual):
         # resizes canvas for grids
-        canvas["width"] = (self.mag * cols)-3
-        canvas["height"] = (self.mag * rows)-3
+        canvas["width"] = (self.mag * cols) - 3
+        canvas["height"] = (self.mag * rows) - 3
 
         if not dual:  # applies normal bg image settings to main grid
             self.cur_lvl_bg_path = (
@@ -2006,7 +2045,9 @@ class LevelsTab(Tab):
         col3_ent.grid(row=0, column=5)
 
         def update_then_destroy():
-            if self.confirm_entry(tree_view, col1_ent.get(), col2_ent.get(), col3_ent.get()):
+            if self.confirm_entry(
+                tree_view, col1_ent.get(), col2_ent.get(), col3_ent.get()
+            ):
                 win.destroy()
 
         ok_button = tk.Button(win, text="Ok")
@@ -2086,8 +2127,16 @@ class LevelsTab(Tab):
                 image=tile_keep[1],
             )
             new_tile.grid(row=count_row, column=count_col)
-            new_tile.bind("<Button-1>", lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c))
-            new_tile.bind("<Button-3>", lambda event, r=count_row, c=count_col: self.tile_pick_secondary(event, r, c))
+            new_tile.bind(
+                "<Button-1>",
+                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+            )
+            new_tile.bind(
+                "<Button-3>",
+                lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
+                    event, r, c
+                ),
+            )
 
     def go_back(self):
         self.lvl_editor_start_canvas.grid()
