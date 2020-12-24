@@ -380,8 +380,8 @@ class LevelsTab(Tab):
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
-        file_tile_codes = open(BASE_DIR / "tilecodes.txt", encoding="utf8")
-        lines = file_tile_codes.readlines()
+        file_tile_codes = BASE_DIR / "tilecodes.txt"
+        tile_lines = file_tile_codes.read_text(encoding='utf8').splitlines()
         count = 0
         count_total = 0
         x = 99
@@ -389,11 +389,11 @@ class LevelsTab(Tab):
         # color_base = int(random.random())
         self.uni_tile_code_list = []
         self.tile_pallete_ref = []
-        for line in lines:
+        base_im = Image.open(BASE_DIR / "static/images/tilecodetextures.png")
+        for line in tile_lines:
             line = line.strip()
             self.uni_tile_code_list.append(str(line))
-            im = Image.open(BASE_DIR / "static/images/tilecodetextures.png")
-            im = im.crop((count * 50, y * 50, 5000 - (x * 50), (1 + y) * 50))
+            im = base_im.crop((count * 50, y * 50, 5000 - (x * 50), (1 + y) * 50))
             self.tile_texture = ImageTk.PhotoImage(im)
             self.texture_images.append(self.tile_texture)
             tile_ref = []
