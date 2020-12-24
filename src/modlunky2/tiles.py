@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List
 from logging import getLogger
+
 from PIL import ImageTk, Image
 
 logger = getLogger(__name__)
@@ -249,6 +250,13 @@ class Tile:
     __slots__ = ["code", "sprite", "_texture"]
 
     def __init__(self, code: TileCodes, sprite: Image.Image):
+        """
+        Holds the pairing of a TileCode and a sprite, will create the Tkinter image when
+        needed.
+
+        :param code: an instance of `TileCodes`
+        :param sprite: image to match the tile code
+        """
         self.code = code
         self.sprite = sprite
         self._texture = None
@@ -278,6 +286,14 @@ class Tile:
 def make_sprites(
     sprite_sheet: Image.Image, sprite_width: int = 50, sprite_height: int = 50
 ) -> List[Image.Image]:
+    """
+    Cuts out every sprite from the sprite_sheet and returns them in order
+
+    :param sprite_sheet: source for all the sprites
+    :param sprite_width: width in pixels of each sprite
+    :param sprite_height: height in pixels of each sprite
+    :return: list of sprites from the sprite sheet
+    """
     # Check if the sprite width/height is likely to be valid
     if (
         sprite_sheet.width % sprite_width != 0
@@ -298,6 +314,12 @@ def make_sprites(
 
 
 def make_rows(sprite_sheet: Image.Image, sprite_height: int = 50) -> List[Image.Image]:
+    """
+
+    :param sprite_sheet: source for all the sprites
+    :param sprite_height: height in pixels of each sprite
+    :return: rows from the sprite sheet
+    """
     rows = []
     # Using the terminology from the Pillow docs where a bbox is a four-tuple of
     # (left, upper, right, lower)
@@ -311,8 +333,13 @@ def make_rows(sprite_sheet: Image.Image, sprite_height: int = 50) -> List[Image.
 
 
 def make_tiles(sprites: List[Image.Image]) -> List[Tile]:
-    # This is assuming that the TileCodes and the sprites are in the correct order
-    # This behavior matches how the tiles and sprites are getting paired up already
+    """
+    This is assuming that the TileCodes and the sprites are in the correct order
+
+    :param sprites: Sprites to pair up with the `TileCodes` enum
+    :return: List of Tile objects
+    """
+
     # Also we are getting some blank squares from the sprite sheet, but zip will bail
     # silently once one of the iterables runs out
     tile_sprite_pairs = list(zip(TileCodes, sprites))
