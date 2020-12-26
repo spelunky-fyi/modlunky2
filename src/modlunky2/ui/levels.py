@@ -383,7 +383,7 @@ class LevelsTab(Tab):
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
         file_tile_codes = BASE_DIR / "tilecodes.txt"
-        tile_lines = file_tile_codes.read_text(encoding='utf8').splitlines()
+        tile_lines = file_tile_codes.read_text(encoding="utf8").splitlines()
         count = 0
         count_total = 0
         x = 99
@@ -1156,7 +1156,9 @@ class LevelsTab(Tab):
                         if str(data[0]) != r"\-size":
                             value = str(data[1])
                         else:
-                            value = str(data[1]) + " " + str(str(data[2]).split("//", 1)[0])
+                            value = (
+                                str(data[1]) + " " + str(str(data[2]).split("//", 1)[0])
+                            )
                     comments = line.split("//", 1)
                     if len(comments) > 1:  # Makes sure a comment even exists
                         comment = "//   " + str(comments[1]).split("//", 2)[0]
