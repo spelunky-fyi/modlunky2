@@ -6,6 +6,8 @@ import tkinter as tk
 import tkinter.font as font
 import tkinter.messagebox as tkMessageBox
 from tkinter import filedialog, ttk
+import tempfile
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
 
@@ -860,41 +862,50 @@ class LevelsTab(Tab):
 
         if int(percent) < 100:
             new_tile_code += "%" + percent
-            tile_image._PhotoImage__photo.write("temp.png")
-            self.ImageTk_image1 = Image.open("temp.png").convert("RGBA")
-            tile_text = percent + "%"
-            if alt_tile != "empty":
-                if any(
-                    alt_tile + " " in self.g[0] for self.g in self.tile_pallete_ref
-                ):  # compares tile id to tile ids in pallete list
-                    tile_image_alt = self.g[1]
-                new_tile_code += "%" + alt_tile
-                tile_text += "/" + str(100 - int(percent)) + "%"
+            # Have to use a temporary directory due to TCL/Tkinter is trying to write
+            # to a file name, not a file handle, and windows doesn't support sharing the
+            # file between processes
+            with tempfile.TemporaryDirectory() as tempdir:
+                tempdir_path = Path(tempdir)
+                temp1 = tempdir_path / "temp1"
+                temp2 = tempdir_path / "temp2"
+                tile_image._PhotoImage__photo.write(temp1, format="png")
 
-                tile_image_alt._PhotoImage__photo.write("temp2.png")
+                image1 = Image.open(
+                    temp1,
+                ).convert("RGBA")
+                tile_text = percent + "%"
+                if alt_tile != "empty":
+                    if any(
+                        alt_tile + " " in self.g[0] for self.g in self.tile_pallete_ref
+                    ):  # compares tile id to tile ids in pallete list
+                        tile_image_alt = self.g[1]
+                    new_tile_code += "%" + alt_tile
+                    tile_text += "/" + str(100 - int(percent)) + "%"
 
-                self.ImageTk_image2 = Image.open("temp2.png").convert("RGBA")
-                self.ImageTk_image2.crop([25, 0, 50, 50]).save("temp2.png")
-                self.ImageTk_image2 = Image.open("temp2.png").convert("RGBA")
+                    tile_image_alt._PhotoImage__photo.write(temp2)
 
-                offset = (25, 0)
-                self.ImageTk_image1.paste(self.ImageTk_image2, offset)
-            # make a blank image for the text, initialized to transparent text color
-            txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
+                    image2 = Image.open(temp2).convert("RGBA")
+                    image2.crop([25, 0, 50, 50]).save("temp2.png")
+                    image2 = Image.open(temp2).convert("RGBA")
 
-            # get a drawing context
-            d = ImageDraw.Draw(txt)
+                    offset = (25, 0)
+                    image1.paste(image2, offset)
+                # make a blank image for the text, initialized to transparent text color
+                txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
 
-            # draw text, half opacity
-            d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
-            d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
-            d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
-            d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
-            d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
+                # get a drawing context
+                d = ImageDraw.Draw(txt)
 
-            out = Image.alpha_composite(self.ImageTk_image1, txt)
-            self.done = ImageTk.PhotoImage(out)
-            tile_image = self.done
+                # draw text, half opacity
+                d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
+                d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
+                d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
+                d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
+                d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
+
+                out = Image.alpha_composite(image1, txt)
+            tile_image = ImageTk.PhotoImage(out)
 
         if any(
             str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0]) + " "
