@@ -1,17 +1,19 @@
 from typing import Optional, Union
 
 from PIL import Image
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 
-_DEFAULT_BASE_PATH = Path(
-    r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
-)
 
-
-class BiomeFloorSheet(ABC):
+class AbstractFloorSheet(ABC):
     _sprite_sheet: Image.Image
-    biome_name = None
+    _base_path: Path
+
+    @property
+    @abstractmethod
+    def biome_name(self) -> str:
+        raise NotImplementedError
+
     """
     Biome sheets are 12x12 128 pixel squares
     """
@@ -23,11 +25,11 @@ class BiomeFloorSheet(ABC):
         "entrance": (7, 0, 9, 3),
         "exit": (9.5, 0, 11.5, 3),
         "door2": (6, 8, 8, 10),
-        # door2_secret
+        # door2_secret is the same as door2, but gets dirt/push_block in front
         "door2_secret": (6, 8, 8, 10),
     }
 
-    def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
+    def __init__(self, base_path: Path):
         self._base_path = base_path
         self._sprite_sheet = Image.open(self._base_path / self._sheet_path)
 
@@ -52,9 +54,9 @@ class BiomeFloorSheet(ABC):
             return self._get_block(*coords)
 
 
-class CaveFloorSheet(BiomeFloorSheet):
+class CaveFloorSheet(AbstractFloorSheet):
     biome_name = "cave"
 
 
-class EggplantFloorSheet(BiomeFloorSheet):
+class EggplantFloorSheet(AbstractFloorSheet):
     biome_name = "eggplant"
