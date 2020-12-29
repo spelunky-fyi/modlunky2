@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Type
-from functools import lru_cache
+from typing import Dict, Optional, Type
 
 from PIL import Image
 
@@ -14,6 +13,8 @@ _DEFAULT_BASE_PATH = Path(
 
 
 class AbstractBiome(ABC):
+    _image_cache: Dict[str, Image.Image]
+
     @property
     @abstractmethod
     def biome_name(self) -> str:
@@ -42,13 +43,25 @@ class AbstractBiome(ABC):
         self._floor_sheet = self._floor_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
         self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
+        self._image_cache = {}
 
-    @lru_cache(maxsize=128)
-    def get(self, key: str) -> Optional[Image.Image]:
-        if key in self._deco_sheet.chunk_map.keys():
-            return self._deco_sheet.get(key)
-        else:
-            return self._floor_sheet.get(key)
+    def get(self, name: str) -> Optional[Image.Image]:
+        # Basically implementing my own doofy caching so that we don't have possible
+        # memory leaks with functools.lru_cache decorator
+        if self._image_cache.get(name):
+            return self._image_cache.get(name)
+        # Try deco_sheet
+        img = self._deco_sheet.get(name)
+        if img:
+            self._image_cache[name] = img
+            return img
+        # If we are still here, check the floor_sheet
+        img = self._floor_sheet.get(name)
+        if img:
+            self._image_cache[name] = img
+            return img
+        # If we still haven't found anything, we got an invalid string or something went
+        # wrong, we are returning none
 
 
 class CaveBiome(AbstractBiome):
