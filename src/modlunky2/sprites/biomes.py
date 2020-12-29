@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, Type
+from functools import lru_cache
 
 from PIL import Image
 
@@ -42,6 +43,7 @@ class AbstractBiome(ABC):
         self._deco_sheet = self._deco_sheet_class(base_path)
         self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
 
+    @lru_cache(maxsize=128)
     def get(self, key: str) -> Optional[Image.Image]:
         if key in self._deco_sheet.chunk_map.keys():
             return self._deco_sheet.get(key)
