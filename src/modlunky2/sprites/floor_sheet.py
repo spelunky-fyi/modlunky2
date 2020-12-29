@@ -26,6 +26,7 @@ class AbstractFloorSheet(ABC):
         "ladder": (0, 4, 2, 5),
         "ladder_plat": (2, 4, 4, 5),
         "entrance": (7, 0, 9, 3),
+        # Exit is not on even 128 pixel boundaries RIP even numbers
         "exit": (9.5, 0, 11.5, 3),
         "door2": (6, 8, 8, 10),
         # door2_secret is the same as door2, but gets dirt/push_block in front
