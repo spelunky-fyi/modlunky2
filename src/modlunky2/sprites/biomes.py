@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 from PIL import Image
 
@@ -13,8 +13,15 @@ _DEFAULT_BASE_PATH = Path(
 
 
 class AbstractBiome(ABC):
-    biome_name: str
-    display_name: str
+    @property
+    @abstractmethod
+    def biome_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def display_name(self) -> str:
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -34,6 +41,12 @@ class AbstractBiome(ABC):
         self._floor_sheet = self._floor_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
         self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
+
+    def get(self, key: str) -> Optional[Image.Image]:
+        if key in self._deco_sheet.chunk_map.keys():
+            return self._deco_sheet.get(key)
+        else:
+            return self._floor_sheet.get(key)
 
 
 class CaveBiome(AbstractBiome):
