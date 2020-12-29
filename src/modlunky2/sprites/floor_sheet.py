@@ -4,10 +4,13 @@ from PIL import Image
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from .types import chunk_map_type
+
 
 class AbstractFloorSheet(ABC):
     _sprite_sheet: Image.Image
     _base_path: Path
+    _chunk_map: chunk_map_type
 
     @property
     @abstractmethod
