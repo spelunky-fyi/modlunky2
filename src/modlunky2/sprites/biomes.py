@@ -40,6 +40,7 @@ class AbstractBiome(ABC):
         return self._bg
 
     def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
+        self.base_path = base_path
         self._floor_sheet = self._floor_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
         self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
