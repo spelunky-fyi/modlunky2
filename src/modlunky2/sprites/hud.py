@@ -4,6 +4,7 @@ from .base_sprite_loader import BaseSpriteLoader
 
 
 class HudSheet(BaseSpriteLoader):
+    # CURRENTLY BROKEN
     _sprite_sheet_path = Path("Data/Textures/hud.png")
     _chunk_size = 32
     _chunk_map = {
