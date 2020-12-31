@@ -1,26 +1,23 @@
-from typing import Optional, Union
-
-from PIL import Image
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 
-from .types import chunk_map_type
+from .base_sprite_loader import BaseSpriteLoader
 
 
-class AbstractFloorSheet(ABC):
-    _sprite_sheet: Image.Image
-    _base_path: Path
-    _chunk_map: chunk_map_type
-
+class AbstractFloorSheet(BaseSpriteLoader):
     @property
     @abstractmethod
     def biome_name(self) -> str:
         raise NotImplementedError
 
+    @property
+    def _sprite_sheet_path(self) -> Path:
+        return Path(f"Data/Textures/floor_{self.biome_name}.png")
+
     """
     Biome sheets are 12x12 128 pixel squares
     """
-
+    _chunk_size = 128
     _chunk_map = {
         "push_block": (7, 0, 8, 1),
         "bone_block": (10, 2, 11, 3),
@@ -37,30 +34,6 @@ class AbstractFloorSheet(ABC):
         "dirt": (0, 0, 4, 7),
         "ghist_door2": (10, 6, 12, 8),
     }
-
-    def __init__(self, base_path: Path):
-        self._base_path = base_path
-        self._sprite_sheet = Image.open(self._base_path / self._sheet_path)
-
-    def _get_block(
-        self,
-        left: Union[int, float],
-        upper: Union[int, float],
-        right: Union[int, float],
-        lower: Union[int, float],
-    ) -> Image.Image:
-        """Used to get chunks of the sprite sheet."""
-        bbox = tuple(map(lambda x: x * 128, (left, upper, right, lower)))
-        return self._sprite_sheet.crop(bbox)
-
-    @property
-    def _sheet_path(self):
-        return Path(f"Data/Textures/floor_{self.biome_name}.png")
-
-    def get(self, name: str) -> Optional[Image.Image]:
-        coords = self._chunk_map.get(name)
-        if coords:
-            return self._get_block(*coords)
 
 
 class CaveFloorSheet(AbstractFloorSheet):
