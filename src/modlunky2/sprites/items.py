@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .base_sprite_loader import BaseSpriteLoader
+from .base_classes import BaseSpriteLoader
 
 
 class ItemSheet(BaseSpriteLoader):

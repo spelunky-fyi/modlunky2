@@ -10,8 +10,6 @@ _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
 )
 
-__all__ = ["BaseSpriteLoader"]
-
 
 class BaseSpriteLoader(ABC):
     @property
