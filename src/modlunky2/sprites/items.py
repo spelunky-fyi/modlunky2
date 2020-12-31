@@ -1,18 +1,16 @@
 from pathlib import Path
-from typing import Optional, Union
 
-from PIL import Image
-
-from .types import chunk_map_type
+from .base_sprite_loader import BaseSpriteLoader
 
 
-class ItemSheet:
+class ItemSheet(BaseSpriteLoader):
     """
     source for `items.png`
 
     """
 
-    _chunk_map: chunk_map_type
+    _sprite_sheet_path = Path("Data/Textures/items.png")
+    _chunk_size = 128
     _chunk_map = {
         "chest": (0, 0, 1, 1),
         "chest_open": (1, 0, 2, 1),
@@ -271,23 +269,3 @@ class ItemSheet:
         "present4": (14, 15, 15, 16),
         "present5": (15, 15, 16, 16),
     }
-
-    def __init__(self, base_path: Path):
-        self.base_path = base_path
-        self._sprite_sheet = Image.open(self.base_path / "Data/Textures/items.png")
-
-    def _get_block(
-        self,
-        left: Union[int, float],
-        upper: Union[int, float],
-        right: Union[int, float],
-        lower: Union[int, float],
-    ) -> Image.Image:
-        """Used to get chunks of the sprite sheet."""
-        bbox = tuple(map(lambda x: x * 128, (left, upper, right, lower)))
-        return self._sprite_sheet.crop(bbox)
-
-    def get(self, name: str) -> Optional[Image.Image]:
-        coords = self._chunk_map.get(name)
-        if coords:
-            return self._get_block(*coords)
