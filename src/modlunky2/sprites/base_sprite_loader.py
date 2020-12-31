@@ -47,7 +47,7 @@ class BaseSpriteLoader(ABC):
         lower: Union[int, float],
     ) -> Image.Image:
         """Used to get chunks of the sprite sheet."""
-        bbox = tuple(map(lambda x: x * 128, (left, upper, right, lower)))
+        bbox = tuple(map(lambda x: x * self._chunk_size, (left, upper, right, lower)))
         return self._sprite_sheet.crop(bbox)
 
     def get(self, name: str) -> Optional[Image.Image]:
