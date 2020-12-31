@@ -6,6 +6,10 @@ from PIL import Image
 
 from .types import chunk_map_type
 
+_DEFAULT_BASE_PATH = Path(
+    r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
+)
+
 
 class BaseSpriteLoader(ABC):
     @property
@@ -35,7 +39,7 @@ class BaseSpriteLoader(ABC):
         """
         pass
 
-    def __init__(self, base_path: Path):
+    def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
         self.base_path = base_path
         self._sprite_sheet = Image.open(self.base_path / self._sprite_sheet_path)
 
