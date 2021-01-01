@@ -5,7 +5,7 @@ from typing import Dict, Optional, Type
 from PIL import Image
 
 from modlunky2.sprites.base_classes.base_deco_sheet import AbstractDecoSheet
-from modlunky2.sprites.floor_sheet import AbstractFloorSheet
+from modlunky2.sprites.base_classes.base_floor_sheet import AbstractFloorSheet
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
