@@ -1,3 +1,8 @@
+"""
+Biomes bring together the floor sheet, deco sheet, and background sprites for each
+environment.
+"""
+
 from .base_classes import AbstractBiome
 from .deco_sheet import CaveDecoSheet
 from .floor_sheet import CaveFloorSheet
