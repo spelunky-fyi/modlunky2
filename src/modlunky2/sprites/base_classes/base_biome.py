@@ -13,6 +13,12 @@ _DEFAULT_BASE_PATH = Path(
 
 
 class AbstractBiome(ABC):
+    """Brings together the decoration sheet, floor sheet, and background for a biome.
+    Subclassed by overriding the abstracted methods with static class variables.
+
+    Main apis are the `bg` method which returns the background image, and `get` which
+    searches the two subclasses to see if it exists."""
+
     _image_cache: Dict[str, Image.Image]
 
     @property
@@ -45,21 +51,42 @@ class AbstractBiome(ABC):
         self._deco_sheet = self._deco_sheet_class(base_path)
         self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
         self._image_cache = {}
+        self._sheet_map = self._make_sheet_map()
+
+    # noinspection PyProtectedMember
+    def _make_sheet_map(self) -> Dict:
+        """
+        Ensures the two subclasses don't overlap their key names, and builds a mapping
+        so we know already where each key is and which class to ask for a key
+        :return:
+        """
+        floor_keys = set(self._floor_sheet._chunk_map.keys())
+        deco_keys = set(self._deco_sheet._chunk_map.keys())
+        same_keys = floor_keys & deco_keys
+        # Evals to false if nothing in the set
+        if same_keys:
+            raise KeyError(
+                f"floor sheet and decoration sheet have colliding names: {same_keys}"
+            )
+        sheet_map = {
+            k: self._floor_sheet.get for k in self._floor_sheet._chunk_map.keys()
+        }
+        for k in self._deco_sheet._chunk_map.keys():
+            sheet_map[k] = self._deco_sheet.get
+        return sheet_map
 
     def get(self, name: str) -> Optional[Image.Image]:
+        # shortcut to check if we actually have this key available to us and bail out
+        # early if we don't
+        get_func = self._sheet_map.get(name)
+        if get_func is None:
+            return
         # Basically implementing my own doofy caching so that we don't have possible
         # memory leaks with functools.lru_cache decorator
         if self._image_cache.get(name):
             return self._image_cache.get(name)
-        # Try deco_sheet
-        img = self._deco_sheet.get(name)
-        if img:
-            self._image_cache[name] = img
-            return img
-        # If we are still here, check the floor_sheet
-        img = self._floor_sheet.get(name)
-        if img:
-            self._image_cache[name] = img
-            return img
-        # If we still haven't found anything, we got an invalid string or something went
-        # wrong, we are returning none
+        # this will either be the `get` method of the floor or deco sheet object
+        img = get_func(name)
+        # Seeding the cache
+        self._image_cache[name] = img
+        return img
