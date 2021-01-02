@@ -4,8 +4,8 @@ from typing import Dict, Optional, Type
 
 from PIL import Image
 
-from modlunky2.sprites.base_classes.base_deco_sheet import AbstractDecoSheet
-from modlunky2.sprites.base_classes.base_floor_sheet import AbstractFloorSheet
+from .base_deco_sheet import AbstractDecoSheet
+from .base_floor_sheet import AbstractFloorSheet
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
@@ -13,7 +13,7 @@ _DEFAULT_BASE_PATH = Path(
 
 
 class AbstractBiome(ABC):
-    """Brings together the decoration sheet, floor sheet, and background for a biome.
+    """Brings together the decoration sheet, floor sheet, and background for a _biome.
     Subclassed by overriding the abstracted methods with static class variables.
 
     Main apis are the `bg` method which returns the background image, and `get` which
