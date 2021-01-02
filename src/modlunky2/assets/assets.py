@@ -26,6 +26,7 @@ from .constants import (
 )
 from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
+from .string_hashing import generate_string_hashes, write_string_hashes
 
 logger = logging.getLogger("modlunky2")
 
@@ -178,6 +179,8 @@ class ExeAsset:
             self.data = rgba_to_png(self.data)
         elif self.filepath in DDS_PNGS:
             self.data = dds_to_png(self.data)
+        elif self.filepath.endswith("strings00.str"):
+            generate_string_hashes(self.data, extract_dir / "strings_hashes.hash")
 
         if recompress:
             # Get a hash of the the uncompressed file to be used
@@ -296,6 +299,13 @@ class AssetStore:
                 if asset.filepath
             ]
             wait(futures, timeout=300)
+
+        # Create the hashed string files separately since they all depend on strings00.str
+        for asset in self.assets:
+            if asset.filepath and asset.filepath.endswith(".str"):
+                asset_file_path = Path(asset.filepath)
+                hashed_strings_file = extract_dir / asset_file_path.parent / (asset_file_path.stem + '_hashed' + asset_file_path.suffix)
+                write_string_hashes(asset.data, hashed_strings_file, extract_dir / "strings_hashes.hash")
 
         return unextracted
 
