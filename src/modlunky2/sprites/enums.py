@@ -11,6 +11,7 @@ class BiomeEnum(Enum):
     neo_babylon = "babylon"
     sunken_city = "sunken"
     eggplant_world = "eggplant"
+    surface = "surface"
 
 
 class BossBiomeEnum(Enum):
