@@ -7,6 +7,19 @@ from .base_classes import AbstractBiome
 from .deco_sheet import *
 from .floor_sheet import *
 
+__all__ = [
+    "CaveBiome",
+    "VolcanaBiome",
+    "JungleBiome",
+    "TidePoolBiome",
+    "TempleBiome",
+    "IceCavesBiome",
+    "BabylonBiome",
+    "SunkenCityBiome",
+    "EggplantBiome",
+    "SurfaceBiome",
+]
+
 
 class CaveBiome(AbstractBiome):
     biome_name = "cave"
