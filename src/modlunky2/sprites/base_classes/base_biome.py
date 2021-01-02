@@ -7,7 +7,7 @@ from PIL import Image
 from .base_deco_sheet import AbstractDecoSheet
 from .base_floor_sheet import AbstractFloorSheet
 
-_DEFAULT_BASE_PATH = Path(
+DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
 )
 
@@ -45,7 +45,7 @@ class AbstractBiome(ABC):
     def bg(self) -> Image.Image:
         return self._bg
 
-    def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
+    def __init__(self, base_path: Path = DEFAULT_BASE_PATH):
         self.base_path = base_path
         self._floor_sheet = self._floor_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
