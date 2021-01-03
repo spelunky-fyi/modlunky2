@@ -26,7 +26,7 @@ from .constants import (
 )
 from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
-from .string_hashing import generate_string_hashes, write_string_hashes
+from .string_hashing import StringHashes
 
 logger = logging.getLogger("modlunky2")
 
@@ -179,8 +179,6 @@ class ExeAsset:
             self.data = rgba_to_png(self.data)
         elif self.filepath in DDS_PNGS:
             self.data = dds_to_png(self.data)
-        elif self.filepath.endswith("strings00.str"):
-            generate_string_hashes(self.data, extract_dir / "strings_hashes.hash")
 
         if recompress:
             # Get a hash of the the uncompressed file to be used
@@ -274,6 +272,7 @@ class AssetStore:
         compression_level=DEFAULT_COMPRESSION_LEVEL,
         max_workers=max(os.cpu_count() - 2, 1),
         recompress=True,
+        generate_string_hashes=True,
     ):
         unextracted = []
         for asset in self.assets:
@@ -300,14 +299,30 @@ class AssetStore:
             ]
             wait(futures, timeout=300)
 
+        if generate_string_hashes:
+            self.hash_strings(extract_dir)
+
+        return unextracted
+
+    def hash_strings(self, extract_dir):
+        # Use the english strings as the source for generating hash values.
+        english_strings = self.find_asset("strings00.str")
+        if english_strings is None or english_strings.data is None:
+            logging.warning("Didn't find data for english strings in strings00.str")
+            return
+
+        string_hashes = StringHashes.from_data(english_strings.data)
+
         # Create the hashed string files separately since they all depend on strings00.str
         for asset in self.assets:
             if asset.filepath and asset.filepath.endswith(".str"):
                 asset_file_path = Path(asset.filepath)
-                hashed_strings_file = extract_dir / asset_file_path.parent / (asset_file_path.stem + '_hashed' + asset_file_path.suffix)
-                write_string_hashes(asset.data, hashed_strings_file, extract_dir / "strings_hashes.hash")
-
-        return unextracted
+                hashed_strings_file = (
+                    extract_dir
+                    / asset_file_path.parent
+                    / f"{asset_file_path.stem}_hashed{asset_file_path.suffix}"
+                )
+                string_hashes.write_string_hashes(asset.data, hashed_strings_file)
 
     def pack_assets(self):
         self.exe_handle.seek(self.BUNDLE_OFFSET)
