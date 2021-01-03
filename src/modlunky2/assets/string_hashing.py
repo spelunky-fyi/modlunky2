@@ -1,33 +1,53 @@
-import io
-
+import zlib
+import logging
 from pathlib import Path
-import pymmh3
-import re
 
-def generate_string_hashes(strings00_data, hashed_strings_filepath: Path):
-    hashed_strings = []
-    current_comment_block = ""
-    for string in  strings00_data.decode().splitlines():
-        if string.startswith('#'):
-            comment_block = string.strip(' #')
-            if comment_block:
-                current_comment_block = comment_block
-            hashed_strings.append('')
-        else:
-            string_hash = pymmh3.hash64(string +  current_comment_block, seed = 0xD67FADD1)[1] & 0xFFFFFFFF
-            hashed_strings.append("0x{:08x}".format(string_hash & 0xFFFFFFFF))
-    hashed_strings = '\n'.join(hashed_strings)
 
-    with hashed_strings_filepath.open("wb") as hashed_strings_file:
-        hashed_strings_file.write(hashed_strings.encode())
+class StringHashes:
+    def __init__(self, hashes):
+        # A list of crc32 hashes of the line striped of whitespace.
+        # If None the line should be written as is, otherwise the
+        # line should be written as `crc_hash: original line of text`.
+        self.hashes = hashes
 
-def write_string_hashes(stringsXX_data, stringsXX_hashed_filepath: Path, hashed_strings_filepath: Path):
-    with hashed_strings_filepath.open("r") as hashed_strings_file:
-        hashed_strings = hashed_strings_file.read().splitlines()
-        original_strings = stringsXX_data.decode().splitlines()
+    @classmethod
+    def from_data(cls, strings_data):
+        hashes = []
+        current_comment_section = None
 
-        merged_strings = [ f'{hash}: {string}' if hash else string for hash, string in zip(hashed_strings, original_strings) ]
-        merged_strings = "\n".join(merged_strings)
+        for line in strings_data.decode().splitlines():
+            if line.startswith("#"):
+                comment_section = line.strip(" #")
+                if comment_section:
+                    current_comment_section = comment_section
+                string_hash = None
+            else:
+                str_to_hash = line.strip()
+                if current_comment_section is not None:
+                    str_to_hash += current_comment_section
 
-        with stringsXX_hashed_filepath.open("wb") as stringsXX_hashed_file:
-            stringsXX_hashed_file.write(merged_strings.encode())
+                string_hash = "0x{:08x}".format(zlib.crc32(str_to_hash.encode()))
+
+            hashes.append(string_hash)
+
+        return cls(hashes=hashes)
+
+    def write_string_hashes(self, strings_data, hashed_strings_dest: Path):
+        lines = strings_data.decode().splitlines()
+        if len(lines) != len(self.hashes):
+            logging.debug("Data for %s has %s lines, expected %s.")
+            return
+
+        with hashed_strings_dest.open("wb") as hashed_strings_file:
+            for line_num, line in enumerate(lines):
+                if line_num >= len(self.hashes):
+                    hashed_strings_file.write(f"{line}\n".encode())
+                    continue
+
+                string_hash = self.hashes[line_num]
+                if string_hash is None:
+                    output_line = line
+                else:
+                    output_line = f"{string_hash}: {line}"
+
+                hashed_strings_file.write(f"{output_line}\n".encode())
