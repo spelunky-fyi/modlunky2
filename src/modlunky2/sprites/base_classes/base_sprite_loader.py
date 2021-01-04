@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable, Dict, Optional, Union
 
 from PIL import Image
 
@@ -58,3 +58,6 @@ class BaseSpriteLoader(ABC):
         coords = self._chunk_map.get(name)
         if coords:
             return self._get_block(*coords)
+
+    def key_map(self) -> Dict[str, Callable]:
+        return {k: self.get for k in self._chunk_map}
