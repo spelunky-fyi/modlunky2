@@ -26,8 +26,7 @@ class PackTab(Tab):
         self.install_dir = install_dir
 
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, minsize=30)
-        self.rowconfigure(2, minsize=60)
+        self.rowconfigure(1, minsize=60)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
@@ -36,13 +35,10 @@ class PackTab(Tab):
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
 
-        self.progress = ttk.Progressbar(self, length=100, mode="determinate")
-        self.progress.grid(row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe")
-
         self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
-        self.button_pack.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
         self.button_restore = ttk.Button(self, text="Restore EXE", command=self.restore)
-        self.button_restore.grid(row=2, column=1, pady=5, padx=5, sticky="nswe")
+        self.button_restore.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
 
         default_icon_path = BASE_DIR / "static/images/noicon.png"
         self.default_icon = ImageTk.PhotoImage(Image.open(default_icon_path))
