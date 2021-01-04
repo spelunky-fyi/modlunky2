@@ -31,8 +31,7 @@ class ExtractTab(Tab):
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, minsize=30)
-        self.rowconfigure(2, minsize=60)
+        self.rowconfigure(1, minsize=60)
 
         self.label_frame = ttk.LabelFrame(self, text="Select exe to Extract")
         self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
@@ -48,11 +47,8 @@ class ExtractTab(Tab):
         self.list_box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.list_box.yview)
 
-        self.progress = ttk.Progressbar(self, length=100, mode="determinate")
-        self.progress.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
-
         self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
-        self.button_extract.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
     def extract(self):
         idx = self.list_box.curselection()
