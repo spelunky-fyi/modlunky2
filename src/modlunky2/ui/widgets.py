@@ -18,16 +18,12 @@ class QueueHandler(logging.Handler):
 
 
 # Adapted from https://beenje.github.io/blog/posts/logging-to-a-tkinter-scrolledtext-widget/
-class ConsoleWindow(tk.Toplevel):
+class ConsoleWindow(tk.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.wm_title("Modlunky2 Console")
-        self.geometry("1024x600")
-        # self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self.close)
 
         # Create a ScrolledText wdiget
-        self.scrolled_text = ScrolledText(self, state="disabled")
+        self.scrolled_text = ScrolledText(self, height=7, state="disabled")
         self.scrolled_text.pack(expand=True, fill="both")
         self.scrolled_text.configure(font="TkFixedFont")
         self.scrolled_text.tag_config("INFO", foreground="green")

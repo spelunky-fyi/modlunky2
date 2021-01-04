@@ -35,6 +35,9 @@ logger = logging.getLogger("modlunky2")
 
 cwd = os.getcwd()
 
+MIN_WIDTH = 1024
+MIN_HEIGHT = 800
+
 
 def get_latest_version():
     try:
@@ -68,7 +71,12 @@ class ModlunkyUI:
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
-        self.root.geometry("950x650")
+        self.root.geometry(f"{MIN_WIDTH}x{MIN_HEIGHT}")
+        self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=0)
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(2, weight=0)
         # self.root.resizable(False, False)
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
         self.root.iconphoto(False, self.icon_png)
@@ -77,7 +85,7 @@ class ModlunkyUI:
             update_button = ttk.Button(
                 self.root, text="Update Modlunky2!", command=self.update
             )
-            update_button.pack()
+            update_button.grid(column=0, row=0)
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -108,9 +116,10 @@ class ModlunkyUI:
         )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
-        self.tab_control.pack(expand=1, fill="both")
+        self.tab_control.grid(column=0, row=1, sticky="nsew")
 
-        self.console = ConsoleWindow()
+        self.console = ConsoleWindow(self.root)
+        self.console.grid(column=0, row=2, sticky="ew")
 
     def update(self):
         webbrowser.open_new_tab(
