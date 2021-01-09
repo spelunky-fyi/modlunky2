@@ -17,7 +17,6 @@ __all__ = [
     "BabylonBiome",
     "SunkenCityBiome",
     "EggplantBiome",
-    "SurfaceBiome",
 ]
 
 
@@ -82,10 +81,3 @@ class EggplantBiome(AbstractBiome):
     display_name = "Eggplant World"
     _floor_sheet_class = EggplantFloorSheet
     _deco_sheet_class = EggplantDecoSheet
-
-
-class SurfaceBiome(AbstractBiome):
-    biome_name = "surface"
-    display_name = "Surface"
-    _floor_sheet_class = SurfaceFloorSheet
-    _deco_sheet_class = SurfaceDecoSheet
