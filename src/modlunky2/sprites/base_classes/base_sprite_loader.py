@@ -15,6 +15,8 @@ _CACHED_NONE_SENTINEL = object()
 
 
 def _cache_img_not_class(f):
+    """using this because functools.lrucache will keep the class object from getting
+    GCed if you are using it on a method"""
     cache_dict = {}
 
     @wraps(f)
