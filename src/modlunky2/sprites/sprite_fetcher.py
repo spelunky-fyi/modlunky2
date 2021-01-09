@@ -55,8 +55,8 @@ class SpelukySpriteFetcher:
         # we are getting the right sprite sheet with the first `(name)` then getting the
         # image with the second `(name)` maybe using partials here would be more
         # pleasing?
-        img = self._non_biome_map.get(name)(name)
+        img = self._non_biome_map.get(name, lambda x: None)(name)
         if not img:
-            return self._biome_map.get(biome)(name)
+            return self._biome_map.get(biome, lambda x: None)(name)
         else:
             return img
