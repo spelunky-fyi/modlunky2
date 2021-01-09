@@ -81,12 +81,5 @@ class AbstractBiome(ABC):
         get_func = self._sheet_map.get(name)
         if get_func is None:
             return
-        # Basically implementing my own doofy caching so that we don't have possible
-        # memory leaks with functools.lru_cache decorator
-        if self._image_cache.get(name):
-            return self._image_cache.get(name)
         # this will either be the `get` method of the floor or deco sheet object
-        img = get_func(name)
-        # Seeding the cache
-        self._image_cache[name] = img
-        return img
+        return get_func(name)
