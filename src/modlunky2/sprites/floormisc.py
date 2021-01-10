@@ -11,7 +11,7 @@ class FloorMiscSheet(BaseSpriteLoader):
     # things
     _chunk_map = {
         "push_block": (0, 0, 1, 1),
-        "arrowtrap": (1, 0, 2, 1),
+        "arrow_trap": (1, 0, 2, 1),
         "altar": (2, 0, 4, 1),
         "altar_trim_right": (2, 1, 3, 2),
         "altar_trim_left": (3, 1, 4, 2),

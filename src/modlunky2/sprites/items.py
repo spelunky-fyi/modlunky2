@@ -181,7 +181,7 @@ class ItemSheet(BaseSpriteLoader):
         "paper_lantern": (6, 10, 7, 11),
         "hou_yi_bow": (7, 10, 8, 11),
         "hou_yi_bow_loaded": (8, 10, 9, 11),
-        "arrow_of_light": (9, 10, 10, 11),
+        "lightarrow": (9, 10, 10, 11),
         "journal_key": (10, 10, 11, 11),
         "elixir": (11, 10, 12, 11),
         "tusk_idol": (12, 10, 13, 11),

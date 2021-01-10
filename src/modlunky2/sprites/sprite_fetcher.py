@@ -57,6 +57,10 @@ class SpelukySpriteFetcher:
         # pleasing?
         img = self._non_biome_map.get(name, lambda x: None)(name)
         if not img:
-            return self._biome_map.get(biome, lambda x: None)(name)
-        else:
-            return img
+            img = self._biome_map.get(biome, lambda x: None)(name)
+        if not img:
+            for bname, b_class in self._biome_dict.items():
+                if bname != biome:
+                    img = b_class.get(name)
+                if img:
+                    break
