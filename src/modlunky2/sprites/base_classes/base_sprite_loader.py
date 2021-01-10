@@ -17,14 +17,14 @@ _CACHED_NONE_SENTINEL = object()
 def _cache_img_not_class(f):
     """using this because functools.lrucache will keep the class object from getting
     GCed if you are using it on a method"""
-    cache_dict = {}
 
+    # noinspection PyProtectedMember
     @wraps(f)
     def cache_img(slf, name: str):
-        img = cache_dict.get(name)
+        img = slf._cache_dict.get(name)
         if not img:
             img = f(slf, name) or _CACHED_NONE_SENTINEL
-            cache_dict[name] = img
+            slf._cache_dict[name] = img
         if img is _CACHED_NONE_SENTINEL:
             return None
         return img
@@ -63,6 +63,9 @@ class BaseSpriteLoader(ABC):
     def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
         self.base_path = base_path
         self._sprite_sheet = Image.open(self.base_path / self._sprite_sheet_path)
+        # This is to support the caching decorator and let it use storage on this class
+        # otherwise we get doofy global dicts for caching
+        self._cache_dict = {}
 
     def _get_block(
         self,

@@ -44,6 +44,7 @@ class BabylonFloorSheet(AbstractFloorSheet):
 
 class SunkenCityFloorSheet(AbstractFloorSheet):
     biome_name = "sunken"
+    _additional_chunks = {"bigspear_trap": (8, 9, 10, 10)}
 
 
 class EggplantFloorSheet(AbstractFloorSheet):

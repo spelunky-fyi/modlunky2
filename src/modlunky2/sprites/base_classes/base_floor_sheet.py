@@ -34,3 +34,11 @@ class AbstractFloorSheet(BaseSpriteLoader):
         "dirt": (0, 0, 4, 7),
         "ghist_door2": (10, 6, 12, 8),
     }
+    _additional_chunks = {}
+
+    def __init__(self, base_path: Path):
+        super().__init__(base_path=base_path)
+        # Adding additional chunks that are defined in subclasses to the chunk map
+        new_map = self._chunk_map.copy()
+        new_map.update(self._additional_chunks)
+        self._chunk_map = new_map
