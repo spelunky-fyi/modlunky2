@@ -25,7 +25,7 @@ class AbstractFloorSheet(BaseSpriteLoader):
         "ladder_plat": (4, 2, 5, 4),
         "entrance": (0, 7, 3, 9),
         # Exit is not on even 128 pixel boundaries RIP even numbers
-        "exit": (9.5, 0, 11.5, 3),
+        "exit": (0, 9.5, 3, 11.5),
         "door2": (8, 6, 10, 8),
         # door2_secret is the same as door2, but gets dirt/push_block in front
         "door2_secret": (8, 6, 10, 8),

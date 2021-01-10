@@ -51,6 +51,7 @@ class SpelukySpriteFetcher:
         non_biome_map.update(floor_misc_key_map)
         return non_biome_map
 
+    # noinspection PyNoneFunctionAssignment
     def get(self, name: str, biome: str = "cave") -> Optional[Image.Image]:
         # we are getting the right sprite sheet with the first `(name)` then getting the
         # image with the second `(name)` maybe using partials here would be more
