@@ -64,3 +64,4 @@ class SpelukySpriteFetcher:
                     img = b_class.get(name)
                 if img:
                     break
+        return img
