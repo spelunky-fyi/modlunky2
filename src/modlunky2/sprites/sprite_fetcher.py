@@ -29,8 +29,10 @@ class SpelukySpriteFetcher:
         from .hud import HudSheet
         from .floormisc import FloorMiscSheet
 
+        # Gather all of the sheets in a list, these are the classes, not instances yet
         sheets = [getattr(monsters, m) for m in monsters.__all__]
         sheets.extend([ItemSheet, HudSheet, FloorMiscSheet])
+        # Now making them instances
         sheets = [s(self.base_path) for s in sheets]
         key_map = {}
         for sheet in sheets:
