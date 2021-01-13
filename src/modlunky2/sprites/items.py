@@ -4,11 +4,6 @@ from .base_classes import BaseSpriteLoader
 
 
 class ItemSheet(BaseSpriteLoader):
-    """
-    source for `items.png`
-
-    """
-
     _sprite_sheet_path = Path("Data/Textures/items.png")
     _chunk_size = 128
     _chunk_map = {
