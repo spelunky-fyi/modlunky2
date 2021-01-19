@@ -151,10 +151,12 @@ class BaseSpriteMerger(ABC):
 
     def do_merge(self, sprite_loaders: List[BaseSpriteLoader]) -> Image:
         height_offset = 0
-        for sprite_loader in sprite_loaders:
-            sprite_loader_type = type(sprite_loader)
-            if sprite_loader_type in self._origin_map:
-                origin_def = self._origin_map[sprite_loader_type]
+        for sprite_loader_type, origin_def in self._origin_map.items():
+            matching_sprite_loaders = [
+                x for x in sprite_loaders if isinstance(x, sprite_loader_type)
+            ]
+            if matching_sprite_loaders:
+                sprite_loader = matching_sprite_loaders[0]
                 chunk_size = origin_def["chunk_size"]
                 for name, coords in origin_def["chunk_map"].items():
                     source_image = sprite_loader.get(name)
@@ -164,7 +166,7 @@ class BaseSpriteMerger(ABC):
                         )
                         self._put_grid(*grid_coords)
                         self._put_chunk(*chunk_coords, source_image)
-                height_offset = height_offset + origin_def["image_size"][1]
+            height_offset = height_offset + origin_def["image_size"][1]
         return self._sprite_sheet
 
     def save(self):
