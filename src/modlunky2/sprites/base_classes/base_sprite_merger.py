@@ -82,6 +82,7 @@ class BaseSpriteMerger(ABC):
         def draw_text_hint(text_hint: str):
             default_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", size=25)
             lines = text_hint.splitlines()
+            lines.reverse()
             current_height = 0
             for line in lines:
                 line_width, line_height = default_font.getsize(line)
@@ -93,7 +94,9 @@ class BaseSpriteMerger(ABC):
                 )
 
         if self._separate_grid_file:
-            draw_text_hint("Stay within the guides!")
+            draw_text_hint(
+                "You may overlap the guides.\nDo not go outsides the guides though!"
+            )
         else:
             draw_text_hint("Stay within the guides!\nDo not overlap the guides!")
 
