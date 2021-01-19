@@ -49,7 +49,6 @@ class BaseSpriteMerger(ABC):
         self._full_path = self.base_path / self._target_sprite_sheet_path
         self._separate_grid_file = separate_grid_file
         self._grid_colors = [(255, 0, 0, 255), (0, 0, 255, 255)]
-        self._grid_colors_idx = 0
 
         max_image_width = 0
         total_image_height = 0
@@ -137,10 +136,21 @@ class BaseSpriteMerger(ABC):
 
         return (grid_bbox, chunk_bbox)
 
-    def _put_grid(self, left: int, upper: int, right: int, lower: int):
+    def _put_grid(
+        self,
+        left: int,
+        upper: int,
+        right: int,
+        lower: int,
+        chunk_size: int,
+    ):
+        chunk_coord = (int(left / chunk_size), int(upper / chunk_size))
+        grid_color_index = int(chunk_coord[0] % 2)
+        if int(chunk_coord[1] % 2):
+            grid_color_index = 0 if grid_color_index else 1
+
         grid_bbox = (left, upper, right, lower)
-        grid_color = self._grid_colors[self._grid_colors_idx]
-        self._grid_colors_idx = 1 if self._grid_colors_idx == 0 else 0
+        grid_color = self._grid_colors[grid_color_index]
         self._grid_image_draw.rectangle(
             grid_bbox, outline=grid_color, width=self._grid_hint_size
         )
@@ -158,15 +168,16 @@ class BaseSpriteMerger(ABC):
             if matching_sprite_loaders:
                 sprite_loader = matching_sprite_loaders[0]
                 chunk_size = origin_def["chunk_size"]
+                image_size = origin_def["image_size"]
                 for name, coords in origin_def["chunk_map"].items():
                     source_image = sprite_loader.get(name)
                     if source_image:
                         grid_coords, chunk_coords = self._get_image_coords(
                             *coords, chunk_size, height_offset
                         )
-                        self._put_grid(*grid_coords)
+                        self._put_grid(*grid_coords, chunk_size)
                         self._put_chunk(*chunk_coords, source_image)
-            height_offset = height_offset + origin_def["image_size"][1]
+            height_offset = height_offset + image_size[1]
         return self._sprite_sheet
 
     def save(self):
