@@ -7,7 +7,7 @@ from os import makedirs
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .types import image_crop_tuple_whole_number
+from .types import image_crop_tuple_whole_number, chunk_map_type
 from .base_sprite_loader import BaseSpriteLoader
 
 _DEFAULT_BASE_PATH = Path(
@@ -35,7 +35,7 @@ class BaseSpriteMerger(ABC):
 
     @property
     @abstractmethod
-    def _origin_map(self) -> Dict[Type[BaseSpriteLoader], Dict]:
+    def _origin_map(self) -> Dict[Type[BaseSpriteLoader], chunk_map_type]:
         """
         Define a mapping from types that are implementations of BaseSpriteLoader
         to a dictionary that contain a chunk_size and a chunk_map
