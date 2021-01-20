@@ -182,6 +182,16 @@ class BaseSpriteMerger(ABC):
                         )
                         self._put_grid(*grid_coords, chunk_size)
                         self._put_chunk(*chunk_coords, source_image)
+                    else:
+                        print(
+                            "Could not find image {} in source {}".format(
+                                name, sprite_loader_type
+                            )
+                        )
+            else:
+                print(
+                    "Required sprite loader {} not supplied".format(sprite_loader_type)
+                )
             height_offset = height_offset + image_size[1]
         return self._sprite_sheet
 
