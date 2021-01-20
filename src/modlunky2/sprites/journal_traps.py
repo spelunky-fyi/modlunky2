@@ -3,7 +3,7 @@ from pathlib import Path
 from .base_classes import BaseSpriteLoader
 
 
-class JournalPlaceSheet(BaseSpriteLoader):
+class JournalTrapSheet(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/journal_entry_traps.png")
     _chunk_size = 160
     _chunk_map = {
