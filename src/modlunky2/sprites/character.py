@@ -55,85 +55,85 @@ class CharacterBlackSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_black.png")
 
 
-class CharacterLimeSheet(BaseSpriteLoader):
+class CharacterLimeSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_lime.png")
 
 
-class CharacterMagentaSheet(BaseSpriteLoader):
+class CharacterMagentaSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_magenta.png")
 
 
-class CharacterOliveSheet(BaseSpriteLoader):
+class CharacterOliveSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_olive.png")
 
 
-class CharacterOrangeSheet(BaseSpriteLoader):
+class CharacterOrangeSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_orange.png")
 
 
-class CharacterPinkSheet(BaseSpriteLoader):
+class CharacterPinkSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_pink.png")
 
 
-class CharacterRedSheet(BaseSpriteLoader):
+class CharacterRedSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_red.png")
 
 
-class CharacterVioletSheet(BaseSpriteLoader):
+class CharacterVioletSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_violet.png")
 
 
-class CharacterWhiteSheet(BaseSpriteLoader):
+class CharacterWhiteSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_white.png")
 
 
-class CharacterYellowSheet(BaseSpriteLoader):
+class CharacterYellowSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_yellow.png")
 
 
-class CharacterBlueSheet(BaseSpriteLoader):
+class CharacterBlueSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_blue.png")
 
 
-class CharacterCeruleanSheet(BaseSpriteLoader):
+class CharacterCeruleanSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_cerulean.png")
 
 
-class CharacterCinnabarSheet(BaseSpriteLoader):
+class CharacterCinnabarSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_cinnabar.png")
 
 
-class CharacterCyanSheet(BaseSpriteLoader):
+class CharacterCyanSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_cyan.png")
 
 
-class CharacterEggChildSheet(BaseSpriteLoader):
+class CharacterEggChildSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_eggchild.png")
 
 
-class CharacterGoldSheet(BaseSpriteLoader):
+class CharacterGoldSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_gold.png")
 
 
-class CharacterGraySheet(BaseSpriteLoader):
+class CharacterGraySheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_gray.png")
 
 
-class CharacterGreenSheet(BaseSpriteLoader):
+class CharacterGreenSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_green.png")
 
 
-class CharacterHiredHandSheet(BaseSpriteLoader):
+class CharacterHiredHandSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_hired.png")
 
 
-class CharacterIrisSheet(BaseSpriteLoader):
+class CharacterIrisSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_iris.png")
 
 
-class CharacterKhakiSheet(BaseSpriteLoader):
+class CharacterKhakiSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_khaki.png")
 
 
-class CharacterLemonSheet(BaseSpriteLoader):
+class CharacterLemonSheet(CharacterSheet):
     _sprite_sheet_path = Path("Data/Textures/char_lemon.png")
