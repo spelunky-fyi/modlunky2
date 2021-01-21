@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Callable, Dict, Optional, Union, List, Type, Tuple
 from random import uniform
 from os import makedirs
-
+from logging import getLogger
 from PIL import Image, ImageDraw, ImageFont
 
 from .types import image_crop_tuple_whole_number, chunk_map_type
@@ -13,6 +13,8 @@ from .base_sprite_loader import BaseSpriteLoader
 _DEFAULT_BASE_PATH = Path(
     r"D:\Program Files (x86)\SteamLibrary\steamapps\common\Spelunky 2\Mods\Extracted"
 )
+
+logger = getLogger("modlunky2")
 
 
 class BaseSpriteMerger(ABC):
@@ -183,13 +185,13 @@ class BaseSpriteMerger(ABC):
                         self._put_grid(*grid_coords, chunk_size)
                         self._put_chunk(*chunk_coords, source_image)
                     else:
-                        print(
+                        logger.error(
                             "Could not find image {} in source {}".format(
                                 name, sprite_loader_type
                             )
                         )
             else:
-                print(
+                logger.error(
                     "Required sprite loader {} not supplied".format(sprite_loader_type)
                 )
             height_offset = height_offset + image_size[1]
