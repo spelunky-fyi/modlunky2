@@ -39,7 +39,7 @@ class JournalMonsterSheet(BaseSpriteLoader):
         "journal_olmite": (0, 3, 1, 4),
         "journal_necromancer": (1, 3, 2, 4),
         "journal_bee": (2, 3, 3, 4),
-        "journal_poochy": (4, 3, 5, 4),
+        "journal_poochi": (4, 3, 5, 4),
         "journal_monty": (5, 3, 6, 4),
         "journal_golden_monkey": (6, 3, 7, 4),
         "journal_jiangshi_assassin": (7, 3, 8, 4),
@@ -54,7 +54,7 @@ class JournalMonsterSheet(BaseSpriteLoader):
         "journal_ghist": (6, 4, 7, 5),
         "journal_tadpole": (7, 4, 8, 5),
         "journal_turkey": (8, 4, 9, 5),
-        "journal_rock_dog": (9, 4, 10, 5),
+        "journal_rockdog": (9, 4, 10, 5),
         "journal_axolotl": (0, 5, 1, 6),
         "journal_qilin": (1, 5, 2, 6),
     }
