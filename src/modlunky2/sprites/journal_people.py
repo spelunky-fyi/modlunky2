@@ -26,6 +26,7 @@ class JournalPeopleSheet(BaseSpriteLoader):
         "journal_char_violet": (6, 1, 7, 2),
         "journal_char_gray": (7, 1, 8, 2),
         "journal_char_khaki": (8, 1, 9, 2),
+        "journal_char_orange": (9, 1, 10, 2),
         "journal_hired_hand": (0, 2, 1, 3),
         "journal_eggplant_child": (1, 2, 2, 3),
         "journal_shopkeeper": (2, 2, 3, 3),
