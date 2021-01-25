@@ -15,6 +15,9 @@ from modlunky2.assets.constants import (
 from modlunky2.ui.utils import is_patched, log_exception
 from modlunky2.ui.widgets import Tab
 
+from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
+from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
+
 logger = logging.getLogger("modlunky2")
 
 
@@ -113,3 +116,11 @@ class ExtractTab(Tab):
             shutil.copy2(exe_filename, dest)
 
         logger.info("Extraction complete!")
+
+        logger.info("Creating merged sprite sheets...")
+        sprite_loaders = get_all_sprite_loaders(self.install_dir / MODS / EXTRACTED_DIR)
+        sprite_mergers = get_all_sprite_mergers(self.install_dir / MODS / EXTRACTED_DIR)
+        for sprite_merger in sprite_mergers:
+            sprite_merger.do_merge(sprite_loaders)
+            sprite_merger.save()
+        logger.info("Done creating merged sprite sheets...")
