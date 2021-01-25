@@ -23,7 +23,7 @@ class BaseSpriteMerger(ABC):
     def _target_sprite_sheet_path(self) -> Path:
         """
         Define the path from a "base path" to the specific png file this is for writing,
-        for example for the cape it should return Path('Data/Textures/Merged/cape.png')
+        for example for the cape it should return Path('Data/Textures/Entities/cape.png')
         """
         pass
 

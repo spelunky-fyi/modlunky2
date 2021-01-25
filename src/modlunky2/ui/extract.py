@@ -117,10 +117,10 @@ class ExtractTab(Tab):
 
         logger.info("Extraction complete!")
 
-        logger.info("Creating merged sprite sheets...")
+        logger.info("Creating entity sprite sheets...")
         sprite_loaders = get_all_sprite_loaders(self.install_dir / MODS / EXTRACTED_DIR)
         sprite_mergers = get_all_sprite_mergers(self.install_dir / MODS / EXTRACTED_DIR)
         for sprite_merger in sprite_mergers:
             sprite_merger.do_merge(sprite_loaders)
             sprite_merger.save()
-        logger.info("Done creating merged sprite sheets...")
+        logger.info("Done creating entity sprite sheets...")

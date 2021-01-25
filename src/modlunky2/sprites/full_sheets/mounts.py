@@ -9,7 +9,7 @@ from ..items import ItemSheet
 
 
 class TurkeySpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/turkey_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/turkey_full.png")
     _grid_hint_size = 8
     _origin_map = {
         Mounts: {
@@ -25,7 +25,7 @@ class TurkeySpriteMerger(BaseSpriteMerger):
 
 
 class RockdogSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/rockdog_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/rockdog_full.png")
     _grid_hint_size = 8
     _origin_map = {
         Mounts: {
@@ -39,7 +39,7 @@ class RockdogSpriteMerger(BaseSpriteMerger):
 
 
 class AxolotlSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/axolotl_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/axolotl_full.png")
     _grid_hint_size = 8
     _origin_map = {
         Mounts: {
@@ -53,7 +53,7 @@ class AxolotlSpriteMerger(BaseSpriteMerger):
 
 
 class QilinSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/qilin_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/qilin_full.png")
     _grid_hint_size = 8
     _origin_map = {
         Mounts: {

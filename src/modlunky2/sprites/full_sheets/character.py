@@ -9,7 +9,7 @@ from ..journal_stickers import StickerSheet
 def _create_class_for_character(color: str, character_sheet_type: type):
     class CharacterSpriteMerger(BaseSpriteMerger):
         _target_sprite_sheet_path = Path(
-            "Data/Textures/Merged/char_{}_full.png".format(color)
+            "Data/Textures/Entities/char_{}_full.png".format(color)
         )
         _grid_hint_size = 8
         _origin_map = {
@@ -57,7 +57,7 @@ CharacterLemonSpriteMerger = _create_class_for_character("lemon", CharacterLemon
 
 
 class CharacterEggChildSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/char_eggchild_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/char_eggchild_full.png")
     _grid_hint_size = 8
     _origin_map = {
         CharacterEggChildSheet: CharacterEggChildSheet._chunk_map,
@@ -66,7 +66,7 @@ class CharacterEggChildSpriteMerger(BaseSpriteMerger):
 
 
 class CharacterHiredHandSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Merged/char_hired_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/char_hired_full.png")
     _grid_hint_size = 8
     _origin_map = {
         CharacterHiredHandSheet: CharacterHiredHandSheet._chunk_map,
