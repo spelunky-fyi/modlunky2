@@ -8,7 +8,7 @@ from PIL import Image
 from .types import chunk_map_type, image_crop_tuple
 
 _DEFAULT_BASE_PATH = Path(
-    r"D:\Program Files (x86)\SteamLibrary\steamapps\common\Spelunky 2\Mods\Extracted"
+    r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
 )
 
 _CACHED_NONE_SENTINEL = object()

@@ -11,7 +11,7 @@ from .types import image_crop_tuple_whole_number, chunk_map_type
 from .base_sprite_loader import BaseSpriteLoader
 
 _DEFAULT_BASE_PATH = Path(
-    r"D:\Program Files (x86)\SteamLibrary\steamapps\common\Spelunky 2\Mods\Extracted"
+    r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
 )
 
 logger = getLogger("modlunky2")
