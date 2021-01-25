@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from ..base_classes.base_sprite_loader import chunks_from_animation
 from ..base_classes.base_sprite_merger import BaseSpriteMerger
 from ..monsters.pets import Pets
 from ..journal_mons import JournalMonsterSheet
+from ..util import chunks_from_animation
 
 
 class MontySpriteMerger(BaseSpriteMerger):

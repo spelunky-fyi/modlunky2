@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from ..base_classes.base_sprite_loader import chunks_from_animation
 from ..base_classes.base_sprite_merger import BaseSpriteMerger
 from ..monsters.mounts import Mounts
 from ..journal_mons import JournalMonsterSheet
 from ..journal_items import JournalItemSheet
 from ..items import ItemSheet
+from ..util import chunks_from_animation
 
 
 class TurkeySpriteMerger(BaseSpriteMerger):

@@ -1,4 +1,4 @@
-from .base_sprite_loader import BaseSpriteLoader, chunks_from_animation
+from .base_classes import BaseSpriteLoader
 from .base_deco_sheet import AbstractDecoSheet
 from .base_biome import AbstractBiome, DEFAULT_BASE_PATH
 from .base_floor_sheet import AbstractFloorSheet

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from ..base_classes.base_sprite_loader import BaseSpriteLoader, chunks_from_animation
+from ..base_classes.base_sprite_loader import BaseSpriteLoader
+from ..util import chunks_from_animation
 
 
 class Mounts(BaseSpriteLoader):
