@@ -167,6 +167,8 @@ class BaseSpriteMerger(ABC):
         self._sprite_sheet.paste(image, bbox)
 
     def do_merge(self, sprite_loaders: List[BaseSpriteLoader]) -> Image:
+        logger.info("Merging sprites for sheet {}".format(self._full_path.stem))
+
         height_offset = 0
         for sprite_loader_type, chunk_map in self._origin_map.items():
             matching_sprite_loaders = [
@@ -198,9 +200,11 @@ class BaseSpriteMerger(ABC):
         return self._sprite_sheet
 
     def save(self):
-        if not self._target_sprite_sheet_path.parent.exists():
-            makedirs(self._target_sprite_sheet_path.parent)
-        self._sprite_sheet.save(self._target_sprite_sheet_path)
+        if not self._full_path.parent.exists():
+            makedirs(self._full_path.parent)
+        self._sprite_sheet.save(self._full_path)
         if self._separate_grid_file:
-            grid_file_path = f"{self._target_sprite_sheet_path.with_suffix('')}_grid{self._target_sprite_sheet_path.suffix}"
+            grid_file_path = (
+                f"{self._full_path.with_suffix('')}_grid{self._full_path.suffix}"
+            )
             self._grid_image.save(grid_file_path)
