@@ -28,6 +28,10 @@ from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 from .string_hashing import StringHashes
 
+from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
+from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
+
+
 logger = logging.getLogger("modlunky2")
 
 
@@ -265,6 +269,11 @@ class AssetStore:
         except Exception:  # pylint: disable=broad-except
             logger.exception("Failed Extraction")
 
+    @staticmethod
+    def _merge_single_entity(sprite_merger, sprite_loaders):
+        sprite_merger.do_merge(sprite_loaders)
+        sprite_merger.save()
+
     def extract(
         self,
         extract_dir,
@@ -273,6 +282,7 @@ class AssetStore:
         max_workers=max(os.cpu_count() - 2, 1),
         recompress=True,
         generate_string_hashes=True,
+        create_entity_sheets=True,
     ):
         unextracted = []
         for asset in self.assets:
@@ -301,6 +311,24 @@ class AssetStore:
 
         if generate_string_hashes:
             self.hash_strings(extract_dir)
+
+        if create_entity_sheets:
+            logger.info("Creating entity sprite sheets...")
+            sprite_loaders = get_all_sprite_loaders(extract_dir)
+            sprite_mergers = get_all_sprite_mergers(extract_dir)
+
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                futures = [
+                    pool.submit(
+                        self._merge_single_entity,
+                        sprite_merger,
+                        sprite_loaders,
+                    )
+                    for sprite_merger in sprite_mergers
+                ]
+                wait(futures, timeout=300)
+
+            logger.info("Done creating entity sprite sheets...")
 
         return unextracted
 

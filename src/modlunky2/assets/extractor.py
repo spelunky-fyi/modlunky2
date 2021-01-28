@@ -51,6 +51,15 @@ def main():
         ),
     )
     parser.add_argument(
+        "--create-entity-sheets",
+        dest="create_entity_sheets",
+        default=False,
+        action="store_true",
+        help=(
+            "Create extended entity assets merged from multiple sheets."
+        ),
+    )
+    parser.add_argument(
         "--no-mkdirs",
         dest="mkdirs",
         default=True,
@@ -82,6 +91,7 @@ def main():
         mods_dir / ".compressed" / extracted_dir,
         args.compression_level,
         recompress=args.recompress,
+        create_entity_sheets=args.create_entity_sheets,
     )
 
     for asset in unextracted:

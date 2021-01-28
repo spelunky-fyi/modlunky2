@@ -102,6 +102,7 @@ class ExtractTab(Tab):
             unextracted = asset_store.extract(
                 mods_dir / EXTRACTED_DIR,
                 mods_dir / ".compressed" / EXTRACTED_DIR,
+                create_entity_sheets=True,
             )
 
         for asset in unextracted:
