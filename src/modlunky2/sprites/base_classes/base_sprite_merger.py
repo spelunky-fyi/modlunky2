@@ -82,7 +82,10 @@ class BaseSpriteMerger(ABC):
         self._grid_image_draw = ImageDraw.Draw(self._grid_image)
 
         def draw_text_hint(text_hint: str):
-            default_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", size=25)
+            try:
+                default_font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", size=25)
+            except OSError:
+                default_font = ImageFont.load_default()
             lines = text_hint.splitlines()
             lines.reverse()
             current_height = 0

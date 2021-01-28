@@ -1,4 +1,4 @@
-from .types import image_crop_tuple
+from modlunky2.sprites.base_classes.types import image_crop_tuple
 
 
 def chunks_from_animation(
