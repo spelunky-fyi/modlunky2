@@ -14,6 +14,8 @@ from PIL import Image
 
 from modlunky2.assets.constants import KNOWN_TEXTURES_V1
 from modlunky2.assets.exc import NonSiblingAsset
+from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
+from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
 
 from .chacha import Key, chacha, hash_filepath
 from .constants import (
@@ -27,9 +29,8 @@ from .constants import (
 from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 from .string_hashing import StringHashes
+from .hashing import md5sum_path
 
-from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
-from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
 
 
 logger = logging.getLogger("modlunky2")
@@ -584,13 +585,7 @@ class DiskAsset:
             ) from err
 
     def md5sum_of_asset(self):
-        with self.asset_path.open("rb") as file_:
-            md5sum = hashlib.md5()
-            chunk = file_.read(8192)
-            while chunk:
-                md5sum.update(chunk)
-                chunk = file_.read(8192)
-            return md5sum.hexdigest().encode()
+        return md5sum_path(self.asset_path)
 
     @property
     def real_suffix(self):

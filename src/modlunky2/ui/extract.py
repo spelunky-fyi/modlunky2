@@ -13,7 +13,7 @@ from modlunky2.assets.constants import (
     PACKS_DIR,
 )
 from modlunky2.ui.utils import is_patched, log_exception
-from modlunky2.ui.widgets import Tab
+from modlunky2.ui.widgets import Tab, ToolTip
 
 logger = logging.getLogger("modlunky2")
 
@@ -33,22 +33,58 @@ class ExtractTab(Tab):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, minsize=60)
 
-        self.label_frame = ttk.LabelFrame(self, text="Select exe to Extract")
-        self.label_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
-        self.label_frame.rowconfigure(0, weight=1)
-        self.label_frame.columnconfigure(0, weight=1)
+        self.top_frame = ttk.Frame(self)
+        self.top_frame.rowconfigure(0, weight=1)
+        self.top_frame.columnconfigure(0, weight=1)
+        self.top_frame.columnconfigure(1, minsize=250)
+        self.top_frame.grid(row=0, column=0, sticky="nswe")
 
-        self.scrollbar = ttk.Scrollbar(self.label_frame)
+        self.exe_frame = ttk.LabelFrame(self.top_frame, text="Select exe to Extract")
+        self.exe_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.exe_frame.rowconfigure(0, weight=1)
+        self.exe_frame.columnconfigure(0, weight=1)
+        self.exe_frame.columnconfigure(1)
+
+        self.list_box = tk.Listbox(self.exe_frame)
+        self.list_box.grid(row=0, column=0, sticky="nswe")
+        self.scrollbar = ttk.Scrollbar(self.exe_frame)
         self.scrollbar.grid(row=0, column=1, sticky="nes")
 
-        self.list_box = tk.Listbox(self.label_frame)
-        self.list_box.grid(row=0, column=0, sticky="nswe")
+        self.config_frame = ttk.LabelFrame(self.top_frame, text="Config")
+        self.config_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+
+        self.recompress = tk.BooleanVar()
+        self.recompress.set(True)
+        self.checkbox_recompress = tk.Checkbutton(
+            self.config_frame,
+            text='Recompress', variable=self.recompress, onvalue=True, offvalue=False,
+        )
+        self.checkbox_recompress.grid(row=0, sticky="nw")
+        ToolTip(self.checkbox_recompress, (
+            "Recompress assets to speed up futuring packing.\n"
+            "Not necessary if you just want the extracted assets."
+        ))
+
+        self.create_entity = tk.BooleanVar()
+        self.create_entity.set(True)
+        self.checkbox_create_entity = tk.Checkbutton(
+            self.config_frame,
+            text='Create Entity Sprites', variable=self.create_entity, onvalue=True, offvalue=False,
+        )
+        self.checkbox_create_entity.grid(row=1, sticky="nw")
+        ToolTip(self.checkbox_create_entity, (
+            "Create merged entity spritesheets. These provide a simpler\n"
+            "interface to some entity mods."
+        ))
 
         self.list_box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.list_box.yview)
 
         self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
         self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        ToolTip(self.button_extract, (
+            "Extract assets from EXE."
+        ))
 
     def extract(self):
         idx = self.list_box.curselection()
@@ -56,7 +92,9 @@ class ExtractTab(Tab):
             return
 
         selected_exe = self.list_box.get(idx)
-        thread = threading.Thread(target=self.extract_assets, args=(selected_exe,))
+        thread = threading.Thread(
+            target=self.extract_assets,
+            args=(selected_exe, self.recompress.get(), self.create_entity.get()))
         thread.start()
 
     def get_exes(self):
@@ -78,12 +116,15 @@ class ExtractTab(Tab):
             self.list_box.insert(tk.END, str(exe))
 
     @log_exception
-    def extract_assets(self, target):
+    def extract_assets(self, target, recompress, create_entity_sheets):
 
         exe_filename = self.install_dir / target
 
         if is_patched(exe_filename):
-            logger.critical("%s is a patched exe. Can't extract.", exe_filename)
+            logger.critical((
+                "%s is a patched exe. Can't extract. You should Restore Exe"
+                " or validate game files to get a clean exe before Extracting."
+            ), exe_filename)
             return
 
         mods_dir = self.install_dir / MODS
@@ -102,7 +143,8 @@ class ExtractTab(Tab):
             unextracted = asset_store.extract(
                 mods_dir / EXTRACTED_DIR,
                 mods_dir / ".compressed" / EXTRACTED_DIR,
-                create_entity_sheets=True,
+                recompress=recompress,
+                create_entity_sheets=create_entity_sheets,
             )
 
         for asset in unextracted:

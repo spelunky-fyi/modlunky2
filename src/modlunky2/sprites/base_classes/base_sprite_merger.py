@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from functools import wraps
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union, List, Type, Tuple
-from random import uniform
+from typing import Dict, List, Type, Tuple
 from os import makedirs
 from logging import getLogger
 from PIL import Image, ImageDraw, ImageFont
@@ -25,7 +23,6 @@ class BaseSpriteMerger(ABC):
         Define the path from a "base path" to the specific png file this is for writing,
         for example for the cape it should return Path('Data/Textures/Entities/cape.png')
         """
-        pass
 
     @property
     @abstractmethod
@@ -33,7 +30,6 @@ class BaseSpriteMerger(ABC):
         """
         define how many pixels thick the grid hint is
         """
-        pass
 
     @property
     @abstractmethod
@@ -42,7 +38,6 @@ class BaseSpriteMerger(ABC):
         Define a mapping from types that are implementations of BaseSpriteLoader
         to a dictionary that contain a chunk_size and a chunk_map
         """
-        pass
 
     def __init__(
         self, base_path: Path = _DEFAULT_BASE_PATH, separate_grid_file: bool = True
@@ -170,7 +165,7 @@ class BaseSpriteMerger(ABC):
         self._sprite_sheet.paste(image, bbox)
 
     def do_merge(self, sprite_loaders: List[BaseSpriteLoader]) -> Image:
-        logger.info("Merging sprites for sheet {}".format(self._full_path.stem))
+        logger.info("Merging sprites for sheet %s", self._full_path.stem)
 
         height_offset = 0
         for sprite_loader_type, chunk_map in self._origin_map.items():
@@ -191,13 +186,12 @@ class BaseSpriteMerger(ABC):
                         self._put_chunk(*chunk_coords, source_image)
                     else:
                         logger.error(
-                            "Could not find image {} in source {}".format(
-                                name, sprite_loader_type
-                            )
+                            "Could not find image %s in source %s",
+                            name, sprite_loader_type
                         )
             else:
                 logger.error(
-                    "Required sprite loader {} not supplied".format(sprite_loader_type)
+                    "Required sprite loader %s not supplied", sprite_loader_type
                 )
             height_offset = height_offset + image_size[1]
         return self._sprite_sheet

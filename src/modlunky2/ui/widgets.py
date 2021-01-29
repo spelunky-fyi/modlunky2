@@ -64,6 +64,29 @@ class ConsoleWindow(tk.Frame):
         pass
 
 
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+
+        self.widget.bind('<Enter>', self.on_enter)
+        self.widget.bind('<Leave>', self.on_leave)
+
+        self.tooltip = None
+        self.label = None
+
+    def on_enter(self, event):
+        self.tooltip = tk.Toplevel()
+        self.tooltip.overrideredirect(True)
+        self.tooltip.geometry(f'+{event.x_root+15}+{event.y_root+10}')
+
+        self.label = tk.Label(self.tooltip,text=self.text)
+        self.label.pack()
+
+    def on_leave(self, _event):
+        self.tooltip.destroy()
+
+
 class Tab(ttk.Frame):
     """ Base class that all tabs should inherit from."""
 

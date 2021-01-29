@@ -2,6 +2,7 @@ import logging
 import shutil
 import threading
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import ttk
 
@@ -9,10 +10,11 @@ from PIL import Image, ImageTk
 
 from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.exc import MissingAsset
+from modlunky2.assets.hashing import md5sum_path
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.utils import is_patched, log_exception
-from modlunky2.ui.widgets import ScrollableFrame, Tab
+from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
 
 logger = logging.getLogger("modlunky2")
 
@@ -29,21 +31,34 @@ class PackTab(Tab):
         self.rowconfigure(1, minsize=60)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+
 
         self.frame = ScrollableFrame(self, text="Select mods to pack")
-        self.frame.grid(row=0, column=0, columnspan=2, pady=5, padx=5, sticky="nswe")
+        self.frame.grid(row=0, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
 
         self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
         self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        ToolTip(self.button_pack, "Pack modded assets into the EXE.")
+
         self.button_restore = ttk.Button(self, text="Restore EXE", command=self.restore)
         self.button_restore.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
+        ToolTip(self.button_restore, "Restore EXE to vanilla state from backup.")
+
+        self.button_validate = ttk.Button(self, text="Validate Game Files", command=self.validate)
+        self.button_validate.grid(row=1, column=2, pady=5, padx=5, sticky="nswe")
+        ToolTip(self.button_validate, "Redownload vanilla EXE from steam.")
 
         default_icon_path = BASE_DIR / "static/images/noicon.png"
         self.default_icon = ImageTk.PhotoImage(Image.open(default_icon_path))
 
         self.checkbox_vars = []
+
+    @staticmethod
+    def validate():
+        webbrowser.open_new_tab("steam://validate/418530")
 
     def restore(self):
         mods_dir = self.install_dir / MODS
@@ -112,11 +127,28 @@ class PackTab(Tab):
         source_exe = extract_dir / "Spel2.exe"
         dest_exe = self.install_dir / "Spel2.exe"
 
+        logger.info("Starting Pack of %s", source_exe)
         if is_patched(source_exe):
             logger.critical(
-                "Source exe (%s) is somehow patched. You need to re-extract."
+                "Source exe (%s) is somehow patched. You need to re-extract.", source_exe
             )
             return
+
+        # If the destination isn't patched we want to check if it differs
+        # from the source exe as new updates are a regular point of confusion
+        # for users.
+        if not is_patched(dest_exe):
+            logger.info("Checking for new release...")
+            logger.info("Hashing %s", source_exe)
+            src_md5 = md5sum_path(source_exe)
+            logger.info("Hashing %s", dest_exe)
+            dest_md5 = md5sum_path(dest_exe)
+            if src_md5 != dest_md5:
+                logger.critical((
+                    "%s appears to be a new version. You need to extract before packing again."
+                ), dest_exe)
+                return
+
 
         shutil.copy2(source_exe, dest_exe)
 
