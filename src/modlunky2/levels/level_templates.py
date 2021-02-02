@@ -126,6 +126,8 @@ VALID_LEVEL_TEMPLATES = set(
 
 SETROOM_RE = re.compile(r"^setroom\d{1,2}-\d{1,2}")
 
+TEMPLATE_COMMENT = "/" * 80
+
 
 class TemplateSetting(Enum):
     IGNORE = "ignore"
@@ -228,9 +230,14 @@ class LevelTemplate:
         return level_template
 
     def pprint(self):
-        print(f"Name: {self.name}")
-        print(f"Comment: {self.comment!r}")
-        print("Chunks:")
+        print(TEMPLATE_COMMENT)
+        name_line = f"{self.prefix}{self.name}"
+        if self.comment:
+            name_line += f"   // {self.comment}"
+        print(name_line)
+        print(TEMPLATE_COMMENT)
+        print("")
+
         for chunk in self.chunks:
             chunk.pprint()
         print("")
