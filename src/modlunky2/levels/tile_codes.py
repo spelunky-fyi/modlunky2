@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional, ClassVar
 
-from .utils import split_comment, DirectivePrefixes
+from .utils import split_comment, DirectivePrefixes, to_line
 
 
 VALID_TILE_CODES = set(
@@ -243,6 +243,7 @@ VALID_TILE_CODES = set(
     ]
 )
 
+NAME_PADDING = max(map(len, VALID_TILE_CODES)) + 4
 PERCENT_DELIM = re.compile(r"%\d{1,2}%?")
 
 
@@ -280,7 +281,11 @@ class TileCode:
         return cls(name, value, comment)
 
     def to_line(self) -> str:
-        line = f"{self.prefix}{self.name}\t\t{self.value}"
-        if self.comment is not None:
-            line = f"{line} // {self.comment}"
-        return f"{line}\n"
+        return to_line(
+            self.prefix,
+            self.name,
+            NAME_PADDING,
+            self.value,
+            4,
+            self.comment
+        )

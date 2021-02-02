@@ -161,7 +161,6 @@ class Chunk:
         chunk = cls(settings=[], foreground=[], background=[])
 
         for line in file_handle:
-            print(line)
             line, _comment = split_comment(line)
 
             if not line:

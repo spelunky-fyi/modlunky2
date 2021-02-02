@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Union, Tuple, ClassVar
 
-from .utils import split_comment, parse_chance_values, DirectivePrefixes
+from .utils import split_comment, parse_chance_values, DirectivePrefixes, to_line
 
 
 VALID_MONSTER_CHANCES = set(
@@ -60,6 +60,8 @@ VALID_MONSTER_CHANCES = set(
     ]
 )
 
+NAME_PADDING = max(map(len, VALID_MONSTER_CHANCES)) + 4
+
 
 @dataclass
 class MonsterChance:
@@ -100,7 +102,11 @@ class MonsterChance:
         return ", ".join(map(str, value))
 
     def to_line(self) -> str:
-        line = f"{self.prefix}{self.name}\t\t{self.value_to_str()}"
-        if self.comment is not None:
-            line = f"{line} // {self.comment}"
-        return f"{line}\n"
+        return to_line(
+            self.prefix,
+            self.name,
+            NAME_PADDING,
+            self.value_to_str(),
+            28,
+            self.comment
+        )

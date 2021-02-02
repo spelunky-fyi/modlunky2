@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TypeVar, Generic, Optional, ClassVar
 
-from .utils import split_comment, DirectivePrefixes
+from .utils import split_comment, DirectivePrefixes, to_line
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -30,6 +30,7 @@ VALID_LEVEL_SETTINGS = set(
     ]
 )
 
+NAME_PADDING = max(map(len, VALID_LEVEL_SETTINGS)) + 4
 
 @dataclass
 class LevelSetting(Generic[T]):
@@ -69,7 +70,11 @@ class LevelSetting(Generic[T]):
         return " ".join(self.value)
 
     def to_line(self) -> str:
-        line = f"{self.prefix}{self.name}\t\t{self.value_to_str()}"
-        if self.comment is not None:
-            line = f"{line} // {self.comment}"
-        return f"{line}\n"
+        return to_line(
+            self.prefix,
+            self.name,
+            NAME_PADDING,
+            self.value_to_str(),
+            10,
+            self.comment
+        )

@@ -5,13 +5,20 @@ from enum import Enum
 def split_comment(line: str, delim: str = "//") -> Tuple[str, str]:
     rest, _, comment = line.partition(delim)
     comment = comment.strip()
-    if not comment:
-        comment = None
     return (rest.strip(), comment)
 
 
 def parse_chance_values(values: str) -> List[int]:
     return [int(value.strip()) for value in values.split(",")]
+
+
+def to_line(prefix, name, name_padding, value, value_padding, comment) -> str:
+    line = f"{prefix}{name:<{name_padding}}"
+    if comment:
+        line = f"{line}{value:<{value_padding}} // {comment}"
+    else:
+        line = f"{line}{value:<{value_padding}}"
+    return f"{line}\n"
 
 
 class Peekable:
