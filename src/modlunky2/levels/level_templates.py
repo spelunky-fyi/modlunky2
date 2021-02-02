@@ -149,6 +149,7 @@ VALID_TEMPLATE_SETTINGS = set(rf"\!{setting.value}" for setting in TemplateSetti
 
 @dataclass
 class Chunk:
+    comment: Optional[str]
     settings: List[TemplateSetting]
     foreground: List[List[str]]
     background: List[List[str]]
@@ -160,16 +161,18 @@ class Chunk:
 
     @classmethod
     def parse(cls, file_handle: TextIO) -> "Chunk":
-        chunk = cls(settings=[], foreground=[], background=[])
+        chunk = cls(comment="", settings=[], foreground=[], background=[])
 
         for line in file_handle:
-            line, _comment = split_comment(line)
+            line = line.strip()
 
             if not line:
                 # Reached the end of the file chunk or file.
                 return chunk
 
-            if line in VALID_TEMPLATE_SETTINGS:
+            if line.startswith("//"):
+                chunk.comment += f"{line}\n"
+            elif line in VALID_TEMPLATE_SETTINGS:
                 chunk.settings.append(TemplateSetting(line[2:]))
             else:
                 foreground, background = cls.partition_line(line)
@@ -180,6 +183,9 @@ class Chunk:
         return chunk
 
     def pprint(self):
+        if self.comment:
+            print(self.comment, end="")
+
         for setting in self.settings:
             print(setting.to_line())
 
@@ -218,7 +224,7 @@ class LevelTemplate:
             if next_line.startswith(DirectivePrefixes.TEMPLATE.value):
                 return level_template
 
-            if next_line:
+            if next_line or comment:
                 chunk = Chunk.parse(file_handle)
                 chunks.append(chunk)
             else:

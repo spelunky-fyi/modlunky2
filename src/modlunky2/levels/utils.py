@@ -2,9 +2,9 @@ from typing import Tuple, List
 from enum import Enum
 
 
-def split_comment(line: str, delim: str = "//") -> Tuple[str, str]:
-    rest, _, comment = line.partition(delim)
-    comment = comment.strip()
+def split_comment(line: str) -> Tuple[str, str]:
+    rest, _, comment = line.partition("//")
+    comment = comment.strip().strip("/")
     return (rest.strip(), comment)
 
 
