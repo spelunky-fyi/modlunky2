@@ -1,9 +1,9 @@
 import re
 from dataclasses import dataclass
-from typing import Optional, ClassVar
+from collections import OrderedDict
+from typing import ClassVar, Optional, TextIO
 
-from .utils import split_comment, DirectivePrefixes, to_line
-
+from .utils import DirectivePrefixes, split_comment, to_line
 
 VALID_TILE_CODES = set(
     [
@@ -136,6 +136,7 @@ VALID_TILE_CODES = set(
         "minewood_floor",
         "minewood_floor_hanging_hide",
         "minewood_floor_noreplace",
+        "minister",
         "moai_statue",
         "mosquito",
         "mother_statue",
@@ -247,6 +248,27 @@ NAME_PADDING = max(map(len, VALID_TILE_CODES)) + 4
 PERCENT_DELIM = re.compile(r"%\d{1,2}%?")
 
 
+class TileCodes:
+    def __init__(self):
+        self._inner = OrderedDict()
+        self.comment = None
+
+    def get(self, name):
+        TileCode.validate_name(name)
+        return self._inner.get(name)
+
+    def set_obj(self, obj: "TileCode"):
+        obj.validate()
+        self._inner[obj.name] = obj
+
+    def write(self, handle: TextIO):
+        if self.comment:
+            handle.write(f"{self.comment}\n")
+        for obj in self._inner.values():
+            handle.write(obj.to_line())
+        handle.write("\n")
+
+
 @dataclass
 class TileCode:
     prefix: ClassVar[str] = DirectivePrefixes.TILE_CODE.value
@@ -263,29 +285,35 @@ class TileCode:
         if not name:
             raise ValueError("Directive missing name.")
 
+        obj = cls(name, value, comment)
+        obj.validate()
+
+        return obj
+
+    @staticmethod
+    def validate_name(name: str):
         for part in PERCENT_DELIM.split(name):
             # names can have foo%50 where an empty rightside is valid.
             if not part:
                 continue
 
             if part not in VALID_TILE_CODES:
-                raise ValueError(
-                    f"Found tilecode with name {name!r} which isn't a valid tile code."
-                )
+                raise ValueError(f"Name {name!r} isn't a valid tile code.")
 
-        if len(value) != 1:
+    def validate_value(self):
+        if len(self.value) != 1:
             raise ValueError(
-                f"Tilecode {name!r} has value {value!r} that's more than one character."
+                f"Tilecode {self.name!r} has value {self.value!r} that's more than one character."
             )
 
-        return cls(name, value, comment)
+    def validate(self):
+        self.validate_name(self.name)
+        self.validate_value()
 
     def to_line(self) -> str:
         return to_line(
-            self.prefix,
-            self.name,
-            NAME_PADDING,
-            self.value,
-            4,
-            self.comment
+            self.prefix, self.name, NAME_PADDING, self.value, 4, self.comment
         )
+
+    def write(self, handle: TextIO):
+        handle.write(self.to_line())

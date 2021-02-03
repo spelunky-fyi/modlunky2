@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
+from collections import OrderedDict
 from itertools import zip_longest
 from typing import ClassVar, List, Optional, TextIO, Tuple
 
@@ -141,10 +142,32 @@ class TemplateSetting(Enum):
 
     def to_line(self):
         prefix = DirectivePrefixes.TEMPLATE_SETTING.value
-        return f"{prefix}{self.value}"
+        return f"{prefix}{self.value}\n"
 
 
 VALID_TEMPLATE_SETTINGS = set(rf"\!{setting.value}" for setting in TemplateSetting)
+
+
+class LevelTemplates:
+    def __init__(self):
+        self._inner = OrderedDict()
+        self.comment = None
+
+    def get(self, name):
+        LevelTemplate.validate_name(name)
+        return self._inner.get(name)
+
+    def set_obj(self, obj: "LevelTemplate"):
+        obj.validate()
+        self._inner[obj.name] = obj
+
+    def write(self, handle: TextIO):
+        if self.comment:
+            handle.write(f"{self.comment}\n")
+        for idx, template in enumerate(self._inner.values()):
+            template.write(handle)
+            if idx < len(self._inner) - 1:
+                handle.write("\n")
 
 
 @dataclass
@@ -182,19 +205,18 @@ class Chunk:
 
         return chunk
 
-    def pprint(self):
+    def write(self, handle: TextIO):
         if self.comment:
-            print(self.comment, end="")
+            handle.write(self.comment)
 
         for setting in self.settings:
-            print(setting.to_line())
+            handle.write(setting.to_line())
 
         for fg_line, bg_line in zip_longest(self.foreground, self.background):
             line = "".join(fg_line)
             if bg_line:
                 line = f"{line} {''.join(bg_line)}"
-            print(line)
-        print("")
+            handle.write(f"{line}\n")
 
 
 @dataclass
@@ -235,15 +257,23 @@ class LevelTemplate:
 
         return level_template
 
-    def pprint(self):
-        print(TEMPLATE_COMMENT)
+    @staticmethod
+    def validate_name(name: str):
+        if name not in VALID_LEVEL_TEMPLATES and not SETROOM_RE.match(name):
+            raise ValueError(f"Name {name!r} isn't a valid level template")
+
+    def validate(self):
+        self.validate_name(self.name)
+
+    def write(self, handle: TextIO):
+        handle.write(f"{TEMPLATE_COMMENT}\n")
         name_line = f"{self.prefix}{self.name}"
         if self.comment:
             name_line += f"   // {self.comment}"
-        print(name_line)
-        print(TEMPLATE_COMMENT)
-        print("")
+        handle.write(f"{name_line}\n")
+        handle.write(f"{TEMPLATE_COMMENT}\n\n")
 
-        for chunk in self.chunks:
-            chunk.pprint()
-        print("")
+        for idx, chunk in enumerate(self.chunks):
+            chunk.write(handle)
+            if idx < len(self.chunks) - 1:
+                handle.write("\n")

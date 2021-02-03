@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Optional, ClassVar
+from collections import OrderedDict
+from typing import ClassVar, Generic, Optional, TextIO, TypeVar
 
-from .utils import split_comment, DirectivePrefixes, to_line
-
+from .utils import DirectivePrefixes, split_comment, to_line
 
 T = TypeVar("T")  # pylint: disable=invalid-name
 
@@ -32,6 +32,29 @@ VALID_LEVEL_SETTINGS = set(
 
 NAME_PADDING = max(map(len, VALID_LEVEL_SETTINGS)) + 4
 
+
+class LevelSettings:
+    def __init__(self):
+        self._inner = OrderedDict()
+        self.comment = None
+
+    def get(self, name):
+        LevelSetting.validate_name(name)
+        return self._inner.get(name)
+
+    def set_obj(self, obj: "LevelSetting"):
+        obj.clean()
+        obj.validate()
+        self._inner[obj.name] = obj
+
+    def write(self, handle: TextIO):
+        if self.comment:
+            handle.write(f"{self.comment}\n")
+        for obj in self._inner.values():
+            handle.write(obj.to_line())
+        handle.write("\n")
+
+
 @dataclass
 class LevelSetting(Generic[T]):
     prefix: ClassVar[str] = DirectivePrefixes.LEVEL_SETTING.value
@@ -48,21 +71,55 @@ class LevelSetting(Generic[T]):
         if not name:
             raise ValueError("Directive missing name.")
 
-        if name not in VALID_LEVEL_SETTINGS:
-            raise ValueError(
-                f"Found level setting with name {name!r} which isn't a valid level setting name."
-            )
+        level_setting = cls(name, value, comment)
+        level_setting.clean()
+        level_setting.validate()
 
-        if name == "size":
-            value = tuple(value.split())
+        return level_setting
+
+    @staticmethod
+    def validate_name(name: str):
+        if name not in VALID_LEVEL_SETTINGS:
+            raise ValueError(f"Invalid name provided for LevelSetting: {name!r}")
+
+    def validate_value(self):
+        if self.name == "size":
+            if not isinstance(self.value, tuple) or len(self.value) != 2:
+                raise ValueError(
+                    f"LevelSetting with name {self.name} expected a tuple of length 2: {self.value!r}"
+                )
+        elif self.name == "liquid_gravity":
+            if not isinstance(self.value, float):
+                raise ValueError(
+                    f"LevelSetting with name {self.name} expected to be a float: {self.value!r}"
+                )
+        else:
+            if not isinstance(self.value, int):
+                raise ValueError(
+                    f"LevelSetting with name {self.name} expected to be an int: {self.value!r}"
+                )
+
+    def validate(self):
+        self.validate_name(self.name)
+        self.validate_value()
+
+    def clean_value(self):
+        if not isinstance(self.value, str):
+            return
+
+        if self.name == "size":
+            value = tuple(self.value.split())
             if len(value) != 2:
                 raise ValueError("Directive `size` expects 2 values.")
-        elif name == "liquid_gravity":
-            value = float(value)
+        elif self.name == "liquid_gravity":
+            value = float(self.value)
         else:
-            value = int(value)
+            value = int(self.value)
 
-        return cls(name, value, comment)
+        self.value = value
+
+    def clean(self):
+        self.clean_value()
 
     def value_to_str(self) -> str:
         if isinstance(self.value, (int, float)):
@@ -71,10 +128,8 @@ class LevelSetting(Generic[T]):
 
     def to_line(self) -> str:
         return to_line(
-            self.prefix,
-            self.name,
-            NAME_PADDING,
-            self.value_to_str(),
-            10,
-            self.comment
+            self.prefix, self.name, NAME_PADDING, self.value_to_str(), 10, self.comment
         )
+
+    def write(self, handle: TextIO):
+        handle.write(self.to_line())
