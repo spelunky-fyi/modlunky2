@@ -25,7 +25,7 @@ from modlunky2.assets.constants import (
 )
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
-from modlunky2.constants import BASE_DIR, ROOT_DIR
+from modlunky2.constants import BASE_DIR, ROOT_DIR, IS_EXE
 from modlunky2.ui.extract import ExtractTab
 from modlunky2.ui.levels import LevelsTab
 from modlunky2.ui.pack import PackTab
@@ -59,12 +59,18 @@ class ModlunkyUI:
     def __init__(self, install_dir, beta=False):
         self.install_dir = install_dir
         self.beta = beta
-        self.current_version = get_current_version()
-        self.latest_version = get_latest_version()
-        if self.latest_version is None or self.current_version is None:
-            self.needs_update = False
+
+        if IS_EXE:
+            self.current_version = get_current_version()
+            self.latest_version = get_latest_version()
+            if self.latest_version is None or self.current_version is None:
+                self.needs_update = False
+            else:
+                self.needs_update = self.current_version < self.latest_version
         else:
-            self.needs_update = self.current_version < self.latest_version
+            self.current_version = None
+            self.latest_version = None
+            self.needs_update = False
 
         self._shutdown_handlers = []
         self._shutting_down = False

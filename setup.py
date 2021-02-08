@@ -6,6 +6,8 @@ HERE = pathlib.Path(__file__).parent.resolve()
 LONG_DESCRIPTION = (HERE / 'README.md').read_text(encoding='utf-8')
 VERSION = (HERE / 'VERSION').read_text(encoding='utf-8').strip()
 
+with open('requirements.txt') as fp:
+    install_requires = fp.read()
 
 setup(
     name='modlunky2',
@@ -38,7 +40,7 @@ setup(
     keywords='games',
     package_dir={'': 'src'},  # Optional
     packages=find_packages(where='src'),  # Required
-    python_requires='>=3.7, <3.9',
+    python_requires='>=3.7',
 
     # This field lists other packages that your project depends on to run.
     # Any package you put here will be installed by pip when your project is
@@ -46,7 +48,7 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[],
+    install_requires=install_requires,
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
