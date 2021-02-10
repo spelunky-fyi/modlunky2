@@ -68,6 +68,9 @@ class MonsterChances:
         self._inner = OrderedDict()
         self.comment = None
 
+    def all(self):
+        return list(self._inner.values())
+
     def get(self, name):
         MonsterChance.validate_name(name)
         return self._inner.get(name)
