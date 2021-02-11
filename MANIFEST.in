@@ -1,5 +1,5 @@
 include requirements.txt
-include VERSION
 include LICENSE
+include src/modlunky2/VERSION
 include src/modlunky2/tilecodes.txt
 recursive-include src/modlunky2/static *

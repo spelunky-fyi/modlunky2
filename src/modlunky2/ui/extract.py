@@ -24,10 +24,10 @@ TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
 
 
 class ExtractTab(Tab):
-    def __init__(self, tab_control, install_dir, *args, **kwargs):
+    def __init__(self, tab_control, config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.install_dir = install_dir
+        self.config = config
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -100,11 +100,11 @@ class ExtractTab(Tab):
     def get_exes(self):
         exes = []
         # Don't recurse forever. 3 levels should be enough
-        exes.extend(self.install_dir.glob("*.exe"))
-        exes.extend(self.install_dir.glob("*/*.exe"))
-        exes.extend(self.install_dir.glob("*/*/*.exe"))
+        exes.extend(self.config.install_dir.glob("*.exe"))
+        exes.extend(self.config.install_dir.glob("*/*.exe"))
+        exes.extend(self.config.install_dir.glob("*/*/*.exe"))
         return [
-            exe.relative_to(self.install_dir)
+            exe.relative_to(self.config.install_dir)
             for exe in exes
             # Exclude modlunky2 which is likely in the install directory
             if exe.name not in ["modlunky2.exe"]
@@ -118,7 +118,7 @@ class ExtractTab(Tab):
     @log_exception
     def extract_assets(self, target, recompress, create_entity_sheets):
 
-        exe_filename = self.install_dir / target
+        exe_filename = self.config.install_dir / target
 
         if is_patched(exe_filename):
             logger.critical((
@@ -127,7 +127,7 @@ class ExtractTab(Tab):
             ), exe_filename)
             return
 
-        mods_dir = self.install_dir / MODS
+        mods_dir = self.config.install_dir / MODS
 
         for dir_ in TOP_LEVEL_DIRS:
             (mods_dir / dir_).mkdir(parents=True, exist_ok=True)

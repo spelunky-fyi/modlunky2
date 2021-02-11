@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 HERE = pathlib.Path(__file__).parent.resolve()
 LONG_DESCRIPTION = (HERE / 'README.md').read_text(encoding='utf-8')
-VERSION = (HERE / 'VERSION').read_text(encoding='utf-8').strip()
+VERSION = (HERE / 'src/modlunky2/VERSION').read_text(encoding='utf-8').strip()
 
 with open('requirements.txt') as fp:
     install_requires = fp.read()

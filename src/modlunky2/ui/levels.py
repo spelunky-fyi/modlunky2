@@ -18,7 +18,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class LevelsTab(Tab):
-    def __init__(self, tab_control, install_dir, *args, **kwargs):
+    def __init__(self, tab_control, config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.last_selected_room = None
         # TODO: Get actual resolution
@@ -27,8 +27,11 @@ class LevelsTab(Tab):
         self.extracts_mode = True
         self.dual_mode = False
         self.tab_control = tab_control
-        self.install_dir = install_dir
-        self.textures_dir = install_dir / "Mods/Extracted/Data/Textures"
+        self.config = config
+
+        self.textures_dir = self.config.install_dir / "Mods/Extracted/Data/Textures"
+        self.extracts_path = self.config.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
+        self.overrides_path = self.config.install_dir / "Mods" / "Overrides"
 
         self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
@@ -37,9 +40,6 @@ class LevelsTab(Tab):
         self.lvl_editor_start_canvas.grid(row=0, column=0, columnspan=2, sticky="nswe")
         self.lvl_editor_start_canvas.columnconfigure(0, weight=1)
         self.lvl_editor_start_canvas.rowconfigure(0, weight=1)
-
-        self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
-        self.overrides_path = self.install_dir / "Mods" / "Overrides"
 
         self.welcome_label = tk.Label(
             self.lvl_editor_start_canvas,
@@ -92,6 +92,11 @@ class LevelsTab(Tab):
         self.btn_lvl_folder.grid(
             row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 10)
         )
+
+    def on_load(self):
+        self.textures_dir = self.config.install_dir / "Mods/Extracted/Data/Textures"
+        self.extracts_path = self.config.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
+        self.overrides_path = self.config.install_dir / "Mods" / "Overrides"
 
     def load_editor(self):
         self.save_needed = False
@@ -195,7 +200,7 @@ class LevelsTab(Tab):
         self.vsb_tree_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_levels.configure(yscrollcommand=self.vsb_tree_levels.set)
         self.my_list = os.listdir(
-            self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
+            self.config.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
         )
         self.tree_levels.grid(row=0, column=0, rowspan=5, sticky="nswe")
         self.vsb_tree_levels.grid(row=0, column=0, rowspan=5, sticky="nse")
@@ -621,7 +626,7 @@ class LevelsTab(Tab):
             else:
                 print("adding to overrides")
                 path = (
-                    self.install_dir
+                    self.config.install_dir
                     / "Mods"
                     / "Overrides"
                     / str(self.tree_files.item(self.last_selected_file, option="text"))

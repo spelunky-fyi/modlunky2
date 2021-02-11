@@ -22,10 +22,10 @@ MODS = Path("Mods")
 
 
 class PackTab(Tab):
-    def __init__(self, tab_control, install_dir, *args, **kwargs):
+    def __init__(self, tab_control, config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.install_dir = install_dir
+        self.config = config
 
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, minsize=60)
@@ -61,10 +61,10 @@ class PackTab(Tab):
         webbrowser.open_new_tab("steam://validate/418530")
 
     def restore(self):
-        mods_dir = self.install_dir / MODS
+        mods_dir = self.config.install_dir / MODS
         extract_dir = mods_dir / "Extracted"
         source_exe = extract_dir / "Spel2.exe"
-        dest_exe = self.install_dir / "Spel2.exe"
+        dest_exe = self.config.install_dir / "Spel2.exe"
 
         if is_patched(source_exe):
             logger.critical(
@@ -78,7 +78,7 @@ class PackTab(Tab):
 
     def pack(self):
         packs = [
-            self.install_dir / "Mods" / exe.get()
+            self.config.install_dir / "Mods" / exe.get()
             for exe in self.checkbox_vars
             if exe.get()
         ]
@@ -87,16 +87,16 @@ class PackTab(Tab):
 
     def get_packs(self):
         pack_dirs = []
-        overrides_dir = self.install_dir / "Mods" / "Overrides"
+        overrides_dir = self.config.install_dir / "Mods" / "Overrides"
         if overrides_dir.exists():
-            pack_dirs.append(overrides_dir.relative_to(self.install_dir / "Mods"))
+            pack_dirs.append(overrides_dir.relative_to(self.config.install_dir / "Mods"))
 
-        packs_dir = self.install_dir / "Mods" / "Packs"
+        packs_dir = self.config.install_dir / "Mods" / "Packs"
         if packs_dir.exists():
             for dir_ in packs_dir.iterdir():
                 if not dir_.is_dir():
                     continue
-                pack_dirs.append(dir_.relative_to(self.install_dir / "Mods"))
+                pack_dirs.append(dir_.relative_to(self.config.install_dir / "Mods"))
 
         return pack_dirs
 
@@ -122,10 +122,10 @@ class PackTab(Tab):
 
     @log_exception
     def repack_assets(self, packs):
-        mods_dir = self.install_dir / MODS
+        mods_dir = self.config.install_dir / MODS
         extract_dir = mods_dir / "Extracted"
         source_exe = extract_dir / "Spel2.exe"
-        dest_exe = self.install_dir / "Spel2.exe"
+        dest_exe = self.config.install_dir / "Spel2.exe"
 
         logger.info("Starting Pack of %s", source_exe)
         if is_patched(source_exe):

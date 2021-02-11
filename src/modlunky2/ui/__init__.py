@@ -13,7 +13,6 @@ from tkinter import PhotoImage, ttk
 from tkinter.scrolledtext import ScrolledText
 
 import requests
-from packaging import version
 from PIL import Image, ImageTk
 
 from modlunky2.assets.assets import AssetStore
@@ -25,44 +24,29 @@ from modlunky2.assets.constants import (
 )
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
-from modlunky2.constants import BASE_DIR, ROOT_DIR, IS_EXE
+from modlunky2.constants import BASE_DIR, IS_EXE
+from modlunky2.version import current_version, latest_version
 from modlunky2.ui.extract import ExtractTab
 from modlunky2.ui.levels import LevelsTab
 from modlunky2.ui.pack import PackTab
+from modlunky2.ui.config import ConfigTab
 from modlunky2.ui.widgets import ConsoleWindow
 
 logger = logging.getLogger("modlunky2")
 
-cwd = os.getcwd()
 
 MIN_WIDTH = 1024
 MIN_HEIGHT = 800
 
 
-def get_latest_version():
-    try:
-        return version.parse(
-            requests.get(
-                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
-            ).json()["tag_name"]
-        )
-    except Exception:  # pylint: disable=broad-except
-        return None
-
-
-def get_current_version():
-    with (ROOT_DIR / "VERSION").open() as version_file:
-        return version.parse(version_file.read().strip())
-
-
 class ModlunkyUI:
-    def __init__(self, install_dir, beta=False):
-        self.install_dir = install_dir
-        self.beta = beta
+    def __init__(self, config, data_dir):
+        self.config = config
+        self.data_dir = data_dir
 
         if IS_EXE:
-            self.current_version = get_current_version()
-            self.latest_version = get_latest_version()
+            self.current_version = current_version()
+            self.latest_version = latest_version()
             if self.latest_version is None or self.current_version is None:
                 self.needs_update = False
             else:
@@ -103,21 +87,29 @@ class ModlunkyUI:
             "Pack Assets",
             PackTab(
                 tab_control=self.tab_control,
-                install_dir=install_dir,
+                config=config,
             ),
         )
         self.register_tab(
             "Extract Assets",
             ExtractTab(
                 tab_control=self.tab_control,
-                install_dir=install_dir,
+                config=config,
             ),
         )
         self.register_tab(
             "Levels",
             LevelsTab(
                 tab_control=self.tab_control,
-                install_dir=install_dir,
+                config=config,
+            ),
+        )
+
+        self.register_tab(
+            "Config",
+            ConfigTab(
+                tab_control=self.tab_control,
+                config=config,
             ),
         )
 
@@ -131,12 +123,6 @@ class ModlunkyUI:
         webbrowser.open_new_tab(
             f"https://github.com/spelunky-fyi/modlunky2/releases/tag/{self.latest_version}"
         )
-
-    def self_update(self):
-        updater = Path(cwd + "/updater.exe")
-        subprocess.call([updater])  # if file exists
-        self.root.quit()
-        self.root.destroy()
 
     def on_tab_change(self, event):
         tab = event.widget.tab("current")["text"]
