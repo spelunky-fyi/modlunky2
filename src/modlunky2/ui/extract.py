@@ -4,6 +4,9 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
+from ctypes.util import find_library  # pylint: disable=unused-import
+
+from fsb5.utils import load_lib, LibraryNotFoundException
 
 from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.constants import (
@@ -14,6 +17,7 @@ from modlunky2.assets.constants import (
 )
 from modlunky2.ui.utils import is_patched, log_exception
 from modlunky2.ui.widgets import Tab, ToolTip
+from modlunky2.assets.soundbank import Extension as SoundExtension
 
 logger = logging.getLogger("modlunky2")
 
@@ -23,11 +27,21 @@ MODS = Path("Mods")
 TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
 
 
+def try_load_vorbis():
+    try:
+        load_lib("vorbis")
+        return True
+    except LibraryNotFoundException:
+        return False
+
+
 class ExtractTab(Tab):
     def __init__(self, tab_control, config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.config = config
+
+        self.vorbis_loaded = try_load_vorbis()
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -50,7 +64,7 @@ class ExtractTab(Tab):
         self.scrollbar = ttk.Scrollbar(self.exe_frame)
         self.scrollbar.grid(row=0, column=1, sticky="nes")
 
-        self.config_frame = ttk.LabelFrame(self.top_frame, text="Config")
+        self.config_frame = ttk.LabelFrame(self.top_frame, text="Options")
         self.config_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
         self.recompress = tk.BooleanVar()
@@ -77,6 +91,55 @@ class ExtractTab(Tab):
             "interface to some entity mods."
         ))
 
+        self.generate_string_hashes = tk.BooleanVar()
+        self.generate_string_hashes.set(True)
+        self.checkbox_string_hashes = tk.Checkbutton(
+            self.config_frame,
+            text='Generate String Hashes', variable=self.generate_string_hashes, onvalue=True, offvalue=False,
+        )
+        self.checkbox_string_hashes.grid(row=2, sticky="nw")
+        ToolTip(self.checkbox_string_hashes, (
+            "Generate string hash files. These provide a better\n"
+            "interface for creating mods that use strings."
+        ))
+
+        self.extract_wavs = tk.BooleanVar()
+        self.extract_wavs.set(False)
+        self.checkbox_extract_wavs = tk.Checkbutton(
+            self.config_frame,
+            text='Extract .wav files', variable=self.extract_wavs, onvalue=True, offvalue=False,
+        )
+        self.checkbox_extract_wavs.grid(row=3, sticky="nw")
+        ToolTip(self.checkbox_extract_wavs, (
+            "Extract .wav files from the soundbank."
+        ))
+
+        oggs_state = tk.NORMAL
+        if not self.vorbis_loaded:
+            oggs_state = tk.DISABLED
+        self.extract_oggs = tk.BooleanVar()
+        self.extract_oggs.set(False)
+        self.checkbox_extract_oggs = tk.Checkbutton(
+            self.config_frame, state=oggs_state,
+            text='Extract .ogg files', variable=self.extract_oggs, onvalue=True, offvalue=False,
+        )
+        self.checkbox_extract_oggs.grid(row=4, sticky="nw")
+        ToolTip(self.checkbox_extract_oggs, (
+            "Extract .ogg files from the soundbank."
+        ))
+
+        self.reuse_extracted = tk.BooleanVar()
+        self.reuse_extracted.set(False)
+        self.checkbox_reuse_extracted = tk.Checkbutton(
+            self.config_frame,
+            text='Reuse Extracted Assets', variable=self.reuse_extracted, onvalue=True, offvalue=False,
+        )
+        self.checkbox_reuse_extracted.grid(row=5, sticky="nw")
+        ToolTip(self.checkbox_reuse_extracted, (
+            "If checked we will not re-extract from the binary\n"
+            "and only rerun post processing steps."
+        ))
+
         self.list_box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.list_box.yview)
 
@@ -91,10 +154,25 @@ class ExtractTab(Tab):
         if not idx:
             return
 
+        extract_sound_extensions = []
+        if self.extract_wavs.get():
+            extract_sound_extensions.append(SoundExtension.WAV)
+
+        if self.extract_oggs.get():
+            extract_sound_extensions.append(SoundExtension.OGG)
+
         selected_exe = self.list_box.get(idx)
         thread = threading.Thread(
             target=self.extract_assets,
-            args=(selected_exe, self.recompress.get(), self.create_entity.get()))
+            args=(
+                selected_exe,
+                self.recompress.get(),
+                self.generate_string_hashes.get(),
+                self.create_entity.get(),
+                extract_sound_extensions,
+                self.reuse_extracted.get(),
+            )
+        )
         thread.start()
 
     def get_exes(self):
@@ -116,7 +194,7 @@ class ExtractTab(Tab):
             self.list_box.insert(tk.END, str(exe))
 
     @log_exception
-    def extract_assets(self, target, recompress, create_entity_sheets):
+    def extract_assets(self, target, recompress, generate_string_hashes, create_entity_sheets, extract_sound_extensions, reuse_extracted):
 
         exe_filename = self.config.install_dir / target
 
@@ -144,14 +222,17 @@ class ExtractTab(Tab):
                 mods_dir / EXTRACTED_DIR,
                 mods_dir / ".compressed" / EXTRACTED_DIR,
                 recompress=recompress,
+                generate_string_hashes=generate_string_hashes,
                 create_entity_sheets=create_entity_sheets,
+                extract_sound_extensions=extract_sound_extensions,
+                reuse_extracted=reuse_extracted,
             )
 
         for asset in unextracted:
             logger.warning("Un-extracted Asset %s", asset.asset_block)
 
         dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
-        if exe_filename != dest:
+        if not reuse_extracted and exe_filename != dest:
             logger.info("Backing up exe to %s", dest)
             shutil.copy2(exe_filename, dest)
 

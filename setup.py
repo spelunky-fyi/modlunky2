@@ -75,6 +75,7 @@ setup(
             'modlunky2=modlunky2.cli:main',
             'modlunky2-asset-extract=modlunky2.assets.extractor:main',
             'modlunky2-asset-pack=modlunky2.assets.packer:main',
+            'modlunky2-soundbank-extract=modlunky2.assets.soundbank:main',
         ],
     },
     include_package_data = True,

@@ -26,6 +26,7 @@ from .constants import (
     KNOWN_FILEPATHS,
     PNG_NAMES_TO_DDS_NAMES,
 )
+from .soundbank import extract_soundbank
 from .converters import dds_to_png, png_to_dds, rgba_to_png
 from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
 from .string_hashing import StringHashes
@@ -284,31 +285,35 @@ class AssetStore:
         recompress=True,
         generate_string_hashes=True,
         create_entity_sheets=True,
+        extract_sound_extensions=None,
+        reuse_extracted=False,
     ):
         unextracted = []
-        for asset in self.assets:
-            if asset.filepath is None:
-                # No known filepaths matched this asset.
-                unextracted.append(asset)
-                continue
 
-            asset.load_data(self.exe_handle)
+        if not reuse_extracted:
+            for asset in self.assets:
+                if asset.filepath is None:
+                    # No known filepaths matched this asset.
+                    unextracted.append(asset)
+                    continue
 
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = [
-                pool.submit(
-                    self._extract_single,
-                    asset,
-                    extract_dir,
-                    compressed_dir,
-                    self.key,
-                    compression_level,
-                    recompress,
-                )
-                for asset in self.assets
-                if asset.filepath
-            ]
-            wait(futures, timeout=300)
+                asset.load_data(self.exe_handle)
+
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                futures = [
+                    pool.submit(
+                        self._extract_single,
+                        asset,
+                        extract_dir,
+                        compressed_dir,
+                        self.key,
+                        compression_level,
+                        recompress,
+                    )
+                    for asset in self.assets
+                    if asset.filepath
+                ]
+                wait(futures, timeout=300)
 
         if generate_string_hashes:
             self.hash_strings(extract_dir)
@@ -330,6 +335,9 @@ class AssetStore:
                 wait(futures, timeout=300)
 
             logger.info("Done creating entity sprite sheets...")
+
+        if extract_sound_extensions:
+            extract_soundbank(extract_dir / "soundbank.bank", extract_dir / "soundbank", extract_sound_extensions)
 
         return unextracted
 

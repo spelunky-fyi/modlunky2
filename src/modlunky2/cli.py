@@ -6,7 +6,6 @@ from appdirs import user_config_dir, user_data_dir
 
 from .ui import ModlunkyUI
 from .config import Config
-from .constants import APP_DIR
 
 
 APP_AUTHOR = "spelunky.fyi"
