@@ -1,36 +1,34 @@
-import os
-import subprocess
-import time
-import urllib.request
-from shutil import copyfile
+import sys
+import logging
+from pathlib import Path
+from urllib.request import urlretrieve
+from subprocess import Popen
+
+from .constants import IS_EXE
 
 
-def main():
-    cwd = os.getcwd()
+logger = logging.getLogger("modlunky2")
 
-    copyfile(cwd + "/modlunky2.exe", cwd + "/modlunky2.exe.bak")  # Creates temp backup
-
-    try:
-        os.remove(cwd + "/modlunky2.exe")  # deletes current version
-        print("Download latest release of Modlunky2..")
-        # downlaods latest release on github
-        url = "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe"
-        urllib.request.urlretrieve(url, cwd + "/modlunky2.exe")
-
-        print("Download Complete!")
-        # deletes backup once download is complete
-        os.remove(cwd + "/modlunky2.exe.bak")
-
-        # runs tool again and closes
-        subprocess.call([cwd + "/modlunky2.exe"])
-
-        # Wait for 5 seconds to give tool time to reopen
-        time.sleep(5)
-    except OSError:
-        # restores backup if download failed for whatever reason
-        copyfile(cwd + "/modlunky2.exe.bak", cwd + "modlunky2.exe")
-        print("Download Failed.")
+LATEST_EXE = "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe"
 
 
-if __name__ == "__main__":
-    main()
+def self_update():
+    if not IS_EXE:
+        logger.warning("Tried to update while not an exe. Doing nothing...")
+
+    self_exe = Path(sys.executable)
+    exe_dir = self_exe.parent.resolve()
+
+    new_path = exe_dir / f"{self_exe.stem}.backup{self_exe.suffix}"
+    if new_path.exists():
+        logger.info("Found previous backup. Removing...")
+        new_path.unlink(missing_ok=True)
+
+    logger.info("Moving running version to %s", new_path)
+    self_exe.rename(new_path)
+
+    logger.info("Downloading latest version now.")
+    urlretrieve(LATEST_EXE, self_exe)
+
+    logger.info("Launching new version now.")
+    Popen([str(self_exe)])

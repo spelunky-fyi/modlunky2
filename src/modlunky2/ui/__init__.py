@@ -26,6 +26,7 @@ from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.version import current_version, latest_version
+from modlunky2.updater import self_update
 from modlunky2.ui.extract import ExtractTab
 from modlunky2.ui.levels import LevelsTab
 from modlunky2.ui.pack import PackTab
@@ -125,9 +126,11 @@ class ModlunkyUI:
         self.console.grid(column=0, row=2, padx=2, pady=2, sticky="ew")
 
     def update(self):
-        webbrowser.open_new_tab(
-            f"https://github.com/spelunky-fyi/modlunky2/releases/tag/{self.latest_version}"
-        )
+        try:
+            self_update()
+            self.quit()
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Failed to update...")
 
     def on_tab_change(self, event):
         tab = event.widget.tab("current")["text"]
