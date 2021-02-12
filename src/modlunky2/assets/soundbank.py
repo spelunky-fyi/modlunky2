@@ -17,7 +17,9 @@ class Extension(Enum):
     OGG = "ogg"
 
 
-def extract_soundbank(soundbank_path: Path, dest_path: Path, extract_extensions: Extension=None):
+def extract_soundbank(
+    soundbank_path: Path, dest_path: Path, extract_extensions: Extension = None
+):
 
     if extract_extensions:
         extract_extensions = set(ext.value for ext in extract_extensions)
@@ -47,12 +49,23 @@ def extract_soundbank(soundbank_path: Path, dest_path: Path, extract_extensions:
                 continue
 
             for sample in fsb.samples:
-                logger.info("Extracting %s.%s (%sHz, %s channels, %s samples)", sample.name, ext, sample.frequency, sample.channels, sample.samples)
+                logger.info(
+                    "Extracting %s.%s (%sHz, %s channels, %s samples)",
+                    sample.name,
+                    ext,
+                    sample.frequency,
+                    sample.channels,
+                    sample.samples,
+                )
                 try:
-                    with (dest_path / ext / f"{sample.name}.{ext}").open("wb") as out_file:
+                    with (dest_path / ext / f"{sample.name}.{ext}").open(
+                        "wb"
+                    ) as out_file:
                         out_file.write(fsb.rebuild_sample(sample))
                 except LibraryNotFoundException as err:
-                    logger.error("Failed to extract files for extension %s: %s", ext, err)
+                    logger.error(
+                        "Failed to extract files for extension %s: %s", ext, err
+                    )
                     return
 
             logger.info("Extracted %s %s files from bank %s", len(fsb.samples), ext, i)
@@ -65,7 +78,11 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(format="%(levelname)s - %(message)s", level=logging.INFO)
 
-    extract_soundbank(Path(args.soundbank), Path("sound"), extract_extensions=[Extension.WAV, Extension.OGG])
+    extract_soundbank(
+        Path(args.soundbank),
+        Path("sound"),
+        extract_extensions=[Extension.WAV, Extension.OGG],
+    )
 
 
 if __name__ == "__main__":

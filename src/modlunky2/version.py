@@ -4,7 +4,6 @@ from packaging import version
 from modlunky2.constants import BASE_DIR
 
 
-
 def latest_version():
     try:
         return version.parse(

@@ -7,9 +7,10 @@ from appdirs import user_config_dir, user_data_dir
 from .ui import ModlunkyUI
 from .config import Config
 
-
 APP_AUTHOR = "spelunky.fyi"
 APP_NAME = "modlunky2"
+
+logger = logging.getLogger("modlunky2")
 
 
 def make_dirs(*dirs):
@@ -32,8 +33,10 @@ def main():
 
     log_format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
+    launch(args)
 
 
+def launch(args):
     config_dir = Path(user_config_dir(APP_NAME, APP_AUTHOR))
     data_dir = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 

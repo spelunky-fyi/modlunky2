@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from collections import OrderedDict
 from itertools import zip_longest
@@ -228,7 +228,7 @@ class LevelTemplate:
 
     name: str
     comment: Optional[str]
-    chunks: List[Chunk]
+    chunks: List[Chunk] = field(repr=False)
 
     @classmethod
     def parse(cls, line: str, file_handle: TextIO) -> "LevelTemplate":

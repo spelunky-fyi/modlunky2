@@ -187,7 +187,8 @@ class BaseSpriteMerger(ABC):
                     else:
                         logger.error(
                             "Could not find image %s in source %s",
-                            name, sprite_loader_type
+                            name,
+                            sprite_loader_type,
                         )
             else:
                 logger.error(

@@ -1,5 +1,6 @@
 import logging
 import json
+
 try:
     import winreg
 except ImportError:
@@ -38,7 +39,7 @@ def check_registry_for_spel2():
         try:
             subkey = winreg.OpenKey(programs, keyname)
             name, _ = winreg.QueryValueEx(subkey, "DisplayName")
-            if name == 'Spelunky 2':
+            if name == "Spelunky 2":
                 return Path(winreg.QueryValueEx(subkey, "InstallLocation")[0])
         except OSError:
             continue
@@ -59,7 +60,7 @@ def guess_install_dir():
 
     logger.info("Checking Windows Registry for Spelunky 2 Installation")
     reg_path = check_registry_for_spel2()
-    if (reg_path / EXE_NAME).exists():
+    if reg_path and (reg_path / EXE_NAME).exists():
         logger.info("Found Spelunky 2!")
         return reg_path
 

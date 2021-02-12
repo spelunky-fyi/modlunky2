@@ -1,5 +1,6 @@
 import hashlib
 
+
 def md5sum_path(path, chunk_size=8192):
     """ Streaming md5 digest from a path."""
 

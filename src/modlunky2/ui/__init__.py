@@ -72,10 +72,15 @@ class ModlunkyUI:
         self.root.iconphoto(False, self.icon_png)
 
         if self.needs_update:
-            update_button = ttk.Button(
-                self.root, text="Update Modlunky2!", command=self.update
+            update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
+            update_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+            update_frame.columnconfigure(0, weight=1)
+            update_frame.rowconfigure(0, weight=1)
+
+            update_button = tk.Button(
+                update_frame, text="Update Now!", command=self.update, bg="#bfbfbf", font="sans 12 bold"
             )
-            update_button.grid(column=0, row=0)
+            update_button.grid(column=0, row=0, padx=5, pady=5, sticky="nswe")
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -114,10 +119,10 @@ class ModlunkyUI:
         )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
-        self.tab_control.grid(column=0, row=1, sticky="nsew")
+        self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
         self.console = ConsoleWindow(self.root)
-        self.console.grid(column=0, row=2, sticky="ew")
+        self.console.grid(column=0, row=2, padx=2, pady=2, sticky="ew")
 
     def update(self):
         webbrowser.open_new_tab(

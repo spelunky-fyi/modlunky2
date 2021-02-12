@@ -33,7 +33,6 @@ from .string_hashing import StringHashes
 from .hashing import md5sum_path
 
 
-
 logger = logging.getLogger("modlunky2")
 
 
@@ -337,7 +336,11 @@ class AssetStore:
             logger.info("Done creating entity sprite sheets...")
 
         if extract_sound_extensions:
-            extract_soundbank(extract_dir / "soundbank.bank", extract_dir / "soundbank", extract_sound_extensions)
+            extract_soundbank(
+                extract_dir / "soundbank.bank",
+                extract_dir / "soundbank",
+                extract_sound_extensions,
+            )
 
         return unextracted
 

@@ -55,9 +55,7 @@ def main():
         dest="create_entity_sheets",
         default=False,
         action="store_true",
-        help=(
-            "Create extended entity assets merged from multiple sheets."
-        ),
+        help=("Create extended entity assets merged from multiple sheets."),
     )
     parser.add_argument(
         "--no-mkdirs",
