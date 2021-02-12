@@ -1,29 +1,7 @@
 import logging
-import os
-import queue
-import random
-import shutil
-import subprocess
-import threading
 import tkinter as tk
-import tkinter.messagebox as tkMessageBox
-import webbrowser
-from pathlib import Path
 from tkinter import PhotoImage, ttk
-from tkinter.scrolledtext import ScrolledText
 
-import requests
-from PIL import Image, ImageTk
-
-from modlunky2.assets.assets import AssetStore
-from modlunky2.assets.constants import (
-    EXTRACTED_DIR,
-    FILEPATH_DIRS,
-    OVERRIDES_DIR,
-    PACKS_DIR,
-)
-from modlunky2.assets.exc import MissingAsset
-from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.version import current_version, latest_version
 from modlunky2.updater import self_update
@@ -45,16 +23,15 @@ class ModlunkyUI:
         self.config = config
         self.data_dir = data_dir
 
+        self.current_version = current_version()
+        self.latest_version = latest_version()
+
         if IS_EXE:
-            self.current_version = current_version()
-            self.latest_version = latest_version()
             if self.latest_version is None or self.current_version is None:
                 self.needs_update = False
             else:
                 self.needs_update = self.current_version < self.latest_version
         else:
-            self.current_version = None
-            self.latest_version = None
             self.needs_update = False
 
         self._shutdown_handlers = []
@@ -74,14 +51,18 @@ class ModlunkyUI:
 
         if self.needs_update:
             update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
-            update_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+            update_frame.grid(row=0, column=0, sticky="nswe")
             update_frame.columnconfigure(0, weight=1)
             update_frame.rowconfigure(0, weight=1)
 
             update_button = tk.Button(
-                update_frame, text="Update Now!", command=self.update, bg="#bfbfbf", font="sans 12 bold"
+                update_frame,
+                text="Update Now!",
+                command=self.update,
+                bg="#bfbfbf",
+                font="sans 12 bold",
             )
-            update_button.grid(column=0, row=0, padx=5, pady=5, sticky="nswe")
+            update_button.grid(column=0, row=0, sticky="nswe")
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -124,6 +105,11 @@ class ModlunkyUI:
 
         self.console = ConsoleWindow(self.root)
         self.console.grid(column=0, row=2, padx=2, pady=2, sticky="ew")
+
+        self.version_label = tk.Label(
+            self.root, text=f"v{self.current_version}", font="Helvitica 9 italic"
+        )
+        self.version_label.grid(column=0, row=3, padx=5, sticky="e")
 
     def update(self):
         try:
