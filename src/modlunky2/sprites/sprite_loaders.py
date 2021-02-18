@@ -1,3 +1,5 @@
+from modlunky2.constants import BASE_DIR
+
 from .items import ItemSheet
 from .journal_stickers import StickerSheet
 from .journal_items import JournalItemSheet
@@ -9,6 +11,7 @@ from .journal_traps import JournalTrapSheet
 from .character import *
 from .monsters.mounts import Mounts
 from .monsters.pets import Pets
+from .tilecode_extras import TilecodeExtras
 
 
 def get_all_sprite_loaders(base_path: str):
@@ -46,4 +49,8 @@ def get_all_sprite_loaders(base_path: str):
         CharacterLemonSheet(base_path),
         Mounts(base_path),
         Pets(base_path),
+        # This uses the constant BASE_DIR as the base path as this
+        # texture is bundled with the source rather than coming
+        # from the extracted assets.
+        TilecodeExtras(BASE_DIR),
     ]

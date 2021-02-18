@@ -3,10 +3,12 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from PIL import Image
 
+from modlunky2.constants import BASE_DIR
+
 from .base_classes import AbstractBiome, BaseSpriteLoader, DEFAULT_BASE_PATH
 
 
-class SpelukySpriteFetcher:
+class SpelunkySpriteFetcher:
     def __init__(self, base_path: Path = DEFAULT_BASE_PATH):
         self.base_path = base_path
         # Setting up universal pieces
@@ -28,12 +30,19 @@ class SpelukySpriteFetcher:
         from .items import ItemSheet
         from .hud import HudSheet
         from .floormisc import FloorMiscSheet
+        from .tilecode_extras import TilecodeExtras
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
         sheets = [getattr(monsters, m) for m in monsters.__all__]
         sheets.extend([ItemSheet, HudSheet, FloorMiscSheet])
         # Now making them instances
         sheets = [s(self.base_path) for s in sheets]
+
+        # This uses the constant BASE_DIR as the base path as this
+        # texture is bundled with the source rather than coming
+        # from the extracted assets.
+        sheets.append(TilecodeExtras(BASE_DIR))
+
         key_map = {}
         for sheet in sheets:
             for k in sheet.key_map():

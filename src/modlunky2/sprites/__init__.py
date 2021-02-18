@@ -1,3 +1,3 @@
-from .sprite_fetcher import SpelukySpriteFetcher
+from .sprite_fetcher import SpelunkySpriteFetcher
 
-__all__ = ["SpelukySpriteFetcher"]
+__all__ = ["SpelunkySpriteFetcher"]
