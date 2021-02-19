@@ -419,14 +419,18 @@ class LevelsTab(Tab):
         #self.panel_sel_secondary["image"] = self.texture_images[0]
         #self.tile_label_secondary["text"] = "Secondary Tile: " + r"\?empty a"
 
-        self.draw_mode = [] # slight adjustments of textures for tile preview # 1 = resize by half # 2 = lower down half tile # 3 draw from bottom get_codes_left
+        self.draw_mode = [] # slight adjustments of textures for tile preview # 1 = lower half tile # 2 = draw from bottom left # 3 = center # 4 = center to the right # 5 = draw bottom left + rais 1 tile
         self.draw_mode.append(["anubis", 2])
-        self.draw_mode.append(["crushtraplarge", 2])
+        self.draw_mode.append(["olmec", 5])
+        self.draw_mode.append(["alienqueen", 5])
         self.draw_mode.append(["mummy", 2])
         self.draw_mode.append(["lamassu", 2])
         self.draw_mode.append(["madametusk", 2])
-        self.draw_mode.append(["cookfire", 1])
         self.draw_mode.append(["giant_frog", 3])
+        self.draw_mode.append(["door", 2])
+        self.draw_mode.append(["minister", 2])
+        self.draw_mode.append(["storage_guy", 2])
+        self.draw_mode.append(["idol", 4])
 
         def canvas_click(event, canvas):  # when the level editor grid is clicked
             # Get rectangle diameters
@@ -648,55 +652,66 @@ class LevelsTab(Tab):
             print("No changes to save")
 
     def remember_changes(self):  # remembers changes made to rooms
-        try:
-            item_iid = self.tree_levels.selection()[0]
-            parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
-            if parent_iid:
-                self.canvas.delete("all")
-                self.canvas_dual.delete("all")
-                new_room_data = ""
-                if self.var_dual.Get():
-                    new_room_data += "\n" + "\!dual"
-                if self.var_flip.Get():
-                    new_room_data += "\n" + "\!flip"
-                if self.var_only_flip.Get():
-                    new_room_data += "\n" + "\!onlyflip"
-                if self.var_rare.Get():
-                    new_room_data += "\n" + "\!rare"
-                if self.var_hard.Get():
-                    new_room_data += "\n" + "\!hard"
-                if self.var_liquid.Get():
-                    new_room_data += "\n" + "\!liquid"
-                if self.var_ignore.Get():
-                    new_room_data += "\n" + "\!ignore"
+        item_iid = self.tree_levels.selection()[0]
+        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
+        if parent_iid:
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            new_room_data = ""
+            if int(self.var_dual.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!dual"
+            if int(self.var_flip.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!flip"
+            if int(self.var_only_flip.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!onlyflip"
+            if int(self.var_rare.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!rare"
+            if int(self.var_hard.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!hard"
+            if int(self.var_liquid.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!liquid"
+            if int(self.var_ignore.get())==1:
+                if new_room_data != "":
+                    new_room_data+="\n"
+                new_room_data += "\!ignore"
 
-                for row in self.tiles_meta:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    for block in row:
-                        if str(block) == "None":
-                            new_room_data += str(" ")
-                        else:
-                            new_room_data += str(block)
-                room_save = []
-                for line in new_room_data.split("\n", 100):
-                    room_save.append(line)
-                # Put it back in with the upated values
-                edited = self.tree_levels.insert(
-                    parent_iid,
-                    self.tree_levels.index(item_iid),
-                    text="room (edited)",
-                    values=room_save,
-                )
-                # Remove it from the tree
-                self.tree_levels.delete(item_iid)
-                self.tree_levels.selection_set(edited)
-                self.room_select(None)
-                print("temp saved: \n" + new_room_data)
-                print("Changes remembered!")
-                self.save_needed = True
-        except Exception as err:  # pylint: disable=broad-except
-            print("No room to temp save " + str(err))
+            for row in self.tiles_meta:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                for block in row:
+                    if str(block) == "None":
+                        new_room_data += str(" ")
+                    else:
+                        new_room_data += str(block)
+            room_save = []
+            for line in new_room_data.split("\n", 100):
+                room_save.append(line)
+            # Put it back in with the upated values
+            edited = self.tree_levels.insert(
+                parent_iid,
+                self.tree_levels.index(item_iid),
+                text="room (edited)",
+                values=room_save,
+            )
+            # Remove it from the tree
+            self.tree_levels.delete(item_iid)
+            self.tree_levels.selection_set(edited)
+            self.room_select(None)
+            print("temp saved: \n" + new_room_data)
+            print("Changes remembered!")
+            self.save_needed = True
 
     def del_tilecode(self):
         msg_box = tk.messagebox.askquestion(
@@ -1414,11 +1429,13 @@ class LevelsTab(Tab):
             lvl.startswith("blackmark")
             or lvl.startswith("jungle")
             or lvl.startswith("challenge_moon")
+            or lvl.endswith("_jungle.lvl")
         ):
             self.lvl_biome = "jungle"
             self.lvl_bg_path = self.textures_dir / "bg_jungle.png"
         elif (lvl.startswith("challenge_star")
-            or lvl.startswith("temple")):
+            or lvl.startswith("temple")
+            or lvl.endswith("_temple.lvl")):
             self.lvl_biome = "temple"
             self.lvl_bg_path = self.textures_dir / "bg_temple.png"
         elif (
@@ -1426,6 +1443,7 @@ class LevelsTab(Tab):
             or lvl.startswith("sunken")
             or lvl.startswith("hundun")
             or lvl.startswith("ending_hard")
+            or lvl.endswith("_sunkencity.lvl")
         ):
             self.lvl_biome = "sunken"
             self.lvl_bg_path = self.textures_dir / "bg_sunken.png"
@@ -1435,7 +1453,8 @@ class LevelsTab(Tab):
         elif lvl.startswith("egg"):
             self.lvl_biome = "eggplant"
             self.lvl_bg_path = self.textures_dir / "bg_eggplant.png"
-        elif lvl.startswith("ice"):
+        elif (lvl.startswith("ice")
+        or lvl.endswith("_icecavesarea.lvl")):
             self.lvl_biome = "ice"
             self.lvl_bg_path = self.textures_dir / "bg_ice.png"
         elif lvl.startswith("olmec"):
@@ -1444,7 +1463,8 @@ class LevelsTab(Tab):
         elif lvl.startswith("vlad"):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_vlad.png"
-        elif lvl.startswith("volcano"):
+        elif (lvl.startswith("volcano")
+        or lvl.endswith("_volcano.lvl")):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_volcano.png"
 
@@ -1480,21 +1500,43 @@ class LevelsTab(Tab):
             levels.append(LevelFile.from_path(Path(self.lvls_path / "ending.lvl")))
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
+        from modlunky2.sprites.tilecode_extras import TILENAMES
         for level in levels:
             level_tilecodes = level.tile_codes.all()
             for tilecode in level_tilecodes:
                 tilecode_item = []
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
                 print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
-                img = self._sprite_fetcher.get(tilecode.name, str(self.lvl_biome))
+
+                img = self._sprite_fetcher.get(str(tilecode.name), str(self.lvl_biome))
+
+                if len(tilecode.name.split("%", 2))>1:
+                    primary_tile = tilecode.name.split("%", 2)[0]
+                    img1= self._sprite_fetcher.get(primary_tile, str(self.lvl_biome))
+                    percent = tilecode.name.split("%", 2)[1]
+                    secondary_tile = "empty"
+                    img2 = None
+                    if len(tilecode.name.split("%", 2))>2:
+                        secondary_tile = tilecode.name.split("%", 2)[2]
+                        img2 = self._sprite_fetcher.get(secondary_tile, str(self.lvl_biome))
+                    print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
+                    img = self.get_tilecode_percent_texture(primary_tile, secondary_tile, percent, img1, img2)
+
                 if img is None:
-                    img = Image.open(BASE_DIR / "static/images/unknown.png")
+                    img = self._sprite_fetcher.get("unknown")
                 width, height = img.size
-                width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
-                height = int(height/2.65)
+                resize = True
+
+                for tile in TILENAMES: # These tile textures are already sized down
+                    if tile == tilecode.name:
+                        resize = False
+
+                if resize:
+                    width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
+                    height = int(height/2.65)
 
                 scale = 1
-                if (tilecode.name == "door2" or tilecode.name == "door2_secret"): # for some reason these are sized differently then everything elses typical universal scale
+                if (tilecode.name == "door2" or tilecode.name == "door2_secret" or tilecode.name == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
                     width = int(width/2)
                     height = int(height/2)
 
@@ -1510,7 +1552,6 @@ class LevelsTab(Tab):
 
                 img = img.resize((width, height), Image.ANTIALIAS)
                 tilecode_item.append(ImageTk.PhotoImage(img))
-
 
                 for i in self.tile_pallete_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -1546,8 +1587,34 @@ class LevelsTab(Tab):
                         tilecode_item.append(str(need[0]) + " " + need[1])
                         img = self._sprite_fetcher.get(str(need[1].split(1, "?")[1]), self.lvl_biome)
                         if img is None:
-                            img = Image.open(BASE_DIR / "static/images/unknown.png")
-                        img = img.resize((50, 50), Image.ANTIALIAS)
+                            img = self._sprite_fetcher.get("unknown")
+                        width, height = img.size
+                        resize = True
+
+                        for tile in TILENAMES: # These tile textures are already sized down
+                            if tile == tilecode.name:
+                                resize = False
+
+                        if resize:
+                            width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
+                            height = int(height/2.65)
+
+                        scale = 1
+                        if (tilecode.name == "door2" or tilecode.name == "door2_secret"): # for some reason these are sized differently then everything elses typical universal scale
+                            width = int(width/2)
+                            height = int(height/2)
+
+                        if (width < 50 and height < 50): # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
+                            difference = 0
+                            if width > height:
+                                difference = 50-width
+                            else:
+                                difference = 50-height
+
+                            width = width + difference
+                            height = height + difference
+
+                        img = img.resize((width, height), Image.ANTIALIAS)
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
         self.populate_tilecode_pallete()
@@ -1595,7 +1662,7 @@ class LevelsTab(Tab):
         #lines = file1.readlines()
 
 
-    def adjust_texture_xy(event, width, height, mode): # slight adjustments of textures for tile preview # 1 = resize by half # 2 = draw from bottom left # 3 center
+    def adjust_texture_xy(event, width, height, mode): # slight adjustments of textures for tile preview # 1 = lower down half a tile # 2 = draw from bottom left # 3 = center # 4 = center to the right # 5 = draw bottom left + rais 1 tile
         x = 0
         y = 0
         if mode == 1:
@@ -1605,4 +1672,54 @@ class LevelsTab(Tab):
         elif mode == 3:
             x = width/3.2
             y = height/2
+        elif mode == 4:
+            x = (width*-1)/2
+        elif mode == 5:
+            y = height/2 + 50
         return x, y
+
+    def get_tilecode_percent_texture(event, tile, alt_tile, percent, img1, img2):
+        with tempfile.TemporaryDirectory() as tempdir:
+            tempdir_path = Path(tempdir)
+            temp1 = tempdir_path / "temp1.png"
+            temp2 = tempdir_path / "temp2.png"
+            #ImageTk.PhotoImage()._PhotoImage__photo.write(temp1, format="png")
+
+            image1_save = ImageTk.PhotoImage(img1)
+            image1_save._PhotoImage__photo.write(temp1, format="png")
+            image1 = Image.open(
+                temp1,
+            ).convert("RGBA")
+            image1 = image1.resize((50,50),Image.BILINEAR)
+            tile_text = percent + "%"
+            if alt_tile != "empty":
+                tile_text += "/" + str(100 - int(percent)) + "%"
+
+                #ImageTk.PhotoImage()._PhotoImage__photo.write(temp2, format="png")
+
+                image2_save = ImageTk.PhotoImage(img2)
+                image2_save._PhotoImage__photo.write(temp2, format="png")
+                image2 = Image.open(temp2).convert("RGBA")
+                image2 = image2.resize((50,50),Image.BILINEAR).convert("RGBA")
+                image2.crop([25, 0, 50, 50]).save(temp2)
+                image1.save(temp1)
+                image1 = Image.open(temp1).convert("RGBA")
+                image2 = Image.open(temp2).convert("RGBA")
+
+                offset = (25, 0)
+                image1.paste(image2, offset)
+            # make a blank image for the text, initialized to transparent text color
+            txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
+
+            # get a drawing context
+            d = ImageDraw.Draw(txt)
+
+            # draw text, half opacity
+            d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
+            d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
+            d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
+            d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
+            d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
+
+            out = Image.alpha_composite(image1, txt)
+        return out
