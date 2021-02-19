@@ -21,8 +21,8 @@ class AbstractFloorSheet(BaseSpriteLoader):
     _chunk_map = {
         "push_block": (7, 0, 8, 1),
         "bone_block": (10, 2, 11, 3),
-        "ladder": (4, 0, 5, 2),
-        "ladder_plat": (4, 2, 5, 4),
+        "ladder": (4, 1, 5, 2),
+        "ladder_plat": (4, 2, 5, 3),
         "entrance": (0, 7, 3, 9),
         # Exit is not on even 128 pixel boundaries RIP even numbers
         "exit": (0, 9.5, 3, 11.5),
@@ -32,6 +32,7 @@ class AbstractFloorSheet(BaseSpriteLoader):
         "spikes": (5, 9, 6, 10),
         "altar": (10, 0, 12, 2),
         "dirt": (0, 0, 4, 7),
+        "floor": (0, 0, 1, 1),
         "ghist_door2": (10, 6, 12, 8),
     }
     _additional_chunks = {}

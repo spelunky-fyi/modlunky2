@@ -23,7 +23,7 @@ class AbstractBiome(ABC):
 
     @property
     @abstractmethod
-    def biome_name(self) -> str:
+    def floor_name(self) -> str:
         raise NotImplementedError
 
     @property
@@ -61,8 +61,9 @@ class AbstractBiome(ABC):
         :return:
         """
         floor_keys = set(self._floor_sheet._chunk_map.keys())
+        styled_keys = set(self._floorstyled_sheet._chunk_map.keys())
         deco_keys = set(self._deco_sheet._chunk_map.keys())
-        same_keys = floor_keys & deco_keys
+        same_keys = floor_keys & deco_keys & styled_keys
         # Evals to false if nothing in the set
         if same_keys:
             raise KeyError(
@@ -73,6 +74,8 @@ class AbstractBiome(ABC):
         }
         for k in self._deco_sheet._chunk_map.keys():
             sheet_map[k] = self._deco_sheet.get
+        for k in self._floorstyled_sheet._chunk_map.keys():
+            sheet_map[k] = self._floorstyled_sheet.get
         return sheet_map
 
     def get(self, name: str) -> Optional[Image.Image]:
