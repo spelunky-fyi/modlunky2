@@ -38,6 +38,11 @@ class AbstractBiome(ABC):
 
     @property
     @abstractmethod
+    def _floorstyled_sheet_class(self) -> Type[AbstractFloorSheet]:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def _deco_sheet_class(self) -> Type[AbstractDecoSheet]:
         raise NotImplementedError
 
@@ -48,8 +53,9 @@ class AbstractBiome(ABC):
     def __init__(self, base_path: Path = DEFAULT_BASE_PATH):
         self.base_path = base_path
         self._floor_sheet = self._floor_sheet_class(base_path)
+        self._floorstyled_sheet = self._floorstyled_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
-        self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
+        self._bg = Image.open(base_path / f"Data/Textures/bg_{self.floor_name}.png")
         self._image_cache = {}
         self._sheet_map = self._make_sheet_map()
 
