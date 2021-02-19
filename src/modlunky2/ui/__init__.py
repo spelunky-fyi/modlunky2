@@ -14,8 +14,8 @@ from modlunky2.ui.widgets import ConsoleWindow
 logger = logging.getLogger("modlunky2")
 
 
-MIN_WIDTH = 1024
-MIN_HEIGHT = 800
+MIN_WIDTH = 1280
+MIN_HEIGHT = 900
 
 
 class ModlunkyUI:
@@ -85,7 +85,7 @@ class ModlunkyUI:
             ),
         )
         self.register_tab(
-            "Levels",
+            "Level Editor",
             LevelsTab(
                 tab_control=self.tab_control,
                 config=config,
@@ -103,8 +103,13 @@ class ModlunkyUI:
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
-        self.console = ConsoleWindow(self.root)
-        self.console.grid(column=0, row=2, padx=2, pady=2, sticky="ew")
+        self.console_frame = ttk.LabelFrame(self.root, text="Console")
+        self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
+        self.console_frame.columnconfigure(0, weight=1)
+        self.console_frame.rowconfigure(0, weight=1)
+
+        self.console = ConsoleWindow(self.console_frame)
+        self.console.grid(column=0, row=0, padx=2, pady=2, sticky="ew")
 
         self.version_label = tk.Label(
             self.root, text=f"v{self.current_version}", font="Helvitica 9 italic"

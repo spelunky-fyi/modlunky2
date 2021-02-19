@@ -152,6 +152,7 @@ class ExtractTab(Tab):
     def extract(self):
         idx = self.list_box.curselection()
         if not idx:
+            logger.error("Didn't select exe")
             return
 
         extract_sound_extensions = []
