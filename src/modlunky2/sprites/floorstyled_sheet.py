@@ -1,4 +1,4 @@
-from .base_classes import AbstractFloorSheet
+from .base_classes.base_floorstyled_sheet import AbstractFloorStyledSheet
 
 __all__ = [
     "HiveStyledFloorSheet",
@@ -16,53 +16,56 @@ __all__ = [
 ]
 
 
-class HiveStyledFloorSheet(AbstractFloorSheet):
+class HiveStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "beehive"
 
 
-class DuatStyledFloorSheet(AbstractFloorSheet):
+class DuatStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "duat"
 
 
-class GoldStyledFloorSheet(AbstractFloorSheet):
+class GoldStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "gold"
 
 
-class GutsStyledFloorSheet(AbstractFloorSheet):
+class GutsStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "guts"
 
 
-class MothershipStyledFloorSheet(AbstractFloorSheet):
+class MothershipStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "mothership"
 
 
-class PagodaStyledFloorSheet(AbstractFloorSheet):
+class PagodaStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "pagoda"
 
 
-class BabylonStyledFloorSheet(AbstractFloorSheet):
+class BabylonStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "babylon"
 
 
-class SunkenCityStyledFloorSheet(AbstractFloorSheet):
+class SunkenCityStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "sunken"
 
 
-class PalaceStyledFloorSheet(AbstractFloorSheet):
+class PalaceStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "palace"
 
 
-class StonedStyledFloorSheet(AbstractFloorSheet):
+class StonedStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "stone"
 
 
-class TempleStyledFloorSheet(AbstractFloorSheet):
+class TempleStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "temple"
 
 
-class VladStyledFloorSheet(AbstractFloorSheet):
+class VladStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "vlad"
 
 
-class WoodStyledFloorSheet(AbstractFloorSheet):
+class WoodStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "wood"
+    _additional_chunks = {"wanted_poster": (6, 6, 8, 8),
+    "shop_sign": (4, 8, 6, 10),
+    "shop_door": (9, 0, 10, 1)}
