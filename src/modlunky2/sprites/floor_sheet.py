@@ -24,6 +24,7 @@ class VolcanaFloorSheet(AbstractFloorSheet):
 
 class JungleFloorSheet(AbstractFloorSheet):
     biome_name = "jungle"
+    _additional_chunks = {"bush_block": (10, 2, 11, 3)}
 
 
 class TidePoolFloorSheet(AbstractFloorSheet):

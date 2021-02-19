@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
+from modlunky2.constants import BASE_DIR
 
 from PIL import Image
-
-from modlunky2.constants import BASE_DIR
 
 from .base_classes import AbstractBiome, BaseSpriteLoader, DEFAULT_BASE_PATH
 
