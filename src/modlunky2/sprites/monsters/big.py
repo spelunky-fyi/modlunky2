@@ -9,6 +9,7 @@ class Big1(BaseSpriteLoader):
     _chunk_map = {
         "cavemanboss": (0, 0, 2, 2),
         "giantspider": (0, 10, 2, 12),
+        "giant_spider": (0, 10, 2, 12),
         "queenbee": (0, 14, 2, 16),
     }
 
@@ -51,7 +52,7 @@ class Big5(BaseSpriteLoader):
         "apep": (8, 0, 10, 2),
         "madametusk": (0, 8, 2, 10),
         "giant_frog": (0, 13, 3, 16),
-        "minister": (0, 10, 1, 13),
+        "minister": (0, 10, 1, 13.5),
     }
 
 
@@ -61,5 +62,29 @@ class Big6(BaseSpriteLoader):
     _chunk_map = {
         "kingu": (0, 0, 5, 6),
         "waddler": (0, 12, 2, 14),
+        "storage_guy": (0, 12, 2, 14),
         "humphead": (0, 14, 4, 16),
+    }
+
+class OsirisAndAlienQueen(BaseSpriteLoader):
+    _sprite_sheet_path = Path("Data/Textures/monsters_osiris.png")
+    _chunk_size = 128
+    _chunk_map = {
+    "osiris": (0, 0, 5, 7),
+    "alienqueen": (0, 13, 3, 16)
+    }
+
+class OlmecAndMech(BaseSpriteLoader):
+    _sprite_sheet_path = Path("Data/Textures/monsters_olmec.png")
+    _chunk_size = 128
+    _chunk_map = {
+    "olmec": (0, 0, 4, 4),
+    }
+
+class Yama(BaseSpriteLoader):
+    _sprite_sheet_path = Path("Data/Textures/monsters_yama.png")
+    _chunk_size = 128
+    _chunk_map = {
+    "yama": (0, 0, 7, 11),
+    "alienqueen": (0, 13, 3, 16)
     }
