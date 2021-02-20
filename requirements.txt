@@ -3,4 +3,4 @@ requests==2.25.0
 zstandard==0.14.0
 Pillow==8.0.1
 appdirs==1.4.4
-fsb5==1.0
+git+git://github.com/spelunky-fyi/python-fsb5@de35eeb86be83c2c95c6ae8a2a475beb77f89685#egg=fsb5
