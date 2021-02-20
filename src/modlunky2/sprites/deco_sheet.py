@@ -51,7 +51,9 @@ class TempleDecoSheet(AbstractDecoSheet):
 class IceCavesDecoSheet(AbstractDecoSheet):
     biome_name = "ice"
     _chunk_size = 128
-    _chunk_map = {}
+    _chunk_map = {
+        "moai_statue": (1, 5, 3, 8),
+        }
 
 
 class BabylonDecoSheet(AbstractDecoSheet):

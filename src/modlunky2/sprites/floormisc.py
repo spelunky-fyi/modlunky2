@@ -51,6 +51,7 @@ class FloorMiscSheet(BaseSpriteLoader):
         "crushtraplarge": (0, 4, 2, 6),
         "crushtrap": (0, 6, 1, 7),
         "lasertrap": (2, 4, 3, 5),
+        "laser_trap": (2, 4, 3, 5),
         "lasertrap_charging1": (3, 4, 4, 5),
         "lasertrap_charging2": (4, 4, 5, 5),
         "lasertrap_charged": (5, 4, 6, 5),

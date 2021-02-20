@@ -27,13 +27,14 @@ class SpelunkySpriteFetcher:
     def _make_non_biome_map(self) -> Tuple[List[BaseSpriteLoader], Dict[str, Callable]]:
         from . import monsters
         from .items import ItemSheet
+        from .coffins import CoffinSheet
         from .hud import HudSheet
         from .floormisc import FloorMiscSheet
         from .tilecode_extras import TilecodeExtras
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
         sheets = [getattr(monsters, m) for m in monsters.__all__]
-        sheets.extend([ItemSheet, HudSheet, FloorMiscSheet])
+        sheets.extend([CoffinSheet, ItemSheet, HudSheet, FloorMiscSheet])
         # Now making them instances
         sheets = [s(self.base_path) for s in sheets]
 

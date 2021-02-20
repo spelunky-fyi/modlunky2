@@ -24,7 +24,7 @@ TILENAMES = [
     "pen_floor",
     "pen_locked_door",
     "timed_powder_keg",
-    "chainandblocks_ceiling",
+    "chain_ceiling",
     "lava",
     "stagnant_lava",
     "vault_wall",
@@ -60,6 +60,9 @@ TILENAMES = [
     "platform",
     "quicksand",
     "pillar",
+    "giantclam",
+    "pipe",
+    "sticky_trap",
 ]
 
 class TilecodeExtras(BaseSpriteLoader):

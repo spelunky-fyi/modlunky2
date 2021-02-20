@@ -9,6 +9,7 @@ from .floor_sheet import *
 from .floorstyled_sheet import *
 
 __all__ = [
+    "SurfaceBiome",
     "CaveBiome",
     "VolcanaBiome",
     "JungleBiome",
@@ -22,6 +23,13 @@ __all__ = [
     "EggplantBiome",
 ]
 
+class SurfaceBiome(AbstractBiome):
+    biome_name = "surface"
+    floor_name = "surface"
+    display_name = "Surface"
+    _floor_sheet_class = SurfaceFloorSheet
+    _floorstyled_sheet_class = WoodStyledFloorSheet
+    _deco_sheet_class = CaveDecoSheet
 
 class CaveBiome(AbstractBiome):
     biome_name = "cave"

@@ -1,6 +1,7 @@
 from modlunky2.constants import BASE_DIR
 
 from .items import ItemSheet
+from .coffins import CoffinSheet
 from .journal_stickers import StickerSheet
 from .journal_items import JournalItemSheet
 from .journal_people import JournalPeopleSheet
@@ -17,6 +18,7 @@ from .tilecode_extras import TilecodeExtras
 def get_all_sprite_loaders(base_path: str):
     return [
         ItemSheet(base_path),
+        CoffinSheet(base_path),
         StickerSheet(base_path),
         JournalItemSheet(base_path),
         JournalPeopleSheet(base_path),
