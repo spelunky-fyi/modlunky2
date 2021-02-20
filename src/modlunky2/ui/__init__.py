@@ -1,15 +1,18 @@
+import time
 import logging
 import tkinter as tk
 from tkinter import PhotoImage, ttk
 
 from modlunky2.constants import BASE_DIR, IS_EXE
-from modlunky2.version import current_version, latest_version
 from modlunky2.updater import self_update
-from modlunky2.ui.extract import ExtractTab
-from modlunky2.ui.levels import LevelsTab
-from modlunky2.ui.pack import PackTab
-from modlunky2.ui.config import ConfigTab
-from modlunky2.ui.widgets import ConsoleWindow
+from modlunky2.version import current_version, latest_version
+
+from .tasks import TaskManager, PING_INTERVAL
+from .config import ConfigTab
+from .extract import ExtractTab
+from .levels import LevelsTab
+from .pack import PackTab
+from .widgets import ConsoleWindow
 
 logger = logging.getLogger("modlunky2")
 
@@ -36,6 +39,7 @@ class ModlunkyUI:
 
         self._shutdown_handlers = []
         self._shutting_down = False
+        self.task_manager = TaskManager()
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
@@ -82,6 +86,7 @@ class ModlunkyUI:
             ExtractTab(
                 tab_control=self.tab_control,
                 config=config,
+                task_manager=self.task_manager,
             ),
         )
         self.register_tab(
@@ -116,6 +121,37 @@ class ModlunkyUI:
         )
         self.version_label.grid(column=0, row=3, padx=5, sticky="e")
 
+        self.task_manager.start_process()
+        self.last_ping = time.time()
+        self.root.after(100, self.after_cb)
+
+    def after_cb(self):
+        if not self.task_manager.is_alive():
+            # Worker process went away but we're shutting down so just return
+            if self._shutting_down:
+                return
+
+            # Worker process went away unexpectedly... Restart it.
+            logger.critical("Worker process went away... Restarting it.")
+            self.task_manager.start_process()
+            self.root.after(100, self.after_cb)
+            return
+
+        # Send regular pings so the worker process knows
+        # we're still alive.
+        now = time.time()
+        if now - self.last_ping > PING_INTERVAL:
+            self.last_ping = now
+            self.task_manager.ping()
+
+        while True:
+            msg = self.task_manager.receive_message()
+            if msg is None:
+                self.root.after(100, self.after_cb)
+                return
+
+            self.task_manager.dispatch(msg)
+
     def update(self):
         try:
             self_update()
@@ -140,6 +176,7 @@ class ModlunkyUI:
         for handler in self._shutdown_handlers:
             handler()
 
+        self.task_manager.quit()
         self.root.quit()
         self.root.destroy()
 

@@ -1,6 +1,8 @@
 import logging
 import os
-import queue
+from multiprocessing import Queue
+from queue import Empty
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
@@ -33,7 +35,7 @@ class ConsoleWindow(tk.Frame):
         self.scrolled_text.tag_config("CRITICAL", foreground="red", underline=1)
 
         # Create a logging handler using a queue
-        self.log_queue = queue.Queue()
+        self.log_queue = Queue()
         self.queue_handler = QueueHandler(self.log_queue)
         formatter = logging.Formatter("%(asctime)s: %(message)s")
         self.queue_handler.setFormatter(formatter)
@@ -54,7 +56,7 @@ class ConsoleWindow(tk.Frame):
         while True:
             try:
                 record = self.log_queue.get(block=False)
-            except queue.Empty:
+            except Empty:
                 break
             else:
                 self.display(record)
