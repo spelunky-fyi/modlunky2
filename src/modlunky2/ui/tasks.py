@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from multiprocessing import Process, Queue
 from queue import Empty
 
+from .logs import register_queue_handler, QueueHandler
+
 logger = logging.getLogger("modlunky2")
 
 
@@ -22,7 +24,7 @@ class Message:
 class Task:
     callback: Callable
     threaded: bool = False
-    on_complete: Optional[Callable] = None
+    on_complete: Optional[str] = None
 
 class Worker:
     def __init__(self, rx_queue, tx_queue):
@@ -49,7 +51,9 @@ class Worker:
 
         self._receivers[name] = Task(callback, threaded, on_complete)
 
-    def process_tasks(self):
+    def process_tasks(self, log_queue):
+        queue_handler = QueueHandler(log_queue)
+        register_queue_handler(queue_handler)
         self._started = True
         self.last_ping = time.time()
         while True:
@@ -90,7 +94,7 @@ class Worker:
             except Exception as err:  # pylint: disable=broad-except
                 logger.critical("Failed to execute command %s: %s", repr(msg.name), err)
             if task.on_complete:
-                task.on_complete(self.call)
+                self.call(task.on_complete)
 
         if task.threaded:
             thread = threading.Thread(target=func)
@@ -101,11 +105,11 @@ class Worker:
     def send_message(self, msg: Message):
         self.tx_queue.put_nowait(msg)
 
-
 class TaskManager:
-    def __init__(self):
+    def __init__(self, log_queue):
         self.tx_queue = Queue()
         self.rx_queue = Queue()
+        self.log_queue = log_queue
         self.worker = Worker(rx_queue=self.tx_queue, tx_queue=self.rx_queue)
         self.worker_process = None
         self._receivers = {}
@@ -129,7 +133,7 @@ class TaskManager:
         self.send_message(msg)
 
     def start_process(self):
-        self.worker_process = Process(target=self.worker.process_tasks)
+        self.worker_process = Process(target=self.worker.process_tasks, args=(self.log_queue,))
         self.worker_process.start()
 
     def is_alive(self):

@@ -98,7 +98,7 @@ class ExtractTab(Tab):
         self.task_manager = task_manager
         self.task_manager.register_task(
             "extract_assets", extract_assets, True,
-            on_complete=lambda call: call("extract_finished"),
+            on_complete="extract_finished",
         )
         self.task_manager.register_handler("extract_finished", self.extract_finished)
 

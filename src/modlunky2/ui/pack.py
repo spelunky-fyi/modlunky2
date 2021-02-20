@@ -79,7 +79,7 @@ class PackTab(Tab):
         self.task_manager = task_manager
         self.task_manager.register_task(
             "pack_assets", pack_assets, True,
-            on_complete=lambda call: call("pack_finished"),
+            on_complete="pack_finished",
         )
         self.task_manager.register_handler("pack_finished", self.pack_finished)
 

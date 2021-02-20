@@ -2,6 +2,7 @@ import time
 import logging
 import tkinter as tk
 from tkinter import PhotoImage, ttk
+from multiprocessing import Queue
 
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
@@ -13,6 +14,7 @@ from .extract import ExtractTab
 from .levels import LevelsTab
 from .pack import PackTab
 from .widgets import ConsoleWindow
+from .logs import QueueHandler, register_queue_handler
 
 logger = logging.getLogger("modlunky2")
 
@@ -39,7 +41,11 @@ class ModlunkyUI:
 
         self._shutdown_handlers = []
         self._shutting_down = False
-        self.task_manager = TaskManager()
+
+        self.log_queue = Queue()
+        self.queue_handler = QueueHandler(self.log_queue)
+        register_queue_handler(self.queue_handler)
+        self.task_manager = TaskManager(self.log_queue)
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
@@ -114,7 +120,7 @@ class ModlunkyUI:
         self.console_frame.columnconfigure(0, weight=1)
         self.console_frame.rowconfigure(0, weight=1)
 
-        self.console = ConsoleWindow(self.console_frame)
+        self.console = ConsoleWindow(self.queue_handler, self.console_frame)
         self.console.grid(column=0, row=0, padx=2, pady=2, sticky="ew")
 
         self.version_label = tk.Label(
