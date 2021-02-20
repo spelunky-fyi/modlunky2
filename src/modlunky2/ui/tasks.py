@@ -1,6 +1,7 @@
 import time
 import logging
-from typing import Optional, Dict, Any
+import threading
+from typing import Callable, Optional, Dict, Any
 from dataclasses import dataclass
 from multiprocessing import Process, Queue
 from queue import Empty
@@ -17,6 +18,11 @@ class Message:
     name: str
     kwargs: Optional[Dict[str, Any]] = None
 
+@dataclass
+class Task:
+    callback: Callable
+    threaded: bool = False
+    on_complete: Optional[Callable] = None
 
 class Worker:
     def __init__(self, rx_queue, tx_queue):
@@ -32,7 +38,7 @@ class Worker:
         msg = Message(name, kwargs)
         self.send_message(msg)
 
-    def register(self, name, callback):
+    def register(self, name, callback, threaded=False, on_complete=None):
         if self._started:
             raise RuntimeError(
                 f"Attempted to register {name!r} after worker was started..."
@@ -41,7 +47,7 @@ class Worker:
         if name in self._receivers:
             raise RuntimeError(f"{name} is already registered...")
 
-        self._receivers[name] = callback
+        self._receivers[name] = Task(callback, threaded, on_complete)
 
     def process_tasks(self):
         self._started = True
@@ -67,8 +73,8 @@ class Worker:
             self.dispatch(msg)
 
     def dispatch(self, msg):
-        func = self._receivers.get(msg.name)
-        if func is None:
+        task = self._receivers.get(msg.name)
+        if task is None:
             logger.warning(
                 "Worker: Received unexpected command (%s). Ignoring...", msg.name
             )
@@ -78,10 +84,19 @@ class Worker:
         if msg.kwargs is not None:
             kwargs.update(msg.kwargs)
 
-        try:
-            func(self, **kwargs)
-        except Exception as err:  # pylint: disable=broad-except
-            logger.critical("Failed to execute command %s: %s", repr(msg.name), err)
+        def func():
+            try:
+                task.callback(self.call, **kwargs)
+            except Exception as err:  # pylint: disable=broad-except
+                logger.critical("Failed to execute command %s: %s", repr(msg.name), err)
+            if task.on_complete:
+                task.on_complete(self.call)
+
+        if task.threaded:
+            thread = threading.Thread(target=func)
+            thread.start()
+        else:
+            func()
 
     def send_message(self, msg: Message):
         self.tx_queue.put_nowait(msg)
@@ -101,8 +116,8 @@ class TaskManager:
             raise RuntimeError(f"{name} is already registered...")
         self._receivers[name] = callback
 
-    def register_task(self, name, callback):
-        self.worker.register(name, callback)
+    def register_task(self, name, callback, threaded=False, on_complete=None):
+        self.worker.register(name, callback, threaded, on_complete)
 
     def register_handler(self, name, callback):
         self.register(name, callback)

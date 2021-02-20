@@ -1,6 +1,5 @@
 import logging
 import shutil
-import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -35,12 +34,73 @@ def try_load_vorbis():
         return False
 
 
+def extract_assets(
+    _call,
+    install_dir,
+    target,
+    recompress,
+    generate_string_hashes,
+    create_entity_sheets,
+    extract_sound_extensions,
+    reuse_extracted,
+):
+    exe_filename = install_dir / target
+
+    if is_patched(exe_filename):
+        logger.critical(
+            (
+                "%s is a patched exe. Can't extract. You should Restore Exe"
+                " or validate game files to get a clean exe before Extracting."
+            ),
+            exe_filename,
+        )
+        return
+
+    mods_dir = install_dir / MODS
+
+    for dir_ in TOP_LEVEL_DIRS:
+        (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
+
+    for dir_ in FILEPATH_DIRS:
+        (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
+            parents=True, exist_ok=True
+        )
+
+    with exe_filename.open("rb") as exe:
+        asset_store = AssetStore.load_from_file(exe)
+        unextracted = asset_store.extract(
+            mods_dir / EXTRACTED_DIR,
+            mods_dir / ".compressed" / EXTRACTED_DIR,
+            recompress=recompress,
+            generate_string_hashes=generate_string_hashes,
+            create_entity_sheets=create_entity_sheets,
+            extract_sound_extensions=extract_sound_extensions,
+            reuse_extracted=reuse_extracted,
+        )
+
+    for asset in unextracted:
+        logger.warning("Un-extracted Asset %s", asset.asset_block)
+
+    dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
+    if not reuse_extracted and exe_filename != dest:
+        logger.info("Backing up exe to %s", dest)
+        shutil.copy2(exe_filename, dest)
+
+    logger.info("Extraction complete!")
+
+
 class ExtractTab(Tab):
     def __init__(self, tab_control, config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.config = config
         self.task_manager = task_manager
+        self.task_manager.register_task(
+            "extract_assets", extract_assets, True,
+            on_complete=lambda call: call("extract_finished"),
+        )
+        self.task_manager.register_handler("extract_finished", self.extract_finished)
 
         self.vorbis_loaded = try_load_vorbis()
 
@@ -175,11 +235,16 @@ class ExtractTab(Tab):
         self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_extract, ("Extract assets from EXE."))
 
+    def extract_finished(self):
+        self.button_extract["state"] = tk.NORMAL
+
     def extract(self):
         idx = self.list_box.curselection()
         if not idx:
             logger.error("Didn't select exe")
             return
+
+        self.button_extract["state"] = tk.DISABLED
 
         extract_sound_extensions = []
         if self.extract_wavs.get():
@@ -189,18 +254,16 @@ class ExtractTab(Tab):
             extract_sound_extensions.append(SoundExtension.OGG)
 
         selected_exe = self.list_box.get(idx)
-        thread = threading.Thread(
-            target=self.extract_assets,
-            args=(
-                selected_exe,
-                self.recompress.get(),
-                self.generate_string_hashes.get(),
-                self.create_entity.get(),
-                extract_sound_extensions,
-                self.reuse_extracted.get(),
-            ),
+        self.task_manager.call(
+            "extract_assets",
+            install_dir=self.config.install_dir,
+            target=selected_exe,
+            recompress=self.recompress.get(),
+            generate_string_hashes=self.generate_string_hashes.get(),
+            create_entity_sheets=self.create_entity.get(),
+            extract_sound_extensions=extract_sound_extensions,
+            reuse_extracted=self.reuse_extracted.get(),
         )
-        thread.start()
 
     def get_exes(self):
         exes = []
@@ -219,58 +282,3 @@ class ExtractTab(Tab):
         self.list_box.delete(0, tk.END)
         for exe in self.get_exes():
             self.list_box.insert(tk.END, str(exe))
-
-    def extract_assets(
-        self,
-        target,
-        recompress,
-        generate_string_hashes,
-        create_entity_sheets,
-        extract_sound_extensions,
-        reuse_extracted,
-    ):
-
-        exe_filename = self.config.install_dir / target
-
-        if is_patched(exe_filename):
-            logger.critical(
-                (
-                    "%s is a patched exe. Can't extract. You should Restore Exe"
-                    " or validate game files to get a clean exe before Extracting."
-                ),
-                exe_filename,
-            )
-            return
-
-        mods_dir = self.config.install_dir / MODS
-
-        for dir_ in TOP_LEVEL_DIRS:
-            (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
-
-        for dir_ in FILEPATH_DIRS:
-            (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-            (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
-                parents=True, exist_ok=True
-            )
-
-        with exe_filename.open("rb") as exe:
-            asset_store = AssetStore.load_from_file(exe)
-            unextracted = asset_store.extract(
-                mods_dir / EXTRACTED_DIR,
-                mods_dir / ".compressed" / EXTRACTED_DIR,
-                recompress=recompress,
-                generate_string_hashes=generate_string_hashes,
-                create_entity_sheets=create_entity_sheets,
-                extract_sound_extensions=extract_sound_extensions,
-                reuse_extracted=reuse_extracted,
-            )
-
-        for asset in unextracted:
-            logger.warning("Un-extracted Asset %s", asset.asset_block)
-
-        dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
-        if not reuse_extracted and exe_filename != dest:
-            logger.info("Backing up exe to %s", dest)
-            shutil.copy2(exe_filename, dest)
-
-        logger.info("Extraction complete!")
