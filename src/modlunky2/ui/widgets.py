@@ -1,25 +1,14 @@
-import logging
 import os
-import queue
+from queue import Empty
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
-logger = logging.getLogger("modlunky2")
-
-
-class QueueHandler(logging.Handler):
-    def __init__(self, log_queue):
-        super().__init__()
-        self.log_queue = log_queue
-
-    def emit(self, record):
-        self.log_queue.put(record)
-
 
 # Adapted from https://beenje.github.io/blog/posts/logging-to-a-tkinter-scrolledtext-widget/
 class ConsoleWindow(tk.Frame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, queue_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Create a ScrolledText wdiget
@@ -33,11 +22,7 @@ class ConsoleWindow(tk.Frame):
         self.scrolled_text.tag_config("CRITICAL", foreground="red", underline=1)
 
         # Create a logging handler using a queue
-        self.log_queue = queue.Queue()
-        self.queue_handler = QueueHandler(self.log_queue)
-        formatter = logging.Formatter("%(asctime)s: %(message)s")
-        self.queue_handler.setFormatter(formatter)
-        logger.addHandler(self.queue_handler)
+        self.queue_handler = queue_handler
 
         # Start polling messages from the queue
         self.after(100, self.poll_log_queue)
@@ -53,8 +38,8 @@ class ConsoleWindow(tk.Frame):
         # Check every 100ms if there is a new message in the queue to display
         while True:
             try:
-                record = self.log_queue.get(block=False)
-            except queue.Empty:
+                record = self.queue_handler.log_queue.get(block=False)
+            except Empty:
                 break
             else:
                 self.display(record)

@@ -1,21 +1,26 @@
+import time
 import logging
 import tkinter as tk
 from tkinter import PhotoImage, ttk
+from multiprocessing import Queue
 
 from modlunky2.constants import BASE_DIR, IS_EXE
-from modlunky2.version import current_version, latest_version
 from modlunky2.updater import self_update
-from modlunky2.ui.extract import ExtractTab
-from modlunky2.ui.levels import LevelsTab
-from modlunky2.ui.pack import PackTab
-from modlunky2.ui.config import ConfigTab
-from modlunky2.ui.widgets import ConsoleWindow
+from modlunky2.version import current_version, latest_version
+
+from .tasks import TaskManager, PING_INTERVAL
+from .config import ConfigTab
+from .extract import ExtractTab
+from .levels import LevelsTab
+from .pack import PackTab
+from .widgets import ConsoleWindow
+from .logs import QueueHandler, register_queue_handler
 
 logger = logging.getLogger("modlunky2")
 
 
-MIN_WIDTH = 1024
-MIN_HEIGHT = 800
+MIN_WIDTH = 1280
+MIN_HEIGHT = 900
 
 
 class ModlunkyUI:
@@ -36,6 +41,11 @@ class ModlunkyUI:
 
         self._shutdown_handlers = []
         self._shutting_down = False
+
+        self.log_queue = Queue()
+        self.queue_handler = QueueHandler(self.log_queue)
+        register_queue_handler(self.queue_handler)
+        self.task_manager = TaskManager(self.log_queue)
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
@@ -75,6 +85,7 @@ class ModlunkyUI:
             PackTab(
                 tab_control=self.tab_control,
                 config=config,
+                task_manager=self.task_manager,
             ),
         )
         self.register_tab(
@@ -82,10 +93,11 @@ class ModlunkyUI:
             ExtractTab(
                 tab_control=self.tab_control,
                 config=config,
+                task_manager=self.task_manager,
             ),
         )
         self.register_tab(
-            "Levels",
+            "Level Editor",
             LevelsTab(
                 tab_control=self.tab_control,
                 config=config,
@@ -103,13 +115,49 @@ class ModlunkyUI:
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
-        self.console = ConsoleWindow(self.root)
-        self.console.grid(column=0, row=2, padx=2, pady=2, sticky="ew")
+        self.console_frame = ttk.LabelFrame(self.root, text="Console")
+        self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
+        self.console_frame.columnconfigure(0, weight=1)
+        self.console_frame.rowconfigure(0, weight=1)
+
+        self.console = ConsoleWindow(self.queue_handler, self.console_frame)
+        self.console.grid(column=0, row=0, padx=2, pady=2, sticky="ew")
 
         self.version_label = tk.Label(
             self.root, text=f"v{self.current_version}", font="Helvitica 9 italic"
         )
         self.version_label.grid(column=0, row=3, padx=5, sticky="e")
+
+        self.task_manager.start_process()
+        self.last_ping = time.time()
+        self.root.after(100, self.after_cb)
+
+    def after_cb(self):
+        if not self.task_manager.is_alive():
+            # Worker process went away but we're shutting down so just return
+            if self._shutting_down:
+                return
+
+            # Worker process went away unexpectedly... Restart it.
+            logger.critical("Worker process went away... Restarting it.")
+            self.task_manager.start_process()
+            self.root.after(100, self.after_cb)
+            return
+
+        # Send regular pings so the worker process knows
+        # we're still alive.
+        now = time.time()
+        if now - self.last_ping > PING_INTERVAL:
+            self.last_ping = now
+            self.task_manager.ping()
+
+        while True:
+            msg = self.task_manager.receive_message()
+            if msg is None:
+                self.root.after(100, self.after_cb)
+                return
+
+            self.task_manager.dispatch(msg)
 
     def update(self):
         try:
@@ -135,6 +183,7 @@ class ModlunkyUI:
         for handler in self._shutdown_handlers:
             handler()
 
+        self.task_manager.quit()
         self.root.quit()
         self.root.destroy()
 

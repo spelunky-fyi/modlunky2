@@ -1,6 +1,5 @@
 import logging
 import shutil
-import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -15,7 +14,7 @@ from modlunky2.assets.constants import (
     OVERRIDES_DIR,
     PACKS_DIR,
 )
-from modlunky2.ui.utils import is_patched, log_exception
+from modlunky2.ui.utils import is_patched
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 
@@ -35,11 +34,73 @@ def try_load_vorbis():
         return False
 
 
+def extract_assets(
+    _call,
+    install_dir,
+    target,
+    recompress,
+    generate_string_hashes,
+    create_entity_sheets,
+    extract_sound_extensions,
+    reuse_extracted,
+):
+    exe_filename = install_dir / target
+
+    if is_patched(exe_filename):
+        logger.critical(
+            (
+                "%s is a patched exe. Can't extract. You should Restore Exe"
+                " or validate game files to get a clean exe before Extracting."
+            ),
+            exe_filename,
+        )
+        return
+
+    mods_dir = install_dir / MODS
+
+    for dir_ in TOP_LEVEL_DIRS:
+        (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
+
+    for dir_ in FILEPATH_DIRS:
+        (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
+        (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
+            parents=True, exist_ok=True
+        )
+
+    with exe_filename.open("rb") as exe:
+        asset_store = AssetStore.load_from_file(exe)
+        unextracted = asset_store.extract(
+            mods_dir / EXTRACTED_DIR,
+            mods_dir / ".compressed" / EXTRACTED_DIR,
+            recompress=recompress,
+            generate_string_hashes=generate_string_hashes,
+            create_entity_sheets=create_entity_sheets,
+            extract_sound_extensions=extract_sound_extensions,
+            reuse_extracted=reuse_extracted,
+        )
+
+    for asset in unextracted:
+        logger.warning("Un-extracted Asset %s", asset.asset_block)
+
+    dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
+    if not reuse_extracted and exe_filename != dest:
+        logger.info("Backing up exe to %s", dest)
+        shutil.copy2(exe_filename, dest)
+
+    logger.info("Extraction complete!")
+
+
 class ExtractTab(Tab):
-    def __init__(self, tab_control, config, *args, **kwargs):
+    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.config = config
+        self.task_manager = task_manager
+        self.task_manager.register_task(
+            "extract_assets", extract_assets, True,
+            on_complete="extract_finished",
+        )
+        self.task_manager.register_handler("extract_finished", self.extract_finished)
 
         self.vorbis_loaded = try_load_vorbis()
 
@@ -71,48 +132,67 @@ class ExtractTab(Tab):
         self.recompress.set(True)
         self.checkbox_recompress = tk.Checkbutton(
             self.config_frame,
-            text='Recompress', variable=self.recompress, onvalue=True, offvalue=False,
+            text="Recompress",
+            variable=self.recompress,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_recompress.grid(row=0, sticky="nw")
-        ToolTip(self.checkbox_recompress, (
-            "Recompress assets to speed up futuring packing.\n"
-            "Not necessary if you just want the extracted assets."
-        ))
+        ToolTip(
+            self.checkbox_recompress,
+            (
+                "Recompress assets to speed up futuring packing.\n"
+                "Not necessary if you just want the extracted assets."
+            ),
+        )
 
         self.create_entity = tk.BooleanVar()
         self.create_entity.set(True)
         self.checkbox_create_entity = tk.Checkbutton(
             self.config_frame,
-            text='Create Entity Sprites', variable=self.create_entity, onvalue=True, offvalue=False,
+            text="Create Entity Sprites",
+            variable=self.create_entity,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_create_entity.grid(row=1, sticky="nw")
-        ToolTip(self.checkbox_create_entity, (
-            "Create merged entity spritesheets. These provide a simpler\n"
-            "interface to some entity mods."
-        ))
+        ToolTip(
+            self.checkbox_create_entity,
+            (
+                "Create merged entity spritesheets. These provide a simpler\n"
+                "interface to some entity mods."
+            ),
+        )
 
         self.generate_string_hashes = tk.BooleanVar()
         self.generate_string_hashes.set(True)
         self.checkbox_string_hashes = tk.Checkbutton(
             self.config_frame,
-            text='Generate String Hashes', variable=self.generate_string_hashes, onvalue=True, offvalue=False,
+            text="Generate String Hashes",
+            variable=self.generate_string_hashes,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_string_hashes.grid(row=2, sticky="nw")
-        ToolTip(self.checkbox_string_hashes, (
-            "Generate string hash files. These provide a better\n"
-            "interface for creating mods that use strings."
-        ))
+        ToolTip(
+            self.checkbox_string_hashes,
+            (
+                "Generate string hash files. These provide a better\n"
+                "interface for creating mods that use strings."
+            ),
+        )
 
         self.extract_wavs = tk.BooleanVar()
         self.extract_wavs.set(False)
         self.checkbox_extract_wavs = tk.Checkbutton(
             self.config_frame,
-            text='Extract .wav files', variable=self.extract_wavs, onvalue=True, offvalue=False,
+            text="Extract .wav files",
+            variable=self.extract_wavs,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_extract_wavs.grid(row=3, sticky="nw")
-        ToolTip(self.checkbox_extract_wavs, (
-            "Extract .wav files from the soundbank."
-        ))
+        ToolTip(self.checkbox_extract_wavs, ("Extract .wav files from the soundbank."))
 
         oggs_state = tk.NORMAL
         if not self.vorbis_loaded:
@@ -120,39 +200,51 @@ class ExtractTab(Tab):
         self.extract_oggs = tk.BooleanVar()
         self.extract_oggs.set(False)
         self.checkbox_extract_oggs = tk.Checkbutton(
-            self.config_frame, state=oggs_state,
-            text='Extract .ogg files', variable=self.extract_oggs, onvalue=True, offvalue=False,
+            self.config_frame,
+            state=oggs_state,
+            text="Extract .ogg files",
+            variable=self.extract_oggs,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_extract_oggs.grid(row=4, sticky="nw")
-        ToolTip(self.checkbox_extract_oggs, (
-            "Extract .ogg files from the soundbank."
-        ))
+        ToolTip(self.checkbox_extract_oggs, ("Extract .ogg files from the soundbank."))
 
         self.reuse_extracted = tk.BooleanVar()
         self.reuse_extracted.set(False)
         self.checkbox_reuse_extracted = tk.Checkbutton(
             self.config_frame,
-            text='Reuse Extracted Assets', variable=self.reuse_extracted, onvalue=True, offvalue=False,
+            text="Reuse Extracted Assets",
+            variable=self.reuse_extracted,
+            onvalue=True,
+            offvalue=False,
         )
         self.checkbox_reuse_extracted.grid(row=5, sticky="nw")
-        ToolTip(self.checkbox_reuse_extracted, (
-            "If checked we will not re-extract from the binary\n"
-            "and only rerun post processing steps."
-        ))
+        ToolTip(
+            self.checkbox_reuse_extracted,
+            (
+                "If checked we will not re-extract from the binary\n"
+                "and only rerun post processing steps."
+            ),
+        )
 
         self.list_box.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.list_box.yview)
 
         self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
         self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
-        ToolTip(self.button_extract, (
-            "Extract assets from EXE."
-        ))
+        ToolTip(self.button_extract, ("Extract assets from EXE."))
+
+    def extract_finished(self):
+        self.button_extract["state"] = tk.NORMAL
 
     def extract(self):
         idx = self.list_box.curselection()
         if not idx:
+            logger.error("Didn't select exe")
             return
+
+        self.button_extract["state"] = tk.DISABLED
 
         extract_sound_extensions = []
         if self.extract_wavs.get():
@@ -162,18 +254,16 @@ class ExtractTab(Tab):
             extract_sound_extensions.append(SoundExtension.OGG)
 
         selected_exe = self.list_box.get(idx)
-        thread = threading.Thread(
-            target=self.extract_assets,
-            args=(
-                selected_exe,
-                self.recompress.get(),
-                self.generate_string_hashes.get(),
-                self.create_entity.get(),
-                extract_sound_extensions,
-                self.reuse_extracted.get(),
-            )
+        self.task_manager.call(
+            "extract_assets",
+            install_dir=self.config.install_dir,
+            target=selected_exe,
+            recompress=self.recompress.get(),
+            generate_string_hashes=self.generate_string_hashes.get(),
+            create_entity_sheets=self.create_entity.get(),
+            extract_sound_extensions=extract_sound_extensions,
+            reuse_extracted=self.reuse_extracted.get(),
         )
-        thread.start()
 
     def get_exes(self):
         exes = []
@@ -192,48 +282,3 @@ class ExtractTab(Tab):
         self.list_box.delete(0, tk.END)
         for exe in self.get_exes():
             self.list_box.insert(tk.END, str(exe))
-
-    @log_exception
-    def extract_assets(self, target, recompress, generate_string_hashes, create_entity_sheets, extract_sound_extensions, reuse_extracted):
-
-        exe_filename = self.config.install_dir / target
-
-        if is_patched(exe_filename):
-            logger.critical((
-                "%s is a patched exe. Can't extract. You should Restore Exe"
-                " or validate game files to get a clean exe before Extracting."
-            ), exe_filename)
-            return
-
-        mods_dir = self.config.install_dir / MODS
-
-        for dir_ in TOP_LEVEL_DIRS:
-            (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
-
-        for dir_ in FILEPATH_DIRS:
-            (mods_dir / EXTRACTED_DIR / dir_).mkdir(parents=True, exist_ok=True)
-            (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
-                parents=True, exist_ok=True
-            )
-
-        with exe_filename.open("rb") as exe:
-            asset_store = AssetStore.load_from_file(exe)
-            unextracted = asset_store.extract(
-                mods_dir / EXTRACTED_DIR,
-                mods_dir / ".compressed" / EXTRACTED_DIR,
-                recompress=recompress,
-                generate_string_hashes=generate_string_hashes,
-                create_entity_sheets=create_entity_sheets,
-                extract_sound_extensions=extract_sound_extensions,
-                reuse_extracted=reuse_extracted,
-            )
-
-        for asset in unextracted:
-            logger.warning("Un-extracted Asset %s", asset.asset_block)
-
-        dest = mods_dir / EXTRACTED_DIR / "Spel2.exe"
-        if not reuse_extracted and exe_filename != dest:
-            logger.info("Backing up exe to %s", dest)
-            shutil.copy2(exe_filename, dest)
-
-        logger.info("Extraction complete!")

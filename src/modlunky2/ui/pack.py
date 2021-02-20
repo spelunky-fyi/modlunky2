@@ -1,6 +1,5 @@
 import logging
 import shutil
-import threading
 import tkinter as tk
 import webbrowser
 from pathlib import Path
@@ -13,7 +12,7 @@ from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.hashing import md5sum_path
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.utils import is_patched, log_exception
+from modlunky2.ui.utils import is_patched
 from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
 
 logger = logging.getLogger("modlunky2")
@@ -21,11 +20,68 @@ logger = logging.getLogger("modlunky2")
 MODS = Path("Mods")
 
 
+def pack_assets(_call, install_dir, packs):
+    mods_dir = install_dir / MODS
+    extract_dir = mods_dir / "Extracted"
+    source_exe = extract_dir / "Spel2.exe"
+    dest_exe = install_dir / "Spel2.exe"
+
+    logger.info("Starting Pack of %s", source_exe)
+    if is_patched(source_exe):
+        logger.critical(
+            "Source exe (%s) is somehow patched. You need to re-extract.", source_exe
+        )
+        return
+
+    # If the destination isn't patched we want to check if it differs
+    # from the source exe as new updates are a regular point of confusion
+    # for users.
+    if not is_patched(dest_exe):
+        logger.info("Checking for new release...")
+        logger.info("Hashing %s", source_exe)
+        src_md5 = md5sum_path(source_exe)
+        logger.info("Hashing %s", dest_exe)
+        dest_md5 = md5sum_path(dest_exe)
+        if src_md5 != dest_md5:
+            logger.critical((
+                "%s appears to be a new version. You need to extract before packing again."
+            ), dest_exe)
+            return
+
+
+    shutil.copy2(source_exe, dest_exe)
+
+    with dest_exe.open("rb+") as dest_file:
+        asset_store = AssetStore.load_from_file(dest_file)
+        try:
+            asset_store.repackage(
+                packs,
+                extract_dir,
+                mods_dir / ".compressed",
+            )
+        except MissingAsset as err:
+            logger.error(
+                "Failed to find expected asset: %s. Unabled to proceed...", err
+            )
+            return
+
+        patcher = Patcher(dest_file)
+        patcher.patch_checksum()
+        patcher.patch_release()
+        logger.info("Repacking complete!")
+
+
 class PackTab(Tab):
-    def __init__(self, tab_control, config, *args, **kwargs):
+    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.config = config
+        self.task_manager = task_manager
+        self.task_manager.register_task(
+            "pack_assets", pack_assets, True,
+            on_complete="pack_finished",
+        )
+        self.task_manager.register_handler("pack_finished", self.pack_finished)
 
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, minsize=60)
@@ -56,6 +112,11 @@ class PackTab(Tab):
 
         self.checkbox_vars = []
 
+    def pack_finished(self):
+        self.button_pack["state"] = tk.NORMAL
+        self.button_restore["state"] = tk.NORMAL
+        self.button_validate["state"] = tk.NORMAL
+
     @staticmethod
     def validate():
         webbrowser.open_new_tab("steam://validate/418530")
@@ -82,8 +143,11 @@ class PackTab(Tab):
             for exe in self.checkbox_vars
             if exe.get()
         ]
-        thread = threading.Thread(target=self.repack_assets, args=(packs,))
-        thread.start()
+        self.button_pack["state"] = tk.DISABLED
+        self.button_restore["state"] = tk.DISABLED
+        self.button_validate["state"] = tk.DISABLED
+        self.task_manager.call("pack_assets", install_dir=self.config.install_dir, packs=packs)
+
 
     def get_packs(self):
         pack_dirs = []
@@ -119,54 +183,3 @@ class PackTab(Tab):
             )
             self.checkbox_vars.append(str_var)
             item.grid(row=idx, column=0, pady=5, padx=5, sticky="w")
-
-    @log_exception
-    def repack_assets(self, packs):
-        mods_dir = self.config.install_dir / MODS
-        extract_dir = mods_dir / "Extracted"
-        source_exe = extract_dir / "Spel2.exe"
-        dest_exe = self.config.install_dir / "Spel2.exe"
-
-        logger.info("Starting Pack of %s", source_exe)
-        if is_patched(source_exe):
-            logger.critical(
-                "Source exe (%s) is somehow patched. You need to re-extract.", source_exe
-            )
-            return
-
-        # If the destination isn't patched we want to check if it differs
-        # from the source exe as new updates are a regular point of confusion
-        # for users.
-        if not is_patched(dest_exe):
-            logger.info("Checking for new release...")
-            logger.info("Hashing %s", source_exe)
-            src_md5 = md5sum_path(source_exe)
-            logger.info("Hashing %s", dest_exe)
-            dest_md5 = md5sum_path(dest_exe)
-            if src_md5 != dest_md5:
-                logger.critical((
-                    "%s appears to be a new version. You need to extract before packing again."
-                ), dest_exe)
-                return
-
-
-        shutil.copy2(source_exe, dest_exe)
-
-        with dest_exe.open("rb+") as dest_file:
-            asset_store = AssetStore.load_from_file(dest_file)
-            try:
-                asset_store.repackage(
-                    packs,
-                    extract_dir,
-                    mods_dir / ".compressed",
-                )
-            except MissingAsset as err:
-                logger.error(
-                    "Failed to find expected asset: %s. Unabled to proceed...", err
-                )
-                return
-
-            patcher = Patcher(dest_file)
-            patcher.patch_checksum()
-            patcher.patch_release()
-            logger.info("Repacking complete!")
