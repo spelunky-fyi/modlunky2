@@ -414,23 +414,46 @@ class LevelsTab(Tab):
         # color_base = int(random.random())
         self.uni_tile_code_list = []
         self.tile_pallete_ref = []
-        #self.panel_sel["image"] = self.texture_images[0]
-        #self.tile_label["text"] = "Primary Tile: " + r"\?empty a"
-        #self.panel_sel_secondary["image"] = self.texture_images[0]
-        #self.tile_label_secondary["text"] = "Secondary Tile: " + r"\?empty a"
+        self.panel_sel["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
+        self.tile_label["text"] = "Primary Tile: " + r"\?empty 0"
+        self.panel_sel_secondary["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
+        self.tile_label_secondary["text"] = "Secondary Tile: " + r"\?empty 0"
 
-        self.draw_mode = [] # slight adjustments of textures for tile preview # 1 = lower half tile # 2 = draw from bottom left # 3 = center # 4 = center to the right # 5 = draw bottom left + rais 1 tile
+        self.draw_mode = [] # slight adjustments of textures for tile preview
+        # 1 = lower half tile
+        # 2 = draw from bottom left
+        # 3 = center
+        # 4 = center to the right
+        # 5 = draw bottom left + raise 1 tile
+        # 6 = position doors
+        # 7 = draw bottom left + raise half tile
+        # 8 = draw bottom left + lowere 1 tile
         self.draw_mode.append(["anubis", 2])
         self.draw_mode.append(["olmec", 5])
-        self.draw_mode.append(["alienqueen", 5])
+        self.draw_mode.append(["alienqueen", 7])
+        self.draw_mode.append(["coffin", 2])
+        self.draw_mode.append(["lavamander", 2])
         self.draw_mode.append(["mummy", 2])
+        self.draw_mode.append(["yama", 2])
+        self.draw_mode.append(["crown_statue", 7])
         self.draw_mode.append(["lamassu", 2])
         self.draw_mode.append(["madametusk", 2])
         self.draw_mode.append(["giant_frog", 3])
         self.draw_mode.append(["door", 2])
+        self.draw_mode.append(["door2", 6])
+        self.draw_mode.append(["door2_secret", 6])
+        self.draw_mode.append(["ghist_door2", 6])
+        self.draw_mode.append(["ghist_door", 2])
         self.draw_mode.append(["minister", 2])
         self.draw_mode.append(["storage_guy", 2])
         self.draw_mode.append(["idol", 4])
+
+        combo_tile_ids = []
+        for tile_info in VALID_TILE_CODES:
+            combo_tile_ids.append(tile_info)
+
+        self.combobox["values"] = sorted(combo_tile_ids, key=str.lower)
+        self.combobox_alt["values"] = sorted(combo_tile_ids, key=str.lower)
 
         def canvas_click(event, canvas):  # when the level editor grid is clicked
             # Get rectangle diameters
@@ -882,61 +905,17 @@ class LevelsTab(Tab):
 
         tile = str(tile.split(" ", 3)[0])
         alt_tile = str(alt_tile.split(" ", 3)[0])  # isolates the id
-        new_tile_code = r"\?" + tile
-
-        tile_image = None
-        tile_image_alt = None
-        if any(
-            tile + " " in self.e[0] for self.e in self.tile_pallete_ref
-        ):  # compares tile id to tile ids in universal pallete list
-            tile_image = self.e[1]
+        new_tile_code = tile
 
         if int(percent) < 100:
             new_tile_code += "%" + percent
             # Have to use a temporary directory due to TCL/Tkinter is trying to write
             # to a file name, not a file handle, and windows doesn't support sharing the
             # file between processes
-            with tempfile.TemporaryDirectory() as tempdir:
-                tempdir_path = Path(tempdir)
-                temp1 = tempdir_path / "temp1"
-                temp2 = tempdir_path / "temp2"
-                tile_image._PhotoImage__photo.write(temp1, format="png")
+            if alt_tile != "empty":
+                new_tile_code += "%" + alt_tile
 
-                image1 = Image.open(
-                    temp1,
-                ).convert("RGBA")
-                tile_text = percent + "%"
-                if alt_tile != "empty":
-                    if any(
-                        alt_tile + " " in self.g[0] for self.g in self.tile_pallete_ref
-                    ):  # compares tile id to tile ids in pallete list
-                        tile_image_alt = self.g[1]
-                    new_tile_code += "%" + alt_tile
-                    tile_text += "/" + str(100 - int(percent)) + "%"
-
-                    tile_image_alt._PhotoImage__photo.write(temp2)
-
-                    image2 = Image.open(temp2).convert("RGBA")
-                    image2.crop([25, 0, 50, 50]).save("temp2.png")
-                    image2 = Image.open(temp2).convert("RGBA")
-
-                    offset = (25, 0)
-                    image1.paste(image2, offset)
-                # make a blank image for the text, initialized to transparent text color
-                txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
-
-                # get a drawing context
-                d = ImageDraw.Draw(txt)
-
-                # draw text, half opacity
-                d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
-                d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
-                d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
-                d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
-                d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
-
-                out = Image.alpha_composite(image1, txt)
-            tile_image = ImageTk.PhotoImage(out)
+        tile_image = ImageTk.PhotoImage(self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self))
 
         if any(
             str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0]) + " "
@@ -1405,23 +1384,27 @@ class LevelsTab(Tab):
         self.tree_levels.bind("<ButtonRelease-1>", self.room_select)
         self.tile_pallete_ref_in_use = []
 
+        self.lvl = lvl
+
         self.lvl_biome = "cave" # cave by default, depicts what background and sprites will be loaded
         self.lvl_bg_path = self.textures_dir / "bg_cave.png"
         if (lvl.startswith("abzu.lvl")
         or lvl.startswith("lake")
         or lvl.startswith("tide")
         or lvl.startswith("end")
+        or lvl.endswith("_tidepool.lvl")
         or lvl.startswith("tiamat")):
             self.lvl_biome = "tidepool"
             self.lvl_bg_path = self.textures_dir / "bg_tidepool.png"
         elif (
             lvl.startswith("babylon")
             or lvl.startswith("hallofu")
+            or lvl.endswith("_babylon.lvl")
         ):
             self.lvl_biome = "babylon"
             self.lvl_bg_path = self.textures_dir / "bg_babylon.png"
         elif lvl.startswith("basecamp"):
-            self.lvl_biome = "cave"
+            self.lvl_biome = "surface"
         elif lvl.startswith("beehive"):
             self.lvl_biome = "jungle"
             self.lvl_bg_path = self.textures_dir / "bg_beehive.png"
@@ -1458,7 +1441,7 @@ class LevelsTab(Tab):
             self.lvl_biome = "ice"
             self.lvl_bg_path = self.textures_dir / "bg_ice.png"
         elif lvl.startswith("olmec"):
-            self.lvl_biome = "stone"
+            self.lvl_biome = "jungle"
             self.lvl_bg_path = self.textures_dir / "bg_stone.png"
         elif lvl.startswith("vlad"):
             self.lvl_biome = "volcano"
@@ -1500,7 +1483,6 @@ class LevelsTab(Tab):
             levels.append(LevelFile.from_path(Path(self.lvls_path / "ending.lvl")))
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
-        from modlunky2.sprites.tilecode_extras import TILENAMES
         for level in levels:
             level_tilecodes = level.tile_codes.all()
             for tilecode in level_tilecodes:
@@ -1508,50 +1490,13 @@ class LevelsTab(Tab):
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
                 print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
 
-                img = self._sprite_fetcher.get(str(tilecode.name), str(self.lvl_biome))
+                img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self)
 
-                if len(tilecode.name.split("%", 2))>1:
-                    primary_tile = tilecode.name.split("%", 2)[0]
-                    img1= self._sprite_fetcher.get(primary_tile, str(self.lvl_biome))
-                    percent = tilecode.name.split("%", 2)[1]
-                    secondary_tile = "empty"
-                    img2 = None
-                    if len(tilecode.name.split("%", 2))>2:
-                        secondary_tile = tilecode.name.split("%", 2)[2]
-                        img2 = self._sprite_fetcher.get(secondary_tile, str(self.lvl_biome))
-                    print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
-                    img = self.get_tilecode_percent_texture(primary_tile, secondary_tile, percent, img1, img2)
-
-                if img is None:
-                    img = self._sprite_fetcher.get("unknown")
-                width, height = img.size
-                resize = True
-
-                for tile in TILENAMES: # These tile textures are already sized down
-                    if tile == tilecode.name:
-                        resize = False
-
-                if resize:
-                    width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
-                    height = int(height/2.65)
-
-                scale = 1
-                if (tilecode.name == "door2" or tilecode.name == "door2_secret" or tilecode.name == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
-                    width = int(width/2)
-                    height = int(height/2)
-
-                if (width < 50 and height < 50): # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
-                    difference = 0
-                    if width > height:
-                        difference = 50-width
-                    else:
-                        difference = 50-height
-
-                    width = width + difference
-                    height = height + difference
-
-                img = img.resize((width, height), Image.ANTIALIAS)
                 tilecode_item.append(ImageTk.PhotoImage(img))
+                self.panel_sel["image"] = tilecode_item[1]
+                self.tile_label["text"] = "Primary Tile: " + r"\?" + tilecode_item[0]
+                self.panel_sel_secondary["image"] = tilecode_item[1]
+                self.tile_label_secondary["text"] = "Secondary Tile: " + r"\?" + tilecode_item[0]
 
                 for i in self.tile_pallete_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -1585,36 +1530,9 @@ class LevelsTab(Tab):
                             i = i + 1
                         tilecode_item = []
                         tilecode_item.append(str(need[0]) + " " + need[1])
-                        img = self._sprite_fetcher.get(str(need[1].split(1, "?")[1]), self.lvl_biome)
-                        if img is None:
-                            img = self._sprite_fetcher.get("unknown")
-                        width, height = img.size
-                        resize = True
 
-                        for tile in TILENAMES: # These tile textures are already sized down
-                            if tile == tilecode.name:
-                                resize = False
+                        img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self)
 
-                        if resize:
-                            width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
-                            height = int(height/2.65)
-
-                        scale = 1
-                        if (tilecode.name == "door2" or tilecode.name == "door2_secret"): # for some reason these are sized differently then everything elses typical universal scale
-                            width = int(width/2)
-                            height = int(height/2)
-
-                        if (width < 50 and height < 50): # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
-                            difference = 0
-                            if width > height:
-                                difference = 50-width
-                            else:
-                                difference = 50-height
-
-                            width = width + difference
-                            height = height + difference
-
-                        img = img.resize((width, height), Image.ANTIALIAS)
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
         self.populate_tilecode_pallete()
@@ -1662,7 +1580,15 @@ class LevelsTab(Tab):
         #lines = file1.readlines()
 
 
-    def adjust_texture_xy(event, width, height, mode): # slight adjustments of textures for tile preview # 1 = lower down half a tile # 2 = draw from bottom left # 3 = center # 4 = center to the right # 5 = draw bottom left + rais 1 tile
+    def adjust_texture_xy(event, width, height, mode): # slight adjustments of textures for tile preview
+    # 1 = lower half tile
+    # 2 = draw from bottom left
+    # 3 = center
+    # 4 = center to the right
+    # 5 = draw bottom left + raise 1 tile
+    # 6 = position doors
+    # 7 = draw bottom left + raise half tile
+    # 8 = draw bottom left + lowere 1 tile
         x = 0
         y = 0
         if mode == 1:
@@ -1676,7 +1602,91 @@ class LevelsTab(Tab):
             x = (width*-1)/2
         elif mode == 5:
             y = height/2 + 50
+        elif mode == 6:
+            x = 25
+            y = 22
+        elif mode == 7:
+            y = height/2 + 25
+        elif mode == 9:
+            y = (height/2 + 50)*-1
         return x, y
+
+    def get_texture(event, tile, biome, lvl, self):
+        from modlunky2.sprites.tilecode_extras import TILENAMES
+        img = self._sprite_fetcher.get(str(tile), str(biome))
+
+        if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
+            if (tile=="floor"):
+                img = self._sprite_fetcher.get("generic_floor", str(biome))
+            elif (tile=="styled_floor"):
+                img = self._sprite_fetcher.get("generic_styled_floor", str(biome))
+        if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
+            if (tile=="floor"):
+                img = self._sprite_fetcher.get("floor", "cave")
+
+        if len(tile.split("%", 2))>1:
+            img1 = self._sprite_fetcher.get("unknown")
+            img2 = self._sprite_fetcher.get("unknown")
+            primary_tile = tile.split("%", 2)[0]
+            if self._sprite_fetcher.get(primary_tile, str(biome)):
+                img1 = self._sprite_fetcher.get(primary_tile, str(biome))
+                if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
+                    if (primary_tile=="floor"):
+                        img1 = self._sprite_fetcher.get("generic_floor", str(biome))
+                    elif (primary_tile=="styled_floor"):
+                        img1 = self._sprite_fetcher.get("generic_styled_floor", str(biome))
+                if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
+                    if (primary_tile=="floor"):
+                        img = self._sprite_fetcher.get("floor", "cave")
+            percent = tile.split("%", 2)[1]
+            secondary_tile = "empty"
+            img2 = None
+            if len(tile.split("%", 2))>2:
+                secondary_tile = tile.split("%", 2)[2]
+                if self._sprite_fetcher.get(secondary_tile, str(biome)):
+                    img2 = self._sprite_fetcher.get(secondary_tile, str(biome))
+                    if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
+                        if (secondary_tile=="floor"):
+                            img2 = self._sprite_fetcher.get("generic_floor", str(biome))
+                        elif (secondary_tile=="styled_floor"):
+                            img2 = self._sprite_fetcher.get("generic_styled_floor", str(biome))
+                    if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
+                        if (secondary_tile=="floor"):
+                            img = self._sprite_fetcher.get("floor", "cave")
+            print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
+            img = self.get_tilecode_percent_texture(primary_tile, secondary_tile, percent, img1, img2)
+
+        if img is None:
+            img = self._sprite_fetcher.get("unknown")
+        width, height = img.size
+        resize = True
+
+        for tile_ref in TILENAMES: # These tile textures are already sized down
+            if tile_ref == tile:
+                resize = False
+
+        if resize:
+            width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
+            height = int(height/2.65)
+
+        scale = 1
+        #if (tile == "door2" or tile == "door2_secret" or tile == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
+        #    width = int(width/2)
+        #    height = int(height/2)
+
+        if (width < 50 and height < 50): # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
+            difference = 0
+            if width > height:
+                difference = 50-width
+            else:
+                difference = 50-height
+
+            width = width + difference
+            height = height + difference
+
+        img = img.resize((width, height), Image.ANTIALIAS)
+        return img
+
 
     def get_tilecode_percent_texture(event, tile, alt_tile, percent, img1, img2):
         with tempfile.TemporaryDirectory() as tempdir:
