@@ -15,17 +15,14 @@ class AbstractFloorStyledSheet(BaseSpriteLoader):
         return Path(f"Data/Textures/floorstyled_{self.styled_name}.png")
 
     _chunk_size = 128
-    _chunk_map = {"styled_floor": (7, 2, 8, 3),
-    "duat_floor": (7, 2, 8, 3),
-    "palace_floor": (7, 2, 8, 3),
-    "temple_floor": (7, 2, 8, 3),
-    "guts_floor": (7, 2, 8, 3),
-    "sunken_floor": (7, 2, 8, 3),
-    "minewood_floor": (7, 2, 8, 3),
-    "stone_floor": (7, 2, 8, 3),
-    "vlad_floor": (7, 2, 8, 3),
-    "pagoda_floor": (7, 2, 8, 3),
-    "babylon_floor": (7, 2, 8, 3),
-    "beehive_floor": (7, 2, 8, 3),
-    "cog_floor": (7, 2, 8, 3),
-    "mothership_floor": (7, 2, 8, 3)}
+    _chunk_map = {
+        "styled_floor": (7, 2, 8, 3),
+    }
+    _additional_chunks = {}
+
+    def __init__(self, base_path: Path):
+        super().__init__(base_path=base_path)
+        # Adding additional chunks that are defined in subclasses to the chunk map
+        new_map = self._chunk_map.copy()
+        new_map.update(self._additional_chunks)
+        self._chunk_map = new_map
