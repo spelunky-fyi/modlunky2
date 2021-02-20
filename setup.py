@@ -1,4 +1,5 @@
 import pathlib
+from urllib.parse import urlparse, parse_qs
 
 from setuptools import find_packages, setup
 
@@ -6,8 +7,15 @@ HERE = pathlib.Path(__file__).parent.resolve()
 LONG_DESCRIPTION = (HERE / 'README.md').read_text(encoding='utf-8')
 VERSION = (HERE / 'src/modlunky2/VERSION').read_text(encoding='utf-8').strip()
 
-with open('requirements.txt') as fp:
-    install_requires = fp.read()
+
+def get_install_requires():
+    install_requires = []
+    with open('requirements.txt') as fp:
+        for line in fp:
+            line = line.strip()
+            install_requires.append(line)
+    return install_requires
+
 
 setup(
     name='modlunky2',
@@ -48,7 +56,7 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=install_requires,
+    install_requires=get_install_requires(),
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"

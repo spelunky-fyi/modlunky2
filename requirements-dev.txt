@@ -1,3 +1,4 @@
 pyinstaller==4.0
 pylint==2.6.0
 black==20.8b1
+twine

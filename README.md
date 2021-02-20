@@ -52,9 +52,8 @@ Whenever developing the project you'll want to activate the virtualenv in your t
 Once you have your virtual environment setup and activated you'll want to finish setting up the development environment.
 
 ```console
-> git clone https://github.com/spelunky-fyi/modlunky2/
-> cd modlunky2
 > pip install -r requirements.txt
+> pip install -r requirements-dev.txt
 > python setup.py develop
 ```
 
@@ -65,7 +64,7 @@ install anything. If you add new source files you may have to run `python setup.
 ### Running Locally
 
 ```
-modlunky2 --install-dir="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2"
+modlunky2
 ```
 
 ### Building Distributions
@@ -78,5 +77,5 @@ python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
 
 #### EXE
 ```
-pyinstaller.exe --clean .\pyinstaller-cli.py --add-data "src/modlunky2/tilecodes.txt;." --add-data "VERSION;." --add-data "src/modlunky2/static;static" --name modlunky2 --onefile --noconsole --icon=.\src\modlunky2\static\images\icon.ico
+pyinstaller.exe modlunky2.spec
 ```
