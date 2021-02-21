@@ -85,12 +85,15 @@ class Tab(ttk.Frame):
 class ScrollableFrame(ttk.LabelFrame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
+
         self.canvas = tk.Canvas(self)
+        self.canvas.grid(row=0, column=0, sticky="nswe")
+
         self.scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
+        self.scrollbar.grid(row=0, column=1, sticky="nse")
         self.scrollable_frame = tk.Frame(self.canvas)
-        self.canvas.pack(side="left", fill="both", expand=True)
 
         self.scrollable_frame.bind(
             "<Configure>",
@@ -98,13 +101,9 @@ class ScrollableFrame(ttk.LabelFrame):
         )
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.bind("<Enter>", self._bind_to_mousewheel)
         self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
-
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
 
     def _on_mousewheel(self, event):
         scroll_dir = None
