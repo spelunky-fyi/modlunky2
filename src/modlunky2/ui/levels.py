@@ -5,7 +5,7 @@ import random
 import tkinter as tk
 import tkinter.font as font
 import tkinter.messagebox as tkMessageBox
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, Widget
 import tempfile
 from pathlib import Path
 
@@ -24,6 +24,7 @@ logger = logging.getLogger("modlunky2")
 class LevelsTab(Tab):
     def __init__(self, tab_control, install_dir, *args, **kwargs): # Loads editor start screen ##############################################################################################
         super().__init__(tab_control, *args, **kwargs)
+        self.tree_levels = LevelsTree(self, self)
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -193,7 +194,7 @@ class LevelsTab(Tab):
         self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
         self.tree_levels = LevelsTree(
-            self.tab2, selectmode="browse"
+            self.tab2, self, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
@@ -219,7 +220,7 @@ class LevelsTab(Tab):
             self.tab2,
             bg="#292929",
         )
-        self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=7, sticky="nwse")
+        self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="nwse")
 
         self.canvas_grids.columnconfigure(0, weight=1)
         self.canvas_grids.rowconfigure(0, weight=1)
@@ -268,11 +269,11 @@ class LevelsTab(Tab):
         self.vbar = ttk.Scrollbar(
             self.tab2, orient="vertical", command=self.canvas_grids.yview
         )
-        self.vbar.grid(row=0, column=2, rowspan=4, columnspan=6, sticky="nse")
+        self.vbar.grid(row=0, column=2, rowspan=4, columnspan=7, sticky="nse")
         self.hbar = ttk.Scrollbar(
             self.tab2, orient="horizontal", command=self.canvas_grids.xview
         )
-        self.hbar.grid(row=0, column=1, rowspan=4, columnspan=7, sticky="wes")
+        self.hbar.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="wes")
 
         self.canvas_grids.config(
             xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set
@@ -307,19 +308,19 @@ class LevelsTab(Tab):
         self.tile_pallete = ScrollableFrame(  # the tile palletes are loaded into here as buttons with their image as a tile and txt as their value to grab when needed
             self.tab2, text="Tile Pallete", width=50
         )
-        self.tile_pallete.grid(row=2, column=8, columnspan=4, rowspan=3, sticky="swne")
+        self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=3, sticky="swne")
         self.tile_pallete.scrollable_frame["width"] = 50
 
         self.tile_label = tk.Label(
             self.tab2,
             text="Primary Tile:",
         )  # shows selected tile. Important because this is used for more than just user convenience; we can grab the currently used tile here
-        self.tile_label.grid(row=0, column=9, columnspan=1, sticky="we")
+        self.tile_label.grid(row=0, column=10, columnspan=1, sticky="we")
         self.tile_label_secondary = tk.Label(
             self.tab2,
             text="Secondary Tile:",
         )  # shows selected tile. Important because this is used for more than just user convenience; we can grab the currently used tile here
-        self.tile_label_secondary.grid(row=1, column=9, columnspan=1, sticky="we")
+        self.tile_label_secondary.grid(row=1, column=10, columnspan=1, sticky="we")
 
         self.button_tilecode_del = tk.Button(
             self.tab2,
@@ -329,7 +330,7 @@ class LevelsTab(Tab):
             width=10,
             command=self.del_tilecode,
         )
-        self.button_tilecode_del.grid(row=0, column=8, sticky="e")
+        self.button_tilecode_del.grid(row=0, column=9, sticky="e")
         self.button_tilecode_del["state"] = tk.DISABLED
 
         self.button_tilecode_del_secondary = tk.Button(
@@ -340,7 +341,7 @@ class LevelsTab(Tab):
             width=10,
             command=self.del_tilecode_secondary,
         )
-        self.button_tilecode_del_secondary.grid(row=1, column=8, sticky="e")
+        self.button_tilecode_del_secondary.grid(row=1, column=9, sticky="e")
         self.button_tilecode_del_secondary["state"] = tk.DISABLED
 
         self.img_sel = ImageTk.PhotoImage(
@@ -349,24 +350,24 @@ class LevelsTab(Tab):
         self.panel_sel = tk.Label(
             self.tab2, image=self.img_sel, width=50
         )  # shows selected tile image
-        self.panel_sel.grid(row=0, column=10)
+        self.panel_sel.grid(row=0, column=11)
         self.panel_sel_secondary = tk.Label(
             self.tab2, image=self.img_sel, width=50
         )  # shows selected tile image
-        self.panel_sel_secondary.grid(row=1, column=10)
+        self.panel_sel_secondary.grid(row=1, column=11)
 
         self.combobox = ttk.Combobox(self.tab2, height=20)
-        self.combobox.grid(row=4, column=8, columnspan=1, sticky="nswe")
+        self.combobox.grid(row=4, column=9, columnspan=1, sticky="nswe")
         self.combobox["state"] = tk.DISABLED
         self.combobox_alt = ttk.Combobox(self.tab2, height=40)
-        self.combobox_alt.grid(row=4, column=9, columnspan=1, sticky="nswe")
+        self.combobox_alt.grid(row=4, column=10, columnspan=1, sticky="nswe")
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
         self.scale = tk.Scale(
             self.tab2, from_=0, to=100, orient=tk.HORIZONTAL, command=self.update_value
         )  # scale for the percent of a selected tile
-        self.scale.grid(row=3, column=8, columnspan=2, sticky="we")
+        self.scale.grid(row=3, column=9, columnspan=2, sticky="we")
         self.scale.set(100)
         self.scale["state"] = tk.DISABLED
 
@@ -379,7 +380,7 @@ class LevelsTab(Tab):
             ),
         )
         self.button_tilecode_add.grid(
-            row=3, column=10, rowspan=2, columnspan=2, sticky="nswe"
+            row=3, column=11, rowspan=2, columnspan=2, sticky="nswe"
         )
 
         self.var_ignore = tk.IntVar()
@@ -389,6 +390,7 @@ class LevelsTab(Tab):
         self.var_rare = tk.IntVar()
         self.var_hard = tk.IntVar()
         self.var_liquid = tk.IntVar()
+        self.var_purge = tk.IntVar()
         self.checkbox_ignore = ttk.Checkbutton(self.tab2, text='Ignore',var=self.var_ignore, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_ignore.grid(row=4, column=1, sticky="w")
         self.checkbox_flip = ttk.Checkbutton(self.tab2, text='Flip',var=self.var_flip, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
@@ -401,8 +403,10 @@ class LevelsTab(Tab):
         self.checkbox_hard.grid(row=4, column=6, sticky="w")
         self.checkbox_liquid = ttk.Checkbutton(self.tab2, text='Optimize Liquids',var=self.var_liquid, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_liquid.grid(row=4, column=4, sticky="w")
+        self.checkbox_purge = ttk.Checkbutton(self.tab2, text='Purge',var=self.var_purge, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_purge.grid(row=4, column=7, sticky="w")
         self.checkbox_dual = ttk.Checkbutton(self.tab2, text='Dual',var=self.var_dual, onvalue=1, offvalue=0, command= lambda: self.dual_toggle(self))
-        self.checkbox_dual.grid(row=4, column=7, sticky="w")
+        self.checkbox_dual.grid(row=4, column=8, sticky="w")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
@@ -758,6 +762,10 @@ class LevelsTab(Tab):
                     if new_room_data != "":
                         new_room_data+="\n"
                     new_room_data += "\!dual"
+                if int(self.var_purge.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!purge"
                 if int(self.var_flip.get())==1:
                     if new_room_data != "":
                         new_room_data+="\n"
@@ -1305,6 +1313,11 @@ class LevelsTab(Tab):
             else:
                 self.var_flip.set(0)
 
+            if "\!purge" in current_settings:
+                self.var_purge.set(1)
+            else:
+                self.var_purge.set(0)
+
             if "\!onlyflip" in current_settings:
                 self.var_only_flip.set(1)
             else:
@@ -1826,8 +1839,10 @@ class LevelsTab(Tab):
         return out
 
 class LevelsTree(ttk.Treeview):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, levels_tab, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)
+
+        self.levels_tab = levels_tab
 
         self.popup_menu_child = tk.Menu(self, tearoff=0) # two different context menus to show depending on what is clicked (room or room list)
         self.popup_menu_parent = tk.Menu(self, tearoff=0)
@@ -1847,6 +1862,9 @@ class LevelsTree(ttk.Treeview):
                 self.popup_menu_child.tk_popup(event.x_root, event.y_root, 0)
             else: # if room list is clicked
                 self.popup_menu_parent.tk_popup(event.x_root, event.y_root, 0)
+
+            self.levels_tab.save_needed = True
+            self.levels_tab.button_save["state"]=tk.NORMAL
         except:
             self.popup_menu_child.grab_release()
             self.popup_menu_parent.grab_release()
@@ -1867,6 +1885,10 @@ class LevelsTree(ttk.Treeview):
             )
             if msg_box == "yes":
                 self.delete(item_iid)
+                self.levels_tab.canvas.delete("all")
+                self.levels_tab.canvas_dual.delete("all")
+                self.levels_tab.canvas.grid_remove()
+                self.levels_tab.canvas_dual.grid_remove()
 
     def add_room(self):
         item_iid = self.selection()[0]
