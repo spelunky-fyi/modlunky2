@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
 
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.widgets import LevelsTree, RulesTree, ScrollableFrame, Tab
+from modlunky2.ui.widgets import RulesTree, ScrollableFrame, Tab
 from modlunky2.sprites import SpelunkySpriteFetcher
 
 from modlunky2.levels import LevelFile
@@ -156,6 +156,7 @@ class LevelsTab(Tab):
             command=self.save_changes,
         )
         self.button_save.grid(row=2, column=0, sticky="nswe")
+        self.button_save["state"]=tk.DISABLED
 
         self.tab_control.add(  # Rules Tab ######################################################################################################
             self.tab1, text="Rules"
@@ -191,7 +192,7 @@ class LevelsTab(Tab):
         self.tab2.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
-        self.tree_levels = ttk.Treeview(
+        self.tree_levels = LevelsTree(
             self.tab2, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
@@ -388,19 +389,19 @@ class LevelsTab(Tab):
         self.var_rare = tk.IntVar()
         self.var_hard = tk.IntVar()
         self.var_liquid = tk.IntVar()
-        self.checkbox_ignore = ttk.Checkbutton(self.tab2, text='Ignore',var=self.var_ignore, onvalue=1, offvalue=0)
+        self.checkbox_ignore = ttk.Checkbutton(self.tab2, text='Ignore',var=self.var_ignore, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_ignore.grid(row=4, column=1, sticky="w")
-        self.checkbox_flip = ttk.Checkbutton(self.tab2, text='Flip',var=self.var_flip, onvalue=1, offvalue=0)
+        self.checkbox_flip = ttk.Checkbutton(self.tab2, text='Flip',var=self.var_flip, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_flip.grid(row=4, column=2, sticky="w")
-        self.checkbox_only_flip = ttk.Checkbutton(self.tab2, text='Only Flip',var=self.var_only_flip, onvalue=1, offvalue=0)
+        self.checkbox_only_flip = ttk.Checkbutton(self.tab2, text='Only Flip',var=self.var_only_flip, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_only_flip.grid(row=4, column=3, sticky="w")
-        self.checkbox_rare = ttk.Checkbutton(self.tab2, text='Rare',var=self.var_rare, onvalue=1, offvalue=0)
+        self.checkbox_rare = ttk.Checkbutton(self.tab2, text='Rare',var=self.var_rare, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_rare.grid(row=4, column=5, sticky="w")
-        self.checkbox_hard = ttk.Checkbutton(self.tab2, text='Hard',var=self.var_hard, onvalue=1, offvalue=0)
+        self.checkbox_hard = ttk.Checkbutton(self.tab2, text='Hard',var=self.var_hard, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_hard.grid(row=4, column=6, sticky="w")
-        self.checkbox_liquid = ttk.Checkbutton(self.tab2, text='Optimize Liquids',var=self.var_liquid, onvalue=1, offvalue=0)
+        self.checkbox_liquid = ttk.Checkbutton(self.tab2, text='Optimize Liquids',var=self.var_liquid, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
         self.checkbox_liquid.grid(row=4, column=4, sticky="w")
-        self.checkbox_dual = ttk.Checkbutton(self.tab2, text='Dual',var=self.var_dual, onvalue=1, offvalue=0) #, command=print_selection
+        self.checkbox_dual = ttk.Checkbutton(self.tab2, text='Dual',var=self.var_dual, onvalue=1, offvalue=0, command= lambda: self.dual_toggle(self))
         self.checkbox_dual.grid(row=4, column=7, sticky="w")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
@@ -415,9 +416,9 @@ class LevelsTab(Tab):
         self.uni_tile_code_list = []
         self.tile_pallete_ref = []
         self.panel_sel["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
-        self.tile_label["text"] = "Primary Tile: " + r"\?empty 0"
+        self.tile_label["text"] = "Primary Tile: " + "empty 0"
         self.panel_sel_secondary["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
-        self.tile_label_secondary["text"] = "Secondary Tile: " + r"\?empty 0"
+        self.tile_label_secondary["text"] = "Secondary Tile: " + "empty 0"
 
         self.draw_mode = [] # slight adjustments of textures for tile preview
         # 1 = lower half tile
@@ -561,6 +562,7 @@ class LevelsTab(Tab):
                 )
                 if msg_box == "yes":
                     self.save_needed = False
+                    self.button_save["state"]=tk.DISABLED
                     print("Entered new files witout saving")
                 else:
                     self.tree_files.selection_set(self.last_selected_file)
@@ -602,6 +604,75 @@ class LevelsTab(Tab):
         for code in self.usable_codes:
             codes += str(code)
         print(str(len(self.usable_codes)) + " codes left (" + codes + ")")
+
+
+    def dual_toggle(event, self):
+        item_iid = self.tree_levels.selection()[0]
+        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
+        if parent_iid:
+            room_name = self.tree_levels.item(item_iid, option="text")
+            room_rows = self.tree_levels.item(item_iid, option="values")
+            new_room_data = []
+
+            tags = []
+            tags.append("\!ignore")
+            tags.append("\!flip")
+            tags.append("\!onlyflip")
+            tags.append("\!dual")
+            tags.append("\!rare")
+            tags.append("\!hard")
+            tags.append("\!liquid")
+            tags.append("\!purge")
+
+            if self.var_dual.get()==1: # converts room into dual
+                for row in room_rows:
+                    tag_row = False
+                    new_row = ""
+                    for tag in tags:
+                        if row.startswith(tag):
+                            tag_row = True
+                    if not tag_row:
+                        new_row = row + " "
+                        for char in row:
+                            new_row += "0"
+                        new_room_data.append(str(new_row))
+                    else:
+                        new_room_data.append(str(row))
+                    new_room_data.insert(0, "\!dual")
+            else: # converts room into none dual
+                msg_box = tk.messagebox.askquestion(
+                    "Delete Dual Room?",
+                    "Un-dualing this room will delete your background layer. This is not recoverable.\nContinue?",
+                    icon="warning",
+                )
+                if msg_box == "yes":
+                    for row in room_rows:
+                        tag_row = False
+                        new_row = ""
+                        for tag in tags:
+                            if str(row).startswith(tag):
+                                tag_row = True
+                        if not tag_row:
+                            new_row = str(row).split(" ", 2)[0]
+                        else:
+                            if not row.startswith("\!dual"):
+                                new_row = row
+                        if new_row !="":
+                            new_room_data.append(str(new_row))
+
+
+            edited = self.tree_levels.insert(
+                parent_iid,
+                self.tree_levels.index(item_iid),
+                text=room_name,
+                values=new_room_data,
+            )
+            # Remove it from the tree
+            self.tree_levels.delete(item_iid)
+            self.tree_levels.selection_set(edited)
+            self.room_select(None)
+            self.remember_changes()
+
 
     def save_changes(self):
         if self.save_needed:
@@ -669,72 +740,83 @@ class LevelsTab(Tab):
             f.write(file_content)
             f.close()
             self.save_needed = False
+            self.button_save["state"]=tk.DISABLED
 
             print("Saved")
         else:
             print("No changes to save")
 
     def remember_changes(self):  # remembers changes made to rooms
-        item_iid = self.tree_levels.selection()[0]
-        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
-        if parent_iid:
+        try:
+            item_iid = self.tree_levels.selection()[0]
+            parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
+            if parent_iid:
+                self.canvas.delete("all")
+                self.canvas_dual.delete("all")
+                new_room_data = ""
+                if int(self.var_dual.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!dual"
+                if int(self.var_flip.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!flip"
+                if int(self.var_only_flip.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!onlyflip"
+                if int(self.var_rare.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!rare"
+                if int(self.var_hard.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!hard"
+                if int(self.var_liquid.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!liquid"
+                if int(self.var_ignore.get())==1:
+                    if new_room_data != "":
+                        new_room_data+="\n"
+                    new_room_data += "\!ignore"
+
+                for row in self.tiles_meta:
+                    if new_room_data != "":
+                        new_room_data += "\n"
+                    for block in row:
+                        if str(block) == "None":
+                            new_room_data += str(" ")
+                        else:
+                            new_room_data += str(block)
+                room_save = []
+                for line in new_room_data.split("\n", 100):
+                    room_save.append(line)
+                # Put it back in with the upated values
+                edited = self.tree_levels.insert(
+                    parent_iid,
+                    self.tree_levels.index(item_iid),
+                    text="room (edited)",
+                    values=room_save,
+                )
+                # Remove it from the tree
+                self.tree_levels.delete(item_iid)
+                self.tree_levels.selection_set(edited)
+                self.room_select(None)
+                print("temp saved: \n" + new_room_data)
+                print("Changes remembered!")
+                self.save_needed = True
+                self.button_save["state"]=tk.NORMAL
+        except:
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
-            new_room_data = ""
-            if int(self.var_dual.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!dual"
-            if int(self.var_flip.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!flip"
-            if int(self.var_only_flip.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!onlyflip"
-            if int(self.var_rare.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!rare"
-            if int(self.var_hard.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!hard"
-            if int(self.var_liquid.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!liquid"
-            if int(self.var_ignore.get())==1:
-                if new_room_data != "":
-                    new_room_data+="\n"
-                new_room_data += "\!ignore"
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
 
-            for row in self.tiles_meta:
-                if new_room_data != "":
-                    new_room_data += "\n"
-                for block in row:
-                    if str(block) == "None":
-                        new_room_data += str(" ")
-                    else:
-                        new_room_data += str(block)
-            room_save = []
-            for line in new_room_data.split("\n", 100):
-                room_save.append(line)
-            # Put it back in with the upated values
-            edited = self.tree_levels.insert(
-                parent_iid,
-                self.tree_levels.index(item_iid),
-                text="room (edited)",
-                values=room_save,
-            )
-            # Remove it from the tree
-            self.tree_levels.delete(item_iid)
-            self.tree_levels.selection_set(edited)
-            self.room_select(None)
-            print("temp saved: \n" + new_room_data)
-            print("Changes remembered!")
-            self.save_needed = True
 
     def del_tilecode(self):
         msg_box = tk.messagebox.askquestion(
@@ -815,6 +897,7 @@ class LevelsTab(Tab):
 
             self.get_codes_left()
             self.save_needed = True
+            self.button_save["state"]=tk.NORMAL
         else:
             return
 
@@ -897,6 +980,7 @@ class LevelsTab(Tab):
 
             self.get_codes_left()
             self.save_needed = True
+            self.button_save["state"]=tk.NORMAL
         else:
             return
 
@@ -971,6 +1055,7 @@ class LevelsTab(Tab):
         )
         self.get_codes_left()
         self.save_needed = True
+        self.button_save["state"]=tk.NORMAL
 
     def populate_tilecode_pallete(self):
         for (
@@ -1011,30 +1096,36 @@ class LevelsTab(Tab):
             )
 
     def go_back(self):
-        self.lvl_editor_start_canvas.grid()
-        self.tab_control.grid_remove()
-        self.tree_files.grid_remove()
-        # Resets widgets
-        self.scale["state"] = tk.DISABLED
-        self.combobox["state"] = tk.DISABLED
-        self.combobox_alt["state"] = tk.DISABLED
-        self.button_tilecode_del["state"] = tk.DISABLED
-        self.button_tilecode_del_secondary["state"] = tk.DISABLED
-        self.canvas.delete("all")
-        self.canvas_dual.delete("all")
-        self.canvas.grid_remove()
-        self.canvas_dual.grid_remove()
-        self.foreground_label.grid_remove()
-        self.background_label.grid_remove()
-        self.button_back.grid_remove()
-        self.button_save.grid_remove()
-        self.vsb_tree_files.grid_remove()
-        for (
-            widget
-        ) in (
-            self.tile_pallete.scrollable_frame.winfo_children()
-        ):  # removes any old tiles that might be there from the last file
-            widget.destroy()
+        msg_box = tk.messagebox.askquestion(
+            "Exit Editor?",
+            "Exit editor and return to start screen?\n Load data will be lost.",
+            icon="warning",
+        )
+        if msg_box == "yes":
+            self.lvl_editor_start_canvas.grid()
+            self.tab_control.grid_remove()
+            self.tree_files.grid_remove()
+            # Resets widgets
+            self.scale["state"] = tk.DISABLED
+            self.combobox["state"] = tk.DISABLED
+            self.combobox_alt["state"] = tk.DISABLED
+            self.button_tilecode_del["state"] = tk.DISABLED
+            self.button_tilecode_del_secondary["state"] = tk.DISABLED
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
+            self.button_back.grid_remove()
+            self.button_save.grid_remove()
+            self.vsb_tree_files.grid_remove()
+            for (
+                widget
+            ) in (
+                self.tile_pallete.scrollable_frame.winfo_children()
+            ):  # removes any old tiles that might be there from the last file
+                widget.destroy()
 
     def update_value(self, _event):
         if int(self.scale.get()) == 100:
@@ -1733,3 +1824,219 @@ class LevelsTab(Tab):
 
             out = Image.alpha_composite(image1, txt)
         return out
+
+class LevelsTree(ttk.Treeview):
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Treeview.__init__(self, parent, *args, **kwargs)
+
+        self.popup_menu_child = tk.Menu(self, tearoff=0) # two different context menus to show depending on what is clicked (room or room list)
+        self.popup_menu_parent = tk.Menu(self, tearoff=0)
+        self.popup_menu_child.add_command(label="Rename Room",
+                    command=self.rename)
+        self.popup_menu_child.add_command(label="Delete Room", command=self.delete_selected)
+        self.popup_menu_child.add_command(label="Add Room", command=self.add_room)
+        self.popup_menu_parent.add_command(label="Add Room", command=self.add_room)
+
+        self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
+
+    def popup(self, event):
+        try:
+            item_iid = self.selection()[0]
+            parent_iid = self.parent(item_iid)  # gets selected room
+            if parent_iid: # if actual room is clicked
+                self.popup_menu_child.tk_popup(event.x_root, event.y_root, 0)
+            else: # if room list is clicked
+                self.popup_menu_parent.tk_popup(event.x_root, event.y_root, 0)
+        except:
+            self.popup_menu_child.grab_release()
+            self.popup_menu_parent.grab_release()
+
+    def rename(self):
+        for i in self.selection()[::-1]:
+            self.rename_dialog()
+
+    def delete_selected(self):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)  # gets selected room
+        if parent_iid:
+            msg_box = tk.messagebox.askquestion(
+                "Delete Room?",
+                "Are you sure you want to delete " + self.item(item_iid)["text"] + "?"
+                + "\nThis won't be recoverable.",
+                icon="warning",
+            )
+            if msg_box == "yes":
+                self.delete(item_iid)
+
+    def add_room(self):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)  # gets selected room
+        parent = None
+        if parent_iid:
+            parent = parent_iid
+        else:
+            parent = item_iid
+
+        # First check if a blank space was selected
+        entry_index = self.focus()
+        if entry_index == "":
+            return
+
+        # Set up window
+        win = tk.Toplevel()
+        win.title("Add Room")
+        win.attributes("-toolwindow", True)
+        self.center(win)
+
+        room_sizes = []
+        room_sizes.append("normal 10x8")
+        room_sizes.append("machine_wideroom 20x8")
+        room_sizes.append("machine_tallroom 10x16")
+        room_sizes.append("machine_bigroom 10x16")
+        room_sizes.append("ghistroom 5x5")
+        room_sizes.append("feeling 20x16")
+        room_sizes.append("chunk_ground 5x3")
+        room_sizes.append("chunk_door 6x3")
+        room_sizes.append("chunk_air 5x3")
+        room_sizes.append("cache 5x5")
+
+        combosizes = ttk.Combobox(win, height=20)
+        combosizes["values"] = room_sizes
+        combosizes.grid(row=0, column=1, columnspan = 3)
+        col1_lbl = tk.Label(win, text="Size: ")
+        col1_ent = tk.Entry(win)
+        col1_lbl.grid(row=0, column=0)
+
+        combosizes.set("normal 10x8")
+        if self.item(parent)["text"].startswith("machine_wideroom"):
+            combosizes.set("machine_wideroom 20x8")
+        elif self.item(parent)["text"].startswith("machine_wideroom"):
+            combosizes.set("machine_tallroom 10x16")
+        elif self.item(parent)["text"].startswith("machine_wideroom"):
+            combosizes.set("machine_bigroom 10x16")
+        elif self.item(parent)["text"].startswith("chunk_air"):
+            combosizes.set("chunk_air 5x3")
+        elif self.item(parent)["text"].startswith("chunk_ground"):
+            combosizes.set("chunk_ground 5x3")
+        elif self.item(parent)["text"].startswith("chunk_door"):
+            combosizes.set("chunk_door 6x3")
+        elif self.item(parent)["text"].startswith("chunk_door"):
+            combosizes.set("chunk_door 6x3")
+        elif self.item(parent)["text"].startswith("chunk_door"):
+            combosizes.set("chunk_door 6x3")
+        elif self.item(parent)["text"].startswith("cache"):
+            combosizes.set("cache 5x5")
+        elif self.item(parent)["text"].startswith("feeling"):
+            combosizes.set("feeling 20x16")
+
+        def update_then_destroy():
+            new_room_data = []
+            x = 10
+            y = 8
+
+            if (combosizes.get()=="machine_wideroom 20x8"):
+                x = 20
+                y = 8
+            elif (combosizes.get()=="machine_wideroom 10x16"):
+                x = 10
+                y = 16
+            elif (combosizes.get()=="machine_wideroom 20x16" or combosizes.get()=="feeling 20x16"):
+                x = 20
+                y = 16
+            elif (combosizes.get()=="ghistroom 5x5" or combosizes.get()=="cache 5x5"):
+                x = 5
+                y = 5
+            elif (combosizes.get()=="chunk_ground 5x3" or combosizes.get()=="chunk_air 5x3"):
+                x = 5
+                y = 3
+            elif (combosizes.get()=="chunk_door 6x3"):
+                x = 6
+                y = 3
+
+            for i in range(y): # for each row
+                row = ""
+                for ii in range(x): # foreach collumn
+                    row+="0"
+                new_room_data.append(row)
+
+            self.insert(
+                parent, "end", text="new room", values=new_room_data)
+            win.destroy()
+
+        ok_button = tk.Button(win, text="Add")
+        ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+        ok_button.grid(row=2, column=1)
+
+        cancel_button = tk.Button(win, text="Cancel")
+        cancel_button.bind("<Button-1>", lambda c: win.destroy())
+        cancel_button.grid(row=2, column=2)
+
+    def rename_dialog(self):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)  # gets selected room
+        if parent_iid:
+            # First check if a blank space was selected
+            entry_index = self.focus()
+            if entry_index == "":
+                return
+
+            # Set up window
+            win = tk.Toplevel()
+            win.title("Edit Name")
+            win.attributes("-toolwindow", True)
+            self.center(win)
+
+            item_name = ""
+            item_name = self.item(item_iid)["text"]
+            room_data = self.item(item_iid, option="values")
+
+            col1_lbl = tk.Label(win, text="Name: ")
+            col1_ent = tk.Entry(win)
+            col1_ent.insert(0, item_name)  # Default to rooms current name
+            col1_lbl.grid(row=0, column=0)
+            col1_ent.grid(row=0, column=1, columnspan = 3)
+
+            def update_then_destroy():
+                if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
+                    win.destroy()
+
+            ok_button = tk.Button(win, text="Ok")
+            ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+            ok_button.grid(row=1, column=1)
+
+            cancel_button = tk.Button(win, text="Cancel")
+            cancel_button.bind("<Button-1>", lambda c: win.destroy())
+            cancel_button.grid(row=1, column=2)
+
+    def confirm_entry(self, entry1, parent, room_data):
+        if entry1!="":
+            # Grab the current index in the tree
+            current_index = self.index(self.focus())
+
+            # Remove it from the tree
+            self.delete(self.focus())
+
+            # Put it back in with the upated values
+            self.insert(
+                parent, current_index, text=entry1, values=room_data)
+            return True
+        else:
+            return False
+
+
+    def center(self, toplevel):
+        toplevel.update_idletasks()
+
+        # Tkinter way to find the screen resolution
+        # screen_width = toplevel.winfo_screenwidth()
+        # screen_height = toplevel.winfo_screenheight()
+
+        # find the screen resolution
+        screen_width = 1280
+        screen_height = 720
+
+        size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
+        x = screen_width / 2 - size[0] / 2
+        y = screen_height / 2 - size[1] / 2
+
+        toplevel.geometry("+%d+%d" % (x, y))
