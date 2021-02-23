@@ -1,4 +1,4 @@
-packaging==20.4
+packaging==20.9
 requests==2.25.0
 zstandard==0.14.0
 Pillow==8.0.1
