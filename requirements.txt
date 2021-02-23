@@ -1,5 +1,5 @@
 packaging==20.4
-requests==2.25.0
+requests==2.25.1
 zstandard==0.15.1
 Pillow==8.0.1
 appdirs==1.4.4
