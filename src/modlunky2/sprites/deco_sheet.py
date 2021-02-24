@@ -33,7 +33,9 @@ class VolcanaDecoSheet(AbstractDecoSheet):
 class JungleDecoSheet(AbstractDecoSheet):
     biome_name = "jungle"
     _chunk_size = 128
-    _chunk_map = {}
+    _chunk_map = {
+        "stone_door": (0, 5, 3, 7)
+    }
 
 
 class TidePoolDecoSheet(AbstractDecoSheet):
@@ -51,7 +53,9 @@ class TempleDecoSheet(AbstractDecoSheet):
 class IceCavesDecoSheet(AbstractDecoSheet):
     biome_name = "ice"
     _chunk_size = 128
-    _chunk_map = {}
+    _chunk_map = {
+        "moai_statue": (0, 7, 4, 12),
+        }
 
 
 class BabylonDecoSheet(AbstractDecoSheet):
@@ -63,7 +67,9 @@ class BabylonDecoSheet(AbstractDecoSheet):
 class SunkenCityDecoSheet(AbstractDecoSheet):
     biome_name = "sunken"
     _chunk_size = 128
-    _chunk_map = {}
+    _chunk_map = {
+        "mother_statue": (0, 5, 2, 11),
+        }
 
 
 class EggplantDecoSheet(AbstractDecoSheet):
@@ -73,6 +79,20 @@ class EggplantDecoSheet(AbstractDecoSheet):
 
 
 class SurfaceDecoSheet(AbstractDecoSheet):
-    biome_name = "surface"
+    biome_name = "basecamp"
     _chunk_size = 128
-    _chunk_map = {}
+    _chunk_map = {
+        "construction_sign": (5, 12, 6, 13),
+        "singlebed": (0, 15, 1, 16),
+        "dresser": (2, 14, 3, 15),
+        "bunkbed": (0, 13, 2, 15),
+        "diningtable": (14, 10, 16, 11),
+        "sidetable": (9, 12, 10, 13),
+        "chair_looking_left": (3, 15, 4, 16),
+        "chair_looking_right": (3, 15, 4, 16),
+        "couch": (6, 15, 8, 16),
+        "tv": (8, 15, 9, 16),
+        "dog_sign": (12, 10, 14, 12),
+        "shortcut_station_banner": (10, 8, 12, 12),
+        "telescope": (12, 8, 14, 10),
+        }
