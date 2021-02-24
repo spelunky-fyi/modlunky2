@@ -23,7 +23,7 @@ class AbstractBiome(ABC):
 
     @property
     @abstractmethod
-    def biome_name(self) -> str:
+    def floor_name(self) -> str:
         raise NotImplementedError
 
     @property
@@ -38,6 +38,11 @@ class AbstractBiome(ABC):
 
     @property
     @abstractmethod
+    def _floorstyled_sheet_class(self) -> Type[AbstractFloorSheet]:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def _deco_sheet_class(self) -> Type[AbstractDecoSheet]:
         raise NotImplementedError
 
@@ -48,8 +53,12 @@ class AbstractBiome(ABC):
     def __init__(self, base_path: Path = DEFAULT_BASE_PATH):
         self.base_path = base_path
         self._floor_sheet = self._floor_sheet_class(base_path)
+        self._floorstyled_sheet = self._floorstyled_sheet_class(base_path)
         self._deco_sheet = self._deco_sheet_class(base_path)
-        self._bg = Image.open(base_path / f"Data/Textures/bg_{self.biome_name}.png")
+        try:
+            self._bg = Image.open(base_path / f"Data/Textures/bg_{self.floor_name}.png")
+        except:
+            self._bg = Image.open(base_path / f"Data/Textures/bg_cave.png")
         self._image_cache = {}
         self._sheet_map = self._make_sheet_map()
 
@@ -61,8 +70,9 @@ class AbstractBiome(ABC):
         :return:
         """
         floor_keys = set(self._floor_sheet._chunk_map.keys())
+        styled_keys = set(self._floorstyled_sheet._chunk_map.keys())
         deco_keys = set(self._deco_sheet._chunk_map.keys())
-        same_keys = floor_keys & deco_keys
+        same_keys = floor_keys & deco_keys & styled_keys
         # Evals to false if nothing in the set
         if same_keys:
             raise KeyError(
@@ -73,6 +83,8 @@ class AbstractBiome(ABC):
         }
         for k in self._deco_sheet._chunk_map.keys():
             sheet_map[k] = self._deco_sheet.get
+        for k in self._floorstyled_sheet._chunk_map.keys():
+            sheet_map[k] = self._floorstyled_sheet.get
         return sheet_map
 
     def get(self, name: str) -> Optional[Image.Image]:
