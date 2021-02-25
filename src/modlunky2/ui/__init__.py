@@ -116,7 +116,6 @@ class ModlunkyUI:
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
         self.console_frame = ttk.LabelFrame(self.root, text="Console")
-        self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
         self.console_frame.columnconfigure(0, weight=1)
         self.console_frame.rowconfigure(0, weight=1)
 
@@ -167,8 +166,13 @@ class ModlunkyUI:
             logger.exception("Failed to update...")
 
     def on_tab_change(self, event):
-        tab = event.widget.tab("current")["text"]
-        self.tabs[tab].on_load()
+        tab_name = event.widget.tab("current")["text"]
+        tab = self.tabs[tab_name]
+        if tab.show_console:
+            self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
+        else:
+            self.console_frame.grid_forget()
+        tab.on_load()
 
     def register_tab(self, name, obj):
         self.tabs[name] = obj

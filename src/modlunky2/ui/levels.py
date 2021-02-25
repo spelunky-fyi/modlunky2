@@ -22,7 +22,10 @@ logger = logging.getLogger("modlunky2")
 
 
 class LevelsTab(Tab):
-    def __init__(self, tab_control, install_dir, *args, **kwargs): # Loads editor start screen ##############################################################################################
+
+    show_console = False
+
+    def __init__(self, tab_control, config, *args, **kwargs): # Loads editor start screen ##############################################################################################
         super().__init__(tab_control, *args, **kwargs)
         self.tree_levels = LevelsTree(self, self)
         self.last_selected_room = None
@@ -32,8 +35,8 @@ class LevelsTab(Tab):
         self.extracts_mode = True
         self.dual_mode = False
         self.tab_control = tab_control
-        self.install_dir = install_dir
-        self.textures_dir = install_dir / "Mods/Extracted/Data/Textures"
+        self.install_dir = config.install_dir
+        self.textures_dir = config.install_dir / "Mods/Extracted/Data/Textures"
         self._sprite_fetcher = SpelunkySpriteFetcher(self.install_dir / "Mods/Extracted")
 
 
@@ -125,7 +128,7 @@ class LevelsTab(Tab):
         self.tree_files["show"] = "headings"
         self.tree_files.column("1", width=100, anchor="w")
         self.tree_files.heading("1", text="Level Files")
-        self.my_list = os.listdir(self.lvls_path)
+        self.my_list = sorted(os.listdir(self.lvls_path))
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
