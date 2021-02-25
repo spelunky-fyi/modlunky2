@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from collections import OrderedDict
 from itertools import zip_longest
@@ -197,7 +197,7 @@ class Chunk:
                 return chunk
 
             if line.startswith("//"):
-                chunk.comment += f"{line}\n"
+                chunk.comment += f"{line}"
             elif line in VALID_TEMPLATE_SETTINGS:
                 chunk.settings.append(TemplateSetting(line[2:]))
             else:
@@ -210,7 +210,7 @@ class Chunk:
 
     def write(self, handle: TextIO):
         if self.comment:
-            handle.write(self.comment)
+            handle.write(f"// {self.comment.rstrip()}\n")
 
         for setting in self.settings:
             handle.write(setting.to_line())
@@ -228,7 +228,7 @@ class LevelTemplate:
 
     name: str
     comment: Optional[str]
-    chunks: List[Chunk] = field(repr=False)
+    chunks: List[Chunk]
 
     @classmethod
     def parse(cls, line: str, file_handle: TextIO) -> "LevelTemplate":

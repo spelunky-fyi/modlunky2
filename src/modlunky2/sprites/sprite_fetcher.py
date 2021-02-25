@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
+from modlunky2.constants import BASE_DIR
 
 from PIL import Image
-
-from modlunky2.constants import BASE_DIR
 
 from .base_classes import AbstractBiome, BaseSpriteLoader, DEFAULT_BASE_PATH
 
@@ -28,13 +27,15 @@ class SpelunkySpriteFetcher:
     def _make_non_biome_map(self) -> Tuple[List[BaseSpriteLoader], Dict[str, Callable]]:
         from . import monsters
         from .items import ItemSheet
+        from .coffins import CoffinSheet
+        from .base_eggship2 import EggShip2Sheet
         from .hud import HudSheet
         from .floormisc import FloorMiscSheet
         from .tilecode_extras import TilecodeExtras
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
         sheets = [getattr(monsters, m) for m in monsters.__all__]
-        sheets.extend([ItemSheet, HudSheet, FloorMiscSheet])
+        sheets.extend([CoffinSheet, EggShip2Sheet, ItemSheet, HudSheet, FloorMiscSheet])
         # Now making them instances
         sheets = [s(self.base_path) for s in sheets]
 

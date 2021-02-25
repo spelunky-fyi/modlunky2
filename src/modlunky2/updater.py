@@ -9,7 +9,9 @@ from .constants import IS_EXE
 
 logger = logging.getLogger("modlunky2")
 
-LATEST_EXE = "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe"
+LATEST_EXE = (
+    "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe"
+)
 
 
 def self_update():

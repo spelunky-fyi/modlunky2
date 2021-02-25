@@ -10,9 +10,9 @@ class FloorMiscSheet(BaseSpriteLoader):
     # Note trying to match the names I see in the `.lvl` files for the names of these
     # things
     _chunk_map = {
-        "push_block": (0, 0, 1, 1),
+        "push_block_reg": (0, 0, 1, 1),
         "arrow_trap": (1, 0, 2, 1),
-        "altar": (2, 0, 4, 1),
+        "altar": (2, 0, 3, 1),
         "altar_trim_right": (2, 1, 3, 2),
         "altar_trim_left": (3, 1, 4, 2),
         "totemtrap": (4, 0, 5, 2),
@@ -29,6 +29,7 @@ class FloorMiscSheet(BaseSpriteLoader):
         "cookfire": (6, 1, 7, 2),
         "powder_keg": (2, 2, 3, 3),
         "factory_generator": (3, 2, 4, 3),
+        "alien_generator": (3, 2, 4, 3),
         # Used when the top of a totem trap is broken
         "totemtrap_broken_edge": (4, 2, 5, 3),
         "liontrap_broken_edge": (5, 2, 6, 3),
@@ -36,12 +37,14 @@ class FloorMiscSheet(BaseSpriteLoader):
         "storage_floor": (6, 2, 7, 3),
         "storage_floor_activated": (7, 2, 8, 3),
         "elevator": (2, 3, 3, 4),
+        "crushing_elevator": (2, 3, 3, 4),
         "elevator_up": (3, 3, 4, 4),
         "elevator_down": (4, 3, 5, 4),
         "jungle_spear_trap": (5, 3, 6, 4),
         # Used when a platform is directly above the ground or another platform
         "tidepool_single_step_platform": (6, 3, 7, 4),
         "tidepool_platform_top": (7, 3, 8, 4),
+        "pagoda_platform": (7, 3, 8, 4),
         "tidepool_platform_middle": (7, 4, 8, 5),
         "tidepool_platform_bottom": (7, 5, 8, 6),
         "tidepool_platform_bottom_broken": (6, 4, 7, 5),
@@ -49,6 +52,7 @@ class FloorMiscSheet(BaseSpriteLoader):
         "crushtraplarge": (0, 4, 2, 6),
         "crushtrap": (0, 6, 1, 7),
         "lasertrap": (2, 4, 3, 5),
+        "laser_trap": (2, 4, 3, 5),
         "lasertrap_charging1": (3, 4, 4, 5),
         "lasertrap_charging2": (4, 4, 5, 5),
         "lasertrap_charged": (5, 4, 6, 5),

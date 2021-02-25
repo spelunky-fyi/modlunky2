@@ -20,11 +20,13 @@ class Message:
     name: str
     kwargs: Optional[Dict[str, Any]] = None
 
+
 @dataclass
 class Task:
     callback: Callable
     threaded: bool = False
     on_complete: Optional[str] = None
+
 
 class Worker:
     def __init__(self, rx_queue, tx_queue):
@@ -105,6 +107,7 @@ class Worker:
     def send_message(self, msg: Message):
         self.tx_queue.put_nowait(msg)
 
+
 class TaskManager:
     def __init__(self, log_queue):
         self.tx_queue = Queue()
@@ -133,7 +136,9 @@ class TaskManager:
         self.send_message(msg)
 
     def start_process(self):
-        self.worker_process = Process(target=self.worker.process_tasks, args=(self.log_queue,))
+        self.worker_process = Process(
+            target=self.worker.process_tasks, args=(self.log_queue,)
+        )
         self.worker_process.start()
 
     def is_alive(self):
