@@ -39,9 +39,7 @@ class LevelsTab(Tab):
         self.tab_control = tab_control
         self.install_dir = config.install_dir
         self.textures_dir = config.install_dir / "Mods/Extracted/Data/Textures"
-        self._sprite_fetcher = SpelunkySpriteFetcher(
-            self.install_dir / "Mods/Extracted"
-        )
+        self._sprite_fetcher = None
 
         self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
@@ -104,6 +102,11 @@ class LevelsTab(Tab):
         )
         self.btn_lvl_folder.grid(
             row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 10)
+        )
+
+    def on_load(self):
+        self._sprite_fetcher = SpelunkySpriteFetcher(
+            self.install_dir / "Mods/Extracted"
         )
 
     def load_editor(
@@ -1029,7 +1032,7 @@ class LevelsTab(Tab):
                             self.tree_files.item(self.last_selected_file, option="text")
                         )
                     )
-                with Path(path).open("w", encoding="utf-8") as fh:
+                with Path(path).open("w", encoding="cp1252") as fh:
                     level_file.write(fh)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
