@@ -1029,7 +1029,7 @@ class LevelsTab(Tab):
                             self.tree_files.item(self.last_selected_file, option="text")
                         )
                     )
-                with Path(path).open("w") as fh:
+                with Path(path).open("w", encoding="utf-8") as fh:
                     level_file.write(fh)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED

@@ -51,7 +51,7 @@ class LevelFile:
         last_section_comment = None
         last_seen_directive = None
 
-        with level_path.open("r") as level_fh:
+        with level_path.open("r", encoding="utf-8") as level_fh:
             level_fh = Peekable(level_fh)
             for line in level_fh:
 
