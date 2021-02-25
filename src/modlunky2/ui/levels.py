@@ -25,7 +25,9 @@ class LevelsTab(Tab):
 
     show_console = False
 
-    def __init__(self, tab_control, config, *args, **kwargs): # Loads editor start screen ##############################################################################################
+    def __init__(
+        self, tab_control, config, *args, **kwargs
+    ):  # Loads editor start screen ##############################################################################################
         super().__init__(tab_control, *args, **kwargs)
         self.tree_levels = LevelsTree(self, self)
         self.last_selected_room = None
@@ -37,8 +39,9 @@ class LevelsTab(Tab):
         self.tab_control = tab_control
         self.install_dir = config.install_dir
         self.textures_dir = config.install_dir / "Mods/Extracted/Data/Textures"
-        self._sprite_fetcher = SpelunkySpriteFetcher(self.install_dir / "Mods/Extracted")
-
+        self._sprite_fetcher = SpelunkySpriteFetcher(
+            self.install_dir / "Mods/Extracted"
+        )
 
         self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
@@ -103,7 +106,9 @@ class LevelsTab(Tab):
             row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 10)
         )
 
-    def load_editor(self): # Run when start screen option is selected ############################################### Loads Editor UI ###############################################
+    def load_editor(
+        self,
+    ):  # Run when start screen option is selected ############################################### Loads Editor UI ###############################################
         self.save_needed = False
         self.last_selected_file = None
         self.tiles = None
@@ -160,7 +165,7 @@ class LevelsTab(Tab):
             command=self.save_changes,
         )
         self.button_save.grid(row=2, column=0, sticky="nswe")
-        self.button_save["state"]=tk.DISABLED
+        self.button_save["state"] = tk.DISABLED
 
         self.tab_control.add(  # Rules Tab ######################################################################################################
             self.tab1, text="Rules"
@@ -192,10 +197,14 @@ class LevelsTab(Tab):
         self.tree_chances_levels = RulesTree(
             self.tab1, self, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
-        self.tree_chances_levels.bind("<Double-1>", lambda e: self.on_double_click(self.tree_chances_levels))
+        self.tree_chances_levels.bind(
+            "<Double-1>", lambda e: self.on_double_click(self.tree_chances_levels)
+        )
         self.tree_chances_levels.place(x=30, y=95)
         # style = ttk.Style(self)
-        self.vsb_chances_levels = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree_chances_levels.yview)
+        self.vsb_chances_levels = ttk.Scrollbar(
+            self.tab1, orient="vertical", command=self.tree_chances_levels.yview
+        )
         self.vsb_chances_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_chances_levels.configure(yscrollcommand=self.vsb_chances_levels.set)
         self.tree_chances_levels["columns"] = ("1", "2", "3")
@@ -212,10 +221,14 @@ class LevelsTab(Tab):
         self.tree_chances_monsters = RulesTree(
             self.tab1, self, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
-        self.tree_chances_monsters.bind("<Double-1>", lambda e: self.on_double_click(self.tree_chances_monsters))
+        self.tree_chances_monsters.bind(
+            "<Double-1>", lambda e: self.on_double_click(self.tree_chances_monsters)
+        )
         self.tree_chances_monsters.place(x=30, y=95)
         # style = ttk.Style(self)
-        self.vsb_chances_monsters = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree_chances_monsters.yview)
+        self.vsb_chances_monsters = ttk.Scrollbar(
+            self.tab1, orient="vertical", command=self.tree_chances_monsters.yview
+        )
         self.vsb_chances_monsters.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree.configure(yscrollcommand=self.vsb_chances_monsters.set)
         self.tree_chances_monsters["columns"] = ("1", "2", "3")
@@ -326,6 +339,8 @@ class LevelsTab(Tab):
         self.canvas_grids.create_window(
             (x0, y0), window=self.scrollable_canvas_frame, anchor="center"
         )
+        self.canvas_grids.bind("<Enter>", self._bind_to_mousewheel)
+        self.canvas_grids.bind("<Leave>", self._unbind_from_mousewheel)
         self.scrollable_canvas_frame.bind(
             "<Configure>",
             lambda e: self.canvas_grids.configure(
@@ -388,7 +403,9 @@ class LevelsTab(Tab):
         self.button_tilecode_del_secondary["state"] = tk.DISABLED
 
         self.img_sel = ImageTk.PhotoImage(
-            Image.open(BASE_DIR / "static/images/tilecodetextures.png") ########################################### set selected img
+            Image.open(
+                BASE_DIR / "static/images/tilecodetextures.png"
+            )  ########################################### set selected img
         )
         self.panel_sel = tk.Label(
             self.tab2, image=self.img_sel, width=50
@@ -434,21 +451,77 @@ class LevelsTab(Tab):
         self.var_hard = tk.IntVar()
         self.var_liquid = tk.IntVar()
         self.var_purge = tk.IntVar()
-        self.checkbox_ignore = ttk.Checkbutton(self.tab2, text='Ignore',var=self.var_ignore, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_ignore = ttk.Checkbutton(
+            self.tab2,
+            text="Ignore",
+            var=self.var_ignore,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_ignore.grid(row=4, column=1, sticky="w")
-        self.checkbox_flip = ttk.Checkbutton(self.tab2, text='Flip',var=self.var_flip, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_flip = ttk.Checkbutton(
+            self.tab2,
+            text="Flip",
+            var=self.var_flip,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_flip.grid(row=4, column=2, sticky="w")
-        self.checkbox_only_flip = ttk.Checkbutton(self.tab2, text='Only Flip',var=self.var_only_flip, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_only_flip = ttk.Checkbutton(
+            self.tab2,
+            text="Only Flip",
+            var=self.var_only_flip,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_only_flip.grid(row=4, column=3, sticky="w")
-        self.checkbox_rare = ttk.Checkbutton(self.tab2, text='Rare',var=self.var_rare, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_rare = ttk.Checkbutton(
+            self.tab2,
+            text="Rare",
+            var=self.var_rare,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_rare.grid(row=4, column=5, sticky="w")
-        self.checkbox_hard = ttk.Checkbutton(self.tab2, text='Hard',var=self.var_hard, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_hard = ttk.Checkbutton(
+            self.tab2,
+            text="Hard",
+            var=self.var_hard,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_hard.grid(row=4, column=6, sticky="w")
-        self.checkbox_liquid = ttk.Checkbutton(self.tab2, text='Optimize Liquids',var=self.var_liquid, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_liquid = ttk.Checkbutton(
+            self.tab2,
+            text="Optimize Liquids",
+            var=self.var_liquid,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_liquid.grid(row=4, column=4, sticky="w")
-        self.checkbox_purge = ttk.Checkbutton(self.tab2, text='Purge',var=self.var_purge, onvalue=1, offvalue=0, command= lambda: self.remember_changes())
+        self.checkbox_purge = ttk.Checkbutton(
+            self.tab2,
+            text="Purge",
+            var=self.var_purge,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.remember_changes(),
+        )
         self.checkbox_purge.grid(row=4, column=7, sticky="w")
-        self.checkbox_dual = ttk.Checkbutton(self.tab2, text='Dual',var=self.var_dual, onvalue=1, offvalue=0, command= lambda: self.dual_toggle(self))
+        self.checkbox_dual = ttk.Checkbutton(
+            self.tab2,
+            text="Dual",
+            var=self.var_dual,
+            onvalue=1,
+            offvalue=0,
+            command=lambda: self.dual_toggle(self),
+        )
         self.checkbox_dual.grid(row=4, column=8, sticky="w")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
@@ -464,10 +537,12 @@ class LevelsTab(Tab):
         self.tile_pallete_ref = []
         self.panel_sel["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
         self.tile_label["text"] = "Primary Tile: " + "empty 0"
-        self.panel_sel_secondary["image"] = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
+        self.panel_sel_secondary["image"] = ImageTk.PhotoImage(
+            self._sprite_fetcher.get("empty")
+        )
         self.tile_label_secondary["text"] = "Secondary Tile: " + "empty 0"
 
-        self.draw_mode = [] # slight adjustments of textures for tile preview
+        self.draw_mode = []  # slight adjustments of textures for tile preview
         # 1 = lower half tile
         # 2 = draw from bottom left
         # 3 = center
@@ -627,7 +702,7 @@ class LevelsTab(Tab):
                 )
                 if msg_box == "yes":
                     self.save_needed = False
-                    self.button_save["state"]=tk.DISABLED
+                    self.button_save["state"] = tk.DISABLED
                     print("Entered new files witout saving")
                 else:
                     self.tree_files.selection_set(self.last_selected_file)
@@ -645,6 +720,49 @@ class LevelsTab(Tab):
                 self.read_lvl_file(item_text)
 
         self.tree_files.bind("<ButtonRelease-1>", tree_filesitemclick)
+
+    def _on_mousewheel(self, event):
+        scroll_dir = None
+        if event.num == 5 or event.delta == -120:
+            scroll_dir = 1
+        elif event.num == 4 or event.delta == 120:
+            scroll_dir = -1
+
+        if scroll_dir is None:
+            return
+
+        if event.state & (1 << 0):  # Shift / Horizontal Scroll
+            self._scroll_horizontal(scroll_dir)
+        else:
+            self._scroll_vertical(scroll_dir)
+
+    def _scroll_vertical(self, scroll_dir):
+        # If the scrollbar is max size don't bother scrolling
+        if self.vbar.get() == (0.0, 1.0):
+            return
+
+        self.canvas_grids.yview_scroll(scroll_dir, "units")
+
+    def _scroll_horizontal(self, scroll_dir):
+        # If the scrollbar is max size don't bother scrolling
+        if self.hbar.get() == (0.0, 1.0):
+            return
+
+        self.canvas_grids.xview_scroll(scroll_dir, "units")
+
+    def _bind_to_mousewheel(self, _event):
+        if "nt" in os.name:
+            self.canvas_grids.bind_all("<MouseWheel>", self._on_mousewheel)
+        else:
+            self.canvas_grids.bind_all("<Button-4>", self._on_mousewheel)
+            self.canvas_grids.bind_all("<Button-5>", self._on_mousewheel)
+
+    def _unbind_from_mousewheel(self, _event):
+        if "nt" in os.name:
+            self.canvas_grids.unbind_all("<MouseWheel>")
+        else:
+            self.canvas_grids.unbind_all("<Button-4>")
+            self.canvas_grids.unbind_all("<Button-5>")
 
     def tile_pick(
         self, event, button_row, button_col
@@ -670,7 +788,6 @@ class LevelsTab(Tab):
             codes += str(code)
         print(str(len(self.usable_codes)) + " codes left (" + codes + ")")
 
-
     def dual_toggle(event, self):
         item_iid = self.tree_levels.selection()[0]
         parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
@@ -689,7 +806,7 @@ class LevelsTab(Tab):
             tags.append("\!liquid")
             tags.append("\!purge")
 
-            if self.var_dual.get()==1: # converts room into dual
+            if self.var_dual.get() == 1:  # converts room into dual
                 new_room_data.append("\!dual")
                 for row in room_rows:
                     tag_row = False
@@ -704,7 +821,7 @@ class LevelsTab(Tab):
                         new_room_data.append(str(new_row))
                     else:
                         new_room_data.append(str(row))
-            else: # converts room into none dual
+            else:  # converts room into none dual
                 msg_box = tk.messagebox.askquestion(
                     "Delete Dual Room?",
                     "Un-dualing this room will delete your background layer. This is not recoverable.\nContinue?",
@@ -722,9 +839,8 @@ class LevelsTab(Tab):
                         else:
                             if not row.startswith("\!dual"):
                                 new_row = row
-                        if new_row !="":
+                        if new_row != "":
                             new_room_data.append(str(new_row))
-
 
             edited = self.tree_levels.insert(
                 parent_iid,
@@ -738,17 +854,23 @@ class LevelsTab(Tab):
             self.room_select(None)
             self.remember_changes()
 
-
     def save_changes(self):
         if self.save_needed:
             try:
 
                 from modlunky2.levels.level_chances import LevelChances, LevelChance
                 from modlunky2.levels.level_settings import LevelSettings, LevelSetting
-                from modlunky2.levels.level_templates import LevelTemplates, LevelTemplate
-                from modlunky2.levels.monster_chances import MonsterChances, MonsterChance
+                from modlunky2.levels.level_templates import (
+                    LevelTemplates,
+                    LevelTemplate,
+                )
+                from modlunky2.levels.monster_chances import (
+                    MonsterChances,
+                    MonsterChance,
+                )
                 from modlunky2.levels.tile_codes import TileCodes, TileCode
                 from modlunky2.levels.level_templates import TemplateSetting, Chunk
+
                 tags = []
                 tags.append("\!ignore")
                 tags.append("\!flip")
@@ -765,37 +887,68 @@ class LevelsTab(Tab):
                 level_templates = LevelTemplates()
 
                 for tilecode in self.tile_pallete_ref_in_use:
-                    tile_codes.set_obj(TileCode(name=tilecode[0].split(" ", 1)[0], value = tilecode[0].split(" ", 1)[1], comment=""))
+                    tile_codes.set_obj(
+                        TileCode(
+                            name=tilecode[0].split(" ", 1)[0],
+                            value=tilecode[0].split(" ", 1)[1],
+                            comment="",
+                        )
+                    )
 
-                bad_chars = ['[', ']', '\'', "\""]
-                bad_chars_settings = ['[', ']', '\'', "\"", ","]
+                bad_chars = ["[", "]", "'", '"']
+                bad_chars_settings = ["[", "]", "'", '"', ","]
                 for entry in self.tree.get_children():
                     values = self.tree.item(entry)["values"]
                     value_final = ""
-                    for i in bad_chars_settings :
-                        value_final = str(values[1]).replace(i, '')
-                    level_settings.set_obj(LevelSetting(name=str(values[0]), value=value_final, comment=str(values[2])))
+                    for i in bad_chars_settings:
+                        value_final = str(values[1]).replace(i, "")
+                    level_settings.set_obj(
+                        LevelSetting(
+                            name=str(values[0]),
+                            value=value_final,
+                            comment=str(values[2]),
+                        )
+                    )
 
                 for entry in self.tree_chances_monsters.get_children():
                     values = self.tree_chances_monsters.item(entry)["values"]
                     value_final = ""
-                    for i in bad_chars :
-                        value_final = str(values[1]).replace(i, '')
-                    monster_chances.set_obj(MonsterChance(name=str(values[0]), value=value_final, comment=str(values[2])))
+                    for i in bad_chars:
+                        value_final = str(values[1]).replace(i, "")
+                    monster_chances.set_obj(
+                        MonsterChance(
+                            name=str(values[0]),
+                            value=value_final,
+                            comment=str(values[2]),
+                        )
+                    )
 
                 for entry in self.tree_chances_levels.get_children():
                     values = self.tree_chances_levels.item(entry)["values"]
                     value_final = ""
-                    for i in bad_chars :
-                        value_final = str(values[1]).replace(i, '')
-                    level_chances.set_obj(LevelChance(name=str(values[0]), value=value_final, comment=str(values[2])))
+                    for i in bad_chars:
+                        value_final = str(values[1]).replace(i, "")
+                    level_chances.set_obj(
+                        LevelChance(
+                            name=str(values[0]),
+                            value=value_final,
+                            comment=str(values[2]),
+                        )
+                    )
 
                 for room_parent in self.tree_levels.get_children():
                     template_chunks = []
-                    room_list_name = self.tree_levels.item(room_parent)["text"].split(" ",1)[0]
+                    room_list_name = self.tree_levels.item(room_parent)["text"].split(
+                        " ", 1
+                    )[0]
                     room_list_comment = ""
-                    if len(self.tree_levels.item(room_parent)["text"].split("//",1))>1:
-                        room_list_comment = self.tree_levels.item(room_parent)["text"].split("//",1)[1]
+                    if (
+                        len(self.tree_levels.item(room_parent)["text"].split("//", 1))
+                        > 1
+                    ):
+                        room_list_comment = self.tree_levels.item(room_parent)[
+                            "text"
+                        ].split("//", 1)[1]
                     for room in self.tree_levels.get_children(room_parent):
                         room_data = self.tree_levels.item(room, option="values")
                         room_name = self.tree_levels.item(room)["text"]
@@ -809,7 +962,7 @@ class LevelsTab(Tab):
                             tag_found = False
                             background_found = False
                             for tag in tags:
-                                if str(line)==str(tag): # this line is a tag
+                                if str(line) == str(tag):  # this line is a tag
                                     tag_found = True
                             if not tag_found:
                                 for char in str(line):
@@ -817,30 +970,54 @@ class LevelsTab(Tab):
                                         row.append(str(char))
                                     elif background_found and str(char) != " ":
                                         back_row.append(str(char))
-                                    elif char==" ":
+                                    elif char == " ":
                                         background_found = True
                             else:
-                                room_settings.append(TemplateSetting(str(line.split("!", 1)[1])))
+                                room_settings.append(
+                                    TemplateSetting(str(line.split("!", 1)[1]))
+                                )
                                 print("FOUND " + str(line.split("!", 1)[1]))
 
                             if not tag_found:
                                 room_foreground.append(row)
-                                if back_row!=[]:
+                                if back_row != []:
                                     room_background.append(back_row)
-                                #print(str(room_foreground))
-                                #print(str(room_background))
-                        #print(str(Chunk(comment=room_name, settings= room_settings, foreground = room_foreground, background = room_background)))
-                        template_chunks.append(Chunk(comment=room_name, settings= room_settings, foreground = room_foreground, background = room_background))
-                    level_templates.set_obj(LevelTemplate(name=room_list_name, comment=room_list_comment, chunks=template_chunks))
-                    #print(str(level_templates.all()))
-                level_file = LevelFile("", level_settings, tile_codes, level_chances, monster_chances, level_templates)
-                #print(str(level_file))
+                                # print(str(room_foreground))
+                                # print(str(room_background))
+                        # print(str(Chunk(comment=room_name, settings= room_settings, foreground = room_foreground, background = room_background)))
+                        template_chunks.append(
+                            Chunk(
+                                comment=room_name,
+                                settings=room_settings,
+                                foreground=room_foreground,
+                                background=room_background,
+                            )
+                        )
+                    level_templates.set_obj(
+                        LevelTemplate(
+                            name=room_list_name,
+                            comment=room_list_comment,
+                            chunks=template_chunks,
+                        )
+                    )
+                    # print(str(level_templates.all()))
+                level_file = LevelFile(
+                    "",
+                    level_settings,
+                    tile_codes,
+                    level_chances,
+                    monster_chances,
+                    level_templates,
+                )
+                # print(str(level_file))
                 path = None
                 if not self.extracts_mode:
                     path = (
                         self.lvls_path
                         + "/"
-                        + str(self.tree_files.item(self.last_selected_file, option="text"))
+                        + str(
+                            self.tree_files.item(self.last_selected_file, option="text")
+                        )
                     )
                 else:
                     print("adding to overrides")
@@ -848,12 +1025,14 @@ class LevelsTab(Tab):
                         self.install_dir
                         / "Mods"
                         / "Overrides"
-                        / str(self.tree_files.item(self.last_selected_file, option="text"))
+                        / str(
+                            self.tree_files.item(self.last_selected_file, option="text")
+                        )
                     )
                 with Path(path).open("w") as fh:
                     level_file.write(fh)
                 self.save_needed = False
-                self.button_save["state"]=tk.DISABLED
+                self.button_save["state"] = tk.DISABLED
                 print("Saved")
             except:
                 msg_box = tk.messagebox.showerror(
@@ -872,37 +1051,37 @@ class LevelsTab(Tab):
                 self.canvas.delete("all")
                 self.canvas_dual.delete("all")
                 new_room_data = ""
-                if int(self.var_dual.get())==1:
+                if int(self.var_dual.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!dual"
-                if int(self.var_purge.get())==1:
+                if int(self.var_purge.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!purge"
-                if int(self.var_flip.get())==1:
+                if int(self.var_flip.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!flip"
-                if int(self.var_only_flip.get())==1:
+                if int(self.var_only_flip.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!onlyflip"
-                if int(self.var_rare.get())==1:
+                if int(self.var_rare.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!rare"
-                if int(self.var_hard.get())==1:
+                if int(self.var_hard.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!hard"
-                if int(self.var_liquid.get())==1:
+                if int(self.var_liquid.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!liquid"
-                if int(self.var_ignore.get())==1:
+                if int(self.var_ignore.get()) == 1:
                     if new_room_data != "":
-                        new_room_data+="\n"
+                        new_room_data += "\n"
                     new_room_data += "\!ignore"
 
                 for row in self.tiles_meta:
@@ -930,7 +1109,7 @@ class LevelsTab(Tab):
                 print("temp saved: \n" + new_room_data)
                 print("Changes remembered!")
                 self.save_needed = True
-                self.button_save["state"]=tk.NORMAL
+                self.button_save["state"] = tk.NORMAL
         except:
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
@@ -938,7 +1117,6 @@ class LevelsTab(Tab):
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
-
 
     def del_tilecode(self):
         msg_box = tk.messagebox.askquestion(
@@ -1019,7 +1197,7 @@ class LevelsTab(Tab):
 
             self.get_codes_left()
             self.save_needed = True
-            self.button_save["state"]=tk.NORMAL
+            self.button_save["state"] = tk.NORMAL
         else:
             return
 
@@ -1102,7 +1280,7 @@ class LevelsTab(Tab):
 
             self.get_codes_left()
             self.save_needed = True
-            self.button_save["state"]=tk.NORMAL
+            self.button_save["state"] = tk.NORMAL
         else:
             return
 
@@ -1121,7 +1299,9 @@ class LevelsTab(Tab):
             if alt_tile != "empty":
                 new_tile_code += "%" + alt_tile
 
-        tile_image = ImageTk.PhotoImage(self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self))
+        tile_image = ImageTk.PhotoImage(
+            self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self)
+        )
 
         if any(
             str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0]) + " "
@@ -1177,7 +1357,7 @@ class LevelsTab(Tab):
         )
         self.get_codes_left()
         self.save_needed = True
-        self.button_save["state"]=tk.NORMAL
+        self.button_save["state"] = tk.NORMAL
 
     def on_double_click(self, tree_view):
         # First check if a blank space was selected
@@ -1188,7 +1368,10 @@ class LevelsTab(Tab):
         # Set up window
         win = tk.Toplevel()
         win.title("Edit Entry")
-        win.attributes("-toolwindow", True)
+        if "nt" in os.name:
+            win.attributes("-toolwindow", True)
+        else:
+            win.attributes("-alpha", True)
         self.center(win)
 
         ####
@@ -1225,7 +1408,7 @@ class LevelsTab(Tab):
             ):
                 win.destroy()
                 self.save_needed = True
-                self.button_save["state"]=tk.NORMAL
+                self.button_save["state"] = tk.NORMAL
 
         ok_button = tk.Button(win, text="Ok")
         ok_button.bind("<Button-1>", lambda e: update_then_destroy())
@@ -1260,7 +1443,7 @@ class LevelsTab(Tab):
 
         tree_view.delete(curr)
         self.save_needed = True
-        self.button_save["state"]=tk.NORMAL
+        self.button_save["state"] = tk.NORMAL
 
     def center(self, toplevel):
         toplevel.update_idletasks()
@@ -1278,7 +1461,6 @@ class LevelsTab(Tab):
         y = screen_height / 2 - size[1] / 2
 
         toplevel.geometry("+%d+%d" % (x, y))
-
 
     def populate_tilecode_pallete(self):
         for (
@@ -1496,8 +1678,12 @@ class LevelsTab(Tab):
             self.last_selected_room = item_iid
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
-            current_settings = self.tree_levels.item(item_iid, option="values")[0] # Room settings
-            current_room = self.tree_levels.item(item_iid, option="values") # Room foreground
+            current_settings = self.tree_levels.item(item_iid, option="values")[
+                0
+            ]  # Room settings
+            current_room = self.tree_levels.item(
+                item_iid, option="values"
+            )  # Room foreground
             current_room_tiles = []
             current_settings = []
 
@@ -1615,7 +1801,11 @@ class LevelsTab(Tab):
                             y = 0
                             for tile_name_ref in self.draw_mode:
                                 if tile_name == str(tile_name_ref[0]):
-                                    x, y = self.adjust_texture_xy(tile_image.width(), tile_image.height(), tile_name_ref[1])
+                                    x, y = self.adjust_texture_xy(
+                                        tile_image.width(),
+                                        tile_image.height(),
+                                        tile_name_ref[1],
+                                    )
                             self.tiles[currow][curcol] = self.canvas_dual.create_image(
                                 xx * self.mag - x,
                                 currow * self.mag - y,
@@ -1634,7 +1824,11 @@ class LevelsTab(Tab):
                             y = 0
                             for tile_name_ref in self.draw_mode:
                                 if tile_name == str(tile_name_ref[0]):
-                                    x, y = self.adjust_texture_xy(tile_image.width(), tile_image.height(), tile_name_ref[1])
+                                    x, y = self.adjust_texture_xy(
+                                        tile_image.width(),
+                                        tile_image.height(),
+                                        tile_name_ref[1],
+                                    )
                             self.tiles[currow][curcol] = self.canvas.create_image(
                                 curcol * self.mag - x,
                                 currow * self.mag - y,
@@ -1707,14 +1901,16 @@ class LevelsTab(Tab):
 
         self.lvl = lvl
 
-        self.lvl_biome = "cave" # cave by default, depicts what background and sprites will be loaded
+        self.lvl_biome = "cave"  # cave by default, depicts what background and sprites will be loaded
         self.lvl_bg_path = self.textures_dir / "bg_cave.png"
-        if (lvl.startswith("abzu.lvl")
-        or lvl.startswith("lake")
-        or lvl.startswith("tide")
-        or lvl.startswith("end")
-        or lvl.endswith("_tidepool.lvl")
-        or lvl.startswith("tiamat")):
+        if (
+            lvl.startswith("abzu.lvl")
+            or lvl.startswith("lake")
+            or lvl.startswith("tide")
+            or lvl.startswith("end")
+            or lvl.endswith("_tidepool.lvl")
+            or lvl.startswith("tiamat")
+        ):
             self.lvl_biome = "tidepool"
             self.lvl_bg_path = self.textures_dir / "bg_tidepool.png"
         elif (
@@ -1738,9 +1934,11 @@ class LevelsTab(Tab):
         ):
             self.lvl_biome = "jungle"
             self.lvl_bg_path = self.textures_dir / "bg_jungle.png"
-        elif (lvl.startswith("challenge_star")
+        elif (
+            lvl.startswith("challenge_star")
             or lvl.startswith("temple")
-            or lvl.endswith("_temple.lvl")):
+            or lvl.endswith("_temple.lvl")
+        ):
             self.lvl_biome = "temple"
             self.lvl_bg_path = self.textures_dir / "bg_temple.png"
         elif (
@@ -1761,8 +1959,7 @@ class LevelsTab(Tab):
         elif lvl.startswith("egg"):
             self.lvl_biome = "eggplant"
             self.lvl_bg_path = self.textures_dir / "bg_eggplant.png"
-        elif (lvl.startswith("ice")
-        or lvl.endswith("_icecavesarea.lvl")):
+        elif lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl"):
             self.lvl_biome = "ice"
             self.lvl_bg_path = self.textures_dir / "bg_ice.png"
         elif lvl.startswith("olmec"):
@@ -1771,8 +1968,7 @@ class LevelsTab(Tab):
         elif lvl.startswith("vlad"):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_vlad.png"
-        elif (lvl.startswith("volcano")
-        or lvl.endswith("_volcano.lvl")):
+        elif lvl.startswith("volcano") or lvl.endswith("_volcano.lvl"):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_volcano.png"
 
@@ -1785,117 +1981,263 @@ class LevelsTab(Tab):
             else:
                 lvl_path = self.lvls_path / lvl
 
-
-        levels = [] # Levels to load dependancy tilecodes from
+        levels = []  # Levels to load dependancy tilecodes from
         load_path = None
         if not lvl.startswith("base"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "generic.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "generic.lvl")))
+                    levels.append(
+                        LevelFile.from_path(Path(self.lvls_path + "/" + "generic.lvl"))
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "generic.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
+                    )
             else:
                 if Path(self.overrides_path / "generic.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "generic.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "generic.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "generic.lvl"))
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
+                    )
         if lvl.startswith("base"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "basecamp.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "basecamp.lvl")))
+                    levels.append(
+                        LevelFile.from_path(Path(self.lvls_path + "/" + "basecamp.lvl"))
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
+                    )
             else:
                 if Path(self.overrides_path / "basecamp.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "basecamp.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "basecamp.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl"))
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
+                    )
         elif lvl.startswith("cave"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "dwellingarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "dwellingarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "dwellingarea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "dwellingarea.lvl"
+                        )
+                    )
             else:
                 if Path(self.overrides_path / "dwellingarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "dwellingarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "dwellingarea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl"))
-        elif (lvl.startswith("blackmark") or lvl.startswith("beehive") or lvl.startswith("challenge_moon")):
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "dwellingarea.lvl"
+                        )
+                    )
+        elif (
+            lvl.startswith("blackmark")
+            or lvl.startswith("beehive")
+            or lvl.startswith("challenge_moon")
+        ):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "junglearea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "junglearea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "junglearea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
+                    )
             else:
                 if Path(self.overrides_path / "junglearea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "junglearea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "junglearea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl"))
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
+                    )
         elif lvl.startswith("vlads"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "volcanoarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "volcanoarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "volcanoarea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "volcanoarea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "volcanoarea.lvl"
+                        )
+                    )
             else:
                 if Path(self.overrides_path / "volcanoarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "volcanoarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "volcanoarea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(self.extracts_path / "volcanoarea.lvl"))
-        elif (lvl.startswith("lake") or lvl.startswith("challenge_star")):
+                    levels.append(
+                        LevelFile.from_path(self.extracts_path / "volcanoarea.lvl")
+                    )
+        elif lvl.startswith("lake") or lvl.startswith("challenge_star"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "tidepoolarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "tidepoolarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "tidepoolarea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "tidepoolarea.lvl"
+                        )
+                    )
             else:
                 if Path(self.overrides_path / "tidepoolarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "tidepoolarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "tidepoolarea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl"))
-        elif (lvl.startswith("hallofush") or lvl.startswith("challenge_star") or lvl.startswith("babylonarea_1") or lvl.startswith("palace")):
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "tidepoolarea.lvl"
+                        )
+                    )
+        elif (
+            lvl.startswith("hallofush")
+            or lvl.startswith("challenge_star")
+            or lvl.startswith("babylonarea_1")
+            or lvl.startswith("palace")
+        ):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "babylonarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "babylonarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "babylonarea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "babylonarea.lvl"
+                        )
+                    )
             else:
                 if Path(self.overrides_path / "babylonarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "babylonarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "babylonarea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl"))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "babylonarea.lvl"
+                        )
+                    )
         elif lvl.startswith("challenge_sun"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "sunkencityarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "sunkencityarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.lvls_path + "/" + "sunkencityarea.lvl")
+                        )
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "sunkencityarea.lvl"
+                        )
+                    )
             else:
                 if Path(self.overrides_path / "sunkencityarea.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "sunkencityarea.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "sunkencityarea.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl"))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.extracts_path) / "sunkencityarea.lvl"
+                        )
+                    )
         elif lvl.startswith("end"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "ending.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.lvls_path + "/" + "ending.lvl")))
+                    levels.append(
+                        LevelFile.from_path(Path(self.lvls_path + "/" + "ending.lvl"))
+                    )
                 else:
-                    print("local dependancy lvl not found, attempting load from extracts")
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "ending.lvl"))
+                    print(
+                        "local dependancy lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
+                    )
             else:
                 if Path(self.overrides_path / "ending.lvl").is_dir():
-                    levels.append(LevelFile.from_path(Path(self.overrides_path + "/" + "ending.lvl")))
+                    levels.append(
+                        LevelFile.from_path(
+                            Path(self.overrides_path + "/" + "ending.lvl")
+                        )
+                    )
                 else:
-                    levels.append(LevelFile.from_path(Path(self.extracts_path) / "ending.lvl"))
+                    levels.append(
+                        LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
+                    )
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
         for level in levels:
@@ -1905,7 +2247,7 @@ class LevelsTab(Tab):
             for tilecode in level_tilecodes:
                 tilecode_item = []
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
-                #print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
+                # print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
 
                 img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self)
 
@@ -1913,21 +2255,25 @@ class LevelsTab(Tab):
                 self.panel_sel["image"] = tilecode_item[1]
                 self.tile_label["text"] = "Primary Tile: " + tilecode_item[0]
                 self.panel_sel_secondary["image"] = tilecode_item[1]
-                self.tile_label_secondary["text"] = "Secondary Tile: " + tilecode_item[0]
+                self.tile_label_secondary["text"] = (
+                    "Secondary Tile: " + tilecode_item[0]
+                )
 
                 for i in self.tile_pallete_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
                         self.tile_pallete_ref_in_use.remove(i)
-                        #print("removed " + str(i[0]))
+                        # print("removed " + str(i[0]))
 
                 for i in self.usable_codes:
                     if str(i) == str(tilecode.value):
                         self.usable_codes.remove(i)
-                        #print("removed " + str(i))
+                        # print("removed " + str(i))
 
                 self.tile_pallete_ref_in_use.append(tilecode_item)
-                #print("appending " + str(tilecode_item[0]))
-        if lvl.startswith("generic"): # adds tilecodes to generic that it relies on yet doesn't provide
+                # print("appending " + str(tilecode_item[0]))
+        if lvl.startswith(
+            "generic"
+        ):  # adds tilecodes to generic that it relies on yet doesn't provide
             generic_needs = [
                 ["4", "push_block"],
                 ["t", "treasure"],
@@ -1953,14 +2299,13 @@ class LevelsTab(Tab):
                         self.tile_pallete_ref_in_use.append(tilecode_item)
         self.populate_tilecode_pallete()
 
-
         level_rules = level.level_settings.all()
-        #print("level settings: " + str(level_rules))
-        bad_chars=["[","]","\"","\'","(",")"]
+        # print("level settings: " + str(level_rules))
+        bad_chars = ["[", "]", '"', "'", "(", ")"]
         for rules in level_rules:
             value_final = str(rules.value)
-            for i in bad_chars :
-                value_final = value_final.replace(i, '')
+            for i in bad_chars:
+                value_final = value_final.replace(i, "")
             self.tree.insert(
                 "",
                 "end",
@@ -1974,7 +2319,16 @@ class LevelsTab(Tab):
                 "",
                 "end",
                 text="L1",
-                values=(str(rules.name), str(rules.value).strip("[").strip("]").strip("(").strip(")").strip("\""), str(rules.comment)),
+                values=(
+                    str(rules.name),
+                    str(rules.value)
+                    .strip("[")
+                    .strip("]")
+                    .strip("(")
+                    .strip(")")
+                    .strip('"'),
+                    str(rules.comment),
+                ),
             )
 
         level_monsters = level.level_chances.all()
@@ -1983,21 +2337,29 @@ class LevelsTab(Tab):
                 "",
                 "end",
                 text="L1",
-                values=(str(rules.name), str(rules.value).strip("[").strip("]").strip("(").strip(")").strip("\""), str(rules.comment)),
+                values=(
+                    str(rules.name),
+                    str(rules.value)
+                    .strip("[")
+                    .strip("]")
+                    .strip("(")
+                    .strip(")")
+                    .strip('"'),
+                    str(rules.comment),
+                ),
             )
-
 
         level_templates = level.level_templates.all()
 
         for template in level_templates:
             template_comment = ""
-            if str(template.comment)!="":
-                template_comment="// "+str(template.comment)
+            if str(template.comment) != "":
+                template_comment = "// " + str(template.comment)
             entry = self.node = self.tree_levels.insert(
                 "", "end", text=str(template.name) + "   " + template_comment
             )
             for room in template.chunks:
-                room_string = [] #makes room data into string for storing
+                room_string = []  # makes room data into string for storing
 
                 for setting in room.settings:
                     room_string.append("\!" + str(setting).split(".", 1)[1].lower())
@@ -2007,173 +2369,240 @@ class LevelsTab(Tab):
                     foreground = ""
                     background = ""
                     for code in line:
-                        foreground+=str(code)
-                    if len(room.background)>0:
+                        foreground += str(code)
+                    if len(room.background) > 0:
                         background += " "
                         for code in room.background[i]:
-                            background+=str(code)
+                            background += str(code)
                     room_string.append(foreground + background)
                     i = i + 1
 
                 room_name = "room"
-                if str(room.comment)!="":
-                    room_name=str(room.comment).split(" ", 1)[1].strip("\n")
-
+                if str(room.comment) != "":
+                    room_name = str(room.comment).split(" ", 1)[1].strip("\n")
 
                 self.node = self.tree_levels.insert(
                     entry, "end", values=room_string, text=str(room_name)
                 )
 
+        # lines = file1.readlines()
 
-        #lines = file1.readlines()
-
-
-    def adjust_texture_xy(event, width, height, mode): # slight adjustments of textures for tile preview
-    # 1 = lower half tile
-    # 2 = draw from bottom left
-    # 3 = center
-    # 4 = center to the right
-    # 5 = draw bottom left + raise 1 tile
-    # 6 = position doors
-    # 7 = draw bottom left + raise half tile
-    # 8 = draw bottom left + lowere 1 tile
-    # 9 = draw bottom left + raise 1 tile + move left 1 tile
-    # 10 = draw bottom left + raise 1 tile + move left 1 tile
-    # 11 = move left 1 tile
+    def adjust_texture_xy(
+        event, width, height, mode
+    ):  # slight adjustments of textures for tile preview
+        # 1 = lower half tile
+        # 2 = draw from bottom left
+        # 3 = center
+        # 4 = center to the right
+        # 5 = draw bottom left + raise 1 tile
+        # 6 = position doors
+        # 7 = draw bottom left + raise half tile
+        # 8 = draw bottom left + lowere 1 tile
+        # 9 = draw bottom left + raise 1 tile + move left 1 tile
+        # 10 = draw bottom left + raise 1 tile + move left 1 tile
+        # 11 = move left 1 tile
         x = 0
         y = 0
         if mode == 1:
-            y = (height*-1)/2
+            y = (height * -1) / 2
         elif mode == 2:
-            y = height/2
+            y = height / 2
         elif mode == 3:
-            x = width/3.2
-            y = height/2
+            x = width / 3.2
+            y = height / 2
         elif mode == 4:
-            x = (width*-1)/2
+            x = (width * -1) / 2
         elif mode == 5:
-            y = height/2 + 50
+            y = height / 2 + 50
         elif mode == 6:
             x = 25
             y = 22
         elif mode == 7:
-            y = height/2 + 25
+            y = height / 2 + 25
         elif mode == 8:
-            y = (height/2 + 50)*-1
+            y = (height / 2 + 50) * -1
         elif mode == 9:
-            y = height/2 + 50
+            y = height / 2 + 50
             x = 75
         elif mode == 10:
-            y = height/2 + 100
+            y = height / 2 + 100
         elif mode == 11:
             x = 50
         return x, y
 
     def get_texture(event, tile, biome, lvl, self):
         from modlunky2.sprites.tilecode_extras import TILENAMES
+
         img = self._sprite_fetcher.get(str(tile), str(biome))
 
-        if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
-            if (tile=="floor"):
+        if (
+            lvl.startswith("generic")
+            or lvl.startswith("challenge")
+            or lvl.startswith("testing")
+            or lvl.startswith("beehive")
+            or lvl.startswith("palace")
+        ):  # makes tiles more general for multi biome lvls
+            if tile == "floor":
                 img = self._sprite_fetcher.get("generic_floor", str(biome))
-            elif (tile=="styled_floor"):
+            elif tile == "styled_floor":
                 img = self._sprite_fetcher.get("generic_styled_floor", str(biome))
-        if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
-            if (tile=="floor"):
+        if lvl.startswith(
+            "base"
+        ):  # base is weird with its tiles so I gotta get specific here
+            if tile == "floor":
                 img = self._sprite_fetcher.get("floor", "cave")
-        if (lvl.startswith("duat")): # specific floor hard for this biome
-            if (tile=="floor_hard"):
+        if lvl.startswith("duat"):  # specific floor hard for this biome
+            if tile == "floor_hard":
                 img = self._sprite_fetcher.get("duat_floor_hard")
-        if (lvl.startswith("sunken") or lvl.startswith("hundun") or lvl.endswith("_sunkencity.lvl")): # specific floor hard for this biome
-            if (tile=="floor_hard"):
+        if (
+            lvl.startswith("sunken")
+            or lvl.startswith("hundun")
+            or lvl.endswith("_sunkencity.lvl")
+        ):  # specific floor hard for this biome
+            if tile == "floor_hard":
                 img = self._sprite_fetcher.get("sunken_floor_hard")
-        if (lvl.startswith("volcan") or lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl") or lvl.endswith("_volcano.lvl")): # specific floor styled for this biome
-            if (tile=="styled_floor"):
+        if (
+            lvl.startswith("volcan")
+            or lvl.startswith("ice")
+            or lvl.endswith("_icecavesarea.lvl")
+            or lvl.endswith("_volcano.lvl")
+        ):  # specific floor styled for this biome
+            if tile == "styled_floor":
                 img = self._sprite_fetcher.get("empty")
-        if (lvl.startswith("olmec")): # specific door
-            if (tile=="door"):
-                img = self._sprite_fetcher.get("stone_door", )
+        if lvl.startswith("olmec"):  # specific door
+            if tile == "door":
+                img = self._sprite_fetcher.get(
+                    "stone_door",
+                )
 
-        if len(tile.split("%", 2))>1:
+        if len(tile.split("%", 2)) > 1:
             img1 = self._sprite_fetcher.get("unknown")
             img2 = self._sprite_fetcher.get("unknown")
             primary_tile = tile.split("%", 2)[0]
             if self._sprite_fetcher.get(primary_tile, str(biome)):
                 img1 = self._sprite_fetcher.get(primary_tile, str(biome))
-                if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
-                    if (primary_tile=="floor"):
+                if (
+                    lvl.startswith("generic")
+                    or lvl.startswith("challenge")
+                    or lvl.startswith("testing")
+                    or lvl.startswith("beehive")
+                    or lvl.startswith("palace")
+                ):  # makes tiles more general for multi biome lvls
+                    if primary_tile == "floor":
                         img1 = self._sprite_fetcher.get("generic_floor", str(biome))
-                    elif (primary_tile=="styled_floor"):
-                        img1 = self._sprite_fetcher.get("generic_styled_floor", str(biome))
-                if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
-                    if (primary_tile=="floor"):
+                    elif primary_tile == "styled_floor":
+                        img1 = self._sprite_fetcher.get(
+                            "generic_styled_floor", str(biome)
+                        )
+                if lvl.startswith(
+                    "base"
+                ):  # base is weird with its tiles so I gotta get specific here
+                    if primary_tile == "floor":
                         img1 = self._sprite_fetcher.get("floor", "cave")
-                if (lvl.startswith("duat")): # specific floor hard for this biome
-                    if (primary_tile=="floor_hard"):
+                if lvl.startswith("duat"):  # specific floor hard for this biome
+                    if primary_tile == "floor_hard":
                         img1 = self._sprite_fetcher.get("duat_floor_hard")
-                if (lvl.startswith("sunken") or lvl.startswith("hundun") or lvl.endswith("_sunkencity.lvl")):  # specific floor hard for this biome
-                    if (primary_tile=="floor_hard"):
+                if (
+                    lvl.startswith("sunken")
+                    or lvl.startswith("hundun")
+                    or lvl.endswith("_sunkencity.lvl")
+                ):  # specific floor hard for this biome
+                    if primary_tile == "floor_hard":
                         img1 = self._sprite_fetcher.get("sunken_floor_hard")
-                if (lvl.startswith("volcan") or lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl") or lvl.endswith("_volcano.lvl")): # specific floor styled for this biome
-                    if (primary_tile=="styled_floor"):
+                if (
+                    lvl.startswith("volcan")
+                    or lvl.startswith("ice")
+                    or lvl.endswith("_icecavesarea.lvl")
+                    or lvl.endswith("_volcano.lvl")
+                ):  # specific floor styled for this biome
+                    if primary_tile == "styled_floor":
                         img1 = self._sprite_fetcher.get("empty")
-                if (lvl.startswith("olmec")): # specific door
-                    if (primary_tile=="door"):
-                        img1 = self._sprite_fetcher.get("stone_door", )
+                if lvl.startswith("olmec"):  # specific door
+                    if primary_tile == "door":
+                        img1 = self._sprite_fetcher.get(
+                            "stone_door",
+                        )
             percent = tile.split("%", 2)[1]
             secondary_tile = "empty"
             img2 = None
-            if len(tile.split("%", 2))>2:
+            if len(tile.split("%", 2)) > 2:
                 secondary_tile = tile.split("%", 2)[2]
                 if self._sprite_fetcher.get(secondary_tile, str(biome)):
                     img2 = self._sprite_fetcher.get(secondary_tile, str(biome))
-                    if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")): # makes tiles more general for multi biome lvls
-                        if (secondary_tile=="floor"):
+                    if (
+                        lvl.startswith("generic")
+                        or lvl.startswith("challenge")
+                        or lvl.startswith("testing")
+                        or lvl.startswith("beehive")
+                        or lvl.startswith("palace")
+                    ):  # makes tiles more general for multi biome lvls
+                        if secondary_tile == "floor":
                             img2 = self._sprite_fetcher.get("generic_floor", str(biome))
-                        elif (secondary_tile=="styled_floor"):
-                            img2 = self._sprite_fetcher.get("generic_styled_floor", str(biome))
-                    if (lvl.startswith("base")): # base is weird with its tiles so I gotta get specific here
-                        if (secondary_tile=="floor"):
+                        elif secondary_tile == "styled_floor":
+                            img2 = self._sprite_fetcher.get(
+                                "generic_styled_floor", str(biome)
+                            )
+                    if lvl.startswith(
+                        "base"
+                    ):  # base is weird with its tiles so I gotta get specific here
+                        if secondary_tile == "floor":
                             img2 = self._sprite_fetcher.get("floor", "cave")
-                    if (lvl.startswith("duat")): # specific floor hard for this biome
-                        if (secondary_tile=="floor_hard"):
+                    if lvl.startswith("duat"):  # specific floor hard for this biome
+                        if secondary_tile == "floor_hard":
                             img2 = self._sprite_fetcher.get("duat_floor_hard")
-                    if (lvl.startswith("sunken") or lvl.startswith("hundun") or lvl.endswith("_sunkencity.lvl")):  # specific floor hard for this biome
-                        if (secondary_tile=="floor_hard"):
+                    if (
+                        lvl.startswith("sunken")
+                        or lvl.startswith("hundun")
+                        or lvl.endswith("_sunkencity.lvl")
+                    ):  # specific floor hard for this biome
+                        if secondary_tile == "floor_hard":
                             img2 = self._sprite_fetcher.get("sunken_floor_hard")
-                    if (lvl.startswith("volcan") or lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl") or lvl.endswith("_volcano.lvl")): # specific floor styled for this biome
-                        if (secondary_tile=="styled_floor"):
+                    if (
+                        lvl.startswith("volcan")
+                        or lvl.startswith("ice")
+                        or lvl.endswith("_icecavesarea.lvl")
+                        or lvl.endswith("_volcano.lvl")
+                    ):  # specific floor styled for this biome
+                        if secondary_tile == "styled_floor":
                             img2 = self._sprite_fetcher.get("empty")
-                    if (lvl.startswith("olmec")): # specific door
-                        if (secondary_tile=="door"):
-                            img2 = self._sprite_fetcher.get("stone_door", )
-            #print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
-            img = self.get_tilecode_percent_texture(primary_tile, secondary_tile, percent, img1, img2)
+                    if lvl.startswith("olmec"):  # specific door
+                        if secondary_tile == "door":
+                            img2 = self._sprite_fetcher.get(
+                                "stone_door",
+                            )
+            # print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
+            img = self.get_tilecode_percent_texture(
+                primary_tile, secondary_tile, percent, img1, img2
+            )
 
         if img is None:
             img = self._sprite_fetcher.get("unknown")
         width, height = img.size
         resize = True
 
-        for tile_ref in TILENAMES: # These tile textures are already sized down
+        for tile_ref in TILENAMES:  # These tile textures are already sized down
             if tile_ref == tile:
                 resize = False
 
         if resize:
-            width = int(width/2.65) # 2.65 is the scale to get the typical 128 tile size down to the needed 50
-            height = int(height/2.65)
+            width = int(
+                width / 2.65
+            )  # 2.65 is the scale to get the typical 128 tile size down to the needed 50
+            height = int(height / 2.65)
 
         scale = 1
-        #if (tile == "door2" or tile == "door2_secret" or tile == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
+        # if (tile == "door2" or tile == "door2_secret" or tile == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
         #    width = int(width/2)
         #    height = int(height/2)
 
-        if (width < 50 and height < 50): # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
+        if (
+            width < 50 and height < 50
+        ):  # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
             difference = 0
             if width > height:
-                difference = 50-width
+                difference = 50 - width
             else:
-                difference = 50-height
+                difference = 50 - height
 
             width = width + difference
             height = height + difference
@@ -2181,30 +2610,29 @@ class LevelsTab(Tab):
         img = img.resize((width, height), Image.ANTIALIAS)
         return img
 
-
     def get_tilecode_percent_texture(event, tile, alt_tile, percent, img1, img2):
         with tempfile.TemporaryDirectory() as tempdir:
             tempdir_path = Path(tempdir)
             temp1 = tempdir_path / "temp1.png"
             temp2 = tempdir_path / "temp2.png"
-            #ImageTk.PhotoImage()._PhotoImage__photo.write(temp1, format="png")
+            # ImageTk.PhotoImage()._PhotoImage__photo.write(temp1, format="png")
 
             image1_save = ImageTk.PhotoImage(img1)
             image1_save._PhotoImage__photo.write(temp1, format="png")
             image1 = Image.open(
                 temp1,
             ).convert("RGBA")
-            image1 = image1.resize((50,50),Image.BILINEAR)
+            image1 = image1.resize((50, 50), Image.BILINEAR)
             tile_text = percent + "%"
             if alt_tile != "empty":
                 tile_text += "/" + str(100 - int(percent)) + "%"
 
-                #ImageTk.PhotoImage()._PhotoImage__photo.write(temp2, format="png")
+                # ImageTk.PhotoImage()._PhotoImage__photo.write(temp2, format="png")
 
                 image2_save = ImageTk.PhotoImage(img2)
                 image2_save._PhotoImage__photo.write(temp2, format="png")
                 image2 = Image.open(temp2).convert("RGBA")
-                image2 = image2.resize((50,50),Image.BILINEAR).convert("RGBA")
+                image2 = image2.resize((50, 50), Image.BILINEAR).convert("RGBA")
                 image2.crop([25, 0, 50, 50]).save(temp2)
                 image1.save(temp1)
                 image1 = Image.open(temp1).convert("RGBA")
@@ -2228,17 +2656,21 @@ class LevelsTab(Tab):
             out = Image.alpha_composite(image1, txt)
         return out
 
+
 class LevelsTree(ttk.Treeview):
     def __init__(self, parent, levels_tab, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)
 
         self.levels_tab = levels_tab
 
-        self.popup_menu_child = tk.Menu(self, tearoff=0) # two different context menus to show depending on what is clicked (room or room list)
+        self.popup_menu_child = tk.Menu(
+            self, tearoff=0
+        )  # two different context menus to show depending on what is clicked (room or room list)
         self.popup_menu_parent = tk.Menu(self, tearoff=0)
-        self.popup_menu_child.add_command(label="Rename Room",
-                    command=self.rename)
-        self.popup_menu_child.add_command(label="Delete Room", command=self.delete_selected)
+        self.popup_menu_child.add_command(label="Rename Room", command=self.rename)
+        self.popup_menu_child.add_command(
+            label="Delete Room", command=self.delete_selected
+        )
         self.popup_menu_child.add_command(label="Add Room", command=self.add_room)
         self.popup_menu_parent.add_command(label="Add Room", command=self.add_room)
 
@@ -2248,13 +2680,13 @@ class LevelsTree(ttk.Treeview):
         try:
             item_iid = self.selection()[0]
             parent_iid = self.parent(item_iid)  # gets selected room
-            if parent_iid: # if actual room is clicked
+            if parent_iid:  # if actual room is clicked
                 self.popup_menu_child.tk_popup(event.x_root, event.y_root, 0)
-            else: # if room list is clicked
+            else:  # if room list is clicked
                 self.popup_menu_parent.tk_popup(event.x_root, event.y_root, 0)
 
             self.levels_tab.save_needed = True
-            self.levels_tab.button_save["state"]=tk.NORMAL
+            self.levels_tab.button_save["state"] = tk.NORMAL
         except:
             self.popup_menu_child.grab_release()
             self.popup_menu_parent.grab_release()
@@ -2269,7 +2701,9 @@ class LevelsTree(ttk.Treeview):
         if parent_iid:
             msg_box = tk.messagebox.askquestion(
                 "Delete Room?",
-                "Are you sure you want to delete " + self.item(item_iid)["text"] + "?"
+                "Are you sure you want to delete "
+                + self.item(item_iid)["text"]
+                + "?"
                 + "\nThis won't be recoverable.",
                 icon="warning",
             )
@@ -2297,7 +2731,10 @@ class LevelsTree(ttk.Treeview):
         # Set up window
         win = tk.Toplevel()
         win.title("Add Room")
-        win.attributes("-toolwindow", True)
+        if "nt" in os.name:
+            win.attributes("-toolwindow", True)
+        else:
+            win.attributes("-alpha", True)
         self.center(win)
 
         room_sizes = []
@@ -2314,7 +2751,7 @@ class LevelsTree(ttk.Treeview):
 
         combosizes = ttk.Combobox(win, height=20)
         combosizes["values"] = room_sizes
-        combosizes.grid(row=0, column=1, columnspan = 3)
+        combosizes.grid(row=0, column=1, columnspan=3)
         col1_lbl = tk.Label(win, text="Size: ")
         col1_ent = tk.Entry(win)
         col1_lbl.grid(row=0, column=0)
@@ -2346,33 +2783,38 @@ class LevelsTree(ttk.Treeview):
             x = 10
             y = 8
 
-            if (combosizes.get()=="machine_wideroom 20x8"):
+            if combosizes.get() == "machine_wideroom 20x8":
                 x = 20
                 y = 8
-            elif (combosizes.get()=="machine_wideroom 10x16"):
+            elif combosizes.get() == "machine_wideroom 10x16":
                 x = 10
                 y = 16
-            elif (combosizes.get()=="machine_wideroom 20x16" or combosizes.get()=="feeling 20x16"):
+            elif (
+                combosizes.get() == "machine_wideroom 20x16"
+                or combosizes.get() == "feeling 20x16"
+            ):
                 x = 20
                 y = 16
-            elif (combosizes.get()=="ghistroom 5x5" or combosizes.get()=="cache 5x5"):
+            elif combosizes.get() == "ghistroom 5x5" or combosizes.get() == "cache 5x5":
                 x = 5
                 y = 5
-            elif (combosizes.get()=="chunk_ground 5x3" or combosizes.get()=="chunk_air 5x3"):
+            elif (
+                combosizes.get() == "chunk_ground 5x3"
+                or combosizes.get() == "chunk_air 5x3"
+            ):
                 x = 5
                 y = 3
-            elif (combosizes.get()=="chunk_door 6x3"):
+            elif combosizes.get() == "chunk_door 6x3":
                 x = 6
                 y = 3
 
-            for i in range(y): # for each row
+            for i in range(y):  # for each row
                 row = ""
-                for ii in range(x): # foreach collumn
-                    row+="0"
+                for ii in range(x):  # foreach collumn
+                    row += "0"
                 new_room_data.append(row)
 
-            self.insert(
-                parent, "end", text="new room", values=new_room_data)
+            self.insert(parent, "end", text="new room", values=new_room_data)
             win.destroy()
 
         ok_button = tk.Button(win, text="Add")
@@ -2395,7 +2837,10 @@ class LevelsTree(ttk.Treeview):
             # Set up window
             win = tk.Toplevel()
             win.title("Edit Name")
-            win.attributes("-toolwindow", True)
+            if "nt" in os.name:
+                win.attributes("-toolwindow", True)
+            else:
+                win.attributes("-alpha", True)
             self.center(win)
 
             item_name = ""
@@ -2406,7 +2851,7 @@ class LevelsTree(ttk.Treeview):
             col1_ent = tk.Entry(win)
             col1_ent.insert(0, item_name)  # Default to rooms current name
             col1_lbl.grid(row=0, column=0)
-            col1_ent.grid(row=0, column=1, columnspan = 3)
+            col1_ent.grid(row=0, column=1, columnspan=3)
 
             def update_then_destroy():
                 if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
@@ -2421,7 +2866,7 @@ class LevelsTree(ttk.Treeview):
             cancel_button.grid(row=1, column=2)
 
     def confirm_entry(self, entry1, parent, room_data):
-        if entry1!="":
+        if entry1 != "":
             # Grab the current index in the tree
             current_index = self.index(self.focus())
 
@@ -2429,12 +2874,10 @@ class LevelsTree(ttk.Treeview):
             self.delete(self.focus())
 
             # Put it back in with the upated values
-            self.insert(
-                parent, current_index, text=entry1, values=room_data)
+            self.insert(parent, current_index, text=entry1, values=room_data)
             return True
         else:
             return False
-
 
     def center(self, toplevel):
         toplevel.update_idletasks()
@@ -2469,7 +2912,7 @@ class RulesTree(ttk.Treeview):
 
     def popup(self, event):
         try:
-            if len(self.selection())==1:
+            if len(self.selection()) == 1:
                 self.popup_menu.tk_popup(event.x_root, event.y_root, 0)
             else:
                 self.popup_menu_parent.tk_popup(event.x_root, event.y_root, 0)
@@ -2486,7 +2929,7 @@ class RulesTree(ttk.Treeview):
             item_iid = self.selection()[0]
             self.delete(item_iid)
             self.levels_tab.save_needed = True
-            self.levels_tab.button_save["state"]=tk.NORMAL
+            self.levels_tab.button_save["state"] = tk.NORMAL
 
     def add(self):
         edited = self.insert(
@@ -2495,5 +2938,5 @@ class RulesTree(ttk.Treeview):
             values=["COMMENT", "VAL", "// COMMENT"],
         )
         self.levels_tab.save_needed = True
-        self.levels_tab.button_save["state"]=tk.NORMAL
+        self.levels_tab.button_save["state"] = tk.NORMAL
         # self.selection_set(0, 'end')

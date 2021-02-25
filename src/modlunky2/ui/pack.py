@@ -43,11 +43,13 @@ def pack_assets(_call, install_dir, packs):
         logger.info("Hashing %s", dest_exe)
         dest_md5 = md5sum_path(dest_exe)
         if src_md5 != dest_md5:
-            logger.critical((
-                "%s appears to be a new version. You need to extract before packing again."
-            ), dest_exe)
+            logger.critical(
+                (
+                    "%s appears to be a new version. You need to extract before packing again."
+                ),
+                dest_exe,
+            )
             return
-
 
     shutil.copy2(source_exe, dest_exe)
 
@@ -78,7 +80,9 @@ class PackTab(Tab):
         self.config = config
         self.task_manager = task_manager
         self.task_manager.register_task(
-            "pack_assets", pack_assets, True,
+            "pack_assets",
+            pack_assets,
+            True,
             on_complete="pack_finished",
         )
         self.task_manager.register_handler("pack_finished", self.pack_finished)
@@ -88,7 +92,6 @@ class PackTab(Tab):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
-
 
         self.frame = ScrollableFrame(self, text="Select mods to pack")
         self.frame.grid(row=0, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
@@ -103,7 +106,9 @@ class PackTab(Tab):
         self.button_restore.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_restore, "Restore EXE to vanilla state from backup.")
 
-        self.button_validate = ttk.Button(self, text="Validate Game Files", command=self.validate)
+        self.button_validate = ttk.Button(
+            self, text="Validate Game Files", command=self.validate
+        )
         self.button_validate.grid(row=1, column=2, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_validate, "Redownload vanilla EXE from steam.")
 
@@ -146,14 +151,17 @@ class PackTab(Tab):
         self.button_pack["state"] = tk.DISABLED
         self.button_restore["state"] = tk.DISABLED
         self.button_validate["state"] = tk.DISABLED
-        self.task_manager.call("pack_assets", install_dir=self.config.install_dir, packs=packs)
-
+        self.task_manager.call(
+            "pack_assets", install_dir=self.config.install_dir, packs=packs
+        )
 
     def get_packs(self):
         pack_dirs = []
         overrides_dir = self.config.install_dir / "Mods" / "Overrides"
         if overrides_dir.exists():
-            pack_dirs.append(overrides_dir.relative_to(self.config.install_dir / "Mods"))
+            pack_dirs.append(
+                overrides_dir.relative_to(self.config.install_dir / "Mods")
+            )
 
         packs_dir = self.config.install_dir / "Mods" / "Packs"
         if packs_dir.exists():

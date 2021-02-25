@@ -27,6 +27,7 @@ __all__ = [
     "EggplantBiome",
 ]
 
+
 class SurfaceBiome(AbstractBiome):
     biome_name = "surface"
     floor_name = "surface"
@@ -34,6 +35,7 @@ class SurfaceBiome(AbstractBiome):
     _floor_sheet_class = SurfaceFloorSheet
     _floorstyled_sheet_class = WoodStyledFloorSheet
     _deco_sheet_class = SurfaceDecoSheet
+
 
 class CaveBiome(AbstractBiome):
     biome_name = "cave"
@@ -43,6 +45,7 @@ class CaveBiome(AbstractBiome):
     _floorstyled_sheet_class = WoodStyledFloorSheet
     _deco_sheet_class = CaveDecoSheet
 
+
 class VolcanaBiome(AbstractBiome):
     biome_name = "volcano"
     floor_name = "volcano"
@@ -50,6 +53,7 @@ class VolcanaBiome(AbstractBiome):
     _floor_sheet_class = VolcanaFloorSheet
     _floorstyled_sheet_class = VladStyledFloorSheet
     _deco_sheet_class = VolcanaDecoSheet
+
 
 class JungleBiome(AbstractBiome):
     biome_name = "jungle"
@@ -59,6 +63,7 @@ class JungleBiome(AbstractBiome):
     _floorstyled_sheet_class = StonedStyledFloorSheet
     _deco_sheet_class = JungleDecoSheet
 
+
 class OlmecBiome(AbstractBiome):
     biome_name = "olmec"
     floor_name = "jungle"
@@ -66,6 +71,7 @@ class OlmecBiome(AbstractBiome):
     _floor_sheet_class = JungleFloorSheet
     _floorstyled_sheet_class = StonedStyledFloorSheet
     _deco_sheet_class = JungleDecoSheet
+
 
 class TidePoolBiome(AbstractBiome):
     biome_name = "tidepool"
@@ -75,6 +81,7 @@ class TidePoolBiome(AbstractBiome):
     _floorstyled_sheet_class = PagodaStyledFloorSheet
     _deco_sheet_class = TidePoolDecoSheet
 
+
 class TempleBiome(AbstractBiome):
     biome_name = "temple"
     floor_name = "temple"
@@ -82,6 +89,7 @@ class TempleBiome(AbstractBiome):
     _floor_sheet_class = TempleFloorSheet
     _floorstyled_sheet_class = TempleStyledFloorSheet
     _deco_sheet_class = TempleDecoSheet
+
 
 class DuatBiome(AbstractBiome):
     biome_name = "duat"
@@ -91,6 +99,7 @@ class DuatBiome(AbstractBiome):
     _floorstyled_sheet_class = DuatStyledFloorSheet
     _deco_sheet_class = TempleDecoSheet
 
+
 class GoldBiome(AbstractBiome):
     biome_name = "gold"
     floor_name = "temple"
@@ -98,6 +107,7 @@ class GoldBiome(AbstractBiome):
     _floor_sheet_class = TempleFloorSheet
     _floorstyled_sheet_class = GoldStyledFloorSheet
     _deco_sheet_class = TempleDecoSheet
+
 
 class BeeBiome(AbstractBiome):
     biome_name = "beehive"
@@ -107,6 +117,7 @@ class BeeBiome(AbstractBiome):
     _floorstyled_sheet_class = HiveStyledFloorSheet
     _deco_sheet_class = JungleDecoSheet
 
+
 class IceCavesBiome(AbstractBiome):
     biome_name = "ice"
     floor_name = "ice"
@@ -114,6 +125,7 @@ class IceCavesBiome(AbstractBiome):
     _floor_sheet_class = IceCavesFloorSheet
     _floorstyled_sheet_class = MothershipStyledFloorSheet
     _deco_sheet_class = IceCavesDecoSheet
+
 
 class BabylonBiome(AbstractBiome):
     biome_name = "babylon"
@@ -123,6 +135,7 @@ class BabylonBiome(AbstractBiome):
     _floorstyled_sheet_class = BabylonStyledFloorSheet
     _deco_sheet_class = BabylonDecoSheet
 
+
 class PalaceBiome(AbstractBiome):
     biome_name = "palace"
     floor_name = "palace"
@@ -130,6 +143,7 @@ class PalaceBiome(AbstractBiome):
     _floor_sheet_class = BabylonFloorSheet
     _floorstyled_sheet_class = PalaceStyledFloorSheet
     _deco_sheet_class = BabylonDecoSheet
+
 
 class SunkenCityBiome(AbstractBiome):
     biome_name = "sunken"
@@ -139,6 +153,7 @@ class SunkenCityBiome(AbstractBiome):
     _floorstyled_sheet_class = SunkenCityStyledFloorSheet
     _deco_sheet_class = SunkenCityDecoSheet
 
+
 class GutsBiome(AbstractBiome):
     biome_name = "guts"
     floor_name = "guts"
@@ -146,6 +161,7 @@ class GutsBiome(AbstractBiome):
     _floor_sheet_class = SunkenCityFloorSheet
     _floorstyled_sheet_class = GutsStyledFloorSheet
     _deco_sheet_class = SunkenCityDecoSheet
+
 
 class EggplantBiome(AbstractBiome):
     biome_name = "eggplant"

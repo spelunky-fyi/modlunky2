@@ -54,8 +54,8 @@ class ToolTip:
         self.widget = widget
         self.text = text
 
-        self.widget.bind('<Enter>', self.on_enter)
-        self.widget.bind('<Leave>', self.on_leave)
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.on_leave)
 
         self.tooltip = None
         self.label = None
@@ -63,9 +63,9 @@ class ToolTip:
     def on_enter(self, event):
         self.tooltip = tk.Toplevel()
         self.tooltip.overrideredirect(True)
-        self.tooltip.geometry(f'+{event.x_root+15}+{event.y_root+10}')
+        self.tooltip.geometry(f"+{event.x_root+15}+{event.y_root+10}")
 
-        self.label = tk.Label(self.tooltip,text=self.text)
+        self.label = tk.Label(self.tooltip, text=self.text)
         self.label.pack()
 
     def on_leave(self, _event):

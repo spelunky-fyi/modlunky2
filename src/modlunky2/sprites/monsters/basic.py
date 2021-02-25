@@ -52,6 +52,7 @@ class Basic3(BaseSpriteLoader):
         "yang": (0, 14, 1, 15),
     }
 
+
 class Monsters01(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters01.png")
     _chunk_size = 128
@@ -61,8 +62,9 @@ class Monsters01(BaseSpriteLoader):
         "witchdoctor": (0, 6, 1, 7),
         "mantrap": (0, 8, 1, 9),
         "tikiman": (0, 9, 1, 10),
-        "mosquito": (14, 0, 15, 1)
+        "mosquito": (14, 0, 15, 1),
     }
+
 
 class Monsters02(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters02.png")
@@ -70,13 +72,14 @@ class Monsters02(BaseSpriteLoader):
     _chunk_map = {
         "jiangshi": (0, 0, 1, 1),
         "octopus": (0, 2, 1, 3),
-        #"asfsafd": (0, 6, 1, 7),
+        # "asfsafd": (0, 6, 1, 7),
         "hermitcrab": (11, 5, 12, 6),
         "crocman": (0, 8, 1, 9),
         "sorceress": (0, 10, 1, 11),
         "catmummy": (0, 11, 1, 12),
-        "necromancer": (0, 12, 1, 13)
+        "necromancer": (0, 12, 1, 13),
     }
+
 
 class Monsters03(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters03.png")

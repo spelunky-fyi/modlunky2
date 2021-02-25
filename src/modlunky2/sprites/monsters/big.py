@@ -66,26 +66,23 @@ class Big6(BaseSpriteLoader):
         "humphead": (0, 14, 4, 16),
     }
 
+
 class OsirisAndAlienQueen(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters_osiris.png")
     _chunk_size = 128
-    _chunk_map = {
-    "osiris": (0, 0, 5, 7),
-    "alienqueen": (0, 13, 3, 16)
-    }
+    _chunk_map = {"osiris": (0, 0, 5, 7), "alienqueen": (0, 13, 3, 16)}
+
 
 class OlmecAndMech(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters_olmec.png")
     _chunk_size = 128
     _chunk_map = {
-    "olmec": (0, 0, 4, 4),
-    "empty_mech": (10, 5, 12, 7),
+        "olmec": (0, 0, 4, 4),
+        "empty_mech": (10, 5, 12, 7),
     }
+
 
 class Yama(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters_yama.png")
     _chunk_size = 128
-    _chunk_map = {
-    "yama": (0, 0, 7, 11),
-    "empress_grave": (8, 6, 10, 12)
-    }
+    _chunk_map = {"yama": (0, 0, 7, 11), "empress_grave": (8, 6, 10, 12)}

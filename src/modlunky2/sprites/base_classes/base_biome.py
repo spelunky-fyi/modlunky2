@@ -57,7 +57,7 @@ class AbstractBiome(ABC):
         self._deco_sheet = self._deco_sheet_class(base_path)
         try:
             self._bg = Image.open(base_path / f"Data/Textures/bg_{self.floor_name}.png")
-        except:
+        except Exception:
             self._bg = Image.open(base_path / f"Data/Textures/bg_cave.png")
         self._image_cache = {}
         self._sheet_map = self._make_sheet_map()

@@ -26,24 +26,35 @@ class ConfigTab(Tab):
 
         install_dir_frame = ttk.LabelFrame(config_frame, text="Install Directory")
         install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="n")
-        ToolTip(install_dir_frame, (
-            "The directory where Spelunky 2 is installed."
-        ))
+        ToolTip(install_dir_frame, ("The directory where Spelunky 2 is installed."))
 
         self.install_dir_var = tk.StringVar(value=self.config.config_file.install_dir)
-        install_dir_entry = ttk.Entry(install_dir_frame, textvariable=self.install_dir_var, state=tk.DISABLED, width=80)
+        install_dir_entry = ttk.Entry(
+            install_dir_frame,
+            textvariable=self.install_dir_var,
+            state=tk.DISABLED,
+            width=80,
+        )
         install_dir_entry.columnconfigure(0, weight=1)
         install_dir_entry.columnconfigure(1, weight=1)
         install_dir_entry.columnconfigure(2, weight=1)
-        install_dir_entry.grid(row=0, column=0, padx=10, pady=10, columnspan=3, sticky="n")
+        install_dir_entry.grid(
+            row=0, column=0, padx=10, pady=10, columnspan=3, sticky="n"
+        )
 
-        install_dir_browse = ttk.Button(install_dir_frame, text="Browse", command=self.browse_install_dir)
+        install_dir_browse = ttk.Button(
+            install_dir_frame, text="Browse", command=self.browse_install_dir
+        )
         install_dir_browse.grid(row=1, column=0, pady=5, padx=5, sticky="nsew")
 
-        install_dir_lucky = ttk.Button(install_dir_frame, text="I'm Feeling Lucky", command=self.feeling_lucky)
+        install_dir_lucky = ttk.Button(
+            install_dir_frame, text="I'm Feeling Lucky", command=self.feeling_lucky
+        )
         install_dir_lucky.grid(row=1, column=1, pady=5, padx=5, sticky="nsew")
 
-        install_dir_clear = ttk.Button(install_dir_frame, text="Clear", command=self.clear_install_dir)
+        install_dir_clear = ttk.Button(
+            install_dir_frame, text="Clear", command=self.clear_install_dir
+        )
         install_dir_clear.grid(row=1, column=2, pady=5, padx=5, sticky="nsew")
 
     def browse_install_dir(self):

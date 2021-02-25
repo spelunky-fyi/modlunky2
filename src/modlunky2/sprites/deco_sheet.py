@@ -33,9 +33,7 @@ class VolcanaDecoSheet(AbstractDecoSheet):
 class JungleDecoSheet(AbstractDecoSheet):
     biome_name = "jungle"
     _chunk_size = 128
-    _chunk_map = {
-        "stone_door": (0, 5, 3, 7)
-    }
+    _chunk_map = {"stone_door": (0, 5, 3, 7)}
 
 
 class TidePoolDecoSheet(AbstractDecoSheet):
@@ -55,7 +53,7 @@ class IceCavesDecoSheet(AbstractDecoSheet):
     _chunk_size = 128
     _chunk_map = {
         "moai_statue": (0, 7, 4, 12),
-        }
+    }
 
 
 class BabylonDecoSheet(AbstractDecoSheet):
@@ -69,7 +67,7 @@ class SunkenCityDecoSheet(AbstractDecoSheet):
     _chunk_size = 128
     _chunk_map = {
         "mother_statue": (0, 5, 2, 11),
-        }
+    }
 
 
 class EggplantDecoSheet(AbstractDecoSheet):
@@ -95,4 +93,4 @@ class SurfaceDecoSheet(AbstractDecoSheet):
         "dog_sign": (12, 10, 14, 12),
         "shortcut_station_banner": (10, 8, 12, 12),
         "telescope": (12, 8, 14, 10),
-        }
+    }
