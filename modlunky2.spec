@@ -8,7 +8,6 @@ a = Analysis(
     pathex=["."],
     binaries=[],
     datas=[
-        ("src/modlunky2/tilecodes.txt", "."),
         ("src/modlunky2/VERSION", "."),
         ("src/modlunky2/static", "static"),
         ("dist/libogg.dll", "."),

@@ -1,22 +1,35 @@
+# pylint: disable=too-many-lines
+
 import logging
 import os
 import os.path
-import random
 import tkinter as tk
-import tkinter.font as font
 import tkinter.messagebox as tkMessageBox
-from tkinter import filedialog, ttk, Widget
+from tkinter import filedialog, ttk
 import tempfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageTk
+from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableFrame, Tab
 from modlunky2.sprites import SpelunkySpriteFetcher
-
 from modlunky2.levels import LevelFile
 from modlunky2.levels.tile_codes import VALID_TILE_CODES
+from modlunky2.sprites.tilecode_extras import TILENAMES
+from modlunky2.levels.level_chances import LevelChances, LevelChance
+from modlunky2.levels.level_settings import LevelSettings, LevelSetting
+from modlunky2.levels.level_templates import (
+    LevelTemplates,
+    LevelTemplate,
+)
+from modlunky2.levels.monster_chances import (
+    MonsterChances,
+    MonsterChance,
+)
+from modlunky2.levels.tile_codes import TileCodes, TileCode
+from modlunky2.levels.level_templates import TemplateSetting, Chunk
+
 
 logger = logging.getLogger("modlunky2")
 
@@ -27,7 +40,7 @@ class LevelsTab(Tab):
 
     def __init__(
         self, tab_control, config, *args, **kwargs
-    ):  # Loads editor start screen ##############################################################################################
+    ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
         self.tree_levels = LevelsTree(self, self)
         self.last_selected_room = None
@@ -69,6 +82,28 @@ class LevelsTab(Tab):
         )
         self.welcome_label.grid(row=0, column=0, sticky="nswe", ipady=30, padx=(10, 10))
 
+        # Init Attributes
+        self.lvls_path = None
+        self.save_needed = False
+        self.last_selected_file = None
+        self.cur_lvl_bg_path = None
+        self.im_output = None
+        self.lvl_bg = None
+        self.lvl_bg_path = None
+        self.lvl_bgbg = None
+        self.lvl_bgbg_path = None
+        self.rows = None
+        self.cols = None
+        self.tiles = None
+        self.tiles_meta = None
+        self.usable_codes_string = None
+        self.usable_codes = None
+        self.im_output_dual = None
+        self.tile_pallete_ref_in_use = None
+        self.lvl = None
+        self.lvl_biome = None
+        self.node = None
+
         def select_lvl_folder():
             dirname = filedialog.askdirectory(
                 parent=self, initialdir="/", title="Please select a directory"
@@ -109,9 +144,8 @@ class LevelsTab(Tab):
             self.install_dir / "Mods/Extracted"
         )
 
-    def load_editor(
-        self,
-    ):  # Run when start screen option is selected ############################################### Loads Editor UI ###############################################
+    # Run when start screen option is selected
+    def load_editor(self):
         self.save_needed = False
         self.last_selected_file = None
         self.tiles = None
@@ -170,9 +204,8 @@ class LevelsTab(Tab):
         self.button_save.grid(row=2, column=0, sticky="nswe")
         self.button_save["state"] = tk.DISABLED
 
-        self.tab_control.add(  # Rules Tab ######################################################################################################
-            self.tab1, text="Rules"
-        )
+        # Rules Tab
+        self.tab_control.add(self.tab1, text="Rules")
 
         self.tab1.columnconfigure(0, weight=1)  # Column 1 = Everything Else
         self.tab1.rowconfigure(0, weight=1)  # Row 0 = List box / Label
@@ -245,9 +278,8 @@ class LevelsTab(Tab):
         self.tree_chances_monsters.grid(row=2, column=0, sticky="nwse")
         self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
 
-        self.tab_control.add(  # Level Editor Tab ###############################################################################################
-            self.tab2, text="Level Editor"
-        )
+        # Level Editor Tab
+        self.tab_control.add(self.tab2, text="Level Editor")
         self.tab2.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.tab2.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
@@ -337,10 +369,10 @@ class LevelsTab(Tab):
         self.canvas_grids.config(
             xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set
         )
-        x0 = self.canvas_grids.winfo_screenwidth() / 2
-        y0 = self.canvas_grids.winfo_screenheight() / 2
+        x_origin = self.canvas_grids.winfo_screenwidth() / 2
+        y_origin = self.canvas_grids.winfo_screenheight() / 2
         self.canvas_grids.create_window(
-            (x0, y0), window=self.scrollable_canvas_frame, anchor="center"
+            (x_origin, y_origin), window=self.scrollable_canvas_frame, anchor="center"
         )
         self.canvas_grids.bind("<Enter>", self._bind_to_mousewheel)
         self.canvas_grids.bind("<Leave>", self._unbind_from_mousewheel)
@@ -366,21 +398,25 @@ class LevelsTab(Tab):
         self.canvas_dual.grid_remove()  # hides it for now
         self.dual_mode = False
 
-        self.tile_pallete = ScrollableFrame(  # the tile palletes are loaded into here as buttons with their image as a tile and txt as their value to grab when needed
-            self.tab2, text="Tile Pallete", width=50
-        )
+        # the tile palletes are loaded into here as buttons with their image
+        # as a tile and txt as their value to grab when needed
+        self.tile_pallete = ScrollableFrame(self.tab2, text="Tile Pallete", width=50)
         self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=3, sticky="swne")
         self.tile_pallete.scrollable_frame["width"] = 50
 
+        # shows selected tile. Important because this is used for more than just user
+        # convenience; we can grab the currently used tile here
         self.tile_label = tk.Label(
             self.tab2,
             text="Primary Tile:",
-        )  # shows selected tile. Important because this is used for more than just user convenience; we can grab the currently used tile here
+        )
         self.tile_label.grid(row=0, column=10, columnspan=1, sticky="we")
+        # shows selected tile. Important because this is used for more than just user
+        # convenience; we can grab the currently used tile here
         self.tile_label_secondary = tk.Label(
             self.tab2,
             text="Secondary Tile:",
-        )  # shows selected tile. Important because this is used for more than just user convenience; we can grab the currently used tile here
+        )
         self.tile_label_secondary.grid(row=1, column=10, columnspan=1, sticky="we")
 
         self.button_tilecode_del = tk.Button(
@@ -460,7 +496,7 @@ class LevelsTab(Tab):
             var=self.var_ignore,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_ignore.grid(row=4, column=1, sticky="w")
         self.checkbox_flip = ttk.Checkbutton(
@@ -469,7 +505,7 @@ class LevelsTab(Tab):
             var=self.var_flip,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_flip.grid(row=4, column=2, sticky="w")
         self.checkbox_only_flip = ttk.Checkbutton(
@@ -478,7 +514,7 @@ class LevelsTab(Tab):
             var=self.var_only_flip,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_only_flip.grid(row=4, column=3, sticky="w")
         self.checkbox_rare = ttk.Checkbutton(
@@ -487,7 +523,7 @@ class LevelsTab(Tab):
             var=self.var_rare,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_rare.grid(row=4, column=5, sticky="w")
         self.checkbox_hard = ttk.Checkbutton(
@@ -496,7 +532,7 @@ class LevelsTab(Tab):
             var=self.var_hard,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_hard.grid(row=4, column=6, sticky="w")
         self.checkbox_liquid = ttk.Checkbutton(
@@ -505,7 +541,7 @@ class LevelsTab(Tab):
             var=self.var_liquid,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_liquid.grid(row=4, column=4, sticky="w")
         self.checkbox_purge = ttk.Checkbutton(
@@ -514,7 +550,7 @@ class LevelsTab(Tab):
             var=self.var_purge,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.remember_changes(),
+            command=self.remember_changes,
         )
         self.checkbox_purge.grid(row=4, column=7, sticky="w")
         self.checkbox_dual = ttk.Checkbutton(
@@ -523,18 +559,13 @@ class LevelsTab(Tab):
             var=self.var_dual,
             onvalue=1,
             offvalue=0,
-            command=lambda: self.dual_toggle(self),
+            command=self.dual_toggle,
         )
         self.checkbox_dual.grid(row=4, column=8, sticky="w")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
-        file_tile_codes = BASE_DIR / "tilecodes.txt"
-        tile_lines = file_tile_codes.read_text(encoding="utf8").splitlines()
-        count = 0
-        count_total = 0
-        x = 99
-        y = 0
+
         # color_base = int(random.random())
         self.uni_tile_code_list = []
         self.tile_pallete_ref = []
@@ -768,7 +799,7 @@ class LevelsTab(Tab):
             self.canvas_grids.unbind_all("<Button-5>")
 
     def tile_pick(
-        self, event, button_row, button_col
+        self, _event, button_row, button_col
     ):  # When a tile is selected from the tile pallete
         selected_tile = self.tile_pallete.scrollable_frame.grid_slaves(
             button_row, button_col
@@ -777,7 +808,7 @@ class LevelsTab(Tab):
         self.tile_label["text"] = "Primary Tile: " + selected_tile["text"]
 
     def tile_pick_secondary(
-        self, event, button_row, button_col
+        self, _event, button_row, button_col
     ):  # When a tile is selected from the tile pallete
         selected_tile = self.tile_pallete.scrollable_frame.grid_slaves(
             button_row, button_col
@@ -791,7 +822,7 @@ class LevelsTab(Tab):
             codes += str(code)
         print(str(len(self.usable_codes)) + " codes left (" + codes + ")")
 
-    def dual_toggle(event, self):
+    def dual_toggle(self, _event):
         item_iid = self.tree_levels.selection()[0]
         parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
         if parent_iid:
@@ -800,17 +831,17 @@ class LevelsTab(Tab):
             new_room_data = []
 
             tags = []
-            tags.append("\!ignore")
-            tags.append("\!flip")
-            tags.append("\!onlyflip")
-            tags.append("\!dual")
-            tags.append("\!rare")
-            tags.append("\!hard")
-            tags.append("\!liquid")
-            tags.append("\!purge")
+            tags.append(r"\!ignore")
+            tags.append(r"\!flip")
+            tags.append(r"\!onlyflip")
+            tags.append(r"\!dual")
+            tags.append(r"\!rare")
+            tags.append(r"\!hard")
+            tags.append(r"\!liquid")
+            tags.append(r"\!purge")
 
             if self.var_dual.get() == 1:  # converts room into dual
-                new_room_data.append("\!dual")
+                new_room_data.append(r"\!dual")
                 for row in room_rows:
                     tag_row = False
                     new_row = ""
@@ -819,7 +850,7 @@ class LevelsTab(Tab):
                             tag_row = True
                     if not tag_row:
                         new_row = row + " "
-                        for char in row:
+                        for _char in row:
                             new_row += "0"
                         new_room_data.append(str(new_row))
                     else:
@@ -840,7 +871,7 @@ class LevelsTab(Tab):
                         if not tag_row:
                             new_row = str(row).split(" ", 2)[0]
                         else:
-                            if not row.startswith("\!dual"):
+                            if not row.startswith(r"\!dual"):
                                 new_row = row
                         if new_row != "":
                             new_room_data.append(str(new_row))
@@ -860,29 +891,15 @@ class LevelsTab(Tab):
     def save_changes(self):
         if self.save_needed:
             try:
-
-                from modlunky2.levels.level_chances import LevelChances, LevelChance
-                from modlunky2.levels.level_settings import LevelSettings, LevelSetting
-                from modlunky2.levels.level_templates import (
-                    LevelTemplates,
-                    LevelTemplate,
-                )
-                from modlunky2.levels.monster_chances import (
-                    MonsterChances,
-                    MonsterChance,
-                )
-                from modlunky2.levels.tile_codes import TileCodes, TileCode
-                from modlunky2.levels.level_templates import TemplateSetting, Chunk
-
                 tags = []
-                tags.append("\!ignore")
-                tags.append("\!flip")
-                tags.append("\!onlyflip")
-                tags.append("\!dual")
-                tags.append("\!rare")
-                tags.append("\!hard")
-                tags.append("\!liquid")
-                tags.append("\!purge")
+                tags.append(r"\!ignore")
+                tags.append(r"\!flip")
+                tags.append(r"\!onlyflip")
+                tags.append(r"\!dual")
+                tags.append(r"\!rare")
+                tags.append(r"\!hard")
+                tags.append(r"\!liquid")
+                tags.append(r"\!purge")
                 tile_codes = TileCodes()
                 level_chances = LevelChances()
                 level_settings = LevelSettings()
@@ -985,9 +1002,7 @@ class LevelsTab(Tab):
                                 room_foreground.append(row)
                                 if back_row != []:
                                     room_background.append(back_row)
-                                # print(str(room_foreground))
-                                # print(str(room_background))
-                        # print(str(Chunk(comment=room_name, settings= room_settings, foreground = room_foreground, background = room_background)))
+
                         template_chunks.append(
                             Chunk(
                                 comment=room_name,
@@ -1032,13 +1047,13 @@ class LevelsTab(Tab):
                             self.tree_files.item(self.last_selected_file, option="text")
                         )
                     )
-                with Path(path).open("w", encoding="cp1252") as fh:
-                    level_file.write(fh)
+                with Path(path).open("w", encoding="cp1252") as handle:
+                    level_file.write(handle)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 print("Saved")
-            except:
-                msg_box = tk.messagebox.showerror(
+            except Exception:  # pylint: disable=broad-except
+                _msg_box = tk.messagebox.showerror(
                     "Continue?",
                     "Error saving..",
                 )
@@ -1057,35 +1072,35 @@ class LevelsTab(Tab):
                 if int(self.var_dual.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!dual"
+                    new_room_data += r"\!dual"
                 if int(self.var_purge.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!purge"
+                    new_room_data += r"\!purge"
                 if int(self.var_flip.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!flip"
+                    new_room_data += r"\!flip"
                 if int(self.var_only_flip.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!onlyflip"
+                    new_room_data += r"\!onlyflip"
                 if int(self.var_rare.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!rare"
+                    new_room_data += r"\!rare"
                 if int(self.var_hard.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!hard"
+                    new_room_data += r"\!hard"
                 if int(self.var_liquid.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!liquid"
+                    new_room_data += r"\!liquid"
                 if int(self.var_ignore.get()) == 1:
                     if new_room_data != "":
                         new_room_data += "\n"
-                    new_room_data += "\!ignore"
+                    new_room_data += r"\!ignore"
 
                 for row in self.tiles_meta:
                     if new_room_data != "":
@@ -1113,7 +1128,7 @@ class LevelsTab(Tab):
                 print("Changes remembered!")
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
-        except:
+        except Exception:  # pylint: disable=broad-except
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
             self.canvas.grid_remove()
@@ -1170,15 +1185,10 @@ class LevelsTab(Tab):
             print(
                 str(tile_code) + " is now available for use"
             )  # adds tilecode back to list to be reused
-            ii = 0
             for id_ in self.tile_pallete_ref_in_use:
-                if str(tile_id) == str(
-                    id_[0].split(" ", 2)[0]
-                ):  # removes tilecode from list in use
-                    # self.usable_codes.pop(ii)
+                if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
                     print("Deleted " + str(tile_id))
-                ii = ii + 1
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -1253,15 +1263,10 @@ class LevelsTab(Tab):
             print(
                 str(tile_code) + " is now available for use"
             )  # adds tilecode back to list to be reused
-            ii = 0
             for id_ in self.tile_pallete_ref_in_use:
-                if str(tile_id) == str(
-                    id_[0].split(" ", 2)[0]
-                ):  # removes tilecode from list in use
-                    # self.usable_codes.pop(ii)
+                if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
                     print("Deleted " + str(tile_id))
-                ii = ii + 1
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -1303,23 +1308,21 @@ class LevelsTab(Tab):
                 new_tile_code += "%" + alt_tile
 
         tile_image = ImageTk.PhotoImage(
-            self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self)
+            self.get_texture(new_tile_code, self.lvl_biome, self.lvl)
         )
 
         if any(
-            str(new_tile_code + " ") in str(self.g[0].split(" ", 3)[0]) + " "
-            for self.g in self.tile_pallete_ref_in_use
+            str(new_tile_code + " ") in str(g[0].split(" ", 3)[0]) + " "
+            for g in self.tile_pallete_ref_in_use
         ):  # compares tile id to tile ids in pallete list
             tkMessageBox.showinfo("Uh Oh!", "You already have that!")
             return
 
         if len(self.usable_codes) > 0:
             usable_code = self.usable_codes[0]
-            i = 0
-            for ii in self.usable_codes:
-                if ii == usable_code:
-                    self.usable_codes.remove(ii)
-                i = i + 1
+            for code in self.usable_codes:
+                if code == usable_code:
+                    self.usable_codes.remove(code)
         else:
             tkMessageBox.showinfo(
                 "Uh Oh!", "You've reached the tilecode limit; delete some to add more"
@@ -1328,7 +1331,7 @@ class LevelsTab(Tab):
 
         count_row = 0
         count_col = 0
-        for i in self.tile_pallete_ref_in_use:
+        for _ in self.tile_pallete_ref_in_use:
             if count_col == 7:
                 count_col = -1
                 count_row = count_row + 1
@@ -1460,10 +1463,10 @@ class LevelsTab(Tab):
         screen_height = int(self.screen_height)
 
         size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
-        x = screen_width / 2 - size[0] / 2
-        y = screen_height / 2 - size[1] / 2
+        x_coord = screen_width / 2 - size[0] / 2
+        y_coord = screen_height / 2 - size[1] / 2
 
-        toplevel.geometry("+%d+%d" % (x, y))
+        toplevel.geometry("+%d+%d" % (x_coord, y_coord))
 
     def populate_tilecode_pallete(self):
         for (
@@ -1701,44 +1704,44 @@ class LevelsTab(Tab):
                         if str(char) == " ":
                             self.dual_mode = True
 
-            if "\!dual" in current_settings:
+            if r"\!dual" in current_settings:
                 self.dual_mode = True
                 self.var_dual.set(1)
             else:
                 self.dual_mode = False
                 self.var_dual.set(0)
 
-            if "\!flip" in current_settings:
+            if r"\!flip" in current_settings:
                 self.var_flip.set(1)
             else:
                 self.var_flip.set(0)
 
-            if "\!purge" in current_settings:
+            if r"\!purge" in current_settings:
                 self.var_purge.set(1)
             else:
                 self.var_purge.set(0)
 
-            if "\!onlyflip" in current_settings:
+            if r"\!onlyflip" in current_settings:
                 self.var_only_flip.set(1)
             else:
                 self.var_only_flip.set(0)
 
-            if "\!ignore" in current_settings:
+            if r"\!ignore" in current_settings:
                 self.var_ignore.set(1)
             else:
                 self.var_ignore.set(0)
 
-            if "\!rare" in current_settings:
+            if r"\!rare" in current_settings:
                 self.var_rare.set(1)
             else:
                 self.var_rare.set(0)
 
-            if "\!hard" in current_settings:
+            if r"\!hard" in current_settings:
                 self.var_hard.set(1)
             else:
                 self.var_hard.set(0)
 
-            if "\!liquid" in current_settings:
+            if r"\!liquid" in current_settings:
                 self.var_liquid.set(1)
             else:
                 self.var_liquid.set(0)
@@ -1787,71 +1790,76 @@ class LevelsTab(Tab):
                 for block in str(room_row):
                     if str(block) != " ":
                         tile_name = ""
-                        for pallete_block in self.tile_pallete_ref_in_use:
-                            if any(
-                                str(" " + block) in str(self.c[0])
-                                for self.c in self.tile_pallete_ref_in_use
-                            ):
-                                tile_image = self.c[1]
-                                tile_name = str(self.c[0]).split(" ", 1)[0]
+                        for _pallete_block in self.tile_pallete_ref_in_use:
+                            tiles = [
+                                c
+                                for c in self.tile_pallete_ref_in_use
+                                if str(" " + block) in str(c[0])
+                            ]
+                            if tiles:
+                                tile_image = tiles[-1][1]
+                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
                             else:
-                                print(
-                                    str(block) + " Not Found"
-                                )  # There's a missing tile id somehow
+                                # There's a missing tile id somehow
+                                print(str(block) + " Not Found")
                         if self.dual_mode and curcol > int((self.cols - 1) / 2):
-                            xx = int(curcol - ((self.cols - 1) / 2) - 1)
-                            x = 0
-                            y = 0
+                            x2_coord = int(curcol - ((self.cols - 1) / 2) - 1)
+                            x_coord = 0
+                            y_coord = 0
                             for tile_name_ref in self.draw_mode:
                                 if tile_name == str(tile_name_ref[0]):
-                                    x, y = self.adjust_texture_xy(
+                                    x_coord, y_coord = self.adjust_texture_xy(
                                         tile_image.width(),
                                         tile_image.height(),
                                         tile_name_ref[1],
                                     )
                             self.tiles[currow][curcol] = self.canvas_dual.create_image(
-                                xx * self.mag - x,
-                                currow * self.mag - y,
+                                x2_coord * self.mag - x_coord,
+                                currow * self.mag - y_coord,
                                 image=tile_image,
                                 anchor="nw",
                             )
-                            coords = (
-                                xx * self.mag,
+                            _coords = (
+                                x2_coord * self.mag,
                                 currow * self.mag,
-                                xx * self.mag + 50,
+                                x2_coord * self.mag + 50,
                                 currow * self.mag + 50,
                             )
                             self.tiles_meta[currow][curcol] = block
                         else:
-                            x = 0
-                            y = 0
+                            x_coord = 0
+                            y_coord = 0
                             for tile_name_ref in self.draw_mode:
                                 if tile_name == str(tile_name_ref[0]):
-                                    x, y = self.adjust_texture_xy(
+                                    x_coord, y_coord = self.adjust_texture_xy(
                                         tile_image.width(),
                                         tile_image.height(),
                                         tile_name_ref[1],
                                     )
                             self.tiles[currow][curcol] = self.canvas.create_image(
-                                curcol * self.mag - x,
-                                currow * self.mag - y,
+                                curcol * self.mag - x_coord,
+                                currow * self.mag - y_coord,
                                 image=tile_image,
                                 anchor="nw",
                             )
-                            coords = (
+                            _coords = (
                                 curcol * self.mag,
                                 currow * self.mag,
                                 curcol * self.mag + 50,
                                 currow * self.mag + 50,
                             )
                             self.tiles_meta[currow][curcol] = block
-                        # print("loaded layer col " + str(curcol) + " " + str(self.c[0]) + " out of " + str(len(str(room_row))))
 
                     curcol = curcol + 1
 
     def read_lvl_file(self, lvl):
         self.last_selected_room = None
-        self.usable_codes_string = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+        self.usable_codes_string = (
+            r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`"""
+            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
+            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
+            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
+        )
         self.usable_codes = []
         for code in self.usable_codes_string:
             self.usable_codes.append(code)
@@ -1985,7 +1993,6 @@ class LevelsTab(Tab):
                 lvl_path = self.lvls_path / lvl
 
         levels = []  # Levels to load dependancy tilecodes from
-        load_path = None
         if not lvl.startswith("base"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "generic.lvl").is_dir():
@@ -2243,6 +2250,7 @@ class LevelsTab(Tab):
                     )
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
+        level = None
         for level in levels:
             print(str(level.comment) + " loaded.")
             level_tilecodes = level.tile_codes.all()
@@ -2252,7 +2260,7 @@ class LevelsTab(Tab):
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
                 # print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
 
-                img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self)
+                img = self.get_texture(tilecode.name, self.lvl_biome, lvl)
 
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 self.panel_sel["image"] = tilecode_item[1]
@@ -2274,6 +2282,10 @@ class LevelsTab(Tab):
 
                 self.tile_pallete_ref_in_use.append(tilecode_item)
                 # print("appending " + str(tilecode_item[0]))
+
+        if level is None:
+            return
+
         if lvl.startswith(
             "generic"
         ):  # adds tilecodes to generic that it relies on yet doesn't provide
@@ -2296,7 +2308,7 @@ class LevelsTab(Tab):
                         tilecode_item = []
                         tilecode_item.append(str(need[1]) + " " + str(need[0]))
 
-                        img = self.get_texture(str(need[1]), self.lvl_biome, lvl, self)
+                        img = self.get_texture(str(need[1]), self.lvl_biome, lvl)
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
@@ -2365,7 +2377,7 @@ class LevelsTab(Tab):
                 room_string = []  # makes room data into string for storing
 
                 for setting in room.settings:
-                    room_string.append("\!" + str(setting).split(".", 1)[1].lower())
+                    room_string.append(r"\!" + str(setting).split(".", 1)[1].lower())
 
                 i = 0
                 for line in room.foreground:
@@ -2390,9 +2402,9 @@ class LevelsTab(Tab):
 
         # lines = file1.readlines()
 
-    def adjust_texture_xy(
-        event, width, height, mode
-    ):  # slight adjustments of textures for tile preview
+    @staticmethod
+    def adjust_texture_xy(width, height, mode):
+        # slight adjustments of textures for tile preview
         # 1 = lower half tile
         # 2 = draw from bottom left
         # 3 = center
@@ -2404,38 +2416,36 @@ class LevelsTab(Tab):
         # 9 = draw bottom left + raise 1 tile + move left 1 tile
         # 10 = draw bottom left + raise 1 tile + move left 1 tile
         # 11 = move left 1 tile
-        x = 0
-        y = 0
+        x_coord = 0
+        y_coord = 0
         if mode == 1:
-            y = (height * -1) / 2
+            y_coord = (height * -1) / 2
         elif mode == 2:
-            y = height / 2
+            y_coord = height / 2
         elif mode == 3:
-            x = width / 3.2
-            y = height / 2
+            x_coord = width / 3.2
+            y_coord = height / 2
         elif mode == 4:
-            x = (width * -1) / 2
+            x_coord = (width * -1) / 2
         elif mode == 5:
-            y = height / 2 + 50
+            y_coord = height / 2 + 50
         elif mode == 6:
-            x = 25
-            y = 22
+            x_coord = 25
+            y_coord = 22
         elif mode == 7:
-            y = height / 2 + 25
+            y_coord = height / 2 + 25
         elif mode == 8:
-            y = (height / 2 + 50) * -1
+            y_coord = (height / 2 + 50) * -1
         elif mode == 9:
-            y = height / 2 + 50
-            x = 75
+            y_coord = height / 2 + 50
+            x_coord = 75
         elif mode == 10:
-            y = height / 2 + 100
+            y_coord = height / 2 + 100
         elif mode == 11:
-            x = 50
-        return x, y
+            x_coord = 50
+        return x_coord, y_coord
 
-    def get_texture(event, tile, biome, lvl, self):
-        from modlunky2.sprites.tilecode_extras import TILENAMES
-
+    def get_texture(self, tile, biome, lvl):
         img = self._sprite_fetcher.get(str(tile), str(biome))
 
         if (
@@ -2593,14 +2603,15 @@ class LevelsTab(Tab):
             )  # 2.65 is the scale to get the typical 128 tile size down to the needed 50
             height = int(height / 2.65)
 
-        scale = 1
-        # if (tile == "door2" or tile == "door2_secret" or tile == "ghist_door2"): # for some reason these are sized differently then everything elses typical universal scale
+        _scale = 1
+        # for some reason these are sized differently then everything elses typical universal scale
+        # if (tile == "door2" or tile == "door2_secret" or tile == "ghist_door2"):
         #    width = int(width/2)
         #    height = int(height/2)
 
-        if (
-            width < 50 and height < 50
-        ):  # since theres rounding involved, this makes sure each tile is size correctly by making up for what was rounded off
+        # since theres rounding involved, this makes sure each tile is size
+        # correctly by making up for what was rounded off
+        if width < 50 and height < 50:
             difference = 0
             if width > height:
                 difference = 50 - width
@@ -2613,7 +2624,8 @@ class LevelsTab(Tab):
         img = img.resize((width, height), Image.ANTIALIAS)
         return img
 
-    def get_tilecode_percent_texture(event, tile, alt_tile, percent, img1, img2):
+    @staticmethod
+    def get_tilecode_percent_texture(_tile, alt_tile, percent, img1, img2):
         with tempfile.TemporaryDirectory() as tempdir:
             tempdir_path = Path(tempdir)
             temp1 = tempdir_path / "temp1.png"
@@ -2621,6 +2633,7 @@ class LevelsTab(Tab):
             # ImageTk.PhotoImage()._PhotoImage__photo.write(temp1, format="png")
 
             image1_save = ImageTk.PhotoImage(img1)
+            # pylint: disable=protected-access
             image1_save._PhotoImage__photo.write(temp1, format="png")
             image1 = Image.open(
                 temp1,
@@ -2633,6 +2646,7 @@ class LevelsTab(Tab):
                 # ImageTk.PhotoImage()._PhotoImage__photo.write(temp2, format="png")
 
                 image2_save = ImageTk.PhotoImage(img2)
+                # pylint: disable=protected-access
                 image2_save._PhotoImage__photo.write(temp2, format="png")
                 image2 = Image.open(temp2).convert("RGBA")
                 image2 = image2.resize((50, 50), Image.BILINEAR).convert("RGBA")
@@ -2647,14 +2661,14 @@ class LevelsTab(Tab):
             txt = Image.new("RGBA", (50, 50), (255, 255, 255, 0))
 
             # get a drawing context
-            d = ImageDraw.Draw(txt)
+            draw_ctx = ImageDraw.Draw(txt)
 
             # draw text, half opacity
-            d.text((6, 34), tile_text, fill=(0, 0, 0, 255))
-            d.text((4, 34), tile_text, fill=(0, 0, 0, 255))
-            d.text((6, 36), tile_text, fill=(0, 0, 0, 255))
-            d.text((4, 36), tile_text, fill=(0, 0, 0, 255))
-            d.text((5, 35), tile_text, fill=(255, 255, 255, 255))
+            draw_ctx.text((6, 34), tile_text, fill=(0, 0, 0, 255))
+            draw_ctx.text((4, 34), tile_text, fill=(0, 0, 0, 255))
+            draw_ctx.text((6, 36), tile_text, fill=(0, 0, 0, 255))
+            draw_ctx.text((4, 36), tile_text, fill=(0, 0, 0, 255))
+            draw_ctx.text((5, 35), tile_text, fill=(255, 255, 255, 255))
 
             out = Image.alpha_composite(image1, txt)
         return out
@@ -2690,12 +2704,12 @@ class LevelsTree(ttk.Treeview):
 
             self.levels_tab.save_needed = True
             self.levels_tab.button_save["state"] = tk.NORMAL
-        except:
+        except Exception:  # pylint: disable=broad-except
             self.popup_menu_child.grab_release()
             self.popup_menu_parent.grab_release()
 
     def rename(self):
-        for i in self.selection()[::-1]:
+        for _ in self.selection()[::-1]:
             self.rename_dialog()
 
     def delete_selected(self):
@@ -2756,7 +2770,6 @@ class LevelsTree(ttk.Treeview):
         combosizes["values"] = room_sizes
         combosizes.grid(row=0, column=1, columnspan=3)
         col1_lbl = tk.Label(win, text="Size: ")
-        col1_ent = tk.Entry(win)
         col1_lbl.grid(row=0, column=0)
 
         combosizes.set("normal 10x8")
@@ -2783,37 +2796,37 @@ class LevelsTree(ttk.Treeview):
 
         def update_then_destroy():
             new_room_data = []
-            x = 10
-            y = 8
+            x_coord = 10
+            y_coord = 8
 
             if combosizes.get() == "machine_wideroom 20x8":
-                x = 20
-                y = 8
+                x_coord = 20
+                y_coord = 8
             elif combosizes.get() == "machine_wideroom 10x16":
-                x = 10
-                y = 16
+                x_coord = 10
+                y_coord = 16
             elif (
                 combosizes.get() == "machine_wideroom 20x16"
                 or combosizes.get() == "feeling 20x16"
             ):
-                x = 20
-                y = 16
+                x_coord = 20
+                y_coord = 16
             elif combosizes.get() == "ghistroom 5x5" or combosizes.get() == "cache 5x5":
-                x = 5
-                y = 5
+                x_coord = 5
+                y_coord = 5
             elif (
                 combosizes.get() == "chunk_ground 5x3"
                 or combosizes.get() == "chunk_air 5x3"
             ):
-                x = 5
-                y = 3
+                x_coord = 5
+                y_coord = 3
             elif combosizes.get() == "chunk_door 6x3":
-                x = 6
-                y = 3
+                x_coord = 6
+                y_coord = 3
 
-            for i in range(y):  # for each row
+            for _ in range(y_coord):  # for each row
                 row = ""
-                for ii in range(x):  # foreach collumn
+                for _ in range(x_coord):  # foreach collumn
                     row += "0"
                 new_room_data.append(row)
 
@@ -2894,10 +2907,10 @@ class LevelsTree(ttk.Treeview):
         screen_height = 720
 
         size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
-        x = screen_width / 2 - size[0] / 2
-        y = screen_height / 2 - size[1] / 2
+        x_coord = screen_width / 2 - size[0] / 2
+        y_coord = screen_height / 2 - size[1] / 2
 
-        toplevel.geometry("+%d+%d" % (x, y))
+        toplevel.geometry("+%d+%d" % (x_coord, y_coord))
 
 
 class RulesTree(ttk.Treeview):
@@ -2935,7 +2948,7 @@ class RulesTree(ttk.Treeview):
             self.levels_tab.button_save["state"] = tk.NORMAL
 
     def add(self):
-        edited = self.insert(
+        _edited = self.insert(
             "",
             "end",
             values=["COMMENT", "VAL", "// COMMENT"],
