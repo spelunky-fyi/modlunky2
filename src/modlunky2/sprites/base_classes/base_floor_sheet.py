@@ -31,7 +31,6 @@ class AbstractFloorSheet(BaseSpriteLoader):
         "spikes": (5, 9, 6, 10),
         "dirt": (0, 0, 4, 7),
         "floor": (0, 0, 1, 1),
-        "ghist_door2": (10, 6, 12, 8),
     }
     _additional_chunks = {}
 

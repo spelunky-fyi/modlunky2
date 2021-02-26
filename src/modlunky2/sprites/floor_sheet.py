@@ -17,13 +17,13 @@ __all__ = [
 class CaveFloorSheet(AbstractFloorSheet):
     biome_name = "cave"
     _additional_chunks = {
-        "bush_block": (10, 2, 11, 3),
         "ladder": (4, 1, 5, 2),
         "ladder_plat": (4, 2, 5, 3),
         "bone_block": (10, 2, 11, 3),
         "idol_floor": (10, 0, 11, 1),
         "starting_exit": (0.5, 7, 3, 9),
         "minewood_floor_hanging_hide": (6, 1, 7, 3),
+        "ghist_door2": (10, 6, 12, 8),
     }
 
 
@@ -45,6 +45,7 @@ class JungleFloorSheet(AbstractFloorSheet):
         "growable_vine": (4, 2, 5, 3),
         "tree_base": (3, 11, 4, 12),
         "jungle_floor": (0, 0, 1, 1),
+        "bush_block": (10, 2, 11, 3),
     }
 
 
@@ -88,6 +89,7 @@ class EggplantFloorSheet(AbstractFloorSheet):
     biome_name = "eggplant"
     _additional_chunks = {
         "eggplant_door": (0.5, 7, 3, 9),
+        "ghist_door2": (10, 6, 12, 8),
     }
 
 
