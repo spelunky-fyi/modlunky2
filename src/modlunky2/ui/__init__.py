@@ -1,5 +1,7 @@
 import time
+import sys
 import logging
+import traceback
 import tkinter as tk
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
@@ -15,12 +17,18 @@ from .levels import LevelsTab
 from .pack import PackTab
 from .widgets import ConsoleWindow
 from .logs import QueueHandler, register_queue_handler
+from .error import ErrorTab
 
 logger = logging.getLogger("modlunky2")
 
 
 MIN_WIDTH = 1280
 MIN_HEIGHT = 900
+
+
+def exception_logger(type_, value, traceb):
+    exc = traceback.format_exception(type_, value, traceb)
+    logger.critical("Unhandled Exception: %s", "".join(exc).strip())
 
 
 class ModlunkyUI:
@@ -59,6 +67,9 @@ class ModlunkyUI:
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
         self.root.iconphoto(False, self.icon_png)
 
+        sys.excepthook = exception_logger
+        self.root.report_callback_exception = exception_logger
+
         if self.needs_update:
             update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
             update_frame.grid(row=0, column=0, sticky="nswe")
@@ -82,34 +93,31 @@ class ModlunkyUI:
 
         self.register_tab(
             "Pack Assets",
-            PackTab(
-                tab_control=self.tab_control,
-                config=config,
-                task_manager=self.task_manager,
-            ),
+            PackTab,
+            tab_control=self.tab_control,
+            config=config,
+            task_manager=self.task_manager,
         )
         self.register_tab(
             "Extract Assets",
-            ExtractTab(
-                tab_control=self.tab_control,
-                config=config,
-                task_manager=self.task_manager,
-            ),
+            ExtractTab,
+            tab_control=self.tab_control,
+            config=config,
+            task_manager=self.task_manager,
         )
         self.register_tab(
             "Level Editor",
-            LevelsTab(
-                tab_control=self.tab_control,
-                config=config,
-            ),
+            LevelsTab,
+            tab_control=self.tab_control,
+            modlunky_ui=self,
+            config=config,
         )
 
         self.register_tab(
             "Config",
-            ConfigTab(
-                tab_control=self.tab_control,
-                config=config,
-            ),
+            ConfigTab,
+            tab_control=self.tab_control,
+            config=config,
         )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
@@ -169,12 +177,26 @@ class ModlunkyUI:
         tab_name = event.widget.tab("current")["text"]
         tab = self.tabs[tab_name]
         if tab.show_console:
-            self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
+            self.render_console()
         else:
-            self.console_frame.grid_forget()
+            self.forget_console()
         tab.on_load()
 
-    def register_tab(self, name, obj):
+    def render_console(self):
+        self.console_frame.grid(row=2, column=0, padx=5, pady=(5, 0), sticky="nswe")
+
+    def forget_console(self):
+        self.console_frame.grid_forget()
+
+    def register_tab(self, name, cls, **kwargs):
+        try:
+            obj = cls(**kwargs)
+        except Exception:  # pylint: disable=broad-except
+            obj = ErrorTab(tab_control=self.tab_control)
+            logger.critical(
+                "Failed to register tab %s: %s", name, "".join(traceback.format_exception(*sys.exc_info())).strip())
+
+
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)
 

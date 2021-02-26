@@ -35,13 +35,12 @@ logger = logging.getLogger("modlunky2")
 
 
 class LevelsTab(Tab):
-
-    show_console = False
-
     def __init__(
-        self, tab_control, config, *args, **kwargs
+        self, tab_control, modlunky_ui, config, *args, **kwargs
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
+
+        self.modlunky_ui = modlunky_ui
         self.tree_levels = LevelsTree(self, self)
         self.last_selected_room = None
         # TODO: Get actual resolution
@@ -146,6 +145,8 @@ class LevelsTab(Tab):
 
     # Run when start screen option is selected
     def load_editor(self):
+        self.show_console = False
+        self.modlunky_ui.forget_console()
         self.save_needed = False
         self.last_selected_file = None
         self.tiles = None
