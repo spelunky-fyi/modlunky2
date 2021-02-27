@@ -614,7 +614,13 @@ class PlayTab(Tab):
             for pack in all_packs:
                 load_order_file.write(f"--{pack}\n")
 
+    def write_steam_appid(self):
+        path = self.config.install_dir / "steam_appid.txt"
+        with path.open("w") as handle:
+            handle.write("418530")
+
     def play(self):
+        self.write_steam_appid()
         self.write_load_order()
         # TODO: launch playlunky
 
