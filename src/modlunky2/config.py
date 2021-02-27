@@ -5,21 +5,34 @@ try:
     import winreg
 except ImportError:
     winreg = None
-
 from shutil import copyfile
 from pathlib import Path
 
-from modlunky2.constants import APP_DIR
+from appdirs import user_config_dir, user_data_dir, user_cache_dir
 
+from modlunky2.constants import APP_DIR
 
 PROGRAMS_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
 DEFAULT_PATH = Path("C:/Program Files (x86)/Steam/steamapps/common/Spelunky 2")
 EXE_NAME = "Spel2.exe"
 
+APP_AUTHOR = "spelunky.fyi"
+APP_NAME = "modlunky2"
+CONFIG_DIR = Path(user_config_dir(APP_NAME, APP_AUTHOR))
+DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
+CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
+
+
 # Sentinel for tracking unset fields
 NOT_PRESENT = object()
 
 logger = logging.getLogger("modlunky2")
+
+
+def make_user_dirs():
+    for dir_ in [CONFIG_DIR, DATA_DIR, CACHE_DIR]:
+        if not dir_.exists():
+            dir_.mkdir(parents=True, exist_ok=True)
 
 
 def check_registry_for_spel2():
@@ -73,6 +86,7 @@ class ConfigFile:
         self.config_path = config_path
 
         self.install_dir = None
+        self.playlunky_version = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -94,6 +108,9 @@ class ConfigFile:
             install_dir = Path(install_dir)
         obj.install_dir = install_dir
 
+        # Initialize playlunky-version
+        obj.playlunky_version = config_data.get("playlunky-version")
+
         if needs_save:
             obj.save()
 
@@ -104,9 +121,13 @@ class ConfigFile:
         if self.install_dir:
             install_dir = self.install_dir.as_posix()
 
-        return {
-            "install-dir": install_dir,
-        }
+        out = {}
+        out["install-dir"] = install_dir
+
+        if self.playlunky_version is not None:
+            out["playlunky-version"] = self.playlunky_version
+
+        return out
 
     def _get_tmp_path(self):
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
@@ -123,8 +144,6 @@ class ConfigFile:
 
 
 class Config:
-    CONFIG_FIELDS = set(["install_dir"])
-
     def __init__(self, config_file: ConfigFile):
         self.config_file = config_file
 
@@ -134,6 +153,10 @@ class Config:
     @classmethod
     def from_path(cls, config_path: Path):
         return cls(config_file=ConfigFile.from_path(config_path))
+
+    @classmethod
+    def default(cls):
+        return Config.from_path(CONFIG_DIR / "config.json")
 
     @property
     def install_dir(self):

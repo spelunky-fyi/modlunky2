@@ -14,6 +14,7 @@ from .tasks import TaskManager, PING_INTERVAL
 from .config import ConfigTab
 from .extract import ExtractTab
 from .levels import LevelsTab
+from .play import PlayTab
 from .pack import PackTab
 from .widgets import ConsoleWindow
 from .logs import QueueHandler, register_queue_handler
@@ -92,8 +93,8 @@ class ModlunkyUI:
         self.tab_control = ttk.Notebook(self.root)
 
         self.register_tab(
-            "Pack Assets",
-            PackTab,
+            "Play",
+            PlayTab,
             tab_control=self.tab_control,
             config=config,
             task_manager=self.task_manager,
@@ -112,7 +113,13 @@ class ModlunkyUI:
             modlunky_ui=self,
             config=config,
         )
-
+        self.register_tab(
+            "Pack Assets",
+            PackTab,
+            tab_control=self.tab_control,
+            config=config,
+            task_manager=self.task_manager,
+        )
         self.register_tab(
             "Config",
             ConfigTab,
