@@ -624,16 +624,19 @@ class PlayTab(Tab):
         return list(after - before), list(before - after)
 
     def get_packs(self):
-        pack_dirs = []
+        packs = []
         packs_dir = self.config.install_dir / "Mods/Packs"
-        if packs_dir.exists():
-            for dir_ in packs_dir.iterdir():
-                if not dir_.is_dir():
-                    continue
-                pack_dirs.append(
-                    str(dir_.relative_to(self.config.install_dir / "Mods/Packs"))
-                )
-        return pack_dirs
+        if not packs_dir.exists():
+            return packs
+
+        for path in packs_dir.iterdir():
+            if not path.is_dir() and not path.suffix.lower() == ".zip":
+                continue
+
+            packs.append(
+                str(path.relative_to(self.config.install_dir / "Mods/Packs"))
+            )
+        return packs
 
     def render_packs(self):
         name = self.filter_frame.name.get()
