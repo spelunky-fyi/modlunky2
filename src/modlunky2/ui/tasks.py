@@ -53,9 +53,9 @@ class Worker:
 
         self._receivers[name] = Task(callback, threaded, on_complete)
 
-    def process_tasks(self, log_queue):
+    def process_tasks(self, log_queue, log_level=logging.INFO):
         queue_handler = QueueHandler(log_queue)
-        register_queue_handler(queue_handler)
+        register_queue_handler(queue_handler, log_level)
         self._started = True
         self.last_ping = time.time()
         while True:
@@ -99,7 +99,7 @@ class Worker:
                 self.call(task.on_complete)
 
         if task.threaded:
-            thread = threading.Thread(target=func)
+            thread = threading.Thread(target=func, daemon=True)
             thread.start()
         else:
             func()
@@ -109,10 +109,11 @@ class Worker:
 
 
 class TaskManager:
-    def __init__(self, log_queue):
+    def __init__(self, log_queue, log_level=logging.INFO):
         self.tx_queue = Queue()
         self.rx_queue = Queue()
         self.log_queue = log_queue
+        self.log_level = log_level
         self.worker = Worker(rx_queue=self.tx_queue, tx_queue=self.rx_queue)
         self.worker_process = None
         self._receivers = {}
@@ -137,7 +138,7 @@ class TaskManager:
 
     def start_process(self):
         self.worker_process = Process(
-            target=self.worker.process_tasks, args=(self.log_queue,)
+            target=self.worker.process_tasks, args=(self.log_queue, self.log_level)
         )
         self.worker_process.start()
 
@@ -163,7 +164,8 @@ class TaskManager:
         pass
 
     def dispatch(self, msg):
-        logger.debug("Received Message: %s", msg)
+        if msg.name != "pong":
+            logger.debug("Received Message: %s", msg)
 
         func = self._receivers.get(msg.name)
         if func is None:

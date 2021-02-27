@@ -32,9 +32,8 @@ def exception_logger(type_, value, traceb):
 
 
 class ModlunkyUI:
-    def __init__(self, config, data_dir):
+    def __init__(self, config, log_level=logging.INFO):
         self.config = config
-        self.data_dir = data_dir
 
         self.current_version = current_version()
         self.latest_version = latest_version()
@@ -52,8 +51,8 @@ class ModlunkyUI:
 
         self.log_queue = Queue()
         self.queue_handler = QueueHandler(self.log_queue)
-        register_queue_handler(self.queue_handler)
-        self.task_manager = TaskManager(self.log_queue)
+        register_queue_handler(self.queue_handler, log_level)
+        self.task_manager = TaskManager(self.log_queue, log_level)
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
@@ -87,6 +86,7 @@ class ModlunkyUI:
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
+        self.root.bind("<Escape>", self.quit)
 
         self.tabs = {}
         self.tab_control = ttk.Notebook(self.root)
@@ -200,8 +200,36 @@ class ModlunkyUI:
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)
 
-    def quit(self):
+    def tabs_needing_save(self):
+        needs_save = []
+        for tab_name, tab in self.tabs.items():
+            if tab.save_needed:
+                needs_save.append(tab_name)
+        return needs_save
+
+    def should_close(self, needs_save):
+        tabs = ", ".join(needs_save)
+        msg_box = tk.messagebox.askquestion(
+            "Close Modlunky2?",
+            (
+                f"You have some tabs ({tabs}) with unsaved changes.\n"
+                "Are you sure you want to exit without saving?"
+            ),
+            icon="warning",
+        )
+        return msg_box == "yes"
+
+
+    def quit(self, _event=None):
         if self._shutting_down:
+            return
+
+        needs_save = self.tabs_needing_save()
+        should_close = True
+        if needs_save:
+            should_close = self.should_close(needs_save)
+
+        if not should_close:
             return
 
         self._shutting_down = True

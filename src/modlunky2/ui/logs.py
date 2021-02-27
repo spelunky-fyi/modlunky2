@@ -12,7 +12,7 @@ class QueueHandler(logging.Handler):
         self.log_queue.put(record)
 
 
-def register_queue_handler(queue_handler):
+def register_queue_handler(queue_handler, log_level):
     # On linux this handler exists in a subprocess but not on windows.
     for handler in logger.handlers:
         if isinstance(handler, QueueHandler):
@@ -21,4 +21,4 @@ def register_queue_handler(queue_handler):
     formatter = logging.Formatter("%(asctime)s: %(message)s")
     queue_handler.setFormatter(formatter)
     logger.addHandler(queue_handler)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(log_level)

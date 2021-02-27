@@ -29,14 +29,24 @@ def main():
     parser.add_argument(
         "--beta", default=False, action="store_true", help="Display beta features."
     )
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="What level to log at. Default: %(default)s",
+    )
     args = parser.parse_args()
 
     log_format = "%(asctime)s: %(message)s"
+    log_level = logging.getLevelName(args.log_level)
+
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
-    launch(args)
+    logger.setLevel(log_level)
+    launch(args, log_level)
 
 
-def launch(args):
+def launch(args, log_level):
     config_dir = Path(user_config_dir(APP_NAME, APP_AUTHOR))
     data_dir = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 
@@ -49,5 +59,5 @@ def launch(args):
     if args.beta:
         config.beta = True
 
-    native_ui = ModlunkyUI(config, data_dir)
+    native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()

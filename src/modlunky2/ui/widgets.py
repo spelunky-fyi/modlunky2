@@ -76,6 +76,7 @@ class Tab(ttk.Frame):
     """ Base class that all tabs should inherit from."""
 
     show_console = True
+    save_needed = False
 
     def on_load(self):
         """ Called whenever the tab is loaded."""

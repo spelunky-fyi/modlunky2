@@ -3,33 +3,26 @@
 import logging
 import os
 import os.path
+import tempfile
 import tkinter as tk
 import tkinter.messagebox as tkMessageBox
-from tkinter import filedialog, ttk
-import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+from tkinter import filedialog, ttk
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.widgets import ScrollableFrame, Tab
-from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.levels import LevelFile
-from modlunky2.levels.tile_codes import VALID_TILE_CODES
+from modlunky2.levels.level_chances import LevelChance, LevelChances
+from modlunky2.levels.level_settings import LevelSetting, LevelSettings
+from modlunky2.levels.level_templates import (Chunk, LevelTemplate,
+                                              LevelTemplates, TemplateSetting)
+from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
+from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
+from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.levels.level_chances import LevelChances, LevelChance
-from modlunky2.levels.level_settings import LevelSettings, LevelSetting
-from modlunky2.levels.level_templates import (
-    LevelTemplates,
-    LevelTemplate,
-)
-from modlunky2.levels.monster_chances import (
-    MonsterChances,
-    MonsterChance,
-)
-from modlunky2.levels.tile_codes import TileCodes, TileCode
-from modlunky2.levels.level_templates import TemplateSetting, Chunk
-
+from modlunky2.ui.widgets import ScrollableFrame, Tab
 
 logger = logging.getLogger("modlunky2")
 
@@ -647,7 +640,7 @@ class LevelsTab(Tab):
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
                 if int(col) == int((len(self.tiles[0]) - 1) / 2):
-                    print("Middle of dual detected; not tile placed")
+                    logger.debug("Middle of dual detected; not tile placed")
                     return
 
             canvas.delete(self.tiles[int(row)][int(col)])
@@ -658,10 +651,9 @@ class LevelsTab(Tab):
                 anchor="nw",
             )
             self.tiles_meta[row][col] = self.tile_label["text"].split(" ", 4)[3]
-            print(
-                str(self.tiles_meta[row][col])
-                + " replaced with "
-                + self.tile_label["text"].split(" ", 4)[3]
+            logger.debug("%s replaced with %s",
+                self.tiles_meta[row][col],
+                self.tile_label["text"].split(" ", 4)[3],
             )
             self.remember_changes()  # remember changes made
 
@@ -683,7 +675,7 @@ class LevelsTab(Tab):
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
                 if int(col) == int((len(self.tiles[0]) - 1) / 2):
-                    print("Middle of dual detected; not tile placed")
+                    logger.debug("Middle of dual detected; not tile placed")
                     return
 
             canvas.delete(self.tiles[int(row)][int(col)])
@@ -696,10 +688,9 @@ class LevelsTab(Tab):
             self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[
                 3
             ]
-            print(
-                str(self.tiles_meta[row][col])
-                + " replaced with "
-                + self.tile_label["text"].split(" ", 4)[3]
+            logger.debug("%s replaced with %s",
+                self.tiles_meta[row][col],
+                self.tile_label["text"].split(" ", 4)[3],
             )
             self.remember_changes()  # remember changes made
 
@@ -738,7 +729,7 @@ class LevelsTab(Tab):
                 if msg_box == "yes":
                     self.save_needed = False
                     self.button_save["state"] = tk.DISABLED
-                    print("Entered new files witout saving")
+                    logger.debug("Entered new files witout saving")
                 else:
                     self.tree_files.selection_set(self.last_selected_file)
                     return
@@ -821,7 +812,7 @@ class LevelsTab(Tab):
         codes = ""
         for code in self.usable_codes:
             codes += str(code)
-        print(str(len(self.usable_codes)) + " codes left (" + codes + ")")
+        logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def dual_toggle(self, _event):
         item_iid = self.tree_levels.selection()[0]
@@ -997,7 +988,7 @@ class LevelsTab(Tab):
                                 room_settings.append(
                                     TemplateSetting(str(line.split("!", 1)[1]))
                                 )
-                                print("FOUND " + str(line.split("!", 1)[1]))
+                                logger.debug("FOUND %s", line.split("!", 1)[1])
 
                             if not tag_found:
                                 room_foreground.append(row)
@@ -1019,7 +1010,6 @@ class LevelsTab(Tab):
                             chunks=template_chunks,
                         )
                     )
-                    # print(str(level_templates.all()))
                 level_file = LevelFile(
                     "",
                     level_settings,
@@ -1028,7 +1018,6 @@ class LevelsTab(Tab):
                     monster_chances,
                     level_templates,
                 )
-                # print(str(level_file))
                 path = None
                 if not self.extracts_mode:
                     path = (
@@ -1039,7 +1028,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print("adding to overrides")
+                    logger.debug("adding to overrides")
                     path = (
                         self.install_dir
                         / "Mods"
@@ -1052,14 +1041,14 @@ class LevelsTab(Tab):
                     level_file.write(handle)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
-                print("Saved")
+                logger.debug("Saved")
             except Exception:  # pylint: disable=broad-except
                 _msg_box = tk.messagebox.showerror(
                     "Continue?",
                     "Error saving..",
                 )
         else:
-            print("No changes to save")
+            logger.debug("No changes to save")
 
     def remember_changes(self):  # remembers changes made to rooms
         try:
@@ -1125,8 +1114,8 @@ class LevelsTab(Tab):
                 self.tree_levels.delete(item_iid)
                 self.tree_levels.selection_set(edited)
                 self.room_select(None)
-                print("temp saved: \n" + new_room_data)
-                print("Changes remembered!")
+                logger.debug("temp saved: \n%s" + new_room_data)
+                logger.debug("Changes remembered!")
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
         except Exception:  # pylint: disable=broad-except
@@ -1180,16 +1169,15 @@ class LevelsTab(Tab):
                         self.tree_levels.selection_set(edited)
                         self.last_selected_room = edited
                         self.room_select(None)
-            print("Replaced " + tile_id + " in all rooms with air/empty")
+            logger.debug("Replaced %s in all rooms with air/empty", tile_id)
 
             self.usable_codes.append(str(tile_code))
-            print(
-                str(tile_code) + " is now available for use"
-            )  # adds tilecode back to list to be reused
+            logger.debug("%s is now available for use", tile_code)
+            # adds tilecode back to list to be reused
             for id_ in self.tile_pallete_ref_in_use:
                 if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
-                    print("Deleted " + str(tile_id))
+                    logger.debug("Deleted %s", tile_id)
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -1258,16 +1246,15 @@ class LevelsTab(Tab):
                         self.tree_levels.selection_set(edited)
                         self.last_selected_room = edited
                         self.room_select(None)
-            print("Replaced " + tile_id + " in all rooms with air/empty")
+            logger.debug("Replaced %s in all rooms with air/empty", tile_code)
 
             self.usable_codes.append(str(tile_code))
-            print(
-                str(tile_code) + " is now available for use"
-            )  # adds tilecode back to list to be reused
+            logger.debug("%s is now available for use", tile_code)
+            # adds tilecode back to list to be reused
             for id_ in self.tile_pallete_ref_in_use:
                 if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
-                    print("Deleted " + str(tile_id))
+                    logger.debug("Deleted %s", tile_id)
             self.populate_tilecode_pallete()
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -1312,12 +1299,12 @@ class LevelsTab(Tab):
             self.get_texture(new_tile_code, self.lvl_biome, self.lvl)
         )
 
-        if any(
-            str(new_tile_code + " ") in str(g[0].split(" ", 3)[0]) + " "
-            for g in self.tile_pallete_ref_in_use
-        ):  # compares tile id to tile ids in pallete list
-            tkMessageBox.showinfo("Uh Oh!", "You already have that!")
-            return
+        # compares tile id to tile ids in pallete list
+        for palette_tile in self.tile_pallete_ref_in_use:
+            palette_tile = palette_tile[0].split()[0].strip()
+            if new_tile_code == palette_tile:
+                tkMessageBox.showinfo("Uh Oh!", "You already have that!")
+                return
 
         if len(self.usable_codes) > 0:
             usable_code = self.usable_codes[0]
@@ -1696,10 +1683,10 @@ class LevelsTab(Tab):
 
             for cr_line in current_room:
                 if str(cr_line).startswith(r"\!"):
-                    print("found tag " + str(cr_line))
+                    logger.debug("found tag %s", cr_line)
                     current_settings.append(cr_line)
                 else:
-                    print("appending " + str(cr_line))
+                    logger.debug("appending %s", cr_line)
                     current_room_tiles.append(str(cr_line))
                     for char in str(cr_line):
                         if str(char) == " ":
@@ -1787,7 +1774,7 @@ class LevelsTab(Tab):
                 curcol = 0
                 currow = currow + 1
                 tile_image = None
-                print(room_row)
+                logger.debug("Room row: %s", room_row)
                 for block in str(room_row):
                     if str(block) != " ":
                         tile_name = ""
@@ -1802,7 +1789,7 @@ class LevelsTab(Tab):
                                 tile_name = str(tiles[-1][0]).split(" ", 1)[0]
                             else:
                                 # There's a missing tile id somehow
-                                print(str(block) + " Not Found")
+                                logger.debug("%s Not Found", block)
                         if self.dual_mode and curcol > int((self.cols - 1) / 2):
                             x2_coord = int(curcol - ((self.cols - 1) / 2) - 1)
                             x_coord = 0
@@ -1988,7 +1975,7 @@ class LevelsTab(Tab):
             lvl_path = self.lvls_path + "/" + lvl
         else:
             if (self.overrides_path / lvl).exists():
-                print("Found this lvl in overrides; loading it instead")
+                logger.debug("Found this lvl in overrides; loading it instead")
                 lvl_path = self.overrides_path / lvl
             else:
                 lvl_path = self.lvls_path / lvl
@@ -2001,7 +1988,7 @@ class LevelsTab(Tab):
                         LevelFile.from_path(Path(self.lvls_path + "/" + "generic.lvl"))
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2025,7 +2012,7 @@ class LevelsTab(Tab):
                         LevelFile.from_path(Path(self.lvls_path + "/" + "basecamp.lvl"))
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2051,7 +2038,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2085,7 +2072,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2111,7 +2098,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2139,7 +2126,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2174,7 +2161,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2204,7 +2191,7 @@ class LevelsTab(Tab):
                         )
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2232,7 +2219,7 @@ class LevelsTab(Tab):
                         LevelFile.from_path(Path(self.lvls_path + "/" + "ending.lvl"))
                     )
                 else:
-                    print(
+                    logger.debug(
                         "local dependancy lvl not found, attempting load from extracts"
                     )
                     levels.append(
@@ -2253,13 +2240,12 @@ class LevelsTab(Tab):
 
         level = None
         for level in levels:
-            print(str(level.comment) + " loaded.")
+            logger.debug("%s loaded.", level.comment)
             level_tilecodes = level.tile_codes.all()
 
             for tilecode in level_tilecodes:
                 tilecode_item = []
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
-                # print("item: " + tilecode.name + " biome: " + str(self.lvl_biome))
 
                 img = self.get_texture(tilecode.name, self.lvl_biome, lvl)
 
@@ -2274,15 +2260,12 @@ class LevelsTab(Tab):
                 for i in self.tile_pallete_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
                         self.tile_pallete_ref_in_use.remove(i)
-                        # print("removed " + str(i[0]))
 
                 for i in self.usable_codes:
                     if str(i) == str(tilecode.value):
                         self.usable_codes.remove(i)
-                        # print("removed " + str(i))
 
                 self.tile_pallete_ref_in_use.append(tilecode_item)
-                # print("appending " + str(tilecode_item[0]))
 
         if level is None:
             return
@@ -2316,7 +2299,6 @@ class LevelsTab(Tab):
         self.populate_tilecode_pallete()
 
         level_rules = level.level_settings.all()
-        # print("level settings: " + str(level_rules))
         bad_chars = ["[", "]", '"', "'", "(", ")"]
         for rules in level_rules:
             value_final = str(rules.value)
@@ -2584,7 +2566,6 @@ class LevelsTab(Tab):
                             img2 = self._sprite_fetcher.get(
                                 "stone_door",
                             )
-            # print("searching for " + primary_tile + " " + secondary_tile + " " + str(percent))
             img = self.get_tilecode_percent_texture(
                 primary_tile, secondary_tile, percent, img1, img2
             )
@@ -2594,7 +2575,8 @@ class LevelsTab(Tab):
         width, height = img.size
         resize = True
 
-        for tile_ref in TILENAMES:  # These tile textures are already sized down
+        # These tile textures are already sized down
+        for tile_ref in TILENAMES:
             if tile_ref == tile:
                 resize = False
 
@@ -2674,6 +2656,29 @@ class LevelsTab(Tab):
             out = Image.alpha_composite(image1, txt)
         return out
 
+
+@dataclass
+class RoomType:
+    name: str
+    x_size: int
+    y_size: int
+
+ROOM_TYPES = {
+    f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
+    for room_type in [
+        RoomType("normal", 10, 8),
+        RoomType("machine_wideroom", 20, 8),
+        RoomType("machine_tallroom", 10, 16),
+        RoomType("machine_bigroom", 20, 16),
+        RoomType("ghistroom", 5, 5),
+        RoomType("feeling", 20, 16),
+        RoomType("chunk_ground", 5, 3),
+        RoomType("chunk_door", 6, 3),
+        RoomType("chunk_air", 5, 3),
+        RoomType("cache", 5, 5),
+    ]
+}
+DEFAULT_ROOM_TYPE = "normal"
 
 class LevelsTree(ttk.Treeview):
     def __init__(self, parent, levels_tab, *args, **kwargs):
@@ -2755,82 +2760,23 @@ class LevelsTree(ttk.Treeview):
             win.attributes("-alpha", True)
         self.center(win)
 
-        room_sizes = []
-        room_sizes.append("normal 10x8")
-        room_sizes.append("machine_wideroom 20x8")
-        room_sizes.append("machine_tallroom 10x16")
-        room_sizes.append("machine_bigroom 10x16")
-        room_sizes.append("ghistroom 5x5")
-        room_sizes.append("feeling 20x16")
-        room_sizes.append("chunk_ground 5x3")
-        room_sizes.append("chunk_door 6x3")
-        room_sizes.append("chunk_air 5x3")
-        room_sizes.append("cache 5x5")
-
         combosizes = ttk.Combobox(win, height=20)
-        combosizes["values"] = room_sizes
+        combosizes["values"] = list(ROOM_TYPES.keys())
         combosizes.grid(row=0, column=1, columnspan=3)
         col1_lbl = tk.Label(win, text="Size: ")
         col1_lbl.grid(row=0, column=0)
 
-        combosizes.set("normal 10x8")
-        if self.item(parent)["text"].startswith("machine_wideroom"):
-            combosizes.set("machine_wideroom 20x8")
-        elif self.item(parent)["text"].startswith("machine_wideroom"):
-            combosizes.set("machine_tallroom 10x16")
-        elif self.item(parent)["text"].startswith("machine_wideroom"):
-            combosizes.set("machine_bigroom 10x16")
-        elif self.item(parent)["text"].startswith("chunk_air"):
-            combosizes.set("chunk_air 5x3")
-        elif self.item(parent)["text"].startswith("chunk_ground"):
-            combosizes.set("chunk_ground 5x3")
-        elif self.item(parent)["text"].startswith("chunk_door"):
-            combosizes.set("chunk_door 6x3")
-        elif self.item(parent)["text"].startswith("chunk_door"):
-            combosizes.set("chunk_door 6x3")
-        elif self.item(parent)["text"].startswith("chunk_door"):
-            combosizes.set("chunk_door 6x3")
-        elif self.item(parent)["text"].startswith("cache"):
-            combosizes.set("cache 5x5")
-        elif self.item(parent)["text"].startswith("feeling"):
-            combosizes.set("feeling 20x16")
+        # Set default prompt based on parent name
+        combosizes.set("normal: 10x8")
+        parent_room_type = self.item(parent)["text"]
+        for room_size_text, room_type in ROOM_TYPES.items():
+            if parent_room_type.startswith(room_type.name):
+                combosizes.set(room_size_text)
+                break
 
         def update_then_destroy():
-            new_room_data = []
-            x_coord = 10
-            y_coord = 8
-
-            if combosizes.get() == "machine_wideroom 20x8":
-                x_coord = 20
-                y_coord = 8
-            elif combosizes.get() == "machine_wideroom 10x16":
-                x_coord = 10
-                y_coord = 16
-            elif (
-                combosizes.get() == "machine_wideroom 20x16"
-                or combosizes.get() == "feeling 20x16"
-            ):
-                x_coord = 20
-                y_coord = 16
-            elif combosizes.get() == "ghistroom 5x5" or combosizes.get() == "cache 5x5":
-                x_coord = 5
-                y_coord = 5
-            elif (
-                combosizes.get() == "chunk_ground 5x3"
-                or combosizes.get() == "chunk_air 5x3"
-            ):
-                x_coord = 5
-                y_coord = 3
-            elif combosizes.get() == "chunk_door 6x3":
-                x_coord = 6
-                y_coord = 3
-
-            for _ in range(y_coord):  # for each row
-                row = ""
-                for _ in range(x_coord):  # foreach collumn
-                    row += "0"
-                new_room_data.append(row)
-
+            room_type = ROOM_TYPES[combosizes.get()]
+            new_room_data = ["0" * room_type.x_size] * room_type.y_size
             self.insert(parent, "end", text="new room", values=new_room_data)
             win.destroy()
 
