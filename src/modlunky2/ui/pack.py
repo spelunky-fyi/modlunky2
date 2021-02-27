@@ -168,6 +168,8 @@ class PackTab(Tab):
             for dir_ in packs_dir.iterdir():
                 if not dir_.is_dir():
                     continue
+                if dir_.name == ".db":
+                    continue
                 pack_dirs.append(dir_.relative_to(self.config.install_dir / "Mods"))
 
         return pack_dirs
