@@ -14,6 +14,7 @@ from tkinter import ttk
 
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
+from modlunky2.ui.play.config import PlaylunkyConfig
 from modlunky2.ui.widgets import ScrollableFrame, Tab
 
 logger = logging.getLogger("modlunky2")
@@ -349,7 +350,7 @@ class OptionsFrame(tk.LabelFrame):
         self.parent = parent
         self.columnconfigure(0, weight=1)
 
-        self.random_char_var = tk.BooleanVar
+        self.random_char_var = tk.BooleanVar()
         self.random_char_checkbox = tk.Checkbutton(
             self,
             text="Random Character Select",
@@ -358,7 +359,7 @@ class OptionsFrame(tk.LabelFrame):
         )
         self.random_char_checkbox.grid(row=0, column=0, sticky="w")
 
-        self.loose_audio_var = tk.BooleanVar
+        self.loose_audio_var = tk.BooleanVar()
         self.loose_audio_checkbox = tk.Checkbutton(
             self,
             text="Enable Loose Audio Loading",
@@ -367,14 +368,14 @@ class OptionsFrame(tk.LabelFrame):
         )
         self.loose_audio_checkbox.grid(row=1, column=0, sticky="w")
 
-        self.random_char_var = tk.BooleanVar
-        self.random_char_checkbox = tk.Checkbutton(
+        self.cache_decoded_audio_var = tk.BooleanVar()
+        self.cache_decoded_audio_checkbox = tk.Checkbutton(
             self,
             text="Cache Decoded Audio Files",
-            variable=self.random_char_var,
+            variable=self.cache_decoded_audio_var,
             compound="left",
         )
-        self.random_char_checkbox.grid(row=2, column=0, sticky="w")
+        self.cache_decoded_audio_checkbox.grid(row=2, column=0, sticky="w")
 
 
 class FiltersFrame(tk.LabelFrame):
@@ -581,6 +582,28 @@ class PlayTab(Tab):
     def disable_button(self):
         self.button_play["state"] = tk.DISABLED
 
+    def load_from_ini(self):
+        path = self.config.install_dir / "playlunky.ini"
+        if path.exists():
+            with path.open() as ini_file:
+                config = PlaylunkyConfig.from_ini(ini_file)
+        else:
+            config = PlaylunkyConfig()
+        print(config)
+        self.options_frame.random_char_var.set(config.random_character_select)
+        self.options_frame.loose_audio_var.set(config.enable_loose_audio_files)
+        self.options_frame.cache_decoded_audio_var.set(config.cache_decoded_audio_files)
+
+    def write_ini(self):
+        path = self.config.install_dir / "playlunky.ini"
+        config = PlaylunkyConfig(
+            random_character_select=self.options_frame.random_char_var.get(),
+            enable_loose_audio_files=self.options_frame.loose_audio_var.get(),
+            cache_decoded_audio_files=self.options_frame.cache_decoded_audio_var.get(),
+        )
+        with path.open("w") as handle:
+            config.write(handle)
+
     def load_from_load_order(self):
         load_order_path = self.config.install_dir / "load_order.txt"
         with load_order_path.open("r") as load_order_file:
@@ -622,6 +645,7 @@ class PlayTab(Tab):
     def play(self):
         self.write_steam_appid()
         self.write_load_order()
+        self.write_ini()
         # TODO: launch playlunky
 
     @staticmethod
@@ -705,4 +729,5 @@ class PlayTab(Tab):
 
         self.packs = packs
         self.render_packs()
+        self.load_from_ini()
         self.load_from_load_order()
