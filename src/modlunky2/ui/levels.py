@@ -1120,7 +1120,7 @@ class LevelsTab(Tab):
                 self.tree_levels.delete(item_iid)
                 self.tree_levels.selection_set(edited)
                 self.room_select(None)
-                logger.debug("temp saved: \n%s" + new_room_data)
+                logger.debug("temp saved: \n%s", new_room_data)
                 logger.debug("Changes remembered!")
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
