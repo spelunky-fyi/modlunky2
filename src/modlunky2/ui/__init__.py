@@ -100,13 +100,6 @@ class ModlunkyUI:
             task_manager=self.task_manager,
         )
         self.register_tab(
-            "Play",
-            PlayTab,
-            tab_control=self.tab_control,
-            config=config,
-            task_manager=self.task_manager,
-        )
-        self.register_tab(
             "Playlunky",
             PlayTab,
             tab_control=self.tab_control,
