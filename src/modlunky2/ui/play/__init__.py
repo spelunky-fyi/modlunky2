@@ -602,6 +602,16 @@ class PlayTab(Tab):
         self.load_from_ini()
         self.load_from_load_order()
 
+    def make_dirs(self):
+        if not self.config.install_dir:
+            return
+
+        packs_dir = self.config.install_dir / "Mods/Packs"
+        if packs_dir.exists():
+            return
+
+        packs_dir.mkdir(parents=True, exist_ok=True)
+
     def enable_button(self):
         self.button_play["state"] = tk.NORMAL
 
@@ -758,6 +768,7 @@ class PlayTab(Tab):
         return lambda: self.on_check(name, var)
 
     def on_load(self):
+        self.make_dirs()
         packs = sorted(self.get_packs())
         packs_added, packs_removed = self.diff_packs(self.packs, packs)
 
