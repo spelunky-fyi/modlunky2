@@ -1,5 +1,6 @@
 import json
 import logging
+import subprocess
 import threading
 import tkinter as tk
 import zipfile
@@ -527,12 +528,30 @@ class LoadOrderFrame(tk.LabelFrame):
         self.render_buttons()
 
 
+def launch_playlunky(_call, install_dir, exe_path):
+    logger.info("Executing Playlunky Launcher from %s in %s", exe_path, install_dir)
+    working_dir = exe_path.parent
+    cmd = [
+        f"{exe_path}", f"--exe_dir={install_dir}"
+    ]
+    proc = subprocess.Popen(cmd, cwd=working_dir)
+    proc.communicate()
+
+
 class PlayTab(Tab):
     def __init__(self, tab_control, config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.config = config
         self.task_manager = task_manager
+        self.task_manager.register_task(
+            "play:launch_playlunky",
+            launch_playlunky,
+            True,
+            on_complete="play:playlunky_closed",
+        )
+        self.task_manager.register_handler("play:playlunky_closed", self.playlunky_closed)
+        self.playlunky_running = False
 
         self.rowconfigure(0, minsize=200)
         self.rowconfigure(1, weight=1)
@@ -579,6 +598,20 @@ class PlayTab(Tab):
         self.packs = []
         self.checkboxes = {}
 
+        self.on_load()
+        self.load_from_ini()
+        self.load_from_load_order()
+
+    def make_dirs(self):
+        if not self.config.install_dir:
+            return
+
+        packs_dir = self.config.install_dir / "Mods/Packs"
+        if packs_dir.exists():
+            return
+
+        packs_dir.mkdir(parents=True, exist_ok=True)
+
     def enable_button(self):
         self.button_play["state"] = tk.NORMAL
 
@@ -608,7 +641,10 @@ class PlayTab(Tab):
             config.write(handle)
 
     def load_from_load_order(self):
-        load_order_path = self.config.install_dir / "load_order.txt"
+        load_order_path = self.load_order_path
+        if not load_order_path.exists():
+            return
+
         with load_order_path.open("r") as load_order_file:
             for line in load_order_file:
                 line = line.strip()
@@ -630,7 +666,7 @@ class PlayTab(Tab):
                 self.on_check(line, var)
 
     def write_load_order(self):
-        load_order_path = self.config.install_dir / "load_order.txt"
+        load_order_path = self.load_order_path
         with load_order_path.open("w") as load_order_file:
             all_packs = set(self.checkboxes.keys())
             for pack in self.load_order.all():
@@ -644,6 +680,10 @@ class PlayTab(Tab):
         path = self.config.install_dir / "steam_appid.txt"
         with path.open("w") as handle:
             handle.write("418530")
+
+    @property
+    def load_order_path(self):
+        return self.config.install_dir / "Mods/Packs/load_order.txt"
 
     def play(self):
         self.write_steam_appid()
@@ -659,8 +699,15 @@ class PlayTab(Tab):
             logger.critical("No playlunky launcher found at %s", exe_path)
             return
 
-        logger.info("Executing Playlunky Launcher from %s", exe_path)
-        # TODO: launch playlunky
+        self.version_frame.selected_dropdown["state"] = tk.DISABLED
+        self.version_frame.uninstall_frame.button["state"] = tk.DISABLED
+        self.disable_button()
+        self.task_manager.call("play:launch_playlunky", install_dir=self.config.install_dir, exe_path=exe_path)
+
+    def playlunky_closed(self):
+        self.version_frame.selected_dropdown["state"] = tk.NORMAL
+        self.version_frame.uninstall_frame.button["state"] = tk.NORMAL
+        self.enable_button()
 
     @staticmethod
     def diff_packs(before, after):
@@ -674,8 +721,14 @@ class PlayTab(Tab):
             return packs
 
         for path in packs_dir.iterdir():
+            if path.name.startswith("."):
+                continue
+
             if not path.is_dir() and not path.suffix.lower() == ".zip":
                 continue
+
+            if path.is_file and path.suffix.lower() == ".zip":
+                path = path.with_suffix("")
 
             packs.append(str(path.relative_to(self.config.install_dir / "Mods/Packs")))
         return packs
@@ -715,6 +768,7 @@ class PlayTab(Tab):
         return lambda: self.on_check(name, var)
 
     def on_load(self):
+        self.make_dirs()
         packs = sorted(self.get_packs())
         packs_added, packs_removed = self.diff_packs(self.packs, packs)
 
@@ -741,5 +795,3 @@ class PlayTab(Tab):
 
         self.packs = packs
         self.render_packs()
-        self.load_from_ini()
-        self.load_from_load_order()
