@@ -299,7 +299,10 @@ class VersionFrame(tk.LabelFrame):
 
     def render(self):
         self.available_releases = self.get_available_releases()
-        installed_releases = set(dir_.name for dir_ in PLAYLUNKY_DATA_DIR.iterdir())
+        installed_releases = set()
+        if PLAYLUNKY_DATA_DIR.exists():
+            for dir_ in PLAYLUNKY_DATA_DIR.iterdir():
+                installed_releases.add(dir_.name)
         available_releases = list(self.available_releases.keys())
 
         self.selected_dropdown.destroy()
@@ -419,7 +422,7 @@ class LoadOrderFrame(tk.LabelFrame):
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.listbox = tk.Listbox(self)
+        self.listbox = tk.Listbox(self, selectmode=tk.SINGLE)
         self.listbox.grid(
             row=0, column=0, columnspan=2, pady=5, padx=(5, 0), sticky="nsew"
         )
@@ -429,13 +432,84 @@ class LoadOrderFrame(tk.LabelFrame):
 
         self.listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.listbox.yview)
+        self.listbox.bind("<<ListboxSelect>>", self.render_buttons)
 
-        self.up_button = ttk.Button(self, text="Up", state=tk.DISABLED)
+        self.up_button = ttk.Button(self, text="Up", state=tk.DISABLED, command=self.move_up)
         self.up_button.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.down_button = ttk.Button(self, text="Down", state=tk.DISABLED)
+        self.down_button = ttk.Button(self, text="Down", state=tk.DISABLED, command=self.move_down)
         self.down_button.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
 
+    def current_selection(self):
+        cur = self.listbox.curselection()
+        if not cur:
+            return None
+        return cur[0]
+
+    def render_buttons(self, _event=None):
+        size = self.listbox.size()
+        selection = self.current_selection()
+
+        # Too few items or none selected
+        if size < 2 or selection is None:
+            up_state = tk.DISABLED
+            down_state = tk.DISABLED
+        # First item selected
+        elif selection == 0:
+            up_state = tk.DISABLED
+            down_state = tk.NORMAL
+        # Last item selected
+        elif selection == size - 1:
+            up_state = tk.NORMAL
+            down_state = tk.DISABLED
+        else:
+            up_state = tk.NORMAL
+            down_state = tk.NORMAL
+
+        self.up_button["state"] = up_state
+        self.down_button["state"] = down_state
+
+    def move_up(self):
+        selection = self.current_selection()
+
+        if selection is None:
+            return
+
+        if selection == 0:
+            return
+
+        label = self.listbox.get(selection)
+        self.listbox.delete(selection)
+        self.listbox.insert(selection - 1, label)
+        self.listbox.selection_set(selection - 1)
+
+        self.render_buttons()
+
+    def move_down(self):
+        size = self.listbox.size()
+        selection = self.current_selection()
+
+        if selection is None:
+            return
+
+        if selection == size-1:
+            return
+
+        label = self.listbox.get(selection)
+        self.listbox.delete(selection)
+        self.listbox.insert(selection + 1, label)
+        self.listbox.selection_set(selection + 1)
+
+        self.render_buttons()
+
+    def insert(self, label):
+        self.listbox.insert(tk.END, label)
+        self.render_buttons()
+
+    def delete(self, label):
+        idx = self.listbox.get(0, tk.END).index(label)
+        self.listbox.delete(idx)
+        self.render_buttons()
 
 class PlayTab(Tab):
     def __init__(self, tab_control, config, task_manager, *args, **kwargs):
@@ -540,27 +614,36 @@ class PlayTab(Tab):
             if display:
                 checkbox.grid(column=0, pady=0, padx=5, sticky="w")
 
-    def on_check(self, _event=None):
+    def on_check(self, name, var):
+        name = str(name)
+        if var.get():
+            self.load_order.insert(name)
+        else:
+            self.load_order.delete(name)
         self.render_packs()
+
+    def on_check_wrapper(self, name, var):
+        return lambda: self.on_check(name, var)
 
     def on_load(self):
         packs = sorted(self.get_packs())
         packs_added, packs_removed = self.diff_packs(self.packs, packs)
 
         for pack in packs_added:
-            str_var = tk.StringVar()
+            var = tk.BooleanVar()
+
             item = tk.Checkbutton(
                 self.packs_frame.scrollable_frame,
                 text=f" {pack}",
                 image=self.default_icon,
                 font=("Segoe UI", 12, "bold"),
-                variable=str_var,
-                onvalue=f"{pack}",
-                offvalue="",
+                variable=var,
+                onvalue=True,
+                offvalue=False,
                 compound="left",
-                command=self.on_check,
+                command=self.on_check_wrapper(pack, var),
             )
-            self.checkboxes[pack] = (str_var, item)
+            self.checkboxes[pack] = (var, item)
 
         for pack in packs_removed:
             (_, item) = self.checkboxes[pack]
