@@ -16,8 +16,12 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_chances import LevelChance, LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
-from modlunky2.levels.level_templates import (Chunk, LevelTemplate,
-                                              LevelTemplates, TemplateSetting)
+from modlunky2.levels.level_templates import (
+    Chunk,
+    LevelTemplate,
+    LevelTemplates,
+    TemplateSetting,
+)
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
@@ -651,7 +655,8 @@ class LevelsTab(Tab):
                 anchor="nw",
             )
             self.tiles_meta[row][col] = self.tile_label["text"].split(" ", 4)[3]
-            logger.debug("%s replaced with %s",
+            logger.debug(
+                "%s replaced with %s",
                 self.tiles_meta[row][col],
                 self.tile_label["text"].split(" ", 4)[3],
             )
@@ -688,7 +693,8 @@ class LevelsTab(Tab):
             self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[
                 3
             ]
-            logger.debug("%s replaced with %s",
+            logger.debug(
+                "%s replaced with %s",
                 self.tiles_meta[row][col],
                 self.tile_label["text"].split(" ", 4)[3],
             )
@@ -2663,6 +2669,7 @@ class RoomType:
     x_size: int
     y_size: int
 
+
 ROOM_TYPES = {
     f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
     for room_type in [
@@ -2679,6 +2686,7 @@ ROOM_TYPES = {
     ]
 }
 DEFAULT_ROOM_TYPE = "normal"
+
 
 class LevelsTree(ttk.Treeview):
     def __init__(self, parent, levels_tab, *args, **kwargs):

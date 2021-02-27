@@ -194,8 +194,10 @@ class ModlunkyUI:
         except Exception:  # pylint: disable=broad-except
             obj = ErrorTab(tab_control=self.tab_control)
             logger.critical(
-                "Failed to register tab %s: %s", name, "".join(traceback.format_exception(*sys.exc_info())).strip())
-
+                "Failed to register tab %s: %s",
+                name,
+                "".join(traceback.format_exception(*sys.exc_info())).strip(),
+            )
 
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)
@@ -218,7 +220,6 @@ class ModlunkyUI:
             icon="warning",
         )
         return msg_box == "yes"
-
 
     def quit(self, _event=None):
         if self._shutting_down:
