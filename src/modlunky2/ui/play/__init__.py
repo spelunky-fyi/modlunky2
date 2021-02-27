@@ -1,16 +1,16 @@
 import json
 import logging
 import threading
+import tkinter as tk
 import zipfile
 from io import BytesIO
 from pathlib import Path
 from shutil import copyfile
+from tkinter import ttk
+from tkinter import font as tk_font
 
-import tkinter as tk
 import requests
 from PIL import Image, ImageTk
-from tkinter import font as tk_font
-from tkinter import ttk
 
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
@@ -23,7 +23,10 @@ MODS = Path("Mods")
 PLAYLUNKY_RELEASES_URL = "https://api.github.com/repos/spelunky-fyi/Playlunky/releases"
 PLAYLUNKY_RELEASES_PATH = CACHE_DIR / "playlunky-releases.json"
 PLAYLUNKY_DATA_DIR = DATA_DIR / "playlunky"
-PLAYLUNKY_FILES = ["playlunky64.dll", "playlunky_launcher.exe"]
+
+PLAYLUNKY_DLL = "playlunky64.dll"
+PLAYLUNKY_EXE = "playlunky_launcher.exe"
+PLAYLUNKY_FILES = [PLAYLUNKY_DLL, PLAYLUNKY_EXE]
 
 
 class Entry(tk.Entry):
@@ -589,7 +592,7 @@ class PlayTab(Tab):
                 config = PlaylunkyConfig.from_ini(ini_file)
         else:
             config = PlaylunkyConfig()
-        print(config)
+
         self.options_frame.random_char_var.set(config.random_character_select)
         self.options_frame.loose_audio_var.set(config.enable_loose_audio_files)
         self.options_frame.cache_decoded_audio_var.set(config.cache_decoded_audio_files)
@@ -646,6 +649,17 @@ class PlayTab(Tab):
         self.write_steam_appid()
         self.write_load_order()
         self.write_ini()
+
+        exe_path = (
+            PLAYLUNKY_DATA_DIR
+            / self.config.config_file.playlunky_version
+            / PLAYLUNKY_EXE
+        )
+        if not exe_path.exists():
+            logger.critical("No playlunky launcher found at %s", exe_path)
+            return
+
+        logger.info("Executing Playlunky Launcher from %s", exe_path)
         # TODO: launch playlunky
 
     @staticmethod
@@ -663,9 +677,7 @@ class PlayTab(Tab):
             if not path.is_dir() and not path.suffix.lower() == ".zip":
                 continue
 
-            packs.append(
-                str(path.relative_to(self.config.install_dir / "Mods/Packs"))
-            )
+            packs.append(str(path.relative_to(self.config.install_dir / "Mods/Packs")))
         return packs
 
     def render_packs(self):
