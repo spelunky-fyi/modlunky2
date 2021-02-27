@@ -820,7 +820,7 @@ class LevelsTab(Tab):
             codes += str(code)
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
-    def dual_toggle(self, _event):
+    def dual_toggle(self):
         item_iid = self.tree_levels.selection()[0]
         parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
         if parent_iid:
