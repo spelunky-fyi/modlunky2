@@ -1,19 +1,20 @@
-import logging
 import json
-import zipfile
-from shutil import copyfile
+import logging
 import threading
-import tkinter as tk
-from tkinter import ttk, font as tk_font
+import zipfile
 from io import BytesIO
 from pathlib import Path
+from shutil import copyfile
 
+import tkinter as tk
 import requests
 from PIL import Image, ImageTk
+from tkinter import font as tk_font
+from tkinter import ttk
 
+from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableFrame, Tab
-from modlunky2.config import CACHE_DIR, DATA_DIR
 
 logger = logging.getLogger("modlunky2")
 
@@ -434,10 +435,14 @@ class LoadOrderFrame(tk.LabelFrame):
         self.scrollbar.config(command=self.listbox.yview)
         self.listbox.bind("<<ListboxSelect>>", self.render_buttons)
 
-        self.up_button = ttk.Button(self, text="Up", state=tk.DISABLED, command=self.move_up)
+        self.up_button = ttk.Button(
+            self, text="Up", state=tk.DISABLED, command=self.move_up
+        )
         self.up_button.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.down_button = ttk.Button(self, text="Down", state=tk.DISABLED, command=self.move_down)
+        self.down_button = ttk.Button(
+            self, text="Down", state=tk.DISABLED, command=self.move_down
+        )
         self.down_button.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
 
     def current_selection(self):
@@ -492,7 +497,7 @@ class LoadOrderFrame(tk.LabelFrame):
         if selection is None:
             return
 
-        if selection == size-1:
+        if selection == size - 1:
             return
 
         label = self.listbox.get(selection)
@@ -506,10 +511,17 @@ class LoadOrderFrame(tk.LabelFrame):
         self.listbox.insert(tk.END, label)
         self.render_buttons()
 
+    def all(self):
+        return self.listbox.get(0, tk.END)
+
     def delete(self, label):
-        idx = self.listbox.get(0, tk.END).index(label)
+        try:
+            idx = self.listbox.get(0, tk.END).index(label)
+        except ValueError:
+            return
         self.listbox.delete(idx)
         self.render_buttons()
+
 
 class PlayTab(Tab):
     def __init__(self, tab_control, config, task_manager, *args, **kwargs):
@@ -569,9 +581,42 @@ class PlayTab(Tab):
     def disable_button(self):
         self.button_play["state"] = tk.DISABLED
 
+    def load_from_load_order(self):
+        load_order_path = self.config.install_dir / "load_order.txt"
+        with load_order_path.open("r") as load_order_file:
+            for line in load_order_file:
+                line = line.strip()
+
+                select = True
+                if line.startswith("--"):
+                    select = False
+                    line = line[2:]
+
+                var, checkbox = self.checkboxes.get(line, (None, None))
+                if (var, checkbox) == (None, None):
+                    continue
+
+                if select:
+                    checkbox.select()
+                else:
+                    checkbox.deselect()
+
+                self.on_check(line, var)
+
+    def write_load_order(self):
+        load_order_path = self.config.install_dir / "load_order.txt"
+        with load_order_path.open("w") as load_order_file:
+            all_packs = set(self.checkboxes.keys())
+            for pack in self.load_order.all():
+                all_packs.remove(pack)
+                load_order_file.write(f"{pack}\n")
+
+            for pack in all_packs:
+                load_order_file.write(f"--{pack}\n")
+
     def play(self):
+        self.write_load_order()
         # TODO: launch playlunky
-        pass
 
     @staticmethod
     def diff_packs(before, after):
@@ -586,7 +631,7 @@ class PlayTab(Tab):
                 if not dir_.is_dir():
                     continue
                 pack_dirs.append(
-                    dir_.relative_to(self.config.install_dir / "Mods/Packs")
+                    str(dir_.relative_to(self.config.install_dir / "Mods/Packs"))
                 )
         return pack_dirs
 
@@ -603,7 +648,7 @@ class PlayTab(Tab):
             checkbox_val = checkbox_var.get()
             checkbox.grid_forget()
 
-            if name and name not in str(pack).lower():
+            if name and name not in pack.lower():
                 display = False
 
             if filter_selected == "Selected" and not checkbox_val:
@@ -615,7 +660,6 @@ class PlayTab(Tab):
                 checkbox.grid(column=0, pady=0, padx=5, sticky="w")
 
     def on_check(self, name, var):
-        name = str(name)
         if var.get():
             self.load_order.insert(name)
         else:
@@ -652,3 +696,4 @@ class PlayTab(Tab):
 
         self.packs = packs
         self.render_packs()
+        self.load_from_load_order()
