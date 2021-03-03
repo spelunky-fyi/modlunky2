@@ -9,8 +9,6 @@ import tkinter.messagebox as tkMessageBox
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import filedialog, ttk
-import asyncio
-from multiprocessing import Process
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
@@ -1082,8 +1080,8 @@ class LevelsTab(Tab):
             parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
             if parent_iid:
                 room_name = str(self.tree_levels.item(item_iid)["text"])
-                #self.canvas.delete("all")
-                #self.canvas_dual.delete("all")
+                # self.canvas.delete("all")
+                # self.canvas_dual.delete("all")
                 new_room_data = ""
                 if int(self.var_dual.get()) == 1:
                     if new_room_data != "":
@@ -1139,7 +1137,7 @@ class LevelsTab(Tab):
                 # Remove it from the tree
                 self.tree_levels.delete(item_iid)
                 self.tree_levels.selection_set(edited)
-                #self.room_select(None)
+                # self.room_select(None)
                 logger.debug("temp saved: \n%s", new_room_data)
                 logger.debug("Changes remembered!")
                 self.save_needed = True
