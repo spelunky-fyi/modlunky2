@@ -9,6 +9,8 @@ import tkinter.messagebox as tkMessageBox
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import filedialog, ttk
+import asyncio
+from multiprocessing import Process
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
@@ -648,12 +650,21 @@ class LevelsTab(Tab):
                     return
 
             canvas.delete(self.tiles[int(row)][int(col)])
-            self.tiles[row][col] = canvas.create_image(
-                int(col) * self.mag,
-                int(row) * self.mag,
-                image=self.panel_sel["image"],
-                anchor="nw",
-            )
+            if canvas == self.canvas_dual:
+                x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
+                self.tiles[row][col] = canvas.create_image(
+                    x2_coord * self.mag,
+                    int(row) * self.mag,
+                    image=self.panel_sel["image"],
+                    anchor="nw",
+                )
+            else:
+                self.tiles[row][col] = canvas.create_image(
+                    int(col) * self.mag,
+                    int(row) * self.mag,
+                    image=self.panel_sel["image"],
+                    anchor="nw",
+                )
             self.tiles_meta[row][col] = self.tile_label["text"].split(" ", 4)[3]
             logger.debug(
                 "%s replaced with %s",
@@ -684,12 +695,21 @@ class LevelsTab(Tab):
                     return
 
             canvas.delete(self.tiles[int(row)][int(col)])
-            self.tiles[row][col] = canvas.create_image(
-                int(col) * self.mag,
-                int(row) * self.mag,
-                image=self.panel_sel_secondary["image"],
-                anchor="nw",
-            )
+            if canvas == self.canvas_dual:
+                x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
+                self.tiles[row][col] = canvas.create_image(
+                    x2_coord * self.mag,
+                    int(row) * self.mag,
+                    image=self.panel_sel_secondary["image"],
+                    anchor="nw",
+                )
+            else:
+                self.tiles[row][col] = canvas.create_image(
+                    int(col) * self.mag,
+                    int(row) * self.mag,
+                    image=self.panel_sel_secondary["image"],
+                    anchor="nw",
+                )
             self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[
                 3
             ]
@@ -1062,8 +1082,8 @@ class LevelsTab(Tab):
             parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
             if parent_iid:
                 room_name = str(self.tree_levels.item(item_iid)["text"])
-                self.canvas.delete("all")
-                self.canvas_dual.delete("all")
+                #self.canvas.delete("all")
+                #self.canvas_dual.delete("all")
                 new_room_data = ""
                 if int(self.var_dual.get()) == 1:
                     if new_room_data != "":
@@ -1119,7 +1139,7 @@ class LevelsTab(Tab):
                 # Remove it from the tree
                 self.tree_levels.delete(item_iid)
                 self.tree_levels.selection_set(edited)
-                self.room_select(None)
+                #self.room_select(None)
                 logger.debug("temp saved: \n%s", new_room_data)
                 logger.debug("Changes remembered!")
                 self.save_needed = True
@@ -1587,7 +1607,7 @@ class LevelsTab(Tab):
             ):
                 factor = 0  # darkens the image for cosmic ocean and duat and others
 
-            image = Image.open(self.cur_lvl_bg_path)
+            image = Image.open(self.cur_lvl_bg_path).convert("RGBA")
             image = image.resize(
                 (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
             )  ## The (250, 250) is (height, width)
@@ -1641,7 +1661,7 @@ class LevelsTab(Tab):
             ):
                 factor = 0  # darkens the image for cosmic ocean and duat and others
 
-            image_dual = Image.open(self.lvl_bgbg_path)
+            image_dual = Image.open(self.lvl_bgbg_path).convert("RGBA")
             image_dual = image_dual.resize(
                 (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
             )  ## The (250, 250) is (height, width)
