@@ -531,9 +531,7 @@ class LoadOrderFrame(tk.LabelFrame):
 def launch_playlunky(_call, install_dir, exe_path):
     logger.info("Executing Playlunky Launcher from %s in %s", exe_path, install_dir)
     working_dir = exe_path.parent
-    cmd = [
-        f"{exe_path}", f"--exe_dir={install_dir}"
-    ]
+    cmd = [f"{exe_path}", f"--exe_dir={install_dir}"]
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
 
@@ -550,7 +548,9 @@ class PlayTab(Tab):
             True,
             on_complete="play:playlunky_closed",
         )
-        self.task_manager.register_handler("play:playlunky_closed", self.playlunky_closed)
+        self.task_manager.register_handler(
+            "play:playlunky_closed", self.playlunky_closed
+        )
         self.playlunky_running = False
 
         self.rowconfigure(0, minsize=200)
@@ -702,7 +702,11 @@ class PlayTab(Tab):
         self.version_frame.selected_dropdown["state"] = tk.DISABLED
         self.version_frame.uninstall_frame.button["state"] = tk.DISABLED
         self.disable_button()
-        self.task_manager.call("play:launch_playlunky", install_dir=self.config.install_dir, exe_path=exe_path)
+        self.task_manager.call(
+            "play:launch_playlunky",
+            install_dir=self.config.install_dir,
+            exe_path=exe_path,
+        )
 
     def playlunky_closed(self):
         self.version_frame.selected_dropdown["state"] = tk.NORMAL
