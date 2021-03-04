@@ -399,7 +399,7 @@ class LevelsTab(Tab):
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
         self.tile_pallete = ScrollableFrame(self.tab2, text="Tile Pallete", width=50)
-        self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=3, sticky="swne")
+        self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=1, sticky="swne")
         self.tile_pallete.scrollable_frame["width"] = 50
 
         # shows selected tile. Important because this is used for more than just user
@@ -496,7 +496,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_ignore.grid(row=4, column=1, sticky="w")
         self.checkbox_flip = ttk.Checkbutton(
             self.tab2,
             text="Flip",
@@ -505,7 +504,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_flip.grid(row=4, column=2, sticky="w")
         self.checkbox_only_flip = ttk.Checkbutton(
             self.tab2,
             text="Only Flip",
@@ -514,7 +512,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_only_flip.grid(row=4, column=3, sticky="w")
         self.checkbox_rare = ttk.Checkbutton(
             self.tab2,
             text="Rare",
@@ -523,7 +520,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_rare.grid(row=4, column=5, sticky="w")
         self.checkbox_hard = ttk.Checkbutton(
             self.tab2,
             text="Hard",
@@ -532,7 +528,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_hard.grid(row=4, column=6, sticky="w")
         self.checkbox_liquid = ttk.Checkbutton(
             self.tab2,
             text="Optimize Liquids",
@@ -541,7 +536,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_liquid.grid(row=4, column=4, sticky="w")
         self.checkbox_purge = ttk.Checkbutton(
             self.tab2,
             text="Purge",
@@ -550,7 +544,6 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.remember_changes,
         )
-        self.checkbox_purge.grid(row=4, column=7, sticky="w")
         self.checkbox_dual = ttk.Checkbutton(
             self.tab2,
             text="Dual",
@@ -559,7 +552,14 @@ class LevelsTab(Tab):
             offvalue=0,
             command=self.dual_toggle,
         )
-        self.checkbox_dual.grid(row=4, column=8, sticky="w")
+        self.checkbox_dual.grid(row=4, column=1, sticky="w")
+        self.checkbox_ignore.grid(row=4, column=2, sticky="w")
+        self.checkbox_purge.grid(row=4, column=3, sticky="w")
+        self.checkbox_rare.grid(row=4, column=4, sticky="w")
+        self.checkbox_hard.grid(row=4, column=5, sticky="w")
+        self.checkbox_flip.grid(row=4, column=6, sticky="w")
+        self.checkbox_only_flip.grid(row=4, column=7, sticky="w")
+        self.checkbox_liquid.grid(row=4, column=8, sticky="w")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
@@ -637,29 +637,62 @@ class LevelsTab(Tab):
             if canvas == self.canvas_dual:
                 col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
                 row = event.y // row_height
+
+                if col*self.mag<int(self.canvas["width"])+self.mag or col*self.mag>int(self.canvas["width"])*2+self.mag:
+                    print("col out of bounds")
+                    return
+
+                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
+                    print("row out of bounds")
+                    return
             else:
                 # Calculate column and row number
                 col = event.x // col_width
                 row = event.y // row_height
+
+                if col*self.mag<0 or col*self.mag>int(self.canvas["width"]):
+                    print("col out of bounds")
+                    return
+
+                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
+                    print("row out of bounds")
+                    return
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
                 if int(col) == int((len(self.tiles[0]) - 1) / 2):
                     logger.debug("Middle of dual detected; not tile placed")
                     return
 
+            x_coord_offset = 0
+            y_coord_offset = 0
+            img = None
+            #height, width, channels = img.shape
+            for tile_name_ref in self.draw_mode:
+                if self.tile_label["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
+                    print("Applying custom anchor for " + self.tile_label["text"].split(" ", 4)[2])
+                    for tile_ref in self.tile_pallete_ref_in_use:
+                        if str(tile_ref[0].split(" ", 1)[0])==self.tile_label["text"].split(" ", 4)[2]:
+                            print("Found " + str(tile_ref[0]))
+                            img = tile_ref[1]
+                            x_coord_offset, y_coord_offset = self.adjust_texture_xy(
+                                img.width(),
+                                img.height(),
+                                int(tile_name_ref[1]),
+                            )
+
             canvas.delete(self.tiles[int(row)][int(col)])
             if canvas == self.canvas_dual:
                 x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
-                self.tiles[row][col] = canvas.create_image(
-                    x2_coord * self.mag,
-                    int(row) * self.mag,
+                self.tiles[int(row)][int(col)] = canvas.create_image(
+                    x2_coord * self.mag - x_coord_offset,
+                    int(row) * self.mag - y_coord_offset,
                     image=self.panel_sel["image"],
                     anchor="nw",
                 )
             else:
-                self.tiles[row][col] = canvas.create_image(
-                    int(col) * self.mag,
-                    int(row) * self.mag,
+                self.tiles[int(row)][int(col)] = canvas.create_image(
+                    int(col) * self.mag - x_coord_offset,
+                    int(row) * self.mag - y_coord_offset,
                     image=self.panel_sel["image"],
                     anchor="nw",
                 )
@@ -673,7 +706,8 @@ class LevelsTab(Tab):
 
         def canvas_click_secondary(
             event, canvas
-        ):  # when the level editor grid is clicked
+        ):
+            # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
             row_height = self.mag
@@ -682,29 +716,61 @@ class LevelsTab(Tab):
             if canvas == self.canvas_dual:
                 col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
                 row = event.y // row_height
+
+                if col*self.mag<int(self.canvas["width"])+self.mag or col*self.mag>int(self.canvas["width"])*2+self.mag:
+                    print("col out of bounds")
+                    return
+
+                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
+                    print("row out of bounds")
+                    return
             else:
                 # Calculate column and row number
                 col = event.x // col_width
                 row = event.y // row_height
+
+                if col*self.mag<0 or col*self.mag>int(self.canvas["width"]):
+                    print("col out of bounds")
+                    return
+
+                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
+                    print("row out of bounds")
+                    return
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
                 if int(col) == int((len(self.tiles[0]) - 1) / 2):
                     logger.debug("Middle of dual detected; not tile placed")
                     return
 
+            x_coord_offset = 0
+            y_coord_offset = 0
+            img = None
+            for tile_name_ref in self.draw_mode:
+                if self.tile_label_secondary["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
+                    print("Applying custom anchor for " + self.tile_label_secondary["text"].split(" ", 4)[2])
+                    for tile_ref in self.tile_pallete_ref_in_use:
+                        if str(tile_ref[0].split(" ", 1)[0])==self.tile_label_secondary["text"].split(" ", 4)[2]:
+                            print("Found " + str(tile_ref[0]))
+                            img = tile_ref[1]
+                            x_coord_offset, y_coord_offset = self.adjust_texture_xy(
+                                img.width(),
+                                img.height(),
+                                int(tile_name_ref[1]),
+                            )
+
             canvas.delete(self.tiles[int(row)][int(col)])
             if canvas == self.canvas_dual:
                 x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
                 self.tiles[row][col] = canvas.create_image(
-                    x2_coord * self.mag,
-                    int(row) * self.mag,
+                    x2_coord * self.mag - x_coord_offset,
+                    int(row) * self.mag - y_coord_offset,
                     image=self.panel_sel_secondary["image"],
                     anchor="nw",
                 )
             else:
                 self.tiles[row][col] = canvas.create_image(
-                    int(col) * self.mag,
-                    int(row) * self.mag,
+                    int(col) * self.mag - x_coord_offset,
+                    int(row) * self.mag - y_coord_offset,
                     image=self.panel_sel_secondary["image"],
                     anchor="nw",
                 )
@@ -1932,7 +1998,6 @@ class LevelsTab(Tab):
             or lvl.startswith("tide")
             or lvl.startswith("end")
             or lvl.endswith("_tidepool.lvl")
-            or lvl.startswith("tiamat")
         ):
             self.lvl_biome = "tidepool"
             self.lvl_bg_path = self.textures_dir / "bg_tidepool.png"
@@ -1941,6 +2006,7 @@ class LevelsTab(Tab):
             or lvl.startswith("hallofu")
             or lvl.endswith("_babylon.lvl")
             or lvl.startswith("palace")
+            or lvl.startswith("tiamat")
         ):
             self.lvl_biome = "babylon"
             self.lvl_bg_path = self.textures_dir / "bg_babylon.png"
