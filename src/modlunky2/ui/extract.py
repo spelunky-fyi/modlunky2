@@ -130,7 +130,9 @@ class ExtractTab(Tab):
         self.scrollbar = ttk.Scrollbar(self.exe_frame)
         self.scrollbar.grid(row=0, column=1, sticky="nes")
 
-        self.button_open = ttk.Button(self.top_frame, text="Open Extract Dir", command=self.open_extract_dir)
+        self.button_open = ttk.Button(
+            self.top_frame, text="Open Extract Dir", command=self.open_extract_dir
+        )
         self.button_open.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
         self.config_frame = ttk.LabelFrame(self.top_frame, text="Options")

@@ -638,24 +638,27 @@ class LevelsTab(Tab):
                 col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
                 row = event.y // row_height
 
-                if col*self.mag<int(self.canvas["width"])+self.mag or col*self.mag>int(self.canvas["width"])*2+self.mag:
-                    print("col out of bounds")
+                if (
+                    col * self.mag < int(self.canvas["width"]) + self.mag
+                    or col * self.mag > int(self.canvas["width"]) * 2 + self.mag
+                ):
+                    logger.debug("col out of bounds")
                     return
 
-                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
-                    print("row out of bounds")
+                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
+                    logger.debug("row out of bounds")
                     return
             else:
                 # Calculate column and row number
                 col = event.x // col_width
                 row = event.y // row_height
 
-                if col*self.mag<0 or col*self.mag>int(self.canvas["width"]):
-                    print("col out of bounds")
+                if col * self.mag < 0 or col * self.mag > int(self.canvas["width"]):
+                    logger.debug("col out of bounds")
                     return
 
-                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
-                    print("row out of bounds")
+                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
+                    logger.debug("row out of bounds")
                     return
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
@@ -666,13 +669,19 @@ class LevelsTab(Tab):
             x_coord_offset = 0
             y_coord_offset = 0
             img = None
-            #height, width, channels = img.shape
+            # height, width, channels = img.shape
             for tile_name_ref in self.draw_mode:
                 if self.tile_label["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
-                    print("Applying custom anchor for " + self.tile_label["text"].split(" ", 4)[2])
+                    logger.debug(
+                        "Applying custom anchor for %s",
+                        self.tile_label["text"].split(" ", 4)[2],
+                    )
                     for tile_ref in self.tile_pallete_ref_in_use:
-                        if str(tile_ref[0].split(" ", 1)[0])==self.tile_label["text"].split(" ", 4)[2]:
-                            print("Found " + str(tile_ref[0]))
+                        if (
+                            str(tile_ref[0].split(" ", 1)[0])
+                            == self.tile_label["text"].split(" ", 4)[2]
+                        ):
+                            logger.debug("Found %s", tile_ref[0])
                             img = tile_ref[1]
                             x_coord_offset, y_coord_offset = self.adjust_texture_xy(
                                 img.width(),
@@ -704,9 +713,7 @@ class LevelsTab(Tab):
             )
             self.remember_changes()  # remember changes made
 
-        def canvas_click_secondary(
-            event, canvas
-        ):
+        def canvas_click_secondary(event, canvas):
             # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
@@ -717,24 +724,27 @@ class LevelsTab(Tab):
                 col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
                 row = event.y // row_height
 
-                if col*self.mag<int(self.canvas["width"])+self.mag or col*self.mag>int(self.canvas["width"])*2+self.mag:
-                    print("col out of bounds")
+                if (
+                    col * self.mag < int(self.canvas["width"]) + self.mag
+                    or col * self.mag > int(self.canvas["width"]) * 2 + self.mag
+                ):
+                    logger.debug("col out of bounds")
                     return
 
-                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
-                    print("row out of bounds")
+                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
+                    logger.debug("row out of bounds")
                     return
             else:
                 # Calculate column and row number
                 col = event.x // col_width
                 row = event.y // row_height
 
-                if col*self.mag<0 or col*self.mag>int(self.canvas["width"]):
-                    print("col out of bounds")
+                if col * self.mag < 0 or col * self.mag > int(self.canvas["width"]):
+                    logger.debug("col out of bounds")
                     return
 
-                if row*self.mag<0 or row*self.mag>int(self.canvas["height"]):
-                    print("row out of bounds")
+                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
+                    logger.debug("row out of bounds")
                     return
             # If the tile is not filled, create a rectangle
             if self.dual_mode:
@@ -746,11 +756,19 @@ class LevelsTab(Tab):
             y_coord_offset = 0
             img = None
             for tile_name_ref in self.draw_mode:
-                if self.tile_label_secondary["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
-                    print("Applying custom anchor for " + self.tile_label_secondary["text"].split(" ", 4)[2])
+                if self.tile_label_secondary["text"].split(" ", 4)[2] == str(
+                    tile_name_ref[0]
+                ):
+                    logger.debug(
+                        "Applying custom anchor for %s",
+                        self.tile_label_secondary["text"].split(" ", 4)[2],
+                    )
                     for tile_ref in self.tile_pallete_ref_in_use:
-                        if str(tile_ref[0].split(" ", 1)[0])==self.tile_label_secondary["text"].split(" ", 4)[2]:
-                            print("Found " + str(tile_ref[0]))
+                        if (
+                            str(tile_ref[0].split(" ", 1)[0])
+                            == self.tile_label_secondary["text"].split(" ", 4)[2]
+                        ):
+                            logger.debug("Found %s", tile_ref[0])
                             img = tile_ref[1]
                             x_coord_offset, y_coord_offset = self.adjust_texture_xy(
                                 img.width(),
