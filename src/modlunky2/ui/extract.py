@@ -1,6 +1,7 @@
 import logging
 import shutil
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import ttk
 from ctypes.util import find_library  # pylint: disable=unused-import
@@ -111,14 +112,16 @@ class ExtractTab(Tab):
         self.rowconfigure(1, minsize=60)
 
         self.top_frame = ttk.Frame(self)
-        self.top_frame.rowconfigure(0, weight=1)
+        self.top_frame.rowconfigure(0, minsize=60)
+        self.top_frame.rowconfigure(1, weight=1)
         self.top_frame.columnconfigure(0, weight=1)
         self.top_frame.columnconfigure(1, minsize=250)
         self.top_frame.grid(row=0, column=0, sticky="nswe")
 
         self.exe_frame = ttk.LabelFrame(self.top_frame, text="Select exe to Extract")
-        self.exe_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.exe_frame.grid(row=0, column=0, rowspan=2, pady=5, padx=5, sticky="nswe")
         self.exe_frame.rowconfigure(0, weight=1)
+
         self.exe_frame.columnconfigure(0, weight=1)
         self.exe_frame.columnconfigure(1)
 
@@ -127,8 +130,11 @@ class ExtractTab(Tab):
         self.scrollbar = ttk.Scrollbar(self.exe_frame)
         self.scrollbar.grid(row=0, column=1, sticky="nes")
 
+        self.button_open = ttk.Button(self.top_frame, text="Open Extract Dir", command=self.open_extract_dir)
+        self.button_open.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+
         self.config_frame = ttk.LabelFrame(self.top_frame, text="Options")
-        self.config_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+        self.config_frame.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
 
         self.recompress = tk.BooleanVar()
         self.recompress.set(True)
@@ -236,6 +242,10 @@ class ExtractTab(Tab):
         self.button_extract = ttk.Button(self, text="Extract", command=self.extract)
         self.button_extract.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_extract, ("Extract assets from EXE."))
+
+    def open_extract_dir(self):
+        extract_dir = self.config.install_dir / MODS / EXTRACTED_DIR
+        webbrowser.open(f"file://{extract_dir}")
 
     def extract_finished(self):
         self.button_extract["state"] = tk.NORMAL

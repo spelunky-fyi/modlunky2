@@ -39,6 +39,10 @@ class BaseSpriteMerger(ABC):
         to a dictionary that contain a chunk_size and a chunk_map
         """
 
+    @property
+    def stem(self):
+        return self._full_path.stem
+
     def __init__(
         self, base_path: Path = _DEFAULT_BASE_PATH, separate_grid_file: bool = True
     ):
@@ -165,7 +169,7 @@ class BaseSpriteMerger(ABC):
         self._sprite_sheet.paste(image, bbox)
 
     def do_merge(self, sprite_loaders: List[BaseSpriteLoader]) -> Image:
-        logger.info("Merging sprites for sheet %s", self._full_path.stem)
+        logger.info("Merging sprites for sheet %s", self.stem)
 
         height_offset = 0
         for sprite_loader_type, chunk_map in self._origin_map.items():

@@ -1,6 +1,8 @@
 import hashlib
 import logging
 import os
+import sys
+import traceback
 from collections import defaultdict
 from concurrent.futures import wait
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -272,8 +274,15 @@ class AssetStore:
 
     @staticmethod
     def _merge_single_entity(sprite_merger, sprite_loaders):
-        sprite_merger.do_merge(sprite_loaders)
-        sprite_merger.save()
+        try:
+            sprite_merger.do_merge(sprite_loaders)
+            sprite_merger.save()
+        except Exception:  # pylint: disable=broad-except
+            logger.critical(
+                "Failed to merge sprite for %s: %s",
+                sprite_merger.stem,
+                "".join(traceback.format_exception(*sys.exc_info())).strip(),
+            )
 
     def extract(
         self,

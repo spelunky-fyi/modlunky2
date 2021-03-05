@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Dict, Optional, Union
+from threading import Lock
 
 from PIL import Image
 
@@ -12,6 +13,7 @@ _DEFAULT_BASE_PATH = Path(
 )
 
 _CACHED_NONE_SENTINEL = object()
+_CACHE_LOCK = Lock()
 
 
 def _cache_img_not_class(f):
@@ -21,13 +23,14 @@ def _cache_img_not_class(f):
     # noinspection PyProtectedMember
     @wraps(f)
     def cache_img(slf, name: str):
-        img = slf._cache_dict.get(name)
-        if not img:
-            img = f(slf, name) or _CACHED_NONE_SENTINEL
-            slf._cache_dict[name] = img
-        if img is _CACHED_NONE_SENTINEL:
-            return None
-        return img
+        with _CACHE_LOCK:
+            img = slf._cache_dict.get(name)
+            if not img:
+                img = f(slf, name) or _CACHED_NONE_SENTINEL
+                slf._cache_dict[name] = img
+            if img is _CACHED_NONE_SENTINEL:
+                return None
+            return img
 
     return cache_img
 

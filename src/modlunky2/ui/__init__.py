@@ -93,13 +93,6 @@ class ModlunkyUI:
         self.tab_control = ttk.Notebook(self.root)
 
         self.register_tab(
-            "Pack Assets",
-            PackTab,
-            tab_control=self.tab_control,
-            config=config,
-            task_manager=self.task_manager,
-        )
-        self.register_tab(
             "Playlunky",
             PlayTab,
             tab_control=self.tab_control,
@@ -114,13 +107,19 @@ class ModlunkyUI:
             task_manager=self.task_manager,
         )
         self.register_tab(
+            "Pack Assets",
+            PackTab,
+            tab_control=self.tab_control,
+            config=config,
+            task_manager=self.task_manager,
+        )
+        self.register_tab(
             "Level Editor",
             LevelsTab,
             tab_control=self.tab_control,
             modlunky_ui=self,
             config=config,
         )
-
         self.register_tab(
             "Config",
             ConfigTab,
