@@ -182,7 +182,7 @@ class DownloadFrame(tk.Frame):
 
 def uninstall_playlunky_release(call, tag):
     dest_dir = PLAYLUNKY_DATA_DIR / tag
-    logger.info("Removing version %s from %s", tag, dest_dir)
+    logger.info("Removing Playlunky version %s", tag)
     for file_ in PLAYLUNKY_FILES:
         (dest_dir / file_).unlink(missing_ok=True)
     dest_dir.rmdir()
@@ -529,7 +529,7 @@ class LoadOrderFrame(tk.LabelFrame):
 
 
 def launch_playlunky(_call, install_dir, exe_path):
-    logger.info("Executing Playlunky Launcher from %s in %s", exe_path, install_dir)
+    logger.info("Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR))
     working_dir = exe_path.parent
     cmd = [f"{exe_path}", f"--exe_dir={install_dir}"]
     proc = subprocess.Popen(cmd, cwd=working_dir)
