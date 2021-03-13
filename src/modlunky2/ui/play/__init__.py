@@ -273,6 +273,10 @@ class VersionFrame(tk.LabelFrame):
     def show_download_frame(self):
         self.uninstall_frame.grid_forget()
         self.download_frame.grid(row=4, column=0, padx=10, sticky="ew")
+        if not self.selected_var.get():
+            self.download_frame.button["state"] = tk.DISABLED
+        else:
+            self.download_frame.button["state"] = tk.NORMAL
 
     def show_uninstall_frame(self):
         self.download_frame.grid_forget()
@@ -529,7 +533,9 @@ class LoadOrderFrame(tk.LabelFrame):
 
 
 def launch_playlunky(_call, install_dir, exe_path):
-    logger.info("Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR))
+    logger.info(
+        "Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR)
+    )
     working_dir = exe_path.parent
     cmd = [f"{exe_path}", f"--exe_dir={install_dir}"]
     proc = subprocess.Popen(cmd, cwd=working_dir)
@@ -794,7 +800,7 @@ class PlayTab(Tab):
 
         for pack in packs_removed:
             (_, item) = self.checkboxes[pack]
-            item.detroy()
+            item.destroy()
             del self.checkboxes[pack]
 
         self.packs = packs
