@@ -11,6 +11,7 @@ from pathlib import Path
 from tkinter import filedialog, ttk
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
+from modlunky2.ui.utils import tb_info
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
@@ -172,11 +173,8 @@ class LevelsTab(Tab):
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
-        for (
-            file
-        ) in (
-            self.my_list
-        ):  # Loads list of all the lvl files in the left farthest treeview
+        # Loads list of all the lvl files in the left farthest treeview
+        for file in self.my_list:
             if str(file).endswith(".lvl"):
                 self.tree_files.insert("", "end", values=str(file), text=str(file))
 
@@ -184,7 +182,7 @@ class LevelsTab(Tab):
         self.tab_control = ttk.Notebook(self)
         self.tab_control.grid(row=0, column=1, rowspan=3, sticky="nwse")
 
-        self.tab1 = ttk.Frame(self.tab_control)  # Tab 1 shows a lvl files rules
+        self.tab1 = ttk.Frame(self.tab_control)
         self.tab2 = ttk.Frame(self.tab_control)  # Tab 2 is the actual level editor
 
         self.button_back = tk.Button(
@@ -1151,6 +1149,7 @@ class LevelsTab(Tab):
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
             except Exception:  # pylint: disable=broad-except
+                logger.critical("Failed to save level: %s", tb_info())
                 _msg_box = tk.messagebox.showerror(
                     "Continue?",
                     "Error saving..",
@@ -1391,10 +1390,21 @@ class LevelsTab(Tab):
     def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
 
-        tile = str(tile.split(" ", 3)[0])
-        alt_tile = str(alt_tile.split(" ", 3)[0])  # isolates the id
-        new_tile_code = tile
+        invalid_tilecodes = []
+        if tile not in VALID_TILE_CODES:
+            invalid_tilecodes.append(tile)
 
+        if alt_tile not in VALID_TILE_CODES:
+            invalid_tilecodes.append(alt_tile)
+
+        if invalid_tilecodes:
+            tkMessageBox.showinfo(
+                "Uh Oh!",
+                f"You've entered invalid tilecodes: {', '.join(invalid_tilecodes)}",
+            )
+            return
+
+        new_tile_code = tile
         if int(percent) < 100:
             new_tile_code += "%" + percent
             # Have to use a temporary directory due to TCL/Tkinter is trying to write
@@ -1565,11 +1575,8 @@ class LevelsTab(Tab):
         toplevel.geometry("+%d+%d" % (x_coord, y_coord))
 
     def populate_tilecode_pallete(self):
-        for (
-            widget
-        ) in (
-            self.tile_pallete.scrollable_frame.winfo_children()
-        ):  # resets tile pallete to add them all back without the deleted one
+        # resets tile pallete to add them all back without the deleted one
+        for widget in self.tile_pallete.scrollable_frame.winfo_children():
             widget.destroy()
         count_row = 0
         count_col = -1
@@ -1627,11 +1634,8 @@ class LevelsTab(Tab):
             self.button_back.grid_remove()
             self.button_save.grid_remove()
             self.vsb_tree_files.grid_remove()
-            for (
-                widget
-            ) in (
-                self.tile_pallete.scrollable_frame.winfo_children()
-            ):  # removes any old tiles that might be there from the last file
+            # removes any old tiles that might be there from the last file
+            for widget in self.tile_pallete.scrollable_frame.winfo_children():
                 widget.destroy()
 
     def update_value(self, _event):
@@ -1960,32 +1964,20 @@ class LevelsTab(Tab):
         for code in self.usable_codes_string:
             self.usable_codes.append(code)
 
-        for (
-            widget
-        ) in (
-            self.tile_pallete.scrollable_frame.winfo_children()
-        ):  # removes any old tiles that might be there from the last file
+        # removes any old tiles that might be there from the last file
+        for widget in self.tile_pallete.scrollable_frame.winfo_children():
             widget.destroy()
 
-        for (
-            i
-        ) in (
-            self.tree_chances_levels.get_children()
-        ):  # removes any old rules that might be there from the last file
+        # removes any old rules that might be there from the last file
+        for i in self.tree_chances_levels.get_children():
             self.tree_chances_levels.delete(i)
 
-        for (
-            i
-        ) in (
-            self.tree_chances_monsters.get_children()
-        ):  # removes any old rules that might be there from the last file
+        # removes any old rules that might be there from the last file
+        for i in self.tree_chances_monsters.get_children():
             self.tree_chances_monsters.delete(i)
 
-        for (
-            i
-        ) in (
-            self.tree.get_children()
-        ):  # removes any old rules that might be there from the last file
+        # removes any old rules that might be there from the last file
+        for i in self.tree.get_children():
             self.tree.delete(i)
 
         self.tree.delete(*self.tree.get_children())
@@ -2796,10 +2788,10 @@ class LevelsTree(ttk.Treeview):
 
         self.levels_tab = levels_tab
 
-        self.popup_menu_child = tk.Menu(
-            self, tearoff=0
-        )  # two different context menus to show depending on what is clicked (room or room list)
+        # two different context menus to show depending on what is clicked (room or room list)
+        self.popup_menu_child = tk.Menu(self, tearoff=0)
         self.popup_menu_parent = tk.Menu(self, tearoff=0)
+
         self.popup_menu_child.add_command(label="Rename Room", command=self.rename)
         self.popup_menu_child.add_command(
             label="Delete Room", command=self.delete_selected

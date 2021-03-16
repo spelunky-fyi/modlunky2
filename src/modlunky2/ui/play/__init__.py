@@ -7,8 +7,8 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from shutil import copyfile
-from tkinter import ttk
 from tkinter import font as tk_font
+from tkinter import messagebox, ttk
 
 import requests
 from PIL import Image, ImageTk
@@ -424,6 +424,23 @@ class FiltersFrame(tk.LabelFrame):
             self.parent.master.render_packs()
 
 
+class InstallModFrame(tk.LabelFrame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, text="Install Mod", *args, **kwargs)
+        self.parent = parent
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        self.button = ttk.Button(self, text="Browse", command=self.install_mod)
+        self.button.grid(row=0, column=0, pady=5, padx=10, sticky="nswe")
+
+    def install_mod(self):
+        tk.messagebox.showinfo(
+            "Coming Soon",
+            "This feature hasn't been implemented yet, but it will be soon!",
+        )
+
+
 class LoadOrderFrame(tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, text="Load Order", *args, **kwargs)
@@ -566,20 +583,25 @@ class PlayTab(Tab):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, minsize=250)
 
-        self.packs_wrapper = tk.Frame(self)
-        self.packs_wrapper.grid(row=0, column=0, rowspan=3, sticky="nswe")
-        self.packs_wrapper.columnconfigure(0, weight=1)
-        self.packs_wrapper.rowconfigure(1, weight=1)
+        self.play_wrapper = tk.Frame(self)
+        self.play_wrapper.grid(row=0, column=0, rowspan=3, sticky="nswe")
+        self.play_wrapper.columnconfigure(0, weight=1)
+        self.play_wrapper.rowconfigure(1, weight=1)
 
-        self.filter_frame = FiltersFrame(self.packs_wrapper)
+        self.filter_frame = FiltersFrame(self.play_wrapper)
         self.filter_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
+        self.install_mod_frame = InstallModFrame(self.play_wrapper)
+        self.install_mod_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+
         self.packs_frame = ScrollableFrame(
-            self.packs_wrapper, text="Select Mods to Play"
+            self.play_wrapper, text="Select Mods to Play"
         )
         self.packs_frame.rowconfigure(0, weight=1)
         self.packs_frame.columnconfigure(0, weight=1)
-        self.packs_frame.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.packs_frame.grid(
+            row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
+        )
 
         self.version_frame = VersionFrame(self, config, task_manager)
         self.version_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")

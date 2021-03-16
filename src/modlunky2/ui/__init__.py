@@ -19,6 +19,7 @@ from .pack import PackTab
 from .widgets import ConsoleWindow
 from .logs import QueueHandler, register_queue_handler
 from .error import ErrorTab
+from .utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -200,11 +201,7 @@ class ModlunkyUI:
             obj = cls(**kwargs)
         except Exception:  # pylint: disable=broad-except
             obj = ErrorTab(tab_control=self.tab_control)
-            logger.critical(
-                "Failed to register tab %s: %s",
-                name,
-                "".join(traceback.format_exception(*sys.exc_info())).strip(),
-            )
+            logger.critical("Failed to register tab %s: %s", name, tb_info())
 
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)

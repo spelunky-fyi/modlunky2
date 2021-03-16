@@ -1,4 +1,6 @@
 import logging
+import sys
+import traceback
 from functools import wraps
 
 from modlunky2.assets.patcher import Patcher
@@ -20,3 +22,7 @@ def log_exception(func):
             logger.exception("Unexpected failure")
 
     return wrapper
+
+
+def tb_info():
+    return "".join(traceback.format_exception(*sys.exc_info())).strip()
