@@ -25,9 +25,10 @@ PLAYLUNKY_RELEASES_URL = "https://api.github.com/repos/spelunky-fyi/Playlunky/re
 PLAYLUNKY_RELEASES_PATH = CACHE_DIR / "playlunky-releases.json"
 PLAYLUNKY_DATA_DIR = DATA_DIR / "playlunky"
 
+SPEL2_DLL = "spel2.dll"
 PLAYLUNKY_DLL = "playlunky64.dll"
 PLAYLUNKY_EXE = "playlunky_launcher.exe"
-PLAYLUNKY_FILES = [PLAYLUNKY_DLL, PLAYLUNKY_EXE]
+PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
 
 
 class Entry(tk.Entry):
