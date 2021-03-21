@@ -2,6 +2,7 @@ from modlunky2.constants import BASE_DIR
 
 from .items import ItemSheet
 from .coffins import CoffinSheet
+from .deco_extra import DecoExtraSheet
 from .base_eggship2 import EggShip2Sheet
 from .journal_stickers import StickerSheet
 from .journal_items import JournalItemSheet

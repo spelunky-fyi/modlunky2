@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import filedialog, ttk
 
+import pyclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from modlunky2.ui.utils import tb_info
 
@@ -309,7 +310,7 @@ class LevelsTab(Tab):
         )
         self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="nwse")
 
-        self.canvas_grids.columnconfigure(0, weight=1)
+        self.canvas_grids.columnconfigure(2, weight=1)
         self.canvas_grids.rowconfigure(0, weight=1)
 
         self.scrollable_canvas_frame = tk.Frame(self.canvas_grids, bg="#343434")
@@ -393,6 +394,23 @@ class LevelsTab(Tab):
         self.canvas_dual.grid(row=1, column=3, padx=(0, 50))
         self.canvas_dual.grid_remove()  # hides it for now
         self.dual_mode = False
+
+        self.button_hide_tree = tk.Button(
+            self.canvas_grids, text="<<", command=self.toggle_list_hide
+        )
+        self.button_hide_tree.grid(row=0, column=0, sticky="nw")
+
+        self.button_replace = tk.Button(
+            self.canvas_grids, text="Replace", command=self.replace_tiles_dia
+        )
+        self.button_replace.grid(row=0, column=1, sticky="nw")
+        self.button_replace["state"] = tk.DISABLED
+
+        self.button_clear = tk.Button(
+            self.canvas_grids, text="Clear Canvas", command=self.clear_canvas
+        )
+        self.button_clear.grid(row=0, column=2, sticky="nw")
+        self.button_clear["state"] = tk.DISABLED
 
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
@@ -584,6 +602,7 @@ class LevelsTab(Tab):
         # 9 = draw bottom left + raise 1 tile + move left 1 tile
         # 10 = draw bottom left + raise 1 tile + move left 1 tile
         # 11 = move left 1 tile
+        # 12 = raise 1 tile
         self.draw_mode.append(["anubis", 2])
         self.draw_mode.append(["olmec", 5])
         self.draw_mode.append(["alienqueen", 7])
@@ -617,7 +636,9 @@ class LevelsTab(Tab):
         self.draw_mode.append(["minister", 2])
         self.draw_mode.append(["storage_guy", 2])
         self.draw_mode.append(["idol", 4])
+        self.draw_mode.append(["plasma_cannon", 4])
         self.draw_mode.append(["lockedchest", 4])
+        self.draw_mode.append(["shopkeeper_vat", 12])
 
         combo_tile_ids = []
         for tile_info in VALID_TILE_CODES:
@@ -1233,6 +1254,111 @@ class LevelsTab(Tab):
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
 
+    def toggle_list_hide(self):
+        if self.button_hide_tree["text"] == "<<":
+            self.tree_levels.grid_remove()
+            self.vsb_tree_levels.grid_remove()
+            self.tab2.columnconfigure(0, minsize=0)  # Column 0 = Level List
+            self.button_hide_tree["text"] = ">>"
+        else:
+            self.tree_levels.grid()
+            self.vsb_tree_levels.grid()
+            self.tab2.columnconfigure(0, minsize=200)  # Column 0 = Level List
+            self.button_hide_tree["text"] = "<<"
+
+    def replace_tiles_dia(self):
+        # Set up window
+        win = tk.Toplevel()
+        win.title("Replace Tiles")
+        if "nt" in os.name:
+            win.attributes("-toolwindow", True)
+        else:
+            win.attributes("-alpha", True)
+        self.center(win)
+
+        replacees = []
+        for tile in self.tile_pallete_ref_in_use:
+            replacees.append(str(tile[0]))
+
+        combo_replace = ttk.Combobox(win, height=20)
+        combo_replace["values"] = replacees
+        combo_replace.grid(row=0, column=1, columnspan=1)
+        col1_lbl = tk.Label(win, text="Replace all ")
+        col1_lbl.grid(row=0, column=0)
+        combo_replacer = ttk.Combobox(win, height=20)
+        combo_replacer["values"] = replacees
+        combo_replacer.grid(row=0, column=3, columnspan=1)
+        col2_lbl = tk.Label(win, text=" with ")
+        col2_lbl.grid(row=0, column=2)
+
+        def update_then_destroy():
+            if (
+                str(combo_replace.get().split(" ", 1)[0]) != "empty"
+                and combo_replace.get() != ""
+                and combo_replacer.get() != ""
+            ):
+                self.replace_tiles(
+                    str(combo_replace.get().split(" ", 1)[1]),
+                    str(combo_replacer.get().split(" ", 1)[1]),
+                )
+                win.destroy()
+
+        ok_button = tk.Button(win, text="Replace")
+        ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+        ok_button.grid(row=2, column=1)
+
+        cancel_button = tk.Button(win, text="Cancel")
+        cancel_button.bind("<Button-1>", lambda c: win.destroy())
+        cancel_button.grid(row=2, column=2)
+
+    def replace_tiles(self, tile, new_tile):
+        for room_parent in self.tree_levels.get_children():
+            for room in self.tree_levels.get_children(room_parent):
+                room_data = []
+                room_name = self.tree_levels.item(room, option="text")
+                room_rows = self.tree_levels.item(room, option="values")
+                for row in room_rows:
+                    new_row = ""
+                    if not str(row).startswith(r"\!"):
+                        for replace_code in row:
+                            if replace_code == str(tile):
+                                replace_code = str(new_tile)
+                                new_row += str(new_tile)
+                            else:
+                                new_row += str(replace_code)
+                    else:
+                        new_row = str(row)
+                    room_data.append(new_row)
+                # Put it back in with the upated values
+                edited = self.tree_levels.insert(
+                    room_parent,
+                    self.tree_levels.index(room),
+                    text=str(room_name),
+                    values=room_data,
+                )
+                # Remove it from the tree
+                self.tree_levels.delete(room)
+                if room == self.last_selected_room:
+                    self.tree_levels.selection_set(edited)
+                    self.last_selected_room = edited
+                    self.room_select(None)
+
+    def clear_canvas(self):
+        msg_box = tk.messagebox.askquestion(
+            "Clear Canvases?",
+            "Completely clear your canvas? This isn't recoverable.",
+            icon="warning",
+        )
+        if msg_box == "yes":
+            row_count = 0
+            for row in self.tiles_meta:
+                col_count = 0
+                for _ in row:
+                    self.tiles_meta[int(row_count)][int(col_count)] = "0"
+                    col_count = col_count + 1
+                row_count = row_count + 1
+            self.remember_changes()  # remember changes made
+
     def del_tilecode(self):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
@@ -1621,6 +1747,8 @@ class LevelsTab(Tab):
             self.tree_files.grid_remove()
             # Resets widgets
             self.scale["state"] = tk.DISABLED
+            self.button_replace["state"] = tk.DISABLED
+            self.button_clear["state"] = tk.DISABLED
             self.combobox["state"] = tk.DISABLED
             self.combobox_alt["state"] = tk.DISABLED
             self.button_tilecode_del["state"] = tk.DISABLED
@@ -1949,8 +2077,8 @@ class LevelsTab(Tab):
                                 currow * self.mag + 50,
                             )
                             self.tiles_meta[currow][curcol] = block
-
                     curcol = curcol + 1
+        self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, lvl):
         self.last_selected_room = None
@@ -1989,6 +2117,7 @@ class LevelsTab(Tab):
         self.combobox_alt["state"] = tk.NORMAL
         self.button_tilecode_del["state"] = tk.NORMAL
         self.button_tilecode_del_secondary["state"] = tk.NORMAL
+        self.button_replace["state"] = tk.NORMAL
 
         self.combobox_alt.grid_remove()
         self.scale.set(100)
@@ -2499,6 +2628,7 @@ class LevelsTab(Tab):
         # 9 = draw bottom left + raise 1 tile + move left 1 tile
         # 10 = draw bottom left + raise 1 tile + move left 1 tile
         # 11 = move left 1 tile
+        # 12 = raise 1 tile
         x_coord = 0
         y_coord = 0
         if mode == 1:
@@ -2526,50 +2656,80 @@ class LevelsTab(Tab):
             y_coord = height / 2 + 100
         elif mode == 11:
             x_coord = 50
+        elif mode == 12:
+            y_coord = 50
         return x_coord, y_coord
 
     def get_texture(self, tile, biome, lvl):
-        img = self._sprite_fetcher.get(str(tile), str(biome))
+        def get_specific_tile(tile):
+            img_spec = None
 
-        if (
-            lvl.startswith("generic")
-            or lvl.startswith("challenge")
-            or lvl.startswith("testing")
-            or lvl.startswith("beehive")
-            or lvl.startswith("palace")
-        ):  # makes tiles more general for multi biome lvls
-            if tile == "floor":
-                img = self._sprite_fetcher.get("generic_floor", str(biome))
-            elif tile == "styled_floor":
-                img = self._sprite_fetcher.get("generic_styled_floor", str(biome))
-        if lvl.startswith(
-            "base"
-        ):  # base is weird with its tiles so I gotta get specific here
-            if tile == "floor":
-                img = self._sprite_fetcher.get("floor", "cave")
-        if lvl.startswith("duat"):  # specific floor hard for this biome
-            if tile == "floor_hard":
-                img = self._sprite_fetcher.get("duat_floor_hard")
-        if (
-            lvl.startswith("sunken")
-            or lvl.startswith("hundun")
-            or lvl.endswith("_sunkencity.lvl")
-        ):  # specific floor hard for this biome
-            if tile == "floor_hard":
-                img = self._sprite_fetcher.get("sunken_floor_hard")
-        if (
-            lvl.startswith("volcan")
-            or lvl.startswith("ice")
-            or lvl.endswith("_icecavesarea.lvl")
-            or lvl.endswith("_volcano.lvl")
-        ):  # specific floor styled for this biome
-            if tile == "styled_floor":
-                img = self._sprite_fetcher.get("empty")
-        if lvl.startswith("olmec"):  # specific door
-            if tile == "door":
-                img = self._sprite_fetcher.get(
-                    "stone_door",
-                )
+            if (
+                lvl.startswith("generic")
+                or lvl.startswith("challenge")
+                or lvl.startswith("testing")
+                or lvl.startswith("beehive")
+                or lvl.startswith("palace")
+            ):
+                if tile == "floor":
+                    img_spec = self._sprite_fetcher.get("generic_floor", str(biome))
+                elif tile == "styled_floor":
+                    img_spec = self._sprite_fetcher.get(
+                        "generic_styled_floor", str(biome)
+                    )
+            # base is weird with its tiles so I gotta get specific here
+            if lvl.startswith("base"):
+                if tile == "floor":
+                    img_spec = self._sprite_fetcher.get("floor", "cave")
+            if lvl.startswith("duat"):  # specific floor hard for this biome
+                if tile == "floor_hard":
+                    img_spec = self._sprite_fetcher.get("duat_floor_hard")
+                elif tile == "coffin":
+                    img_spec = self._sprite_fetcher.get(
+                        "duat_coffin",
+                    )
+            # specific floor hard for this biome
+            if (
+                lvl.startswith("sunken")
+                or lvl.startswith("hundun")
+                or lvl.endswith("_sunkencity.lvl")
+            ):
+                if tile == "floor_hard":
+                    img_spec = self._sprite_fetcher.get("sunken_floor_hard")
+            # specific floor styled for this biome
+            if (
+                lvl.startswith("volcan")
+                or lvl.startswith("ice")
+                or lvl.endswith("_icecavesarea.lvl")
+                or lvl.endswith("_volcano.lvl")
+            ):
+                if tile == "styled_floor":
+                    img_spec = self._sprite_fetcher.get("empty")
+            if lvl.startswith("olmec"):  # specific door
+                if tile == "door":
+                    img_spec = self._sprite_fetcher.get(
+                        "stone_door",
+                    )
+            if lvl.startswith("cityofgold"):  # specific door
+                if tile == "crushtraplarge":
+                    img_spec = self._sprite_fetcher.get(
+                        "gold_crushtraplarge",
+                    )
+                elif tile == "coffin":
+                    img_spec = self._sprite_fetcher.get(
+                        "gold_coffin",
+                    )
+            if lvl.startswith("temple"):  # specific door
+                if tile == "coffin":
+                    img_spec = self._sprite_fetcher.get(
+                        "temple_coffin",
+                    )
+
+            return img_spec
+
+        img = self._sprite_fetcher.get(str(tile), str(biome))
+        if get_specific_tile(str(tile)) is not None:
+            img = get_specific_tile(str(tile))
 
         if len(tile.split("%", 2)) > 1:
             img1 = self._sprite_fetcher.get("unknown")
@@ -2577,47 +2737,8 @@ class LevelsTab(Tab):
             primary_tile = tile.split("%", 2)[0]
             if self._sprite_fetcher.get(primary_tile, str(biome)):
                 img1 = self._sprite_fetcher.get(primary_tile, str(biome))
-                if (
-                    lvl.startswith("generic")
-                    or lvl.startswith("challenge")
-                    or lvl.startswith("testing")
-                    or lvl.startswith("beehive")
-                    or lvl.startswith("palace")
-                ):  # makes tiles more general for multi biome lvls
-                    if primary_tile == "floor":
-                        img1 = self._sprite_fetcher.get("generic_floor", str(biome))
-                    elif primary_tile == "styled_floor":
-                        img1 = self._sprite_fetcher.get(
-                            "generic_styled_floor", str(biome)
-                        )
-                if lvl.startswith(
-                    "base"
-                ):  # base is weird with its tiles so I gotta get specific here
-                    if primary_tile == "floor":
-                        img1 = self._sprite_fetcher.get("floor", "cave")
-                if lvl.startswith("duat"):  # specific floor hard for this biome
-                    if primary_tile == "floor_hard":
-                        img1 = self._sprite_fetcher.get("duat_floor_hard")
-                if (
-                    lvl.startswith("sunken")
-                    or lvl.startswith("hundun")
-                    or lvl.endswith("_sunkencity.lvl")
-                ):  # specific floor hard for this biome
-                    if primary_tile == "floor_hard":
-                        img1 = self._sprite_fetcher.get("sunken_floor_hard")
-                if (
-                    lvl.startswith("volcan")
-                    or lvl.startswith("ice")
-                    or lvl.endswith("_icecavesarea.lvl")
-                    or lvl.endswith("_volcano.lvl")
-                ):  # specific floor styled for this biome
-                    if primary_tile == "styled_floor":
-                        img1 = self._sprite_fetcher.get("empty")
-                if lvl.startswith("olmec"):  # specific door
-                    if primary_tile == "door":
-                        img1 = self._sprite_fetcher.get(
-                            "stone_door",
-                        )
+                if get_specific_tile(str(tile)) is not None:
+                    img1 = get_specific_tile(str(primary_tile))
             percent = tile.split("%", 2)[1]
             secondary_tile = "empty"
             img2 = None
@@ -2625,47 +2746,8 @@ class LevelsTab(Tab):
                 secondary_tile = tile.split("%", 2)[2]
                 if self._sprite_fetcher.get(secondary_tile, str(biome)):
                     img2 = self._sprite_fetcher.get(secondary_tile, str(biome))
-                    if (
-                        lvl.startswith("generic")
-                        or lvl.startswith("challenge")
-                        or lvl.startswith("testing")
-                        or lvl.startswith("beehive")
-                        or lvl.startswith("palace")
-                    ):  # makes tiles more general for multi biome lvls
-                        if secondary_tile == "floor":
-                            img2 = self._sprite_fetcher.get("generic_floor", str(biome))
-                        elif secondary_tile == "styled_floor":
-                            img2 = self._sprite_fetcher.get(
-                                "generic_styled_floor", str(biome)
-                            )
-                    if lvl.startswith(
-                        "base"
-                    ):  # base is weird with its tiles so I gotta get specific here
-                        if secondary_tile == "floor":
-                            img2 = self._sprite_fetcher.get("floor", "cave")
-                    if lvl.startswith("duat"):  # specific floor hard for this biome
-                        if secondary_tile == "floor_hard":
-                            img2 = self._sprite_fetcher.get("duat_floor_hard")
-                    if (
-                        lvl.startswith("sunken")
-                        or lvl.startswith("hundun")
-                        or lvl.endswith("_sunkencity.lvl")
-                    ):  # specific floor hard for this biome
-                        if secondary_tile == "floor_hard":
-                            img2 = self._sprite_fetcher.get("sunken_floor_hard")
-                    if (
-                        lvl.startswith("volcan")
-                        or lvl.startswith("ice")
-                        or lvl.endswith("_icecavesarea.lvl")
-                        or lvl.endswith("_volcano.lvl")
-                    ):  # specific floor styled for this biome
-                        if secondary_tile == "styled_floor":
-                            img2 = self._sprite_fetcher.get("empty")
-                    if lvl.startswith("olmec"):  # specific door
-                        if secondary_tile == "door":
-                            img2 = self._sprite_fetcher.get(
-                                "stone_door",
-                            )
+                    if get_specific_tile(str(tile)) is not None:
+                        img2 = get_specific_tile(str(secondary_tile))
             img = self.get_tilecode_percent_texture(
                 primary_tile, secondary_tile, percent, img1, img2
             )
@@ -2794,10 +2876,16 @@ class LevelsTree(ttk.Treeview):
 
         self.popup_menu_child.add_command(label="Rename Room", command=self.rename)
         self.popup_menu_child.add_command(
+            label="Duplicate Room", command=self.duplicate
+        )
+        self.popup_menu_child.add_command(label="Copy Room", command=self.copy)
+        self.popup_menu_child.add_command(label="Paste Room", command=self.paste)
+        self.popup_menu_child.add_command(
             label="Delete Room", command=self.delete_selected
         )
         self.popup_menu_child.add_command(label="Add Room", command=self.add_room)
         self.popup_menu_parent.add_command(label="Add Room", command=self.add_room)
+        self.popup_menu_parent.add_command(label="Paste Room", command=self.paste)
 
         self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
 
@@ -2819,6 +2907,45 @@ class LevelsTree(ttk.Treeview):
     def rename(self):
         for _ in self.selection()[::-1]:
             self.rename_dialog()
+
+    def duplicate(self):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)  # gets selected room
+        if parent_iid:
+            item_name = self.item(item_iid)["text"]
+            room_data = self.item(item_iid, option="values")
+            self.insert(parent_iid, "end", text=item_name + " COPY", values=room_data)
+
+    def copy(self):
+        item = self.selection()[0]
+        copy_text = str(self.item(item, option="text"))
+        copy_values_raw = self.item(item, option="values")
+        copy_values = ""
+        for line in copy_values_raw:
+            copy_values += str(line) + "\n"
+        logger.debug("copied %s", copy_values)
+        pyclip.copy(copy_text + "\n" + copy_values)
+
+    def paste(self):
+        data = pyclip.paste().decode("cp1252")
+
+        paste_text = data.split("\n", 1)[0]
+        paste_values_raw = data.split("\n", 1)[1]
+
+        paste_values = []
+        paste_values = paste_values_raw.split("\n")
+
+        for item in paste_values:
+            if item == "":
+                paste_values.remove(item)  # removes empty line
+        logger.debug("pasted %s", paste_values)
+
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)  # gets selected room
+        if parent_iid:
+            self.insert(parent_iid, "end", text=paste_text, values=paste_values)
+        else:
+            self.insert(item_iid, "end", text=paste_text, values=paste_values)
 
     def delete_selected(self):
         item_iid = self.selection()[0]

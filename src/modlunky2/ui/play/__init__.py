@@ -440,7 +440,9 @@ class ControlsFrame(tk.LabelFrame):
         self.parent = parent
         self.columnconfigure(0, weight=1)
 
-        self.install_button = ttk.Button(self, text="Install Mod", command=self.install_mod)
+        self.install_button = ttk.Button(
+            self, text="Install Mod", command=self.install_mod
+        )
         self.install_button.grid(row=0, column=0, pady=5, padx=10, sticky="nswe")
 
     def install_mod(self):
@@ -611,14 +613,19 @@ class PlayTab(Tab):
         )
 
         self.version_frame = VersionFrame(self, config, task_manager)
-        self.version_frame.grid(row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
+        self.version_frame.grid(
+            row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
+        )
 
         self.install_mod_frame = ControlsFrame(self)
-        self.install_mod_frame.grid(row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
-
+        self.install_mod_frame.grid(
+            row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
+        )
 
         self.options_frame = OptionsFrame(self)
-        self.options_frame.grid(row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe")
+        self.options_frame.grid(
+            row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
+        )
 
         self.load_order = LoadOrderFrame(self)
         self.load_order.grid(row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe")
@@ -669,7 +676,6 @@ class PlayTab(Tab):
         self.options_frame.loose_audio_var.set(config.enable_loose_audio_files)
         self.options_frame.cache_decoded_audio_var.set(config.cache_decoded_audio_files)
         self.options_frame.enable_developer_mode_var.set(config.enable_developer_mode)
-
 
     def write_ini(self):
         path = self.config.install_dir / "playlunky.ini"
