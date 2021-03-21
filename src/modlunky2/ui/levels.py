@@ -1280,16 +1280,25 @@ class LevelsTab(Tab):
         for tile in self.tile_pallete_ref_in_use:
             replacees.append(str(tile[0]))
 
+        col1_lbl = tk.Label(win, text="Replace all ")
+        col1_lbl.grid(row=0, column=0)
         combo_replace = ttk.Combobox(win, height=20)
         combo_replace["values"] = replacees
         combo_replace.grid(row=0, column=1, columnspan=1)
-        col1_lbl = tk.Label(win, text="Replace all ")
-        col1_lbl.grid(row=0, column=0)
+        col2_lbl = tk.Label(win, text=" with ")
+        col2_lbl.grid(row=0, column=2)
         combo_replacer = ttk.Combobox(win, height=20)
         combo_replacer["values"] = replacees
         combo_replacer.grid(row=0, column=3, columnspan=1)
-        col2_lbl = tk.Label(win, text=" with ")
-        col2_lbl.grid(row=0, column=2)
+        col3_lbl = tk.Label(win, text=" in ")
+        col3_lbl.grid(row=0, column=4)
+        combo_where = ttk.Combobox(win, height=20)
+        combo_where["values"] = ["all rooms", "current room"]
+        combo_where.set("current room")
+        combo_where.grid(row=0, column=5, columnspan=1)
+        error_lbl = tk.Label(win, text="", fg="red")
+        error_lbl.grid(row=1, column=1, columnspan=5)
+        error_lbl.grid_remove()
 
         def update_then_destroy():
             if (
@@ -1297,51 +1306,85 @@ class LevelsTab(Tab):
                 and combo_replace.get() != ""
                 and combo_replacer.get() != ""
             ):
+                if (str(combo_where.get())!= "all rooms" and str(combo_where.get()) != "current room"):
+                    error_lbl['text']="Invalid parameter"
+                    error_lbl.grid()
+                    return
+                valid_1 = False
+                valid_2 = False
+                for valid_tile in replacees:
+                    if str(combo_replace.get())==valid_tile:
+                        valid_1 = True
+                    if str(combo_replacer.get())==valid_tile:
+                        valid_2 = True
+                if (valid_1 == False or valid_2 == False):
+                    error_lbl['text']="Invalid parameter"
+                    error_lbl.grid()
+                    return
+                if (str(combo_where.get()) == "current room" and self.last_selected_room==None):
+                    error_lbl['text']="No current room selected.."
+                    error_lbl.grid()
+                    return
                 self.replace_tiles(
                     str(combo_replace.get().split(" ", 1)[1]),
                     str(combo_replacer.get().split(" ", 1)[1]),
+                    str(combo_where.get())
                 )
                 win.destroy()
 
         ok_button = tk.Button(win, text="Replace")
         ok_button.bind("<Button-1>", lambda e: update_then_destroy())
-        ok_button.grid(row=2, column=1)
+        ok_button.grid(row=2, column=4)
 
         cancel_button = tk.Button(win, text="Cancel")
         cancel_button.bind("<Button-1>", lambda c: win.destroy())
-        cancel_button.grid(row=2, column=2)
+        cancel_button.grid(row=2, column=1)
 
-    def replace_tiles(self, tile, new_tile):
-        for room_parent in self.tree_levels.get_children():
-            for room in self.tree_levels.get_children(room_parent):
-                room_data = []
-                room_name = self.tree_levels.item(room, option="text")
-                room_rows = self.tree_levels.item(room, option="values")
-                for row in room_rows:
-                    new_row = ""
-                    if not str(row).startswith(r"\!"):
-                        for replace_code in row:
-                            if replace_code == str(tile):
-                                replace_code = str(new_tile)
-                                new_row += str(new_tile)
-                            else:
-                                new_row += str(replace_code)
-                    else:
-                        new_row = str(row)
-                    room_data.append(new_row)
-                # Put it back in with the upated values
-                edited = self.tree_levels.insert(
-                    room_parent,
-                    self.tree_levels.index(room),
-                    text=str(room_name),
-                    values=room_data,
-                )
-                # Remove it from the tree
-                self.tree_levels.delete(room)
-                if room == self.last_selected_room:
-                    self.tree_levels.selection_set(edited)
-                    self.last_selected_room = edited
-                    self.room_select(None)
+    def replace_tiles(self, tile, new_tile, replace_where):
+        if replace_where == "all rooms":
+            for room_parent in self.tree_levels.get_children():
+                for room in self.tree_levels.get_children(room_parent):
+                    room_data = []
+                    room_name = self.tree_levels.item(room, option="text")
+                    room_rows = self.tree_levels.item(room, option="values")
+                    for row in room_rows:
+                        new_row = ""
+                        if not str(row).startswith(r"\!"):
+                            for replace_code in row:
+                                if replace_code == str(tile):
+                                    replace_code = str(new_tile)
+                                    new_row += str(new_tile)
+                                else:
+                                    new_row += str(replace_code)
+                        else:
+                            new_row = str(row)
+                        room_data.append(new_row)
+                    # Put it back in with the upated values
+                    edited = self.tree_levels.insert(
+                        room_parent,
+                        self.tree_levels.index(room),
+                        text=str(room_name),
+                        values=room_data,
+                    )
+                    # Remove it from the tree
+                    self.tree_levels.delete(room)
+                    if room == self.last_selected_room:
+                        self.tree_levels.selection_set(edited)
+                        self.last_selected_room = edited
+                        self.room_select(None)
+        else:
+            row_count = 0
+            for row in self.tiles_meta:
+                col_count = 0
+                for _ in row:
+                    if self.tiles_meta[int(row_count)][int(col_count)] == tile:
+                        self.tiles_meta[int(row_count)][int(col_count)] = new_tile
+                        #self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
+                        #self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
+                    col_count = col_count + 1
+                row_count = row_count + 1
+            self.remember_changes()  # remember changes made
+            self.room_select(None)
 
     def clear_canvas(self):
         msg_box = tk.messagebox.askquestion(
@@ -1355,6 +1398,8 @@ class LevelsTab(Tab):
                 col_count = 0
                 for _ in row:
                     self.tiles_meta[int(row_count)][int(col_count)] = "0"
+                    self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
+                    self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
                     col_count = col_count + 1
                 row_count = row_count + 1
             self.remember_changes()  # remember changes made
