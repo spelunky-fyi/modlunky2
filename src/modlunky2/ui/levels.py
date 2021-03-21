@@ -1306,29 +1306,35 @@ class LevelsTab(Tab):
                 and combo_replace.get() != ""
                 and combo_replacer.get() != ""
             ):
-                if (str(combo_where.get())!= "all rooms" and str(combo_where.get()) != "current room"):
-                    error_lbl['text']="Invalid parameter"
+                if (
+                    str(combo_where.get()) != "all rooms"
+                    and str(combo_where.get()) != "current room"
+                ):
+                    error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
                 valid_1 = False
                 valid_2 = False
                 for valid_tile in replacees:
-                    if str(combo_replace.get())==valid_tile:
+                    if str(combo_replace.get()) == valid_tile:
                         valid_1 = True
-                    if str(combo_replacer.get())==valid_tile:
+                    if str(combo_replacer.get()) == valid_tile:
                         valid_2 = True
-                if (valid_1 == False or valid_2 == False):
-                    error_lbl['text']="Invalid parameter"
+                if valid_1 == False or valid_2 == False:
+                    error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
-                if (str(combo_where.get()) == "current room" and self.last_selected_room==None):
-                    error_lbl['text']="No current room selected.."
+                if (
+                    str(combo_where.get()) == "current room"
+                    and self.last_selected_room == None
+                ):
+                    error_lbl["text"] = "No current room selected.."
                     error_lbl.grid()
                     return
                 self.replace_tiles(
                     str(combo_replace.get().split(" ", 1)[1]),
                     str(combo_replacer.get().split(" ", 1)[1]),
-                    str(combo_where.get())
+                    str(combo_where.get()),
                 )
                 win.destroy()
 
@@ -1379,8 +1385,8 @@ class LevelsTab(Tab):
                 for _ in row:
                     if self.tiles_meta[int(row_count)][int(col_count)] == tile:
                         self.tiles_meta[int(row_count)][int(col_count)] = new_tile
-                        #self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
-                        #self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
+                        # self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
+                        # self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
                     col_count = col_count + 1
                 row_count = row_count + 1
             self.remember_changes()  # remember changes made

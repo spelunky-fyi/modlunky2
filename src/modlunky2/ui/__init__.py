@@ -158,7 +158,6 @@ class ModlunkyUI:
             logger.debug("Saving config")
             self.config.config_file.save()
 
-
     def after_cb(self):
         if not self.task_manager.is_alive():
             # Worker process went away but we're shutting down so just return
@@ -187,7 +186,7 @@ class ModlunkyUI:
             self.task_manager.dispatch(msg)
 
     def handle_resize(self, event):
-        if not isinstance(event.widget,tk.Tk):
+        if not isinstance(event.widget, tk.Tk):
             return
 
         self.last_geometry = self.root.geometry()
