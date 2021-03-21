@@ -36,7 +36,16 @@ class SpelunkySpriteFetcher:
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
         sheets = [getattr(monsters, m) for m in monsters.__all__]
-        sheets.extend([CoffinSheet, EggShip2Sheet, ItemSheet, HudSheet, FloorMiscSheet, DecoExtraSheet])
+        sheets.extend(
+            [
+                CoffinSheet,
+                EggShip2Sheet,
+                ItemSheet,
+                HudSheet,
+                FloorMiscSheet,
+                DecoExtraSheet,
+            ]
+        )
         # Now making them instances
         sheets = [s(self.base_path) for s in sheets]
 

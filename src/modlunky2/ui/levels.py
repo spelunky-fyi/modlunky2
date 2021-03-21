@@ -9,8 +9,8 @@ import tkinter.messagebox as tkMessageBox
 from dataclasses import dataclass
 from pathlib import Path
 from tkinter import filedialog, ttk
-import win32clipboard
 
+import pyclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from modlunky2.ui.utils import tb_info
 
@@ -395,16 +395,22 @@ class LevelsTab(Tab):
         self.canvas_dual.grid_remove()  # hides it for now
         self.dual_mode = False
 
-        self.button_hide_tree = tk.Button(self.canvas_grids, text="<<", command=self.toggle_list_hide)
+        self.button_hide_tree = tk.Button(
+            self.canvas_grids, text="<<", command=self.toggle_list_hide
+        )
         self.button_hide_tree.grid(row=0, column=0, sticky="nw")
 
-        self.button_replace = tk.Button(self.canvas_grids, text="Replace", command=self.replace_tiles_dia)
+        self.button_replace = tk.Button(
+            self.canvas_grids, text="Replace", command=self.replace_tiles_dia
+        )
         self.button_replace.grid(row=0, column=1, sticky="nw")
-        self.button_replace['state'] = tk.DISABLED
+        self.button_replace["state"] = tk.DISABLED
 
-        self.button_clear = tk.Button(self.canvas_grids, text="Clear Canvas", command=self.clear_canvas)
+        self.button_clear = tk.Button(
+            self.canvas_grids, text="Clear Canvas", command=self.clear_canvas
+        )
         self.button_clear.grid(row=0, column=2, sticky="nw")
-        self.button_clear['state'] = tk.DISABLED
+        self.button_clear["state"] = tk.DISABLED
 
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
@@ -1249,16 +1255,16 @@ class LevelsTab(Tab):
             self.background_label.grid_remove()
 
     def toggle_list_hide(self):
-        if self.button_hide_tree['text']=="<<":
+        if self.button_hide_tree["text"] == "<<":
             self.tree_levels.grid_remove()
             self.vsb_tree_levels.grid_remove()
             self.tab2.columnconfigure(0, minsize=0)  # Column 0 = Level List
-            self.button_hide_tree['text']=">>"
+            self.button_hide_tree["text"] = ">>"
         else:
             self.tree_levels.grid()
             self.vsb_tree_levels.grid()
             self.tab2.columnconfigure(0, minsize=200)  # Column 0 = Level List
-            self.button_hide_tree['text']="<<"
+            self.button_hide_tree["text"] = "<<"
 
     def replace_tiles_dia(self):
         # Set up window
@@ -1286,8 +1292,15 @@ class LevelsTab(Tab):
         col2_lbl.grid(row=0, column=2)
 
         def update_then_destroy():
-            if (str(combo_replace.get().split(" ", 1)[0])!="empty" and combo_replace.get()!="" and combo_replacer.get()!=""):
-                self.replace_tiles(str(combo_replace.get().split(" ", 1)[1]), str(combo_replacer.get().split(" ", 1)[1]))
+            if (
+                str(combo_replace.get().split(" ", 1)[0]) != "empty"
+                and combo_replace.get() != ""
+                and combo_replacer.get() != ""
+            ):
+                self.replace_tiles(
+                    str(combo_replace.get().split(" ", 1)[1]),
+                    str(combo_replacer.get().split(" ", 1)[1]),
+                )
                 win.destroy()
 
         ok_button = tk.Button(win, text="Replace")
@@ -1297,7 +1310,6 @@ class LevelsTab(Tab):
         cancel_button = tk.Button(win, text="Cancel")
         cancel_button.bind("<Button-1>", lambda c: win.destroy())
         cancel_button.grid(row=2, column=2)
-
 
     def replace_tiles(self, tile, new_tile):
         for room_parent in self.tree_levels.get_children():
@@ -1346,7 +1358,6 @@ class LevelsTab(Tab):
                     col_count = col_count + 1
                 row_count = row_count + 1
             self.remember_changes()  # remember changes made
-
 
     def del_tilecode(self):
         msg_box = tk.messagebox.askquestion(
@@ -1736,8 +1747,8 @@ class LevelsTab(Tab):
             self.tree_files.grid_remove()
             # Resets widgets
             self.scale["state"] = tk.DISABLED
-            self.button_replace['state'] = tk.DISABLED
-            self.button_clear['state'] = tk.DISABLED
+            self.button_replace["state"] = tk.DISABLED
+            self.button_clear["state"] = tk.DISABLED
             self.combobox["state"] = tk.DISABLED
             self.combobox_alt["state"] = tk.DISABLED
             self.button_tilecode_del["state"] = tk.DISABLED
@@ -2067,7 +2078,7 @@ class LevelsTab(Tab):
                             )
                             self.tiles_meta[currow][curcol] = block
                     curcol = curcol + 1
-        self.button_clear['state'] = tk.NORMAL
+        self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, lvl):
         self.last_selected_room = None
@@ -2106,7 +2117,7 @@ class LevelsTab(Tab):
         self.combobox_alt["state"] = tk.NORMAL
         self.button_tilecode_del["state"] = tk.NORMAL
         self.button_tilecode_del_secondary["state"] = tk.NORMAL
-        self.button_replace['state'] = tk.NORMAL
+        self.button_replace["state"] = tk.NORMAL
 
         self.combobox_alt.grid_remove()
         self.scale.set(100)
@@ -2650,18 +2661,24 @@ class LevelsTab(Tab):
         return x_coord, y_coord
 
     def get_texture(self, tile, biome, lvl):
-
         def get_specific_tile(tile):
             img_spec = None
 
-            if (lvl.startswith("generic") or lvl.startswith("challenge") or lvl.startswith("testing") or lvl.startswith("beehive") or lvl.startswith("palace")):
+            if (
+                lvl.startswith("generic")
+                or lvl.startswith("challenge")
+                or lvl.startswith("testing")
+                or lvl.startswith("beehive")
+                or lvl.startswith("palace")
+            ):
                 if tile == "floor":
                     img_spec = self._sprite_fetcher.get("generic_floor", str(biome))
                 elif tile == "styled_floor":
                     img_spec = self._sprite_fetcher.get(
                         "generic_styled_floor", str(biome)
                     )
-            if lvl.startswith("base"):  # base is weird with its tiles so I gotta get specific here
+            # base is weird with its tiles so I gotta get specific here
+            if lvl.startswith("base"):
                 if tile == "floor":
                     img_spec = self._sprite_fetcher.get("floor", "cave")
             if lvl.startswith("duat"):  # specific floor hard for this biome
@@ -2671,10 +2688,21 @@ class LevelsTab(Tab):
                     img_spec = self._sprite_fetcher.get(
                         "duat_coffin",
                     )
-            if (lvl.startswith("sunken") or lvl.startswith("hundun") or lvl.endswith("_sunkencity.lvl")):  # specific floor hard for this biome
+            # specific floor hard for this biome
+            if (
+                lvl.startswith("sunken")
+                or lvl.startswith("hundun")
+                or lvl.endswith("_sunkencity.lvl")
+            ):
                 if tile == "floor_hard":
                     img_spec = self._sprite_fetcher.get("sunken_floor_hard")
-            if (lvl.startswith("volcan")or lvl.startswith("ice")or lvl.endswith("_icecavesarea.lvl")or lvl.endswith("_volcano.lvl")):  # specific floor styled for this biome
+            # specific floor styled for this biome
+            if (
+                lvl.startswith("volcan")
+                or lvl.startswith("ice")
+                or lvl.endswith("_icecavesarea.lvl")
+                or lvl.endswith("_volcano.lvl")
+            ):
                 if tile == "styled_floor":
                     img_spec = self._sprite_fetcher.get("empty")
             if lvl.startswith("olmec"):  # specific door
@@ -2699,9 +2727,8 @@ class LevelsTab(Tab):
 
             return img_spec
 
-
         img = self._sprite_fetcher.get(str(tile), str(biome))
-        if get_specific_tile(str(tile))!=None:
+        if get_specific_tile(str(tile)) != None:
             img = get_specific_tile(str(tile))
 
         if len(tile.split("%", 2)) > 1:
@@ -2710,7 +2737,7 @@ class LevelsTab(Tab):
             primary_tile = tile.split("%", 2)[0]
             if self._sprite_fetcher.get(primary_tile, str(biome)):
                 img1 = self._sprite_fetcher.get(primary_tile, str(biome))
-                if get_specific_tile(str(tile))!=None:
+                if get_specific_tile(str(tile)) != None:
                     img1 = get_specific_tile(str(primary_tile))
             percent = tile.split("%", 2)[1]
             secondary_tile = "empty"
@@ -2719,7 +2746,7 @@ class LevelsTab(Tab):
                 secondary_tile = tile.split("%", 2)[2]
                 if self._sprite_fetcher.get(secondary_tile, str(biome)):
                     img2 = self._sprite_fetcher.get(secondary_tile, str(biome))
-                    if get_specific_tile(str(tile))!=None:
+                    if get_specific_tile(str(tile)) != None:
                         img2 = get_specific_tile(str(secondary_tile))
             img = self.get_tilecode_percent_texture(
                 primary_tile, secondary_tile, percent, img1, img2
@@ -2848,7 +2875,9 @@ class LevelsTree(ttk.Treeview):
         self.popup_menu_parent = tk.Menu(self, tearoff=0)
 
         self.popup_menu_child.add_command(label="Rename Room", command=self.rename)
-        self.popup_menu_child.add_command(label="Duplicate Room", command=self.duplicate)
+        self.popup_menu_child.add_command(
+            label="Duplicate Room", command=self.duplicate
+        )
         self.popup_menu_child.add_command(label="Copy Room", command=self.copy)
         self.popup_menu_child.add_command(label="Paste Room", command=self.paste)
         self.popup_menu_child.add_command(
@@ -2894,17 +2923,11 @@ class LevelsTree(ttk.Treeview):
         copy_values = ""
         for line in copy_values_raw:
             copy_values += str(line) + "\n"
-        print("copied " + copy_values)
-        # set clipboard data
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(copy_text + "\n" + copy_values)
-        win32clipboard.CloseClipboard()
+        logger.debug("copied %s", copy_values)
+        pyclip.copy(copy_text + "\n" + copy_values)
 
     def paste(self):
-        win32clipboard.OpenClipboard()
-        data = win32clipboard.GetClipboardData()
-        win32clipboard.CloseClipboard()
+        data = pyclip.paste().decode("cp1252")
 
         paste_text = data.split("\n", 1)[0]
         paste_values_raw = data.split("\n", 1)[1]
@@ -2914,8 +2937,8 @@ class LevelsTree(ttk.Treeview):
 
         for item in paste_values:
             if item == "":
-                paste_values.remove(item) # removes empty line
-        print("pasted " + str(paste_values))
+                paste_values.remove(item)  # removes empty line
+        logger.debug("pasted %s", paste_values)
 
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)  # gets selected room
@@ -2923,7 +2946,6 @@ class LevelsTree(ttk.Treeview):
             self.insert(parent_iid, "end", text=paste_text, values=paste_values)
         else:
             self.insert(item_iid, "end", text=paste_text, values=paste_values)
-
 
     def delete_selected(self):
         item_iid = self.selection()[0]

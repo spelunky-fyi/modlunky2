@@ -72,7 +72,6 @@ def test_ini_with_known_values():
     assert config.enable_developer_mode is False
 
 
-
 def test_ini_when_empty():
     config = PlaylunkyConfig.from_ini(StringIO(""))
     assert config.random_character_select is False
