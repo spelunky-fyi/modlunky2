@@ -1,4 +1,5 @@
 import os
+import re
 from queue import Empty
 
 import tkinter as tk
@@ -137,34 +138,51 @@ class ScrollableFrame(ttk.LabelFrame):
             self.canvas.unbind_all("<Button-5>")
 
 
-class ToggledFrame(tk.Frame):
-    def __init__(self, parent, text, *args, **options):
-        tk.Frame.__init__(self, parent, *args, **options)
+class PopupWindow(ttk.Frame):
+    def __init__(self, title, config, *args, **kwargs):
+        self.shutting_down = False
+        self.win = tk.Toplevel()
+        self.config = config
 
-        self.show = tk.IntVar()
-        self.show.set(0)
+        self.label_frame = ttk.LabelFrame(self.win, text=title)
+        self.label_frame.columnconfigure(0, weight=1)
+        self.label_frame.rowconfigure(0, weight=1)
+        self.label_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
-        self.title_frame = ttk.Frame(self)
-        self.title_frame.pack(fill="x", expand=1)
+        super().__init__(self.label_frame, *args, **kwargs)
 
-        ttk.Label(self.title_frame, text=text).pack(side="left", fill="x", expand=1)
-
-        self.toggle_button = ttk.Checkbutton(
-            self.title_frame,
-            width=2,
-            text="+",
-            command=self.toggle,
-            variable=self.show,
-            style="Toolbutton",
-        )
-        self.toggle_button.pack(side="left")
-
-        self.sub_frame = tk.Frame(self, relief="sunken", borderwidth=1)
-
-    def toggle(self):
-        if bool(self.show.get()):
-            self.sub_frame.pack(fill="x", expand=1)
-            self.toggle_button.configure(text="-")
+        self.win.title(title)
+        if "nt" in os.name:
+            self.win.attributes("-toolwindow", True)
         else:
-            self.sub_frame.forget()
-            self.toggle_button.configure(text="+")
+            self.win.attributes("-alpha", True)
+
+        main_geometry = tuple(map(int, re.split(r"[+x]", self.config.config_file.geometry)))
+
+        self.win.geometry("+{}+{}".format(
+            main_geometry[2] + 400,
+            main_geometry[3] + 200,
+        ))
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        self.win.bind("<Escape>", self.on_escape)
+
+    def on_escape(self, _event=None):
+        self.destroy()
+
+    def destroy(self):
+        # This Frame is a child element of the Toplevel so destroying the
+        # toplevel will eventually call this method again which would be
+        # infinitely recursive.
+        #
+        # Track the first time this is called which will propagate the destroy
+        # to the Toplevel, afterwords call the super's destroy instead.
+        if not self.shutting_down:
+            self.shutting_down = True
+            self.win.destroy()
+            return
+
+        super().destroy()

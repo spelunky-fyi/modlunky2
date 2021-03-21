@@ -28,7 +28,7 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.widgets import ScrollableFrame, Tab
+from modlunky2.ui.widgets import ScrollableFrame, Tab, PopupWindow
 
 logger = logging.getLogger("modlunky2")
 
@@ -38,9 +38,10 @@ class LevelsTab(Tab):
         self, tab_control, modlunky_ui, config, *args, **kwargs
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
+        self.config = config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(self, self)
+        self.tree_levels = LevelsTree(self, self, self.config)
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -282,7 +283,7 @@ class LevelsTab(Tab):
         self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
         self.tree_levels = LevelsTree(
-            self.tab2, self, selectmode="browse"
+            self.tab2, self, self.config, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
@@ -1268,13 +1269,7 @@ class LevelsTab(Tab):
 
     def replace_tiles_dia(self):
         # Set up window
-        win = tk.Toplevel()
-        win.title("Replace Tiles")
-        if "nt" in os.name:
-            win.attributes("-toolwindow", True)
-        else:
-            win.attributes("-alpha", True)
-        self.center(win)
+        win = PopupWindow("Replace Tiles", self.config)
 
         replacees = []
         for tile in self.tile_pallete_ref_in_use:
@@ -1338,12 +1333,10 @@ class LevelsTab(Tab):
                 )
                 win.destroy()
 
-        ok_button = tk.Button(win, text="Replace")
-        ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+        ok_button = tk.Button(win, text="Replace", command=update_then_destroy)
         ok_button.grid(row=2, column=4)
 
-        cancel_button = tk.Button(win, text="Cancel")
-        cancel_button.bind("<Button-1>", lambda c: win.destroy())
+        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
         cancel_button.grid(row=2, column=1)
 
     def replace_tiles(self, tile, new_tile, replace_where):
@@ -1654,18 +1647,7 @@ class LevelsTab(Tab):
         if entry_index == "":
             return
 
-        # Set up window
-        win = tk.Toplevel()
-        win.title("Edit Entry")
-        if "nt" in os.name:
-            win.attributes("-toolwindow", True)
-        else:
-            win.attributes("-alpha", True)
-        self.center(win)
-
-        ####
-        # Set up the window's other attributes and geometry
-        ####
+        win = PopupWindow("Edit Entry", self.config)
 
         # Grab the entry's values
         for child in tree_view.get_children():
@@ -1699,12 +1681,10 @@ class LevelsTab(Tab):
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
 
-        ok_button = tk.Button(win, text="Ok")
-        ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+        ok_button = tk.Button(win, text="Ok", command=update_then_destroy)
         ok_button.grid(row=1, column=2)
 
-        cancel_button = tk.Button(win, text="Cancel")
-        cancel_button.bind("<Button-1>", lambda c: win.destroy())
+        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
         cancel_button.grid(row=1, column=4)
 
     def confirm_entry(self, tree_view, entry1, entry2, entry3):
@@ -1733,23 +1713,6 @@ class LevelsTab(Tab):
         tree_view.delete(curr)
         self.save_needed = True
         self.button_save["state"] = tk.NORMAL
-
-    def center(self, toplevel):
-        toplevel.update_idletasks()
-
-        # Tkinter way to find the screen resolution
-        # screen_width = toplevel.winfo_screenwidth()
-        # screen_height = toplevel.winfo_screenheight()
-
-        # find the screen resolution
-        screen_width = int(self.screen_width)
-        screen_height = int(self.screen_height)
-
-        size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
-        x_coord = screen_width / 2 - size[0] / 2
-        y_coord = screen_height / 2 - size[1] / 2
-
-        toplevel.geometry("+%d+%d" % (x_coord, y_coord))
 
     def populate_tilecode_pallete(self):
         # resets tile pallete to add them all back without the deleted one
@@ -2916,8 +2879,9 @@ DEFAULT_ROOM_TYPE = "normal"
 
 
 class LevelsTree(ttk.Treeview):
-    def __init__(self, parent, levels_tab, *args, **kwargs):
-        ttk.Treeview.__init__(self, parent, *args, **kwargs)
+    def __init__(self, parent, levels_tab, config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.config = config
 
         self.levels_tab = levels_tab
 
@@ -3031,14 +2995,7 @@ class LevelsTree(ttk.Treeview):
         if entry_index == "":
             return
 
-        # Set up window
-        win = tk.Toplevel()
-        win.title("Add Room")
-        if "nt" in os.name:
-            win.attributes("-toolwindow", True)
-        else:
-            win.attributes("-alpha", True)
-        self.center(win)
+        win = PopupWindow("Add Room", self.config)
 
         combosizes = ttk.Combobox(win, height=20)
         combosizes["values"] = list(ROOM_TYPES.keys())
@@ -3060,12 +3017,10 @@ class LevelsTree(ttk.Treeview):
             self.insert(parent, "end", text="new room", values=new_room_data)
             win.destroy()
 
-        ok_button = tk.Button(win, text="Add")
-        ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+        ok_button = tk.Button(win, text="Add", command=update_then_destroy)
         ok_button.grid(row=2, column=1)
 
-        cancel_button = tk.Button(win, text="Cancel")
-        cancel_button.bind("<Button-1>", lambda c: win.destroy())
+        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
         cancel_button.grid(row=2, column=2)
 
     def rename_dialog(self):
@@ -3077,14 +3032,7 @@ class LevelsTree(ttk.Treeview):
             if entry_index == "":
                 return
 
-            # Set up window
-            win = tk.Toplevel()
-            win.title("Edit Name")
-            if "nt" in os.name:
-                win.attributes("-toolwindow", True)
-            else:
-                win.attributes("-alpha", True)
-            self.center(win)
+            win = PopupWindow("Edit Name", self.config)
 
             item_name = ""
             item_name = self.item(item_iid)["text"]
@@ -3100,12 +3048,10 @@ class LevelsTree(ttk.Treeview):
                 if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
                     win.destroy()
 
-            ok_button = tk.Button(win, text="Ok")
-            ok_button.bind("<Button-1>", lambda e: update_then_destroy())
+            ok_button = tk.Button(win, text="Ok", command=update_then_destroy)
             ok_button.grid(row=1, column=1)
 
-            cancel_button = tk.Button(win, text="Cancel")
-            cancel_button.bind("<Button-1>", lambda c: win.destroy())
+            cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
             cancel_button.grid(row=1, column=2)
 
     def confirm_entry(self, entry1, parent, room_data):
@@ -3122,22 +3068,7 @@ class LevelsTree(ttk.Treeview):
         else:
             return False
 
-    def center(self, toplevel):
-        toplevel.update_idletasks()
 
-        # Tkinter way to find the screen resolution
-        # screen_width = toplevel.winfo_screenwidth()
-        # screen_height = toplevel.winfo_screenheight()
-
-        # find the screen resolution
-        screen_width = 1280
-        screen_height = 720
-
-        size = tuple(int(_) for _ in toplevel.geometry().split("+")[0].split("x"))
-        x_coord = screen_width / 2 - size[0] / 2
-        y_coord = screen_height / 2 - size[1] / 2
-
-        toplevel.geometry("+%d+%d" % (x_coord, y_coord))
 
 
 class RulesTree(ttk.Treeview):
