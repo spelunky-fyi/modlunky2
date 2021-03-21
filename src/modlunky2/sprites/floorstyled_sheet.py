@@ -40,7 +40,7 @@ class GoldStyledFloorSheet(AbstractFloorStyledSheet):
         "cog_floor": (7, 2, 8, 3),
         "slidingwall_ceiling": (5, 8, 6, 10),
         "slidingwall_switch": (6, 8, 7, 9),
-        "crushtraplarge": (6, 0, 8, 2),
+        "gold_crushtraplarge": (6, 0, 8, 2),
         "push_block": (7, 2, 8, 3),
     }
 
