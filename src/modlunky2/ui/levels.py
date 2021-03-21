@@ -2995,33 +2995,17 @@ class LevelsTree(ttk.Treeview):
         if entry_index == "":
             return
 
-        win = PopupWindow("Add Room", self.config)
-
-        combosizes = ttk.Combobox(win, height=20)
-        combosizes["values"] = list(ROOM_TYPES.keys())
-        combosizes.grid(row=0, column=1, columnspan=3)
-        col1_lbl = tk.Label(win, text="Size: ")
-        col1_lbl.grid(row=0, column=0)
-
         # Set default prompt based on parent name
-        combosizes.set("normal: 10x8")
+        roomsize_key = "normal: 10x8"
         parent_room_type = self.item(parent)["text"]
         for room_size_text, room_type in ROOM_TYPES.items():
             if parent_room_type.startswith(room_type.name):
-                combosizes.set(room_size_text)
+                roomsize_key = room_size_text
                 break
 
-        def update_then_destroy():
-            room_type = ROOM_TYPES[combosizes.get()]
-            new_room_data = ["0" * room_type.x_size] * room_type.y_size
-            self.insert(parent, "end", text="new room", values=new_room_data)
-            win.destroy()
-
-        ok_button = tk.Button(win, text="Add", command=update_then_destroy)
-        ok_button.grid(row=2, column=1)
-
-        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
-        cancel_button.grid(row=2, column=2)
+        room_type = ROOM_TYPES[roomsize_key]
+        new_room_data = ["0" * room_type.x_size] * room_type.y_size
+        self.insert(parent, "end", text="new room", values=new_room_data)
 
     def rename_dialog(self):
         item_iid = self.selection()[0]
