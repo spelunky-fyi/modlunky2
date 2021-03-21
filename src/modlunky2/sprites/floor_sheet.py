@@ -30,7 +30,6 @@ class CaveFloorSheet(AbstractFloorSheet):
 class VolcanaFloorSheet(AbstractFloorSheet):
     biome_name = "volcano"
     _additional_chunks = {
-        "icefloor": (7, 1, 8, 2),
         "conveyorbelt_right": (8, 10, 9, 11),
         "conveyorbelt_left": (8, 11, 9, 12),
         "door2": (8, 6, 10, 8),
@@ -90,6 +89,7 @@ class EggplantFloorSheet(AbstractFloorSheet):
     _additional_chunks = {
         "eggplant_door": (0.5, 7, 3, 9),
         "ghist_door2": (10, 6, 12, 8),
+        "fountain_head": (10, 2, 12, 4),
     }
 
 
