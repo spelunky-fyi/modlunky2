@@ -12,23 +12,19 @@ from tkinter import filedialog, ttk
 
 import pyclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
-from modlunky2.ui.utils import tb_info
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_chances import LevelChance, LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
-from modlunky2.levels.level_templates import (
-    Chunk,
-    LevelTemplate,
-    LevelTemplates,
-    TemplateSetting,
-)
+from modlunky2.levels.level_templates import (Chunk, LevelTemplate,
+                                              LevelTemplates, TemplateSetting)
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.widgets import ScrollableFrame, Tab, PopupWindow
+from modlunky2.ui.utils import tb_info
+from modlunky2.ui.widgets import PopupWindow, ScrollableFrame, Tab
 
 logger = logging.getLogger("modlunky2")
 
@@ -1279,20 +1275,23 @@ class LevelsTab(Tab):
         col1_lbl.grid(row=0, column=0)
         combo_replace = ttk.Combobox(win, height=20)
         combo_replace["values"] = replacees
-        combo_replace.grid(row=0, column=1, columnspan=1)
-        col2_lbl = tk.Label(win, text=" with ")
-        col2_lbl.grid(row=0, column=2)
+        combo_replace.grid(row=0, column=1)
+
+        col2_lbl = tk.Label(win, text="with ")
+        col2_lbl.grid(row=1, column=0)
         combo_replacer = ttk.Combobox(win, height=20)
         combo_replacer["values"] = replacees
-        combo_replacer.grid(row=0, column=3, columnspan=1)
-        col3_lbl = tk.Label(win, text=" in ")
-        col3_lbl.grid(row=0, column=4)
+        combo_replacer.grid(row=1, column=1)
+
+        col3_lbl = tk.Label(win, text="in ")
+        col3_lbl.grid(row=2, column=0)
         combo_where = ttk.Combobox(win, height=20)
         combo_where["values"] = ["all rooms", "current room"]
         combo_where.set("current room")
-        combo_where.grid(row=0, column=5, columnspan=1)
+        combo_where.grid(row=2, column=1)
+
         error_lbl = tk.Label(win, text="", fg="red")
-        error_lbl.grid(row=1, column=1, columnspan=5)
+        error_lbl.grid(row=3, column=0, columnspan=2)
         error_lbl.grid_remove()
 
         def update_then_destroy():
@@ -1301,10 +1300,7 @@ class LevelsTab(Tab):
                 and combo_replace.get() != ""
                 and combo_replacer.get() != ""
             ):
-                if (
-                    str(combo_where.get()) != "all rooms"
-                    and str(combo_where.get()) != "current room"
-                ):
+                if str(combo_where.get()) not in ["all rooms", "current room"]:
                     error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
@@ -1333,11 +1329,19 @@ class LevelsTab(Tab):
                 )
                 win.destroy()
 
-        ok_button = tk.Button(win, text="Replace", command=update_then_destroy)
-        ok_button.grid(row=2, column=4)
+        separator = ttk.Separator(win)
+        separator.grid(row=4, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
-        cancel_button.grid(row=2, column=1)
+        buttons = tk.Frame(win)
+        buttons.grid(row=5, column=0, columnspan=2, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = tk.Button(buttons, text="Replace", command=update_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def replace_tiles(self, tile, new_tile, replace_where):
         if replace_where == "all rooms":
@@ -1648,6 +1652,7 @@ class LevelsTab(Tab):
             return
 
         win = PopupWindow("Edit Entry", self.config)
+        win.columnconfigure(1, minsize=500)
 
         # Grab the entry's values
         for child in tree_view.get_children():
@@ -1658,20 +1663,20 @@ class LevelsTab(Tab):
         col1_lbl = tk.Label(win, text="Entry: ")
         col1_ent = tk.Entry(win)
         col1_ent.insert(0, values[0])  # Default is column 1's current value
-        col1_lbl.grid(row=0, column=0)
-        col1_ent.grid(row=0, column=1)
+        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
 
         col2_lbl = tk.Label(win, text="Value: ")
         col2_ent = tk.Entry(win)
         col2_ent.insert(0, values[1])  # Default is column 2's current value
-        col2_lbl.grid(row=0, column=2)
-        col2_ent.grid(row=0, column=3)
+        col2_lbl.grid(row=1, column=0, padx=2, pady=2, sticky="nse")
+        col2_ent.grid(row=1, column=1, padx=2, pady=2, sticky="nsew")
 
-        col3_lbl = tk.Label(win, text="Note: ")
+        col3_lbl = tk.Label(win, text="Comment: ")
         col3_ent = tk.Entry(win)
         col3_ent.insert(0, values[2])  # Default is column 3's current value
-        col3_lbl.grid(row=0, column=4)
-        col3_ent.grid(row=0, column=5)
+        col3_lbl.grid(row=2, column=0, padx=2, pady=2, sticky="nse")
+        col3_ent.grid(row=2, column=1, padx=2, pady=2, sticky="nsew")
 
         def update_then_destroy():
             if self.confirm_entry(
@@ -1681,11 +1686,19 @@ class LevelsTab(Tab):
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
 
-        ok_button = tk.Button(win, text="Ok", command=update_then_destroy)
-        ok_button.grid(row=1, column=2)
+        separator = ttk.Separator(win)
+        separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
-        cancel_button.grid(row=1, column=4)
+        buttons = tk.Frame(win)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def confirm_entry(self, tree_view, entry1, entry2, entry3):
         ####
@@ -2619,8 +2632,9 @@ class LevelsTab(Tab):
                     i = i + 1
 
                 room_name = "room"
-                if str(room.comment) != "":
-                    room_name = str(room.comment).split(" ", 1)[1].strip("\n")
+                comment = str(room.comment).lstrip("/ ").strip()
+                if comment:
+                    room_name = comment
 
                 self.node = self.tree_levels.insert(
                     entry, "end", values=room_string, text=str(room_name)
@@ -3010,33 +3024,44 @@ class LevelsTree(ttk.Treeview):
     def rename_dialog(self):
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)  # gets selected room
-        if parent_iid:
-            # First check if a blank space was selected
-            entry_index = self.focus()
-            if entry_index == "":
-                return
+        if not parent_iid:
+            return
 
-            win = PopupWindow("Edit Name", self.config)
+        # First check if a blank space was selected
+        entry_index = self.focus()
+        if entry_index == "":
+            return
 
-            item_name = ""
-            item_name = self.item(item_iid)["text"]
-            room_data = self.item(item_iid, option="values")
+        win = PopupWindow("Edit Name", self.config)
 
-            col1_lbl = tk.Label(win, text="Name: ")
-            col1_ent = tk.Entry(win)
-            col1_ent.insert(0, item_name)  # Default to rooms current name
-            col1_lbl.grid(row=0, column=0)
-            col1_ent.grid(row=0, column=1, columnspan=3)
+        item_name = ""
+        item_name = self.item(item_iid)["text"]
+        room_data = self.item(item_iid, option="values")
 
-            def update_then_destroy():
-                if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
-                    win.destroy()
+        col1_lbl = tk.Label(win, text="Name: ")
+        col1_ent = tk.Entry(win)
+        col1_ent.insert(0, item_name)  # Default to rooms current name
+        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nswe")
 
-            ok_button = tk.Button(win, text="Ok", command=update_then_destroy)
-            ok_button.grid(row=1, column=1)
+        def update_then_destroy():
+            if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
+                win.destroy()
 
-            cancel_button = tk.Button(win, text="Cancel", command=win.destroy)
-            cancel_button.grid(row=1, column=2)
+        separator = ttk.Separator(win)
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="nsew")
+
+        buttons = tk.Frame(win)
+        buttons.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+
 
     def confirm_entry(self, entry1, parent, room_data):
         if entry1 != "":

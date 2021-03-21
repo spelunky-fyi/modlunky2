@@ -163,6 +163,7 @@ class PopupWindow(ttk.Frame):
             main_geometry[2] + 400,
             main_geometry[3] + 200,
         ))
+        self.win.resizable(False, False)
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
