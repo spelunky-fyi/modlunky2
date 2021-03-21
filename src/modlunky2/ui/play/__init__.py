@@ -386,6 +386,15 @@ class OptionsFrame(tk.LabelFrame):
         )
         self.cache_decoded_audio_checkbox.grid(row=2, column=0, sticky="w")
 
+        self.enable_developer_mode_var = tk.BooleanVar()
+        self.enable_developer_mode_checkbox = tk.Checkbutton(
+            self,
+            text="Enable Developer Mode",
+            variable=self.enable_developer_mode_var,
+            compound="left",
+        )
+        self.enable_developer_mode_checkbox.grid(row=3, column=0, sticky="w")
+
 
 class FiltersFrame(tk.LabelFrame):
     def __init__(self, parent):
@@ -658,6 +667,8 @@ class PlayTab(Tab):
         self.options_frame.random_char_var.set(config.random_character_select)
         self.options_frame.loose_audio_var.set(config.enable_loose_audio_files)
         self.options_frame.cache_decoded_audio_var.set(config.cache_decoded_audio_files)
+        self.options_frame.enable_developer_mode_var.set(config.enable_developer_mode)
+
 
     def write_ini(self):
         path = self.config.install_dir / "playlunky.ini"
@@ -665,6 +676,7 @@ class PlayTab(Tab):
             random_character_select=self.options_frame.random_char_var.get(),
             enable_loose_audio_files=self.options_frame.loose_audio_var.get(),
             cache_decoded_audio_files=self.options_frame.cache_decoded_audio_var.get(),
+            enable_developer_mode=self.options_frame.enable_developer_mode_var.get(),
         )
         with path.open("w") as handle:
             config.write(handle)

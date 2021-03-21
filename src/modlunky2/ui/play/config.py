@@ -14,6 +14,7 @@ class PlaylunkyConfig:
     random_character_select: bool = False
     enable_loose_audio_files: bool = True
     cache_decoded_audio_files: bool = False
+    enable_developer_mode: bool = False
 
     @classmethod
     def from_ini(cls, handle: TextIO) -> "PlaylunkyConfig":
@@ -35,11 +36,17 @@ class PlaylunkyConfig:
             "cache_decoded_audio_files",
             fallback=False,
         )
+        enable_developer_mode = config.getboolean(
+            "settings",
+            "enable_developer_mode",
+            fallback=False,
+        )
 
         obj = cls(
             random_character_select=random_character_select,
             enable_loose_audio_files=enable_loose_audio_files,
             cache_decoded_audio_files=cache_decoded_audio_files,
+            enable_developer_mode=enable_developer_mode,
         )
 
         obj.ini = config

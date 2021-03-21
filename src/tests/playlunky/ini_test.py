@@ -14,6 +14,7 @@ def test_keep_unknown():
         enable_loose_audio_files=on
         some_unknown_field=ABACAB00
         cache_decoded_audio_files=off
+        enable_developer_mode=off
     """
             )
         )
@@ -33,6 +34,7 @@ def test_keep_unknown():
         enable_loose_audio_files=on
         some_unknown_field=ABACAB00
         cache_decoded_audio_files=off
+        enable_developer_mode=off
     """
         ).strip()
     )
@@ -59,6 +61,7 @@ def test_ini_with_known_values():
         random_character_select=off
         enable_loose_audio_files=on
         cache_decoded_audio_files=off
+        enable_developer_mode=off
     """
             )
         )
@@ -66,6 +69,8 @@ def test_ini_with_known_values():
     assert config.random_character_select is False
     assert config.enable_loose_audio_files is True
     assert config.cache_decoded_audio_files is False
+    assert config.enable_developer_mode is False
+
 
 
 def test_ini_when_empty():
