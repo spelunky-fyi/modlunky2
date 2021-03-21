@@ -1320,13 +1320,13 @@ class LevelsTab(Tab):
                         valid_1 = True
                     if str(combo_replacer.get()) == valid_tile:
                         valid_2 = True
-                if valid_1 == False or valid_2 == False:
+                if valid_1 is False or valid_2 is False:
                     error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
                 if (
                     str(combo_where.get()) == "current room"
-                    and self.last_selected_room == None
+                    and self.last_selected_room is None
                 ):
                     error_lbl["text"] = "No current room selected.."
                     error_lbl.grid()
