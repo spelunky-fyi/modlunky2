@@ -62,7 +62,7 @@ class Monsters01(BaseSpriteLoader):
         "witchdoctor": (0, 6, 1, 7),
         "mantrap": (0, 8, 1, 9),
         "tikiman": (0, 9, 1, 10),
-        "mosquito": (14, 0, 15, 1),
+        "mosquito": (0, 14, 1, 15),
     }
 
 
@@ -86,7 +86,6 @@ class Monsters03(BaseSpriteLoader):
     _chunk_size = 128
     _chunk_map = {
         "yeti": (0, 0, 1, 1),
-        "shopkeeper_vat": (0, 2, 1, 3),
         "jumpdog": (0, 6, 1, 7),
         "olmite": (0, 7, 1, 8),
     }
