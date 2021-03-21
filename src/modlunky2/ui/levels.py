@@ -1346,14 +1346,14 @@ class LevelsTab(Tab):
     def clear_canvas(self):
         msg_box = tk.messagebox.askquestion(
             "Clear Canvases?",
-            "Completelt clear your canvas? This isn't recoverable.",
+            "Completely clear your canvas? This isn't recoverable.",
             icon="warning",
         )
         if msg_box == "yes":
             row_count = 0
             for row in self.tiles_meta:
                 col_count = 0
-                for col in row:
+                for _ in row:
                     self.tiles_meta[int(row_count)][int(col_count)] = "0"
                     col_count = col_count + 1
                 row_count = row_count + 1
@@ -2728,7 +2728,7 @@ class LevelsTab(Tab):
             return img_spec
 
         img = self._sprite_fetcher.get(str(tile), str(biome))
-        if get_specific_tile(str(tile)) != None:
+        if get_specific_tile(str(tile)) is not None:
             img = get_specific_tile(str(tile))
 
         if len(tile.split("%", 2)) > 1:
@@ -2737,7 +2737,7 @@ class LevelsTab(Tab):
             primary_tile = tile.split("%", 2)[0]
             if self._sprite_fetcher.get(primary_tile, str(biome)):
                 img1 = self._sprite_fetcher.get(primary_tile, str(biome))
-                if get_specific_tile(str(tile)) != None:
+                if get_specific_tile(str(tile)) is not None:
                     img1 = get_specific_tile(str(primary_tile))
             percent = tile.split("%", 2)[1]
             secondary_tile = "empty"
@@ -2746,7 +2746,7 @@ class LevelsTab(Tab):
                 secondary_tile = tile.split("%", 2)[2]
                 if self._sprite_fetcher.get(secondary_tile, str(biome)):
                     img2 = self._sprite_fetcher.get(secondary_tile, str(biome))
-                    if get_specific_tile(str(tile)) != None:
+                    if get_specific_tile(str(tile)) is not None:
                         img2 = get_specific_tile(str(secondary_tile))
             img = self.get_tilecode_percent_texture(
                 primary_tile, secondary_tile, percent, img1, img2
