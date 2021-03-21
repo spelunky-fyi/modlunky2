@@ -139,7 +139,7 @@ class ExtractTab(Tab):
         self.config_frame.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
 
         self.recompress = tk.BooleanVar()
-        self.recompress.set(True)
+        self.recompress.set(False)
         self.checkbox_recompress = tk.Checkbutton(
             self.config_frame,
             text="Recompress",
