@@ -434,15 +434,14 @@ class FiltersFrame(tk.LabelFrame):
             self.parent.master.render_packs()
 
 
-class InstallModFrame(tk.LabelFrame):
+class ControlsFrame(tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, text="Install Mod", *args, **kwargs)
+        super().__init__(parent, text="Stuff & Things", *args, **kwargs)
         self.parent = parent
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
 
-        self.button = ttk.Button(self, text="Browse", command=self.install_mod)
-        self.button.grid(row=0, column=0, pady=5, padx=10, sticky="nswe")
+        self.install_button = ttk.Button(self, text="Install Mod", command=self.install_mod)
+        self.install_button.grid(row=0, column=0, pady=5, padx=10, sticky="nswe")
 
     def install_mod(self):
         tk.messagebox.showinfo(
@@ -592,6 +591,7 @@ class PlayTab(Tab):
         self.rowconfigure(3, minsize=60)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, minsize=250)
+        self.columnconfigure(2, minsize=250)
 
         self.play_wrapper = tk.Frame(self)
         self.play_wrapper.grid(row=0, column=0, rowspan=3, sticky="nswe")
@@ -600,9 +600,6 @@ class PlayTab(Tab):
 
         self.filter_frame = FiltersFrame(self.play_wrapper)
         self.filter_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
-
-        self.install_mod_frame = InstallModFrame(self.play_wrapper)
-        self.install_mod_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
         self.packs_frame = ScrollableFrame(
             self.play_wrapper, text="Select Mods to Play"
@@ -614,13 +611,17 @@ class PlayTab(Tab):
         )
 
         self.version_frame = VersionFrame(self, config, task_manager)
-        self.version_frame.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+        self.version_frame.grid(row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
+
+        self.install_mod_frame = ControlsFrame(self)
+        self.install_mod_frame.grid(row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
+
 
         self.options_frame = OptionsFrame(self)
-        self.options_frame.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
+        self.options_frame.grid(row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe")
 
         self.load_order = LoadOrderFrame(self)
-        self.load_order.grid(row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
+        self.load_order.grid(row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe")
 
         self.button_play = ttk.Button(
             self, text="Play!", state=tk.DISABLED, command=self.play
