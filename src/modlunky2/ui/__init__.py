@@ -9,6 +9,7 @@ from multiprocessing import Queue
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
+from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
 
 from .tasks import TaskManager, PING_INTERVAL
 from .config import ConfigTab
@@ -22,10 +23,6 @@ from .error import ErrorTab
 from .utils import tb_info
 
 logger = logging.getLogger("modlunky2")
-
-
-MIN_WIDTH = 1280
-MIN_HEIGHT = 900
 
 
 def exception_logger(type_, value, traceb):
@@ -58,7 +55,10 @@ class ModlunkyUI:
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
-        self.root.geometry(f"{MIN_WIDTH}x{MIN_HEIGHT}")
+        self.root.geometry(config.config_file.geometry)
+        self.last_geometry = config.config_file.geometry
+        self.root.bind("<Configure>", self.handle_resize)
+
         self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_rowconfigure(0, weight=0)
@@ -146,6 +146,18 @@ class ModlunkyUI:
         self.task_manager.start_process()
         self.last_ping = time.time()
         self.root.after(100, self.after_cb)
+        self.root.after(1000, self.after_record_win)
+
+    def after_record_win(self):
+        self.root.after(1000, self.after_record_win)
+        if self.config.config_file.geometry != self.last_geometry:
+            self.config.config_file.geometry = self.last_geometry
+            self.config.config_file.dirty = True
+
+        if self.config.config_file.dirty:
+            logger.debug("Saving config")
+            self.config.config_file.save()
+
 
     def after_cb(self):
         if not self.task_manager.is_alive():
@@ -173,6 +185,12 @@ class ModlunkyUI:
                 return
 
             self.task_manager.dispatch(msg)
+
+    def handle_resize(self, event):
+        if not isinstance(event.widget,tk.Tk):
+            return
+
+        self.last_geometry = self.root.geometry()
 
     def update(self):
         try:

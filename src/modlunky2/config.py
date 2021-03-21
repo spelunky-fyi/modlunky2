@@ -22,6 +22,9 @@ CONFIG_DIR = Path(user_config_dir(APP_NAME, APP_AUTHOR))
 DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
 
+MIN_WIDTH = 1280
+MIN_HEIGHT = 900
+
 
 # Sentinel for tracking unset fields
 NOT_PRESENT = object()
@@ -84,9 +87,11 @@ def guess_install_dir():
 class ConfigFile:
     def __init__(self, config_path: Path):
         self.config_path = config_path
+        self.dirty = False
 
         self.install_dir = None
         self.playlunky_version = None
+        self.geometry = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -111,6 +116,9 @@ class ConfigFile:
         # Initialize playlunky-version
         obj.playlunky_version = config_data.get("playlunky-version")
 
+        # Initialize geometry
+        obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
+
         if needs_save:
             obj.save()
 
@@ -127,12 +135,16 @@ class ConfigFile:
         if self.playlunky_version is not None:
             out["playlunky-version"] = self.playlunky_version
 
+        out["geometry"] = self.geometry
+
         return out
 
     def _get_tmp_path(self):
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
 
     def save(self):
+        self.dirty = False
+
         # Make a temporary file so we can do an atomic replace
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
