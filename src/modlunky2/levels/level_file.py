@@ -1,3 +1,4 @@
+from io import BytesIO
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,7 +39,7 @@ class LevelFile:
     level_templates: LevelTemplates
 
     @classmethod
-    def from_path(cls, level_path: Path) -> "LevelFile":
+    def from_handle(cls, level_fh: BytesIO) -> "LevelFile":
         level_file = LevelFile(
             comment=None,
             level_settings=LevelSettings(),
@@ -51,66 +52,70 @@ class LevelFile:
         last_section_comment = None
         last_seen_directive = None
 
-        with level_path.open("r", encoding="cp1252") as level_fh:
-            level_fh = Peekable(level_fh)
-            for line in level_fh:
+        level_fh = Peekable(level_fh)
+        for line in level_fh:
 
-                line = line.strip()
-                if not line:
-                    continue
+            line = line.strip()
+            if not line:
+                continue
 
-                if line.startswith(DirectivePrefixes.LEVEL_SETTING.value):
-                    level_setting = LevelSetting.parse(line)
-                    level_file.level_settings.set_obj(level_setting)
-                    if last_seen_directive != DirectivePrefixes.LEVEL_SETTING:
-                        if last_section_comment:
-                            level_file.level_settings.comment = last_section_comment
-                            last_section_comment = None
-                        last_seen_directive = DirectivePrefixes.LEVEL_SETTING
-
-                elif line.startswith(DirectivePrefixes.TILE_CODE.value):
-                    tile_code = TileCode.parse(line)
-                    level_file.tile_codes.set_obj(tile_code)
-                    if last_seen_directive != DirectivePrefixes.TILE_CODE:
-                        if last_section_comment:
-                            level_file.tile_codes.comment = last_section_comment
-                            last_section_comment = None
-                        last_seen_directive = DirectivePrefixes.TILE_CODE
-
-                elif line.startswith(DirectivePrefixes.LEVEL_CHANCE.value):
-                    level_chance = LevelChance.parse(line)
-                    level_file.level_chances.set_obj(level_chance)
-                    if last_seen_directive != DirectivePrefixes.LEVEL_CHANCE:
-                        if last_section_comment:
-                            level_file.level_chances.comment = last_section_comment
-                            last_section_comment = None
-                        last_seen_directive = DirectivePrefixes.LEVEL_CHANCE
-
-                elif line.startswith(DirectivePrefixes.MONSTER_CHANCE.value):
-                    monster_chance = MonsterChance.parse(line)
-                    level_file.monster_chances.set_obj(monster_chance)
-                    if last_seen_directive != DirectivePrefixes.MONSTER_CHANCE:
-                        if last_section_comment:
-                            level_file.monster_chances.comment = last_section_comment
-                            last_section_comment = None
-                        last_seen_directive = DirectivePrefixes.MONSTER_CHANCE
-
-                elif line.startswith(DirectivePrefixes.TEMPLATE.value):
-                    template = LevelTemplate.parse(line, level_fh)
-                    level_file.level_templates.set_obj(template)
-                    if last_seen_directive != DirectivePrefixes.TEMPLATE:
-                        if last_section_comment:
-                            level_file.level_templates.comment = last_section_comment
-                            last_section_comment = None
-                        last_seen_directive = DirectivePrefixes.TEMPLATE
-
-                elif line == SECTION_COMMENT:
-                    last_section_comment = parse_section_comment(line, level_fh)
-                    if not level_file.comment and not last_seen_directive:
-                        level_file.comment = last_section_comment
+            if line.startswith(DirectivePrefixes.LEVEL_SETTING.value):
+                level_setting = LevelSetting.parse(line)
+                level_file.level_settings.set_obj(level_setting)
+                if last_seen_directive != DirectivePrefixes.LEVEL_SETTING:
+                    if last_section_comment:
+                        level_file.level_settings.comment = last_section_comment
                         last_section_comment = None
+                    last_seen_directive = DirectivePrefixes.LEVEL_SETTING
+
+            elif line.startswith(DirectivePrefixes.TILE_CODE.value):
+                tile_code = TileCode.parse(line)
+                level_file.tile_codes.set_obj(tile_code)
+                if last_seen_directive != DirectivePrefixes.TILE_CODE:
+                    if last_section_comment:
+                        level_file.tile_codes.comment = last_section_comment
+                        last_section_comment = None
+                    last_seen_directive = DirectivePrefixes.TILE_CODE
+
+            elif line.startswith(DirectivePrefixes.LEVEL_CHANCE.value):
+                level_chance = LevelChance.parse(line)
+                level_file.level_chances.set_obj(level_chance)
+                if last_seen_directive != DirectivePrefixes.LEVEL_CHANCE:
+                    if last_section_comment:
+                        level_file.level_chances.comment = last_section_comment
+                        last_section_comment = None
+                    last_seen_directive = DirectivePrefixes.LEVEL_CHANCE
+
+            elif line.startswith(DirectivePrefixes.MONSTER_CHANCE.value):
+                monster_chance = MonsterChance.parse(line)
+                level_file.monster_chances.set_obj(monster_chance)
+                if last_seen_directive != DirectivePrefixes.MONSTER_CHANCE:
+                    if last_section_comment:
+                        level_file.monster_chances.comment = last_section_comment
+                        last_section_comment = None
+                    last_seen_directive = DirectivePrefixes.MONSTER_CHANCE
+
+            elif line.startswith(DirectivePrefixes.TEMPLATE.value):
+                template = LevelTemplate.parse(line, level_fh)
+                level_file.level_templates.set_obj(template)
+                if last_seen_directive != DirectivePrefixes.TEMPLATE:
+                    if last_section_comment:
+                        level_file.level_templates.comment = last_section_comment
+                        last_section_comment = None
+                    last_seen_directive = DirectivePrefixes.TEMPLATE
+
+            elif line == SECTION_COMMENT:
+                last_section_comment = parse_section_comment(line, level_fh)
+                if not level_file.comment and not last_seen_directive:
+                    level_file.comment = last_section_comment
+                    last_section_comment = None
 
         return level_file
+
+    @classmethod
+    def from_path(cls, level_path: Path) -> "LevelFile":
+        with level_path.open("r", encoding="cp1252") as level_fh:
+            return cls.from_handle(level_fh)
 
     def write(self, handle: TextIO):
         handle.write(f"{self.comment}\n")

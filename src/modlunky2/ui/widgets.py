@@ -157,12 +157,16 @@ class PopupWindow(ttk.Frame):
         else:
             self.win.attributes("-alpha", True)
 
-        main_geometry = tuple(map(int, re.split(r"[+x]", self.config.config_file.geometry)))
+        main_geometry = tuple(
+            map(int, re.split(r"[+x]", self.config.config_file.geometry))
+        )
 
-        self.win.geometry("+{}+{}".format(
-            main_geometry[2] + 400,
-            main_geometry[3] + 200,
-        ))
+        self.win.geometry(
+            "+{}+{}".format(
+                main_geometry[2] + 400,
+                main_geometry[3] + 200,
+            )
+        )
         self.win.resizable(False, False)
 
         self.columnconfigure(0, weight=1)

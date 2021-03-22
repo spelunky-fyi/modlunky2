@@ -188,6 +188,9 @@ class Chunk:
     @classmethod
     def parse(cls, file_handle: TextIO) -> "Chunk":
         chunk = cls(comment="", settings=[], foreground=[], background=[])
+        # Track whether we've started processing the chunk so we can return
+        # if there is a trailing comment
+        started_chunk = False
 
         for line in file_handle:
             line = line.strip()
@@ -197,10 +200,14 @@ class Chunk:
                 return chunk
 
             if line.startswith("//"):
+                if started_chunk:
+                    return chunk
                 chunk.comment += f"{line}"
             elif line in VALID_TEMPLATE_SETTINGS:
+                started_chunk = True
                 chunk.settings.append(TemplateSetting(line[2:]))
             else:
+                started_chunk = True
                 foreground, background = cls.partition_line(line)
                 if background:
                     chunk.background.append(list(background))

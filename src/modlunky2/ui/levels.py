@@ -17,8 +17,12 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_chances import LevelChance, LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
-from modlunky2.levels.level_templates import (Chunk, LevelTemplate,
-                                              LevelTemplates, TemplateSetting)
+from modlunky2.levels.level_templates import (
+    Chunk,
+    LevelTemplate,
+    LevelTemplates,
+    TemplateSetting,
+)
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
@@ -180,8 +184,10 @@ class LevelsTab(Tab):
         self.tab_control = ttk.Notebook(self)
         self.tab_control.grid(row=0, column=1, rowspan=3, sticky="nwse")
 
-        self.tab1 = ttk.Frame(self.tab_control)
-        self.tab2 = ttk.Frame(self.tab_control)  # Tab 2 is the actual level editor
+        self.rules_tab = ttk.Frame(self.tab_control)
+        self.editor_tab = ttk.Frame(
+            self.tab_control
+        )  # Tab 2 is the actual level editor
 
         self.button_back = tk.Button(
             self, text="Go Back", bg="black", fg="white", command=self.go_back
@@ -199,18 +205,18 @@ class LevelsTab(Tab):
         self.button_save["state"] = tk.DISABLED
 
         # Rules Tab
-        self.tab_control.add(self.tab1, text="Rules")
-
-        self.tab1.columnconfigure(0, weight=1)  # Column 1 = Everything Else
-        self.tab1.rowconfigure(0, weight=1)  # Row 0 = List box / Label
+        self.rules_tab.columnconfigure(0, weight=1)  # Column 1 = Everything Else
+        self.rules_tab.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
         self.tree = RulesTree(
-            self.tab1, self, selectmode="browse"
+            self.rules_tab, self, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree.bind("<Double-1>", lambda e: self.on_double_click(self.tree))
         self.tree.place(x=30, y=95)
         # style = ttk.Style(self)
-        self.vsb = ttk.Scrollbar(self.tab1, orient="vertical", command=self.tree.yview)
+        self.vsb = ttk.Scrollbar(
+            self.rules_tab, orient="vertical", command=self.tree.yview
+        )
         self.vsb.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree.configure(yscrollcommand=self.vsb.set)
         self.tree["columns"] = ("1", "2", "3")
@@ -225,7 +231,7 @@ class LevelsTab(Tab):
         self.vsb.grid(row=0, column=1, sticky="nse")
 
         self.tree_chances_levels = RulesTree(
-            self.tab1, self, selectmode="browse"
+            self.rules_tab, self, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree_chances_levels.bind(
             "<Double-1>", lambda e: self.on_double_click(self.tree_chances_levels)
@@ -233,7 +239,7 @@ class LevelsTab(Tab):
         self.tree_chances_levels.place(x=30, y=95)
         # style = ttk.Style(self)
         self.vsb_chances_levels = ttk.Scrollbar(
-            self.tab1, orient="vertical", command=self.tree_chances_levels.yview
+            self.rules_tab, orient="vertical", command=self.tree_chances_levels.yview
         )
         self.vsb_chances_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_chances_levels.configure(yscrollcommand=self.vsb_chances_levels.set)
@@ -249,7 +255,7 @@ class LevelsTab(Tab):
         self.vsb_chances_levels.grid(row=1, column=1, sticky="nse")
 
         self.tree_chances_monsters = RulesTree(
-            self.tab1, self, selectmode="browse"
+            self.rules_tab, self, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree_chances_monsters.bind(
             "<Double-1>", lambda e: self.on_double_click(self.tree_chances_monsters)
@@ -257,7 +263,7 @@ class LevelsTab(Tab):
         self.tree_chances_monsters.place(x=30, y=95)
         # style = ttk.Style(self)
         self.vsb_chances_monsters = ttk.Scrollbar(
-            self.tab1, orient="vertical", command=self.tree_chances_monsters.yview
+            self.rules_tab, orient="vertical", command=self.tree_chances_monsters.yview
         )
         self.vsb_chances_monsters.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree.configure(yscrollcommand=self.vsb_chances_monsters.set)
@@ -273,17 +279,19 @@ class LevelsTab(Tab):
         self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
 
         # Level Editor Tab
-        self.tab_control.add(self.tab2, text="Level Editor")
-        self.tab2.columnconfigure(0, minsize=200)  # Column 0 = Level List
-        self.tab2.columnconfigure(1, weight=1)  # Column 1 = Everything Else
-        self.tab2.rowconfigure(2, weight=1)  # Row 0 = List box / Label
+        self.tab_control.add(self.editor_tab, text="Level Editor")
+        self.tab_control.add(self.rules_tab, text="Rules")
+
+        self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
+        self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+        self.editor_tab.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
         self.tree_levels = LevelsTree(
-            self.tab2, self, self.config, selectmode="browse"
+            self.editor_tab, self, self.config, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
-            self.tab2, orient="vertical", command=self.tree_levels.yview
+            self.editor_tab, orient="vertical", command=self.tree_levels.yview
         )
         self.vsb_tree_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_levels.configure(yscrollcommand=self.vsb_tree_levels.set)
@@ -302,7 +310,7 @@ class LevelsTab(Tab):
         )
 
         self.canvas_grids = tk.Canvas(  # this is the main level editor grid
-            self.tab2,
+            self.editor_tab,
             bg="#292929",
         )
         self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="nwse")
@@ -352,11 +360,11 @@ class LevelsTab(Tab):
         self.background_label.grid_remove()
 
         self.vbar = ttk.Scrollbar(
-            self.tab2, orient="vertical", command=self.canvas_grids.yview
+            self.editor_tab, orient="vertical", command=self.canvas_grids.yview
         )
         self.vbar.grid(row=0, column=2, rowspan=4, columnspan=7, sticky="nse")
         self.hbar = ttk.Scrollbar(
-            self.tab2, orient="horizontal", command=self.canvas_grids.xview
+            self.editor_tab, orient="horizontal", command=self.canvas_grids.xview
         )
         self.hbar.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="wes")
 
@@ -411,27 +419,29 @@ class LevelsTab(Tab):
 
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
-        self.tile_pallete = ScrollableFrame(self.tab2, text="Tile Pallete", width=50)
+        self.tile_pallete = ScrollableFrame(
+            self.editor_tab, text="Tile Pallete", width=50
+        )
         self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=1, sticky="swne")
         self.tile_pallete.scrollable_frame["width"] = 50
 
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
         self.tile_label = tk.Label(
-            self.tab2,
+            self.editor_tab,
             text="Primary Tile:",
         )
         self.tile_label.grid(row=0, column=10, columnspan=1, sticky="we")
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
         self.tile_label_secondary = tk.Label(
-            self.tab2,
+            self.editor_tab,
             text="Secondary Tile:",
         )
         self.tile_label_secondary.grid(row=1, column=10, columnspan=1, sticky="we")
 
         self.button_tilecode_del = tk.Button(
-            self.tab2,
+            self.editor_tab,
             text="Del",
             bg="red",
             fg="white",
@@ -442,7 +452,7 @@ class LevelsTab(Tab):
         self.button_tilecode_del["state"] = tk.DISABLED
 
         self.button_tilecode_del_secondary = tk.Button(
-            self.tab2,
+            self.editor_tab,
             text="Del",
             bg="red",
             fg="white",
@@ -458,31 +468,35 @@ class LevelsTab(Tab):
             )  ########################################### set selected img
         )
         self.panel_sel = tk.Label(
-            self.tab2, image=self.img_sel, width=50
+            self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel.grid(row=0, column=11)
         self.panel_sel_secondary = tk.Label(
-            self.tab2, image=self.img_sel, width=50
+            self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel_secondary.grid(row=1, column=11)
 
-        self.combobox = ttk.Combobox(self.tab2, height=20)
+        self.combobox = ttk.Combobox(self.editor_tab, height=20)
         self.combobox.grid(row=4, column=9, columnspan=1, sticky="nswe")
         self.combobox["state"] = tk.DISABLED
-        self.combobox_alt = ttk.Combobox(self.tab2, height=40)
+        self.combobox_alt = ttk.Combobox(self.editor_tab, height=40)
         self.combobox_alt.grid(row=4, column=10, columnspan=1, sticky="nswe")
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
         self.scale = tk.Scale(
-            self.tab2, from_=0, to=100, orient=tk.HORIZONTAL, command=self.update_value
+            self.editor_tab,
+            from_=0,
+            to=100,
+            orient=tk.HORIZONTAL,
+            command=self.update_value,
         )  # scale for the percent of a selected tile
         self.scale.grid(row=3, column=9, columnspan=2, sticky="we")
         self.scale.set(100)
         self.scale["state"] = tk.DISABLED
 
         self.button_tilecode_add = tk.Button(
-            self.tab2,
+            self.editor_tab,
             text="Add TileCode",
             bg="yellow",
             command=lambda: self.add_tilecode(
@@ -502,7 +516,7 @@ class LevelsTab(Tab):
         self.var_liquid = tk.IntVar()
         self.var_purge = tk.IntVar()
         self.checkbox_ignore = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Ignore",
             var=self.var_ignore,
             onvalue=1,
@@ -510,7 +524,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_flip = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Flip",
             var=self.var_flip,
             onvalue=1,
@@ -518,7 +532,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_only_flip = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Only Flip",
             var=self.var_only_flip,
             onvalue=1,
@@ -526,7 +540,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_rare = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Rare",
             var=self.var_rare,
             onvalue=1,
@@ -534,7 +548,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_hard = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Hard",
             var=self.var_hard,
             onvalue=1,
@@ -542,7 +556,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_liquid = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Optimize Liquids",
             var=self.var_liquid,
             onvalue=1,
@@ -550,7 +564,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_purge = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Purge",
             var=self.var_purge,
             onvalue=1,
@@ -558,7 +572,7 @@ class LevelsTab(Tab):
             command=self.remember_changes,
         )
         self.checkbox_dual = ttk.Checkbutton(
-            self.tab2,
+            self.editor_tab,
             text="Dual",
             var=self.var_dual,
             onvalue=1,
@@ -1255,12 +1269,12 @@ class LevelsTab(Tab):
         if self.button_hide_tree["text"] == "<<":
             self.tree_levels.grid_remove()
             self.vsb_tree_levels.grid_remove()
-            self.tab2.columnconfigure(0, minsize=0)  # Column 0 = Level List
+            self.editor_tab.columnconfigure(0, minsize=0)  # Column 0 = Level List
             self.button_hide_tree["text"] = ">>"
         else:
             self.tree_levels.grid()
             self.vsb_tree_levels.grid()
-            self.tab2.columnconfigure(0, minsize=200)  # Column 0 = Level List
+            self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
             self.button_hide_tree["text"] = "<<"
 
     def replace_tiles_dia(self):
@@ -3062,7 +3076,6 @@ class LevelsTree(ttk.Treeview):
         cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
-
     def confirm_entry(self, entry1, parent, room_data):
         if entry1 != "":
             # Grab the current index in the tree
@@ -3076,8 +3089,6 @@ class LevelsTree(ttk.Treeview):
             return True
         else:
             return False
-
-
 
 
 class RulesTree(ttk.Treeview):
