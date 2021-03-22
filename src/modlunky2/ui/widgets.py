@@ -87,14 +87,16 @@ class ScrollableFrame(ttk.LabelFrame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
         self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self.canvas = tk.Canvas(self)
-        self.canvas.grid(row=0, column=0, rowspan=5, sticky="nswe")
+        self.canvas.grid(row=0, column=0, sticky="nswe")
 
         self.scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
-        self.scrollbar.grid(row=0, column=1, rowspan=5, sticky="nse")
+        self.scrollbar.grid(row=0, column=1, sticky="nse")
+
         self.scrollable_frame = tk.Frame(self.canvas)
 
         self.scrollable_frame.bind(
@@ -102,10 +104,17 @@ class ScrollableFrame(ttk.LabelFrame):
             lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
         )
 
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self._window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.bind("<Enter>", self._bind_to_mousewheel)
         self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
+        self.canvas.bind('<Configure>', self.inner_resize)
+
+
+    def inner_resize(self, event):
+        # resize inner frame to canvas size
+        self.canvas.itemconfig(self._window, width=event.width)
+        self.canvas.itemconfig(self._window, height=event.height)
 
     def _on_mousewheel(self, event):
         scroll_dir = None

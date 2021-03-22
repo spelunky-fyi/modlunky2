@@ -1,8 +1,11 @@
 import json
 import logging
+import shutil
 import subprocess
 import threading
 import tkinter as tk
+import time
+import webbrowser
 import zipfile
 from io import BytesIO
 from pathlib import Path
@@ -11,7 +14,6 @@ from tkinter import font as tk_font
 from tkinter import messagebox, ttk
 
 import requests
-from PIL import Image, ImageTk
 
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
@@ -236,7 +238,7 @@ def is_installed(tag):
 
 
 class VersionFrame(tk.LabelFrame):
-    CACHE_RELEASES_INTERVAL = 1000 * 10 * 60
+    CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
     def __init__(self, parent, config, task_manager):
         super().__init__(parent, text="Version")
@@ -299,7 +301,22 @@ class VersionFrame(tk.LabelFrame):
         return available_releases
 
     def cache_releases(self):
+        next_run = self.CACHE_RELEASES_INTERVAL
+        if PLAYLUNKY_RELEASES_PATH.exists():
+            mtime = int(PLAYLUNKY_RELEASES_PATH.stat().st_mtime) * 1000
+            now = int(time.time()) * 1000
+            delta = now - mtime
+            if delta < self.CACHE_RELEASES_INTERVAL - 1000:
+                next_run = self.CACHE_RELEASES_INTERVAL - delta
+                logger.debug(
+                    "Playlunky releases were retrieved too recently. Retrying in %s seconds",
+                    next_run / 1000
+                )
+                self.after(next_run, self.cache_releases)
+                return
+
         self.task_manager.call("play:cache_releases")
+        logger.debug("Scheduling next run for caching releases in %s seconds", self.CACHE_RELEASES_INTERVAL / 1000)
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
@@ -435,21 +452,74 @@ class FiltersFrame(tk.LabelFrame):
 
 
 class ControlsFrame(tk.LabelFrame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, config, *args, **kwargs):
         super().__init__(parent, text="Stuff & Things", *args, **kwargs)
         self.parent = parent
+        self.config = config
+
         self.columnconfigure(0, weight=1)
 
         self.install_button = ttk.Button(
             self, text="Install Mod", command=self.install_mod
         )
-        self.install_button.grid(row=0, column=0, pady=5, padx=10, sticky="nswe")
+        self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
+
+        self.refresh_button = ttk.Button(
+            self, text="Refresh Mods", command=self.refresh_mods
+        )
+        self.refresh_button.grid(row=1, column=0, pady=3, padx=10, sticky="nswe")
+
+        self.guide_button = ttk.Button(
+            self, text="User Guide", command=self.guide
+        )
+        self.guide_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
+
+        self.update_releases_button = ttk.Button(
+            self, text="Update Releases", command=self.update_releases
+        )
+        self.update_releases_button.grid(row=3, column=0, pady=3, padx=10, sticky="nswe")
+
+        self.clear_cache_button = ttk.Button(
+            self, text="Clear Cache", command=self.clear_cache
+        )
+        self.clear_cache_button.grid(row=4, column=0, pady=3, padx=10, sticky="nswe")
+
 
     def install_mod(self):
         tk.messagebox.showinfo(
             "Coming Soon",
             "This feature hasn't been implemented yet, but it will be soon!",
         )
+
+    def refresh_mods(self):
+        self.parent.on_load()
+
+    def guide(self):
+        webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
+
+    def update_releases(self):
+        self.parent.version_frame.task_manager.call("play:cache_releases")
+
+    def clear_cache(self):
+        cache_dir = self.config.install_dir / "Mods/Packs/.db"
+        if not cache_dir.exists():
+            logger.info("No cache directory found to remove. Looked in %s", cache_dir)
+            return
+
+        answer = tk.messagebox.askokcancel(
+            title='Confirmation',
+            message=(
+                'Are you sure you want to remove Playlunky cache?\n'
+                '\n'
+                f'This will remove {cache_dir} and all of its contents.'
+            ),
+            icon=tk.messagebox.WARNING,
+        )
+
+        if not answer:
+            return
+
+        shutil.rmtree(cache_dir)
 
 
 class LoadOrderFrame(tk.LabelFrame):
@@ -608,6 +678,7 @@ class PlayTab(Tab):
         )
         self.packs_frame.rowconfigure(0, weight=1)
         self.packs_frame.columnconfigure(0, weight=1)
+        self.packs_frame.scrollable_frame.columnconfigure(1, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -617,7 +688,7 @@ class PlayTab(Tab):
             row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.install_mod_frame = ControlsFrame(self)
+        self.install_mod_frame = ControlsFrame(self, config)
         self.install_mod_frame.grid(
             row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -638,8 +709,9 @@ class PlayTab(Tab):
         self.version_frame.render()
         self.version_frame.cache_releases()
 
-        default_icon_path = BASE_DIR / "static/images/noicon.png"
-        self.default_icon = ImageTk.PhotoImage(Image.open(default_icon_path))
+        icon_path = BASE_DIR / "static/images"
+        self.folder_icon = tk.PhotoImage(file=icon_path / "folder.png")
+        self.trash_icon = tk.PhotoImage(file=icon_path / "trash.png")
 
         self.packs = []
         self.checkboxes = {}
@@ -702,8 +774,8 @@ class PlayTab(Tab):
                     select = False
                     line = line[2:]
 
-                var, checkbox = self.checkboxes.get(line, (None, None))
-                if (var, checkbox) == (None, None):
+                var, checkbox, buttons = self.checkboxes.get(line, (None, None, None))
+                if (var, checkbox, buttons) == (None, None, None):
                     continue
 
                 if select:
@@ -781,6 +853,10 @@ class PlayTab(Tab):
 
             if path.is_file and path.suffix.lower() == ".zip":
                 path = path.with_suffix("")
+                # If There's a version that's extracted with the same name
+                # skip the zipped version
+                if path.exists():
+                    continue
 
             packs.append(str(path.relative_to(self.config.install_dir / "Mods/Packs")))
         return packs
@@ -792,11 +868,18 @@ class PlayTab(Tab):
 
         filter_selected = self.filter_frame.selected_var.get()
 
+        row_num = 0
         for pack in self.packs:
             display = True
-            checkbox_var, checkbox = self.checkboxes[pack]
+            checkbox_var, checkbox, buttons = self.checkboxes[pack]
             checkbox_val = checkbox_var.get()
+            buttons.grid_forget()
             checkbox.grid_forget()
+
+            if not (self.config.install_dir / "Mods/Packs" / str(pack)).exists():
+                buttons.folder_button["state"] = tk.DISABLED
+            else:
+                buttons.folder_button["state"] = tk.NORMAL
 
             if name and name not in pack.lower():
                 display = False
@@ -807,7 +890,10 @@ class PlayTab(Tab):
                 display = False
 
             if display:
-                checkbox.grid(column=0, pady=0, padx=5, sticky="w")
+                checkbox.grid(row=row_num, column=0, pady=0, padx=5, sticky="nsw")
+                buttons.grid(row=row_num, column=1, pady=0, padx=5, sticky="e")
+
+                row_num += 1
 
     def on_check(self, name, var):
         if var.get():
@@ -819,6 +905,58 @@ class PlayTab(Tab):
     def on_check_wrapper(self, name, var):
         return lambda: self.on_check(name, var)
 
+    def open_pack_dir(self, pack):
+        if pack.startswith("/"):
+            logger.warning("Got dangerous pack name, aborting...")
+            return
+
+        pack_dir = self.config.install_dir / "Mods/Packs" / pack
+        if not pack_dir.exists():
+            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
+            return
+
+        webbrowser.open(f"file://{pack_dir}")
+
+
+    def remove_pack(self, pack):
+        if pack.startswith("/"):
+            logger.warning("Got dangerous pack name, aborting...")
+            return
+
+
+        to_remove = []
+        pack_dir = self.config.install_dir / "Mods/Packs" / pack
+        if pack_dir.exists():
+            to_remove.append(pack_dir)
+
+        if pack_dir.with_suffix(".zip").exists():
+            to_remove.append(pack_dir.with_suffix(".zip"))
+
+        if not to_remove:
+            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
+
+        removing = '\n'.join(map(str, to_remove))
+        answer = tk.messagebox.askokcancel(
+            title='Confirmation',
+            message=(
+                "Are you sure you want to remove this pack?\n"
+                "\n"
+                "This will remove the following:\n"
+                f"{removing}"
+            ),
+            icon=tk.messagebox.WARNING,
+        )
+
+        if not answer:
+            return
+
+        for path in to_remove:
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        self.on_load()
+
     def on_load(self):
         self.make_dirs()
         packs = sorted(self.get_packs())
@@ -829,8 +967,7 @@ class PlayTab(Tab):
 
             item = tk.Checkbutton(
                 self.packs_frame.scrollable_frame,
-                text=f" {pack}",
-                image=self.default_icon,
+                text=f"{pack}",
                 font=("Segoe UI", 12, "bold"),
                 variable=var,
                 onvalue=True,
@@ -838,11 +975,27 @@ class PlayTab(Tab):
                 compound="left",
                 command=self.on_check_wrapper(pack, var),
             )
-            self.checkboxes[pack] = (var, item)
+
+            buttons = tk.Frame(self.packs_frame.scrollable_frame)
+            buttons.rowconfigure(0, weight=1)
+            buttons.folder_button = ttk.Button(
+                buttons,
+                image=self.folder_icon,
+                command=(lambda pack: lambda: self.open_pack_dir(str(pack)))(pack)
+            )
+            buttons.folder_button.grid(row=0, column=0, sticky="e")
+            buttons.trash_button = ttk.Button(
+                buttons,
+                image=self.trash_icon,
+                command=(lambda pack: lambda: self.remove_pack(str(pack)))(pack),
+            )
+            buttons.trash_button.grid(row=0, column=1, sticky="e")
+            self.checkboxes[pack] = (var, item, buttons)
 
         for pack in packs_removed:
-            (_, item) = self.checkboxes[pack]
+            (_, item, buttons) = self.checkboxes[pack]
             item.destroy()
+            buttons.destroy()
             del self.checkboxes[pack]
 
         self.packs = packs

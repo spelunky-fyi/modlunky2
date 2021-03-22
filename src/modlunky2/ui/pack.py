@@ -112,7 +112,7 @@ class PackTab(Tab):
         self.button_validate.grid(row=1, column=2, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_validate, "Redownload vanilla EXE from steam.")
 
-        default_icon_path = BASE_DIR / "static/images/noicon.png"
+        default_icon_path = BASE_DIR / "static/images/folder.png"
         self.default_icon = ImageTk.PhotoImage(Image.open(default_icon_path))
 
         self.checkbox_vars = []
