@@ -523,7 +523,6 @@ class ControlsFrame(tk.LabelFrame):
         self.parent.on_load()
 
     def open_packs(self):
-        webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
         packs_dir = self.config.install_dir / "Mods/Packs"
         if not packs_dir.exists():
             logger.info("Couldn't find Packs directory. Looked in %s", packs_dir)
