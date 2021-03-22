@@ -2973,7 +2973,7 @@ class LevelsTree(ttk.Treeview):
         pyperclip.copy(copy_text + "\n" + copy_values)
 
     def paste(self):
-        data = pyperclip.paste().encode('utf-8').decode('cp1252')
+        data = pyperclip.paste().encode("utf-8").decode("cp1252")
 
         paste_text = data.split("\n", 1)[0]
         paste_values_raw = data.split("\n", 1)[1]

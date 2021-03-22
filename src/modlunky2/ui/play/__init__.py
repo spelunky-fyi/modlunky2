@@ -103,7 +103,7 @@ def cache_playlunky_releases(call):
     call("play:cache_releases_updated")
 
 
-def download_playlunky_release(call, tag, download_url):
+def download_playlunky_release(call, tag, download_url, launch):
 
     dest_path = PLAYLUNKY_DATA_DIR / tag
     if not dest_path.exists():
@@ -123,7 +123,8 @@ def download_playlunky_release(call, tag, download_url):
     for member in playlunky_zip.infolist():
         if member.filename in PLAYLUNKY_FILES:
             playlunky_zip.extract(member, dest_path)
-    call("play:download_finished")
+
+    call("play:download_finished", launch=launch)
 
 
 class DownloadFrame(tk.Frame):
@@ -155,7 +156,7 @@ class DownloadFrame(tk.Frame):
         self.progress_bar = ttk.Progressbar(self)
         self.progress_bar.grid(row=3, column=0, pady=5, padx=5, sticky="we")
 
-    def download(self):
+    def download(self, launch=False):
         tag = self.parent.selected_var.get()
         release = self.parent.available_releases.get(tag)
         if release is None:
@@ -171,20 +172,25 @@ class DownloadFrame(tk.Frame):
         self.progress_bar["maximum"] = asset["size"]
         self.button["state"] = tk.DISABLED
         self.parent.selected_dropdown["state"] = tk.DISABLED
+        self.parent.parent.disable_button()
         self.task_manager.call(
             "play:start_download",
             tag=tag,
             download_url=asset["browser_download_url"],
+            launch=launch,
         )
 
     def on_download_progress(self, amount_downloaded):
         self.progress_bar["value"] = amount_downloaded
 
-    def on_download_finished(self):
-        self.parent.parent.enable_button()
+    def on_download_finished(self, launch=False):
         self.progress_bar["value"] = 0
-        self.button["state"] = tk.NORMAL
-        self.parent.render()
+        if launch:
+            self.parent.parent.play()
+        else:
+            self.parent.parent.enable_button()
+            self.button["state"] = tk.NORMAL
+            self.parent.render()
 
 
 def uninstall_playlunky_release(call, tag):
@@ -235,6 +241,7 @@ class UninstallFrame(tk.Frame):
     def on_uninstall_finished(self):
         self.button["state"] = tk.NORMAL
         self.parent.render()
+        self.parent.parent.enable_button()
 
 
 def is_installed(tag):
@@ -359,6 +366,11 @@ class VersionFrame(tk.LabelFrame):
         selected_version = self.config.config_file.playlunky_version
         if selected_version:
             self.selected_var.set(selected_version)
+        else:
+            selected_version = available_releases[0]
+            self.config.config_file.playlunky_version = selected_version
+            self.config.config_file.save()
+            self.selected_var.set(selected_version)
 
         for release in self.available_releases:
             if release in installed_releases:
@@ -368,10 +380,10 @@ class VersionFrame(tk.LabelFrame):
 
         if selected_version in installed_releases:
             self.show_uninstall_frame()
-            self.parent.enable_button()
         else:
             self.show_download_frame()
-            self.parent.disable_button()
+
+        self.parent.enable_button()
 
     def on_cache_releases_updated(self):
         self.render()
@@ -853,23 +865,50 @@ class PlayTab(Tab):
     def load_order_path(self):
         return self.config.install_dir / "Mods/Packs/load_order.txt"
 
-    def play(self):
-        self.write_steam_appid()
-        self.write_load_order()
-        self.write_ini()
+    def should_install(self):
+        version = self.config.config_file.playlunky_version
+        if version:
+            msg = (
+                f"You don't currently have version {version} installed.\n\n"
+                "Would you like to install it?"
+            )
+        else:
+            msg = (
+                "You don't have any version of Playlunky selected.\n\n"
+                "Would you like to install and run the latest?"
+            )
 
+        answer = tk.messagebox.askokcancel(
+            title="Install?",
+            message=msg,
+            icon=tk.messagebox.INFO,
+        )
+
+        return answer
+
+    def play(self):
         exe_path = (
             PLAYLUNKY_DATA_DIR
             / self.config.config_file.playlunky_version
             / PLAYLUNKY_EXE
         )
+        self.disable_button()
+
         if not exe_path.exists():
-            logger.critical("No playlunky launcher found at %s", exe_path)
+            should_install = self.should_install()
+            if should_install:
+                self.version_frame.download_frame.download(launch=True)
+            else:
+                logger.critical("Can't run without an installed version of Playlunky")
+                self.enable_button()
             return
+
+        self.write_steam_appid()
+        self.write_load_order()
+        self.write_ini()
 
         self.version_frame.selected_dropdown["state"] = tk.DISABLED
         self.version_frame.uninstall_frame.button["state"] = tk.DISABLED
-        self.disable_button()
         self.task_manager.call(
             "play:launch_playlunky",
             install_dir=self.config.install_dir,
@@ -880,6 +919,7 @@ class PlayTab(Tab):
         self.version_frame.selected_dropdown["state"] = tk.NORMAL
         self.version_frame.uninstall_frame.button["state"] = tk.NORMAL
         self.enable_button()
+        self.version_frame.render()
 
     @staticmethod
     def diff_packs(before, after):
