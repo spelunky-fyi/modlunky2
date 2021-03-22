@@ -4,4 +4,4 @@ zstandard==0.15.2
 Pillow==8.1.2
 appdirs==1.4.4
 sfyi-fsb5==1.1
-pyclip==0.5.4
+pyperclip==1.8.2

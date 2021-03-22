@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import filedialog, ttk
 
-import pyclip
+import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.constants import BASE_DIR
@@ -104,8 +104,11 @@ class LevelsTab(Tab):
         self.node = None
 
         def select_lvl_folder():
+            initial_dir = self.config.install_dir / "Mods/Packs"
+            if not initial_dir.exists():
+                initial_dir = Path("/")
             dirname = filedialog.askdirectory(
-                parent=self, initialdir="/", title="Please select a directory"
+                parent=self, initialdir=initial_dir, title="Please select a directory"
             )
             if not dirname:
                 return
@@ -2967,10 +2970,10 @@ class LevelsTree(ttk.Treeview):
         for line in copy_values_raw:
             copy_values += str(line) + "\n"
         logger.debug("copied %s", copy_values)
-        pyclip.copy(copy_text + "\n" + copy_values)
+        pyperclip.copy(copy_text + "\n" + copy_values)
 
     def paste(self):
-        data = pyclip.paste().decode("cp1252")
+        data = pyperclip.paste().encode('utf-8').decode('cp1252')
 
         paste_text = data.split("\n", 1)[0]
         paste_values_raw = data.split("\n", 1)[1]
