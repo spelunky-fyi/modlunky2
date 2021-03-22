@@ -314,13 +314,16 @@ class VersionFrame(tk.LabelFrame):
                 next_run = self.CACHE_RELEASES_INTERVAL - delta
                 logger.debug(
                     "Playlunky releases were retrieved too recently. Retrying in %s seconds",
-                    next_run / 1000
+                    next_run / 1000,
                 )
                 self.after(next_run, self.cache_releases)
                 return
 
         self.task_manager.call("play:cache_releases")
-        logger.debug("Scheduling next run for caching releases in %s seconds", self.CACHE_RELEASES_INTERVAL / 1000)
+        logger.debug(
+            "Scheduling next run for caching releases in %s seconds",
+            self.CACHE_RELEASES_INTERVAL / 1000,
+        )
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
@@ -463,55 +466,59 @@ class ControlsFrame(tk.LabelFrame):
 
         self.columnconfigure(0, weight=1)
 
-        self.install_button = ttk.Button(
-            self, text="Install Mod", command=self.install_mod
-        )
-        self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.install_button, "Browse for a mod file to install.")
+        # self.install_button = ttk.Button(
+        #    self, text="Install Mod", command=self.install_mod
+        # )
+        # self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
+        # ToolTip(self.install_button, "Browse for a mod file to install.")
 
         self.refresh_button = ttk.Button(
             self, text="Refresh Mods", command=self.refresh_mods
         )
         self.refresh_button.grid(row=1, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.refresh_button, (
-            "If you've made any changes in the Packs directory\n"
-            "that you want updated in the mod list."
-        ))
+        ToolTip(
+            self.refresh_button,
+            (
+                "If you've made any changes in the Packs directory\n"
+                "that you want updated in the mod list."
+            ),
+        )
 
         self.open_packs_button = ttk.Button(
             self, text="Open Packs Directory", command=self.open_packs
         )
         self.open_packs_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.open_packs_button, (
-            "Open the directory where Packs are saved"
-        ))
+        ToolTip(self.open_packs_button, ("Open the directory where Packs are saved"))
 
-        self.guide_button = ttk.Button(
-            self, text="User Guide", command=self.guide
-        )
+        self.guide_button = ttk.Button(self, text="User Guide", command=self.guide)
         self.guide_button.grid(row=3, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.guide_button, (
-            "Open the User Guide"
-        ))
+        ToolTip(self.guide_button, ("Open the User Guide"))
 
         self.update_releases_button = ttk.Button(
             self, text="Update Releases", command=self.update_releases
         )
-        self.update_releases_button.grid(row=4, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.update_releases_button, (
-            "If you want to check for a new version of Playlunky\n"
-            "you can force an update with this button."
-        ))
+        self.update_releases_button.grid(
+            row=4, column=0, pady=3, padx=10, sticky="nswe"
+        )
+        ToolTip(
+            self.update_releases_button,
+            (
+                "If you want to check for a new version of Playlunky\n"
+                "you can force an update with this button."
+            ),
+        )
 
         self.clear_cache_button = ttk.Button(
             self, text="Clear Cache", command=self.clear_cache
         )
         self.clear_cache_button.grid(row=5, column=0, pady=3, padx=10, sticky="nswe")
-        ToolTip(self.clear_cache_button, (
-            "Remove Playlunky cache. This could be helpful\n"
-            "if things aren't working as expected."
-        ))
-
+        ToolTip(
+            self.clear_cache_button,
+            (
+                "Remove Playlunky cache. This could be helpful\n"
+                "if things aren't working as expected."
+            ),
+        )
 
     def install_mod(self):
         tk.messagebox.showinfo(
@@ -543,11 +550,11 @@ class ControlsFrame(tk.LabelFrame):
             return
 
         answer = tk.messagebox.askokcancel(
-            title='Confirmation',
+            title="Confirmation",
             message=(
-                'Are you sure you want to remove Playlunky cache?\n'
-                '\n'
-                f'This will remove {cache_dir} and all of its contents.'
+                "Are you sure you want to remove Playlunky cache?\n"
+                "\n"
+                f"This will remove {cache_dir} and all of its contents."
             ),
             icon=tk.messagebox.WARNING,
         )
@@ -966,12 +973,10 @@ class PlayTab(Tab):
 
         webbrowser.open(f"file://{pack_dir}")
 
-
     def remove_pack(self, pack):
         if pack.startswith("/"):
             logger.warning("Got dangerous pack name, aborting...")
             return
-
 
         to_remove = []
         pack_dir = self.config.install_dir / "Mods/Packs" / pack
@@ -984,9 +989,9 @@ class PlayTab(Tab):
         if not to_remove:
             logger.info("No pack directory found to remove. Looked in %s", pack_dir)
 
-        removing = '\n'.join(map(str, to_remove))
+        removing = "\n".join(map(str, to_remove))
         answer = tk.messagebox.askokcancel(
-            title='Confirmation',
+            title="Confirmation",
             message=(
                 "Are you sure you want to remove this pack?\n"
                 "\n"
@@ -1032,7 +1037,7 @@ class PlayTab(Tab):
             buttons.folder_button = ttk.Button(
                 buttons,
                 image=self.folder_icon,
-                command=(lambda pack: lambda: self.open_pack_dir(str(pack)))(pack)
+                command=(lambda pack: lambda: self.open_pack_dir(str(pack)))(pack),
             )
             buttons.folder_button.grid(row=0, column=0, sticky="e")
             buttons.trash_button = ttk.Button(

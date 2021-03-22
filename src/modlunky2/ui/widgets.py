@@ -57,7 +57,7 @@ class ToolTip:
 
         self.widget.bind("<Enter>", self.on_enter)
         self.widget.bind("<Leave>", self.on_leave)
-        self.widget.bind('<Motion>', self.on_motion)
+        self.widget.bind("<Motion>", self.on_motion)
 
         self.tooltip = None
         self.label = None
@@ -68,13 +68,12 @@ class ToolTip:
         (width, _, _, _) = list(map(int, re.split(r"[x+-]", self.tooltip.geometry())))
 
         x_coord = event.x_root + 15
-        if event.x_root > screen_width * .70:
+        if event.x_root > screen_width * 0.70:
             x_coord = event.x_root - width - 15
 
         y_coord = event.y_root + 10
 
         self.tooltip.geometry(f"+{x_coord}+{y_coord}")
-
 
     def on_motion(self, event):
         self.set_geometry(event)
@@ -109,7 +108,6 @@ class ScrollableFrame(ttk.LabelFrame):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
-
         # create a canvas object and a vertical scrollbar for scrolling it
         self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.vscrollbar.grid(row=0, column=1, sticky="nse")
@@ -124,18 +122,21 @@ class ScrollableFrame(ttk.LabelFrame):
 
         # create a frame inside the canvas which will be scrolled with it
         self.scrollable_frame = ttk.Frame(self.canvas)
-        self.interior_id = self.canvas.create_window(0, 0, window=self.scrollable_frame,
-                                           anchor=tk.NW)
+        self.interior_id = self.canvas.create_window(
+            0, 0, window=self.scrollable_frame, anchor=tk.NW
+        )
 
-        self.scrollable_frame.bind('<Configure>', self._configure_interior)
-        self.canvas.bind('<Configure>', self._configure_canvas)
-        self.canvas.bind('<Enter>', self._bind_to_mousewheel)
-        self.canvas.bind('<Leave>', self._unbind_from_mousewheel)
-
+        self.scrollable_frame.bind("<Configure>", self._configure_interior)
+        self.canvas.bind("<Configure>", self._configure_canvas)
+        self.canvas.bind("<Enter>", self._bind_to_mousewheel)
+        self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
 
     def _configure_interior(self, _event):
         # update the scrollbars to match the size of the inner frame
-        size = (self.scrollable_frame.winfo_reqwidth(), self.scrollable_frame.winfo_reqheight())
+        size = (
+            self.scrollable_frame.winfo_reqwidth(),
+            self.scrollable_frame.winfo_reqheight(),
+        )
         self.canvas.config(scrollregion="0 0 %s %s" % size)
 
         if self.scrollable_frame.winfo_reqwidth() != self.winfo_width():
