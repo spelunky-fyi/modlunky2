@@ -83,38 +83,53 @@ class Tab(ttk.Frame):
         """ Called whenever the tab is loaded."""
 
 
+# Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
 class ScrollableFrame(ttk.LabelFrame):
-    def __init__(self, container, *args, **kwargs):
-        super().__init__(container, *args, **kwargs)
+    def __init__(self, parent, *args, **kw):
+
+        super().__init__(parent, *args, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(self)
+
+        # create a canvas object and a vertical scrollbar for scrolling it
+        self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        self.vscrollbar.grid(row=0, column=1, sticky="nse")
+
+        self.canvas = tk.Canvas(self, yscrollcommand=self.vscrollbar.set)
         self.canvas.grid(row=0, column=0, sticky="nswe")
+        self.vscrollbar.config(command=self.canvas.yview)
 
-        self.scrollbar = ttk.Scrollbar(
-            self, orient="vertical", command=self.canvas.yview
-        )
-        self.scrollbar.grid(row=0, column=1, sticky="nse")
+        # reset the view
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
 
-        self.scrollable_frame = tk.Frame(self.canvas)
+        # create a frame inside the canvas which will be scrolled with it
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.interior_id = self.canvas.create_window(0, 0, window=self.scrollable_frame,
+                                           anchor=tk.NW)
 
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
-        )
-
-        self._window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.bind("<Enter>", self._bind_to_mousewheel)
-        self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
-        self.canvas.bind('<Configure>', self.inner_resize)
+        self.scrollable_frame.bind('<Configure>', self._configure_interior)
+        self.canvas.bind('<Configure>', self._configure_canvas)
+        self.canvas.bind('<Enter>', self._bind_to_mousewheel)
+        self.canvas.bind('<Leave>', self._unbind_from_mousewheel)
 
 
-    def inner_resize(self, event):
-        # resize inner frame to canvas size
-        self.canvas.itemconfig(self._window, width=event.width)
-        self.canvas.itemconfig(self._window, height=event.height)
+    def _configure_interior(self, _event):
+        # update the scrollbars to match the size of the inner frame
+        size = (self.scrollable_frame.winfo_reqwidth(), self.scrollable_frame.winfo_reqheight())
+        self.canvas.config(scrollregion="0 0 %s %s" % size)
+
+        if self.scrollable_frame.winfo_reqwidth() != self.winfo_width():
+            # update the canvas's width to fit the inner frame
+            self.canvas.config(width=self.scrollable_frame.winfo_reqwidth())
+
+    def _configure_canvas(self, _event):
+        if self.scrollable_frame.winfo_reqwidth() != self.winfo_width():
+            # update the inner frame's width to fill the canvas
+            self.canvas.itemconfigure(self.interior_id, width=self.winfo_width())
+
+    # This can now handle either windows or linux platforms
 
     def _on_mousewheel(self, event):
         scroll_dir = None
@@ -127,7 +142,7 @@ class ScrollableFrame(ttk.LabelFrame):
             return
 
         # If the scrollbar is max size don't bother scrolling
-        if self.scrollbar.get() == (0.0, 1.0):
+        if self.vscrollbar.get() == (0.0, 1.0):
             return
 
         self.canvas.yview_scroll(scroll_dir, "units")

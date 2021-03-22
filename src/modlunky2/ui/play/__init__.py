@@ -891,7 +891,7 @@ class PlayTab(Tab):
 
             if display:
                 checkbox.grid(row=row_num, column=0, pady=0, padx=5, sticky="nsw")
-                buttons.grid(row=row_num, column=1, pady=0, padx=5, sticky="e")
+                buttons.grid(row=row_num, column=1, pady=0, padx=(5, 25), sticky="e")
 
                 row_num += 1
 
