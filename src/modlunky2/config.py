@@ -91,6 +91,7 @@ class ConfigFile:
 
         self.install_dir = None
         self.playlunky_version = None
+        self.playlunky_console = False
         self.geometry = None
 
     @classmethod
@@ -113,8 +114,9 @@ class ConfigFile:
             install_dir = Path(install_dir)
         obj.install_dir = install_dir
 
-        # Initialize playlunky-version
+        # Initialize playlunky config
         obj.playlunky_version = config_data.get("playlunky-version")
+        obj.playlunky_console = config_data.get("playlunky-console", False)
 
         # Initialize geometry
         obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
@@ -134,6 +136,7 @@ class ConfigFile:
 
         if self.playlunky_version is not None:
             out["playlunky-version"] = self.playlunky_version
+        out["playlunky-console"] = self.playlunky_console
 
         out["geometry"] = self.geometry
 

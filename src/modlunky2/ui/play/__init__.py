@@ -390,9 +390,10 @@ class VersionFrame(tk.LabelFrame):
 
 
 class OptionsFrame(tk.LabelFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, config):
         super().__init__(parent, text="Options")
         self.parent = parent
+        self.config = config
         self.columnconfigure(0, weight=1)
 
         self.random_char_var = tk.BooleanVar()
@@ -430,6 +431,21 @@ class OptionsFrame(tk.LabelFrame):
             compound="left",
         )
         self.enable_developer_mode_checkbox.grid(row=3, column=0, sticky="w")
+
+        self.enable_console_var = tk.BooleanVar()
+        self.enable_console_var.set(self.config.config_file.playlunky_console)
+        self.enable_console_checkbox = tk.Checkbutton(
+            self,
+            text="Enable Console",
+            variable=self.enable_console_var,
+            compound="left",
+            command=self.handle_console_checkbutton,
+        )
+        self.enable_console_checkbox.grid(row=4, column=0, sticky="w")
+
+    def handle_console_checkbutton(self):
+        self.config.config_file.playlunky_console = self.enable_console_var.get()
+        self.config.config_file.save()
 
 
 class FiltersFrame(tk.LabelFrame):
@@ -685,12 +701,15 @@ class LoadOrderFrame(tk.LabelFrame):
         self.render_buttons()
 
 
-def launch_playlunky(_call, install_dir, exe_path):
+def launch_playlunky(_call, install_dir, exe_path, use_console):
     logger.info(
         "Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR)
     )
     working_dir = exe_path.parent
     cmd = [f"{exe_path}", f"--exe_dir={install_dir}"]
+    if use_console:
+        cmd.append("--console")
+
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
 
@@ -748,7 +767,7 @@ class PlayTab(Tab):
             row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.options_frame = OptionsFrame(self)
+        self.options_frame = OptionsFrame(self, config)
         self.options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -913,6 +932,7 @@ class PlayTab(Tab):
             "play:launch_playlunky",
             install_dir=self.config.install_dir,
             exe_path=exe_path,
+            use_console=self.config.config_file.playlunky_console,
         )
 
     def playlunky_closed(self):
