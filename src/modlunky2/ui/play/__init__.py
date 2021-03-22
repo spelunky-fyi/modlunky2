@@ -1,24 +1,28 @@
+# pylint: disable=too-many-lines
+
 import json
 import logging
 import shutil
 import subprocess
 import threading
-import tkinter as tk
 import time
+import tkinter as tk
 import webbrowser
 import zipfile
 from io import BytesIO
 from pathlib import Path
 from shutil import copyfile
+from tkinter import PhotoImage
 from tkinter import font as tk_font
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
 import requests
+from PIL import Image, ImageTk
 
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig
-from modlunky2.ui.widgets import ScrollableFrame, Tab
+from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
 
 logger = logging.getLogger("modlunky2")
 
@@ -463,26 +467,50 @@ class ControlsFrame(tk.LabelFrame):
             self, text="Install Mod", command=self.install_mod
         )
         self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.install_button, "Browse for a mod file to install.")
 
         self.refresh_button = ttk.Button(
             self, text="Refresh Mods", command=self.refresh_mods
         )
         self.refresh_button.grid(row=1, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.refresh_button, (
+            "If you've made any changes in the Packs directory\n"
+            "that you want updated in the mod list."
+        ))
+
+        self.open_packs_button = ttk.Button(
+            self, text="Open Packs Directory", command=self.open_packs
+        )
+        self.open_packs_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.open_packs_button, (
+            "Open the directory where Packs are saved"
+        ))
 
         self.guide_button = ttk.Button(
             self, text="User Guide", command=self.guide
         )
-        self.guide_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
+        self.guide_button.grid(row=3, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.guide_button, (
+            "Open the User Guide"
+        ))
 
         self.update_releases_button = ttk.Button(
             self, text="Update Releases", command=self.update_releases
         )
-        self.update_releases_button.grid(row=3, column=0, pady=3, padx=10, sticky="nswe")
+        self.update_releases_button.grid(row=4, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.update_releases_button, (
+            "If you want to check for a new version of Playlunky\n"
+            "you can force an update with this button."
+        ))
 
         self.clear_cache_button = ttk.Button(
             self, text="Clear Cache", command=self.clear_cache
         )
-        self.clear_cache_button.grid(row=4, column=0, pady=3, padx=10, sticky="nswe")
+        self.clear_cache_button.grid(row=5, column=0, pady=3, padx=10, sticky="nswe")
+        ToolTip(self.clear_cache_button, (
+            "Remove Playlunky cache. This could be helpful\n"
+            "if things aren't working as expected."
+        ))
 
 
     def install_mod(self):
@@ -493,6 +521,15 @@ class ControlsFrame(tk.LabelFrame):
 
     def refresh_mods(self):
         self.parent.on_load()
+
+    def open_packs(self):
+        webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
+        packs_dir = self.config.install_dir / "Mods/Packs"
+        if not packs_dir.exists():
+            logger.info("Couldn't find Packs directory. Looked in %s", packs_dir)
+            return
+
+        webbrowser.open(f"file://{packs_dir}")
 
     def guide(self):
         webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
@@ -678,7 +715,7 @@ class PlayTab(Tab):
         )
         self.packs_frame.rowconfigure(0, weight=1)
         self.packs_frame.columnconfigure(0, weight=1)
-        self.packs_frame.scrollable_frame.columnconfigure(1, weight=1)
+        self.packs_frame.scrollable_frame.columnconfigure(0, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -710,10 +747,15 @@ class PlayTab(Tab):
         self.version_frame.cache_releases()
 
         icon_path = BASE_DIR / "static/images"
-        self.folder_icon = tk.PhotoImage(file=icon_path / "folder.png")
-        self.trash_icon = tk.PhotoImage(file=icon_path / "trash.png")
+        self.folder_icon = ImageTk.PhotoImage(
+            Image.open(icon_path / "folder.png").resize((30, 30), Image.ANTIALIAS)
+        )
+        self.trash_icon = ImageTk.PhotoImage(
+            Image.open(icon_path / "trash.png").resize((30, 30), Image.ANTIALIAS)
+        )
 
         self.packs = []
+        self.separators = []
         self.checkboxes = {}
 
         self.on_load()
@@ -868,6 +910,10 @@ class PlayTab(Tab):
 
         filter_selected = self.filter_frame.selected_var.get()
 
+        for sep in self.separators:
+            sep.destroy()
+        self.separators.clear()
+
         row_num = 0
         for pack in self.packs:
             display = True
@@ -890,9 +936,13 @@ class PlayTab(Tab):
                 display = False
 
             if display:
+                if row_num > 0:
+                    sep = ttk.Separator(self.packs_frame.scrollable_frame)
+                    sep.grid(row=row_num, column=0, pady=1, sticky="ew")
+                    self.separators.append(sep)
+                    row_num += 1
                 checkbox.grid(row=row_num, column=0, pady=0, padx=5, sticky="nsw")
                 buttons.grid(row=row_num, column=1, pady=0, padx=(5, 25), sticky="e")
-
                 row_num += 1
 
     def on_check(self, name, var):
@@ -973,6 +1023,8 @@ class PlayTab(Tab):
                 onvalue=True,
                 offvalue=False,
                 compound="left",
+                # TODO: dynamic sizing for larger windows
+                wraplength="640",
                 command=self.on_check_wrapper(pack, var),
             )
 
