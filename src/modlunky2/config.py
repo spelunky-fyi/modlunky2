@@ -101,7 +101,15 @@ class ConfigFile:
 
         if config_path.exists():
             with config_path.open("r") as config_file:
-                config_data = json.load(config_file)
+                try:
+                    config_data = json.load(config_file)
+                except Exception as err:  # pylint: disable=broad-except
+                    logger.critical(
+                        "Failed to read config file: %s. Creating new one from defaults.",
+                        err,
+                    )
+                    needs_save = True
+                    config_data = {}
         else:
             config_data = {}
 

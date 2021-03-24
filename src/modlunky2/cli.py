@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .ui import ModlunkyUI
 from .config import Config, make_user_dirs
+from .ui.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -31,7 +32,12 @@ def main():
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
     logger.setLevel(log_level)
-    launch(args, log_level)
+
+    try:
+        launch(args, log_level)
+    except Exception:  # pylint: disable=broad-except
+        logger.critical("%s", tb_info())
+        input("Failed to launch Modlunky 2. Press Enter to exit...")
 
 
 def launch(args, log_level):
