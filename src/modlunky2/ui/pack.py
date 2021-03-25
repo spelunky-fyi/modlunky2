@@ -73,6 +73,39 @@ def pack_assets(_call, install_dir, packs):
         logger.info("Repacking complete!")
 
 
+class WarningFrame(tk.Frame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.columnconfigure(0, minsize=20)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.config(bd=1)
+
+        self.color_bar = tk.Frame(self, bg="red", width=20)
+        self.color_bar.grid(row=0, column=0, sticky="nswe")
+
+        self.label = tk.Label(
+            self,
+            text=(
+                "Packing is deprecated and continues to exist solely for legacy support.\n"
+                "The playlunky tab is the primary supported method for playing mods."
+            ),
+            font="sans 12 bold",
+            justify=tk.CENTER,
+            anchor="e",
+        )
+        self.label.grid(row=0, column=1, sticky="nswe")
+        self.label.bind(
+            "<Configure>",
+            lambda e: self.label.config(wraplength=self.winfo_width() - 60),
+        )
+
+        self.color_bar = tk.Frame(self, bg="red", width=20)
+        self.color_bar.grid(row=0, column=2, sticky="nse")
+
+
 class PackTab(Tab):
     def __init__(self, tab_control, config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
@@ -87,29 +120,33 @@ class PackTab(Tab):
         )
         self.task_manager.register_handler("pack_finished", self.pack_finished)
 
-        self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, minsize=60)
+        self.rowconfigure(0, minsize=60)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, minsize=60, weight=0)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
 
+        self.warning = WarningFrame(self)
+        self.warning.grid(row=0, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
+
         self.frame = ScrollableFrame(self, text="Select mods to pack")
-        self.frame.grid(row=0, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
+        self.frame.grid(row=1, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
 
         self.button_pack = ttk.Button(self, text="Pack", command=self.pack)
-        self.button_pack.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_pack.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_pack, "Pack modded assets into the EXE.")
 
         self.button_restore = ttk.Button(self, text="Restore EXE", command=self.restore)
-        self.button_restore.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
+        self.button_restore.grid(row=2, column=1, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_restore, "Restore EXE to vanilla state from backup.")
 
         self.button_validate = ttk.Button(
             self, text="Validate Game Files", command=self.validate
         )
-        self.button_validate.grid(row=1, column=2, pady=5, padx=5, sticky="nswe")
+        self.button_validate.grid(row=2, column=2, pady=5, padx=5, sticky="nswe")
         ToolTip(self.button_validate, "Redownload vanilla EXE from steam.")
 
         default_icon_path = BASE_DIR / "static/images/folder.png"
