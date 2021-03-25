@@ -341,16 +341,20 @@ class VersionFrame(tk.LabelFrame):
 
     def render(self):
         self.available_releases = self.get_available_releases()
+        available_releases = list(self.available_releases.keys())
+        available_set = set(available_releases)
         installed_releases = set()
         if PLAYLUNKY_DATA_DIR.exists():
             for dir_ in PLAYLUNKY_DATA_DIR.iterdir():
                 installed_releases.add(dir_.name)
-        available_releases = list(self.available_releases.keys())
+
+        orphans = installed_releases - available_set
+        available_releases += orphans
 
         self.selected_dropdown.destroy()
 
         if not available_releases:
-            self.selected_dropdown = tk.Label(self, text="hi")
+            self.selected_dropdown = tk.Label(self, text="No available releases")
             return
 
         self.selected_dropdown = tk.OptionMenu(
@@ -372,7 +376,7 @@ class VersionFrame(tk.LabelFrame):
             self.config.config_file.save()
             self.selected_var.set(selected_version)
 
-        for release in self.available_releases:
+        for release in available_releases:
             if release in installed_releases:
                 self.selected_dropdown["menu"].entryconfigure(
                     release, font=self.bold_font
