@@ -15,6 +15,7 @@ from .character import *
 from .monsters.mounts import Mounts
 from .monsters.pets import Pets
 from .tilecode_extras import TilecodeExtras
+from .menu_leader import MenuLeaderSheet
 
 
 def get_all_sprite_loaders(base_path: str):
@@ -53,6 +54,7 @@ def get_all_sprite_loaders(base_path: str):
         CharacterLemonSheet(base_path),
         Mounts(base_path),
         Pets(base_path),
+        MenuLeaderSheet(base_path),
         # This uses the constant BASE_DIR as the base path as this
         # texture is bundled with the source rather than coming
         # from the extracted assets.
