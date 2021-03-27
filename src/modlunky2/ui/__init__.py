@@ -31,8 +31,8 @@ def exception_logger(type_, value, traceb):
 
 
 class ModlunkyUI:
-    def __init__(self, config, log_level=logging.INFO):
-        self.config = config
+    def __init__(self, modlunky_config, log_level=logging.INFO):
+        self.modlunky_config = modlunky_config
 
         self.current_version = current_version()
         self.latest_version = latest_version()
@@ -55,8 +55,8 @@ class ModlunkyUI:
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
-        self.root.geometry(config.config_file.geometry)
-        self.last_geometry = config.config_file.geometry
+        self.root.geometry(modlunky_config.config_file.geometry)
+        self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
 
         self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
@@ -97,21 +97,21 @@ class ModlunkyUI:
             "Playlunky",
             PlayTab,
             tab_control=self.tab_control,
-            config=config,
+            modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
         self.register_tab(
             "Extract Assets",
             ExtractTab,
             tab_control=self.tab_control,
-            config=config,
+            modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
         self.register_tab(
             "Pack Assets",
             PackTab,
             tab_control=self.tab_control,
-            config=config,
+            modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
         self.register_tab(
@@ -119,13 +119,13 @@ class ModlunkyUI:
             LevelsTab,
             tab_control=self.tab_control,
             modlunky_ui=self,
-            config=config,
+            modlunky_config=modlunky_config,
         )
         self.register_tab(
             "Config",
             ConfigTab,
             tab_control=self.tab_control,
-            config=config,
+            modlunky_config=modlunky_config,
         )
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
@@ -150,13 +150,13 @@ class ModlunkyUI:
 
     def after_record_win(self):
         self.root.after(1000, self.after_record_win)
-        if self.config.config_file.geometry != self.last_geometry:
-            self.config.config_file.geometry = self.last_geometry
-            self.config.config_file.dirty = True
+        if self.modlunky_config.config_file.geometry != self.last_geometry:
+            self.modlunky_config.config_file.geometry = self.last_geometry
+            self.modlunky_config.config_file.dirty = True
 
-        if self.config.config_file.dirty:
+        if self.modlunky_config.config_file.dirty:
             logger.debug("Saving config")
-            self.config.config_file.save()
+            self.modlunky_config.config_file.save()
 
     def after_cb(self):
         if not self.task_manager.is_alive():

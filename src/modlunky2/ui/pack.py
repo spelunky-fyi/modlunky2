@@ -107,10 +107,10 @@ class WarningFrame(tk.Frame):
 
 
 class PackTab(Tab):
-    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
             "pack_assets",
@@ -164,10 +164,10 @@ class PackTab(Tab):
         webbrowser.open_new_tab("steam://validate/418530")
 
     def restore(self):
-        mods_dir = self.config.install_dir / MODS
+        mods_dir = self.modlunky_config.install_dir / MODS
         extract_dir = mods_dir / "Extracted"
         source_exe = extract_dir / "Spel2.exe"
-        dest_exe = self.config.install_dir / "Spel2.exe"
+        dest_exe = self.modlunky_config.install_dir / "Spel2.exe"
 
         if is_patched(source_exe):
             logger.critical(
@@ -181,7 +181,7 @@ class PackTab(Tab):
 
     def pack(self):
         packs = [
-            self.config.install_dir / "Mods" / exe.get()
+            self.modlunky_config.install_dir / "Mods" / exe.get()
             for exe in self.checkbox_vars
             if exe.get()
         ]
@@ -189,25 +189,25 @@ class PackTab(Tab):
         self.button_restore["state"] = tk.DISABLED
         self.button_validate["state"] = tk.DISABLED
         self.task_manager.call(
-            "pack_assets", install_dir=self.config.install_dir, packs=packs
+            "pack_assets", install_dir=self.modlunky_config.install_dir, packs=packs
         )
 
     def get_packs(self):
         pack_dirs = []
-        overrides_dir = self.config.install_dir / "Mods" / "Overrides"
+        overrides_dir = self.modlunky_config.install_dir / "Mods" / "Overrides"
         if overrides_dir.exists():
             pack_dirs.append(
-                overrides_dir.relative_to(self.config.install_dir / "Mods")
+                overrides_dir.relative_to(self.modlunky_config.install_dir / "Mods")
             )
 
-        packs_dir = self.config.install_dir / "Mods" / "Packs"
+        packs_dir = self.modlunky_config.install_dir / "Mods" / "Packs"
         if packs_dir.exists():
             for dir_ in packs_dir.iterdir():
                 if not dir_.is_dir():
                     continue
                 if dir_.name == ".db":
                     continue
-                pack_dirs.append(dir_.relative_to(self.config.install_dir / "Mods"))
+                pack_dirs.append(dir_.relative_to(self.modlunky_config.install_dir / "Mods"))
 
         return pack_dirs
 

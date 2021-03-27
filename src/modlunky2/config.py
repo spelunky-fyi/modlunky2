@@ -29,6 +29,8 @@ MIN_HEIGHT = 900
 # Sentinel for tracking unset fields
 NOT_PRESENT = object()
 
+SPELUNKY_FYI_ROOT_DEFAULT = "https://spelunky.fyi/"
+
 logger = logging.getLogger("modlunky2")
 
 
@@ -93,6 +95,8 @@ class ConfigFile:
         self.playlunky_version = None
         self.playlunky_console = False
         self.geometry = None
+        self.spelunky_fyi_root = None
+        self.spelunky_fyi_api_token = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -129,6 +133,10 @@ class ConfigFile:
         # Initialize geometry
         obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
 
+        # FYI Config
+        obj.spelunky_fyi_root = config_data.get("spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT)
+        obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
+
         if needs_save:
             obj.save()
 
@@ -147,6 +155,8 @@ class ConfigFile:
         out["playlunky-console"] = self.playlunky_console
 
         out["geometry"] = self.geometry
+        out["spelunky-fyi-root"] = self.spelunky_fyi_root
+        out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
 
         return out
 

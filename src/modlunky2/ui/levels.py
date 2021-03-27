@@ -35,13 +35,13 @@ logger = logging.getLogger("modlunky2")
 
 class LevelsTab(Tab):
     def __init__(
-        self, tab_control, modlunky_ui, config, *args, **kwargs
+        self, tab_control, modlunky_ui, modlunky_config, *args, **kwargs
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
-        self.config = config
+        self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(self, self, self.config)
+        self.tree_levels = LevelsTree(self, self, self.modlunky_config)
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -49,8 +49,8 @@ class LevelsTab(Tab):
         self.extracts_mode = True
         self.dual_mode = False
         self.tab_control = tab_control
-        self.install_dir = config.install_dir
-        self.textures_dir = config.install_dir / "Mods/Extracted/Data/Textures"
+        self.install_dir = modlunky_config.install_dir
+        self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
         self._sprite_fetcher = None
 
         self.lvl_editor_start_canvas = tk.Canvas(self)
@@ -104,7 +104,7 @@ class LevelsTab(Tab):
         self.node = None
 
         def select_lvl_folder():
-            initial_dir = self.config.install_dir / "Mods/Packs"
+            initial_dir = self.modlunky_config.install_dir / "Mods/Packs"
             if not initial_dir.exists():
                 initial_dir = Path("/")
             dirname = filedialog.askdirectory(
@@ -290,7 +290,7 @@ class LevelsTab(Tab):
         self.editor_tab.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
         self.tree_levels = LevelsTree(
-            self.editor_tab, self, self.config, selectmode="browse"
+            self.editor_tab, self, self.modlunky_config, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
@@ -1282,7 +1282,7 @@ class LevelsTab(Tab):
 
     def replace_tiles_dia(self):
         # Set up window
-        win = PopupWindow("Replace Tiles", self.config)
+        win = PopupWindow("Replace Tiles", self.modlunky_config)
 
         replacees = []
         for tile in self.tile_pallete_ref_in_use:
@@ -1668,7 +1668,7 @@ class LevelsTab(Tab):
         if entry_index == "":
             return
 
-        win = PopupWindow("Edit Entry", self.config)
+        win = PopupWindow("Edit Entry", self.modlunky_config)
         win.columnconfigure(1, minsize=500)
 
         # Grab the entry's values

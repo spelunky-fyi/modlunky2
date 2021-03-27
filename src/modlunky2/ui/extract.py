@@ -92,10 +92,10 @@ def extract_assets(
 
 
 class ExtractTab(Tab):
-    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
             "extract_assets",
@@ -246,7 +246,7 @@ class ExtractTab(Tab):
         ToolTip(self.button_extract, ("Extract assets from EXE."))
 
     def open_extract_dir(self):
-        extract_dir = self.config.install_dir / MODS / EXTRACTED_DIR
+        extract_dir = self.modlunky_config.install_dir / MODS / EXTRACTED_DIR
         webbrowser.open(f"file://{extract_dir}")
 
     def extract_finished(self):
@@ -270,7 +270,7 @@ class ExtractTab(Tab):
         selected_exe = self.list_box.get(idx)
         self.task_manager.call(
             "extract_assets",
-            install_dir=self.config.install_dir,
+            install_dir=self.modlunky_config.install_dir,
             target=selected_exe,
             recompress=self.recompress.get(),
             generate_string_hashes=self.generate_string_hashes.get(),
@@ -282,11 +282,11 @@ class ExtractTab(Tab):
     def get_exes(self):
         exes = []
         # Don't recurse forever. 3 levels should be enough
-        exes.extend(self.config.install_dir.glob("*.exe"))
-        exes.extend(self.config.install_dir.glob("*/*.exe"))
-        exes.extend(self.config.install_dir.glob("*/*/*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*/*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*/*/*.exe"))
         return [
-            exe.relative_to(self.config.install_dir)
+            exe.relative_to(self.modlunky_config.install_dir)
             for exe in exes
             # Exclude modlunky2 which is likely in the install directory
             if exe.name not in ["modlunky2.exe"]

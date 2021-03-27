@@ -182,10 +182,10 @@ class ScrollableFrame(ttk.LabelFrame):
 
 
 class PopupWindow(ttk.Frame):
-    def __init__(self, title, config, *args, **kwargs):
+    def __init__(self, title, modlunky_config, *args, **kwargs):
         self.shutting_down = False
         self.win = tk.Toplevel()
-        self.config = config
+        self.modlunky_config = modlunky_config
 
         self.label_frame = ttk.LabelFrame(self.win, text=title)
         self.label_frame.columnconfigure(0, weight=1)
@@ -201,7 +201,7 @@ class PopupWindow(ttk.Frame):
             self.win.attributes("-alpha", True)
 
         main_geometry = tuple(
-            map(int, re.split(r"[+x]", self.config.config_file.geometry))
+            map(int, re.split(r"[+x]", self.modlunky_config.config_file.geometry))
         )
 
         self.win.geometry(
