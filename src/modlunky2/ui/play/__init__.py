@@ -15,6 +15,7 @@ from shutil import copyfile
 from tkinter import PhotoImage
 from tkinter import font as tk_font
 from tkinter import ttk
+from urllib.parse import urlparse
 
 import requests
 from PIL import Image, ImageTk
@@ -22,6 +23,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig
+from modlunky2.ui.utils import tb_info
 from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
 
 logger = logging.getLogger("modlunky2")
@@ -35,6 +37,7 @@ SPEL2_DLL = "spel2.dll"
 PLAYLUNKY_DLL = "playlunky64.dll"
 PLAYLUNKY_EXE = "playlunky_launcher.exe"
 PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
+PLAYLUNKY_VERSION_FILENAME = "playlunky.version"
 
 
 class Entry(tk.Entry):
@@ -103,26 +106,50 @@ def cache_playlunky_releases(call):
     call("play:cache_releases_updated")
 
 
+def parse_download_url(download_url):
+    path = Path(urlparse(download_url).path)
+    ext = path.suffix
+    stem = path.stem
+    version = stem.rpartition("_")[2]
+    return version, ext
+
+
 def download_playlunky_release(call, tag, download_url, launch):
+    logger.debug("Downloading %s", download_url)
 
     dest_path = PLAYLUNKY_DATA_DIR / tag
     if not dest_path.exists():
         dest_path.mkdir(parents=True)
 
-    download_file = BytesIO()
-    response = requests.get(download_url, stream=True)
-    amount_downloaded = 0
-    block_size = 102400
+    try:
+        version, ext = parse_download_url(download_url)
+        if ext != ".zip":
+            raise ValueError("Expected .zip but didn't find one")
 
-    for data in response.iter_content(block_size):
-        amount_downloaded += len(data)
-        call("play:download_progress", amount_downloaded=amount_downloaded)
-        download_file.write(data)
+        download_file = BytesIO()
+        response = requests.get(download_url, stream=True)
+        amount_downloaded = 0
+        block_size = 102400
 
-    playlunky_zip = zipfile.ZipFile(download_file)
-    for member in playlunky_zip.infolist():
-        if member.filename in PLAYLUNKY_FILES:
-            playlunky_zip.extract(member, dest_path)
+        for data in response.iter_content(block_size):
+            amount_downloaded += len(data)
+            call("play:download_progress", amount_downloaded=amount_downloaded)
+            download_file.write(data)
+
+        playlunky_zip = zipfile.ZipFile(download_file)
+        for member in playlunky_zip.infolist():
+            if member.filename in PLAYLUNKY_FILES:
+                playlunky_zip.extract(member, dest_path)
+
+        version_path = dest_path / PLAYLUNKY_VERSION_FILENAME
+        logger.debug("Writing version to %s", version_path)
+        with version_path.open("w") as version_file:
+            version_file.write(version)
+
+    except Exception:  # pylint: disable=broad-except
+        logger.critical("Failed to download %s: %s", download_url, tb_info())
+        call("play:download_failed")
+        return
 
     call("play:download_finished", launch=launch)
 
@@ -145,6 +172,9 @@ class DownloadFrame(tk.Frame):
         )
         self.task_manager.register_handler(
             "play:download_finished", self.on_download_finished
+        )
+        self.task_manager.register_handler(
+            "play:download_failed", self.on_download_failed
         )
 
         self.separator = ttk.Separator(self)
@@ -183,6 +213,11 @@ class DownloadFrame(tk.Frame):
     def on_download_progress(self, amount_downloaded):
         self.progress_bar["value"] = amount_downloaded
 
+    def on_download_failed(self):
+        self.parent.parent.enable_button()
+        self.button["state"] = tk.NORMAL
+        self.parent.render()
+
     def on_download_finished(self, launch=False):
         self.progress_bar["value"] = 0
         if launch:
@@ -198,6 +233,7 @@ def uninstall_playlunky_release(call, tag):
     logger.info("Removing Playlunky version %s", tag)
     for file_ in PLAYLUNKY_FILES:
         (dest_dir / file_).unlink(missing_ok=True)
+    (dest_dir / PLAYLUNKY_VERSION_FILENAME).unlink(missing_ok=True)
     dest_dir.rmdir()
     call("play:uninstall_finished")
 
@@ -302,12 +338,19 @@ class VersionFrame(tk.LabelFrame):
         if not PLAYLUNKY_RELEASES_PATH.exists():
             return available_releases
 
+        stable = None
+
         with PLAYLUNKY_RELEASES_PATH.open("r") as releases_file:
             releases = json.load(releases_file)
             for release in releases:
                 tag = release.get("tag_name")
-                if tag is None:
+                prerelease = release.get("prerelease")
+                if tag is None or prerelease is None:
                     continue
+                if stable is None and not prerelease:
+                    logger.debug("Marking %s as stable", tag)
+                    stable = tag
+                    available_releases["stable"] = release
                 available_releases[tag] = release
         return available_releases
 
@@ -341,7 +384,10 @@ class VersionFrame(tk.LabelFrame):
 
     def render(self):
         self.available_releases = self.get_available_releases()
-        available_releases = list(self.available_releases.keys())
+        available_releases = ["stable", "nightly"] + [
+            release for release in self.available_releases
+            if release not in ["nightly", "stable"]
+        ]
         available_set = set(available_releases)
         installed_releases = set()
         if PLAYLUNKY_DATA_DIR.exists():
@@ -909,6 +955,33 @@ class PlayTab(Tab):
 
         return answer
 
+    def needs_update(self):
+        selected_version = self.config.config_file.playlunky_version
+        if selected_version not in ["nightly", "stable"]:
+            return False
+
+        release_info = self.version_frame.available_releases[selected_version]
+        release_version, _ = parse_download_url(release_info["assets"][0]["browser_download_url"])
+
+        downloaded_version_path = (
+            PLAYLUNKY_DATA_DIR
+            / self.config.config_file.playlunky_version
+            / PLAYLUNKY_VERSION_FILENAME
+        )
+        downloaded_version = None
+        if not downloaded_version_path.exists():
+            logger.info("No version info for current download. Updating to latest.")
+            return True
+
+        with downloaded_version_path.open("r") as downloaded_version_file:
+            downloaded_version = downloaded_version_file.read().strip()
+
+        if downloaded_version != release_version:
+            logger.info("New version of %s available. Updating...", selected_version)
+            return True
+
+        return False
+
     def play(self):
         exe_path = (
             PLAYLUNKY_DATA_DIR
@@ -924,6 +997,10 @@ class PlayTab(Tab):
             else:
                 logger.critical("Can't run without an installed version of Playlunky")
                 self.enable_button()
+            return
+
+        if self.needs_update():
+            self.version_frame.download_frame.download(launch=True)
             return
 
         self.write_steam_appid()
