@@ -30,6 +30,10 @@ def exception_logger(type_, value, traceb):
     logger.critical("Unhandled Exception: %s", "".join(exc).strip())
 
 
+def update_start(_call):
+    self_update()
+
+
 class ModlunkyUI:
     def __init__(self, modlunky_config, log_level=logging.INFO):
         self.modlunky_config = modlunky_config
@@ -52,6 +56,15 @@ class ModlunkyUI:
         self.queue_handler = QueueHandler(self.log_queue)
         register_queue_handler(self.queue_handler, log_level)
         self.task_manager = TaskManager(self.log_queue, log_level)
+        self.task_manager.register_task(
+            "modlunky2:update_start",
+            update_start,
+            True,
+            on_complete="modlunky2:update_complete",
+        )
+        self.task_manager.register_handler(
+            "modlunky2:update_complete", self.update_complete
+        )
 
         self.root = tk.Tk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
@@ -71,20 +84,21 @@ class ModlunkyUI:
         sys.excepthook = exception_logger
         self.root.report_callback_exception = exception_logger
 
-        if self.needs_update:
-            update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
-            update_frame.grid(row=0, column=0, sticky="nswe")
-            update_frame.columnconfigure(0, weight=1)
-            update_frame.rowconfigure(0, weight=1)
+        self.update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
+        self.update_frame.columnconfigure(0, weight=1)
+        self.update_frame.rowconfigure(0, weight=1)
 
-            update_button = tk.Button(
-                update_frame,
-                text="Update Now!",
-                command=self.update,
-                bg="#bfbfbf",
-                font="sans 12 bold",
-            )
-            update_button.grid(column=0, row=0, sticky="nswe")
+        self.update_button = tk.Button(
+            self.update_frame,
+            text="Update Now!",
+            command=self.update,
+            bg="#bfbfbf",
+            font="sans 12 bold",
+        )
+
+        if self.needs_update:
+            self.update_frame.grid(row=0, column=0, sticky="nswe")
+            self.update_button.grid(column=0, row=0, sticky="nswe")
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -192,11 +206,20 @@ class ModlunkyUI:
         self.last_geometry = self.root.geometry()
 
     def update(self):
-        try:
-            self_update()
-            self.quit()
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Failed to update...")
+        self.update_button["state"] = tk.DISABLED
+        self.tab_control.grid_forget()
+        label = tk.Label(
+            self.root,
+            text="Update in progress...",
+            anchor=tk.CENTER,
+            font="sans 12 bold",
+        )
+        label.grid(column=0, row=1, padx=10, pady=10, sticky="nsew")
+
+        self.task_manager.call("modlunky2:update_start")
+
+    def update_complete(self):
+        self.quit()
 
     def on_tab_change(self, event):
         tab_name = event.widget.tab("current")["text"]

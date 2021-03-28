@@ -207,7 +207,9 @@ class PackTab(Tab):
                     continue
                 if dir_.name == ".db":
                     continue
-                pack_dirs.append(dir_.relative_to(self.modlunky_config.install_dir / "Mods"))
+                pack_dirs.append(
+                    dir_.relative_to(self.modlunky_config.install_dir / "Mods")
+                )
 
         return pack_dirs
 

@@ -134,7 +134,9 @@ class ConfigFile:
         obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
 
         # FYI Config
-        obj.spelunky_fyi_root = config_data.get("spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT)
+        obj.spelunky_fyi_root = config_data.get(
+            "spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT
+        )
         obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
 
         if needs_save:

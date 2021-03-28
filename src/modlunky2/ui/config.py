@@ -15,12 +15,16 @@ class InstallDir(ttk.LabelFrame):
         super().__init__(parent, text="Install Directory")
         self.modlunky_config = modlunky_config
 
-        install_dir_label = ttk.Label(self, text="The directory where Spelunky 2 is installed")
+        install_dir_label = ttk.Label(
+            self, text="The directory where Spelunky 2 is installed"
+        )
         install_dir_label.grid(
             row=0, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
 
-        self.install_dir_var = tk.StringVar(value=self.modlunky_config.config_file.install_dir)
+        self.install_dir_var = tk.StringVar(
+            value=self.modlunky_config.config_file.install_dir
+        )
         install_dir_entry = ttk.Entry(
             self,
             textvariable=self.install_dir_var,
@@ -86,5 +90,3 @@ class ConfigTab(Tab):
 
         install_dir_frame = InstallDir(config_frame, modlunky_config)
         install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="n")
-
-

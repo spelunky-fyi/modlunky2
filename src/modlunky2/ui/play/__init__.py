@@ -385,7 +385,8 @@ class VersionFrame(tk.LabelFrame):
     def render(self):
         self.available_releases = self.get_available_releases()
         available_releases = ["stable", "nightly"] + [
-            release for release in self.available_releases
+            release
+            for release in self.available_releases
             if release not in ["nightly", "stable"]
         ]
         available_set = set(available_releases)
@@ -494,7 +495,9 @@ class OptionsFrame(tk.LabelFrame):
         self.enable_console_checkbox.grid(row=4, column=0, sticky="w")
 
     def handle_console_checkbutton(self):
-        self.modlunky_config.config_file.playlunky_console = self.enable_console_var.get()
+        self.modlunky_config.config_file.playlunky_console = (
+            self.enable_console_var.get()
+        )
         self.modlunky_config.config_file.save()
 
 
@@ -961,7 +964,9 @@ class PlayTab(Tab):
             return False
 
         release_info = self.version_frame.available_releases[selected_version]
-        release_version, _ = parse_download_url(release_info["assets"][0]["browser_download_url"])
+        release_version, _ = parse_download_url(
+            release_info["assets"][0]["browser_download_url"]
+        )
 
         downloaded_version_path = (
             PLAYLUNKY_DATA_DIR
@@ -1047,7 +1052,9 @@ class PlayTab(Tab):
                 if path.exists():
                     continue
 
-            packs.append(str(path.relative_to(self.modlunky_config.install_dir / "Mods/Packs")))
+            packs.append(
+                str(path.relative_to(self.modlunky_config.install_dir / "Mods/Packs"))
+            )
         return packs
 
     def render_packs(self):
@@ -1069,7 +1076,9 @@ class PlayTab(Tab):
             buttons.grid_forget()
             checkbox.grid_forget()
 
-            if not (self.modlunky_config.install_dir / "Mods/Packs" / str(pack)).exists():
+            if not (
+                self.modlunky_config.install_dir / "Mods/Packs" / str(pack)
+            ).exists():
                 buttons.folder_button["state"] = tk.DISABLED
             else:
                 buttons.folder_button["state"] = tk.NORMAL
