@@ -6,6 +6,8 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
 
+from ttkthemes import ThemedTk, ThemedStyle
+
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
@@ -67,34 +69,54 @@ class ModlunkyUI:
             "modlunky2:update_complete", self.update_complete
         )
 
-        self.root = tk.Tk(className="Modlunky2")  # Equilux Black
+        self.root = ThemedTk(className="Modlunky2")  # Equilux Black
         self.root.title("Modlunky 2")
         self.root.geometry(modlunky_config.config_file.geometry)
         self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
+        if modlunky_config.config_file.theme:
+            self.root.set_theme(modlunky_config.config_file.theme)
+        self.root.event_add("<<ThemeChange>>", 'None')
+
+        style = ThemedStyle()
+        style.configure("ModList.TCheckbutton",
+            font=("Segoe UI", 12, "bold"),
+            # TODO: dynamic sizing for larger windows
+            wraplength="640",
+        )
+        style.configure("Update.TButton", bg="#bfbfbf", font="sans 12 bold")
+        style.configure("TOptionMenu", anchor="w")
+
+        default_background = style.lookup('TFrame', 'background')
+        self.root.configure(bg=default_background)
 
         self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_rowconfigure(0, weight=0)
-        self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_rowconfigure(2, weight=0)
-        # self.root.resizable(False, False)
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
         self.root.iconphoto(False, self.icon_png)
 
         sys.excepthook = exception_logger
         self.root.report_callback_exception = exception_logger
 
-        self.update_frame = ttk.LabelFrame(self.root, text="Modlunky2 Update Available")
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+
+        self.top_frame = ttk.Frame(self.root)
+        self.top_frame.grid(row=0, column=0, sticky="nsew")
+
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        self.top_frame.grid_rowconfigure(0, weight=0)
+        self.top_frame.grid_rowconfigure(1, weight=1)
+        self.top_frame.grid_rowconfigure(2, weight=0)
+
+        self.update_frame = ttk.LabelFrame(self.top_frame, text="Modlunky2 Update Available")
         self.update_frame.columnconfigure(0, weight=1)
         self.update_frame.rowconfigure(0, weight=1)
 
-        self.update_button = tk.Button(
+        self.update_button = ttk.Button(
             self.update_frame,
             text="Update Now!",
             command=self.update,
-            bg="#bfbfbf",
-            font="sans 12 bold",
+            style="Update.TButton",
         )
 
         if self.needs_update:
@@ -106,7 +128,7 @@ class ModlunkyUI:
         self.root.bind("<Escape>", self.quit)
 
         self.tabs = {}
-        self.tab_control = ttk.Notebook(self.root)
+        self.tab_control = ttk.Notebook(self.top_frame)
 
         self.register_tab(
             "Playlunky",
@@ -153,15 +175,15 @@ class ModlunkyUI:
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
-        self.console_frame = ttk.LabelFrame(self.root, text="Console")
+        self.console_frame = ttk.LabelFrame(self.top_frame, text="Console")
         self.console_frame.columnconfigure(0, weight=1)
         self.console_frame.rowconfigure(0, weight=1)
 
         self.console = ConsoleWindow(self.queue_handler, self.console_frame)
         self.console.grid(column=0, row=0, padx=2, pady=2, sticky="ew")
 
-        self.version_label = tk.Label(
-            self.root, text=f"v{self.current_version}", font="Helvitica 9 italic"
+        self.version_label = ttk.Label(
+            self.top_frame, text=f"v{self.current_version}", font="Helvitica 9 italic"
         )
         self.version_label.grid(column=0, row=3, padx=5, sticky="e")
 
@@ -210,14 +232,13 @@ class ModlunkyUI:
     def handle_resize(self, event):
         if not isinstance(event.widget, tk.Tk):
             return
-
         self.last_geometry = self.root.geometry()
 
     def update(self):
         self.update_button["state"] = tk.DISABLED
         self.tab_control.grid_forget()
-        label = tk.Label(
-            self.root,
+        label = ttk.Label(
+            self.top_frame,
             text="Update in progress...",
             anchor=tk.CENTER,
             font="sans 12 bold",

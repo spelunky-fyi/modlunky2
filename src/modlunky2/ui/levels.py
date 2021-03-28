@@ -53,19 +53,19 @@ class LevelsTab(Tab):
         self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
         self._sprite_fetcher = None
 
-        self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.lvl_editor_start_canvas.grid(row=0, column=0, columnspan=2, sticky="nswe")
-        self.lvl_editor_start_canvas.columnconfigure(0, weight=1)
-        self.lvl_editor_start_canvas.rowconfigure(0, weight=1)
+        self.lvl_editor_start_frame = ttk.Frame(self)
+        self.lvl_editor_start_frame.grid(row=0, column=0, columnspan=2, sticky="nswe")
+        self.lvl_editor_start_frame.columnconfigure(0, weight=1)
+        self.lvl_editor_start_frame.rowconfigure(0, weight=1)
 
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
         self.overrides_path = self.install_dir / "Mods" / "Overrides"
 
         self.welcome_label = tk.Label(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text=(
                 "Welcome to the Spelunky 2 Level Editor! "
                 "Created by JackHasWifi with lots of help from "
@@ -124,7 +124,7 @@ class LevelsTab(Tab):
                 self.load_editor()
 
         self.btn_lvl_extracts = ttk.Button(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text="Load From Extracts",
             command=load_extracts_lvls,
         )
@@ -133,7 +133,7 @@ class LevelsTab(Tab):
         )
 
         self.btn_lvl_folder = ttk.Button(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text="Load Levels Folder",
             command=select_lvl_folder,
         )
@@ -154,7 +154,7 @@ class LevelsTab(Tab):
         self.last_selected_file = None
         self.tiles = None
         self.tiles_meta = None
-        self.lvl_editor_start_canvas.grid_remove()
+        self.lvl_editor_start_frame.grid_remove()
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -321,7 +321,7 @@ class LevelsTab(Tab):
         self.canvas_grids.columnconfigure(2, weight=1)
         self.canvas_grids.rowconfigure(0, weight=1)
 
-        self.scrollable_canvas_frame = tk.Frame(self.canvas_grids, bg="#343434")
+        self.scrollable_canvas_frame = ttk.Frame(self.canvas_grids)
 
         # offsets the screen so user can freely scroll around work area
         self.scrollable_canvas_frame.columnconfigure(
@@ -403,18 +403,18 @@ class LevelsTab(Tab):
         self.canvas_dual.grid_remove()  # hides it for now
         self.dual_mode = False
 
-        self.button_hide_tree = tk.Button(
+        self.button_hide_tree = ttk.Button(
             self.canvas_grids, text="<<", command=self.toggle_list_hide
         )
         self.button_hide_tree.grid(row=0, column=0, sticky="nw")
 
-        self.button_replace = tk.Button(
+        self.button_replace = ttk.Button(
             self.canvas_grids, text="Replace", command=self.replace_tiles_dia
         )
         self.button_replace.grid(row=0, column=1, sticky="nw")
         self.button_replace["state"] = tk.DISABLED
 
-        self.button_clear = tk.Button(
+        self.button_clear = ttk.Button(
             self.canvas_grids, text="Clear Canvas", command=self.clear_canvas
         )
         self.button_clear.grid(row=0, column=2, sticky="nw")
@@ -430,14 +430,14 @@ class LevelsTab(Tab):
 
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
-        self.tile_label = tk.Label(
+        self.tile_label = ttk.Label(
             self.editor_tab,
             text="Primary Tile:",
         )
         self.tile_label.grid(row=0, column=10, columnspan=1, sticky="we")
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
-        self.tile_label_secondary = tk.Label(
+        self.tile_label_secondary = ttk.Label(
             self.editor_tab,
             text="Secondary Tile:",
         )
@@ -470,11 +470,11 @@ class LevelsTab(Tab):
                 BASE_DIR / "static/images/tilecodetextures.png"
             )  ########################################### set selected img
         )
-        self.panel_sel = tk.Label(
+        self.panel_sel = ttk.Label(
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel.grid(row=0, column=11)
-        self.panel_sel_secondary = tk.Label(
+        self.panel_sel_secondary = ttk.Label(
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel_secondary.grid(row=1, column=11)
@@ -487,7 +487,7 @@ class LevelsTab(Tab):
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
-        self.scale = tk.Scale(
+        self.scale = ttk.Scale(
             self.editor_tab,
             from_=0,
             to=100,
@@ -1288,19 +1288,19 @@ class LevelsTab(Tab):
         for tile in self.tile_pallete_ref_in_use:
             replacees.append(str(tile[0]))
 
-        col1_lbl = tk.Label(win, text="Replace all ")
+        col1_lbl = ttk.Label(win, text="Replace all ")
         col1_lbl.grid(row=0, column=0)
         combo_replace = ttk.Combobox(win, height=20)
         combo_replace["values"] = replacees
         combo_replace.grid(row=0, column=1)
 
-        col2_lbl = tk.Label(win, text="with ")
+        col2_lbl = ttk.Label(win, text="with ")
         col2_lbl.grid(row=1, column=0)
         combo_replacer = ttk.Combobox(win, height=20)
         combo_replacer["values"] = replacees
         combo_replacer.grid(row=1, column=1)
 
-        col3_lbl = tk.Label(win, text="in ")
+        col3_lbl = ttk.Label(win, text="in ")
         col3_lbl.grid(row=2, column=0)
         combo_where = ttk.Combobox(win, height=20)
         combo_where["values"] = ["all rooms", "current room"]
@@ -1349,15 +1349,15 @@ class LevelsTab(Tab):
         separator = ttk.Separator(win)
         separator.grid(row=4, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=5, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Replace", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Replace", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def replace_tiles(self, tile, new_tile, replace_where):
@@ -1677,20 +1677,20 @@ class LevelsTab(Tab):
                 values = tree_view.item(child)["values"]
                 break
 
-        col1_lbl = tk.Label(win, text="Entry: ")
-        col1_ent = tk.Entry(win)
+        col1_lbl = ttk.Label(win, text="Entry: ")
+        col1_ent = ttk.Entry(win)
         col1_ent.insert(0, values[0])  # Default is column 1's current value
         col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
         col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
 
-        col2_lbl = tk.Label(win, text="Value: ")
-        col2_ent = tk.Entry(win)
+        col2_lbl = ttk.Label(win, text="Value: ")
+        col2_ent = ttk.Entry(win)
         col2_ent.insert(0, values[1])  # Default is column 2's current value
         col2_lbl.grid(row=1, column=0, padx=2, pady=2, sticky="nse")
         col2_ent.grid(row=1, column=1, padx=2, pady=2, sticky="nsew")
 
-        col3_lbl = tk.Label(win, text="Comment: ")
-        col3_ent = tk.Entry(win)
+        col3_lbl = ttk.Label(win, text="Comment: ")
+        col3_ent = ttk.Entry(win)
         col3_ent.insert(0, values[2])  # Default is column 3's current value
         col3_lbl.grid(row=2, column=0, padx=2, pady=2, sticky="nse")
         col3_ent.grid(row=2, column=1, padx=2, pady=2, sticky="nsew")
@@ -1706,15 +1706,15 @@ class LevelsTab(Tab):
         separator = ttk.Separator(win)
         separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def confirm_entry(self, tree_view, entry1, entry2, entry3):
@@ -1786,7 +1786,7 @@ class LevelsTab(Tab):
             icon="warning",
         )
         if msg_box == "yes":
-            self.lvl_editor_start_canvas.grid()
+            self.lvl_editor_start_frame.grid()
             self.tab_control.grid_remove()
             self.tree_files.grid_remove()
             # Resets widgets
@@ -3055,8 +3055,8 @@ class LevelsTree(ttk.Treeview):
         item_name = self.item(item_iid)["text"]
         room_data = self.item(item_iid, option="values")
 
-        col1_lbl = tk.Label(win, text="Name: ")
-        col1_ent = tk.Entry(win)
+        col1_lbl = ttk.Label(win, text="Name: ")
+        col1_ent = ttk.Entry(win)
         col1_ent.insert(0, item_name)  # Default to rooms current name
         col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
         col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nswe")
@@ -3068,15 +3068,15 @@ class LevelsTree(ttk.Treeview):
         separator = ttk.Separator(win)
         separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=2, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def confirm_entry(self, entry1, parent, room_data):

@@ -4,23 +4,38 @@ from queue import Empty
 
 import tkinter as tk
 from tkinter import ttk
-from tkinter.scrolledtext import ScrolledText
+from ttkthemes import ThemedStyle
+
+
+class ScrolledText(ttk.Frame):
+    def __init__(self, parent, height, state, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+
+        self.text = tk.Text(self, wrap="none", height=height, state=state)
+        vsb = ttk.Scrollbar(self, command=self.text.yview, orient="vertical")
+        self.text.configure(yscrollcommand=vsb.set)
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        vsb.grid(row=0, column=1, sticky="ns")
+        self.text.grid(row=0, column=0, sticky="nsew")
 
 
 # Adapted from https://beenje.github.io/blog/posts/logging-to-a-tkinter-scrolledtext-widget/
-class ConsoleWindow(tk.Frame):
+class ConsoleWindow(ttk.Frame):
     def __init__(self, queue_handler, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Create a ScrolledText wdiget
         self.scrolled_text = ScrolledText(self, height=7, state="disabled")
         self.scrolled_text.pack(expand=True, fill="both")
-        self.scrolled_text.configure(font="TkFixedFont")
-        self.scrolled_text.tag_config("INFO", foreground="green")
-        self.scrolled_text.tag_config("DEBUG", foreground="gray")
-        self.scrolled_text.tag_config("WARNING", foreground="orange")
-        self.scrolled_text.tag_config("ERROR", foreground="red")
-        self.scrolled_text.tag_config("CRITICAL", foreground="red", underline=1)
+        self.scrolled_text.text.configure(font="TkFixedFont")
+        self.scrolled_text.text.tag_config("INFO", foreground="green")
+        self.scrolled_text.text.tag_config("DEBUG", foreground="gray")
+        self.scrolled_text.text.tag_config("WARNING", foreground="orange")
+        self.scrolled_text.text.tag_config("ERROR", foreground="red")
+        self.scrolled_text.text.tag_config("CRITICAL", foreground="red", underline=1)
 
         # Create a logging handler using a queue
         self.queue_handler = queue_handler
@@ -30,10 +45,10 @@ class ConsoleWindow(tk.Frame):
 
     def display(self, record):
         msg = self.queue_handler.format(record)
-        self.scrolled_text.configure(state="normal")
-        self.scrolled_text.insert(tk.END, msg + "\n", record.levelname)
-        self.scrolled_text.configure(state="disabled")
-        self.scrolled_text.yview(tk.END)
+        self.scrolled_text.text.configure(state="normal")
+        self.scrolled_text.text.insert(tk.END, msg + "\n", record.levelname)
+        self.scrolled_text.text.configure(state="disabled")
+        self.scrolled_text.text.yview(tk.END)
 
     def poll_log_queue(self):
         # Check every 100ms if there is a new message in the queue to display
@@ -83,7 +98,7 @@ class ToolTip:
         self.tooltip.overrideredirect(True)
         self.set_geometry(event)
 
-        self.label = tk.Label(self.tooltip, text=self.text)
+        self.label = ttk.Label(self.tooltip, text=self.text)
         self.label.pack()
 
     def on_leave(self, _event):
@@ -112,7 +127,11 @@ class ScrollableFrame(ttk.LabelFrame):
         self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.vscrollbar.grid(row=0, column=1, sticky="nse")
 
-        self.canvas = tk.Canvas(self, yscrollcommand=self.vscrollbar.set)
+        self.style = ThemedStyle()
+        background = self.style.lookup("TFrame", "background")
+
+        self.canvas = tk.Canvas(self, bg=background, yscrollcommand=self.vscrollbar.set)
+        self.bind_all("<<ThemeChange>>", self.on_theme_change)
         self.canvas.grid(row=0, column=0, sticky="nswe")
         self.vscrollbar.config(command=self.canvas.yview)
 
@@ -131,6 +150,11 @@ class ScrollableFrame(ttk.LabelFrame):
         self.canvas.bind("<Enter>", self._bind_to_mousewheel)
         self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
 
+    def on_theme_change(self, _event):
+        background = self.style.lookup("TFrame", "background")
+        self.canvas.configure(background=background)
+        self.winfo_toplevel().configure(background=background)
+
     def _configure_interior(self, _event):
         # update the scrollbars to match the size of the inner frame
         size = (
@@ -147,8 +171,6 @@ class ScrollableFrame(ttk.LabelFrame):
         if self.scrollable_frame.winfo_reqwidth() != self.winfo_width():
             # update the inner frame's width to fill the canvas
             self.canvas.itemconfigure(self.interior_id, width=self.winfo_width())
-
-    # This can now handle either windows or linux platforms
 
     def _on_mousewheel(self, event):
         scroll_dir = None
@@ -186,6 +208,10 @@ class PopupWindow(ttk.Frame):
         self.shutting_down = False
         self.win = tk.Toplevel()
         self.modlunky_config = modlunky_config
+
+        style = ThemedStyle()
+        background = style.lookup("TFrame", "background")
+        self.win.configure(bg=background)
 
         self.label_frame = ttk.LabelFrame(self.win, text=title)
         self.label_frame.columnconfigure(0, weight=1)

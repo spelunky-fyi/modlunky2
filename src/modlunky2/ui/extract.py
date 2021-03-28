@@ -140,7 +140,7 @@ class ExtractTab(Tab):
 
         self.recompress = tk.BooleanVar()
         self.recompress.set(False)
-        self.checkbox_recompress = tk.Checkbutton(
+        self.checkbox_recompress = ttk.Checkbutton(
             self.config_frame,
             text="Recompress",
             variable=self.recompress,
@@ -158,7 +158,7 @@ class ExtractTab(Tab):
 
         self.create_entity = tk.BooleanVar()
         self.create_entity.set(True)
-        self.checkbox_create_entity = tk.Checkbutton(
+        self.checkbox_create_entity = ttk.Checkbutton(
             self.config_frame,
             text="Create Entity Sprites",
             variable=self.create_entity,
@@ -176,7 +176,7 @@ class ExtractTab(Tab):
 
         self.generate_string_hashes = tk.BooleanVar()
         self.generate_string_hashes.set(True)
-        self.checkbox_string_hashes = tk.Checkbutton(
+        self.checkbox_string_hashes = ttk.Checkbutton(
             self.config_frame,
             text="Generate String Hashes",
             variable=self.generate_string_hashes,
@@ -194,7 +194,7 @@ class ExtractTab(Tab):
 
         self.extract_wavs = tk.BooleanVar()
         self.extract_wavs.set(False)
-        self.checkbox_extract_wavs = tk.Checkbutton(
+        self.checkbox_extract_wavs = ttk.Checkbutton(
             self.config_frame,
             text="Extract .wav files",
             variable=self.extract_wavs,
@@ -209,7 +209,7 @@ class ExtractTab(Tab):
             oggs_state = tk.DISABLED
         self.extract_oggs = tk.BooleanVar()
         self.extract_oggs.set(False)
-        self.checkbox_extract_oggs = tk.Checkbutton(
+        self.checkbox_extract_oggs = ttk.Checkbutton(
             self.config_frame,
             state=oggs_state,
             text="Extract .ogg files",
@@ -222,7 +222,7 @@ class ExtractTab(Tab):
 
         self.reuse_extracted = tk.BooleanVar()
         self.reuse_extracted.set(False)
-        self.checkbox_reuse_extracted = tk.Checkbutton(
+        self.checkbox_reuse_extracted = ttk.Checkbutton(
             self.config_frame,
             text="Reuse Extracted Assets",
             variable=self.reuse_extracted,

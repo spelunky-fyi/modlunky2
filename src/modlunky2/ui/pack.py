@@ -73,7 +73,7 @@ def pack_assets(_call, install_dir, packs):
         logger.info("Repacking complete!")
 
 
-class WarningFrame(tk.Frame):
+class WarningFrame(ttk.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -81,12 +81,11 @@ class WarningFrame(tk.Frame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
-        self.config(bd=1)
 
         self.color_bar = tk.Frame(self, bg="red", width=20)
         self.color_bar.grid(row=0, column=0, sticky="nswe")
 
-        self.label = tk.Label(
+        self.label = ttk.Label(
             self,
             text=(
                 "Packing is deprecated and continues to exist solely for legacy support.\n"
@@ -220,11 +219,11 @@ class PackTab(Tab):
 
         for idx, exe in enumerate(self.get_packs()):
             str_var = tk.StringVar()
-            item = tk.Checkbutton(
+            item = ttk.Checkbutton(
                 self.frame.scrollable_frame,
                 text=f" {exe}",
                 image=self.default_icon,
-                font=("Segoe UI", 12, "bold"),
+                style="ModList.TCheckbutton",
                 variable=str_var,
                 onvalue=f"{exe}",
                 offvalue="",

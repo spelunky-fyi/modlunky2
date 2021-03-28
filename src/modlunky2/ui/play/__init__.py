@@ -40,7 +40,7 @@ PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
 PLAYLUNKY_VERSION_FILENAME = "playlunky.version"
 
 
-class Entry(tk.Entry):
+class Entry(ttk.Entry):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.bind("<Control-a>", self._select_all)
@@ -154,7 +154,7 @@ def download_playlunky_release(call, tag, download_url, launch):
     call("play:download_finished", launch=launch)
 
 
-class DownloadFrame(tk.Frame):
+class DownloadFrame(ttk.Frame):
     def __init__(self, parent, task_manager):
         super().__init__(parent)
 
@@ -238,7 +238,7 @@ def uninstall_playlunky_release(call, tag):
     call("play:uninstall_finished")
 
 
-class UninstallFrame(tk.Frame):
+class UninstallFrame(ttk.Frame):
     def __init__(self, parent, task_manager):
         super().__init__(parent)
 
@@ -284,7 +284,7 @@ def is_installed(tag):
     return (PLAYLUNKY_DATA_DIR / tag).exists()
 
 
-class VersionFrame(tk.LabelFrame):
+class VersionFrame(ttk.LabelFrame):
     CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
     def __init__(self, parent, modlunky_config, task_manager):
@@ -308,13 +308,11 @@ class VersionFrame(tk.LabelFrame):
         self.default_font = tk_font.nametofont("TkDefaultFont")
         self.bold_font = tk_font.Font(font="TkDefaultFont")
         self.bold_font.configure(weight="bold")
-        self.italic_font = tk_font.Font(font="TkDefaultFont")
-        self.italic_font.configure(slant="italic")
 
-        self.selected_label = tk.Label(self, text="Playlunky Version")
+        self.selected_label = ttk.Label(self, text="Playlunky Version")
         self.selected_label.grid(row=2, column=0, pady=(5, 0), padx=10, sticky="w")
         self.selected_var = tk.StringVar()
-        self.selected_dropdown = tk.Label(text="Loading...")
+        self.selected_dropdown = ttk.Label(text="Loading...")
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
         self.download_frame = DownloadFrame(self, self.task_manager)
@@ -401,17 +399,16 @@ class VersionFrame(tk.LabelFrame):
         self.selected_dropdown.destroy()
 
         if not available_releases:
-            self.selected_dropdown = tk.Label(self, text="No available releases")
+            self.selected_dropdown = ttk.Label(self, text="No available releases")
             return
 
-        self.selected_dropdown = tk.OptionMenu(
+        self.selected_dropdown = ttk.OptionMenu(
             self,
             self.selected_var,
-            available_releases[0],
-            *available_releases[1:],
+            self.selected_var.get(),
+            *available_releases,
             command=self.release_selected,
         )
-        self.selected_dropdown.configure(anchor="w")
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
         selected_version = self.modlunky_config.config_file.playlunky_version
@@ -440,7 +437,7 @@ class VersionFrame(tk.LabelFrame):
         self.render()
 
 
-class OptionsFrame(tk.LabelFrame):
+class OptionsFrame(ttk.LabelFrame):
     def __init__(self, parent, modlunky_config):
         super().__init__(parent, text="Options")
         self.parent = parent
@@ -448,7 +445,7 @@ class OptionsFrame(tk.LabelFrame):
         self.columnconfigure(0, weight=1)
 
         self.random_char_var = tk.BooleanVar()
-        self.random_char_checkbox = tk.Checkbutton(
+        self.random_char_checkbox = ttk.Checkbutton(
             self,
             text="Random Character Select",
             variable=self.random_char_var,
@@ -457,7 +454,7 @@ class OptionsFrame(tk.LabelFrame):
         self.random_char_checkbox.grid(row=0, column=0, sticky="w")
 
         self.loose_audio_var = tk.BooleanVar()
-        self.loose_audio_checkbox = tk.Checkbutton(
+        self.loose_audio_checkbox = ttk.Checkbutton(
             self,
             text="Enable Loose Audio Loading",
             variable=self.loose_audio_var,
@@ -466,7 +463,7 @@ class OptionsFrame(tk.LabelFrame):
         self.loose_audio_checkbox.grid(row=1, column=0, sticky="w")
 
         self.cache_decoded_audio_var = tk.BooleanVar()
-        self.cache_decoded_audio_checkbox = tk.Checkbutton(
+        self.cache_decoded_audio_checkbox = ttk.Checkbutton(
             self,
             text="Cache Decoded Audio Files",
             variable=self.cache_decoded_audio_var,
@@ -475,7 +472,7 @@ class OptionsFrame(tk.LabelFrame):
         self.cache_decoded_audio_checkbox.grid(row=2, column=0, sticky="w")
 
         self.enable_developer_mode_var = tk.BooleanVar()
-        self.enable_developer_mode_checkbox = tk.Checkbutton(
+        self.enable_developer_mode_checkbox = ttk.Checkbutton(
             self,
             text="Enable Developer Mode",
             variable=self.enable_developer_mode_var,
@@ -485,7 +482,7 @@ class OptionsFrame(tk.LabelFrame):
 
         self.enable_console_var = tk.BooleanVar()
         self.enable_console_var.set(self.modlunky_config.config_file.playlunky_console)
-        self.enable_console_checkbox = tk.Checkbutton(
+        self.enable_console_checkbox = ttk.Checkbutton(
             self,
             text="Enable Console",
             variable=self.enable_console_var,
@@ -501,30 +498,30 @@ class OptionsFrame(tk.LabelFrame):
         self.modlunky_config.config_file.save()
 
 
-class FiltersFrame(tk.LabelFrame):
+class FiltersFrame(ttk.LabelFrame):
     def __init__(self, parent):
         super().__init__(parent, text="Filters")
         self.parent = parent
 
-        self.name_label = tk.Label(self, text="Name:")
+        self.name_label = ttk.Label(self, text="Name:")
         self.name_label.grid(row=0, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
         self.name = Entry(self, width="30")
         self.name_last_seen = ""
         self.name.bind_on_key(self.on_name_key)
         self.name.grid(row=0, column=1, pady=(5, 5), padx=(5, 0), sticky="w")
 
-        self.selected_label = tk.Label(self, text="Show:")
+        self.selected_label = ttk.Label(self, text="Show:")
         self.selected_label.grid(row=0, column=2, pady=(5, 5), padx=(5, 0), sticky="w")
         self.selected_var = tk.StringVar(value="Both")
-        self.selected_dropdown = tk.OptionMenu(
+        self.selected_dropdown = ttk.OptionMenu(
             self,
             self.selected_var,
+            self.selected_var.get(),
             "Both",
             "Selected",
             "Unselected",
             command=self.selected_command,
         )
-        self.selected_dropdown.configure(anchor="w")
         self.selected_dropdown.grid(
             row=0, column=3, pady=(5, 5), padx=(5, 0), sticky="w"
         )
@@ -539,7 +536,7 @@ class FiltersFrame(tk.LabelFrame):
             self.parent.master.render_packs()
 
 
-class ControlsFrame(tk.LabelFrame):
+class ControlsFrame(ttk.LabelFrame):
     def __init__(self, parent, modlunky_config, *args, **kwargs):
         super().__init__(parent, text="Stuff & Things", *args, **kwargs)
         self.parent = parent
@@ -634,7 +631,7 @@ class ControlsFrame(tk.LabelFrame):
         shutil.rmtree(cache_dir)
 
 
-class LoadOrderFrame(tk.LabelFrame):
+class LoadOrderFrame(ttk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, text="Load Order", *args, **kwargs)
         self.parent = parent
@@ -647,7 +644,7 @@ class LoadOrderFrame(tk.LabelFrame):
             row=0, column=0, columnspan=2, pady=5, padx=(5, 0), sticky="nsew"
         )
 
-        self.scrollbar = tk.Scrollbar(self)
+        self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.grid(row=0, column=1, columnspan=2, pady=5, sticky="nse")
 
         self.listbox.config(yscrollcommand=self.scrollbar.set)
@@ -780,7 +777,7 @@ class PlayTab(Tab):
         self.columnconfigure(1, minsize=250)
         self.columnconfigure(2, minsize=250)
 
-        self.play_wrapper = tk.Frame(self)
+        self.play_wrapper = ttk.Frame(self)
         self.play_wrapper.grid(row=0, column=0, rowspan=3, sticky="nswe")
         self.play_wrapper.columnconfigure(0, weight=1)
         self.play_wrapper.rowconfigure(1, weight=1)
@@ -899,9 +896,9 @@ class PlayTab(Tab):
                     continue
 
                 if select:
-                    checkbox.select()
+                    var.set(True)
                 else:
-                    checkbox.deselect()
+                    var.set(False)
 
                 self.on_check(line, var)
 
@@ -1157,20 +1154,18 @@ class PlayTab(Tab):
         for pack in packs_added:
             var = tk.BooleanVar()
 
-            item = tk.Checkbutton(
+            item = ttk.Checkbutton(
                 self.packs_frame.scrollable_frame,
                 text=f"{pack}",
-                font=("Segoe UI", 12, "bold"),
+                style="ModList.TCheckbutton",
                 variable=var,
                 onvalue=True,
                 offvalue=False,
                 compound="left",
-                # TODO: dynamic sizing for larger windows
-                wraplength="640",
                 command=self.on_check_wrapper(pack, var),
             )
 
-            buttons = tk.Frame(self.packs_frame.scrollable_frame)
+            buttons = ttk.Frame(self.packs_frame.scrollable_frame)
             buttons.rowconfigure(0, weight=1)
             buttons.folder_button = ttk.Button(
                 buttons,

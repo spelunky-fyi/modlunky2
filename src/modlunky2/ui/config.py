@@ -3,11 +3,57 @@ from pathlib import Path
 
 import tkinter as tk
 from tkinter import ttk
+from ttkthemes import ThemedStyle
 
 from modlunky2.ui.widgets import Tab
 from modlunky2.config import guess_install_dir
 
 logger = logging.getLogger("modlunky2")
+
+
+class Theme(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config):
+        super().__init__(parent, text="Theme")
+        self.modlunky_config = modlunky_config
+
+        theme_label = ttk.Label(
+            self, text="Select a theme"
+        )
+        theme_label.grid(
+            row=0, column=0, padx=5, pady=5, sticky="w"
+        )
+
+        note_label = ttk.Label(
+            self, text=("Note: Themes are are work in progress and don't fully refresh "
+            "until you've restart the application.")
+        )
+        note_label.grid(
+            row=1, column=0, columnspan=2, padx=5, pady=5, sticky="w"
+        )
+
+        self.themed_style = ThemedStyle(self)
+
+        self.selected_label = ttk.Label(self, text="Theme:")
+        self.selected_label.grid(row=2, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
+        self.selected_var = tk.StringVar(value=modlunky_config.config_file.theme)
+        self.selected_dropdown = ttk.OptionMenu(
+            self,
+            self.selected_var,
+            self.selected_var.get(),
+            *sorted(self.themed_style.theme_names()),
+            command=self.set_theme,
+        )
+        self.selected_dropdown.grid(
+            row=2, column=1, pady=(5, 5), padx=(5, 5), sticky="w"
+        )
+
+
+    def set_theme(self, _selected):
+        self.themed_style.theme_use(self.selected_var.get())
+        self.winfo_toplevel().event_generate("<<ThemeChange>>", when="now")
+        self.modlunky_config.config_file.theme = self.selected_var.get()
+        self.modlunky_config.config_file.save()
+
 
 
 class InstallDir(ttk.LabelFrame):
@@ -84,9 +130,12 @@ class ConfigTab(Tab):
         self.rowconfigure(0, weight=1)
 
         config_frame = ttk.LabelFrame(self, text="Config")
-        config_frame.rowconfigure(0, weight=1)
         config_frame.columnconfigure(0, weight=1)
-        config_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        config_frame.columnconfigure(1, weight=1)
+        config_frame.grid(row=0, column=0, columnspan=1, pady=5, padx=5, sticky="nswe")
 
         install_dir_frame = InstallDir(config_frame, modlunky_config)
-        install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="n")
+        install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="new")
+
+        theme_frame = Theme(config_frame, modlunky_config)
+        theme_frame.grid(row=0, column=1, pady=5, padx=5, sticky="new")
