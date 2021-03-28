@@ -97,7 +97,7 @@ class ConfigFile:
         self.geometry = None
         self.spelunky_fyi_root = None
         self.spelunky_fyi_api_token = None
-        self.theme = "default"
+        self.theme = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -140,8 +140,7 @@ class ConfigFile:
         )
         obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
 
-        obj.theme = config_data.get("theme", "default")
-
+        obj.theme = config_data.get("theme", None)
 
         if needs_save:
             obj.save()

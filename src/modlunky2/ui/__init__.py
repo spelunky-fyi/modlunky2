@@ -70,6 +70,8 @@ class ModlunkyUI:
         )
 
         self.root = ThemedTk(className="Modlunky2")  # Equilux Black
+        style = ThemedStyle(self.root)
+        self.root.default_theme = style.theme_use()
         self.root.title("Modlunky 2")
         self.root.geometry(modlunky_config.config_file.geometry)
         self.last_geometry = modlunky_config.config_file.geometry
@@ -78,7 +80,7 @@ class ModlunkyUI:
             self.root.set_theme(modlunky_config.config_file.theme)
         self.root.event_add("<<ThemeChange>>", 'None')
 
-        style = ThemedStyle()
+
         style.configure("ModList.TCheckbutton",
             font=("Segoe UI", 12, "bold"),
             # TODO: dynamic sizing for larger windows

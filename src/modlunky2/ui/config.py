@@ -28,7 +28,7 @@ class Theme(ttk.LabelFrame):
             "until you've restart the application.")
         )
         note_label.grid(
-            row=1, column=0, columnspan=2, padx=5, pady=5, sticky="w"
+            row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w"
         )
 
         self.themed_style = ThemedStyle(self)
@@ -46,12 +46,17 @@ class Theme(ttk.LabelFrame):
         self.selected_dropdown.grid(
             row=2, column=1, pady=(5, 5), padx=(5, 5), sticky="w"
         )
+        self.reset_button = ttk.Button(self, text="Reset", command=self.reset)
+        self.reset_button.grid(row=2, column=2, pady=(5, 5), padx=(5, 5), sticky="w")
 
+    def reset(self):
+        self.selected_var.set(self.winfo_toplevel().default_theme)
+        self.set_theme(self.selected_var.get())
 
-    def set_theme(self, _selected):
-        self.themed_style.theme_use(self.selected_var.get())
+    def set_theme(self, selected):
+        self.themed_style.theme_use(selected)
         self.winfo_toplevel().event_generate("<<ThemeChange>>", when="now")
-        self.modlunky_config.config_file.theme = self.selected_var.get()
+        self.modlunky_config.config_file.theme = selected
         self.modlunky_config.config_file.save()
 
 
