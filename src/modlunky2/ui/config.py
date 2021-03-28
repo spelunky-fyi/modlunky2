@@ -4,7 +4,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
 
-from modlunky2.ui.widgets import Tab, ToolTip
+from modlunky2.ui.widgets import Tab
 from modlunky2.config import guess_install_dir
 
 logger = logging.getLogger("modlunky2")

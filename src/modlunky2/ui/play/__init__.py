@@ -547,12 +547,6 @@ class ControlsFrame(tk.LabelFrame):
 
         self.columnconfigure(0, weight=1)
 
-        # self.install_button = ttk.Button(
-        #    self, text="Install Mod", command=self.install_mod
-        # )
-        # self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
-        # ToolTip(self.install_button, "Browse for a mod file to install.")
-
         self.refresh_button = ttk.Button(
             self, text="Refresh Mods", command=self.refresh_mods
         )
@@ -599,12 +593,6 @@ class ControlsFrame(tk.LabelFrame):
                 "Remove Playlunky cache. This could be helpful\n"
                 "if things aren't working as expected."
             ),
-        )
-
-    def install_mod(self):
-        tk.messagebox.showinfo(
-            "Coming Soon",
-            "This feature hasn't been implemented yet, but it will be soon!",
         )
 
     def refresh_mods(self):
