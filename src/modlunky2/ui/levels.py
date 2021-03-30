@@ -639,7 +639,7 @@ class LevelsTab(Tab):
             text="Add TileCode",
             bg="yellow",
             command=lambda: self.add_tilecode(
-                str(self.combobox.get()), str(self.scale.get()), self.combobox_alt.get()
+                str(self.combobox.get()), str(int(float(self.scale.get()))), self.combobox_alt.get()
             ),
         )
         self.button_tilecode_add.grid(
@@ -2378,7 +2378,7 @@ class LevelsTab(Tab):
                 widget.destroy()
 
     def update_value(self, _event):
-        if int(self.scale.get()) == 100:
+        if int(float(self.scale.get())) == 100:
             self.combobox_alt.grid_remove()
             self.combobox.grid(columnspan=2)
         else:
