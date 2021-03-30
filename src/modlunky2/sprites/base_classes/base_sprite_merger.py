@@ -187,7 +187,13 @@ class BaseSpriteMerger(ABC):
                             *coords, chunk_size, height_offset
                         )
                         self._put_grid(*grid_coords, chunk_size)
-                        self._put_chunk(*chunk_coords, source_image)
+                        try:
+                            self._put_chunk(*chunk_coords, source_image)
+                        except ValueError:
+                            logger.error(
+                                "Failed putting image %s into merged sprite sheet",
+                                name,
+                            )
                     else:
                         logger.error(
                             "Could not find image %s in source %s",

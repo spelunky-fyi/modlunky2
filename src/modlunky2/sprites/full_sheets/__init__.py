@@ -29,6 +29,22 @@ from .mounts import (
     QilinSpriteMerger,
 )
 from .pets import MontySpriteMerger, PercySpriteMerger, PoochiSpriteMerger
+from .monsters.basics import (
+    SnakeSpriteMerger,
+    BatSpriteMerger,
+    FlySpriteMerger,
+    SkeletonSpriteMerger,
+    SpiderSpriteMerger,
+    EarSpriteMerger,
+    ShopkeeperSpriteMerger,
+    UfoSpriteMerger,
+    AlienSpriteMerger,
+    CobraSpriteMerger,
+    ScorpionSpriteMerger,
+    GoldenMonkeySpriteMerger,
+    BeeSpriteMerger,
+    MagmarSpriteMerger,
+)
 
 __all__ = [
     "CharacterBlackSpriteMerger",
@@ -60,4 +76,18 @@ __all__ = [
     "MontySpriteMerger",
     "PercySpriteMerger",
     "PoochiSpriteMerger",
+    "SnakeSpriteMerger",
+    "BatSpriteMerger",
+    "FlySpriteMerger",
+    "SkeletonSpriteMerger",
+    "SpiderSpriteMerger",
+    "EarSpriteMerger",
+    "ShopkeeperSpriteMerger",
+    "UfoSpriteMerger",
+    "AlienSpriteMerger",
+    "CobraSpriteMerger",
+    "ScorpionSpriteMerger",
+    "GoldenMonkeySpriteMerger",
+    "BeeSpriteMerger",
+    "MagmarSpriteMerger",
 ]
