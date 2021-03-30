@@ -25,7 +25,8 @@ class Theme(ttk.LabelFrame):
 
         note_label = ttk.Label(
             self, text=("Note: Themes are are work in progress and don't fully refresh "
-            "until you've restart the application.")
+            "until you've restart the application."),
+            wraplength=500,
         )
         note_label.grid(
             row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w"
@@ -135,7 +136,7 @@ class ConfigTab(Tab):
         self.rowconfigure(0, weight=1)
 
         config_frame = ttk.LabelFrame(self, text="Config")
-        config_frame.columnconfigure(0, weight=1)
+        config_frame.columnconfigure(0, weight=1, minsize=690)
         config_frame.columnconfigure(1, weight=1)
         config_frame.grid(row=0, column=0, columnspan=1, pady=5, padx=5, sticky="nswe")
 

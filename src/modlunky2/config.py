@@ -23,7 +23,7 @@ DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
 
 MIN_WIDTH = 1280
-MIN_HEIGHT = 900
+MIN_HEIGHT = 768
 
 
 # Sentinel for tracking unset fields

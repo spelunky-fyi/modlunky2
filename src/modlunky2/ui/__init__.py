@@ -69,7 +69,7 @@ class ModlunkyUI:
             "modlunky2:update_complete", self.update_complete
         )
 
-        self.root = ThemedTk(className="Modlunky2")  # Equilux Black
+        self.root = tk.Tk(className="Modlunky2")
         style = ThemedStyle(self.root)
         self.root.default_theme = style.theme_use()
         self.root.title("Modlunky 2")
@@ -77,7 +77,7 @@ class ModlunkyUI:
         self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
         if modlunky_config.config_file.theme:
-            self.root.set_theme(modlunky_config.config_file.theme)
+            style.set_theme(modlunky_config.config_file.theme)
         self.root.event_add("<<ThemeChange>>", 'None')
 
 

@@ -28,7 +28,7 @@ class ConsoleWindow(ttk.Frame):
         super().__init__(*args, **kwargs)
 
         # Create a ScrolledText wdiget
-        self.scrolled_text = ScrolledText(self, height=7, state="disabled")
+        self.scrolled_text = ScrolledText(self, height=5, state="disabled")
         self.scrolled_text.pack(expand=True, fill="both")
         self.scrolled_text.text.configure(font="TkFixedFont")
         self.scrolled_text.text.tag_config("INFO", foreground="green")
