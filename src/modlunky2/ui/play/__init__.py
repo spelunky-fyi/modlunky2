@@ -338,7 +338,7 @@ class VersionFrame(ttk.LabelFrame):
 
         stable = None
 
-        with PLAYLUNKY_RELEASES_PATH.open("r") as releases_file:
+        with PLAYLUNKY_RELEASES_PATH.open("r", encoding="utf-8") as releases_file:
             releases = json.load(releases_file)
             for release in releases:
                 tag = release.get("tag_name")

@@ -105,7 +105,7 @@ class ConfigFile:
         needs_save = False
 
         if config_path.exists():
-            with config_path.open("r") as config_file:
+            with config_path.open("r", encoding="utf-8") as config_file:
                 try:
                     config_data = json.load(config_file)
                 except Exception as err:  # pylint: disable=broad-except
@@ -180,7 +180,7 @@ class ConfigFile:
         # Make a temporary file so we can do an atomic replace
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
-        with tmp_path.open("w") as tmp_file:
+        with tmp_path.open("w", encoding="utf-8") as tmp_file:
             json.dump(self.to_dict(), tmp_file, indent=4, sort_keys=True)
 
         copyfile(tmp_path, self.config_path)
