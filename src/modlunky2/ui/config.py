@@ -3,7 +3,7 @@ from pathlib import Path
 
 import tkinter as tk
 from tkinter import ttk
-from ttkthemes import ThemedStyle
+#from ttkthemes import ThemedStyle
 
 from modlunky2.ui.widgets import Tab
 from modlunky2.config import guess_install_dir
@@ -29,7 +29,7 @@ class Theme(ttk.LabelFrame):
         )
         note_label.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
-        self.themed_style = ThemedStyle(self)
+        self.themed_style = ttk.Style(self)
 
         self.selected_label = ttk.Label(self, text="Theme:")
         self.selected_label.grid(row=2, column=0, pady=(5, 5), padx=(5, 0), sticky="w")

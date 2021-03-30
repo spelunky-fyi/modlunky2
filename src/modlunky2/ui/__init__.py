@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
 
-from ttkthemes import ThemedTk, ThemedStyle
+#from ttkthemes import ThemedStyle
 
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
@@ -70,14 +70,14 @@ class ModlunkyUI:
         )
 
         self.root = tk.Tk(className="Modlunky2")
-        style = ThemedStyle(self.root)
+        style = ttk.Style(self.root)
         self.root.default_theme = style.theme_use()
         self.root.title("Modlunky 2")
         self.root.geometry(modlunky_config.config_file.geometry)
         self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
-        if modlunky_config.config_file.theme:
-            style.set_theme(modlunky_config.config_file.theme)
+        if modlunky_config.config_file.theme and modlunky_config.config_file.theme in style.theme_names():
+            style.theme_use(modlunky_config.config_file.theme)
         self.root.event_add("<<ThemeChange>>", "None")
 
         style.configure(

@@ -4,7 +4,7 @@ from queue import Empty
 
 import tkinter as tk
 from tkinter import ttk
-from ttkthemes import ThemedStyle
+#from ttkthemes import ThemedStyle
 
 
 class ScrolledText(ttk.Frame):
@@ -127,7 +127,7 @@ class ScrollableFrame(ttk.LabelFrame):
         self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.vscrollbar.grid(row=0, column=1, sticky="nse")
 
-        self.style = ThemedStyle()
+        self.style = ttk.Style()
         background = self.style.lookup("TFrame", "background")
 
         self.canvas = tk.Canvas(self, bg=background, yscrollcommand=self.vscrollbar.set)
