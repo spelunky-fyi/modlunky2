@@ -16,21 +16,18 @@ class Theme(ttk.LabelFrame):
         super().__init__(parent, text="Theme")
         self.modlunky_config = modlunky_config
 
-        theme_label = ttk.Label(
-            self, text="Select a theme"
-        )
-        theme_label.grid(
-            row=0, column=0, padx=5, pady=5, sticky="w"
-        )
+        theme_label = ttk.Label(self, text="Select a theme")
+        theme_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
         note_label = ttk.Label(
-            self, text=("Note: Themes are are work in progress and don't fully refresh "
-            "until you've restart the application."),
+            self,
+            text=(
+                "Note: Themes are are work in progress and don't fully refresh "
+                "until you've restart the application."
+            ),
             wraplength=500,
         )
-        note_label.grid(
-            row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w"
-        )
+        note_label.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
         self.themed_style = ThemedStyle(self)
 
@@ -59,7 +56,6 @@ class Theme(ttk.LabelFrame):
         self.winfo_toplevel().event_generate("<<ThemeChange>>", when="now")
         self.modlunky_config.config_file.theme = selected
         self.modlunky_config.config_file.save()
-
 
 
 class InstallDir(ttk.LabelFrame):

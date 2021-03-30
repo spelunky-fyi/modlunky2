@@ -78,10 +78,10 @@ class ModlunkyUI:
         self.root.bind("<Configure>", self.handle_resize)
         if modlunky_config.config_file.theme:
             style.set_theme(modlunky_config.config_file.theme)
-        self.root.event_add("<<ThemeChange>>", 'None')
+        self.root.event_add("<<ThemeChange>>", "None")
 
-
-        style.configure("ModList.TCheckbutton",
+        style.configure(
+            "ModList.TCheckbutton",
             font=("Segoe UI", 12, "bold"),
             # TODO: dynamic sizing for larger windows
             wraplength="640",
@@ -89,7 +89,7 @@ class ModlunkyUI:
         style.configure("Update.TButton", bg="#bfbfbf", font="sans 12 bold")
         style.configure("TOptionMenu", anchor="w")
 
-        default_background = style.lookup('TFrame', 'background')
+        default_background = style.lookup("TFrame", "background")
         self.root.configure(bg=default_background)
 
         self.root.minsize(MIN_WIDTH, MIN_HEIGHT)
@@ -110,7 +110,9 @@ class ModlunkyUI:
         self.top_frame.grid_rowconfigure(1, weight=1)
         self.top_frame.grid_rowconfigure(2, weight=0)
 
-        self.update_frame = ttk.LabelFrame(self.top_frame, text="Modlunky2 Update Available")
+        self.update_frame = ttk.LabelFrame(
+            self.top_frame, text="Modlunky2 Update Available"
+        )
         self.update_frame.columnconfigure(0, weight=1)
         self.update_frame.rowconfigure(0, weight=1)
 
