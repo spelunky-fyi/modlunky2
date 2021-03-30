@@ -23,8 +23,8 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig
-from modlunky2.ui.utils import tb_info
 from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 

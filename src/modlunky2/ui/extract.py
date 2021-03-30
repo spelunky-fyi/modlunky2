@@ -15,7 +15,7 @@ from modlunky2.assets.constants import (
     OVERRIDES_DIR,
     PACKS_DIR,
 )
-from modlunky2.ui.utils import is_patched
+from modlunky2.utils import is_patched
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 

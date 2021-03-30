@@ -12,6 +12,7 @@ from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
 from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
+from modlunky2.utils import tb_info
 
 from .tasks import TaskManager, PING_INTERVAL
 from .config import ConfigTab
@@ -23,7 +24,6 @@ from .widgets import ConsoleWindow
 from .install import InstallTab
 from .logs import QueueHandler, register_queue_handler
 from .error import ErrorTab
-from .utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 

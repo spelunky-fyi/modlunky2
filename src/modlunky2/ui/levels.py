@@ -27,8 +27,8 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.utils import tb_info
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrame, Tab
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 

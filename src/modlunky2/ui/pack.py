@@ -12,8 +12,8 @@ from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.hashing import md5sum_path
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.utils import is_patched
 from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.utils import is_patched
 
 logger = logging.getLogger("modlunky2")
 
