@@ -6,13 +6,11 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
 
-#from ttkthemes import ThemedStyle
-
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
 from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
-from modlunky2.utils import tb_info
+from modlunky2.utils import tb_info, temp_chdir
 
 from .tasks import TaskManager, PING_INTERVAL
 from .config import ConfigTab
@@ -70,13 +68,16 @@ class ModlunkyUI:
         )
 
         self.root = tk.Tk(className="Modlunky2")
+        self.load_themes()
         style = ttk.Style(self.root)
         self.root.default_theme = style.theme_use()
+        valid_themes = self.root.call("ttk::themes")
+
         self.root.title("Modlunky 2")
         self.root.geometry(modlunky_config.config_file.geometry)
         self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
-        if modlunky_config.config_file.theme and modlunky_config.config_file.theme in style.theme_names():
+        if modlunky_config.config_file.theme and modlunky_config.config_file.theme in valid_themes:
             style.theme_use(modlunky_config.config_file.theme)
         self.root.event_add("<<ThemeChange>>", "None")
 
@@ -328,3 +329,10 @@ class ModlunkyUI:
             self.root.mainloop()
         except KeyboardInterrupt:
             self.quit()
+
+    def load_themes(self):
+        static_dir = BASE_DIR / "static"
+        themes_dir = static_dir / "themes"
+        with temp_chdir(static_dir):
+            self.root.call("lappend", "auto_path", f"[{themes_dir}]")
+            self.root.eval("source themes/pkgIndex.tcl")

@@ -1,6 +1,8 @@
+import contextlib
 import logging
 import sys
 import traceback
+import os
 from functools import wraps
 
 from modlunky2.assets.patcher import Patcher
@@ -26,3 +28,13 @@ def log_exception(func):
 
 def tb_info():
     return "".join(traceback.format_exception(*sys.exc_info())).strip()
+
+
+@contextlib.contextmanager
+def temp_chdir(new_dir):
+    old_dir = os.getcwd()
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(old_dir)

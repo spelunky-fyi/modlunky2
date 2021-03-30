@@ -3,7 +3,6 @@ from pathlib import Path
 
 import tkinter as tk
 from tkinter import ttk
-#from ttkthemes import ThemedStyle
 
 from modlunky2.ui.widgets import Tab
 from modlunky2.config import guess_install_dir
@@ -29,7 +28,7 @@ class Theme(ttk.LabelFrame):
         )
         note_label.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
-        self.themed_style = ttk.Style(self)
+        self.style = ttk.Style(self)
 
         self.selected_label = ttk.Label(self, text="Theme:")
         self.selected_label.grid(row=2, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
@@ -38,7 +37,7 @@ class Theme(ttk.LabelFrame):
             self,
             self.selected_var,
             self.selected_var.get(),
-            *sorted(self.themed_style.theme_names()),
+            *sorted(self.winfo_toplevel().call("ttk::themes")),
             command=self.set_theme,
         )
         self.selected_dropdown.grid(
@@ -52,7 +51,7 @@ class Theme(ttk.LabelFrame):
         self.set_theme(self.selected_var.get())
 
     def set_theme(self, selected):
-        self.themed_style.theme_use(selected)
+        self.style.theme_use(selected)
         self.winfo_toplevel().event_generate("<<ThemeChange>>", when="now")
         self.modlunky_config.config_file.theme = selected
         self.modlunky_config.config_file.save()

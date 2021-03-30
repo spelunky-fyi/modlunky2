@@ -4,8 +4,6 @@ from queue import Empty
 
 import tkinter as tk
 from tkinter import ttk
-#from ttkthemes import ThemedStyle
-
 
 class ScrolledText(ttk.Frame):
     def __init__(self, parent, height, state, *args, **kwargs):
@@ -209,7 +207,7 @@ class PopupWindow(ttk.Frame):
         self.win = tk.Toplevel()
         self.modlunky_config = modlunky_config
 
-        style = ThemedStyle()
+        style = ttk.Style()
         background = style.lookup("TFrame", "background")
         self.win.configure(bg=background)
 
