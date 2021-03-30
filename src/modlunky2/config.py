@@ -160,8 +160,12 @@ class ConfigFile:
         out["playlunky-console"] = self.playlunky_console
 
         out["geometry"] = self.geometry
-        out["spelunky-fyi-root"] = self.spelunky_fyi_root
-        out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
+
+        if self.spelunky_fyi_api_token is not None:
+            out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
+
+        if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
+            out["spelunky-fyi-root"] = self.spelunky_fyi_root
 
         out["theme"] = self.theme
 
@@ -177,7 +181,7 @@ class ConfigFile:
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
         with tmp_path.open("w") as tmp_file:
-            json.dump(self.to_dict(), tmp_file)
+            json.dump(self.to_dict(), tmp_file, indent=4, sort_keys=True)
 
         copyfile(tmp_path, self.config_path)
         tmp_path.unlink()
