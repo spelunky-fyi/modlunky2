@@ -419,7 +419,7 @@ class LevelsTab(Tab):
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
-        self.tab_control.add(self.variables_tab, text="Variables")
+        self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
         self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -623,7 +623,7 @@ class LevelsTab(Tab):
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
-        self.scale = tk.Scale(
+        self.scale = ttk.Scale(
             self.editor_tab,
             from_=0,
             to=100,
