@@ -23,11 +23,13 @@ DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
 
 MIN_WIDTH = 1280
-MIN_HEIGHT = 900
+MIN_HEIGHT = 768
 
 
 # Sentinel for tracking unset fields
 NOT_PRESENT = object()
+
+SPELUNKY_FYI_ROOT_DEFAULT = "https://spelunky.fyi/"
 
 logger = logging.getLogger("modlunky2")
 
@@ -93,6 +95,9 @@ class ConfigFile:
         self.playlunky_version = None
         self.playlunky_console = False
         self.geometry = None
+        self.spelunky_fyi_root = None
+        self.spelunky_fyi_api_token = None
+        self.theme = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -100,7 +105,7 @@ class ConfigFile:
         needs_save = False
 
         if config_path.exists():
-            with config_path.open("r") as config_file:
+            with config_path.open("r", encoding="utf-8") as config_file:
                 try:
                     config_data = json.load(config_file)
                 except Exception as err:  # pylint: disable=broad-except
@@ -129,6 +134,14 @@ class ConfigFile:
         # Initialize geometry
         obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
 
+        # FYI Config
+        obj.spelunky_fyi_root = config_data.get(
+            "spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT
+        )
+        obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
+
+        obj.theme = config_data.get("theme", None)
+
         if needs_save:
             obj.save()
 
@@ -148,6 +161,14 @@ class ConfigFile:
 
         out["geometry"] = self.geometry
 
+        if self.spelunky_fyi_api_token is not None:
+            out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
+
+        if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
+            out["spelunky-fyi-root"] = self.spelunky_fyi_root
+
+        out["theme"] = self.theme
+
         return out
 
     def _get_tmp_path(self):
@@ -159,8 +180,8 @@ class ConfigFile:
         # Make a temporary file so we can do an atomic replace
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
-        with tmp_path.open("w") as tmp_file:
-            json.dump(self.to_dict(), tmp_file)
+        with tmp_path.open("w", encoding="utf-8") as tmp_file:
+            json.dump(self.to_dict(), tmp_file, indent=4, sort_keys=True)
 
         copyfile(tmp_path, self.config_path)
         tmp_path.unlink()

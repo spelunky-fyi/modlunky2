@@ -15,7 +15,7 @@ from modlunky2.assets.constants import (
     OVERRIDES_DIR,
     PACKS_DIR,
 )
-from modlunky2.ui.utils import is_patched
+from modlunky2.utils import is_patched
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 
@@ -92,10 +92,10 @@ def extract_assets(
 
 
 class ExtractTab(Tab):
-    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
             "extract_assets",
@@ -140,7 +140,7 @@ class ExtractTab(Tab):
 
         self.recompress = tk.BooleanVar()
         self.recompress.set(False)
-        self.checkbox_recompress = tk.Checkbutton(
+        self.checkbox_recompress = ttk.Checkbutton(
             self.config_frame,
             text="Recompress",
             variable=self.recompress,
@@ -158,7 +158,7 @@ class ExtractTab(Tab):
 
         self.create_entity = tk.BooleanVar()
         self.create_entity.set(True)
-        self.checkbox_create_entity = tk.Checkbutton(
+        self.checkbox_create_entity = ttk.Checkbutton(
             self.config_frame,
             text="Create Entity Sprites",
             variable=self.create_entity,
@@ -176,7 +176,7 @@ class ExtractTab(Tab):
 
         self.generate_string_hashes = tk.BooleanVar()
         self.generate_string_hashes.set(True)
-        self.checkbox_string_hashes = tk.Checkbutton(
+        self.checkbox_string_hashes = ttk.Checkbutton(
             self.config_frame,
             text="Generate String Hashes",
             variable=self.generate_string_hashes,
@@ -194,7 +194,7 @@ class ExtractTab(Tab):
 
         self.extract_wavs = tk.BooleanVar()
         self.extract_wavs.set(False)
-        self.checkbox_extract_wavs = tk.Checkbutton(
+        self.checkbox_extract_wavs = ttk.Checkbutton(
             self.config_frame,
             text="Extract .wav files",
             variable=self.extract_wavs,
@@ -209,7 +209,7 @@ class ExtractTab(Tab):
             oggs_state = tk.DISABLED
         self.extract_oggs = tk.BooleanVar()
         self.extract_oggs.set(False)
-        self.checkbox_extract_oggs = tk.Checkbutton(
+        self.checkbox_extract_oggs = ttk.Checkbutton(
             self.config_frame,
             state=oggs_state,
             text="Extract .ogg files",
@@ -222,7 +222,7 @@ class ExtractTab(Tab):
 
         self.reuse_extracted = tk.BooleanVar()
         self.reuse_extracted.set(False)
-        self.checkbox_reuse_extracted = tk.Checkbutton(
+        self.checkbox_reuse_extracted = ttk.Checkbutton(
             self.config_frame,
             text="Reuse Extracted Assets",
             variable=self.reuse_extracted,
@@ -246,7 +246,7 @@ class ExtractTab(Tab):
         ToolTip(self.button_extract, ("Extract assets from EXE."))
 
     def open_extract_dir(self):
-        extract_dir = self.config.install_dir / MODS / EXTRACTED_DIR
+        extract_dir = self.modlunky_config.install_dir / MODS / EXTRACTED_DIR
         webbrowser.open(f"file://{extract_dir}")
 
     def extract_finished(self):
@@ -270,7 +270,7 @@ class ExtractTab(Tab):
         selected_exe = self.list_box.get(idx)
         self.task_manager.call(
             "extract_assets",
-            install_dir=self.config.install_dir,
+            install_dir=self.modlunky_config.install_dir,
             target=selected_exe,
             recompress=self.recompress.get(),
             generate_string_hashes=self.generate_string_hashes.get(),
@@ -282,11 +282,11 @@ class ExtractTab(Tab):
     def get_exes(self):
         exes = []
         # Don't recurse forever. 3 levels should be enough
-        exes.extend(self.config.install_dir.glob("*.exe"))
-        exes.extend(self.config.install_dir.glob("*/*.exe"))
-        exes.extend(self.config.install_dir.glob("*/*/*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*/*.exe"))
+        exes.extend(self.modlunky_config.install_dir.glob("*/*/*.exe"))
         return [
-            exe.relative_to(self.config.install_dir)
+            exe.relative_to(self.modlunky_config.install_dir)
             for exe in exes
             # Exclude modlunky2 which is likely in the install directory
             if exe.name not in ["modlunky2.exe"]

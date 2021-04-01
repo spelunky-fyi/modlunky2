@@ -15,6 +15,7 @@ from shutil import copyfile
 from tkinter import PhotoImage
 from tkinter import font as tk_font
 from tkinter import ttk
+from urllib.parse import urlparse
 
 import requests
 from PIL import Image, ImageTk
@@ -23,6 +24,7 @@ from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig
 from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -35,9 +37,10 @@ SPEL2_DLL = "spel2.dll"
 PLAYLUNKY_DLL = "playlunky64.dll"
 PLAYLUNKY_EXE = "playlunky_launcher.exe"
 PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
+PLAYLUNKY_VERSION_FILENAME = "playlunky.version"
 
 
-class Entry(tk.Entry):
+class Entry(ttk.Entry):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.bind("<Control-a>", self._select_all)
@@ -103,31 +106,55 @@ def cache_playlunky_releases(call):
     call("play:cache_releases_updated")
 
 
+def parse_download_url(download_url):
+    path = Path(urlparse(download_url).path)
+    ext = path.suffix
+    stem = path.stem
+    version = stem.rpartition("_")[2]
+    return version, ext
+
+
 def download_playlunky_release(call, tag, download_url, launch):
+    logger.debug("Downloading %s", download_url)
 
     dest_path = PLAYLUNKY_DATA_DIR / tag
     if not dest_path.exists():
         dest_path.mkdir(parents=True)
 
-    download_file = BytesIO()
-    response = requests.get(download_url, stream=True)
-    amount_downloaded = 0
-    block_size = 102400
+    try:
+        version, ext = parse_download_url(download_url)
+        if ext != ".zip":
+            raise ValueError("Expected .zip but didn't find one")
 
-    for data in response.iter_content(block_size):
-        amount_downloaded += len(data)
-        call("play:download_progress", amount_downloaded=amount_downloaded)
-        download_file.write(data)
+        download_file = BytesIO()
+        response = requests.get(download_url, stream=True)
+        amount_downloaded = 0
+        block_size = 102400
 
-    playlunky_zip = zipfile.ZipFile(download_file)
-    for member in playlunky_zip.infolist():
-        if member.filename in PLAYLUNKY_FILES:
-            playlunky_zip.extract(member, dest_path)
+        for data in response.iter_content(block_size):
+            amount_downloaded += len(data)
+            call("play:download_progress", amount_downloaded=amount_downloaded)
+            download_file.write(data)
+
+        playlunky_zip = zipfile.ZipFile(download_file)
+        for member in playlunky_zip.infolist():
+            if member.filename in PLAYLUNKY_FILES:
+                playlunky_zip.extract(member, dest_path)
+
+        version_path = dest_path / PLAYLUNKY_VERSION_FILENAME
+        logger.debug("Writing version to %s", version_path)
+        with version_path.open("w") as version_file:
+            version_file.write(version)
+
+    except Exception:  # pylint: disable=broad-except
+        logger.critical("Failed to download %s: %s", download_url, tb_info())
+        call("play:download_failed")
+        return
 
     call("play:download_finished", launch=launch)
 
 
-class DownloadFrame(tk.Frame):
+class DownloadFrame(ttk.Frame):
     def __init__(self, parent, task_manager):
         super().__init__(parent)
 
@@ -145,6 +172,9 @@ class DownloadFrame(tk.Frame):
         )
         self.task_manager.register_handler(
             "play:download_finished", self.on_download_finished
+        )
+        self.task_manager.register_handler(
+            "play:download_failed", self.on_download_failed
         )
 
         self.separator = ttk.Separator(self)
@@ -183,6 +213,11 @@ class DownloadFrame(tk.Frame):
     def on_download_progress(self, amount_downloaded):
         self.progress_bar["value"] = amount_downloaded
 
+    def on_download_failed(self):
+        self.parent.parent.enable_button()
+        self.button["state"] = tk.NORMAL
+        self.parent.render()
+
     def on_download_finished(self, launch=False):
         self.progress_bar["value"] = 0
         if launch:
@@ -198,11 +233,12 @@ def uninstall_playlunky_release(call, tag):
     logger.info("Removing Playlunky version %s", tag)
     for file_ in PLAYLUNKY_FILES:
         (dest_dir / file_).unlink(missing_ok=True)
+    (dest_dir / PLAYLUNKY_VERSION_FILENAME).unlink(missing_ok=True)
     dest_dir.rmdir()
     call("play:uninstall_finished")
 
 
-class UninstallFrame(tk.Frame):
+class UninstallFrame(ttk.Frame):
     def __init__(self, parent, task_manager):
         super().__init__(parent)
 
@@ -248,17 +284,17 @@ def is_installed(tag):
     return (PLAYLUNKY_DATA_DIR / tag).exists()
 
 
-class VersionFrame(tk.LabelFrame):
+class VersionFrame(ttk.LabelFrame):
     CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
-    def __init__(self, parent, config, task_manager):
+    def __init__(self, parent, modlunky_config, task_manager):
         super().__init__(parent, text="Version")
         self.parent = parent
         self.available_releases = {}
 
         self.columnconfigure(0, weight=1)
 
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
             "play:cache_releases",
@@ -272,13 +308,11 @@ class VersionFrame(tk.LabelFrame):
         self.default_font = tk_font.nametofont("TkDefaultFont")
         self.bold_font = tk_font.Font(font="TkDefaultFont")
         self.bold_font.configure(weight="bold")
-        self.italic_font = tk_font.Font(font="TkDefaultFont")
-        self.italic_font.configure(slant="italic")
 
-        self.selected_label = tk.Label(self, text="Playlunky Version")
+        self.selected_label = ttk.Label(self, text="Playlunky Version")
         self.selected_label.grid(row=2, column=0, pady=(5, 0), padx=10, sticky="w")
         self.selected_var = tk.StringVar()
-        self.selected_dropdown = tk.Label(text="Loading...")
+        self.selected_dropdown = ttk.Label(text="Loading...")
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
         self.download_frame = DownloadFrame(self, self.task_manager)
@@ -302,12 +336,19 @@ class VersionFrame(tk.LabelFrame):
         if not PLAYLUNKY_RELEASES_PATH.exists():
             return available_releases
 
-        with PLAYLUNKY_RELEASES_PATH.open("r") as releases_file:
+        stable = None
+
+        with PLAYLUNKY_RELEASES_PATH.open("r", encoding="utf-8") as releases_file:
             releases = json.load(releases_file)
             for release in releases:
                 tag = release.get("tag_name")
-                if tag is None:
+                prerelease = release.get("prerelease")
+                if tag is None or prerelease is None:
                     continue
+                if stable is None and not prerelease:
+                    logger.debug("Marking %s as stable", tag)
+                    stable = tag
+                    available_releases["stable"] = release
                 available_releases[tag] = release
         return available_releases
 
@@ -334,45 +375,52 @@ class VersionFrame(tk.LabelFrame):
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
-        if value != self.config.config_file.playlunky_version:
-            self.config.config_file.playlunky_version = value
-            self.config.config_file.save()
+        if value != self.modlunky_config.config_file.playlunky_version:
+            self.modlunky_config.config_file.playlunky_version = value
+            self.modlunky_config.config_file.save()
             self.render()
 
     def render(self):
         self.available_releases = self.get_available_releases()
+        available_releases = ["stable", "nightly"] + [
+            release
+            for release in self.available_releases
+            if release not in ["nightly", "stable"]
+        ]
+        available_set = set(available_releases)
         installed_releases = set()
         if PLAYLUNKY_DATA_DIR.exists():
             for dir_ in PLAYLUNKY_DATA_DIR.iterdir():
                 installed_releases.add(dir_.name)
-        available_releases = list(self.available_releases.keys())
+
+        orphans = installed_releases - available_set
+        available_releases += orphans
 
         self.selected_dropdown.destroy()
 
         if not available_releases:
-            self.selected_dropdown = tk.Label(self, text="hi")
+            self.selected_dropdown = ttk.Label(self, text="No available releases")
             return
 
-        self.selected_dropdown = tk.OptionMenu(
+        self.selected_dropdown = ttk.OptionMenu(
             self,
             self.selected_var,
-            available_releases[0],
-            *available_releases[1:],
+            self.selected_var.get(),
+            *available_releases,
             command=self.release_selected,
         )
-        self.selected_dropdown.configure(anchor="w")
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
-        selected_version = self.config.config_file.playlunky_version
+        selected_version = self.modlunky_config.config_file.playlunky_version
         if selected_version:
             self.selected_var.set(selected_version)
         else:
             selected_version = available_releases[0]
-            self.config.config_file.playlunky_version = selected_version
-            self.config.config_file.save()
+            self.modlunky_config.config_file.playlunky_version = selected_version
+            self.modlunky_config.config_file.save()
             self.selected_var.set(selected_version)
 
-        for release in self.available_releases:
+        for release in available_releases:
             if release in installed_releases:
                 self.selected_dropdown["menu"].entryconfigure(
                     release, font=self.bold_font
@@ -389,15 +437,15 @@ class VersionFrame(tk.LabelFrame):
         self.render()
 
 
-class OptionsFrame(tk.LabelFrame):
-    def __init__(self, parent, config):
+class OptionsFrame(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config):
         super().__init__(parent, text="Options")
         self.parent = parent
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
 
         self.random_char_var = tk.BooleanVar()
-        self.random_char_checkbox = tk.Checkbutton(
+        self.random_char_checkbox = ttk.Checkbutton(
             self,
             text="Random Character Select",
             variable=self.random_char_var,
@@ -406,7 +454,7 @@ class OptionsFrame(tk.LabelFrame):
         self.random_char_checkbox.grid(row=0, column=0, sticky="w")
 
         self.loose_audio_var = tk.BooleanVar()
-        self.loose_audio_checkbox = tk.Checkbutton(
+        self.loose_audio_checkbox = ttk.Checkbutton(
             self,
             text="Enable Loose Audio Loading",
             variable=self.loose_audio_var,
@@ -415,7 +463,7 @@ class OptionsFrame(tk.LabelFrame):
         self.loose_audio_checkbox.grid(row=1, column=0, sticky="w")
 
         self.cache_decoded_audio_var = tk.BooleanVar()
-        self.cache_decoded_audio_checkbox = tk.Checkbutton(
+        self.cache_decoded_audio_checkbox = ttk.Checkbutton(
             self,
             text="Cache Decoded Audio Files",
             variable=self.cache_decoded_audio_var,
@@ -424,7 +472,7 @@ class OptionsFrame(tk.LabelFrame):
         self.cache_decoded_audio_checkbox.grid(row=2, column=0, sticky="w")
 
         self.enable_developer_mode_var = tk.BooleanVar()
-        self.enable_developer_mode_checkbox = tk.Checkbutton(
+        self.enable_developer_mode_checkbox = ttk.Checkbutton(
             self,
             text="Enable Developer Mode",
             variable=self.enable_developer_mode_var,
@@ -433,8 +481,8 @@ class OptionsFrame(tk.LabelFrame):
         self.enable_developer_mode_checkbox.grid(row=3, column=0, sticky="w")
 
         self.enable_console_var = tk.BooleanVar()
-        self.enable_console_var.set(self.config.config_file.playlunky_console)
-        self.enable_console_checkbox = tk.Checkbutton(
+        self.enable_console_var.set(self.modlunky_config.config_file.playlunky_console)
+        self.enable_console_checkbox = ttk.Checkbutton(
             self,
             text="Enable Console",
             variable=self.enable_console_var,
@@ -444,34 +492,36 @@ class OptionsFrame(tk.LabelFrame):
         self.enable_console_checkbox.grid(row=4, column=0, sticky="w")
 
     def handle_console_checkbutton(self):
-        self.config.config_file.playlunky_console = self.enable_console_var.get()
-        self.config.config_file.save()
+        self.modlunky_config.config_file.playlunky_console = (
+            self.enable_console_var.get()
+        )
+        self.modlunky_config.config_file.save()
 
 
-class FiltersFrame(tk.LabelFrame):
+class FiltersFrame(ttk.LabelFrame):
     def __init__(self, parent):
         super().__init__(parent, text="Filters")
         self.parent = parent
 
-        self.name_label = tk.Label(self, text="Name:")
+        self.name_label = ttk.Label(self, text="Name:")
         self.name_label.grid(row=0, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
         self.name = Entry(self, width="30")
         self.name_last_seen = ""
         self.name.bind_on_key(self.on_name_key)
         self.name.grid(row=0, column=1, pady=(5, 5), padx=(5, 0), sticky="w")
 
-        self.selected_label = tk.Label(self, text="Show:")
+        self.selected_label = ttk.Label(self, text="Show:")
         self.selected_label.grid(row=0, column=2, pady=(5, 5), padx=(5, 0), sticky="w")
         self.selected_var = tk.StringVar(value="Both")
-        self.selected_dropdown = tk.OptionMenu(
+        self.selected_dropdown = ttk.OptionMenu(
             self,
             self.selected_var,
+            self.selected_var.get(),
             "Both",
             "Selected",
             "Unselected",
             command=self.selected_command,
         )
-        self.selected_dropdown.configure(anchor="w")
         self.selected_dropdown.grid(
             row=0, column=3, pady=(5, 5), padx=(5, 0), sticky="w"
         )
@@ -486,19 +536,13 @@ class FiltersFrame(tk.LabelFrame):
             self.parent.master.render_packs()
 
 
-class ControlsFrame(tk.LabelFrame):
-    def __init__(self, parent, config, *args, **kwargs):
+class ControlsFrame(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config, *args, **kwargs):
         super().__init__(parent, text="Stuff & Things", *args, **kwargs)
         self.parent = parent
-        self.config = config
+        self.modlunky_config = modlunky_config
 
         self.columnconfigure(0, weight=1)
-
-        # self.install_button = ttk.Button(
-        #    self, text="Install Mod", command=self.install_mod
-        # )
-        # self.install_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
-        # ToolTip(self.install_button, "Browse for a mod file to install.")
 
         self.refresh_button = ttk.Button(
             self, text="Refresh Mods", command=self.refresh_mods
@@ -548,17 +592,11 @@ class ControlsFrame(tk.LabelFrame):
             ),
         )
 
-    def install_mod(self):
-        tk.messagebox.showinfo(
-            "Coming Soon",
-            "This feature hasn't been implemented yet, but it will be soon!",
-        )
-
     def refresh_mods(self):
         self.parent.on_load()
 
     def open_packs(self):
-        packs_dir = self.config.install_dir / "Mods/Packs"
+        packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if not packs_dir.exists():
             logger.info("Couldn't find Packs directory. Looked in %s", packs_dir)
             return
@@ -572,7 +610,7 @@ class ControlsFrame(tk.LabelFrame):
         self.parent.version_frame.task_manager.call("play:cache_releases")
 
     def clear_cache(self):
-        cache_dir = self.config.install_dir / "Mods/Packs/.db"
+        cache_dir = self.modlunky_config.install_dir / "Mods/Packs/.db"
         if not cache_dir.exists():
             logger.info("No cache directory found to remove. Looked in %s", cache_dir)
             return
@@ -593,7 +631,7 @@ class ControlsFrame(tk.LabelFrame):
         shutil.rmtree(cache_dir)
 
 
-class LoadOrderFrame(tk.LabelFrame):
+class LoadOrderFrame(ttk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, text="Load Order", *args, **kwargs)
         self.parent = parent
@@ -606,7 +644,7 @@ class LoadOrderFrame(tk.LabelFrame):
             row=0, column=0, columnspan=2, pady=5, padx=(5, 0), sticky="nsew"
         )
 
-        self.scrollbar = tk.Scrollbar(self)
+        self.scrollbar = ttk.Scrollbar(self)
         self.scrollbar.grid(row=0, column=1, columnspan=2, pady=5, sticky="nse")
 
         self.listbox.config(yscrollcommand=self.scrollbar.set)
@@ -715,10 +753,10 @@ def launch_playlunky(_call, install_dir, exe_path, use_console):
 
 
 class PlayTab(Tab):
-    def __init__(self, tab_control, config, task_manager, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
-        self.config = config
+        self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
             "play:launch_playlunky",
@@ -739,7 +777,7 @@ class PlayTab(Tab):
         self.columnconfigure(1, minsize=250)
         self.columnconfigure(2, minsize=250)
 
-        self.play_wrapper = tk.Frame(self)
+        self.play_wrapper = ttk.Frame(self)
         self.play_wrapper.grid(row=0, column=0, rowspan=3, sticky="nswe")
         self.play_wrapper.columnconfigure(0, weight=1)
         self.play_wrapper.rowconfigure(1, weight=1)
@@ -757,17 +795,17 @@ class PlayTab(Tab):
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.version_frame = VersionFrame(self, config, task_manager)
+        self.version_frame = VersionFrame(self, modlunky_config, task_manager)
         self.version_frame.grid(
             row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.install_mod_frame = ControlsFrame(self, config)
+        self.install_mod_frame = ControlsFrame(self, modlunky_config)
         self.install_mod_frame.grid(
             row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.options_frame = OptionsFrame(self, config)
+        self.options_frame = OptionsFrame(self, modlunky_config)
         self.options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -800,10 +838,10 @@ class PlayTab(Tab):
         self.load_from_load_order()
 
     def make_dirs(self):
-        if not self.config.install_dir:
+        if not self.modlunky_config.install_dir:
             return
 
-        packs_dir = self.config.install_dir / "Mods/Packs"
+        packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if packs_dir.exists():
             return
 
@@ -816,7 +854,7 @@ class PlayTab(Tab):
         self.button_play["state"] = tk.DISABLED
 
     def load_from_ini(self):
-        path = self.config.install_dir / "playlunky.ini"
+        path = self.modlunky_config.install_dir / "playlunky.ini"
         if path.exists():
             with path.open() as ini_file:
                 config = PlaylunkyConfig.from_ini(ini_file)
@@ -829,7 +867,7 @@ class PlayTab(Tab):
         self.options_frame.enable_developer_mode_var.set(config.enable_developer_mode)
 
     def write_ini(self):
-        path = self.config.install_dir / "playlunky.ini"
+        path = self.modlunky_config.install_dir / "playlunky.ini"
         config = PlaylunkyConfig(
             random_character_select=self.options_frame.random_char_var.get(),
             enable_loose_audio_files=self.options_frame.loose_audio_var.get(),
@@ -858,9 +896,9 @@ class PlayTab(Tab):
                     continue
 
                 if select:
-                    checkbox.select()
+                    var.set(True)
                 else:
-                    checkbox.deselect()
+                    var.set(False)
 
                 self.on_check(line, var)
 
@@ -876,16 +914,16 @@ class PlayTab(Tab):
                 load_order_file.write(f"--{pack}\n")
 
     def write_steam_appid(self):
-        path = self.config.install_dir / "steam_appid.txt"
+        path = self.modlunky_config.install_dir / "steam_appid.txt"
         with path.open("w") as handle:
             handle.write("418530")
 
     @property
     def load_order_path(self):
-        return self.config.install_dir / "Mods/Packs/load_order.txt"
+        return self.modlunky_config.install_dir / "Mods/Packs/load_order.txt"
 
     def should_install(self):
-        version = self.config.config_file.playlunky_version
+        version = self.modlunky_config.config_file.playlunky_version
         if version:
             msg = (
                 f"You don't currently have version {version} installed.\n\n"
@@ -905,10 +943,39 @@ class PlayTab(Tab):
 
         return answer
 
+    def needs_update(self):
+        selected_version = self.modlunky_config.config_file.playlunky_version
+        if selected_version not in ["nightly", "stable"]:
+            return False
+
+        release_info = self.version_frame.available_releases[selected_version]
+        release_version, _ = parse_download_url(
+            release_info["assets"][0]["browser_download_url"]
+        )
+
+        downloaded_version_path = (
+            PLAYLUNKY_DATA_DIR
+            / self.modlunky_config.config_file.playlunky_version
+            / PLAYLUNKY_VERSION_FILENAME
+        )
+        downloaded_version = None
+        if not downloaded_version_path.exists():
+            logger.info("No version info for current download. Updating to latest.")
+            return True
+
+        with downloaded_version_path.open("r") as downloaded_version_file:
+            downloaded_version = downloaded_version_file.read().strip()
+
+        if downloaded_version != release_version:
+            logger.info("New version of %s available. Updating...", selected_version)
+            return True
+
+        return False
+
     def play(self):
         exe_path = (
             PLAYLUNKY_DATA_DIR
-            / self.config.config_file.playlunky_version
+            / self.modlunky_config.config_file.playlunky_version
             / PLAYLUNKY_EXE
         )
         self.disable_button()
@@ -922,6 +989,10 @@ class PlayTab(Tab):
                 self.enable_button()
             return
 
+        if self.needs_update():
+            self.version_frame.download_frame.download(launch=True)
+            return
+
         self.write_steam_appid()
         self.write_load_order()
         self.write_ini()
@@ -930,9 +1001,9 @@ class PlayTab(Tab):
         self.version_frame.uninstall_frame.button["state"] = tk.DISABLED
         self.task_manager.call(
             "play:launch_playlunky",
-            install_dir=self.config.install_dir,
+            install_dir=self.modlunky_config.install_dir,
             exe_path=exe_path,
-            use_console=self.config.config_file.playlunky_console,
+            use_console=self.modlunky_config.config_file.playlunky_console,
         )
 
     def playlunky_closed(self):
@@ -948,7 +1019,7 @@ class PlayTab(Tab):
 
     def get_packs(self):
         packs = []
-        packs_dir = self.config.install_dir / "Mods/Packs"
+        packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if not packs_dir.exists():
             return packs
 
@@ -966,7 +1037,9 @@ class PlayTab(Tab):
                 if path.exists():
                     continue
 
-            packs.append(str(path.relative_to(self.config.install_dir / "Mods/Packs")))
+            packs.append(
+                str(path.relative_to(self.modlunky_config.install_dir / "Mods/Packs"))
+            )
         return packs
 
     def render_packs(self):
@@ -988,7 +1061,9 @@ class PlayTab(Tab):
             buttons.grid_forget()
             checkbox.grid_forget()
 
-            if not (self.config.install_dir / "Mods/Packs" / str(pack)).exists():
+            if not (
+                self.modlunky_config.install_dir / "Mods/Packs" / str(pack)
+            ).exists():
                 buttons.folder_button["state"] = tk.DISABLED
             else:
                 buttons.folder_button["state"] = tk.NORMAL
@@ -1026,7 +1101,7 @@ class PlayTab(Tab):
             logger.warning("Got dangerous pack name, aborting...")
             return
 
-        pack_dir = self.config.install_dir / "Mods/Packs" / pack
+        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / pack
         if not pack_dir.exists():
             logger.info("No pack directory found to remove. Looked in %s", pack_dir)
             return
@@ -1039,7 +1114,7 @@ class PlayTab(Tab):
             return
 
         to_remove = []
-        pack_dir = self.config.install_dir / "Mods/Packs" / pack
+        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / pack
         if pack_dir.exists():
             to_remove.append(pack_dir)
 
@@ -1079,20 +1154,18 @@ class PlayTab(Tab):
         for pack in packs_added:
             var = tk.BooleanVar()
 
-            item = tk.Checkbutton(
+            item = ttk.Checkbutton(
                 self.packs_frame.scrollable_frame,
                 text=f"{pack}",
-                font=("Segoe UI", 12, "bold"),
+                style="ModList.TCheckbutton",
                 variable=var,
                 onvalue=True,
                 offvalue=False,
                 compound="left",
-                # TODO: dynamic sizing for larger windows
-                wraplength="640",
                 command=self.on_check_wrapper(pack, var),
             )
 
-            buttons = tk.Frame(self.packs_frame.scrollable_frame)
+            buttons = ttk.Frame(self.packs_frame.scrollable_frame)
             buttons.rowconfigure(0, weight=1)
             buttons.folder_button = ttk.Button(
                 buttons,

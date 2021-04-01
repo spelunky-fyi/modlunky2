@@ -76,6 +76,12 @@ python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
 ```
 
 #### EXE
+
+The default pyinstaller from pip seems prone to false detection from antivirus
+so you need to build your own version per https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html
+
+See: https://stackoverflow.com/a/52054580
+
 ```
 pyinstaller.exe modlunky2.spec
 ```

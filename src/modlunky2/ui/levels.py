@@ -27,21 +27,21 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.utils import tb_info
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrame, Tab
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
 
 class LevelsTab(Tab):
     def __init__(
-        self, tab_control, modlunky_ui, config, *args, **kwargs
+        self, tab_control, modlunky_ui, modlunky_config, *args, **kwargs
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
-        self.config = config
+        self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(self, self, self.config)
+        self.tree_levels = LevelsTree(self, self, self.modlunky_config)
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -49,23 +49,23 @@ class LevelsTab(Tab):
         self.extracts_mode = True
         self.dual_mode = False
         self.tab_control = tab_control
-        self.install_dir = config.install_dir
-        self.textures_dir = config.install_dir / "Mods/Extracted/Data/Textures"
+        self.install_dir = modlunky_config.install_dir
+        self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
         self._sprite_fetcher = None
 
-        self.lvl_editor_start_canvas = tk.Canvas(self)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.lvl_editor_start_canvas.grid(row=0, column=0, columnspan=2, sticky="nswe")
-        self.lvl_editor_start_canvas.columnconfigure(0, weight=1)
-        self.lvl_editor_start_canvas.rowconfigure(0, weight=1)
+        self.lvl_editor_start_frame = ttk.Frame(self)
+        self.lvl_editor_start_frame.grid(row=0, column=0, columnspan=2, sticky="nswe")
+        self.lvl_editor_start_frame.columnconfigure(0, weight=1)
+        self.lvl_editor_start_frame.rowconfigure(0, weight=1)
 
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
         self.overrides_path = self.install_dir / "Mods" / "Overrides"
 
         self.welcome_label = tk.Label(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text=(
                 "Welcome to the Spelunky 2 Level Editor! "
                 "Created by JackHasWifi with lots of help from "
@@ -102,9 +102,10 @@ class LevelsTab(Tab):
         self.lvl = None
         self.lvl_biome = None
         self.node = None
+        self.sister_locations = None
 
         def select_lvl_folder():
-            initial_dir = self.config.install_dir / "Mods/Packs"
+            initial_dir = self.modlunky_config.install_dir / "Mods/Packs"
             if not initial_dir.exists():
                 initial_dir = Path("/")
             dirname = filedialog.askdirectory(
@@ -124,7 +125,7 @@ class LevelsTab(Tab):
                 self.load_editor()
 
         self.btn_lvl_extracts = ttk.Button(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text="Load From Extracts",
             command=load_extracts_lvls,
         )
@@ -133,7 +134,7 @@ class LevelsTab(Tab):
         )
 
         self.btn_lvl_folder = ttk.Button(
-            self.lvl_editor_start_canvas,
+            self.lvl_editor_start_frame,
             text="Load Levels Folder",
             command=select_lvl_folder,
         )
@@ -154,7 +155,7 @@ class LevelsTab(Tab):
         self.last_selected_file = None
         self.tiles = None
         self.tiles_meta = None
-        self.lvl_editor_start_canvas.grid_remove()
+        self.lvl_editor_start_frame.grid_remove()
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -191,6 +192,7 @@ class LevelsTab(Tab):
         self.editor_tab = ttk.Frame(
             self.tab_control
         )  # Tab 2 is the actual level editor
+        self.variables_tab = ttk.Frame(self.tab_control)
 
         self.button_back = tk.Button(
             self, text="Go Back", bg="black", fg="white", command=self.go_back
@@ -281,16 +283,150 @@ class LevelsTab(Tab):
         self.tree_chances_monsters.grid(row=2, column=0, sticky="nwse")
         self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
 
+        # Variables Tab
+        self.variables_tab.columnconfigure(0, weight=1)  # Column 1 = Everything Else
+        self.variables_tab.rowconfigure(1, weight=1)  # Row 0 = List box / Label
+        self.variables_tab.rowconfigure(2, minsize=100)  # Row 0 = List box / Label
+
+        self.depend_order_label = ttk.Label(
+            self.variables_tab, text="Conflicts will be shown here", font=("Arial", 15)
+        )
+        self.depend_order_label.grid(row=0, column=0, sticky="nwse")
+
+        self.no_conflicts_label = ttk.Label(
+            self.variables_tab, text="No conflicts detected!", font=("Arial", 15)
+        )
+        self.no_conflicts_label.grid(row=1, column=0, sticky="nwse")
+
+        self.tree_depend = ttk.Treeview(
+            self.variables_tab, selectmode="browse"
+        )  # This tree shows rules parses from the lvl file
+        # self.tree_depend.bind("<Double-1>", lambda e: self.on_double_click(self.tree))
+        self.tree_depend.place(x=30, y=95)
+        # style = ttk.Style(self)
+        self.vsb_depend = ttk.Scrollbar(
+            self.variables_tab, orient="vertical", command=self.tree_depend.yview
+        )
+        self.vsb_depend.place(x=30 + 200 + 2, y=95, height=200 + 20)
+        self.tree_depend.configure(yscrollcommand=self.vsb_depend.set)
+        self.tree_depend["columns"] = ("1", "2", "3")
+        self.tree_depend["show"] = "headings"
+        self.tree_depend.column("1", width=100, anchor="w")
+        self.tree_depend.column("2", width=10, anchor="w")
+        self.tree_depend.column("3", width=100, anchor="w")
+        self.tree_depend.heading("1", text="Tile Id")
+        self.tree_depend.heading("2", text="Tilecode")
+        self.tree_depend.heading("3", text="File")
+        self.tree_depend.grid(row=1, column=0, sticky="nwse")
+        self.vsb_depend.grid(row=1, column=0, sticky="nse")
+
+        self.button_resolve_variables = ttk.Button(
+            self.variables_tab, text="Resolve Conflicts", command=self.resolve_conflicts
+        )
+        self.button_resolve_variables.grid(row=2, column=0, sticky="nswe")
+
+        self.button_resolve_variables.grid_remove()
+        self.no_conflicts_label.grid_remove()
+
+        self.dependencies = []
+        self.dependencies.append(
+            [
+                "basecamp.lvl",
+                "basecamp_garden.lvl",
+                "basecamp_shortcut_discovered.lvl",
+                "basecamp_shortcut_undiscovered.lvl",
+                "basecamp_shortcut_unlocked.lvl",
+                "basecamp_surface.lvl",
+                "basecamp_tutorial.lvl",
+                "basecamp_tv_room_locked.lvl",
+                "basecamp_tv_room_unlocked.lvl",
+            ]
+        )
+        self.dependencies.append(
+            ["junglearea.lvl", "blackmarket.lvl", "beehive.lvl", "challenge_moon.lvl"]
+        )  # 1
+        self.dependencies.append(
+            ["volcanoarea.lvl", "vladscastle.lvl", "challenge_moon.lvl"]
+        )  # 2
+        self.dependencies.append(
+            ["tidepoolarea.lvl", "lake.lvl", "lakeoffire.lvl", "challenge_star.lvl"]
+        )  # 3
+        self.dependencies.append(
+            ["templearea.lvl", "beehive.lvl", "challenge_star.lvl"]
+        )  # 4
+        self.dependencies.append(
+            [
+                "babylonarea.lvl",
+                "babylonarea_1-1.lvl",
+                "hallofushabti.lvl",
+                "palaceofpleasure.lvl",
+            ]
+        )  # 5
+        self.dependencies.append(["sunkencityarea.lvl", "challenge_sun.lvl"])  # 6
+        self.dependencies.append(["ending.lvl", "ending_hard.lvl"])  # 7
+        self.dependencies.append(
+            ["challenge_moon.lvl", "junglearea.lvl", "volcanoarea.lvl"]
+        )  # 8
+        self.dependencies.append(
+            ["challenge_star.lvl", "tidepoolarea.lvl", "templearea.lvl"]
+        )  # 9
+        self.dependencies.append(
+            [
+                "generic.lvl",
+                "dwellingarea.lvl",
+                "cavebossarea.lvl",
+                "junglearea.lvl",
+                "blackmarket.lvl",
+                "beehive.lvl",
+                "challenge_moon.lvl",
+                "volcanoarea.lvl",
+                "vladscastle.lvl",
+                "challenge_moon.lvl",
+                "olmecarea.lvl",
+                "tidepoolarea.lvl",
+                "lake.lvl",
+                "lakeoffire.lvl",
+                "challenge_star.lvl",
+                "abzu.lvl",
+                "templearea.lvl",
+                "beehive.lvl",
+                "challenge_star.lvl",
+                "cityofgold.lvl",
+                "duat.lvl",
+                "icecavesarea.lvl",
+                "babylonarea.lvl",
+                "babylonarea_1-1.lvl",
+                "hallofushabti.lvl",
+                "palaceofpleasure.lvl",
+                "tiamat.lvl",
+                "sunkencityarea.lvl",
+                "challenge_sun.lvl",
+                "eggplantarea.lvl",
+                "hundun.lvl",
+                "ending.lvl",
+                "ending_hard.lvl",
+                "cosmicocean_babylon.lvl",
+                "cosmicocean_dwelling.lvl",
+                "cosmicocean_icecavesarea.lvl",
+                "cosmicocean_jungle.lvl",
+                "cosmicocean_sunkencity.lvl",
+                "cosmicocean_temple.lvl",
+                "cosmicocean_tidepool.lvl",
+                "cosmicocean_volcano.lvl",
+            ]
+        )  # 10
+
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
+        self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
         self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.editor_tab.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
         self.tree_levels = LevelsTree(
-            self.editor_tab, self, self.config, selectmode="browse"
+            self.editor_tab, self, self.modlunky_config, selectmode="browse"
         )  # This tree shows the rooms in the level editor
         self.tree_levels.place(x=30, y=95)
         self.vsb_tree_levels = ttk.Scrollbar(
@@ -403,18 +539,18 @@ class LevelsTab(Tab):
         self.canvas_dual.grid_remove()  # hides it for now
         self.dual_mode = False
 
-        self.button_hide_tree = tk.Button(
+        self.button_hide_tree = ttk.Button(
             self.canvas_grids, text="<<", command=self.toggle_list_hide
         )
         self.button_hide_tree.grid(row=0, column=0, sticky="nw")
 
-        self.button_replace = tk.Button(
+        self.button_replace = ttk.Button(
             self.canvas_grids, text="Replace", command=self.replace_tiles_dia
         )
         self.button_replace.grid(row=0, column=1, sticky="nw")
         self.button_replace["state"] = tk.DISABLED
 
-        self.button_clear = tk.Button(
+        self.button_clear = ttk.Button(
             self.canvas_grids, text="Clear Canvas", command=self.clear_canvas
         )
         self.button_clear.grid(row=0, column=2, sticky="nw")
@@ -430,14 +566,14 @@ class LevelsTab(Tab):
 
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
-        self.tile_label = tk.Label(
+        self.tile_label = ttk.Label(
             self.editor_tab,
             text="Primary Tile:",
         )
         self.tile_label.grid(row=0, column=10, columnspan=1, sticky="we")
         # shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
-        self.tile_label_secondary = tk.Label(
+        self.tile_label_secondary = ttk.Label(
             self.editor_tab,
             text="Secondary Tile:",
         )
@@ -470,11 +606,11 @@ class LevelsTab(Tab):
                 BASE_DIR / "static/images/tilecodetextures.png"
             )  ########################################### set selected img
         )
-        self.panel_sel = tk.Label(
+        self.panel_sel = ttk.Label(
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel.grid(row=0, column=11)
-        self.panel_sel_secondary = tk.Label(
+        self.panel_sel_secondary = ttk.Label(
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel_secondary.grid(row=1, column=11)
@@ -487,7 +623,7 @@ class LevelsTab(Tab):
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
-        self.scale = tk.Scale(
+        self.scale = ttk.Scale(
             self.editor_tab,
             from_=0,
             to=100,
@@ -503,7 +639,7 @@ class LevelsTab(Tab):
             text="Add TileCode",
             bg="yellow",
             command=lambda: self.add_tilecode(
-                str(self.combobox.get()), str(self.scale.get()), self.combobox_alt.get()
+                str(self.combobox.get()), str(int(float(self.scale.get()))), self.combobox_alt.get()
             ),
         )
         self.button_tilecode_add.grid(
@@ -857,36 +993,35 @@ class LevelsTab(Tab):
         self.canvas_dual.bind(
             "<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas_dual)
         )
+        self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
 
-        def tree_filesitemclick(_event):
-            if self.save_needed and self.last_selected_file is not None:
-                msg_box = tk.messagebox.askquestion(
-                    "Continue?",
-                    "You have unsaved changes to "
-                    + str(self.tree_files.item(self.last_selected_file, option="text"))
-                    + "\nContinue without saving?",
-                    icon="warning",
-                )
-                if msg_box == "yes":
-                    self.save_needed = False
-                    self.button_save["state"] = tk.DISABLED
-                    logger.debug("Entered new files witout saving")
-                else:
-                    self.tree_files.selection_set(self.last_selected_file)
-                    return
-            item_text = ""
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
-            for item in self.tree_files.selection():
-                self.last_selected_file = item
-                item_text = self.tree_files.item(item, "text")
-                self.read_lvl_file(item_text)
-
-        self.tree_files.bind("<ButtonRelease-1>", tree_filesitemclick)
+    def tree_filesitemclick(self, _event):
+        if self.save_needed and self.last_selected_file is not None:
+            msg_box = tk.messagebox.askquestion(
+                "Continue?",
+                "You have unsaved changes to "
+                + str(self.tree_files.item(self.last_selected_file, option="text"))
+                + "\nContinue without saving?",
+                icon="warning",
+            )
+            if msg_box == "yes":
+                self.save_needed = False
+                self.button_save["state"] = tk.DISABLED
+                logger.debug("Entered new files witout saving")
+            else:
+                self.tree_files.selection_set(self.last_selected_file)
+                return
+        item_text = ""
+        self.canvas.delete("all")
+        self.canvas_dual.delete("all")
+        self.canvas.grid_remove()
+        self.canvas_dual.grid_remove()
+        self.foreground_label.grid_remove()
+        self.background_label.grid_remove()
+        for item in self.tree_files.selection():
+            self.last_selected_file = item
+            item_text = self.tree_files.item(item, "text")
+            self.read_lvl_file(item_text)
 
     def _on_mousewheel(self, event):
         scroll_dir = None
@@ -1186,16 +1321,445 @@ class LevelsTab(Tab):
             except Exception:  # pylint: disable=broad-except
                 logger.critical("Failed to save level: %s", tb_info())
                 _msg_box = tk.messagebox.showerror(
-                    "Continue?",
+                    "Oops?",
                     "Error saving..",
                 )
         else:
             logger.debug("No changes to save")
 
+    def resolve_conflicts(self):
+        if self.save_needed:
+            msg_box = tk.messagebox.askquestion(
+                "Save now?",
+                "This will save all your current changes. Continue?",
+                icon="warning",
+            )
+            if msg_box == "no":
+                return
+            else:
+                self.save_changes()
+
+        def get_level(file):
+            if not self.extracts_mode:
+                if os.path.exists(Path(self.lvls_path + "/" + file)):
+                    levelp = LevelFile.from_path(Path(self.lvls_path + "/" + file))
+                else:
+                    logger.debug(
+                        "local dependency lvl not found, attempting load from extracts"
+                    )
+                    levelp = LevelFile.from_path(Path(self.extracts_path) / file)
+            else:
+                if os.path.exists(Path(self.overrides_path / file)):
+                    levelp = LevelFile.from_path(Path(self.overrides_path / file))
+                else:
+                    levelp = LevelFile.from_path(Path(self.extracts_path) / file)
+            return levelp
+
+        usable_codes_string = (
+            r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`"""
+            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
+            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
+            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
+        )
+        usable_codes = []
+        for code in usable_codes_string:
+            usable_codes.append(code)
+
+        # finds tilecodes that are taken in all the dependacy files
+        for level in self.sister_locations:
+            used_codes = level[1].tile_codes.all()
+            for code in used_codes:
+                for usable_code in usable_codes:
+                    if str(code.value) == str(usable_code):
+                        usable_codes.remove(usable_code)
+                        # "sister location" = nick name for lvl files in a dependency group
+                        logger.debug("removed %s from sister location", code.value)
+
+        for i in self.tree_depend.get_children():  # gets base level conflict to compare
+            try:
+                item = self.tree_depend.item(
+                    i, option="values"
+                )  # gets it values ([0] = tile id [1] = tile code [2] = level file name)
+
+                levels = []  # gets list of levels to fix tilecodes among
+                # adds item as (level, item values)
+                levels.append([get_level(item[2].split(" ")[0]), item])
+                # removes item cause its already being worked on so it doesn't
+                # get worked on or compared to again
+                # self.tree_depend.delete(i)
+
+                for child in self.tree_depend.get_children():
+                    item2 = self.tree_depend.item(child, option="values")
+                    # finds item with conflicting codes
+                    if str(item2[1]) == str(item[1]):
+                        levels.append([get_level(item2[2].split(" ")[0]), item2])
+                        # removes item cause its already being worked on so it doesn't
+                        # get worked on or compared to again
+                        # self.tree_depend.delete(child)
+
+                # finds tilecodes that are not available in all the dependacy files
+                # (again cause it could have changed since tilecodes are being messed with)
+                # might not actually be needed
+                for level in levels:
+                    used_codes = level[0].tile_codes.all()
+                    for code in used_codes:
+                        for usable_code in usable_codes:
+                            if str(code.value) == str(usable_code):
+                                usable_codes.remove(usable_code)
+                                logger.debug(
+                                    "removed %s cause its already in use", code.value
+                                )
+
+                # replaces all the old tile codes with the new ones in the rooms
+                for level in levels:
+                    # gives tilecodes their own loop
+                    tilecode_count = 0
+                    tile_codes_new = TileCodes()  # new tilecode database
+
+                    for code in level[0].tile_codes.all():
+                        tile_id = str(level[1][0])
+                        old_code = str(level[1][1])
+                        if str(code.name) == str(tile_id):  # finds conflicting tilecode
+                            # makes sure there's even codes left to assing new unique ones
+                            if len(usable_codes) > 0:
+                                # gets the next available usable code
+                                new_code = str(usable_codes[0])
+                                tile_codes_new.set_obj(
+                                    TileCode(
+                                        name=tile_id,
+                                        value=new_code,
+                                        comment="",
+                                    )
+                                )  # adds new tilecode to database with new code
+                                old_code_found = False
+                                for usable_code in usable_codes:
+                                    if str(new_code) == str(usable_code):
+                                        usable_codes.remove(usable_code)
+                                        logger.debug("used and removed %s", new_code)
+                                    if str(old_code) == str(usable_code):
+                                        old_code_found = True
+                                if not old_code_found:
+                                    usable_codes.append(
+                                        old_code
+                                    )  # adds back replaced code since its now free for use again
+                            else:
+                                self.check_dependencies()
+                                logger.debug("No more unique codes available")
+                                self.tree_filesitemclick(self)
+                                return
+                        else:
+                            tile_codes_new.set_obj(
+                                TileCode(
+                                    name=tile_id,
+                                    value=old_code,
+                                    comment="",
+                                )  # adds tilecode back to database
+                            )
+                        tilecode_count = tilecode_count + 1
+
+                    for code in level[0].tile_codes.all():
+                        tile_id = str(level[1][0])
+                        old_code = str(level[1][1])
+                        if str(code.name) == str(tile_id):  # finds conflicting tilecode
+                            for new_code in tile_codes_new.all():
+                                if new_code.name == code.name:
+                                    template_count = 0
+                                    for template in level[0].level_templates.all():
+                                        new_chunks = []
+                                        for room in template.chunks:
+                                            row_count = 0
+                                            for row in room.foreground:
+                                                col_count = 0
+                                                for col in row:
+                                                    if str(col) == str(old_code):
+                                                        room.foreground[row_count][
+                                                            col_count
+                                                        ] = str(new_code.value)
+                                                        logger.debug(
+                                                            "replaced %s with %s",
+                                                            old_code,
+                                                            new_code.value,
+                                                        )
+                                                    col_count = col_count + 1
+                                                row_count = row_count + 1
+                                            row_count = 0
+                                            for row in room.background:
+                                                col_count = 0
+                                                for col in row:
+                                                    if str(col) == str(old_code):
+                                                        room.background[row_count][
+                                                            col_count
+                                                        ] = str(new_code.value)
+                                                        logger.debug(
+                                                            "replaced %s with %s",
+                                                            old_code,
+                                                            new_code.value,
+                                                        )
+                                                    col_count = col_count + 1
+                                                row_count = row_count + 1
+                                            new_chunks.append(
+                                                Chunk(
+                                                    comment=room.comment,
+                                                    settings=room.settings,
+                                                    foreground=room.foreground,
+                                                    background=room.background,
+                                                )
+                                            )
+                                        level[0].level_templates.all()[
+                                            template_count
+                                        ].chunks = new_chunks
+                                        template_count = template_count + 1
+                    level[0].tile_codes = tile_codes_new
+
+                    if not self.extracts_mode:
+                        path = self.lvls_path + "/" + str(level[1][2].split(" ")[0])
+                    else:
+                        logger.debug("adding to overrides")
+                        path = (
+                            self.install_dir
+                            / "Mods"
+                            / "Overrides"
+                            / str(level[1][2].split(" ")[0])
+                        )
+                    with Path(path).open("w", encoding="cp1252") as handle:
+                        level[0].write(handle)
+                        logger.debug("Fixed conflicts in %s", level[1][2].split(" ")[0])
+            except Exception:  # pylint: disable=broad-except
+                logger.critical("Error: %s", tb_info())
+        self.tree_filesitemclick(self)
+        self.check_dependencies()
+
+    def check_dependencies(self):
+        self.depend_order_label["text"] = ""
+        for i in self.tree_depend.get_children():  # clears tree
+            self.tree_depend.delete(i)
+        logger.debug("checking dependencies..")
+        levels = []
+
+        def append_level(item):
+            self.depend_order_label["text"] += " -> " + item
+            if not self.extracts_mode:
+                if os.path.exists(Path(self.lvls_path + "/" + item)):
+                    levels.append(
+                        [
+                            item + " custom",
+                            LevelFile.from_path(Path(self.lvls_path + "/" + item)),
+                        ]
+                    )
+                else:
+                    logger.debug(
+                        "local dependency lvl not found, attempting load from extracts"
+                    )
+                    levels.append(
+                        [
+                            item + " extracts",
+                            LevelFile.from_path(Path(self.extracts_path) / item),
+                        ]
+                    )
+            else:
+                if os.path.exists(Path(self.overrides_path / item)):
+                    levels.append(
+                        [
+                            item + " overrides",
+                            LevelFile.from_path(Path(self.overrides_path / item)),
+                        ]
+                    )
+                else:
+                    levels.append(
+                        [
+                            item + " extracts",
+                            LevelFile.from_path(Path(self.extracts_path) / item),
+                        ]
+                    )
+
+        self.depend_order_label["text"] = ""
+        if str(self.tree_files.item(self.last_selected_file, option="text")).startswith(
+            "basecamp"
+        ):
+            for file in self.dependencies[0]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("generic.lvl"):
+            for file in self.dependencies[10]:
+                append_level(file)
+        else:
+            append_level("generic.lvl")  # adds generic for all other files
+
+        if str(self.tree_files.item(self.last_selected_file, option="text")).startswith(
+            "challenge_moon.lvl"
+        ):
+            for file in self.dependencies[8]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("challenge_star.lvl"):
+            for file in self.dependencies[9]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("junglearea.lvl"):
+            for file in self.dependencies[1]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("volcanoarea.lvl"):
+            for file in self.dependencies[2]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("tidepoolarea.lvl"):
+            for file in self.dependencies[3]:
+                append_level(file)
+        elif str(
+            self.tree_files.item(self.last_selected_file, option="text")
+        ).startswith("templearea.lvl"):
+            for file in self.dependencies[4]:
+                append_level(file)
+        else:
+            i = 0
+            # each 'depend' = list of files that depend on each other
+            for depend in self.dependencies:
+                if i == 9:
+                    break
+                for file in depend:
+                    # makes sure opened level file match 1 dependency entry
+                    if str(
+                        self.tree_files.item(self.last_selected_file, option="text")
+                    ).startswith(file):
+                        # makes sure this level isn't being tracked from the generic file
+                        if depend != self.dependencies[10]:
+                            logger.debug("checking dependencies of %s", file)
+                            for item in depend:
+                                append_level(item)
+                            break
+                i = i + 1
+        level = None
+        tilecode_compare = []
+        for level in levels:
+            logger.debug("getting tilecodes from %s", level[0])
+            tilecodes = []
+            tilecodes.append(str(level[0]) + " file")
+            level_tilecodes = level[1].tile_codes.all()
+
+            for tilecode in level_tilecodes:
+                tilecodes.append(str(tilecode.name) + " " + str(tilecode.value))
+            tilecode_compare.append(tilecodes)
+
+        self.sister_locations = levels
+
+        for lvl_tilecodes in tilecode_compare:  # for list of tilecodes in each lvl
+            for tilecode in lvl_tilecodes:  # for each tilecode in the lvl
+                # for list of tilecodes in each lvl to compare to
+                for lvl_tilecodes_compare in tilecode_compare:
+                    # makes sure it doesn't compare to itself
+                    if lvl_tilecodes_compare[0] != lvl_tilecodes[0]:
+                        # for each tilecode in the lvl being compared to
+                        for tilecode_compare_to in lvl_tilecodes_compare:
+                            # makes sure its not the header
+                            if (
+                                len(tilecode.split(" ")) != 3
+                                and len(tilecode_compare_to.split(" ")) != 3
+                            ):
+                                # if tilecodes match
+                                if str(tilecode.split(" ")[1]) == str(
+                                    tilecode_compare_to.split(" ")[1]
+                                ):
+                                    # if tilecodes aren't assigned to same thing
+                                    if str(tilecode.split(" ")[0]) != str(
+                                        tilecode_compare_to.split(" ")[0]
+                                    ):
+                                        logger.debug(
+                                            "tilecode conflict: %s",
+                                            tilecode.split(" ")[1],
+                                        )
+                                        logger.debug(
+                                            "in %s and %s",
+                                            lvl_tilecodes[0],
+                                            lvl_tilecodes_compare[0],
+                                        )
+                                        logger.debug(
+                                            "comparing tileids %s to %s",
+                                            tilecode.split(" ")[0],
+                                            tilecode_compare_to.split(" ")[0],
+                                        )
+                                        compare_exists = False
+                                        compare_to_exists = False
+                                        # makes sure the detected conflicts are already listed
+                                        for (
+                                            tree_item
+                                        ) in self.tree_depend.get_children():
+                                            tree_item_check = self.tree_depend.item(
+                                                tree_item, option="values"
+                                            )
+                                            if (
+                                                tree_item_check[0]
+                                                == str(tilecode.split(" ")[0])
+                                                and tree_item_check[1]
+                                                == str(tilecode.split(" ")[1])
+                                                and tree_item_check[2]
+                                                == str(lvl_tilecodes[0])
+                                            ):
+                                                compare_exists = True
+                                            elif (
+                                                tree_item_check[0]
+                                                == str(
+                                                    tilecode_compare_to.split(" ")[0]
+                                                )
+                                                and tree_item_check[1]
+                                                == str(
+                                                    tilecode_compare_to.split(" ")[1]
+                                                )
+                                                and tree_item_check[2]
+                                                == str(lvl_tilecodes_compare[0])
+                                            ):
+                                                compare_to_exists = True
+                                        if not compare_exists:
+                                            self.tree_depend.insert(
+                                                "",
+                                                "end",
+                                                text="L1",
+                                                values=(
+                                                    str(tilecode.split(" ")[0]),
+                                                    str(tilecode.split(" ")[1]),
+                                                    str(lvl_tilecodes[0]),
+                                                ),
+                                            )
+                                        if not compare_to_exists:
+                                            self.tree_depend.insert(
+                                                "",
+                                                "end",
+                                                text="L1",
+                                                values=(
+                                                    str(
+                                                        tilecode_compare_to.split(" ")[
+                                                            0
+                                                        ]
+                                                    ),
+                                                    str(
+                                                        tilecode_compare_to.split(" ")[
+                                                            1
+                                                        ]
+                                                    ),
+                                                    str(lvl_tilecodes_compare[0]),
+                                                ),
+                                            )
+        logger.debug("Done.")
+        if len(self.tree_depend.get_children()) == 0:
+            self.depend_order_label.grid_remove()
+            self.tree_depend.grid_remove()
+            self.button_resolve_variables.grid_remove()
+            self.no_conflicts_label.grid()
+        else:
+            self.depend_order_label.grid()
+            self.tree_depend.grid()
+            self.button_resolve_variables.grid()
+            self.no_conflicts_label.grid_remove()
+
     def remember_changes(self):  # remembers changes made to rooms
+        item_iid = self.tree_levels.selection()[0]
+        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
         try:
-            item_iid = self.tree_levels.selection()[0]
-            parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
             if parent_iid:
                 room_name = str(self.tree_levels.item(item_iid)["text"])
                 # self.canvas.delete("all")
@@ -1282,25 +1846,25 @@ class LevelsTab(Tab):
 
     def replace_tiles_dia(self):
         # Set up window
-        win = PopupWindow("Replace Tiles", self.config)
+        win = PopupWindow("Replace Tiles", self.modlunky_config)
 
         replacees = []
         for tile in self.tile_pallete_ref_in_use:
             replacees.append(str(tile[0]))
 
-        col1_lbl = tk.Label(win, text="Replace all ")
+        col1_lbl = ttk.Label(win, text="Replace all ")
         col1_lbl.grid(row=0, column=0)
         combo_replace = ttk.Combobox(win, height=20)
         combo_replace["values"] = replacees
         combo_replace.grid(row=0, column=1)
 
-        col2_lbl = tk.Label(win, text="with ")
+        col2_lbl = ttk.Label(win, text="with ")
         col2_lbl.grid(row=1, column=0)
         combo_replacer = ttk.Combobox(win, height=20)
         combo_replacer["values"] = replacees
         combo_replacer.grid(row=1, column=1)
 
-        col3_lbl = tk.Label(win, text="in ")
+        col3_lbl = ttk.Label(win, text="in ")
         col3_lbl.grid(row=2, column=0)
         combo_where = ttk.Combobox(win, height=20)
         combo_where["values"] = ["all rooms", "current room"]
@@ -1349,15 +1913,15 @@ class LevelsTab(Tab):
         separator = ttk.Separator(win)
         separator.grid(row=4, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=5, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Replace", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Replace", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def replace_tiles(self, tile, new_tile, replace_where):
@@ -1498,6 +2062,7 @@ class LevelsTab(Tab):
             self.get_codes_left()
             self.save_needed = True
             self.button_save["state"] = tk.NORMAL
+            self.check_dependencies()
         else:
             return
 
@@ -1575,6 +2140,7 @@ class LevelsTab(Tab):
             self.get_codes_left()
             self.save_needed = True
             self.button_save["state"] = tk.NORMAL
+            self.check_dependencies()
         else:
             return
 
@@ -1661,6 +2227,7 @@ class LevelsTab(Tab):
         self.get_codes_left()
         self.save_needed = True
         self.button_save["state"] = tk.NORMAL
+        self.check_dependencies()
 
     def on_double_click(self, tree_view):
         # First check if a blank space was selected
@@ -1668,7 +2235,7 @@ class LevelsTab(Tab):
         if entry_index == "":
             return
 
-        win = PopupWindow("Edit Entry", self.config)
+        win = PopupWindow("Edit Entry", self.modlunky_config)
         win.columnconfigure(1, minsize=500)
 
         # Grab the entry's values
@@ -1677,20 +2244,20 @@ class LevelsTab(Tab):
                 values = tree_view.item(child)["values"]
                 break
 
-        col1_lbl = tk.Label(win, text="Entry: ")
-        col1_ent = tk.Entry(win)
+        col1_lbl = ttk.Label(win, text="Entry: ")
+        col1_ent = ttk.Entry(win)
         col1_ent.insert(0, values[0])  # Default is column 1's current value
         col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
         col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
 
-        col2_lbl = tk.Label(win, text="Value: ")
-        col2_ent = tk.Entry(win)
+        col2_lbl = ttk.Label(win, text="Value: ")
+        col2_ent = ttk.Entry(win)
         col2_ent.insert(0, values[1])  # Default is column 2's current value
         col2_lbl.grid(row=1, column=0, padx=2, pady=2, sticky="nse")
         col2_ent.grid(row=1, column=1, padx=2, pady=2, sticky="nsew")
 
-        col3_lbl = tk.Label(win, text="Comment: ")
-        col3_ent = tk.Entry(win)
+        col3_lbl = ttk.Label(win, text="Comment: ")
+        col3_ent = ttk.Entry(win)
         col3_ent.insert(0, values[2])  # Default is column 3's current value
         col3_lbl.grid(row=2, column=0, padx=2, pady=2, sticky="nse")
         col3_ent.grid(row=2, column=1, padx=2, pady=2, sticky="nsew")
@@ -1706,15 +2273,15 @@ class LevelsTab(Tab):
         separator = ttk.Separator(win)
         separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def confirm_entry(self, tree_view, entry1, entry2, entry3):
@@ -1786,7 +2353,7 @@ class LevelsTab(Tab):
             icon="warning",
         )
         if msg_box == "yes":
-            self.lvl_editor_start_canvas.grid()
+            self.lvl_editor_start_frame.grid()
             self.tab_control.grid_remove()
             self.tree_files.grid_remove()
             # Resets widgets
@@ -1811,7 +2378,7 @@ class LevelsTab(Tab):
                 widget.destroy()
 
     def update_value(self, _event):
-        if int(self.scale.get()) == 100:
+        if int(float(self.scale.get())) == 100:
             self.combobox_alt.grid_remove()
             self.combobox.grid(columnspan=2)
         else:
@@ -2122,6 +2689,13 @@ class LevelsTab(Tab):
                             )
                             self.tiles_meta[currow][curcol] = block
                     curcol = curcol + 1
+        else:
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
         self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, lvl):
@@ -2133,6 +2707,7 @@ class LevelsTab(Tab):
             r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
         )
         self.usable_codes = []
+        self.check_dependencies()
         for code in self.usable_codes_string:
             self.usable_codes.append(code)
 
@@ -2253,7 +2828,8 @@ class LevelsTab(Tab):
             else:
                 lvl_path = self.lvls_path / lvl
 
-        levels = []  # Levels to load dependancy tilecodes from
+        # Levels to load dependency tilecodes from
+        levels = []
         if not lvl.startswith("base"):
             if not self.extracts_mode:
                 if Path(self.lvls_path + "/" + "generic.lvl").is_dir():
@@ -2262,7 +2838,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
@@ -2286,7 +2862,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
@@ -2312,7 +2888,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(
@@ -2346,7 +2922,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
@@ -2372,7 +2948,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(
@@ -2400,7 +2976,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(
@@ -2435,7 +3011,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(
@@ -2465,7 +3041,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(
@@ -2493,7 +3069,7 @@ class LevelsTab(Tab):
                     )
                 else:
                     logger.debug(
-                        "local dependancy lvl not found, attempting load from extracts"
+                        "local dependency lvl not found, attempting load from extracts"
                     )
                     levels.append(
                         LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
@@ -3055,8 +3631,8 @@ class LevelsTree(ttk.Treeview):
         item_name = self.item(item_iid)["text"]
         room_data = self.item(item_iid, option="values")
 
-        col1_lbl = tk.Label(win, text="Name: ")
-        col1_ent = tk.Entry(win)
+        col1_lbl = ttk.Label(win, text="Name: ")
+        col1_ent = ttk.Entry(win)
         col1_ent.insert(0, item_name)  # Default to rooms current name
         col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
         col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nswe")
@@ -3068,15 +3644,15 @@ class LevelsTree(ttk.Treeview):
         separator = ttk.Separator(win)
         separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="nsew")
 
-        buttons = tk.Frame(win)
+        buttons = ttk.Frame(win)
         buttons.grid(row=2, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
-        ok_button = tk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
         ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
-        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def confirm_entry(self, entry1, parent, room_data):

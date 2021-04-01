@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .ui import ModlunkyUI
 from .config import Config, make_user_dirs
-from .ui.utils import tb_info
+from .utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
