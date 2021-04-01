@@ -113,8 +113,31 @@ class Tab(ttk.Frame):
         """ Called whenever the tab is loaded."""
 
 
+class ScrollableFrame(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+
+        self.inner = ScrollableFrameInner(parent)
+        self.inner.grid(sticky="nsew")
+
+        super().__init__(self.inner.scrollable_frame, *args, **kwargs)
+
+
+class ScrollableLabelFrame(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+
+        self.wrapper = ttk.LabelFrame(parent, *args, **kwargs)
+        self.wrapper.columnconfigure(0, weight=1)
+        self.wrapper.rowconfigure(0, weight=1)
+        self.wrapper.grid(columnspan=50, stick="nsew")
+
+        self.inner = ScrollableFrameInner(self.wrapper)
+        self.inner.grid(sticky="nsew")
+
+        super().__init__(self.inner.scrollable_frame)
+
+
 # Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
-class ScrollableFrame(ttk.LabelFrame):
+class ScrollableFrameInner(ttk.Frame):
     def __init__(self, parent, *args, **kw):
 
         super().__init__(parent, *args, **kw)
@@ -139,6 +162,8 @@ class ScrollableFrame(ttk.LabelFrame):
 
         # create a frame inside the canvas which will be scrolled with it
         self.scrollable_frame = ttk.Frame(self.canvas)
+        self.scrollable_frame.columnconfigure(0, weight=1)
+        self.scrollable_frame.rowconfigure(0, weight=1)
         self.interior_id = self.canvas.create_window(
             0, 0, window=self.scrollable_frame, anchor=tk.NW
         )

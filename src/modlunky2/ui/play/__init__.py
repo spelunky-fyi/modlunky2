@@ -23,7 +23,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig
-from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -785,12 +785,11 @@ class PlayTab(Tab):
         self.filter_frame = FiltersFrame(self.play_wrapper)
         self.filter_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.packs_frame = ScrollableFrame(
+        self.packs_frame = ScrollableLabelFrame(
             self.play_wrapper, text="Select Mods to Play"
         )
         self.packs_frame.rowconfigure(0, weight=1)
         self.packs_frame.columnconfigure(0, weight=1)
-        self.packs_frame.scrollable_frame.columnconfigure(0, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -1078,7 +1077,7 @@ class PlayTab(Tab):
 
             if display:
                 if row_num > 0:
-                    sep = ttk.Separator(self.packs_frame.scrollable_frame)
+                    sep = ttk.Separator(self.packs_frame)
                     sep.grid(row=row_num, column=0, pady=1, sticky="ew")
                     self.separators.append(sep)
                     row_num += 1
@@ -1155,7 +1154,7 @@ class PlayTab(Tab):
             var = tk.BooleanVar()
 
             item = ttk.Checkbutton(
-                self.packs_frame.scrollable_frame,
+                self.packs_frame,
                 text=f"{pack}",
                 style="ModList.TCheckbutton",
                 variable=var,
@@ -1165,7 +1164,7 @@ class PlayTab(Tab):
                 command=self.on_check_wrapper(pack, var),
             )
 
-            buttons = ttk.Frame(self.packs_frame.scrollable_frame)
+            buttons = ttk.Frame(self.packs_frame)
             buttons.rowconfigure(0, weight=1)
             buttons.folder_button = ttk.Button(
                 buttons,
