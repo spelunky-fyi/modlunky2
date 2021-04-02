@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from .base_classes import BaseSpriteLoader
-from .util import chunks_from_animation
 
 
 class MenuLeaderSheet(BaseSpriteLoader):
