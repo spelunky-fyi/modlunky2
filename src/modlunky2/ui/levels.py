@@ -27,7 +27,7 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.widgets import PopupWindow, ScrollableFrameInner, Tab
+from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -558,8 +558,8 @@ class LevelsTab(Tab):
 
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
-        self.tile_pallete = ScrollableFrameInner(
-            self.editor_tab, width=50
+        self.tile_pallete = ScrollableFrameLegacy(
+            self.editor_tab, text="Tile Pallete", width=50
         )
         self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=1, sticky="swne")
         self.tile_pallete.scrollable_frame["width"] = 50
