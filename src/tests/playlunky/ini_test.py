@@ -4,7 +4,7 @@ from textwrap import dedent
 from modlunky2.ui.play.config import PlaylunkyConfig
 
 
-def test_keep_unknown():
+def test_legacy_keep_unknown():
     config = PlaylunkyConfig.from_ini(
         StringIO(
             dedent(
@@ -30,11 +30,67 @@ def test_keep_unknown():
         == dedent(
             """\
         [settings]
-        random_character_select=on
-        enable_loose_audio_files=on
         some_unknown_field=ABACAB00
+
+        [general_settings]
+        enable_loose_file_warning=on
+
+        [script_settings]
+        enable_developer_mode=off
+
+        [audio_settings]
+        enable_loose_audio_files=on
+        cache_decoded_audio_files=off
+
+        [sprite_settings]
+        random_character_select=on
+        generate_character_journal_stickers=on
+        generate_character_journal_entries=on
+        generate_sticker_pixel_art=on
+    """
+        ).strip()
+    )
+
+
+def test_legacy_no_unknowns():
+    config = PlaylunkyConfig.from_ini(
+        StringIO(
+            dedent(
+                """\
+        [settings]
+        random_character_select=off
+        enable_loose_audio_files=on
         cache_decoded_audio_files=off
         enable_developer_mode=off
+    """
+            )
+        )
+    )
+    config.random_character_select = True
+
+    out = StringIO()
+    config.write(out)
+    out.seek(0)
+
+    assert (
+        out.getvalue().strip()
+        == dedent(
+            """\
+        [general_settings]
+        enable_loose_file_warning=on
+
+        [script_settings]
+        enable_developer_mode=off
+
+        [audio_settings]
+        enable_loose_audio_files=on
+        cache_decoded_audio_files=off
+
+        [sprite_settings]
+        random_character_select=on
+        generate_character_journal_stickers=on
+        generate_character_journal_entries=on
+        generate_sticker_pixel_art=on
     """
         ).strip()
     )

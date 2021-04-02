@@ -639,7 +639,9 @@ class LevelsTab(Tab):
             text="Add TileCode",
             bg="yellow",
             command=lambda: self.add_tilecode(
-                str(self.combobox.get()), str(int(float(self.scale.get()))), self.combobox_alt.get()
+                str(self.combobox.get()),
+                str(int(float(self.scale.get()))),
+                self.combobox_alt.get(),
             ),
         )
         self.button_tilecode_add.grid(

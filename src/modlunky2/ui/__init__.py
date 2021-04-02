@@ -77,7 +77,10 @@ class ModlunkyUI:
         self.root.geometry(modlunky_config.config_file.geometry)
         self.last_geometry = modlunky_config.config_file.geometry
         self.root.bind("<Configure>", self.handle_resize)
-        if modlunky_config.config_file.theme and modlunky_config.config_file.theme in valid_themes:
+        if (
+            modlunky_config.config_file.theme
+            and modlunky_config.config_file.theme in valid_themes
+        ):
             style.theme_use(modlunky_config.config_file.theme)
         self.root.event_add("<<ThemeChange>>", "None")
 

@@ -5,6 +5,7 @@ from queue import Empty
 import tkinter as tk
 from tkinter import ttk
 
+
 class ScrolledText(ttk.Frame):
     def __init__(self, parent, height, state, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
