@@ -704,6 +704,7 @@ class LoadOrderFrame(ttk.LabelFrame):
         self.listbox.insert(selection - 1, label)
         self.listbox.selection_set(selection - 1)
 
+        self.parent.write_load_order()
         self.render_buttons()
 
     def move_down(self):
@@ -721,10 +722,12 @@ class LoadOrderFrame(ttk.LabelFrame):
         self.listbox.insert(selection + 1, label)
         self.listbox.selection_set(selection + 1)
 
+        self.parent.write_load_order()
         self.render_buttons()
 
     def insert(self, label):
         self.listbox.insert(tk.END, label)
+        self.parent.write_load_order()
         self.render_buttons()
 
     def all(self):
@@ -736,6 +739,7 @@ class LoadOrderFrame(ttk.LabelFrame):
         except ValueError:
             return
         self.listbox.delete(idx)
+        self.parent.write_load_order()
         self.render_buttons()
 
 
@@ -1184,6 +1188,7 @@ class PlayTab(Tab):
             (_, item, buttons) = self.checkboxes[pack]
             item.destroy()
             buttons.destroy()
+            self.load_order.delete(pack)
             del self.checkboxes[pack]
 
         self.packs = packs
