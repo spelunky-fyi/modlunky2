@@ -137,7 +137,6 @@ class ScrollableLabelFrame(ttk.Frame):
         super().__init__(self.inner.scrollable_frame)
 
 
-
 class ScrollableMixin(ttk.Frame):
     def on_theme_change(self, _event):
         background = self.style.lookup("TFrame", "background")
@@ -192,7 +191,6 @@ class ScrollableMixin(ttk.Frame):
             self.canvas.unbind_all("<Button-5>")
 
 
-
 class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
     def __init__(self, parent, *args, **kw):
 
@@ -200,7 +198,7 @@ class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
-# Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
+        # Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
         # create a canvas object and a vertical scrollbar for scrolling it
         self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.vscrollbar.grid(row=0, column=1, sticky="nse")
@@ -231,8 +229,6 @@ class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
         self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
 
 
-
-
 class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
     def __init__(self, parent, *args, **kw):
 
@@ -240,7 +236,7 @@ class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
-# Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
+        # Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
         # create a canvas object and a vertical scrollbar for scrolling it
         self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.vscrollbar.grid(row=0, column=1, sticky="nse")

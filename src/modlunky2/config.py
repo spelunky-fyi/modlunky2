@@ -10,8 +10,6 @@ from pathlib import Path
 
 from appdirs import user_config_dir, user_data_dir, user_cache_dir
 
-from modlunky2.constants import APP_DIR
-
 PROGRAMS_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
 DEFAULT_PATH = Path("C:/Program Files (x86)/Steam/steamapps/common/Spelunky 2")
 EXE_NAME = "Spel2.exe"
@@ -66,11 +64,12 @@ def check_registry_for_spel2():
     return None
 
 
-def guess_install_dir():
-    logger.info("Checking if Spelunky 2 is installed in %s", APP_DIR)
-    if (APP_DIR / EXE_NAME).exists():
-        logger.info("Found Spelunky 2!")
-        return APP_DIR
+def guess_install_dir(exe_dir=None):
+    if exe_dir:
+        logger.info("Checking if Spelunky 2 is installed in %s", exe_dir)
+        if (exe_dir / EXE_NAME).exists():
+            logger.info("Found Spelunky 2!")
+            return exe_dir
 
     logger.info("Checking if Spelunky 2 is installed in %s", DEFAULT_PATH)
     if (DEFAULT_PATH / EXE_NAME).exists():
@@ -102,7 +101,7 @@ class ConfigFile:
         self.last_install_browse = None
 
     @classmethod
-    def from_path(cls, config_path: Path):
+    def from_path(cls, config_path: Path, exe_dir=None):
         obj = cls(config_path=config_path)
         needs_save = False
 
@@ -123,7 +122,7 @@ class ConfigFile:
         # Initialize install-dir
         install_dir = config_data.get("install-dir", NOT_PRESENT)
         if install_dir is NOT_PRESENT:
-            install_dir = guess_install_dir()
+            install_dir = guess_install_dir(exe_dir)
             needs_save = True
         elif install_dir is not None:
             install_dir = Path(install_dir)
@@ -195,25 +194,31 @@ class ConfigFile:
 
 
 class Config:
-    def __init__(self, config_file: ConfigFile):
+    def __init__(self, config_file: ConfigFile, exe_dir):
         self.config_file = config_file
+        self.exe_dir = exe_dir
+        if self.exe_dir is None:
+            self.exe_dir = Path(__file__).resolve().parent
 
         self._install_dir = NOT_PRESENT
         self.beta = False
 
     @classmethod
-    def from_path(cls, config_path: Path):
-        return cls(config_file=ConfigFile.from_path(config_path))
+    def from_path(cls, config_path: Path, exe_dir=None):
+        return cls(
+            config_file=ConfigFile.from_path(config_path, exe_dir=exe_dir),
+            exe_dir=exe_dir,
+        )
 
     @classmethod
-    def default(cls):
-        return Config.from_path(CONFIG_DIR / "config.json")
+    def default(cls, exe_dir=None):
+        return Config.from_path(CONFIG_DIR / "config.json", exe_dir=exe_dir)
 
     @property
     def install_dir(self):
         if self._install_dir is NOT_PRESENT:
             if self.config_file.install_dir is None:
-                return APP_DIR
+                return self.exe_dir
             return self.config_file.install_dir
         return self._install_dir
 
