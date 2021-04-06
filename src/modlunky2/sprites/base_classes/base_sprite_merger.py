@@ -54,20 +54,26 @@ class BaseSpriteMerger(ABC):
 
         max_image_width = 0
         total_image_height = 0
-        for sprite_loader_type, chunk_map in self._origin_map.items():
-            origin_chunk_size = (0, 0)
-            for coords in chunk_map.values():
-                origin_chunk_size = (
-                    max(origin_chunk_size[0], coords[2]),
-                    max(origin_chunk_size[1], coords[3]),
+        for sprite_loader_type, chunk_maps in self._origin_map.items():
+            if not isinstance(chunk_maps, list):
+                chunk_maps = [ chunk_maps ]
+            image_sizes = []
+            for chunk_map in chunk_maps:
+                origin_chunk_size = (0, 0)
+                for coords in chunk_map.values():
+                    origin_chunk_size = (
+                        max(origin_chunk_size[0], coords[2]),
+                        max(origin_chunk_size[1], coords[3]),
+                    )
+                real_chunk_size = self._get_real_chunk_size(sprite_loader_type._chunk_size)
+                origin_image_size = tuple(
+                    int(image_size * real_chunk_size) for image_size in origin_chunk_size
                 )
-            real_chunk_size = self._get_real_chunk_size(sprite_loader_type._chunk_size)
-            origin_image_size = tuple(
-                image_size * real_chunk_size for image_size in origin_chunk_size
-            )
-            max_image_width = max(max_image_width, origin_image_size[0])
-            total_image_height = total_image_height + origin_image_size[1]
-            self._origin_sizes[sprite_loader_type] = origin_image_size
+                max_image_width = max(max_image_width, origin_image_size[0])
+                total_image_height = total_image_height + origin_image_size[1]
+                image_sizes.append(origin_image_size)
+            self._origin_sizes[sprite_loader_type] = image_sizes
+            self._origin_map[sprite_loader_type] = chunk_maps
 
         image_size = (int(max_image_width), int(total_image_height))
         self._sprite_sheet = Image.new(mode="RGBA", size=image_size, color=(0, 0, 0, 0))
@@ -111,16 +117,16 @@ class BaseSpriteMerger(ABC):
 
     def _get_image_coords(
         self,
-        left: int,
-        upper: int,
-        right: int,
-        lower: int,
+        left: float,
+        upper: float,
+        right: float,
+        lower: float,
         chunk_size: int,
         height_offset: int,
     ) -> Tuple[image_crop_tuple_whole_number, image_crop_tuple_whole_number]:
         if self._separate_grid_file:
             bbox = (left, upper, right, lower)
-            bbox = tuple(x * self._get_real_chunk_size(chunk_size) for x in bbox)
+            bbox = tuple(int(x * self._get_real_chunk_size(chunk_size)) for x in bbox)
             bbox = (bbox[0], bbox[1] + height_offset, bbox[2], bbox[3] + height_offset)
             return bbox, bbox
 
@@ -129,11 +135,11 @@ class BaseSpriteMerger(ABC):
         grid_bbox = [coord * real_chunk_size for coord in grid_bbox]
         grid_bbox[1] = grid_bbox[1] + height_offset
         grid_bbox[3] = grid_bbox[3] + height_offset
-        grid_bbox = tuple(grid_bbox)
+        grid_bbox = tuple([int(x) for x in grid_bbox])
 
         chunk_dimensions = (right - left, lower - upper)
         grid_extensions_for_internal_offset = [
-            chunk_dimension * self._grid_hint_size
+            int(chunk_dimension * self._grid_hint_size)
             for chunk_dimension in chunk_dimensions
         ]
         chunk_bbox = (
@@ -172,39 +178,41 @@ class BaseSpriteMerger(ABC):
         logger.info("Merging sprites for sheet %s", self.stem)
 
         height_offset = 0
-        for sprite_loader_type, chunk_map in self._origin_map.items():
+        for sprite_loader_type, chunk_maps in self._origin_map.items():
             matching_sprite_loaders = [
                 x for x in sprite_loaders if isinstance(x, sprite_loader_type)
             ]
             if matching_sprite_loaders:
                 sprite_loader = matching_sprite_loaders[0]
                 chunk_size = sprite_loader_type._chunk_size
-                image_size = self._origin_sizes[sprite_loader_type]
-                for name, coords in chunk_map.items():
-                    source_image = sprite_loader.get(name)
-                    if source_image:
-                        grid_coords, chunk_coords = self._get_image_coords(
-                            *coords, chunk_size, height_offset
-                        )
-                        self._put_grid(*grid_coords, chunk_size)
-                        try:
-                            self._put_chunk(*chunk_coords, source_image)
-                        except ValueError:
-                            logger.error(
-                                "Failed putting image %s into merged sprite sheet",
-                                name,
+                image_sizes = self._origin_sizes[sprite_loader_type]
+                for chunk_map, image_size in zip(chunk_maps, image_sizes):
+                    for name, coords in chunk_map.items():
+                        source_image = sprite_loader.get(name)
+                        if source_image:
+                            grid_coords, chunk_coords = self._get_image_coords(
+                                *coords, chunk_size, height_offset
                             )
-                    else:
-                        logger.error(
-                            "Could not find image %s in source %s",
-                            name,
-                            sprite_loader_type,
-                        )
+                            self._put_grid(*grid_coords, chunk_size)
+                            try:
+                                self._put_chunk(*chunk_coords, source_image)
+                            except ValueError as exception:
+                                logger.error(
+                                    "Failed putting image %s into merged sprite sheet: %s",
+                                    name,
+                                    str(exception)
+                                )
+                        else:
+                            logger.error(
+                                "Could not find image %s in source %s",
+                                name,
+                                sprite_loader_type,
+                            )
+                    height_offset += image_size[1]
             else:
                 logger.error(
                     "Required sprite loader %s not supplied", sprite_loader_type
                 )
-            height_offset = height_offset + image_size[1]
         return self._sprite_sheet
 
     def save(self):

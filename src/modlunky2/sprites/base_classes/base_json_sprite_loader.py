@@ -19,5 +19,7 @@ class BaseJsonSpriteLoader(BaseSpriteLoader):
 
         for entity_name in self._entity_names:
             self._chunk_map.update(
-                chunks_from_json(entities_json, textures_json, entity_name)
+                chunks_from_json(
+                    entities_json, textures_json, entity_name, self._chunk_size
+                )
             )
