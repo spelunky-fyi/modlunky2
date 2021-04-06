@@ -61,6 +61,7 @@ class StickerSheet(BaseSpriteLoader):
         "sticker_tun": (1, 5, 2, 6),
         "sticker_cave_man": (2, 5, 3, 6),
         "sticker_yang": (3, 5, 4, 6),
+        "sticker_parsley": (4, 5, 5, 6),
         "sticker_parsnip": (5, 5, 6, 6),
         "sticker_parmesan": (6, 5, 7, 6),
         "sticker_van_horsing": (7, 5, 8, 6),
