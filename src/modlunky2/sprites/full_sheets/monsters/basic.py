@@ -14,19 +14,19 @@ from modlunky2.sprites.merger_factory import create_merger_factory_for_source_sh
 
 _basic1_factory = create_merger_factory_for_source_sheet(Basic1, JournalMonsterSheet)
 SnakeSpriteMerger = _basic1_factory(
-    "monsters/snake", "journal_snake", ["ENT_TYPE_MONS_SNAKE"]
+    "Monsters/snake", "journal_snake", ["ENT_TYPE_MONS_SNAKE"]
 )
-BatSpriteMerger = _basic1_factory("monsters/bat", "journal_bat", ["ENT_TYPE_MONS_BAT"])
-FlySpriteMerger = _basic1_factory("monsters/fly", None, ["ENT_TYPE_ITEM_FLY"])
+BatSpriteMerger = _basic1_factory("Monsters/bat", "journal_bat", ["ENT_TYPE_MONS_BAT"])
+FlySpriteMerger = _basic1_factory("Monsters/fly", None, ["ENT_TYPE_ITEM_FLY"])
 SkeletonSpriteMerger = _basic1_factory(
-    "monsters/skeleton", "journal_skeleton", ["ENT_TYPE_MONS_SKELETON"]
+    "Monsters/skeleton", "journal_skeleton", ["ENT_TYPE_MONS_SKELETON"]
 )
 SpiderSpriteMerger = _basic1_factory(
-    "monsters/spider", "journal_spider", ["ENT_TYPE_MONS_SPIDER"]
+    "Monsters/spider", "journal_spider", ["ENT_TYPE_MONS_SPIDER"]
 )
-# EarSpriteMerger = _basic1_factory("people/ear", None, [ "ENT_TYPE_MONS_EAR" ])  # RIP Ear
+# EarSpriteMerger = _basic1_factory("People/ear", None, [ "ENT_TYPE_MONS_EAR" ])  # RIP Ear
 ShopkeeperSpriteMerger = _basic1_factory(
-    "people/shopkeeper",
+    "People/shopkeeper",
     None,
     ["ENT_TYPE_MONS_SHOPKEEPER"],
     additional_origins={
@@ -34,30 +34,30 @@ ShopkeeperSpriteMerger = _basic1_factory(
         StickerSheet: {"sticker_shopkeeper": (0, 0, 1, 1)},
     },
 )
-UfoSpriteMerger = _basic1_factory("monsters/ufo", "journal_ufo", ["ENT_TYPE_MONS_UFO"])
+UfoSpriteMerger = _basic1_factory("Monsters/ufo", "journal_ufo", ["ENT_TYPE_MONS_UFO"])
 AlienSpriteMerger = _basic1_factory(
-    "monsters/alien", "journal_alien", ["ENT_TYPE_MONS_ALIEN"]
+    "Monsters/alien", "journal_alien", ["ENT_TYPE_MONS_ALIEN"]
 )
 CobraSpriteMerger = _basic1_factory(
-    "monsters/cobra", "journal_cobra", ["ENT_TYPE_MONS_COBRA"]
+    "Monsters/cobra", "journal_cobra", ["ENT_TYPE_MONS_COBRA"]
 )
 ScorpionSpriteMerger = _basic1_factory(
-    "monsters/scorpion", "journal_scorpion", ["ENT_TYPE_MONS_SCORPION"]
+    "Monsters/scorpion", "journal_scorpion", ["ENT_TYPE_MONS_SCORPION"]
 )
 GoldenMonkeySpriteMerger = _basic1_factory(
-    "monsters/golden_monkey", "journal_golden_monkey", ["ENT_TYPE_MONS_GOLDMONKEY"]
+    "Monsters/golden_monkey", "journal_golden_monkey", ["ENT_TYPE_MONS_GOLDMONKEY"]
 )
-BeeSpriteMerger = _basic1_factory("monsters/bee", "journal_bee", ["ENT_TYPE_MONS_BEE"])
+BeeSpriteMerger = _basic1_factory("Monsters/bee", "journal_bee", ["ENT_TYPE_MONS_BEE"])
 MagmarSpriteMerger = _basic1_factory(
-    "monsters/magmar", "journal_magmar", ["ENT_TYPE_MONS_MAGMAMAN"]
+    "Monsters/magmar", "journal_magmar", ["ENT_TYPE_MONS_MAGMAMAN"]
 )
 
 _basic2_factory = create_merger_factory_for_source_sheet(Basic2, JournalMonsterSheet)
 VampireSpriteMerger = _basic2_factory(
-    "monsters/vampire", "journal_vampire", ["ENT_TYPE_MONS_VAMPIRE"]
+    "Monsters/vampire", "journal_vampire", ["ENT_TYPE_MONS_VAMPIRE"]
 )
 VladSpriteMerger = _basic2_factory(
-    "monsters/vlad",
+    "Monsters/vlad",
     None,
     ["ENT_TYPE_MONS_VLAD"],
     additional_origins={
@@ -66,10 +66,10 @@ VladSpriteMerger = _basic2_factory(
     },
 )
 LeprechaunSpriteMerger = _basic2_factory(
-    "monsters/leprechaun", "journal_leprechaun", ["ENT_TYPE_MONS_LEPRECHAUN"]
+    "Monsters/leprechaun", "journal_leprechaun", ["ENT_TYPE_MONS_LEPRECHAUN"]
 )
 CaveManSpriteMerger = _basic2_factory(
-    "monsters/cave_man",
+    "Monsters/cave_man",
     None,
     ["ENT_TYPE_MONS_CAVEMAN"],
     additional_origins={
@@ -79,13 +79,13 @@ CaveManSpriteMerger = _basic2_factory(
     },
 )
 BodyguardSpriteMerger = _basic2_factory(
-    "people/bodyguard",
+    "People/bodyguard",
     "journal_tusks_bodyguard",
     ["ENT_TYPE_MONS_BODYGUARD"],
     journal_sheet_override=JournalPeopleSheet,
 )
 OldHunterSpriteMerger = _basic2_factory(
-    "people/old_hunter",
+    "People/old_hunter",
     None,
     ["ENT_TYPE_MONS_OLD_HUNTER"],
     additional_origins={
@@ -94,7 +94,7 @@ OldHunterSpriteMerger = _basic2_factory(
     },
 )
 MerchantSpriteMerger = _basic2_factory(
-    "people/merchant",
+    "People/merchant",
     None,
     ["ENT_TYPE_MONS_MERCHANT"],
     additional_origins={
@@ -105,12 +105,12 @@ MerchantSpriteMerger = _basic2_factory(
 
 _basic3_factory = create_merger_factory_for_source_sheet(Basic3, JournalPeopleSheet)
 HundunsServantSpriteMerger = _basic3_factory(
-    "people/hunduns_servant",
+    "People/hunduns_servant",
     "journal_beg",
     ["ENT_TYPE_MONS_HUNDUNS_SERVANT"],
 )
 ThiefSpriteMerger = _basic3_factory(
-    "people/thief",
+    "People/thief",
     None,
     ["ENT_TYPE_MONS_THIEF"],
     additional_origins={
@@ -119,7 +119,7 @@ ThiefSpriteMerger = _basic3_factory(
     },
 )
 ParmesanSpriteMerger = _basic3_factory(
-    "people/parmesan",
+    "People/parmesan",
     None,
     ["ENT_TYPE_MONS_SISTER_PARMESAN"],
     additional_origins={
@@ -128,7 +128,7 @@ ParmesanSpriteMerger = _basic3_factory(
     },
 )
 ParsleySpriteMerger = _basic3_factory(
-    "people/parslet",
+    "People/parslet",
     None,
     ["ENT_TYPE_MONS_SISTER_PARSLEY"],
     additional_origins={
@@ -137,7 +137,7 @@ ParsleySpriteMerger = _basic3_factory(
     },
 )
 ParsnipSpriteMerger = _basic3_factory(
-    "people/parsnip",
+    "People/parsnip",
     None,
     ["ENT_TYPE_MONS_SISTER_PARSNIP"],
     additional_origins={
@@ -146,7 +146,7 @@ ParsnipSpriteMerger = _basic3_factory(
     },
 )
 YanSpriteMerger = _basic3_factory(
-    "people/yang",
+    "People/yang",
     None,
     ["ENT_TYPE_MONS_YANG"],
     additional_origins={
@@ -159,77 +159,77 @@ _monsters1_factory = create_merger_factory_for_source_sheet(
     Monsters1, JournalMonsterSheet
 )
 RobotSpriteMerger = _monsters1_factory(
-    "monsters/robot",
+    "Monsters/robot",
     "journal_robot",
     ["ENT_TYPE_MONS_ROBOT"],
 )
 ImpSpriteMerger = _monsters1_factory(
-    "monsters/imp",
+    "Monsters/imp",
     "journal_imp",
     ["ENT_TYPE_MONS_IMP"],
 )
 ManTrapSpriteMerger = _monsters1_factory(
-    "monsters/man_trap",
+    "Monsters/man_trap",
     "journal_man_trap",
     ["ENT_TYPE_MONS_MANTRAP"],
 )
 TikiManSpriteMerger = _monsters1_factory(
-    "monsters/tiki_man",
+    "Monsters/tiki_man",
     "journal_tiki_man",
     ["ENT_TYPE_MONS_TIKIMAN"],
 )
 CritterSnailSpriteMerger = _monsters1_factory(
-    "critters/snail",
+    "Critters/snail",
     None,
     ["ENT_TYPE_MONS_CRITTERSNAIL"],
 )
 CritterDungBeetleSpriteMerger = _monsters1_factory(
-    "critters/dung_beetle",
+    "Critters/dung_beetle",
     None,
     ["ENT_TYPE_MONS_CRITTERDUNGBEETLE"],
 )
 FireBugSpriteMerger = _monsters1_factory(
-    "monsters/fire_bug",
+    "Monsters/fire_bug",
     "journal_fire_bug",
     ["ENT_TYPE_MONS_FIREBUG", "ENT_TYPE_MONS_FIREBUG_UNCHAINED"],
 )
 MoleSpriteMerger = _monsters1_factory(
-    "monsters/mole",
+    "Monsters/mole",
     "journal_mole",
     ["ENT_TYPE_MONS_MOLE"],
 )
 WitchDoctorSpriteMerger = _monsters1_factory(
-    "monsters/witch_doctor",
+    "Monsters/witch_doctor",
     "journal_witch_doctor",
     ["ENT_TYPE_MONS_WITCHDOCTOR"],
 )
 CritterButterflySpriteMerger = _monsters1_factory(
-    "critters/butterfly",
+    "Critters/butterfly",
     None,
     ["ENT_TYPE_MONS_CRITTERBUTTERFLY"],
 )
 HornedLizardSpriteMerger = _monsters1_factory(
-    "monsters/horned_lizard",
+    "Monsters/horned_lizard",
     "journal_horned_lizard",
     ["ENT_TYPE_MONS_HORNEDLIZARD"],
 )
 WitchDoctorSkullSpriteMerger = _monsters1_factory(
-    "monsters/witch_doctor_skull",
+    "Monsters/witch_doctor_skull",
     None,
     ["ENT_TYPE_MONS_WITCHDOCTORSKULL"],
 )
 MonkeySpriteMerger = _monsters1_factory(
-    "monsters/monkey",
+    "Monsters/monkey",
     "journal_monkey",
     ["ENT_TYPE_MONS_MONKEY"],
 )
 HangSpiderSpriteMerger = _monsters1_factory(
-    "monsters/hang_spider",
+    "Monsters/hang_spider",
     "journal_hang_spider",
     ["ENT_TYPE_MONS_HANGSPIDER"],
 )
 MosquitoSpriteMerger = _monsters1_factory(
-    "monsters/mosquito",
+    "Monsters/mosquito",
     "journal_mosquito",
     ["ENT_TYPE_MONS_MOSQUITO"],
 )
@@ -238,67 +238,67 @@ _monsters2_factory = create_merger_factory_for_source_sheet(
     Monsters2, JournalMonsterSheet
 )
 JiangshiSpriteMerger = _monsters2_factory(
-    "monsters/jiangshi",
+    "Monsters/jiangshi",
     "journal_jiangshi",
     ["ENT_TYPE_MONS_JIANGSHI"],
 )
 HermitCrabSpriteMerger = _monsters2_factory(
-    "monsters/hermit_crab",
+    "Monsters/hermit_crab",
     "journal_hermit_crab",
     ["ENT_TYPE_MONS_HERMITCRAB"],
 )
 FlyingFishSpriteMerger = _monsters2_factory(
-    "monsters/flying_fish",
+    "Monsters/flying_fish",
     "journal_flying_fish",
     ["ENT_TYPE_MONS_FISH"],
 )
 OctopusSpriteMerger = _monsters2_factory(
-    "monsters/octopus",
+    "Monsters/octopus",
     "journal_octopy",
     ["ENT_TYPE_MONS_OCTOPUS"],
 )
 CritterCrabSpriteMerger = _monsters2_factory(
-    "critters/crab",
+    "Critters/crab",
     None,
     ["ENT_TYPE_MONS_CRITTERCRAB"],
 )
 FemaleJiangshiSpriteMerger = _monsters2_factory(
-    "monsters/female_jiangshi",
+    "Monsters/female_jiangshi",
     "journal_jiangshi_assassin",
     ["ENT_TYPE_MONS_FEMALE_JIANGSHI"],
 )
 CritterFishSpriteMerger = _monsters2_factory(
-    "critters/fish",
+    "Critters/fish",
     None,
     ["ENT_TYPE_MONS_CRITTERFISH"],
 )
 CrocManSpriteMerger = _monsters2_factory(
-    "monsters/croc_man",
+    "Monsters/croc_man",
     "journal_croc_man",
     ["ENT_TYPE_MONS_CROCMAN"],
 )
 SorceressSpriteMerger = _monsters2_factory(
-    "monsters/sorceress",
+    "Monsters/sorceress",
     "journal_sorceress",
     ["ENT_TYPE_MONS_SORCERESS"],
 )
 CatMummySpriteMerger = _monsters2_factory(
-    "monsters/cat_mummy",
+    "Monsters/cat_mummy",
     "journal_cat_mummy",
     ["ENT_TYPE_MONS_CATMUMMY"],
 )
 CritterAnchovySpriteMerger = _monsters2_factory(
-    "critters/anchovy",
+    "Critters/anchovy",
     None,
     ["ENT_TYPE_MONS_CRITTERANCHOVY"],
 )
 NecromancerSpriteMerger = _monsters2_factory(
-    "monsters/necromancer",
+    "Monsters/necromancer",
     "journal_necromancer",
     ["ENT_TYPE_MONS_NECROMANCER"],
 )
 CrittersLocustSpriteMerger = _monsters2_factory(
-    "critters/locust",
+    "Critters/locust",
     None,
     ["ENT_TYPE_MONS_CRITTERLOCUST"],
 )
@@ -307,72 +307,72 @@ _monsters3_factory = create_merger_factory_for_source_sheet(
     Monsters3, JournalMonsterSheet
 )
 YetiSpriteMerger = _monsters3_factory(
-    "monsters/yeti",
+    "Monsters/yeti",
     "journal_yeti",
     ["ENT_TYPE_MONS_YETI"],
 )
 ProtoShopkeeperSpriteMerger = _monsters3_factory(
-    "monsters/proto_shopkeeper",
+    "Monsters/proto_shopkeeper",
     "journal_proto_shopkeeper",
     ["ENT_TYPE_MONS_PROTOSHOPKEEPER"],
 )
 CritterFireflySpriteMerger = _monsters3_factory(
-    "critters/firefly",
+    "Critters/firefly",
     None,
     ["ENT_TYPE_MONS_CRITTERFIREFLY"],
 )
 SpriteMerger = _monsters3_factory(
-    "critters/penguin",
+    "Critters/penguin",
     None,
     ["ENT_TYPE_MONS_CRITTERPENGUIN"],
 )
 SpriteMerger = _monsters3_factory(
-    "critters/drone",
+    "Critters/drone",
     None,
     ["ENT_TYPE_MONS_CRITTERDRONE"],
 )
 SpriteMerger = _monsters3_factory(
-    "critters/slime",
+    "Critters/slime",
     None,
     ["ENT_TYPE_MONS_CRITTERSLIME"],
 )
 JumpdogSpriteMerger = _monsters3_factory(
-    "monsters/jumpdog",
+    "Monsters/jumpdog",
     "journal_egg_plup",
     ["ENT_TYPE_MONS_JUMPDOG"],
 )
 TadpoleSpriteMerger = _monsters3_factory(
-    "monsters/tadpole",
+    "Monsters/tadpole",
     "journal_tadpole",
     ["ENT_TYPE_MONS_TADPOLE"],
 )
 OlmiteNakedSpriteMerger = _monsters3_factory(
-    "monsters/olmite_naked",
+    "Monsters/olmite_naked",
     "journal_olmite",
     ["ENT_TYPE_MONS_OLMITE_NAKED"],
 )
 OlmitedArmoredSpriteMerger = _monsters3_factory(
-    "monsters/olmite_armored",
+    "Monsters/olmite_armored",
     None,
     ["ENT_TYPE_MONS_OLMITE_BODYARMORED"],
 )
 OlmiteHelmetSpriteMerger = _monsters3_factory(
-    "monsters/olmite_helmet",
+    "Monsters/olmite_helmet",
     None,
     ["ENT_TYPE_MONS_OLMITE_HELMET"],
 )
 GrubSpriteMerger = _monsters3_factory(
-    "monsters/grub",
+    "Monsters/grub",
     "journal_grub",
     ["ENT_TYPE_MONS_GRUB", "ENT_TYPE_ITEM_EGGSAC"],
 )
 FrogSpriteMerger = _monsters3_factory(
-    "monsters/frog",
+    "Monsters/frog",
     "journal_frog",
     ["ENT_TYPE_MONS_FROG"],
 )
 FireFrogSpriteMerger = _monsters3_factory(
-    "monsters/fire_frog",
+    "Monsters/fire_frog",
     "journal_fire_frog",
     ["ENT_TYPE_MONS_FIREFROG"],
 )

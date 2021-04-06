@@ -7,7 +7,7 @@ from ..journal_mons_big import JournalBigMonsterSheet
 
 
 class GhistSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/ghist.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghist.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalPeopleSheet: {"journal_ghost_shopkeeper": (0, 0, 1, 1)},
@@ -16,7 +16,7 @@ class GhistSpriteMerger(BaseJsonSpriteMerger):
 
 
 class GhostSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/ghost.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghost.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalBigMonsterSheet: {"journal_ghost": (0, 0, 1, 1)},
@@ -25,21 +25,21 @@ class GhostSpriteMerger(BaseJsonSpriteMerger):
 
 
 class GhostMediumSadSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/ghost_sad.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghost_sad.png")
     _grid_hint_size = 8
     _origin_map = {}
     _entity_origins = {Ghost: ["ENT_TYPE_MONS_GHOST_MEDIUM_SAD"]}
 
 
 class GhostMediumHappySpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/ghost_happy.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghost_happy.png")
     _grid_hint_size = 8
     _origin_map = {}
     _entity_origins = {Ghost: ["ENT_TYPE_MONS_GHOST_MEDIUM_HAPPY"]}
 
 
 class GhostSmallSadSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/ghost_small_sad.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghost_small_sad.png")
     _grid_hint_size = 8
     _origin_map = {}
     _entity_origins = {Ghost: ["ENT_TYPE_MONS_GHOST_SMALL_SAD"]}
@@ -47,7 +47,7 @@ class GhostSmallSadSpriteMerger(BaseJsonSpriteMerger):
 
 class GhostSmallHappySpriteMerger(BaseJsonSpriteMerger):
     _target_sprite_sheet_path = Path(
-        "Data/Textures/Entities/ghost/ghost_small_happy.png"
+        "Data/Textures/Entities/Ghost/ghost_small_happy.png"
     )
     _grid_hint_size = 8
     _origin_map = {}
@@ -56,7 +56,7 @@ class GhostSmallHappySpriteMerger(BaseJsonSpriteMerger):
 
 class GhostSmallSurprisedSpriteMerger(BaseJsonSpriteMerger):
     _target_sprite_sheet_path = Path(
-        "Data/Textures/Entities/ghost/ghost_small_surprised.png"
+        "Data/Textures/Entities/Ghost/ghost_small_surprised.png"
     )
     _grid_hint_size = 8
     _origin_map = {}
@@ -65,7 +65,7 @@ class GhostSmallSurprisedSpriteMerger(BaseJsonSpriteMerger):
 
 class GhostSmallAngrySpriteMerger(BaseJsonSpriteMerger):
     _target_sprite_sheet_path = Path(
-        "Data/Textures/Entities/ghost/ghost_small_angry.png"
+        "Data/Textures/Entities/Ghost/ghost_small_angry.png"
     )
     _grid_hint_size = 8
     _origin_map = {}
@@ -73,7 +73,7 @@ class GhostSmallAngrySpriteMerger(BaseJsonSpriteMerger):
 
 
 class MegaJellySpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/ghost/mega_jelly.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/mega_jelly.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalBigMonsterSheet: {"journal_celestial_jellyfish": (0, 0, 1, 1)},
