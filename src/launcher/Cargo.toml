@@ -1,0 +1,23 @@
+[package]
+name = "launcher"
+version = "0.1.0"
+authors = ["garebear <mail@spelunky.fyi>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+directories = "3.0.1"
+zip = "0.5.11"
+anyhow = "1.0.40"
+
+[build-dependencies]
+zip = "0.5.11"
+walkdir = "2.3.2"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[[bin]]
+name = "modlunky2"
+path = "src/main.rs"

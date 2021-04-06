@@ -5,6 +5,7 @@ from queue import Empty
 import tkinter as tk
 from tkinter import ttk
 
+
 class ScrolledText(ttk.Frame):
     def __init__(self, parent, height, state, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -113,41 +114,30 @@ class Tab(ttk.Frame):
         """ Called whenever the tab is loaded."""
 
 
-# Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
-class ScrollableFrame(ttk.LabelFrame):
-    def __init__(self, parent, *args, **kw):
+class ScrollableFrame(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
 
-        super().__init__(parent, *args, **kw)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+        self.inner = ScrollableFrameInner(parent)
+        self.inner.grid(sticky="nsew")
 
-        # create a canvas object and a vertical scrollbar for scrolling it
-        self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
-        self.vscrollbar.grid(row=0, column=1, sticky="nse")
+        super().__init__(self.inner.scrollable_frame, *args, **kwargs)
 
-        self.style = ttk.Style()
-        background = self.style.lookup("TFrame", "background")
 
-        self.canvas = tk.Canvas(self, bg=background, yscrollcommand=self.vscrollbar.set)
-        self.bind_all("<<ThemeChange>>", self.on_theme_change)
-        self.canvas.grid(row=0, column=0, sticky="nswe")
-        self.vscrollbar.config(command=self.canvas.yview)
+class ScrollableLabelFrame(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
 
-        # reset the view
-        self.canvas.xview_moveto(0)
-        self.canvas.yview_moveto(0)
+        self.wrapper = ttk.LabelFrame(parent, *args, **kwargs)
+        self.wrapper.columnconfigure(0, weight=1)
+        self.wrapper.rowconfigure(0, weight=1)
+        self.wrapper.grid(columnspan=50, stick="nsew")
 
-        # create a frame inside the canvas which will be scrolled with it
-        self.scrollable_frame = ttk.Frame(self.canvas)
-        self.interior_id = self.canvas.create_window(
-            0, 0, window=self.scrollable_frame, anchor=tk.NW
-        )
+        self.inner = ScrollableFrameInner(self.wrapper)
+        self.inner.grid(sticky="nsew")
 
-        self.scrollable_frame.bind("<Configure>", self._configure_interior)
-        self.canvas.bind("<Configure>", self._configure_canvas)
-        self.canvas.bind("<Enter>", self._bind_to_mousewheel)
-        self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
+        super().__init__(self.inner.scrollable_frame)
 
+
+class ScrollableMixin(ttk.Frame):
     def on_theme_change(self, _event):
         background = self.style.lookup("TFrame", "background")
         self.canvas.configure(background=background)
@@ -199,6 +189,80 @@ class ScrollableFrame(ttk.LabelFrame):
         else:
             self.canvas.unbind_all("<Button-4>")
             self.canvas.unbind_all("<Button-5>")
+
+
+class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
+    def __init__(self, parent, *args, **kw):
+
+        ttk.Frame.__init__(self, parent, *args, **kw)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
+        # create a canvas object and a vertical scrollbar for scrolling it
+        self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        self.vscrollbar.grid(row=0, column=1, sticky="nse")
+
+        self.style = ttk.Style()
+        background = self.style.lookup("TFrame", "background")
+
+        self.canvas = tk.Canvas(self, bg=background, yscrollcommand=self.vscrollbar.set)
+        self.bind_all("<<ThemeChange>>", self.on_theme_change)
+        self.canvas.grid(row=0, column=0, sticky="nswe")
+        self.vscrollbar.config(command=self.canvas.yview)
+
+        # reset the view
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.scrollable_frame.columnconfigure(0, weight=1)
+        self.scrollable_frame.rowconfigure(0, weight=1)
+        self.interior_id = self.canvas.create_window(
+            0, 0, window=self.scrollable_frame, anchor=tk.NW
+        )
+
+        self.scrollable_frame.bind("<Configure>", self._configure_interior)
+        self.canvas.bind("<Configure>", self._configure_canvas)
+        self.canvas.bind("<Enter>", self._bind_to_mousewheel)
+        self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
+
+
+class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
+    def __init__(self, parent, *args, **kw):
+
+        ttk.LabelFrame.__init__(self, parent, *args, **kw)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # Adapted from https://gist.github.com/JackTheEngineer/81df334f3dcff09fd19e4169dd560c59
+        # create a canvas object and a vertical scrollbar for scrolling it
+        self.vscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        self.vscrollbar.grid(row=0, column=1, sticky="nse")
+
+        self.style = ttk.Style()
+        background = self.style.lookup("TFrame", "background")
+
+        self.canvas = tk.Canvas(self, bg=background, yscrollcommand=self.vscrollbar.set)
+        self.bind_all("<<ThemeChange>>", self.on_theme_change)
+        self.canvas.grid(row=0, column=0, sticky="nswe")
+        self.vscrollbar.config(command=self.canvas.yview)
+
+        # reset the view
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.interior_id = self.canvas.create_window(
+            0, 0, window=self.scrollable_frame, anchor=tk.NW
+        )
+
+        self.scrollable_frame.bind("<Configure>", self._configure_interior)
+        self.canvas.bind("<Configure>", self._configure_canvas)
+        self.canvas.bind("<Enter>", self._bind_to_mousewheel)
+        self.canvas.bind("<Leave>", self._unbind_from_mousewheel)
 
 
 class PopupWindow(ttk.Frame):

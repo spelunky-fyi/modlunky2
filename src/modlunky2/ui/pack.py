@@ -12,7 +12,7 @@ from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.hashing import md5sum_path
 from modlunky2.assets.patcher import Patcher
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
 from modlunky2.utils import is_patched
 
 logger = logging.getLogger("modlunky2")
@@ -129,7 +129,7 @@ class PackTab(Tab):
         self.warning = WarningFrame(self)
         self.warning.grid(row=0, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
 
-        self.frame = ScrollableFrame(self, text="Select mods to pack")
+        self.frame = ScrollableLabelFrame(self, text="Select mods to pack")
         self.frame.grid(row=1, column=0, columnspan=3, pady=5, padx=5, sticky="nswe")
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
@@ -213,14 +213,14 @@ class PackTab(Tab):
         return pack_dirs
 
     def on_load(self):
-        for child in self.frame.scrollable_frame.winfo_children():
+        for child in self.frame.winfo_children():
             child.destroy()
         self.checkbox_vars.clear()
 
         for idx, exe in enumerate(self.get_packs()):
             str_var = tk.StringVar()
             item = ttk.Checkbutton(
-                self.frame.scrollable_frame,
+                self.frame,
                 text=f" {exe}",
                 image=self.default_icon,
                 style="ModList.TCheckbutton",

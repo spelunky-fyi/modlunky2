@@ -26,6 +26,11 @@ def main():
         default="INFO",
         help="What level to log at. Default: %(default)s",
     )
+    parser.add_argument(
+        "--exe-dir",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
     args = parser.parse_args()
 
     log_format = "%(asctime)s: %(message)s"
@@ -43,7 +48,10 @@ def main():
 def launch(args, log_level):
 
     make_user_dirs()
-    config = Config.default()
+    exe_dir = args.exe_dir
+    if exe_dir:
+        exe_dir = Path(exe_dir)
+    config = Config.default(exe_dir=exe_dir)
 
     if args.install_dir:
         config.install_dir = Path(args.install_dir)

@@ -22,8 +22,8 @@ from PIL import Image, ImageTk
 
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.play.config import PlaylunkyConfig
-from modlunky2.ui.widgets import ScrollableFrame, Tab, ToolTip
+from modlunky2.ui.play.config import PlaylunkyConfig, SECTIONS
+from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -444,41 +444,8 @@ class OptionsFrame(ttk.LabelFrame):
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
 
-        self.random_char_var = tk.BooleanVar()
-        self.random_char_checkbox = ttk.Checkbutton(
-            self,
-            text="Random Character Select",
-            variable=self.random_char_var,
-            compound="left",
-        )
-        self.random_char_checkbox.grid(row=0, column=0, sticky="w")
-
-        self.loose_audio_var = tk.BooleanVar()
-        self.loose_audio_checkbox = ttk.Checkbutton(
-            self,
-            text="Enable Loose Audio Loading",
-            variable=self.loose_audio_var,
-            compound="left",
-        )
-        self.loose_audio_checkbox.grid(row=1, column=0, sticky="w")
-
-        self.cache_decoded_audio_var = tk.BooleanVar()
-        self.cache_decoded_audio_checkbox = ttk.Checkbutton(
-            self,
-            text="Cache Decoded Audio Files",
-            variable=self.cache_decoded_audio_var,
-            compound="left",
-        )
-        self.cache_decoded_audio_checkbox.grid(row=2, column=0, sticky="w")
-
-        self.enable_developer_mode_var = tk.BooleanVar()
-        self.enable_developer_mode_checkbox = ttk.Checkbutton(
-            self,
-            text="Enable Developer Mode",
-            variable=self.enable_developer_mode_var,
-            compound="left",
-        )
-        self.enable_developer_mode_checkbox.grid(row=3, column=0, sticky="w")
+        row_num = 0
+        self.ini_options = {}
 
         self.enable_console_var = tk.BooleanVar()
         self.enable_console_var.set(self.modlunky_config.config_file.playlunky_console)
@@ -489,7 +456,40 @@ class OptionsFrame(ttk.LabelFrame):
             compound="left",
             command=self.handle_console_checkbutton,
         )
-        self.enable_console_checkbox.grid(row=4, column=0, sticky="w")
+
+        for section_idx, (section, options) in enumerate(SECTIONS.items()):
+            section_ypad = (5, 0)
+            if section_idx == 0:
+                section_ypad = 0
+            section_label = ttk.Label(self, text=self.format_text(section))
+            section_label.grid(
+                row=row_num, column=0, padx=2, pady=section_ypad, sticky="w"
+            )
+            sep = ttk.Separator(self)
+            sep.grid(row=row_num + 1, padx=2, sticky="we")
+            row_num += 2
+
+            for option in options:
+                self.ini_options[option] = tk.BooleanVar()
+                checkbox = ttk.Checkbutton(
+                    self,
+                    text=self.format_text(option),
+                    variable=self.ini_options[option],
+                    compound="left",
+                    command=self.parent.write_ini,
+                )
+                checkbox.grid(row=row_num, column=0, padx=3, sticky="w")
+                row_num += 1
+
+            if section == "general_settings":
+                self.enable_console_checkbox.grid(
+                    row=row_num, column=0, padx=3, sticky="w"
+                )
+                row_num += 1
+
+    @staticmethod
+    def format_text(text):
+        return " ".join(text.title().split("_"))
 
     def handle_console_checkbutton(self):
         self.modlunky_config.config_file.playlunky_console = (
@@ -704,6 +704,7 @@ class LoadOrderFrame(ttk.LabelFrame):
         self.listbox.insert(selection - 1, label)
         self.listbox.selection_set(selection - 1)
 
+        self.parent.write_load_order()
         self.render_buttons()
 
     def move_down(self):
@@ -721,10 +722,12 @@ class LoadOrderFrame(ttk.LabelFrame):
         self.listbox.insert(selection + 1, label)
         self.listbox.selection_set(selection + 1)
 
+        self.parent.write_load_order()
         self.render_buttons()
 
     def insert(self, label):
         self.listbox.insert(tk.END, label)
+        self.parent.write_load_order()
         self.render_buttons()
 
     def all(self):
@@ -736,6 +739,7 @@ class LoadOrderFrame(ttk.LabelFrame):
         except ValueError:
             return
         self.listbox.delete(idx)
+        self.parent.write_load_order()
         self.render_buttons()
 
 
@@ -785,33 +789,32 @@ class PlayTab(Tab):
         self.filter_frame = FiltersFrame(self.play_wrapper)
         self.filter_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.packs_frame = ScrollableFrame(
+        self.packs_frame = ScrollableLabelFrame(
             self.play_wrapper, text="Select Mods to Play"
         )
         self.packs_frame.rowconfigure(0, weight=1)
         self.packs_frame.columnconfigure(0, weight=1)
-        self.packs_frame.scrollable_frame.columnconfigure(0, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
 
+        self.load_order = LoadOrderFrame(self)
+        self.load_order.grid(row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
+
         self.version_frame = VersionFrame(self, modlunky_config, task_manager)
         self.version_frame.grid(
-            row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
+            row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.install_mod_frame = ControlsFrame(self, modlunky_config)
-        self.install_mod_frame.grid(
-            row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
+        self.controls_frame = ControlsFrame(self, modlunky_config)
+        self.controls_frame.grid(
+            row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
         self.options_frame = OptionsFrame(self, modlunky_config)
         self.options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
-
-        self.load_order = LoadOrderFrame(self)
-        self.load_order.grid(row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe")
 
         self.button_play = ttk.Button(
             self, text="Play!", state=tk.DISABLED, command=self.play
@@ -832,6 +835,8 @@ class PlayTab(Tab):
         self.packs = []
         self.separators = []
         self.checkboxes = {}
+
+        self.ini = None
 
         self.on_load()
         self.load_from_ini()
@@ -857,25 +862,23 @@ class PlayTab(Tab):
         path = self.modlunky_config.install_dir / "playlunky.ini"
         if path.exists():
             with path.open() as ini_file:
-                config = PlaylunkyConfig.from_ini(ini_file)
+                self.ini = PlaylunkyConfig.from_ini(ini_file)
         else:
-            config = PlaylunkyConfig()
+            self.ini = PlaylunkyConfig()
 
-        self.options_frame.random_char_var.set(config.random_character_select)
-        self.options_frame.loose_audio_var.set(config.enable_loose_audio_files)
-        self.options_frame.cache_decoded_audio_var.set(config.cache_decoded_audio_files)
-        self.options_frame.enable_developer_mode_var.set(config.enable_developer_mode)
+        for options in SECTIONS.values():
+            for option in options:
+                self.options_frame.ini_options[option].set(getattr(self.ini, option))
 
     def write_ini(self):
         path = self.modlunky_config.install_dir / "playlunky.ini"
-        config = PlaylunkyConfig(
-            random_character_select=self.options_frame.random_char_var.get(),
-            enable_loose_audio_files=self.options_frame.loose_audio_var.get(),
-            cache_decoded_audio_files=self.options_frame.cache_decoded_audio_var.get(),
-            enable_developer_mode=self.options_frame.enable_developer_mode_var.get(),
-        )
+
+        for options in SECTIONS.values():
+            for option in options:
+                setattr(self.ini, option, self.options_frame.ini_options[option].get())
+
         with path.open("w") as handle:
-            config.write(handle)
+            self.ini.write(handle)
 
     def load_from_load_order(self):
         load_order_path = self.load_order_path
@@ -1078,7 +1081,7 @@ class PlayTab(Tab):
 
             if display:
                 if row_num > 0:
-                    sep = ttk.Separator(self.packs_frame.scrollable_frame)
+                    sep = ttk.Separator(self.packs_frame)
                     sep.grid(row=row_num, column=0, pady=1, sticky="ew")
                     self.separators.append(sep)
                     row_num += 1
@@ -1155,7 +1158,7 @@ class PlayTab(Tab):
             var = tk.BooleanVar()
 
             item = ttk.Checkbutton(
-                self.packs_frame.scrollable_frame,
+                self.packs_frame,
                 text=f"{pack}",
                 style="ModList.TCheckbutton",
                 variable=var,
@@ -1165,7 +1168,7 @@ class PlayTab(Tab):
                 command=self.on_check_wrapper(pack, var),
             )
 
-            buttons = ttk.Frame(self.packs_frame.scrollable_frame)
+            buttons = ttk.Frame(self.packs_frame)
             buttons.rowconfigure(0, weight=1)
             buttons.folder_button = ttk.Button(
                 buttons,
@@ -1185,6 +1188,7 @@ class PlayTab(Tab):
             (_, item, buttons) = self.checkboxes[pack]
             item.destroy()
             buttons.destroy()
+            self.load_order.delete(pack)
             del self.checkboxes[pack]
 
         self.packs = packs

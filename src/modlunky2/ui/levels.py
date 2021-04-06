@@ -27,7 +27,7 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
-from modlunky2.ui.widgets import PopupWindow, ScrollableFrame, Tab
+from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -419,7 +419,8 @@ class LevelsTab(Tab):
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
-        self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
+        if self.modlunky_config.beta:
+            self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
         self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -558,7 +559,7 @@ class LevelsTab(Tab):
 
         # the tile palletes are loaded into here as buttons with their image
         # as a tile and txt as their value to grab when needed
-        self.tile_pallete = ScrollableFrame(
+        self.tile_pallete = ScrollableFrameLegacy(
             self.editor_tab, text="Tile Pallete", width=50
         )
         self.tile_pallete.grid(row=2, column=9, columnspan=4, rowspan=1, sticky="swne")
@@ -639,7 +640,9 @@ class LevelsTab(Tab):
             text="Add TileCode",
             bg="yellow",
             command=lambda: self.add_tilecode(
-                str(self.combobox.get()), str(int(float(self.scale.get()))), self.combobox_alt.get()
+                str(self.combobox.get()),
+                str(int(float(self.scale.get()))),
+                self.combobox_alt.get(),
             ),
         )
         self.button_tilecode_add.grid(

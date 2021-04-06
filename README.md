@@ -82,6 +82,7 @@ so you need to build your own version per https://pyinstaller.readthedocs.io/en/
 
 See: https://stackoverflow.com/a/52054580
 
+##### Build
 ```
-pyinstaller.exe modlunky2.spec
+python build-exe.py
 ```
