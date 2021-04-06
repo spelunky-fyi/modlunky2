@@ -10,7 +10,7 @@ from .big import (
     OlmecAndMech,
 )
 from .ghost import Ghost
-from .basic import Basic1, Basic2, Basic3, Monsters01, Monsters02, Monsters03
+from .basic import Basic1, Basic2, Basic3, Monsters1, Monsters2, Monsters3
 from .mounts import Mounts
 from .pets import Pets
 
@@ -28,9 +28,9 @@ __all__ = [
     "Basic1",
     "Basic2",
     "Basic3",
-    "Monsters01",
-    "Monsters02",
-    "Monsters03",
+    "Monsters1",
+    "Monsters2",
+    "Monsters3",
     "Mounts",
     "Pets",
 ]
