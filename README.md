@@ -82,13 +82,7 @@ so you need to build your own version per https://pyinstaller.readthedocs.io/en/
 
 See: https://stackoverflow.com/a/52054580
 
-##### Build directory
+##### Build
 ```
-pyinstaller.exe --clean .\pyinstaller-cli.py  --add-data "dist/libogg.dll;." --add-data "dist/libvorbis.dll;." --add-data "src/modlunky2/VERSION;." --add-data "src/modlunky2/static;static" --name modlunky2 --onedir --noconsole --icon=./src/modlunky2/static/images/icon.ico --noconfirm
-```
-
-##### Build exe
-```
-cd src/launcher
-cargo build --release
+python build-exe.py
 ```
