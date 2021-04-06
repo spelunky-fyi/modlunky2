@@ -30,6 +30,7 @@ MIN_HEIGHT = 768
 NOT_PRESENT = object()
 
 SPELUNKY_FYI_ROOT_DEFAULT = "https://spelunky.fyi/"
+LAST_INSTALL_BROWSE_DEFAULT = "/"
 
 logger = logging.getLogger("modlunky2")
 
@@ -98,6 +99,7 @@ class ConfigFile:
         self.spelunky_fyi_root = None
         self.spelunky_fyi_api_token = None
         self.theme = None
+        self.last_install_browse = None
 
     @classmethod
     def from_path(cls, config_path: Path):
@@ -127,6 +129,8 @@ class ConfigFile:
             install_dir = Path(install_dir)
         obj.install_dir = install_dir
 
+        obj.last_install_browse = config_data.get("last-install-browse", LAST_INSTALL_BROWSE_DEFAULT)
+
         # Initialize playlunky config
         obj.playlunky_version = config_data.get("playlunky-version")
         obj.playlunky_console = config_data.get("playlunky-console", False)
@@ -154,6 +158,9 @@ class ConfigFile:
 
         out = {}
         out["install-dir"] = install_dir
+
+        if self.last_install_browse != LAST_INSTALL_BROWSE_DEFAULT:
+            out["last-install-browse"] = self.last_install_browse
 
         if self.playlunky_version is not None:
             out["playlunky-version"] = self.playlunky_version
