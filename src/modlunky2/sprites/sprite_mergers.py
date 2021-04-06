@@ -125,4 +125,13 @@ def get_all_sprite_mergers(entities_json: dict, textures_json: dict, base_path: 
         AlienQueenSpriteMerger(entities_json, textures_json, base_path),
         # OlmecSpriteMerger(entities_json, textures_json, base_path),  # RIP
         # MechSpriteMerger(entities_json, textures_json, base_path),  # RIP
+        GhistSpriteMerger(entities_json, textures_json, base_path),
+        GhostSpriteMerger(entities_json, textures_json, base_path),
+        GhostMediumSadSpriteMerger(entities_json, textures_json, base_path),
+        GhostMediumHappySpriteMerger(entities_json, textures_json, base_path),
+        GhostSmallSadSpriteMerger(entities_json, textures_json, base_path),
+        GhostSmallHappySpriteMerger(entities_json, textures_json, base_path),
+        GhostSmallSurprisedSpriteMerger(entities_json, textures_json, base_path),
+        GhostSmallAngrySpriteMerger(entities_json, textures_json, base_path),
+        # MegaJellySpriteMerger(entities_json, textures_json, base_path),  # RIP
     ]

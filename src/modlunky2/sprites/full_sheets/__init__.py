@@ -29,6 +29,7 @@ from .mounts import (
     QilinSpriteMerger,
 )
 from .pets import MontySpriteMerger, PercySpriteMerger, PoochiSpriteMerger
+from .ghost import *
 from .monsters.basic import *
 from .monsters.big import *
 
@@ -155,4 +156,13 @@ __all__ = [
     "AlienQueenSpriteMerger",
     "OlmecSpriteMerger",
     "MechSpriteMerger",
+    "GhistSpriteMerger",
+    "GhostSpriteMerger",
+    "GhostMediumSadSpriteMerger",
+    "GhostMediumHappySpriteMerger",
+    "GhostSmallSadSpriteMerger",
+    "GhostSmallHappySpriteMerger",
+    "GhostSmallSurprisedSpriteMerger",
+    "GhostSmallAngrySpriteMerger",
+    "MegaJellySpriteMerger",
 ]

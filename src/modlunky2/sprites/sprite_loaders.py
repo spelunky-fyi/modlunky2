@@ -1,3 +1,5 @@
+from typing import Optional
+
 from modlunky2.constants import BASE_DIR
 
 from .items import ItemSheet
@@ -14,6 +16,7 @@ from .journal_traps import JournalTrapSheet
 from .character import *
 from .monsters.mounts import Mounts
 from .monsters.pets import Pets
+from .monsters.ghost import Ghost
 from .monsters.basic import Basic1, Basic2, Basic3, Monsters1, Monsters2, Monsters3
 from .monsters.big import (
     Big1,
@@ -29,7 +32,7 @@ from .tilecode_extras import TilecodeExtras
 from .menu_leader import MenuLeaderSheet
 
 
-def get_all_sprite_loaders(entities_json: dict, textures_json: dict, base_path: str):
+def get_all_sprite_loaders(entities_json: Optional[dict], textures_json: Optional[dict], base_path: str):
     return [
         ItemSheet(base_path),
         CoffinSheet(base_path),
@@ -79,6 +82,7 @@ def get_all_sprite_loaders(entities_json: dict, textures_json: dict, base_path: 
         Big6(entities_json, textures_json, base_path),
         OsirisAndAlienQueen(entities_json, textures_json, base_path),
         OlmecAndMech(entities_json, textures_json, base_path),
+        Ghost(entities_json, textures_json, base_path),
         # This uses the constant BASE_DIR as the base path as this
         # texture is bundled with the source rather than coming
         # from the extracted assets.
