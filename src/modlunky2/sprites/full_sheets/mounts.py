@@ -9,7 +9,7 @@ from ..util import chunks_from_animation
 
 
 class TurkeySpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/turkey_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/turkey.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_turkey": (0, 0, 1, 1)},
@@ -20,7 +20,7 @@ class TurkeySpriteMerger(BaseJsonSpriteMerger):
 
 
 class RockdogSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/rockdog_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/rockdog.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_rockdog": (0, 0, 1, 1)},
@@ -29,7 +29,7 @@ class RockdogSpriteMerger(BaseJsonSpriteMerger):
 
 
 class AxolotlSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/axolotl_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/axolotl.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_axolotl": (0, 0, 1, 1)},
@@ -38,7 +38,7 @@ class AxolotlSpriteMerger(BaseJsonSpriteMerger):
 
 
 class QilinSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/qilin_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/mounts/qilin.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_qilin": (0, 0, 1, 1)},

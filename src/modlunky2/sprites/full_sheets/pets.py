@@ -6,7 +6,7 @@ from ..journal_mons import JournalMonsterSheet
 
 
 class MontySpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/monty_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/monty.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_monty": (0, 0, 1, 1)},
@@ -15,7 +15,7 @@ class MontySpriteMerger(BaseJsonSpriteMerger):
 
 
 class PercySpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/percy_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/percy.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_percy": (0, 0, 1, 1)},
@@ -24,7 +24,7 @@ class PercySpriteMerger(BaseJsonSpriteMerger):
 
 
 class PoochiSpriteMerger(BaseJsonSpriteMerger):
-    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/poochi_full.png")
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/pets/poochi.png")
     _grid_hint_size = 8
     _origin_map = {
         JournalMonsterSheet: {"journal_poochi": (0, 0, 1, 1)},

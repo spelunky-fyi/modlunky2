@@ -20,7 +20,7 @@ def create_merger_factory_for_source_sheet(
     ):
         class SpriteMerger(BaseJsonSpriteMerger):
             _target_sprite_sheet_path = Path(
-                "Data/Textures/Entities/{}_full.png".format(target_file_name)
+                "Data/Textures/Entities/{}.png".format(target_file_name)
             )
             _grid_hint_size = 8
             _origin_map = {
