@@ -128,7 +128,9 @@ class ConfigFile:
             install_dir = Path(install_dir)
         obj.install_dir = install_dir
 
-        obj.last_install_browse = config_data.get("last-install-browse", LAST_INSTALL_BROWSE_DEFAULT)
+        obj.last_install_browse = config_data.get(
+            "last-install-browse", LAST_INSTALL_BROWSE_DEFAULT
+        )
 
         # Initialize playlunky config
         obj.playlunky_version = config_data.get("playlunky-version")

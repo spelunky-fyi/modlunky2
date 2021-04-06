@@ -14,9 +14,7 @@ class FileChooser(ttk.Frame):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
 
-        file_chooser_label = ttk.Label(
-            self, text="Choose the file you want to install"
-        )
+        file_chooser_label = ttk.Label(self, text="Choose the file you want to install")
         file_chooser_label.grid(
             row=0, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
@@ -36,9 +34,7 @@ class FileChooser(ttk.Frame):
             row=1, column=0, padx=10, pady=10, columnspan=3, sticky="n"
         )
 
-        file_chooser_browse = ttk.Button(
-            self, text="Browse", command=self.browse
-        )
+        file_chooser_browse = ttk.Button(self, text="Browse", command=self.browse)
         file_chooser_browse.grid(row=2, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
@@ -56,7 +52,6 @@ class FileChooser(ttk.Frame):
 
         self.modlunky_config.config_file.last_install_browse = str(parent.as_posix())
         self.modlunky_config.config_file.save()
-
 
 
 class InstallTab(Tab):
