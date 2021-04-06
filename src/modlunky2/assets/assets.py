@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import traceback
+import json
 from collections import defaultdict
 from concurrent.futures import wait
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -328,8 +329,14 @@ class AssetStore:
 
         if create_entity_sheets:
             logger.info("Creating entity sprite sheets...")
-            sprite_loaders = get_all_sprite_loaders(extract_dir)
-            sprite_mergers = get_all_sprite_mergers(extract_dir)
+
+            with open("entities.json") as entities_file:
+                entities_json = json.loads(entities_file.read())
+            with open("textures.json") as textures_file:
+                textures_json = json.loads(textures_file.read())
+
+            sprite_loaders = get_all_sprite_loaders(entities_json, textures_json, extract_dir)
+            sprite_mergers = get_all_sprite_mergers(entities_json, textures_json, extract_dir)
 
             with ThreadPoolExecutor(max_workers=max_workers) as pool:
                 futures = [
