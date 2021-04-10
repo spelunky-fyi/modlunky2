@@ -771,6 +771,7 @@ class PlayTab(Tab):
         self.task_manager.register_handler(
             "play:playlunky_closed", self.playlunky_closed
         )
+        self.task_manager.register_handler("play:reload", self.on_load)
         self.playlunky_running = False
 
         self.rowconfigure(0, minsize=200)
