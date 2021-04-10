@@ -624,14 +624,25 @@ class LevelsTab(Tab):
         self.combobox_alt.grid_remove()
         self.combobox_alt["state"] = tk.DISABLED
 
+        self.scale_frame = ttk.Frame(self.editor_tab)
+        self.scale_frame.columnconfigure(0, weight=1)
+        self.scale_frame.grid(row=3, column=9, columnspan=2, sticky="nswe")
+
+        self.scale_var = tk.StringVar()
+        self.scale_var.set("100")
+        self.scale_value_label = ttk.Label(
+            self.scale_frame, anchor="center", textvariable=self.scale_var
+        )
+        self.scale_value_label.grid(row=0, column=0, sticky="ew")
+
         self.scale = ttk.Scale(
-            self.editor_tab,
+            self.scale_frame,
             from_=0,
             to=100,
             orient=tk.HORIZONTAL,
             command=self.update_value,
         )  # scale for the percent of a selected tile
-        self.scale.grid(row=3, column=9, columnspan=2, sticky="we")
+        self.scale.grid(row=1, column=0, sticky="we")
         self.scale.set(100)
         self.scale["state"] = tk.DISABLED
 
@@ -2381,6 +2392,7 @@ class LevelsTab(Tab):
                 widget.destroy()
 
     def update_value(self, _event):
+        self.scale_var.set(str(int(float(self.scale.get()))))
         if int(float(self.scale.get())) == 100:
             self.combobox_alt.grid_remove()
             self.combobox.grid(columnspan=2)
