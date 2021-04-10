@@ -322,3 +322,14 @@ class PopupWindow(ttk.Frame):
             return
 
         super().destroy()
+
+
+class Entry(ttk.Entry):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bind("<Control-a>", self.select_all)
+
+    def select_all(self, event):
+        event.widget.select_range(0, "end")
+        event.widget.icursor("end")
+        return "break"

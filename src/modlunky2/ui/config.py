@@ -1,11 +1,10 @@
 import logging
-from pathlib import Path
-
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
-from modlunky2.ui.widgets import Tab
 from modlunky2.config import guess_install_dir
+from modlunky2.ui.widgets import Tab, PopupWindow, Entry
 
 logger = logging.getLogger("modlunky2")
 
@@ -15,8 +14,8 @@ class Theme(ttk.LabelFrame):
         super().__init__(parent, text="Theme")
         self.modlunky_config = modlunky_config
 
-        theme_label = ttk.Label(self, text="Select a theme")
-        theme_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
 
         note_label = ttk.Label(
             self,
@@ -24,14 +23,11 @@ class Theme(ttk.LabelFrame):
                 "Note: Themes are are work in progress and don't fully refresh "
                 "until you've restart the application."
             ),
-            wraplength=500,
         )
-        note_label.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+        note_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
         self.style = ttk.Style(self)
 
-        self.selected_label = ttk.Label(self, text="Theme:")
-        self.selected_label.grid(row=2, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
         self.selected_var = tk.StringVar(value=modlunky_config.config_file.theme)
         self.selected_dropdown = ttk.OptionMenu(
             self,
@@ -41,10 +37,10 @@ class Theme(ttk.LabelFrame):
             command=self.set_theme,
         )
         self.selected_dropdown.grid(
-            row=2, column=1, pady=(5, 5), padx=(5, 5), sticky="w"
+            row=1, column=0, pady=(5, 5), padx=(5, 5), sticky="ew"
         )
         self.reset_button = ttk.Button(self, text="Reset", command=self.reset)
-        self.reset_button.grid(row=2, column=2, pady=(5, 5), padx=(5, 5), sticky="w")
+        self.reset_button.grid(row=1, column=1, pady=(5, 5), padx=(5, 5), sticky="ew")
 
     def reset(self):
         self.selected_var.set(self.winfo_toplevel().default_theme)
@@ -62,6 +58,10 @@ class InstallDir(ttk.LabelFrame):
         super().__init__(parent, text="Install Directory")
         self.modlunky_config = modlunky_config
 
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+
         install_dir_label = ttk.Label(
             self, text="The directory where Spelunky 2 is installed"
         )
@@ -78,11 +78,8 @@ class InstallDir(ttk.LabelFrame):
             state=tk.DISABLED,
             width=80,
         )
-        install_dir_entry.columnconfigure(0, weight=1)
-        install_dir_entry.columnconfigure(1, weight=1)
-        install_dir_entry.columnconfigure(2, weight=1)
         install_dir_entry.grid(
-            row=1, column=0, padx=10, pady=10, columnspan=3, sticky="n"
+            row=1, column=0, padx=10, pady=10, columnspan=3, sticky="nsew"
         )
 
         install_dir_browse = ttk.Button(
@@ -121,6 +118,58 @@ class InstallDir(ttk.LabelFrame):
         self.modlunky_config.config_file.save()
 
 
+class FYISettings(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config):
+        super().__init__(parent, text="spelunky.fyi Settings")
+        self.modlunky_config = modlunky_config
+
+        self.update_text = "Update Token"
+        self.add_text = "Add Token"
+
+        self.token_button = ttk.Button(self, text=self.add_text, command=self.set_token)
+        if self.modlunky_config.config_file.spelunky_fyi_api_token:
+            self.token_button.configure(text=self.update_text)
+        self.token_button.grid(row=0, column=0, pady=(5, 5), padx=(5, 5), sticky="w")
+
+    def set_token(self):
+        win = PopupWindow("API Token", self.modlunky_config)
+        win.columnconfigure(1, minsize=500)
+
+        label = ttk.Label(win, text="API Token: ")
+        entry = Entry(win)
+        if self.modlunky_config.config_file.spelunky_fyi_api_token:
+            entry.insert(0, self.modlunky_config.config_file.spelunky_fyi_api_token)
+        label.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        entry.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
+
+        def update_then_destroy():
+            try:
+                api_token = entry.get().strip()
+                if not api_token:
+                    self.modlunky_config.config_file.spelunky_fyi_api_token = None
+                    self.token_button.configure(text=self.add_text)
+                else:
+                    self.modlunky_config.config_file.spelunky_fyi_api_token = api_token
+                    self.token_button.configure(text=self.update_text)
+                self.modlunky_config.config_file.save()
+            finally:
+                win.destroy()
+
+        separator = ttk.Separator(win)
+        separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+
+
 class ConfigTab(Tab):
     def __init__(self, tab_control, modlunky_config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
@@ -131,12 +180,14 @@ class ConfigTab(Tab):
         self.rowconfigure(0, weight=1)
 
         config_frame = ttk.LabelFrame(self, text="Config")
-        config_frame.columnconfigure(0, weight=1, minsize=690)
-        config_frame.columnconfigure(1, weight=1)
-        config_frame.grid(row=0, column=0, columnspan=1, pady=5, padx=5, sticky="nswe")
+        config_frame.columnconfigure(0, weight=1)
+        config_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         install_dir_frame = InstallDir(config_frame, modlunky_config)
         install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="new")
 
         theme_frame = Theme(config_frame, modlunky_config)
-        theme_frame.grid(row=0, column=1, pady=5, padx=5, sticky="new")
+        theme_frame.grid(row=1, column=0, pady=5, padx=5, sticky="new")
+
+        api_token_frame = FYISettings(config_frame, modlunky_config)
+        api_token_frame.grid(row=2, column=0, pady=5, padx=5, sticky="new")
