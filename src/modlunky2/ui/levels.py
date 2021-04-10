@@ -1400,7 +1400,7 @@ class LevelsTab(Tab):
                 levels.append([get_level(item[2].split(" ")[0]), item])
                 # removes item cause its already being worked on so it doesn't
                 # get worked on or compared to again
-                # self.tree_depend.delete(i)
+                self.tree_depend.delete(i)
 
                 for child in self.tree_depend.get_children():
                     item2 = self.tree_depend.item(child, option="values")
@@ -1409,7 +1409,7 @@ class LevelsTab(Tab):
                         levels.append([get_level(item2[2].split(" ")[0]), item2])
                         # removes item cause its already being worked on so it doesn't
                         # get worked on or compared to again
-                        # self.tree_depend.delete(child)
+                        self.tree_depend.delete(child)
 
                 # finds tilecodes that are not available in all the dependacy files
                 # (again cause it could have changed since tilecodes are being messed with)
@@ -1433,7 +1433,7 @@ class LevelsTab(Tab):
                     for code in level[0].tile_codes.all():
                         tile_id = str(level[1][0])
                         old_code = str(level[1][1])
-                        if str(code.name) == str(tile_id):  # finds conflicting tilecode
+                        if str(code.name) == str(tile_id):  # finds conflicting tilecode by id
                             # makes sure there's even codes left to assing new unique ones
                             if len(usable_codes) > 0:
                                 # gets the next available usable code
@@ -1457,15 +1457,19 @@ class LevelsTab(Tab):
                                         old_code
                                     )  # adds back replaced code since its now free for use again
                             else:
-                                self.check_dependencies()
-                                logger.debug("No more unique codes available")
-                                self.tree_filesitemclick(self)
+                                tile_codes_new.set_obj(
+                                    TileCode(
+                                        name=tile_id,
+                                        value=old_code,
+                                        comment="",
+                                    )  # adds tilecode back to database
+                                )
                                 return
                         else:
                             tile_codes_new.set_obj(
                                 TileCode(
-                                    name=tile_id,
-                                    value=old_code,
+                                    name=code.name,
+                                    value=code.value,
                                     comment="",
                                 )  # adds tilecode back to database
                             )
