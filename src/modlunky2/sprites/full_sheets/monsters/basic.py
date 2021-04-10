@@ -74,7 +74,6 @@ CaveManSpriteMerger = _basic2_factory(
     ["ENT_TYPE_MONS_CAVEMAN"],
     additional_origins={
         JournalMonsterSheet: {"journal_cave_man": (0, 0, 1, 1)},
-        JournalPeopleSheet: {"journal_cave_man_shopkeeper": (0, 0, 1, 1)},
         StickerSheet: {"sticker_cave_man": (0, 0, 1, 1)},
     },
 )
