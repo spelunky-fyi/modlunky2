@@ -1,6 +1,9 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use anyhow::{anyhow, Result};
+use clap::App;
+use clap::AppSettings;
+use clap::Arg;
 use directories::ProjectDirs;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -44,6 +47,31 @@ fn unzip(dest: &PathBuf) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let launcher_matches = App::new("modlunky2")
+        .setting(AppSettings::TrailingVarArg)
+        .setting(AppSettings::DontDelimitTrailingValues)
+        .setting(AppSettings::AllowLeadingHyphen)
+        .setting(AppSettings::DisableVersion)
+        .setting(AppSettings::DisableHelpFlags)
+        .setting(AppSettings::DisableHelpSubcommand)
+        .arg(
+            Arg::with_name("clear-cache")
+                .long("clear-cache")
+                .required(false)
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("remainder")
+                .multiple(true)
+                .allow_hyphen_values(true),
+        )
+        .get_matches();
+
+    let should_clear_cache: bool = launcher_matches.is_present("clear-cache");
+    let remainder: Vec<_> = launcher_matches
+        .values_of("remainder")
+        .map_or_else(|| vec![], |v| v.collect());
+
     let project_dirs = ProjectDirs::from("", "spelunky.fyi", "modlunky2")
         .ok_or(anyhow!("Failed initialize project dirs..."))?;
 
@@ -58,6 +86,10 @@ fn main() -> Result<()> {
     }
 
     let release_dir = cache_dir.join(MODLUNKY2_VERSION);
+    if release_dir.exists() && should_clear_cache {
+        println!("Clearing cached directory at {:?}", release_dir);
+        std::fs::remove_dir_all(&release_dir)?;
+    }
     if !release_dir.exists() {
         println!(
             "Release Dir {} not found. Creating...",
@@ -81,9 +113,8 @@ fn main() -> Result<()> {
         .parent()
         .ok_or(anyhow!("Failed to get parent dir"))?;
 
-    let args: Vec<String> = std::env::args().collect();
     std::process::Command::new(exe_path)
-        .args(&args[1..])
+        .args(remainder)
         .arg("--exe-dir")
         .arg(&exe_dir)
         .spawn()?;
