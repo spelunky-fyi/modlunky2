@@ -127,7 +127,7 @@ ParmesanSpriteMerger = _basic3_factory(
     },
 )
 ParsleySpriteMerger = _basic3_factory(
-    "People/parslet",
+    "People/parsley",
     None,
     ["ENT_TYPE_MONS_SISTER_PARSLEY"],
     additional_origins={
@@ -320,17 +320,17 @@ CritterFireflySpriteMerger = _monsters3_factory(
     None,
     ["ENT_TYPE_MONS_CRITTERFIREFLY"],
 )
-SpriteMerger = _monsters3_factory(
+PenguinSpriteMerger = _monsters3_factory(
     "Critters/penguin",
     None,
     ["ENT_TYPE_MONS_CRITTERPENGUIN"],
 )
-SpriteMerger = _monsters3_factory(
+DroneSpriteMerger = _monsters3_factory(
     "Critters/drone",
     None,
     ["ENT_TYPE_MONS_CRITTERDRONE"],
 )
-SpriteMerger = _monsters3_factory(
+SlimeSpriteMerger = _monsters3_factory(
     "Critters/slime",
     None,
     ["ENT_TYPE_MONS_CRITTERSLIME"],
