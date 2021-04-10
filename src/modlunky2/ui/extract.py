@@ -98,12 +98,14 @@ class ExtractTab(Tab):
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.task_manager.register_task(
-            "extract_assets",
+            "extract:extract_assets",
             extract_assets,
             True,
-            on_complete="extract_finished",
+            on_complete="extract:extract_finished",
         )
-        self.task_manager.register_handler("extract_finished", self.extract_finished)
+        self.task_manager.register_handler(
+            "extract:extract_finished", self.extract_finished
+        )
 
         self.vorbis_loaded = try_load_vorbis()
 
@@ -269,7 +271,7 @@ class ExtractTab(Tab):
 
         selected_exe = self.list_box.get(idx)
         self.task_manager.call(
-            "extract_assets",
+            "extract:extract_assets",
             install_dir=self.modlunky_config.install_dir,
             target=selected_exe,
             recompress=self.recompress.get(),

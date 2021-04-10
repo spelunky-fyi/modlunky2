@@ -145,14 +145,13 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
-        if modlunky_config.beta:
-            self.register_tab(
-                "Install Mods",
-                InstallTab,
-                tab_control=self.tab_control,
-                modlunky_config=modlunky_config,
-                task_manager=self.task_manager,
-            )
+        self.register_tab(
+            "Install Mods",
+            InstallTab,
+            tab_control=self.tab_control,
+            modlunky_config=modlunky_config,
+            task_manager=self.task_manager,
+        )
         self.register_tab(
             "Extract Assets",
             ExtractTab,

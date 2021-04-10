@@ -1,4 +1,5 @@
 import logging
+import shutil
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -41,13 +42,12 @@ class SourceChooser(ttk.Frame):
         if not initial_dir.exists():
             initial_dir = Path("/")
 
-        filename = tk.filedialog.askopenfilenames(parent=self, initialdir=initial_dir)
+        filename = tk.filedialog.askopenfilename(parent=self, initialdir=initial_dir)
         if not filename:
             self.file_chooser_var.set("")
             self.master.master.render()
             return
 
-        filename = filename[0]
         self.file_chooser_var.set(filename)
         parent = Path(filename).parent
 
@@ -128,12 +128,36 @@ class DestinationChooser(ttk.Frame):
         self.master.master.render()
 
 
+def install_mod(call, install_dir: Path, source: Path, pack: str):
+    packs_dir = install_dir / "Mods/Packs"
+    dest_dir = packs_dir / pack
+
+    if not dest_dir.exists():
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+    if source.suffix == ".zip":
+        logger.info("Extracting %s to %s", source.name, dest_dir)
+        shutil.unpack_archive(source, dest_dir)
+    else:
+        logger.info("Copying file %s to %s", source.name, dest_dir)
+        shutil.copy(source.resolve(), dest_dir.resolve())
+
+    logger.info("Finished installing %s to %s", source.name, dest_dir)
+    call("play:reload")
+
+
 class InstallTab(Tab):
     def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager
+
+        self.task_manager.register_task(
+            "install:install_mod",
+            install_mod,
+            True,
+        )
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -156,14 +180,30 @@ class InstallTab(Tab):
         self.file_chooser_frame2 = DestinationChooser(dest_frame, modlunky_config)
         self.file_chooser_frame2.grid(row=0, column=0, pady=5, padx=5, sticky="new")
 
-        self.button_install = ttk.Button(self, text="install", command=self.install)
+        self.button_install = ttk.Button(self, text="Install", command=self.install)
         self.button_install.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
 
     def on_load(self):
         self.render()
 
     def install(self):
-        pass
+        source = Path(self.file_chooser_frame.file_chooser_var.get())
+        pack = self.file_chooser_frame2.file_chooser_var.get()
+
+        if not all([source, pack]):
+            logger.critical("Attempted to install mod with missing source and pack")
+            return
+
+        self.file_chooser_frame.file_chooser_var.set("")
+        self.file_chooser_frame2.file_chooser_var.set("")
+        self.render()
+
+        self.task_manager.call(
+            "install:install_mod",
+            install_dir=self.modlunky_config.install_dir,
+            source=source,
+            pack=pack,
+        )
 
     def render(self):
         source = self.file_chooser_frame.file_chooser_var.get()
