@@ -17,6 +17,7 @@ from .config import ConfigTab
 from .extract import ExtractTab
 from .levels import LevelsTab
 from .play import PlayTab
+from .overlunky import OverlunkyTab
 from .pack import PackTab
 from .widgets import ConsoleWindow
 from .install import InstallTab
@@ -148,6 +149,13 @@ class ModlunkyUI:
         self.register_tab(
             "Install Mods",
             InstallTab,
+            tab_control=self.tab_control,
+            modlunky_config=modlunky_config,
+            task_manager=self.task_manager,
+        )
+        self.register_tab(
+            "Overlunky",
+            OverlunkyTab,
             tab_control=self.tab_control,
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,
