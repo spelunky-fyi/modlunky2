@@ -26,6 +26,8 @@ from .error import ErrorTab
 
 logger = logging.getLogger("modlunky2")
 
+TAB_KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+
 
 def exception_logger(type_, value, traceb):
     exc = traceback.format_exception(type_, value, traceb)
@@ -299,6 +301,13 @@ class ModlunkyUI:
         except Exception:  # pylint: disable=broad-except
             obj = ErrorTab(tab_control=self.tab_control)
             logger.critical("Failed to register tab %s: %s", name, tb_info())
+
+        num_tabs = len(self.tabs)
+        if num_tabs < len(TAB_KEYS):
+            self.root.bind(
+                f"<Control-Key-{TAB_KEYS[num_tabs]}>",
+                lambda _e: self.tab_control.select(obj),
+            )
 
         self.tabs[name] = obj
         self.tab_control.add(obj, text=name)
