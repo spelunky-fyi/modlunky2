@@ -1,4 +1,5 @@
 import logging
+import re
 import shutil
 import tkinter as tk
 from pathlib import Path
@@ -177,18 +178,18 @@ class LocalInstall(ttk.LabelFrame):
         source_frame = ttk.Frame(self)
         source_frame.rowconfigure(0, weight=1)
         source_frame.columnconfigure(0, weight=1)
-        source_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        source_frame.grid(row=0, column=0, pady=5, sticky="nswe")
 
         self.file_chooser_frame = SourceChooser(source_frame, modlunky_config)
-        self.file_chooser_frame.grid(row=0, column=0, pady=5, padx=5, sticky="new")
+        self.file_chooser_frame.grid(row=0, column=0, pady=5, sticky="new")
 
         dest_frame = ttk.Frame(self)
         dest_frame.rowconfigure(0, weight=1)
         dest_frame.columnconfigure(0, weight=1)
-        dest_frame.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        dest_frame.grid(row=1, column=0, pady=5, sticky="nswe")
 
         self.file_chooser_frame2 = DestinationChooser(dest_frame, modlunky_config)
-        self.file_chooser_frame2.grid(row=0, column=0, pady=5, padx=5, sticky="new")
+        self.file_chooser_frame2.grid(row=0, column=0, pady=5, sticky="new")
 
         self.button_install = ttk.Button(self, text="Install", command=self.install)
         self.button_install.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
@@ -222,6 +223,8 @@ class LocalInstall(ttk.LabelFrame):
 
 
 class FyiInstall(ttk.LabelFrame):
+    VALID_SLUG = re.compile(r"^[-\w]+$")
+
     def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(parent, text="spelunky.fyi Installation", *args, **kwargs)
 
@@ -248,13 +251,28 @@ class FyiInstall(ttk.LabelFrame):
         ).grid(row=2, column=0, padx=5, sticky="ew")
 
         self.entry = Entry(frame)
+        self.entry.bind("<KeyRelease>", self._on_key)
         self.entry.grid(row=3, column=0, pady=5, padx=5, sticky="new")
 
         self.button_install = ttk.Button(frame, text="Install", command=self.install)
         self.button_install.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
 
     def install(self):
+        install_code = self.entry.get().strip()
+        if not self.VALID_SLUG.match(install_code):
+            logger.critical("Invalid Install Code...")
+            return
         logger.info("I don't do anything yet...")
+
+    def render(self):
+        install_code = self.entry.get().strip()
+        if install_code:
+            self.button_install["state"] = tk.NORMAL
+        else:
+            self.button_install["state"] = tk.DISABLED
+
+    def _on_key(self, _event):
+        self.render()
 
 
 class InstallTab(Tab):
@@ -281,4 +299,5 @@ class InstallTab(Tab):
         self.render()
 
     def render(self):
+        self.fyi_install.render()
         self.local_install.render()
