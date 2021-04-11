@@ -99,6 +99,7 @@ class ConfigFile:
         self.spelunky_fyi_api_token = None
         self.theme = None
         self.last_install_browse = None
+        self.last_tab = None
 
     @classmethod
     def from_path(cls, config_path: Path, exe_dir=None):
@@ -145,7 +146,8 @@ class ConfigFile:
         )
         obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
 
-        obj.theme = config_data.get("theme", None)
+        obj.theme = config_data.get("theme")
+        obj.last_tab = config_data.get("last-tab")
 
         if needs_save:
             obj.save()
@@ -174,6 +176,9 @@ class ConfigFile:
 
         if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
             out["spelunky-fyi-root"] = self.spelunky_fyi_root
+
+        if self.last_tab:
+            out["last-tab"] = self.last_tab
 
         out["theme"] = self.theme
 

@@ -188,6 +188,7 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
         )
 
+        self.select_last_tab()
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
 
@@ -268,6 +269,12 @@ class ModlunkyUI:
     def update_complete(self):
         self.quit()
 
+    def select_last_tab(self):
+        last_tab = self.tabs.get(self.modlunky_config.config_file.last_tab)
+        if last_tab is None:
+            return
+        self.tab_control.select(last_tab)
+
     def on_tab_change(self, event):
         tab_name = event.widget.tab("current")["text"]
         tab = self.tabs[tab_name]
@@ -275,6 +282,9 @@ class ModlunkyUI:
             self.render_console()
         else:
             self.forget_console()
+
+        self.modlunky_config.config_file.last_tab = tab_name
+        self.modlunky_config.config_file.save()
         tab.on_load()
 
     def render_console(self):
