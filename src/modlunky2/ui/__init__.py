@@ -32,8 +32,8 @@ def exception_logger(type_, value, traceb):
     logger.critical("Unhandled Exception: %s", "".join(exc).strip())
 
 
-def update_start(_call):
-    self_update()
+def update_start(_call, launcher_exe):
+    self_update(launcher_exe)
 
 
 class ModlunkyUI:
@@ -261,7 +261,9 @@ class ModlunkyUI:
         )
         label.grid(column=0, row=1, padx=10, pady=10, sticky="nsew")
 
-        self.task_manager.call("modlunky2:update_start")
+        self.task_manager.call(
+            "modlunky2:update_start", launcher_exe=self.modlunky_config.launcher_exe
+        )
 
     def update_complete(self):
         self.quit()
