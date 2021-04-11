@@ -311,7 +311,13 @@ class VersionFrame(ttk.LabelFrame):
         stable = None
 
         with PLAYLUNKY_RELEASES_PATH.open("r", encoding="utf-8") as releases_file:
-            releases = json.load(releases_file)
+            try:
+                releases = json.load(releases_file)
+            except json.JSONDecodeError:
+                logger.warning("Failed to get read cached releases")
+                self.task_manager.call("play:cache_releases")
+                return available_releases
+
             for release in releases:
                 tag = release.get("tag_name")
                 prerelease = release.get("prerelease")
