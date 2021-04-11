@@ -1,9 +1,13 @@
+import json
 import logging
 import re
 import shutil
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
+
+import requests
+from requests import HTTPError
 
 from modlunky2.ui.widgets import Tab, Entry
 
@@ -139,7 +143,7 @@ class DestinationChooser(ttk.Frame):
         self.master.master.render()
 
 
-def install_mod(call, install_dir: Path, source: Path, pack: str):
+def install_local_mod(call, install_dir: Path, source: Path, pack: str):
     packs_dir = install_dir / "Mods/Packs"
     dest_dir = packs_dir / pack
 
@@ -165,8 +169,8 @@ class LocalInstall(ttk.LabelFrame):
         self.task_manager = task_manager
 
         self.task_manager.register_task(
-            "install:install_mod",
-            install_mod,
+            "install:install_local_mod",
+            install_local_mod,
             True,
         )
 
@@ -207,7 +211,7 @@ class LocalInstall(ttk.LabelFrame):
         self.render()
 
         self.task_manager.call(
-            "install:install_mod",
+            "install:install_local_mod",
             install_dir=self.modlunky_config.install_dir,
             source=source,
             pack=pack,
@@ -222,6 +226,81 @@ class LocalInstall(ttk.LabelFrame):
             self.button_install["state"] = tk.DISABLED
 
 
+def write_manifest(dest_dir: Path, mod_details, latest_mod_file):
+    manifest = {
+        "name": mod_details["name"],
+        "slug": mod_details["slug"],
+        "description": mod_details["description"],
+        "mod_file": {
+            "id": latest_mod_file["id"],
+            "created_at": latest_mod_file["created_at"],
+            "download_url": latest_mod_file["download_url"],
+        },
+    }
+
+    with (dest_dir / "manifest.json").open("w", encoding="utf-8") as manifest_file:
+        json.dump(manifest, manifest_file)
+
+
+def install_fyi_mod(
+    call, install_dir: Path, spelunky_fyi_root: str, api_token: str, install_code: str
+):
+    packs_dir = install_dir / "Mods/Packs"
+
+    url = f"{spelunky_fyi_root}api/mods/{install_code}/"
+    logger.debug("Checking for mod at %s", url)
+    response = requests.get(
+        url,
+        headers={
+            "Authorization": f"Token {api_token}",
+        },
+    )
+
+    if response.status_code == 401:
+        logger.critical(
+            "Request was unauthorized. Make sure you have a valid API token."
+        )
+        return
+
+    if response.status_code == 404:
+        logger.critical("No mod found with install code: %s", install_code)
+        return
+
+    try:
+        response.raise_for_status()
+    except HTTPError:
+        logger.critical("Failed to download mod. Try again later.")
+        return
+
+    mod_details = response.json()
+    if not mod_details["mod_files"]:
+        logger.critical("Mod `%s` has no files to download.", install_code)
+        return
+
+    latest_mod_file = mod_details["mod_files"][0]
+
+    dest_dir = packs_dir / f"fyi.{install_code}"
+    if not dest_dir.exists():
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+    write_manifest(dest_dir, mod_details, latest_mod_file)
+
+    # TODO:
+    #    Download Logo
+    #    Download file
+    #    Handle collisions
+
+    # if source.suffix == ".zip":
+    #     logger.info("Extracting %s to %s", source.name, dest_dir)
+    #     shutil.unpack_archive(source, dest_dir)
+    # else:
+    #     logger.info("Copying file %s to %s", source.name, dest_dir)
+    #     shutil.copy(source.resolve(), dest_dir.resolve())
+
+    logger.info("Finished installing %s to %s", install_code, dest_dir)
+    call("play:reload")
+
+
 class FyiInstall(ttk.LabelFrame):
     VALID_SLUG = re.compile(r"^[-\w]+$")
 
@@ -233,6 +312,12 @@ class FyiInstall(ttk.LabelFrame):
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
+
+        self.task_manager.register_task(
+            "install:install_fyi_mod",
+            install_fyi_mod,
+            True,
+        )
 
         frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
@@ -258,11 +343,29 @@ class FyiInstall(ttk.LabelFrame):
         self.button_install.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
 
     def install(self):
+
+        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
+        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        if not api_token:
+            logger.warning(
+                "This feature requires an API token. You can set one on your Config tab."
+            )
+            return
+
         install_code = self.entry.get().strip()
         if not self.VALID_SLUG.match(install_code):
             logger.critical("Invalid Install Code...")
             return
-        logger.info("I don't do anything yet...")
+
+        self.entry.delete(0, "end")
+        self.render()
+        self.task_manager.call(
+            "install:install_fyi_mod",
+            install_dir=self.modlunky_config.install_dir,
+            spelunky_fyi_root=spelunky_fyi_root,
+            api_token=api_token,
+            install_code=install_code,
+        )
 
     def render(self):
         install_code = self.entry.get().strip()
