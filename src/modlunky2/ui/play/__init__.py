@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import configparser
 import json
 import logging
 import shutil
@@ -848,7 +849,10 @@ class PlayTab(Tab):
         path = self.modlunky_config.install_dir / "playlunky.ini"
         if path.exists():
             with path.open() as ini_file:
-                self.ini = PlaylunkyConfig.from_ini(ini_file)
+                try:
+                    self.ini = PlaylunkyConfig.from_ini(ini_file)
+                except configparser.Error:
+                    self.ini = PlaylunkyConfig()
         else:
             self.ini = PlaylunkyConfig()
 
