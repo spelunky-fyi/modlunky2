@@ -419,8 +419,7 @@ class LevelsTab(Tab):
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
-        if self.modlunky_config.beta:
-            self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
+        self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
         self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -1433,7 +1432,9 @@ class LevelsTab(Tab):
                     for code in level[0].tile_codes.all():
                         tile_id = str(level[1][0])
                         old_code = str(level[1][1])
-                        if str(code.name) == str(tile_id):  # finds conflicting tilecode by id
+                        if str(code.name) == str(
+                            tile_id
+                        ):  # finds conflicting tilecode by id
                             # makes sure there's even codes left to assing new unique ones
                             if len(usable_codes) > 0:
                                 # gets the next available usable code
