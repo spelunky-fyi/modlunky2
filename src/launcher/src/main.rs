@@ -5,7 +5,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use directories::ProjectDirs;
-use std::ffi::OsStr;
+//use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 

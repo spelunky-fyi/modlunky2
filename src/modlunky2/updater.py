@@ -1,6 +1,4 @@
-import sys
 import logging
-from pathlib import Path
 from urllib.request import urlretrieve
 from subprocess import Popen
 
