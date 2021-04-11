@@ -196,8 +196,9 @@ class ConfigFile:
 
 
 class Config:
-    def __init__(self, config_file: ConfigFile, exe_dir):
+    def __init__(self, config_file: ConfigFile, launcher_exe, exe_dir):
         self.config_file = config_file
+        self.launcher_exe = launcher_exe
         self.exe_dir = exe_dir
         if self.exe_dir is None:
             self.exe_dir = Path(__file__).resolve().parent
@@ -206,15 +207,18 @@ class Config:
         self.beta = False
 
     @classmethod
-    def from_path(cls, config_path: Path, exe_dir=None):
+    def from_path(cls, config_path: Path, launcher_exe=None, exe_dir=None):
         return cls(
             config_file=ConfigFile.from_path(config_path, exe_dir=exe_dir),
+            launcher_exe=launcher_exe,
             exe_dir=exe_dir,
         )
 
     @classmethod
-    def default(cls, exe_dir=None):
-        return Config.from_path(CONFIG_DIR / "config.json", exe_dir=exe_dir)
+    def default(cls, launcher_exe=None, exe_dir=None):
+        return Config.from_path(
+            CONFIG_DIR / "config.json", launcher_exe=launcher_exe, exe_dir=exe_dir
+        )
 
     @property
     def install_dir(self):

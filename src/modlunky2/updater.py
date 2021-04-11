@@ -14,11 +14,15 @@ LATEST_EXE = (
 )
 
 
-def self_update():
+def self_update(self_exe):
     if not IS_EXE:
         logger.warning("Tried to update while not an exe. Doing nothing...")
+        return
 
-    self_exe = Path(sys.executable)
+    if self_exe is None:
+        logger.warning("Passed None as self_exe. Doing nothing...")
+        return
+
     exe_dir = self_exe.parent.resolve()
 
     new_path = exe_dir / f"{self_exe.stem}.backup{self_exe.suffix}"

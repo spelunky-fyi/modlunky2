@@ -27,7 +27,7 @@ def main():
         help="What level to log at. Default: %(default)s",
     )
     parser.add_argument(
-        "--exe-dir",
+        "--launcher-exe",
         default=None,
         help=argparse.SUPPRESS,
     )
@@ -48,10 +48,13 @@ def main():
 def launch(args, log_level):
 
     make_user_dirs()
-    exe_dir = args.exe_dir
-    if exe_dir:
-        exe_dir = Path(exe_dir)
-    config = Config.default(exe_dir=exe_dir)
+    launcher_exe = args.launcher_exe
+    exe_dir = None
+    if launcher_exe:
+        launcher_exe = Path(launcher_exe)
+        exe_dir = launcher_exe.parent
+
+    config = Config.default(launcher_exe=launcher_exe, exe_dir=exe_dir)
 
     if args.install_dir:
         config.install_dir = Path(args.install_dir)
