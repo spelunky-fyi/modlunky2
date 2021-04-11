@@ -4,7 +4,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from modlunky2.ui.widgets import Tab
+from modlunky2.ui.widgets import Tab, Entry
 
 logger = logging.getLogger("modlunky2")
 
@@ -13,29 +13,34 @@ class SourceChooser(ttk.Frame):
     def __init__(self, parent, modlunky_config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1)
+
+        ttk.Label(
+            self,
+            text="Source",
+            font="sans 11 bold",
+        ).grid(row=0, column=0, padx=5, sticky="ew")
 
         file_chooser_label = ttk.Label(self, text="Choose the file you want to install")
         file_chooser_label.grid(
-            row=0, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
+            row=1, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
 
         self.file_chooser_var = tk.StringVar()
-
         file_chooser_entry = ttk.Entry(
             self,
             textvariable=self.file_chooser_var,
             state=tk.DISABLED,
-            width=80,
         )
         file_chooser_entry.columnconfigure(0, weight=1)
         file_chooser_entry.columnconfigure(1, weight=1)
         file_chooser_entry.columnconfigure(2, weight=1)
         file_chooser_entry.grid(
-            row=1, column=0, padx=10, pady=10, columnspan=3, sticky="n"
+            row=2, column=0, padx=5, pady=5, columnspan=3, sticky="nsew"
         )
 
         file_chooser_browse = ttk.Button(self, text="Browse", command=self.browse)
-        file_chooser_browse.grid(row=2, column=0, pady=5, padx=5, sticky="nsew")
+        file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
         initial_dir = Path(self.modlunky_config.config_file.last_install_browse)
@@ -60,10 +65,16 @@ class DestinationChooser(ttk.Frame):
     def __init__(self, parent, modlunky_config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1)
 
+        ttk.Label(
+            self,
+            text="Destination",
+            font="sans 11 bold",
+        ).grid(row=0, column=0, padx=5, sticky="ew")
         file_chooser_label = ttk.Label(self, text="Choose or Create a Pack")
         file_chooser_label.grid(
-            row=0, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
+            row=1, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
 
         self.file_chooser_var = tk.StringVar()
@@ -72,17 +83,16 @@ class DestinationChooser(ttk.Frame):
             self,
             textvariable=self.file_chooser_var,
             state=tk.DISABLED,
-            width=80,
         )
         file_chooser_entry.columnconfigure(0, weight=1)
         file_chooser_entry.columnconfigure(1, weight=1)
         file_chooser_entry.columnconfigure(2, weight=1)
         file_chooser_entry.grid(
-            row=1, column=0, padx=10, pady=10, columnspan=3, sticky="n"
+            row=2, column=0, padx=5, pady=5, columnspan=3, sticky="nsew"
         )
 
         file_chooser_browse = ttk.Button(self, text="Browse", command=self.browse)
-        file_chooser_browse.grid(row=2, column=0, pady=5, padx=5, sticky="nsew")
+        file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
         initial_dir = self.modlunky_config.install_dir / "Mods/Packs"
@@ -146,10 +156,10 @@ def install_mod(call, install_dir: Path, source: Path, pack: str):
     call("play:reload")
 
 
-class InstallTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
-        super().__init__(tab_control, *args, **kwargs)
-        self.tab_control = tab_control
+class LocalInstall(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+        super().__init__(parent, text="Local Installation", *args, **kwargs)
+
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager
 
@@ -164,7 +174,7 @@ class InstallTab(Tab):
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, minsize=60)
 
-        source_frame = ttk.LabelFrame(self, text="Source")
+        source_frame = ttk.Frame(self)
         source_frame.rowconfigure(0, weight=1)
         source_frame.columnconfigure(0, weight=1)
         source_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
@@ -172,7 +182,7 @@ class InstallTab(Tab):
         self.file_chooser_frame = SourceChooser(source_frame, modlunky_config)
         self.file_chooser_frame.grid(row=0, column=0, pady=5, padx=5, sticky="new")
 
-        dest_frame = ttk.LabelFrame(self, text="Destination")
+        dest_frame = ttk.Frame(self)
         dest_frame.rowconfigure(0, weight=1)
         dest_frame.columnconfigure(0, weight=1)
         dest_frame.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
@@ -182,9 +192,6 @@ class InstallTab(Tab):
 
         self.button_install = ttk.Button(self, text="Install", command=self.install)
         self.button_install.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
-
-    def on_load(self):
-        self.render()
 
     def install(self):
         source = Path(self.file_chooser_frame.file_chooser_var.get())
@@ -212,3 +219,66 @@ class InstallTab(Tab):
             self.button_install["state"] = tk.NORMAL
         else:
             self.button_install["state"] = tk.DISABLED
+
+
+class FyiInstall(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+        super().__init__(parent, text="spelunky.fyi Installation", *args, **kwargs)
+
+        self.modlunky_config = modlunky_config
+        self.task_manager = task_manager
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        frame = ttk.Frame(self)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+        frame.rowconfigure(4, minsize=60)
+        frame.grid(row=0, column=0, sticky="nswe")
+
+        ttk.Label(
+            frame,
+            text="Install Code",
+            font="sans 11 bold",
+        ).grid(row=1, column=0, padx=5, sticky="ew")
+        ttk.Label(
+            frame,
+            text="Enter the 'Install Code' from a mod page on spelunky.fyi",
+        ).grid(row=2, column=0, padx=5, sticky="ew")
+
+        self.entry = Entry(frame)
+        self.entry.grid(row=3, column=0, pady=5, padx=5, sticky="new")
+
+        self.button_install = ttk.Button(frame, text="Install", command=self.install)
+        self.button_install.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
+
+    def install(self):
+        logger.info("I don't do anything yet...")
+
+
+class InstallTab(Tab):
+    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+        super().__init__(tab_control, *args, **kwargs)
+        self.tab_control = tab_control
+        self.modlunky_config = modlunky_config
+        self.task_manager = task_manager
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        self.fyi_install = FyiInstall(self, modlunky_config, task_manager)
+        self.fyi_install.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        sep = ttk.Separator(self, orient=tk.VERTICAL)
+        sep.grid(row=0, column=1, padx=10, sticky="ns")
+
+        self.local_install = LocalInstall(self, modlunky_config, task_manager)
+        self.local_install.grid(row=0, column=2, padx=5, pady=5, sticky="nsew")
+
+    def on_load(self):
+        self.render()
+
+    def render(self):
+        self.local_install.render()
