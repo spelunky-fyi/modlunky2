@@ -3,13 +3,17 @@ import logging
 import re
 import shutil
 import tkinter as tk
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from tkinter import ttk
+from urllib.parse import urlparse
 
 import requests
 from requests import HTTPError
 
-from modlunky2.ui.widgets import Tab, Entry
+from modlunky2.ui.widgets import Entry, Tab
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -226,11 +230,12 @@ class LocalInstall(ttk.LabelFrame):
             self.button_install["state"] = tk.DISABLED
 
 
-def write_manifest(dest_dir: Path, mod_details, latest_mod_file):
+def write_manifest(dest_dir: Path, mod_details, latest_mod_file, logo=None):
     manifest = {
         "name": mod_details["name"],
         "slug": mod_details["slug"],
         "description": mod_details["description"],
+        "logo": str(logo),
         "mod_file": {
             "id": latest_mod_file["id"],
             "created_at": latest_mod_file["created_at"],
@@ -240,6 +245,67 @@ def write_manifest(dest_dir: Path, mod_details, latest_mod_file):
 
     with (dest_dir / "manifest.json").open("w", encoding="utf-8") as manifest_file:
         json.dump(manifest, manifest_file)
+
+
+def download_contents(_call, url):
+
+    contents = BytesIO()
+
+    try:
+        response = requests.get(url, stream=True, allow_redirects=True)
+        response.raise_for_status()
+        amount_downloaded = 0
+        block_size = 102400
+
+        for data in response.iter_content(block_size):
+            amount_downloaded += len(data)
+            logger.info("Downloaded %s bytes", amount_downloaded)
+            contents.write(data)
+
+    except Exception:  # pylint: disable=broad-except
+        logger.critical("Failed to download %s: %s", url, tb_info())
+        return
+
+    contents.seek(0)
+    return contents
+
+
+def download_file(call, url: str, dest_path: Path):
+    contents = download_contents(call, url)
+    if contents is None:
+        logger.warning("Failed to download file from %s", url)
+        return
+
+    with dest_path.open("wb") as dest_file:
+        shutil.copyfileobj(contents, dest_file)
+
+
+def download_zip(call, download_url, pack_dir):
+    contents = download_contents(call, download_url)
+    if contents is None:
+        logger.warning("Failed to download file from %s", download_url)
+        return
+
+    modzip = zipfile.ZipFile(contents)
+    modzip.extractall(pack_dir)
+
+
+def download_mod_file(call, mod_file, pack_dir):
+    download_url = mod_file["download_url"]
+    filename = Path(mod_file["filename"])
+
+    if filename.suffix == ".zip":
+        download_zip(call, download_url, pack_dir)
+    else:
+        download_file(call, download_url, pack_dir / filename)
+
+
+def download_logo(call, logo_url, pack_dir):
+    logger.info("Downloading logo")
+    url_path = Path(urlparse(logo_url).path)
+    logo_name = Path("mod_logo").with_suffix(url_path.suffix)
+    download_file(call, logo_url, pack_dir / logo_name)
+    return logo_name
 
 
 def install_fyi_mod(
@@ -279,25 +345,20 @@ def install_fyi_mod(
 
     latest_mod_file = mod_details["mod_files"][0]
 
-    dest_dir = packs_dir / f"fyi.{install_code}"
-    if not dest_dir.exists():
-        dest_dir.mkdir(parents=True, exist_ok=True)
+    pack_dir = packs_dir / f"fyi.{install_code}"
+    if not pack_dir.exists():
+        pack_dir.mkdir(parents=True, exist_ok=True)
 
-    write_manifest(dest_dir, mod_details, latest_mod_file)
+    download_mod_file(call, latest_mod_file, pack_dir)
 
-    # TODO:
-    #    Download Logo
-    #    Download file
-    #    Handle collisions
+    logo_url = mod_details["logo"]
+    logo_name = None
+    if logo_url:
+        logo_name = download_logo(call, logo_url, pack_dir)
 
-    # if source.suffix == ".zip":
-    #     logger.info("Extracting %s to %s", source.name, dest_dir)
-    #     shutil.unpack_archive(source, dest_dir)
-    # else:
-    #     logger.info("Copying file %s to %s", source.name, dest_dir)
-    #     shutil.copy(source.resolve(), dest_dir.resolve())
+    write_manifest(pack_dir, mod_details, latest_mod_file, logo_name)
 
-    logger.info("Finished installing %s to %s", install_code, dest_dir)
+    logger.info("Finished installing %s to %s", install_code, pack_dir)
     call("play:reload")
 
 
@@ -343,7 +404,6 @@ class FyiInstall(ttk.LabelFrame):
         self.button_install.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
 
     def install(self):
-
         spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
         if not api_token:
