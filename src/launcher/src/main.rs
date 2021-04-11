@@ -5,6 +5,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use directories::ProjectDirs;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -106,6 +107,23 @@ fn main() -> Result<()> {
 
     if !exe_path.exists() {
         panic!("No exe found despite extracting...");
+    }
+
+    // Clean up old cached releases
+    for entry in fs::read_dir(cache_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        // Don't remove yourself
+        if path.file_name() == Some(OsStr::new(MODLUNKY2_VERSION)) {
+            continue;
+        }
+
+        // Remove old cache directories
+        let _ = std::fs::remove_dir_all(&path);
     }
 
     let current_exe = std::env::current_exe()?;
