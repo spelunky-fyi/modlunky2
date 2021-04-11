@@ -5,7 +5,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use directories::ProjectDirs;
-//use std::ffi::OsStr;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -109,7 +109,6 @@ fn main() -> Result<()> {
         panic!("No exe found despite extracting...");
     }
 
-    /* TODO: Add after self-updater has been in the wild for a while
     // Clean up old cached releases
     for entry in fs::read_dir(cache_dir)? {
         let entry = entry?;
@@ -126,7 +125,6 @@ fn main() -> Result<()> {
         // Remove old cache directories
         let _ = std::fs::remove_dir_all(&path);
     }
-    */
 
     let current_exe = std::env::current_exe()?;
     std::process::Command::new(exe_path)
