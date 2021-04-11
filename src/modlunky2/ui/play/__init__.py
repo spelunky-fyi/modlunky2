@@ -23,7 +23,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig, SECTIONS
-from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
+from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip, DebounceEntry
 from modlunky2.utils import tb_info, is_patched
 
 logger = logging.getLogger("modlunky2")
@@ -38,34 +38,6 @@ PLAYLUNKY_DLL = "playlunky64.dll"
 PLAYLUNKY_EXE = "playlunky_launcher.exe"
 PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
 PLAYLUNKY_VERSION_FILENAME = "playlunky.version"
-
-
-class Entry(ttk.Entry):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.bind("<Control-a>", self._select_all)
-        self.bind("<Key>", self._on_key)
-
-        self._on_key_func = None
-        self._after_id = None
-        self._debounce_ms = 200
-
-    def _select_all(self, _event=None):
-        self.select_range(0, "end")
-        return "break"
-
-    def _on_key(self, event=None):
-        if self._on_key_func is None:
-            return
-
-        if self._after_id is not None:
-            self.after_cancel(self._after_id)
-        self._after_id = self.after(self._debounce_ms, self._on_key_func, event)
-
-    def bind_on_key(self, func, debounce_ms=None):
-        self._on_key_func = func
-        if debounce_ms is not None:
-            self._debounce_ms = debounce_ms
 
 
 cache_releases_lock = threading.Lock()
@@ -505,7 +477,7 @@ class FiltersFrame(ttk.LabelFrame):
 
         self.name_label = ttk.Label(self, text="Name:")
         self.name_label.grid(row=0, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
-        self.name = Entry(self, width="30")
+        self.name = DebounceEntry(self, width="30")
         self.name_last_seen = ""
         self.name.bind_on_key(self.on_name_key)
         self.name.grid(row=0, column=1, pady=(5, 5), padx=(5, 0), sticky="w")

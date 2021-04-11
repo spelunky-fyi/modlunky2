@@ -333,3 +333,26 @@ class Entry(ttk.Entry):
         event.widget.select_range(0, "end")
         event.widget.icursor("end")
         return "break"
+
+
+class DebounceEntry(Entry):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.bind("<Key>", self._on_key)
+
+        self._on_key_func = None
+        self._after_id = None
+        self._debounce_ms = 200
+
+    def _on_key(self, event=None):
+        if self._on_key_func is None:
+            return
+
+        if self._after_id is not None:
+            self.after_cancel(self._after_id)
+        self._after_id = self.after(self._debounce_ms, self._on_key_func, event)
+
+    def bind_on_key(self, func, debounce_ms=None):
+        self._on_key_func = func
+        if debounce_ms is not None:
+            self._debounce_ms = debounce_ms
