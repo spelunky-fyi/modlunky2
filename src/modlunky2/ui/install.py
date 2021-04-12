@@ -311,7 +311,9 @@ def download_logo(call, logo_url, pack_dir):
 def install_fyi_mod(
     call, install_dir: Path, spelunky_fyi_root: str, api_token: str, install_code: str
 ):
-    packs_dir = install_dir / "Mods/Packs"
+    mods_dir = install_dir / "Mods"
+    packs_dir = mods_dir / "Packs"
+    metadata_dir = mods_dir / ".ml/pack-metadata"
 
     url = f"{spelunky_fyi_root}api/mods/{install_code}/"
     logger.debug("Checking for mod at %s", url)
@@ -349,14 +351,18 @@ def install_fyi_mod(
     if not pack_dir.exists():
         pack_dir.mkdir(parents=True, exist_ok=True)
 
+    pack_metadata_dir = metadata_dir / f"fyi.{install_code}"
+    if not pack_metadata_dir.exists():
+        pack_metadata_dir.mkdir(parents=True, exist_ok=True)
+
     download_mod_file(call, latest_mod_file, pack_dir)
 
     logo_url = mod_details["logo"]
     logo_name = None
     if logo_url:
-        logo_name = download_logo(call, logo_url, pack_dir)
+        logo_name = download_logo(call, logo_url, pack_metadata_dir)
 
-    write_manifest(pack_dir, mod_details, latest_mod_file, logo_name)
+    write_manifest(pack_metadata_dir, mod_details, latest_mod_file, logo_name)
 
     logger.info("Finished installing %s to %s", install_code, pack_dir)
     call("play:reload")
