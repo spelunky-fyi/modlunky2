@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from modlunky2.sprites.base_classes.base_sprite_merger import BaseSpriteMerger
 from modlunky2.sprites.monsters.basic import (
     Basic1,
     Basic2,
@@ -10,6 +13,7 @@ from modlunky2.sprites.journal_mons import JournalMonsterSheet
 from modlunky2.sprites.journal_people import JournalPeopleSheet
 from modlunky2.sprites.journal_stickers import StickerSheet
 from modlunky2.sprites.merger_factory import create_merger_factory_for_source_sheet
+from modlunky2.sprites.util import chunks_from_animation
 
 
 _basic1_factory = create_merger_factory_for_source_sheet(Basic1, JournalMonsterSheet)
@@ -45,7 +49,13 @@ ScorpionSpriteMerger = _basic1_factory(
     "Monsters/scorpion", "journal_scorpion", ["ENT_TYPE_MONS_SCORPION"]
 )
 GoldenMonkeySpriteMerger = _basic1_factory(
-    "Monsters/golden_monkey", "journal_golden_monkey", ["ENT_TYPE_MONS_GOLDMONKEY"]
+    "Monsters/golden_monkey", "journal_golden_monkey", ["ENT_TYPE_MONS_GOLDMONKEY"],
+    additional_origins={
+        Basic1: {
+            "additional_golden_monkey_0": (0, 0, 1, 1),
+            "additional_golden_monkey_1": (1, 0, 2, 1),
+        },
+    },
 )
 BeeSpriteMerger = _basic1_factory("Monsters/bee", "journal_bee", ["ENT_TYPE_MONS_BEE"])
 MagmarSpriteMerger = _basic1_factory(
@@ -73,8 +83,12 @@ CaveManSpriteMerger = _basic2_factory(
     None,
     ["ENT_TYPE_MONS_CAVEMAN"],
     additional_origins={
+        Basic2: {
+            **chunks_from_animation("caveman_additional_0", (0, 0, 1, 1), 8),
+            **chunks_from_animation("caveman_additional_1", (0, 1, 1, 2), 2),
+        },
         JournalMonsterSheet: {"journal_cave_man": (0, 0, 1, 1)},
-        StickerSheet: {"sticker_cave_man": (0, 0, 1, 1)},
+        StickerSheet: {"sticker_cave_man": (0, 0, 1, 1)}
     },
 )
 BodyguardSpriteMerger = _basic2_factory(
@@ -144,7 +158,7 @@ ParsnipSpriteMerger = _basic3_factory(
         StickerSheet: {"sticker_parsnip": (0, 0, 1, 1)},
     },
 )
-YanSpriteMerger = _basic3_factory(
+YangSpriteMerger = _basic3_factory(
     "People/yang",
     None,
     ["ENT_TYPE_MONS_YANG"],
@@ -152,6 +166,11 @@ YanSpriteMerger = _basic3_factory(
         JournalPeopleSheet: {"journal_yang": (0, 0, 1, 1)},
         StickerSheet: {"sticker_yang": (0, 0, 1, 1)},
     },
+)
+BirdiesSpriteMerger = _basic3_factory(
+    "Critters/birdies",
+    None,
+    ["ENT_TYPE_FX_BIRDIES"],
 )
 
 _monsters1_factory = create_merger_factory_for_source_sheet(
@@ -201,6 +220,12 @@ WitchDoctorSpriteMerger = _monsters1_factory(
     "Monsters/witch_doctor",
     "journal_witch_doctor",
     ["ENT_TYPE_MONS_WITCHDOCTOR"],
+    additional_origins={
+        Monsters1: {
+            "witchdoctor_additional_0": (0, 0, 1, 1),
+            "witchdoctor_additional_1": (1, 0, 2, 1),
+        },
+    },
 )
 CritterButterflySpriteMerger = _monsters1_factory(
     "Critters/butterfly",
@@ -240,11 +265,23 @@ JiangshiSpriteMerger = _monsters2_factory(
     "Monsters/jiangshi",
     "journal_jiangshi",
     ["ENT_TYPE_MONS_JIANGSHI"],
+    additional_origins={
+        Monsters2: {
+            "jiangshi_additional": (0, 0, 1, 1),
+        },
+    },
 )
 HermitCrabSpriteMerger = _monsters2_factory(
     "Monsters/hermit_crab",
     "journal_hermit_crab",
     ["ENT_TYPE_MONS_HERMITCRAB"],
+    additional_origins={
+        Monsters2: {
+            **chunks_from_animation("hermit_crab_additional_1", (0, 0, 1, 1), 6),
+            **chunks_from_animation("hermit_crab_additional_2", (6, 0, 7, 1), 1),
+            **chunks_from_animation("hermit_crab_additional_3", (0, 1, 1, 2), 4),
+        },
+    },
 )
 FlyingFishSpriteMerger = _monsters2_factory(
     "Monsters/flying_fish",
@@ -261,10 +298,26 @@ CritterCrabSpriteMerger = _monsters2_factory(
     None,
     ["ENT_TYPE_MONS_CRITTERCRAB"],
 )
+class CritterBlueCrabSpriteMerger(BaseSpriteMerger):
+    _target_sprite_sheet_path = Path(
+        "Data/Textures/Entities/Critters/blue_crab.png"
+    )
+    _grid_hint_size = 8
+    _origin_map = {
+        Monsters2: {
+            **chunks_from_animation("blue_crab_1", (0, 0, 1, 1), 3),
+            **chunks_from_animation("blue_crab_2", (0, 1, 1, 2), 3),
+        }
+    }
 FemaleJiangshiSpriteMerger = _monsters2_factory(
     "Monsters/female_jiangshi",
     "journal_jiangshi_assassin",
     ["ENT_TYPE_MONS_FEMALE_JIANGSHI"],
+    additional_origins={
+        Monsters2: {
+            "female_jiangshi_additional": (0, 0, 1, 1),
+        },
+    },
 )
 CritterFishSpriteMerger = _monsters2_factory(
     "Critters/fish",
@@ -350,16 +403,33 @@ OlmiteNakedSpriteMerger = _monsters3_factory(
     "journal_olmite",
     ["ENT_TYPE_MONS_OLMITE_NAKED"],
 )
-OlmitedArmoredSpriteMerger = _monsters3_factory(
-    "Monsters/olmite_armored",
-    None,
-    ["ENT_TYPE_MONS_OLMITE_BODYARMORED"],
-)
-OlmiteHelmetSpriteMerger = _monsters3_factory(
-    "Monsters/olmite_helmet",
-    None,
-    ["ENT_TYPE_MONS_OLMITE_HELMET"],
-)
+class OlmitedArmoredSpriteMerger(BaseSpriteMerger):
+    _target_sprite_sheet_path = Path(
+        "Data/Textures/Entities/Monsters/olmite_armored.png"
+    )
+    _grid_hint_size = 8
+    _origin_map = {
+        Monsters3: {
+            **chunks_from_animation("olmite_boy_armored_1", (0, 0, 1, 1), 4),
+            **chunks_from_animation("olmite_boy_armored_2", (0, 1, 1, 2), 4),
+            **chunks_from_animation("olmite_boy_armored_3", (0, 2, 1, 3), 2),
+        }
+    }
+class OlmiteHelmetSpriteMerger(BaseSpriteMerger):
+    _target_sprite_sheet_path = Path(
+        "Data/Textures/Entities/Monsters/olmite_helmet.png"
+    )
+    _grid_hint_size = 8
+    _origin_map = {
+        Monsters3: {
+            **chunks_from_animation("olmite_boy_helmet_1", (0, 0, 1, 1), 4),
+            **chunks_from_animation("olmite_boy_helmet_2", (0, 1, 1, 2), 4),
+            **chunks_from_animation("olmite_boy_helmet_3", (0, 2, 1, 3), 2),
+            **chunks_from_animation("olmite_boy_helmet_4", (2, 2, 3, 3), 2),
+            **chunks_from_animation("olmite_boy_helmet_5", (0, 3, 1, 4), 4),
+            **chunks_from_animation("olmite_boy_helmet_6", (0, 4, 1, 5), 1),
+        }
+    }
 GrubSpriteMerger = _monsters3_factory(
     "Monsters/grub",
     "journal_grub",
@@ -374,4 +444,10 @@ FireFrogSpriteMerger = _monsters3_factory(
     "Monsters/fire_frog",
     "journal_fire_frog",
     ["ENT_TYPE_MONS_FIREFROG"],
+    additional_origins={
+        Monsters3: {
+            "firefrog_dead_0": (0, 0, 1, 1),
+            "firefrog_dead_1": (1, 0, 2, 1),
+        },
+    },
 )

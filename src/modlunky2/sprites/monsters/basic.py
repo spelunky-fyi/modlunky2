@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ..base_classes import BaseJsonSpriteLoader
+from ..util import chunks_from_animation
 
 
 class Basic1(BaseJsonSpriteLoader):
@@ -22,6 +23,8 @@ class Basic1(BaseJsonSpriteLoader):
         "golden_monkey": (14, 9, 15, 10),
         "bee": (9, 12, 10, 13),
         "magmar": (4, 14, 5, 15),
+        "additional_golden_monkey_0": (11, 10, 12, 11),
+        "additional_golden_monkey_1": (15, 10, 16, 11),
     }
     _entity_names = [
         "ENT_TYPE_MONS_SNAKE",
@@ -53,6 +56,8 @@ class Basic2(BaseJsonSpriteLoader):
         "oldhunter": (0, 11, 1, 12),
         "tun": (0, 14, 1, 15),
         "merchant": (0, 14, 1, 15),
+        **chunks_from_animation("caveman_additional_0", (0, 7, 1, 8), 8),
+        **chunks_from_animation("caveman_additional_1", (8, 7, 9, 8), 2),
     }
     _entity_names = [
         "ENT_TYPE_MONS_VAMPIRE",
@@ -84,6 +89,7 @@ class Basic3(BaseJsonSpriteLoader):
         "ENT_TYPE_MONS_SISTER_PARSLEY",
         "ENT_TYPE_MONS_SISTER_PARSNIP",
         "ENT_TYPE_MONS_YANG",
+        "ENT_TYPE_FX_BIRDIES"
     ]
 
 
@@ -97,6 +103,8 @@ class Monsters1(BaseJsonSpriteLoader):
         "mantrap": (0, 8, 1, 9),
         "tikiman": (0, 9, 1, 10),
         "mosquito": (0, 14, 1, 15),
+        "witchdoctor_additional_0": (12, 10, 13, 11),
+        "witchdoctor_additional_1": (13, 10, 14, 11),
     }
     _entity_names = [
         "ENT_TYPE_MONS_ROBOT",
@@ -129,6 +137,13 @@ class Monsters2(BaseJsonSpriteLoader):
         "sorceress": (0, 10, 1, 11),
         "catmummy": (0, 11, 1, 12),
         "necromancer": (0, 12, 1, 13),
+        "jiangshi_additional": (9, 0, 10, 1),
+        "female_jiangshi_additional": (9, 6, 10, 7),
+        **chunks_from_animation("hermit_crab_additional_1", (10, 4, 11, 5), 6),
+        **chunks_from_animation("hermit_crab_additional_2", (11, 5, 12, 6), 1),
+        **chunks_from_animation("hermit_crab_additional_3", (12, 5, 13, 6), 4),
+        **chunks_from_animation("blue_crab_1", (6, 13, 7, 14), 3),
+        **chunks_from_animation("blue_crab_2", (9, 13, 10, 14), 3),
     }
     _entity_names = [
         "ENT_TYPE_MONS_JIANGSHI",
@@ -154,6 +169,17 @@ class Monsters3(BaseJsonSpriteLoader):
         "yeti": (0, 0, 1, 1),
         "jumpdog": (0, 6, 1, 7),
         "olmite": (0, 7, 1, 8),
+        "firefrog_dead_0": (5, 12, 6, 13),
+        "firefrog_dead_1": (6, 12, 7, 13),
+        **chunks_from_animation("olmite_boy_armored_1", (0, 8, 1, 9), 4),
+        **chunks_from_animation("olmite_boy_armored_2", (4, 8, 5, 9), 4),
+        **chunks_from_animation("olmite_boy_armored_3", (8, 8, 9, 9), 2),
+        **chunks_from_animation("olmite_boy_helmet_1", (0, 9, 1, 10), 4),
+        **chunks_from_animation("olmite_boy_helmet_2", (4, 9, 5, 10), 4),
+        **chunks_from_animation("olmite_boy_helmet_3", (8, 9, 9, 10), 2),
+        **chunks_from_animation("olmite_boy_helmet_4", (0, 10, 1, 11), 2),
+        **chunks_from_animation("olmite_boy_helmet_5", (2, 10, 3, 11), 4),
+        **chunks_from_animation("olmite_boy_helmet_6", (6, 10, 7, 11), 1),
     }
     _entity_names = [
         "ENT_TYPE_MONS_YETI",
