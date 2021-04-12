@@ -40,6 +40,8 @@ PLAYLUNKY_EXE = "playlunky_launcher.exe"
 PLAYLUNKY_FILES = [SPEL2_DLL, PLAYLUNKY_DLL, PLAYLUNKY_EXE]
 PLAYLUNKY_VERSION_FILENAME = "playlunky.version"
 
+ICON_PATH = BASE_DIR / "static/images"
+
 
 cache_releases_lock = threading.Lock()
 
@@ -742,6 +744,150 @@ def launch_playlunky(_call, install_dir, exe_path, use_console):
         )
 
 
+class Pack:
+    def __init__(self, play_tab, parent, modlunky_config, folder):
+        self.play_tab = play_tab
+        self.modlunky_config = modlunky_config
+        self.folder = folder
+
+        self.manifest = {}
+        pack_path = modlunky_config.install_dir / "Mods/Packs" / folder
+        manifest_path = pack_path / "manifest.json"
+        if manifest_path.exists():
+            with manifest_path.open("r", encoding="utf-8") as manifest_file:
+                self.manifest = json.load(manifest_file)
+
+        self.logo_img = None
+        if self.manifest.get("logo") and (pack_path / self.manifest["logo"]).exists():
+            self.logo_img = ImageTk.PhotoImage(
+                Image.open(pack_path / self.manifest["logo"]).resize(
+                    (40, 40), Image.ANTIALIAS
+                )
+            )
+            self.logo = ttk.Label(parent, image=self.logo_img)
+        else:
+            self.logo = ttk.Label(parent)
+
+        self.var = tk.BooleanVar()
+        self.checkbutton = ttk.Checkbutton(
+            parent,
+            text=self.manifest.get("name", folder),
+            style="ModList.TCheckbutton",
+            variable=self.var,
+            onvalue=True,
+            offvalue=False,
+            compound="left",
+            command=self.on_check,
+        )
+
+        self.buttons = ttk.Frame(parent)
+        self.buttons.rowconfigure(0, weight=1)
+        self.buttons.folder_button = ttk.Button(
+            self.buttons,
+            image=self.play_tab.folder_icon,
+            command=self.open_pack_dir,
+        )
+        self.buttons.folder_button.grid(row=0, column=0, sticky="e")
+        self.buttons.trash_button = ttk.Button(
+            self.buttons,
+            image=self.play_tab.trash_icon,
+            command=self.remove_pack,
+        )
+        self.buttons.trash_button.grid(row=0, column=1, sticky="e")
+
+    def forget(self):
+        self.logo.grid_forget()
+        self.checkbutton.grid_forget()
+        self.buttons.grid_forget()
+
+    def grid(self, row):
+        self.logo.grid(row=row, column=0, sticky="ew")
+        self.checkbutton.grid(row=row, column=1, pady=0, padx=5, sticky="nsw")
+        self.buttons.grid(row=row, column=2, pady=0, padx=(5, 25), sticky="e")
+
+    def render_buttons(self):
+        if not (self.modlunky_config.install_dir / "Mods/Packs" / self.folder).exists():
+            self.buttons.folder_button["state"] = tk.DISABLED
+        else:
+            self.buttons.folder_button["state"] = tk.NORMAL
+
+    def selected(self):
+        return self.var.get()
+
+    def enable(self):
+        self.var.set(True)
+
+    def disable(self):
+        self.var.set(False)
+
+    def set(self, val: bool):
+        if val:
+            self.enable()
+        else:
+            self.disable()
+        self.on_check()
+
+    def destroy(self):
+        self.checkbutton.destroy()
+        self.buttons.destroy()
+        self.logo.destroy()
+        self.play_tab.load_order.delete(self.folder)
+
+    def on_check(self):
+        if self.var.get():
+            self.play_tab.load_order.insert(self.folder)
+        else:
+            self.play_tab.load_order.delete(self.folder)
+        self.play_tab.render_packs()
+
+    def open_pack_dir(self):
+        if self.folder.startswith("/"):
+            logger.warning("Got dangerous pack name, aborting...")
+            return
+
+        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / self.folder
+        if not pack_dir.exists():
+            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
+            return
+
+        webbrowser.open(f"file://{pack_dir}")
+
+    def remove_pack(self):
+        if self.folder.startswith("/"):
+            logger.warning("Got dangerous pack name, aborting...")
+            return
+
+        to_remove = []
+        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / self.folder
+        if pack_dir.exists():
+            to_remove.append(pack_dir)
+
+        if not to_remove:
+            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
+
+        removing = "\n".join(map(str, to_remove))
+        answer = tk.messagebox.askokcancel(
+            title="Confirmation",
+            message=(
+                "Are you sure you want to remove this pack?\n"
+                "\n"
+                "This will remove the following:\n"
+                f"{removing}"
+            ),
+            icon=tk.messagebox.WARNING,
+        )
+
+        if not answer:
+            return
+
+        for path in to_remove:
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        self.play_tab.on_load()
+
+
 class PlayTab(Tab):
     def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
@@ -759,6 +905,13 @@ class PlayTab(Tab):
         )
         self.task_manager.register_handler("play:reload", self.on_load)
         self.playlunky_running = False
+
+        self.folder_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "folder.png").resize((30, 30), Image.ANTIALIAS)
+        )
+        self.trash_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "trash.png").resize((30, 30), Image.ANTIALIAS)
+        )
 
         self.rowconfigure(0, minsize=200)
         self.rowconfigure(1, weight=1)
@@ -780,7 +933,7 @@ class PlayTab(Tab):
             self.play_wrapper, text="Select Mods to Play"
         )
         self.packs_frame.rowconfigure(0, weight=1)
-        self.packs_frame.columnconfigure(0, weight=1)
+        self.packs_frame.columnconfigure(1, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
@@ -811,17 +964,9 @@ class PlayTab(Tab):
         self.version_frame.render()
         self.version_frame.cache_releases()
 
-        icon_path = BASE_DIR / "static/images"
-        self.folder_icon = ImageTk.PhotoImage(
-            Image.open(icon_path / "folder.png").resize((30, 30), Image.ANTIALIAS)
-        )
-        self.trash_icon = ImageTk.PhotoImage(
-            Image.open(icon_path / "trash.png").resize((30, 30), Image.ANTIALIAS)
-        )
-
         self.packs = []
         self.separators = []
-        self.checkboxes = {}
+        self.pack_objs = {}
 
         self.ini = None
 
@@ -879,26 +1024,21 @@ class PlayTab(Tab):
             for line in load_order_file:
                 line = line.strip()
 
-                select = True
+                selected = True
                 if line.startswith("--"):
-                    select = False
+                    selected = False
                     line = line[2:]
 
-                var, checkbox, buttons = self.checkboxes.get(line, (None, None, None))
-                if (var, checkbox, buttons) == (None, None, None):
+                pack = self.pack_objs.get(line)
+                if pack is None:
                     continue
 
-                if select:
-                    var.set(True)
-                else:
-                    var.set(False)
-
-                self.on_check(line, var)
+                pack.set(selected)
 
     def write_load_order(self):
         load_order_path = self.load_order_path
         with load_order_path.open("w") as load_order_file:
-            all_packs = set(self.checkboxes.keys())
+            all_packs = set(self.pack_objs.keys())
             for pack in self.load_order.all():
                 all_packs.remove(pack)
                 load_order_file.write(f"{pack}\n")
@@ -1020,15 +1160,8 @@ class PlayTab(Tab):
             if path.name.startswith("."):
                 continue
 
-            if not path.is_dir() and not path.suffix.lower() == ".zip":
+            if not path.is_dir():
                 continue
-
-            if path.is_file and path.suffix.lower() == ".zip":
-                path = path.with_suffix("")
-                # If There's a version that's extracted with the same name
-                # skip the zipped version
-                if path.exists():
-                    continue
 
             packs.append(
                 str(path.relative_to(self.modlunky_config.install_dir / "Mods/Packs"))
@@ -1036,9 +1169,9 @@ class PlayTab(Tab):
         return packs
 
     def render_packs(self):
-        name = self.filter_frame.name.get()
-        if name:
-            name = name.lower()
+        query = self.filter_frame.name.get()
+        if query:
+            query = query.lower()
 
         filter_selected = self.filter_frame.selected_var.get()
 
@@ -1047,139 +1180,41 @@ class PlayTab(Tab):
         self.separators.clear()
 
         row_num = 0
-        for pack in self.packs:
+        for pack_name in self.packs:
             display = True
-            checkbox_var, checkbox, buttons = self.checkboxes[pack]
-            checkbox_val = checkbox_var.get()
-            buttons.grid_forget()
-            checkbox.grid_forget()
+            pack = self.pack_objs[pack_name]
+            pack.forget()
+            pack.render_buttons()
 
-            if not (
-                self.modlunky_config.install_dir / "Mods/Packs" / str(pack)
-            ).exists():
-                buttons.folder_button["state"] = tk.DISABLED
-            else:
-                buttons.folder_button["state"] = tk.NORMAL
-
-            if name and name not in pack.lower():
+            if query and query not in pack_name.lower():
                 display = False
 
-            if filter_selected == "Selected" and not checkbox_val:
+            if filter_selected == "Selected" and not pack.selected():
                 display = False
-            elif filter_selected == "Unselected" and checkbox_val:
+            elif filter_selected == "Unselected" and pack.selected():
                 display = False
 
             if display:
                 if row_num > 0:
                     sep = ttk.Separator(self.packs_frame)
-                    sep.grid(row=row_num, column=0, pady=1, sticky="ew")
+                    sep.grid(row=row_num, column=0, columnspan=2, pady=1, sticky="ew")
                     self.separators.append(sep)
                     row_num += 1
-                checkbox.grid(row=row_num, column=0, pady=0, padx=5, sticky="nsw")
-                buttons.grid(row=row_num, column=1, pady=0, padx=(5, 25), sticky="e")
+                pack.grid(row_num)
                 row_num += 1
-
-    def on_check(self, name, var):
-        if var.get():
-            self.load_order.insert(name)
-        else:
-            self.load_order.delete(name)
-        self.render_packs()
-
-    def on_check_wrapper(self, name, var):
-        return lambda: self.on_check(name, var)
-
-    def open_pack_dir(self, pack):
-        if pack.startswith("/"):
-            logger.warning("Got dangerous pack name, aborting...")
-            return
-
-        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / pack
-        if not pack_dir.exists():
-            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
-            return
-
-        webbrowser.open(f"file://{pack_dir}")
-
-    def remove_pack(self, pack):
-        if pack.startswith("/"):
-            logger.warning("Got dangerous pack name, aborting...")
-            return
-
-        to_remove = []
-        pack_dir = self.modlunky_config.install_dir / "Mods/Packs" / pack
-        if pack_dir.exists():
-            to_remove.append(pack_dir)
-
-        if pack_dir.with_suffix(".zip").exists():
-            to_remove.append(pack_dir.with_suffix(".zip"))
-
-        if not to_remove:
-            logger.info("No pack directory found to remove. Looked in %s", pack_dir)
-
-        removing = "\n".join(map(str, to_remove))
-        answer = tk.messagebox.askokcancel(
-            title="Confirmation",
-            message=(
-                "Are you sure you want to remove this pack?\n"
-                "\n"
-                "This will remove the following:\n"
-                f"{removing}"
-            ),
-            icon=tk.messagebox.WARNING,
-        )
-
-        if not answer:
-            return
-
-        for path in to_remove:
-            if path.is_dir():
-                shutil.rmtree(path)
-            else:
-                path.unlink()
-        self.on_load()
 
     def on_load(self):
         self.make_dirs()
         packs = sorted(self.get_packs())
         packs_added, packs_removed = self.diff_packs(self.packs, packs)
 
-        for pack in packs_added:
-            var = tk.BooleanVar()
+        for pack_name in packs_added:
+            pack = Pack(self, self.packs_frame, self.modlunky_config, pack_name)
+            self.pack_objs[pack_name] = pack
 
-            item = ttk.Checkbutton(
-                self.packs_frame,
-                text=f"{pack}",
-                style="ModList.TCheckbutton",
-                variable=var,
-                onvalue=True,
-                offvalue=False,
-                compound="left",
-                command=self.on_check_wrapper(pack, var),
-            )
-
-            buttons = ttk.Frame(self.packs_frame)
-            buttons.rowconfigure(0, weight=1)
-            buttons.folder_button = ttk.Button(
-                buttons,
-                image=self.folder_icon,
-                command=(lambda pack: lambda: self.open_pack_dir(str(pack)))(pack),
-            )
-            buttons.folder_button.grid(row=0, column=0, sticky="e")
-            buttons.trash_button = ttk.Button(
-                buttons,
-                image=self.trash_icon,
-                command=(lambda pack: lambda: self.remove_pack(str(pack)))(pack),
-            )
-            buttons.trash_button.grid(row=0, column=1, sticky="e")
-            self.checkboxes[pack] = (var, item, buttons)
-
-        for pack in packs_removed:
-            (_, item, buttons) = self.checkboxes[pack]
-            item.destroy()
-            buttons.destroy()
-            self.load_order.delete(pack)
-            del self.checkboxes[pack]
+        for pack_name in packs_removed:
+            pack = self.pack_objs[pack_name]
+            del self.pack_objs[pack_name]
 
         self.packs = packs
         self.render_packs()
