@@ -758,6 +758,7 @@ class Pack:
             with manifest_path.open("r", encoding="utf-8") as manifest_file:
                 self.manifest = json.load(manifest_file)
 
+        self.name = self.manifest.get("name", folder)
         self.logo_img = None
         if self.manifest.get("logo") and (pack_metadata_path / self.manifest["logo"]).exists():
             self.logo_img = ImageTk.PhotoImage(
@@ -772,7 +773,7 @@ class Pack:
         self.var = tk.BooleanVar()
         self.checkbutton = ttk.Checkbutton(
             parent,
-            text=self.manifest.get("name", folder),
+            text=self.name,
             style="ModList.TCheckbutton",
             variable=self.var,
             onvalue=True,
@@ -1206,7 +1207,7 @@ class PlayTab(Tab):
 
     def on_load(self):
         self.make_dirs()
-        packs = sorted(self.get_packs())
+        packs = self.get_packs()
         packs_added, packs_removed = self.diff_packs(self.packs, packs)
 
         for pack_name in packs_added:
@@ -1215,7 +1216,11 @@ class PlayTab(Tab):
 
         for pack_name in packs_removed:
             pack = self.pack_objs[pack_name]
+            pack.destroy()
             del self.pack_objs[pack_name]
 
-        self.packs = packs
+        self.packs = [
+            pack.folder
+            for pack in sorted(self.pack_objs.values(), key=lambda p: p.name)
+        ]
         self.render_packs()
