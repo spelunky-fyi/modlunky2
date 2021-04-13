@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ..base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
+from ..util import chunks_from_animation
 from ..monsters.ghost import Ghost
 from ..journal_people import JournalPeopleSheet
 from ..journal_mons_big import JournalBigMonsterSheet
@@ -10,6 +11,11 @@ class GhistSpriteMerger(BaseJsonSpriteMerger):
     _target_sprite_sheet_path = Path("Data/Textures/Entities/Ghost/ghist.png")
     _grid_hint_size = 8
     _origin_map = {
+        Ghost: {
+            **chunks_from_animation("ghist_angry_0", (0, 0, 1, 1), 3),
+            **chunks_from_animation("ghist_angry_1", (0, 1, 1, 2), 3),
+            **chunks_from_animation("ghist_angry_2", (0, 2, 1, 3), 1)
+        },
         JournalPeopleSheet: {"journal_ghost_shopkeeper": (0, 0, 1, 1)},
     }
     _entity_origins = {Ghost: ["ENT_TYPE_MONS_GHIST"]}

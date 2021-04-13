@@ -27,7 +27,10 @@ QuillbackSpriteMerger = _big1_factory(
     },
 )
 GiantSpiderSpriteMerger = _big1_factory(
-    "BigMonsters/giant_spider", "journal_giant_spider", ["ENT_TYPE_MONS_GIANTSPIDER"]
+    "BigMonsters/giant_spider",
+    "journal_giant_spider",
+    ["ENT_TYPE_MONS_GIANTSPIDER"],
+    additional_origins={Big1: {"giant_spider_additional": (0, 0, 2, 2)}},
 )
 QueenBeeSpriteMerger = _big1_factory(
     "BigMonsters/queen_bee", "journal_queen_bee", ["ENT_TYPE_MONS_QUEENBEE"]
@@ -57,10 +60,27 @@ YetiQueenSpriteMerger = _big3_factory(
 
 _big4_factory = create_merger_factory_for_source_sheet(Big4, JournalBigMonsterSheet)
 CrabManSpriteMerger = _big4_factory(
-    "BigMonsters/crab_man", "journal_panxie", ["ENT_TYPE_MONS_CRABMAN"]
+    "BigMonsters/crab_man",
+    "journal_panxie",
+    [
+        "ENT_TYPE_MONS_CRABMAN",
+    ],
+    additional_origins={
+        Big4: {
+            "crabman_additional": (0, 0, 2, 2),
+            "crabman_open_claw": (2, 0, 3, 1),
+            "crabman_closed_claw": (3, 0, 4, 1),
+            "crabman_chain_claw": (2, 1, 3, 2),
+        }
+    },
 )
 LavamanderSpriteMerger = _big4_factory(
-    "BigMonsters/lavamander", "journal_lavamander", ["ENT_TYPE_MONS_LAVAMANDER"]
+    "BigMonsters/lavamander",
+    "journal_lavamander",
+    ["ENT_TYPE_MONS_LAVAMANDER"],
+    additional_origins={
+        Big4: {**chunks_from_animation("lavamander_additional", (0, 0, 2, 2), 3)}
+    },
 )
 GiantFlySpriteMerger = _big4_factory(
     "BigMonsters/giant_fly",

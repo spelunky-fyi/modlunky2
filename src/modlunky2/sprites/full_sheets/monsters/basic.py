@@ -410,9 +410,9 @@ class OlmitedArmoredSpriteMerger(BaseSpriteMerger):
     _grid_hint_size = 8
     _origin_map = {
         Monsters3: {
-            **chunks_from_animation("olmite_boy_armored_1", (0, 0, 1, 1), 4),
-            **chunks_from_animation("olmite_boy_armored_2", (0, 1, 1, 2), 4),
-            **chunks_from_animation("olmite_boy_armored_3", (0, 2, 1, 3), 2),
+            **chunks_from_animation("olmite_body_armored_1", (0, 0, 1, 1), 4),
+            **chunks_from_animation("olmite_body_armored_2", (0, 1, 1, 2), 4),
+            **chunks_from_animation("olmite_body_armored_3", (0, 2, 1, 3), 2),
         }
     }
 class OlmiteHelmetSpriteMerger(BaseSpriteMerger):
@@ -422,12 +422,12 @@ class OlmiteHelmetSpriteMerger(BaseSpriteMerger):
     _grid_hint_size = 8
     _origin_map = {
         Monsters3: {
-            **chunks_from_animation("olmite_boy_helmet_1", (0, 0, 1, 1), 4),
-            **chunks_from_animation("olmite_boy_helmet_2", (0, 1, 1, 2), 4),
-            **chunks_from_animation("olmite_boy_helmet_3", (0, 2, 1, 3), 2),
-            **chunks_from_animation("olmite_boy_helmet_4", (2, 2, 3, 3), 2),
-            **chunks_from_animation("olmite_boy_helmet_5", (0, 3, 1, 4), 4),
-            **chunks_from_animation("olmite_boy_helmet_6", (0, 4, 1, 5), 1),
+            **chunks_from_animation("olmite_helmet_1", (0, 0, 1, 1), 4),
+            **chunks_from_animation("olmite_helmet_2", (0, 1, 1, 2), 4),
+            **chunks_from_animation("olmite_helmet_3", (0, 2, 1, 3), 2),
+            **chunks_from_animation("olmite_helmet_4", (2, 2, 3, 3), 2),
+            **chunks_from_animation("olmite_helmet_5", (0, 3, 1, 4), 4),
+            **chunks_from_animation("olmite_helmet_6", (0, 4, 1, 5), 1),
         }
     }
 GrubSpriteMerger = _monsters3_factory(

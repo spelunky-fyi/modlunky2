@@ -12,6 +12,7 @@ class Big1(BaseJsonSpriteLoader):
         "giantspider": (0, 10, 2, 12),
         "giant_spider": (0, 10, 2, 12),
         "queenbee": (0, 14, 2, 16),
+        "giant_spider_additional": (14, 10, 16, 12),
     }
     _entity_names = [
         "ENT_TYPE_MONS_CAVEMAN_BOSS",
@@ -57,6 +58,11 @@ class Big4(BaseJsonSpriteLoader):
         "crabman": (0, 0, 2, 2),
         "lavamander": (10, 4, 12, 6),
         "giantfly": (0, 12, 2, 14),
+        "crabman_open_claw": (14, 2, 15, 3),
+        "crabman_closed_claw": (15, 2, 16, 3),
+        "crabman_chain_claw": (14, 3, 15, 4),
+        "crabman_additional": (4, 4, 6, 6),
+        **chunks_from_animation("lavamander_additional", (10, 10, 12, 12), 3),
     }
     _entity_names = [
         "ENT_TYPE_MONS_CRABMAN",
