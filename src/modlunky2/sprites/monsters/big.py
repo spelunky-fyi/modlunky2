@@ -83,7 +83,7 @@ class Big5(BaseJsonSpriteLoader):
         "madametusk": (0, 8, 2, 10),
         "giant_frog": (0, 13, 3, 16),
         "minister": (0, 10, 1, 13.5),
-        **chunks_from_animation("minister_small_walk", (9, 7, 10, 8), 7)
+        **chunks_from_animation("minister_small_walk", (9, 7, 10, 8), 7),
     }
     _entity_names = [
         # "ENT_TYPE_MONS_APEP_HEAD",  # ???
@@ -145,7 +145,7 @@ class OlmecAndMech(BaseJsonSpriteLoader):
         "ENT_TYPE_FX_OLMECPART_SMALL",
         "ENT_TYPE_FX_OLMECPART_SMALLEST",
         "ENT_TYPE_MOUNT_MECH",
-        "ENT_TYPE_FX_MECH_COLLAR"
+        "ENT_TYPE_FX_MECH_COLLAR",
     ]
 
 

@@ -336,8 +336,12 @@ class AssetStore:
             with open(BASE_DIR / "static/game_data/textures.json") as textures_file:
                 textures_json = json.loads(textures_file.read())
 
-            sprite_loaders = get_all_sprite_loaders(entities_json, textures_json, extract_dir)
-            sprite_mergers = get_all_sprite_mergers(entities_json, textures_json, extract_dir)
+            sprite_loaders = get_all_sprite_loaders(
+                entities_json, textures_json, extract_dir
+            )
+            sprite_mergers = get_all_sprite_mergers(
+                entities_json, textures_json, extract_dir
+            )
 
             with ThreadPoolExecutor(max_workers=max_workers) as pool:
                 futures = [

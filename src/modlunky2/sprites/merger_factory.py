@@ -32,7 +32,7 @@ def create_merger_factory_for_source_sheet(
                     }
                     if journal_entry
                     else {}
-                )
+                ),
             }
             _entity_origins = {source_sheet: entity_names}
 

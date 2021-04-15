@@ -89,7 +89,7 @@ class Basic3(BaseJsonSpriteLoader):
         "ENT_TYPE_MONS_SISTER_PARSLEY",
         "ENT_TYPE_MONS_SISTER_PARSNIP",
         "ENT_TYPE_MONS_YANG",
-        "ENT_TYPE_FX_BIRDIES"
+        "ENT_TYPE_FX_BIRDIES",
     ]
 
 

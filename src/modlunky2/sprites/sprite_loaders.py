@@ -32,7 +32,9 @@ from .tilecode_extras import TilecodeExtras
 from .menu_leader import MenuLeaderSheet
 
 
-def get_all_sprite_loaders(entities_json: Optional[dict], textures_json: Optional[dict], base_path: str):
+def get_all_sprite_loaders(
+    entities_json: Optional[dict], textures_json: Optional[dict], base_path: str
+):
     return [
         ItemSheet(base_path),
         CoffinSheet(base_path),

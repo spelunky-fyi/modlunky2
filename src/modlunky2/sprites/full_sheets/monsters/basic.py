@@ -49,7 +49,9 @@ ScorpionSpriteMerger = _basic1_factory(
     "Monsters/scorpion", "journal_scorpion", ["ENT_TYPE_MONS_SCORPION"]
 )
 GoldenMonkeySpriteMerger = _basic1_factory(
-    "Monsters/golden_monkey", "journal_golden_monkey", ["ENT_TYPE_MONS_GOLDMONKEY"],
+    "Monsters/golden_monkey",
+    "journal_golden_monkey",
+    ["ENT_TYPE_MONS_GOLDMONKEY"],
     additional_origins={
         Basic1: {
             "additional_golden_monkey_0": (0, 0, 1, 1),
@@ -88,7 +90,7 @@ CaveManSpriteMerger = _basic2_factory(
             **chunks_from_animation("caveman_additional_1", (0, 1, 1, 2), 2),
         },
         JournalMonsterSheet: {"journal_cave_man": (0, 0, 1, 1)},
-        StickerSheet: {"sticker_cave_man": (0, 0, 1, 1)}
+        StickerSheet: {"sticker_cave_man": (0, 0, 1, 1)},
     },
 )
 BodyguardSpriteMerger = _basic2_factory(
@@ -298,10 +300,10 @@ CritterCrabSpriteMerger = _monsters2_factory(
     None,
     ["ENT_TYPE_MONS_CRITTERCRAB"],
 )
+
+
 class CritterBlueCrabSpriteMerger(BaseSpriteMerger):
-    _target_sprite_sheet_path = Path(
-        "Data/Textures/Entities/Critters/blue_crab.png"
-    )
+    _target_sprite_sheet_path = Path("Data/Textures/Entities/Critters/blue_crab.png")
     _grid_hint_size = 8
     _origin_map = {
         Monsters2: {
@@ -309,6 +311,8 @@ class CritterBlueCrabSpriteMerger(BaseSpriteMerger):
             **chunks_from_animation("blue_crab_2", (0, 1, 1, 2), 3),
         }
     }
+
+
 FemaleJiangshiSpriteMerger = _monsters2_factory(
     "Monsters/female_jiangshi",
     "journal_jiangshi_assassin",
@@ -403,6 +407,8 @@ OlmiteNakedSpriteMerger = _monsters3_factory(
     "journal_olmite",
     ["ENT_TYPE_MONS_OLMITE_NAKED"],
 )
+
+
 class OlmitedArmoredSpriteMerger(BaseSpriteMerger):
     _target_sprite_sheet_path = Path(
         "Data/Textures/Entities/Monsters/olmite_armored.png"
@@ -415,6 +421,8 @@ class OlmitedArmoredSpriteMerger(BaseSpriteMerger):
             **chunks_from_animation("olmite_body_armored_3", (0, 2, 1, 3), 2),
         }
     }
+
+
 class OlmiteHelmetSpriteMerger(BaseSpriteMerger):
     _target_sprite_sheet_path = Path(
         "Data/Textures/Entities/Monsters/olmite_helmet.png"
@@ -430,6 +438,8 @@ class OlmiteHelmetSpriteMerger(BaseSpriteMerger):
             **chunks_from_animation("olmite_helmet_6", (0, 4, 1, 5), 1),
         }
     }
+
+
 GrubSpriteMerger = _monsters3_factory(
     "Monsters/grub",
     "journal_grub",

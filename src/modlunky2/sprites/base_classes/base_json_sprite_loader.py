@@ -12,7 +12,6 @@ class BaseJsonSpriteLoader(BaseSpriteLoader):
         """
         Define names of entities that should additionally be added to the _chunk_map
         """
-        pass
 
     def __init__(self, entities_json, textures_json, *args, **kwargs):
         super().__init__(*args, **kwargs)

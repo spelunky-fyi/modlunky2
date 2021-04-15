@@ -56,7 +56,7 @@ class BaseSpriteMerger(ABC):
         total_image_height = 0
         for sprite_loader_type, chunk_maps in self._origin_map.items():
             if not isinstance(chunk_maps, list):
-                chunk_maps = [ chunk_maps ]
+                chunk_maps = [chunk_maps]
             image_sizes = []
             for chunk_map in chunk_maps:
                 origin_chunk_size = (0, 0)
@@ -65,9 +65,12 @@ class BaseSpriteMerger(ABC):
                         max(origin_chunk_size[0], coords[2]),
                         max(origin_chunk_size[1], coords[3]),
                     )
-                real_chunk_size = self._get_real_chunk_size(sprite_loader_type._chunk_size)
+                real_chunk_size = self._get_real_chunk_size(
+                    sprite_loader_type._chunk_size
+                )
                 origin_image_size = tuple(
-                    int(image_size * real_chunk_size) for image_size in origin_chunk_size
+                    int(image_size * real_chunk_size)
+                    for image_size in origin_chunk_size
                 )
                 max_image_width = max(max_image_width, origin_image_size[0])
                 total_image_height = total_image_height + origin_image_size[1]
@@ -200,7 +203,7 @@ class BaseSpriteMerger(ABC):
                                 logger.error(
                                     "Failed putting image %s into merged sprite sheet: %s",
                                     name,
-                                    str(exception)
+                                    str(exception),
                                 )
                         else:
                             logger.error(

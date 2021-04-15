@@ -14,7 +14,7 @@ class GhistSpriteMerger(BaseJsonSpriteMerger):
         Ghost: {
             **chunks_from_animation("ghist_angry_0", (0, 0, 1, 1), 3),
             **chunks_from_animation("ghist_angry_1", (0, 1, 1, 2), 3),
-            **chunks_from_animation("ghist_angry_2", (0, 2, 1, 3), 1)
+            **chunks_from_animation("ghist_angry_2", (0, 2, 1, 3), 1),
         },
         JournalPeopleSheet: {"journal_ghost_shopkeeper": (0, 0, 1, 1)},
     }
