@@ -24,7 +24,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig, SECTIONS
-from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip, DebounceEntry
+from modlunky2.ui.widgets import ScrollableLabelFrame, ScrollableFrameLegacy, Tab, ToolTip, DebounceEntry
 from modlunky2.utils import tb_info, is_patched
 
 logger = logging.getLogger("modlunky2")
@@ -418,10 +418,11 @@ class VersionFrame(ttk.LabelFrame):
         self.render()
 
 
-class OptionsFrame(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config):
-        super().__init__(parent, text="Options")
+class OptionsFrame(ttk.Frame):
+    def __init__(self, parent, play_tab, modlunky_config):
+        super().__init__(parent)
         self.parent = parent
+        self.play_tab = play_tab
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
 
@@ -457,7 +458,7 @@ class OptionsFrame(ttk.LabelFrame):
                     text=self.format_text(option),
                     variable=self.ini_options[option],
                     compound="left",
-                    command=self.parent.write_ini,
+                    command=self.play_tab.write_ini,
                 )
                 checkbox.grid(row=row_num, column=0, padx=3, sticky="w")
                 row_num += 1
@@ -958,10 +959,12 @@ class PlayTab(Tab):
             row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.options_frame = OptionsFrame(self, modlunky_config)
-        self.options_frame.grid(
+        self.scrollable_options_frame = ScrollableFrameLegacy(self, text="Options")
+        self.scrollable_options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
+        self.options_frame = OptionsFrame(self.scrollable_options_frame.scrollable_frame, self, modlunky_config)
+        self.options_frame.grid(row=0, column=0, sticky="nsew")
 
         self.button_play = ttk.Button(
             self, text="Play!", state=tk.DISABLED, command=self.play
