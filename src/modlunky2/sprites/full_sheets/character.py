@@ -4,6 +4,7 @@ from ..base_classes.base_sprite_merger import BaseSpriteMerger
 from ..character import *
 from ..journal_people import JournalPeopleSheet
 from ..journal_stickers import StickerSheet
+from ..menu_leader import MenuLeaderSheet
 
 
 def _create_class_for_character(color: str, character_sheet_type: type):
@@ -16,6 +17,7 @@ def _create_class_for_character(color: str, character_sheet_type: type):
             character_sheet_type: character_sheet_type._chunk_map,
             JournalPeopleSheet: {"journal_char_{}".format(color): (0, 0, 1, 1)},
             StickerSheet: {"sticker_char_{}".format(color): (0, 0, 1, 1)},
+            MenuLeaderSheet: {"leader_char_{}".format(color): (0, 0, 2, 1)},
         }
 
     return CharacterSpriteMerger

@@ -4,7 +4,12 @@ from modlunky2.constants import BASE_DIR
 
 from PIL import Image
 
-from .base_classes import AbstractBiome, BaseSpriteLoader, DEFAULT_BASE_PATH
+from .base_classes import (
+    AbstractBiome,
+    BaseSpriteLoader,
+    BaseJsonSpriteLoader,
+    DEFAULT_BASE_PATH,
+)
 
 
 class SpelunkySpriteFetcher:
@@ -35,8 +40,8 @@ class SpelunkySpriteFetcher:
         from .tilecode_extras import TilecodeExtras
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
-        sheets = [getattr(monsters, m) for m in monsters.__all__]
-        sheets.extend(
+        _sheets = [getattr(monsters, m) for m in monsters.__all__]
+        _sheets.extend(
             [
                 CoffinSheet,
                 EggShip2Sheet,
@@ -46,8 +51,14 @@ class SpelunkySpriteFetcher:
                 DecoExtraSheet,
             ]
         )
+
         # Now making them instances
-        sheets = [s(self.base_path) for s in sheets]
+        sheets = []
+        for sheet in _sheets:
+            if issubclass(sheet, BaseJsonSpriteLoader):
+                sheets.append(sheet(None, None, self.base_path))
+            else:
+                sheets.append(sheet(self.base_path))
 
         # This uses the constant BASE_DIR as the base path as this
         # texture is bundled with the source rather than coming

@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import traceback
+import json
 from collections import defaultdict
 from concurrent.futures import wait
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -18,6 +19,7 @@ from modlunky2.assets.constants import KNOWN_TEXTURES_V1
 from modlunky2.assets.exc import NonSiblingAsset
 from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
 from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
+from modlunky2.constants import BASE_DIR
 
 from .chacha import Key, chacha, hash_filepath
 from .constants import (
@@ -328,8 +330,18 @@ class AssetStore:
 
         if create_entity_sheets:
             logger.info("Creating entity sprite sheets...")
-            sprite_loaders = get_all_sprite_loaders(extract_dir)
-            sprite_mergers = get_all_sprite_mergers(extract_dir)
+
+            with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+                entities_json = json.loads(entities_file.read())
+            with open(BASE_DIR / "static/game_data/textures.json") as textures_file:
+                textures_json = json.loads(textures_file.read())
+
+            sprite_loaders = get_all_sprite_loaders(
+                entities_json, textures_json, extract_dir
+            )
+            sprite_mergers = get_all_sprite_mergers(
+                entities_json, textures_json, extract_dir
+            )
 
             with ThreadPoolExecutor(max_workers=max_workers) as pool:
                 futures = [

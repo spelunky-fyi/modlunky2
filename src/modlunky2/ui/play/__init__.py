@@ -751,7 +751,9 @@ class Pack:
         self.folder = folder
 
         self.manifest = {}
-        pack_metadata_path = modlunky_config.install_dir / "Mods/.ml/pack-metadata" / folder
+        pack_metadata_path = (
+            modlunky_config.install_dir / "Mods/.ml/pack-metadata" / folder
+        )
 
         manifest_path = pack_metadata_path / "manifest.json"
         if manifest_path.exists():
@@ -760,7 +762,10 @@ class Pack:
 
         self.name = self.manifest.get("name", folder)
         self.logo_img = None
-        if self.manifest.get("logo") and (pack_metadata_path / self.manifest["logo"]).exists():
+        if (
+            self.manifest.get("logo")
+            and (pack_metadata_path / self.manifest["logo"]).exists()
+        ):
             self.logo_img = ImageTk.PhotoImage(
                 Image.open(pack_metadata_path / self.manifest["logo"]).resize(
                     (40, 40), Image.ANTIALIAS
