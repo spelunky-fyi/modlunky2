@@ -34,6 +34,7 @@ def test_legacy_keep_unknown():
 
         [general_settings]
         enable_loose_file_warning=on
+        speedrun_mode=off
 
         [script_settings]
         enable_developer_mode=off
@@ -78,6 +79,7 @@ def test_legacy_no_unknowns():
             """\
         [general_settings]
         enable_loose_file_warning=on
+        speedrun_mode=off
 
         [script_settings]
         enable_developer_mode=off

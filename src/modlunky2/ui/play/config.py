@@ -8,6 +8,7 @@ LEGACY_INI_SECTION = "settings"
 SECTIONS = {
     "general_settings": [
         "enable_loose_file_warning",
+        "speedrun_mode",
     ],
     "script_settings": [
         "enable_developer_mode",
@@ -37,6 +38,7 @@ class PlaylunkyConfig:
 
     # General Settings
     enable_loose_file_warning: bool = True
+    speedrun_mode: bool = False
 
     # Script Settings
     enable_developer_mode: bool = False
