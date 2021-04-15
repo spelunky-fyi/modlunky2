@@ -152,4 +152,4 @@ class OlmecAndMech(BaseJsonSpriteLoader):
 class Yama(BaseSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters_yama.png")
     _chunk_size = 128
-    _chunk_map = {"yama": (0, 0, 7, 11), "empress_grave": (8, 6, 10, 12)}
+    _chunk_map = {"yama": (0, 0, 8, 10), "empress_grave": (8, 6, 10, 12)}
