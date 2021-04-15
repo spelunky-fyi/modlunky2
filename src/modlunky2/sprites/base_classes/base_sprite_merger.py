@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Type, Tuple
-from os import makedirs
 from logging import getLogger
 from PIL import Image, ImageDraw, ImageFont
 
@@ -220,7 +219,7 @@ class BaseSpriteMerger(ABC):
 
     def save(self):
         if not self._full_path.parent.exists():
-            makedirs(self._full_path.parent)
+            self._full_path.parent.mkdir(parents=True, exist_ok=True)
         self._sprite_sheet.save(self._full_path)
         if self._separate_grid_file:
             grid_file_path = (
