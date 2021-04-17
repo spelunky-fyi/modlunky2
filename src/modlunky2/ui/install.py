@@ -389,25 +389,33 @@ class FyiInstall(ttk.LabelFrame):
         frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.rowconfigure(4, minsize=60)
+        frame.rowconfigure(2, weight=1)
+        frame.rowconfigure(6, minsize=60)
         frame.grid(row=0, column=0, sticky="nswe")
 
-        ttk.Label(
+        self.warning_text = ttk.Label(
+            frame,
+            text=(
+                "Before this feature is enabled you must \n"
+                "add an API token in the Settings tab."
+            ),
+            anchor=tk.CENTER,
+        )
+
+        self.install_header = ttk.Label(
             frame,
             text="Install Code",
             font="sans 11 bold",
-        ).grid(row=1, column=0, padx=5, sticky="ew")
-        ttk.Label(
+        )
+        self.install_description = ttk.Label(
             frame,
             text="Enter the 'Install Code' from a mod page on spelunky.fyi",
-        ).grid(row=2, column=0, padx=5, sticky="ew")
+        )
 
         self.entry = Entry(frame)
         self.entry.bind("<KeyRelease>", self._on_key)
-        self.entry.grid(row=3, column=0, pady=5, padx=5, sticky="new")
 
         self.button_install = ttk.Button(frame, text="Install", command=self.install)
-        self.button_install.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
 
     def install(self):
         spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
@@ -434,8 +442,23 @@ class FyiInstall(ttk.LabelFrame):
         )
 
     def render(self):
+        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
         install_code = self.entry.get().strip()
-        if install_code:
+
+        if api_token:
+            self.install_header.grid(row=3, column=0, padx=5, sticky="ew")
+            self.install_description.grid(row=4, column=0, padx=5, sticky="ew")
+            self.entry.grid(row=5, column=0, pady=5, padx=5, sticky="new")
+            self.button_install.grid(row=6, column=0, pady=5, padx=5, sticky="nswe")
+            self.warning_text.grid_forget()
+        else:
+            self.install_header.grid_forget()
+            self.install_description.grid_forget()
+            self.entry.grid_forget()
+            self.button_install.grid_forget()
+            self.warning_text.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+        if api_token and install_code:
             self.button_install["state"] = tk.NORMAL
         else:
             self.button_install["state"] = tk.DISABLED
