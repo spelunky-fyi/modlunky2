@@ -414,7 +414,7 @@ class FyiInstall(ttk.LabelFrame):
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
         if not api_token:
             logger.warning(
-                "This feature requires an API token. You can set one on your Config tab."
+                "This feature requires an API token. You can set one on your Settings tab."
             )
             return
 

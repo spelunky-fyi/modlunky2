@@ -202,7 +202,7 @@ class ConfigFile:
 
 class Config:
     def __init__(self, config_file: ConfigFile, launcher_exe, exe_dir):
-        self.config_file = config_file
+        self.config_file: ConfigFile = config_file
         self.launcher_exe = launcher_exe
         self.exe_dir = exe_dir
         if self.exe_dir is None:

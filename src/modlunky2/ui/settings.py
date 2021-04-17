@@ -1,10 +1,12 @@
 import logging
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import ttk
+from urllib.parse import urljoin
 
 from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, guess_install_dir
-from modlunky2.ui.widgets import Tab, PopupWindow, Entry
+from modlunky2.ui.widgets import Entry, PopupWindow, Tab
 from modlunky2.utils import open_directory
 
 logger = logging.getLogger("modlunky2")
@@ -169,6 +171,11 @@ class FYISettings(ttk.LabelFrame):
 
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+
+        url = urljoin(
+            self.modlunky_config.config_file.spelunky_fyi_root, "/accounts/settings/"
+        )
+        webbrowser.open_new_tab(url)
 
 
 class UserDirectories(ttk.LabelFrame):
