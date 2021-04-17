@@ -13,7 +13,7 @@ from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
 from modlunky2.utils import tb_info, temp_chdir
 
 from .tasks import TaskManager, PING_INTERVAL
-from .config import ConfigTab
+from .settings import SettingsTab
 from .extract import ExtractTab
 from .levels import LevelsTab
 from .play import PlayTab
@@ -184,8 +184,8 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
         )
         self.register_tab(
-            "Config",
-            ConfigTab,
+            "Settings",
+            SettingsTab,
             tab_control=self.tab_control,
             modlunky_config=modlunky_config,
         )

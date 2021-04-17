@@ -31,7 +31,7 @@ from modlunky2.ui.widgets import (
     ToolTip,
     DebounceEntry,
 )
-from modlunky2.utils import tb_info, is_patched
+from modlunky2.utils import open_directory, tb_info, is_patched
 
 logger = logging.getLogger("modlunky2")
 
@@ -589,7 +589,7 @@ class ControlsFrame(ttk.LabelFrame):
             logger.info("Couldn't find Packs directory. Looked in %s", packs_dir)
             return
 
-        webbrowser.open(f"file://{packs_dir}")
+        open_directory(packs_dir)
 
     def guide(self):
         webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
@@ -864,7 +864,7 @@ class Pack:
             logger.info("No pack directory found to remove. Looked in %s", pack_dir)
             return
 
-        webbrowser.open(f"file://{pack_dir}")
+        open_directory(pack_dir)
 
     def remove_pack(self):
         if self.folder.startswith("/"):

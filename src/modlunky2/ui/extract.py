@@ -1,7 +1,6 @@
 import logging
 import shutil
 import tkinter as tk
-import webbrowser
 from pathlib import Path
 from tkinter import ttk
 from ctypes.util import find_library  # pylint: disable=unused-import
@@ -15,7 +14,7 @@ from modlunky2.assets.constants import (
     OVERRIDES_DIR,
     PACKS_DIR,
 )
-from modlunky2.utils import is_patched
+from modlunky2.utils import is_patched, open_directory
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 
@@ -249,7 +248,7 @@ class ExtractTab(Tab):
 
     def open_extract_dir(self):
         extract_dir = self.modlunky_config.install_dir / MODS / EXTRACTED_DIR
-        webbrowser.open(f"file://{extract_dir}")
+        open_directory(extract_dir)
 
     def extract_finished(self):
         self.button_extract["state"] = tk.NORMAL

@@ -3,8 +3,9 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from modlunky2.config import guess_install_dir
+from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, guess_install_dir
 from modlunky2.ui.widgets import Tab, PopupWindow, Entry
+from modlunky2.utils import open_directory
 
 logger = logging.getLogger("modlunky2")
 
@@ -170,7 +171,23 @@ class FYISettings(ttk.LabelFrame):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
 
-class ConfigTab(Tab):
+class UserDirectories(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config):
+        super().__init__(parent, text="User Directories")
+        self.modlunky_config = modlunky_config
+
+        ttk.Button(self, text="Cache", command=lambda: open_directory(CACHE_DIR)).grid(
+            row=0, column=0, pady=(5, 5), padx=(5, 5), sticky="w"
+        )
+        ttk.Button(self, text="Data", command=lambda: open_directory(DATA_DIR)).grid(
+            row=0, column=1, pady=(5, 5), padx=(5, 5), sticky="w"
+        )
+        ttk.Button(
+            self, text="Config", command=lambda: open_directory(CONFIG_DIR)
+        ).grid(row=0, column=2, pady=(5, 5), padx=(5, 5), sticky="w")
+
+
+class SettingsTab(Tab):
     def __init__(self, tab_control, modlunky_config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
@@ -191,3 +208,7 @@ class ConfigTab(Tab):
 
         api_token_frame = FYISettings(config_frame, modlunky_config)
         api_token_frame.grid(row=2, column=0, pady=5, padx=5, sticky="new")
+
+        UserDirectories(config_frame, modlunky_config).grid(
+            row=3, column=0, pady=5, padx=5, sticky="nswe"
+        )

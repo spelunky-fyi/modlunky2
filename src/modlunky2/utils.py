@@ -3,6 +3,8 @@ import logging
 import sys
 import traceback
 import os
+import subprocess
+import webbrowser
 from functools import wraps
 
 from modlunky2.assets.patcher import Patcher
@@ -28,6 +30,17 @@ def log_exception(func):
 
 def tb_info():
     return "".join(traceback.format_exception(*sys.exc_info())).strip()
+
+
+def open_directory(directory):
+    if not directory.exists():
+        return
+
+    if "nt" not in os.name:
+        subprocess.run(["xdg-open", f"{directory}"], check=False)
+        return
+
+    webbrowser.open(f"file://{directory}")
 
 
 @contextlib.contextmanager
