@@ -757,31 +757,16 @@ class Pack:
         self.modlunky_config = modlunky_config
         self.folder = folder
 
-        self.manifest = {}
-        pack_metadata_path = (
+        self.pack_metadata_path = (
             modlunky_config.install_dir / "Mods/.ml/pack-metadata" / folder
         )
+        self.manifest_path = self.pack_metadata_path / "manifest.json"
 
-        manifest_path = pack_metadata_path / "manifest.json"
-        if manifest_path.exists():
-            with manifest_path.open("r", encoding="utf-8") as manifest_file:
-                self.manifest = json.load(manifest_file)
-
-        self.name = self.manifest.get("name", folder)
+        self.manifest = {}
         self.logo_img = None
-        if (
-            self.manifest.get("logo")
-            and (pack_metadata_path / self.manifest["logo"]).exists()
-        ):
-            self.logo_img = ImageTk.PhotoImage(
-                Image.open(pack_metadata_path / self.manifest["logo"]).resize(
-                    (40, 40), Image.ANTIALIAS
-                )
-            )
-            self.logo = ttk.Label(parent, image=self.logo_img)
-        else:
-            self.logo = ttk.Label(parent)
+        self.name = folder
 
+        self.logo = ttk.Label(parent)
         self.var = tk.BooleanVar()
         self.checkbutton = ttk.Checkbutton(
             parent,
@@ -808,6 +793,30 @@ class Pack:
             command=self.remove_pack,
         )
         self.buttons.trash_button.grid(row=0, column=1, sticky="e")
+        self.on_load()
+
+    def on_load(self):
+        if self.manifest_path.exists():
+            with self.manifest_path.open("r", encoding="utf-8") as manifest_file:
+                self.manifest = json.load(manifest_file)
+        else:
+            self.manifest = {}
+
+        self.name = self.manifest.get("name", self.folder)
+        self.checkbutton.configure(text=self.name)
+        if (
+            self.manifest.get("logo")
+            and (self.pack_metadata_path / self.manifest["logo"]).exists()
+        ):
+            self.logo_img = ImageTk.PhotoImage(
+                Image.open(self.pack_metadata_path / self.manifest["logo"]).resize(
+                    (40, 40), Image.ANTIALIAS
+                )
+            )
+            self.logo.configure(image=self.logo_img)
+        else:
+            self.logo_img = None
+            self.logo.configure(image=None)
 
     def forget(self):
         self.logo.grid_forget()
@@ -1235,8 +1244,12 @@ class PlayTab(Tab):
             pack.destroy()
             del self.pack_objs[pack_name]
 
+        for pack in self.pack_objs.values():
+            pack.on_load()
+
         self.packs = [
             pack.folder
             for pack in sorted(self.pack_objs.values(), key=lambda p: p.name)
         ]
+
         self.render_packs()

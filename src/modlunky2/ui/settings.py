@@ -185,6 +185,11 @@ class UserDirectories(ttk.LabelFrame):
         ttk.Button(
             self, text="Config", command=lambda: open_directory(CONFIG_DIR)
         ).grid(row=0, column=2, pady=(5, 5), padx=(5, 5), sticky="w")
+        ttk.Button(
+            self,
+            text="Install Dir",
+            command=lambda: open_directory(self.modlunky_config.install_dir),
+        ).grid(row=0, column=3, pady=(5, 5), padx=(5, 5), sticky="w")
 
 
 class SettingsTab(Tab):
