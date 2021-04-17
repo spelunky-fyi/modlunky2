@@ -1,27 +1,31 @@
-use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::{collections::HashMap, env};
 #[cfg(windows)]
 use winres::WindowsResource;
 
+use std::fs::File;
 use std::io::prelude::*;
 use std::io::{Seek, Write};
 use std::iter::Iterator;
-use zip::write::FileOptions;
 
-use std::fs::File;
+use sha2::Digest;
+use sha2::Sha256;
 use walkdir::{DirEntry, WalkDir};
+use zip::write::FileOptions;
 
 fn zip_dir<T>(
     it: &mut dyn Iterator<Item = DirEntry>,
     prefix: &str,
     writer: T,
     method: zip::CompressionMethod,
-) -> zip::result::ZipResult<()>
+) -> zip::result::ZipResult<HashMap<String, String>>
 where
     T: Write + Seek,
 {
+    let mut hashes: HashMap<String, String> = HashMap::new();
+
     let mut zip = zip::ZipWriter::new(writer);
     let options = FileOptions::default()
         .compression_method(method)
@@ -42,7 +46,9 @@ where
 
             f.read_to_end(&mut buffer)?;
             zip.write_all(&*buffer)?;
+            let digest = Sha256::digest(&buffer);
             buffer.clear();
+            hashes.insert(name.to_str().unwrap().into(), format!("{:x}", digest));
         } else if name.as_os_str().len() != 0 {
             // Only if not root! Avoids path spec / warning
             // and mapname conversion failed error on unzip
@@ -52,7 +58,7 @@ where
         }
     }
     zip.finish()?;
-    Result::Ok(())
+    Result::Ok(hashes)
 }
 
 fn main() -> io::Result<()> {
@@ -79,12 +85,45 @@ fn main() -> io::Result<()> {
     let out_file = File::create(&dest_path).unwrap();
     let walkdir = WalkDir::new(src_dir);
     let it = walkdir.into_iter();
-    zip_dir(
+    let hashes = zip_dir(
         &mut it.filter_map(|e| e.ok()),
         src_dir,
         out_file,
         zip::CompressionMethod::Deflated,
     )?;
+
+    let dest_path = Path::new(&out_dir).join("hashes.rs");
+    let mut out_file = File::create(&dest_path).unwrap();
+
+    write!(
+        out_file,
+        "static KNOWN_FILES: &'static [&'static str] = &[\n"
+    )?;
+    for (key, _value) in &hashes {
+        write!(out_file, "    r\"{}\",\n", key)?;
+    }
+    write!(out_file, "];\n\n")?;
+
+    write!(out_file, "fn get_hash(filename: &str) -> Option<&str> {{\n")?;
+    write!(out_file, "    match filename {{\n")?;
+
+    for (key, value) in &hashes {
+        let path = Path::new(key);
+
+        if path.starts_with("tcl/") {
+            continue;
+        }
+
+        if path.starts_with("tk/") {
+            continue;
+        }
+
+        write!(out_file, "        r\"{}\" => Some(r\"{}\"),\n", key, value)?;
+    }
+
+    write!(out_file, "        _ => None,\n")?;
+    write!(out_file, "    }}\n")?;
+    write!(out_file, "}}\n")?;
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../../dist/modlunky2");

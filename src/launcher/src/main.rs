@@ -1,17 +1,23 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::ffi::OsStr;
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
+
 use anyhow::{anyhow, Result};
 use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use directories::ProjectDirs;
-use std::ffi::OsStr;
-use std::fs;
-use std::path::{Path, PathBuf};
+use sha2::Digest;
+use sha2::Sha256;
 
 static MODLUNKY2_BUNDLE: &'static [u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modlunky2.zip"));
 static MODLUNKY2_VERSION: &'static str =
     include_str!(concat!(env!("OUT_DIR"), "/modlunky2.version"));
+
+include!(concat!(env!("OUT_DIR"), "/hashes.rs"));
 
 fn unzip(dest: &PathBuf) -> Result<()> {
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(MODLUNKY2_BUNDLE))?;
@@ -42,6 +48,41 @@ fn unzip(dest: &PathBuf) -> Result<()> {
             let mut outfile = fs::File::create(&outpath)?;
             std::io::copy(&mut file, &mut outfile)?;
         }
+    }
+
+    Ok(())
+}
+
+fn verify_release_cache(release_dir: &PathBuf) -> Result<()> {
+    let mut should_invalidate = false;
+
+    for known_file in KNOWN_FILES {
+        let path = release_dir.join(known_file);
+
+        if !path.exists() {
+            should_invalidate = true;
+            break;
+        }
+
+        if let Some(expected_hash) = get_hash(known_file) {
+            let mut file = fs::File::open(path)?;
+            let mut sha256 = Sha256::new();
+            io::copy(&mut file, &mut sha256)?;
+            let file_hash = format!("{:x}", sha256.finalize());
+            if file_hash != expected_hash {
+                println!(
+                    "Expected hash didn't match for {}. Invalidating cache...",
+                    known_file
+                );
+                should_invalidate = true;
+                break;
+            }
+        }
+    }
+
+    if should_invalidate {
+        println!("Clearing cached directory at {:?}", release_dir);
+        std::fs::remove_dir_all(&release_dir)?;
     }
 
     Ok(())
@@ -87,10 +128,15 @@ fn main() -> Result<()> {
     }
 
     let release_dir = cache_dir.join(MODLUNKY2_VERSION);
-    if release_dir.exists() && should_clear_cache {
-        println!("Clearing cached directory at {:?}", release_dir);
-        std::fs::remove_dir_all(&release_dir)?;
+    if release_dir.exists() {
+        if should_clear_cache {
+            println!("Clearing cached directory at {:?}", release_dir);
+            std::fs::remove_dir_all(&release_dir)?;
+        } else {
+            verify_release_cache(&release_dir)?;
+        }
     }
+
     if !release_dir.exists() {
         println!(
             "Release Dir {} not found. Creating...",
