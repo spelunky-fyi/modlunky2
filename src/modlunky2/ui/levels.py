@@ -1602,7 +1602,7 @@ class LevelsTab(Tab):
         elif str(
             self.tree_files.item(self.last_selected_file, option="text")
         ).startswith("generic.lvl"):
-            #for file in self.dependencies[10]:
+            # for file in self.dependencies[10]:
             #    append_level(file)
             # removed for now
             self.depend_order_label.grid_remove()

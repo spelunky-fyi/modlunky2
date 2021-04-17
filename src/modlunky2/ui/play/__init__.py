@@ -24,7 +24,13 @@ from PIL import Image, ImageTk
 from modlunky2.config import CACHE_DIR, DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import PlaylunkyConfig, SECTIONS
-from modlunky2.ui.widgets import ScrollableLabelFrame, ScrollableFrameLegacy, Tab, ToolTip, DebounceEntry
+from modlunky2.ui.widgets import (
+    ScrollableLabelFrame,
+    ScrollableFrameLegacy,
+    Tab,
+    ToolTip,
+    DebounceEntry,
+)
 from modlunky2.utils import tb_info, is_patched
 
 logger = logging.getLogger("modlunky2")
@@ -963,7 +969,9 @@ class PlayTab(Tab):
         self.scrollable_options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
-        self.options_frame = OptionsFrame(self.scrollable_options_frame.scrollable_frame, self, modlunky_config)
+        self.options_frame = OptionsFrame(
+            self.scrollable_options_frame.scrollable_frame, self, modlunky_config
+        )
         self.options_frame.grid(row=0, column=0, sticky="nsew")
 
         self.button_play = ttk.Button(
