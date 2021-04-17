@@ -766,6 +766,8 @@ class LevelsTab(Tab):
         # 10 = draw bottom left + raise 1 tile + move left 1 tile
         # 11 = move left 1 tile
         # 12 = raise 1 tile
+        # 13 = draw from bottom left + move left half tile
+        # 14 = precise bottom left for yama
         self.draw_mode.append(["anubis", 2])
         self.draw_mode.append(["olmec", 5])
         self.draw_mode.append(["alienqueen", 7])
@@ -788,9 +790,9 @@ class LevelsTab(Tab):
         self.draw_mode.append(["lamassu", 2])
         self.draw_mode.append(["madametusk", 2])
         self.draw_mode.append(["giant_frog", 3])
-        self.draw_mode.append(["door", 2])
-        self.draw_mode.append(["starting_exit", 2])
-        self.draw_mode.append(["eggplant_door", 2])
+        self.draw_mode.append(["door", 13])
+        self.draw_mode.append(["starting_exit", 13])
+        self.draw_mode.append(["eggplant_door", 13])
         self.draw_mode.append(["door2", 6])
         self.draw_mode.append(["palace_entrance", 6])
         self.draw_mode.append(["door2_secret", 6])
@@ -799,6 +801,10 @@ class LevelsTab(Tab):
         self.draw_mode.append(["minister", 2])
         self.draw_mode.append(["storage_guy", 2])
         self.draw_mode.append(["idol", 4])
+        self.draw_mode.append(["idol_held", 4])
+        self.draw_mode.append(["ankh", 4])
+        self.draw_mode.append(["fountain_head", 13])
+        self.draw_mode.append(["yama", 14])
         self.draw_mode.append(["plasma_cannon", 4])
         self.draw_mode.append(["lockedchest", 4])
         self.draw_mode.append(["shopkeeper_vat", 12])
@@ -1399,7 +1405,7 @@ class LevelsTab(Tab):
                 levels.append([get_level(item[2].split(" ")[0]), item])
                 # removes item cause its already being worked on so it doesn't
                 # get worked on or compared to again
-                self.tree_depend.delete(i)
+                # self.tree_depend.delete(i)
 
                 for child in self.tree_depend.get_children():
                     item2 = self.tree_depend.item(child, option="values")
@@ -1408,7 +1414,7 @@ class LevelsTab(Tab):
                         levels.append([get_level(item2[2].split(" ")[0]), item2])
                         # removes item cause its already being worked on so it doesn't
                         # get worked on or compared to again
-                        self.tree_depend.delete(child)
+                        # self.tree_depend.delete(child)
 
                 # finds tilecodes that are not available in all the dependacy files
                 # (again cause it could have changed since tilecodes are being messed with)
@@ -1458,13 +1464,9 @@ class LevelsTab(Tab):
                                         old_code
                                     )  # adds back replaced code since its now free for use again
                             else:
-                                tile_codes_new.set_obj(
-                                    TileCode(
-                                        name=tile_id,
-                                        value=old_code,
-                                        comment="",
-                                    )  # adds tilecode back to database
-                                )
+                                print("Not enough unique tilecodes left")
+                                self.tree_filesitemclick(self)
+                                self.check_dependencies()
                                 return
                         else:
                             tile_codes_new.set_obj(
@@ -1600,11 +1602,16 @@ class LevelsTab(Tab):
         elif str(
             self.tree_files.item(self.last_selected_file, option="text")
         ).startswith("generic.lvl"):
-            for file in self.dependencies[10]:
-                append_level(file)
+            #for file in self.dependencies[10]:
+            #    append_level(file)
+            # removed for now
+            self.depend_order_label.grid_remove()
+            self.tree_depend.grid_remove()
+            self.button_resolve_variables.grid_remove()
+            self.no_conflicts_label.grid()
+            return
         else:
             append_level("generic.lvl")  # adds generic for all other files
-
         if str(self.tree_files.item(self.last_selected_file, option="text")).startswith(
             "challenge_moon.lvl"
         ):
@@ -3270,6 +3277,8 @@ class LevelsTab(Tab):
         # 10 = draw bottom left + raise 1 tile + move left 1 tile
         # 11 = move left 1 tile
         # 12 = raise 1 tile
+        # 13 = draw from bottom left + move left half tile
+        # 14 = precise bottom left for yama
         x_coord = 0
         y_coord = 0
         if mode == 1:
@@ -3299,6 +3308,12 @@ class LevelsTab(Tab):
             x_coord = 50
         elif mode == 12:
             y_coord = 50
+        elif mode == 13:
+            y_coord = height / 2
+            x_coord = 25
+        elif mode == 14:
+            y_coord = height - 50
+            x_coord = 100
         return x_coord, y_coord
 
     def get_texture(self, tile, biome, lvl):
