@@ -7,7 +7,7 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 from tkinter import ttk
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import requests
 from requests import HTTPError
@@ -315,7 +315,7 @@ def install_fyi_mod(
     packs_dir = mods_dir / "Packs"
     metadata_dir = mods_dir / ".ml/pack-metadata"
 
-    url = f"{spelunky_fyi_root}api/mods/{install_code}/"
+    url = urljoin(spelunky_fyi_root, f"api/mods/{install_code}/")
     logger.debug("Checking for mod at %s", url)
     response = requests.get(
         url,

@@ -173,7 +173,7 @@ class FYISettings(ttk.LabelFrame):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
         url = urljoin(
-            self.modlunky_config.config_file.spelunky_fyi_root, "/accounts/settings/"
+            self.modlunky_config.config_file.spelunky_fyi_root, "accounts/settings/"
         )
         webbrowser.open_new_tab(url)
 

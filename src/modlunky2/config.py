@@ -5,8 +5,10 @@ try:
     import winreg
 except ImportError:
     winreg = None
-from shutil import copyfile
+
 from pathlib import Path
+from shutil import copyfile
+from urllib.parse import urlparse, urlunparse
 
 from appdirs import user_config_dir, user_data_dir, user_cache_dir
 
@@ -153,6 +155,21 @@ class ConfigFile:
             obj.save()
 
         return obj
+
+    @property
+    def spelunky_fyi_ws_root(self):
+        if not self.spelunky_fyi_root:
+            return None
+
+        parts = urlparse(self.spelunky_fyi_root)
+        if parts.scheme == "http":
+            parts = parts._replace(scheme="ws")
+        elif parts.scheme == "https":
+            parts = parts._replace(scheme="wss")
+        else:
+            raise RuntimeError(f"Unexpected scheme found: {self.spelunky_fyi_root}")
+
+        return urlunparse(parts)
 
     def to_dict(self):
         install_dir = None
