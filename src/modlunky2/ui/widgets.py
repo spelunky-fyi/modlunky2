@@ -3,7 +3,9 @@ import re
 from queue import Empty
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import PhotoImage, ttk
+
+from modlunky2.constants import BASE_DIR
 
 
 class ScrolledText(ttk.Frame):
@@ -269,7 +271,11 @@ class PopupWindow(ttk.Frame):
     def __init__(self, title, modlunky_config, *args, **kwargs):
         self.shutting_down = False
         self.win = tk.Toplevel()
+        self.win.attributes("-topmost", "true")
         self.modlunky_config = modlunky_config
+
+        self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
+        self.win.iconphoto(False, self.icon_png)
 
         style = ttk.Style()
         background = style.lookup("TFrame", "background")
@@ -283,10 +289,6 @@ class PopupWindow(ttk.Frame):
         super().__init__(self.label_frame, *args, **kwargs)
 
         self.win.title(title)
-        if "nt" in os.name:
-            self.win.attributes("-toolwindow", True)
-        else:
-            self.win.attributes("-alpha", True)
 
         main_geometry = tuple(
             map(int, re.split(r"[+x]", self.modlunky_config.config_file.geometry))
