@@ -175,7 +175,7 @@ class FYISettings(ttk.LabelFrame):
         url = urljoin(
             self.modlunky_config.config_file.spelunky_fyi_root, "accounts/settings/"
         )
-        webbrowser.open_new_tab(url)
+        # webbrowser.open_new_tab(url)
 
 
 class UserDirectories(ttk.LabelFrame):

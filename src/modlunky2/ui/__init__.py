@@ -1,8 +1,8 @@
-import time
-import sys
 import logging
-import traceback
+import sys
+import time
 import tkinter as tk
+import traceback
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
 
@@ -23,6 +23,7 @@ from .widgets import ConsoleWindow
 from .install import InstallTab
 from .logs import QueueHandler, register_queue_handler
 from .error import ErrorTab
+from .websocket import WebSocketThread
 
 logger = logging.getLogger("modlunky2")
 
@@ -206,10 +207,27 @@ class ModlunkyUI:
         )
         self.version_label.grid(column=0, row=3, padx=5, sticky="e")
 
+        self.ws_thread = None
         self.task_manager.start_process()
         self.last_ping = time.time()
-        self.root.after(100, self.after_cb)
+        self.root.after(100, self.after_task_manager)
+        self.root.after(1000, self.after_ws_thread)
         self.root.after(1000, self.after_record_win)
+
+    def after_ws_thread(self):
+        try:
+            token = self.modlunky_config.config_file.spelunky_fyi_api_token
+            if token is None:
+                return
+
+            if self.ws_thread is not None and self.ws_thread.is_alive():
+                return
+
+            logger.debug("Starting websocket thread")
+            self.ws_thread = WebSocketThread(self.modlunky_config)
+            self.ws_thread.start()
+        finally:
+            self.root.after(1000, self.after_ws_thread)
 
     def after_record_win(self):
         self.root.after(1000, self.after_record_win)
@@ -221,7 +239,7 @@ class ModlunkyUI:
             logger.debug("Saving config")
             self.modlunky_config.config_file.save()
 
-    def after_cb(self):
+    def after_task_manager(self):
         if not self.task_manager.is_alive():
             # Worker process went away but we're shutting down so just return
             if self._shutting_down:
@@ -230,7 +248,7 @@ class ModlunkyUI:
             # Worker process went away unexpectedly... Restart it.
             logger.critical("Worker process went away... Restarting it.")
             self.task_manager.start_process()
-            self.root.after(100, self.after_cb)
+            self.root.after(100, self.after_task_manager)
             return
 
         # Send regular pings so the worker process knows
@@ -243,7 +261,7 @@ class ModlunkyUI:
         while True:
             msg = self.task_manager.receive_message()
             if msg is None:
-                self.root.after(100, self.after_cb)
+                self.root.after(100, self.after_task_manager)
                 return
 
             self.task_manager.dispatch(msg)
