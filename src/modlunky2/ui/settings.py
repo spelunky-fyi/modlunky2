@@ -1,12 +1,11 @@
 import logging
 import tkinter as tk
-import webbrowser
 from pathlib import Path
 from tkinter import ttk
 from urllib.parse import urljoin
 
 from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, guess_install_dir
-from modlunky2.ui.widgets import Entry, PopupWindow, Tab
+from modlunky2.ui.widgets import Entry, Link, PopupWindow, Tab
 from modlunky2.utils import open_directory
 
 logger = logging.getLogger("modlunky2")
@@ -138,12 +137,17 @@ class FYISettings(ttk.LabelFrame):
         win = PopupWindow("API Token", self.modlunky_config)
         win.columnconfigure(1, minsize=500)
 
+        url = urljoin(
+            self.modlunky_config.config_file.spelunky_fyi_root, "accounts/settings/"
+        )
+        link = Link(win, url, text="Get API Token Here", anchor="center")
+        link.grid(row=0, column=0, columnspan=2, padx=2, pady=2)
         label = ttk.Label(win, text="API Token: ")
         entry = Entry(win)
         if self.modlunky_config.config_file.spelunky_fyi_api_token:
             entry.insert(0, self.modlunky_config.config_file.spelunky_fyi_api_token)
-        label.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
-        entry.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
+        label.grid(row=1, column=0, padx=2, pady=2, sticky="nse")
+        entry.grid(row=1, column=1, padx=2, pady=2, sticky="nsew")
 
         def update_then_destroy():
             try:
@@ -159,10 +163,10 @@ class FYISettings(ttk.LabelFrame):
                 win.destroy()
 
         separator = ttk.Separator(win)
-        separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
+        separator.grid(row=4, column=0, columnspan=3, pady=5, sticky="nsew")
 
         buttons = ttk.Frame(win)
-        buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
+        buttons.grid(row=5, column=0, columnspan=2, sticky="nsew")
         buttons.columnconfigure(0, weight=1)
         buttons.columnconfigure(1, weight=1)
 
@@ -171,11 +175,6 @@ class FYISettings(ttk.LabelFrame):
 
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
-
-        url = urljoin(
-            self.modlunky_config.config_file.spelunky_fyi_root, "accounts/settings/"
-        )
-        # webbrowser.open_new_tab(url)
 
 
 class UserDirectories(ttk.LabelFrame):

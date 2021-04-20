@@ -15,9 +15,10 @@ logger = logging.getLogger("modlunky2")
 
 
 class WebSocketThread(threading.Thread):
-    def __init__(self, modlunky_config):
+    def __init__(self, modlunky_config, task_manager):
         super().__init__(daemon=True)
         self.modlunky_config = modlunky_config
+        self.task_manager = task_manager
         self.api_token = modlunky_config.config_file.spelunky_fyi_api_token
         self.backoff = 0.2
         self.max_backoff = 5
@@ -53,7 +54,7 @@ class WebSocketThread(threading.Thread):
                 message,
             )
 
-        if payload["action"] == "web-connected":
+        if payload["action"] in ["web-connected", "hello"]:
             if "channel-name" not in payload:
                 return
 
@@ -68,9 +69,24 @@ class WebSocketThread(threading.Thread):
         elif payload["action"] == "web-disconnected":
             pass
         elif payload["action"] == "install":
-            pass
+            await self.handle_install(payload.get("data", {}))
         else:
             logger.debug("Unknown action (%s). Ignoring", payload)
+
+    async def handle_install(self, data):
+
+        if "install-code" not in data:
+            logger.warning("Invalid install request: %s", data)
+            return
+
+        kwargs = {
+            "install_dir": self.modlunky_config.install_dir,
+            "spelunky_fyi_root": self.modlunky_config.config_file.spelunky_fyi_root,
+            "api_token": self.api_token,
+            "install_code": data["install-code"],
+            "mod_file_id": data.get("mod-file-id"),
+        }
+        self.task_manager.call("install:install_fyi_mod", **kwargs)
 
     async def listen_inner(self):
         headers = {"Authorization": f"Token {self.api_token}"}
@@ -78,7 +94,7 @@ class WebSocketThread(threading.Thread):
             self.retry_num = 0
             logger.info("Connected to spelunky.fyi")
             async for message in websocket:
-                logger.info(message)
+                logger.debug(message)
                 await self.handle_message(websocket, message)
 
     async def listen(self):

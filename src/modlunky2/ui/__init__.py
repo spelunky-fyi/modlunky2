@@ -224,7 +224,7 @@ class ModlunkyUI:
                 return
 
             logger.debug("Starting websocket thread")
-            self.ws_thread = WebSocketThread(self.modlunky_config)
+            self.ws_thread = WebSocketThread(self.modlunky_config, self.task_manager)
             self.ws_thread.start()
         finally:
             self.root.after(1000, self.after_ws_thread)

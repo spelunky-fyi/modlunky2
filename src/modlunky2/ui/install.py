@@ -3,10 +3,12 @@ import logging
 import re
 import shutil
 import tkinter as tk
+from typing import Optional
 import zipfile
 from io import BytesIO
 from pathlib import Path
 from tkinter import ttk
+from os.path import commonprefix
 from urllib.parse import urlparse, urljoin
 
 import requests
@@ -156,7 +158,9 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
 
     if source.suffix == ".zip":
         logger.info("Extracting %s to %s", source.name, dest_dir)
-        shutil.unpack_archive(source, dest_dir)
+        with zipfile.ZipFile(source) as zip_file:
+            zip_file.extractall(dest_dir, get_members_without_commonprefix(zip_file))
+
     else:
         logger.info("Copying file %s to %s", source.name, dest_dir)
         shutil.copy(source.resolve(), dest_dir.resolve())
@@ -230,16 +234,16 @@ class LocalInstall(ttk.LabelFrame):
             self.button_install["state"] = tk.DISABLED
 
 
-def write_manifest(dest_dir: Path, mod_details, latest_mod_file, logo=None):
+def write_manifest(dest_dir: Path, mod_details, mod_file, logo=None):
     manifest = {
         "name": mod_details["name"],
         "slug": mod_details["slug"],
         "description": mod_details["description"],
         "logo": str(logo),
         "mod_file": {
-            "id": latest_mod_file["id"],
-            "created_at": latest_mod_file["created_at"],
-            "download_url": latest_mod_file["download_url"],
+            "id": mod_file["id"],
+            "created_at": mod_file["created_at"],
+            "download_url": mod_file["download_url"],
         },
     }
 
@@ -280,6 +284,31 @@ def download_file(call, url: str, dest_path: Path):
         shutil.copyfileobj(contents, dest_file)
 
 
+def get_members_without_commonprefix(zip_file):
+    paths = set()
+
+    # Get path prefixes
+    for name in zip_file.namelist():
+        if name.endswith("/"):
+            continue
+        paths.add("/".join(name.split("/")[:-1]) + "/")
+
+    # now find the common path prefix (if any)
+    prefix = commonprefix(list(paths))
+
+    if prefix.lower().startswith(("data/", "soundbank/")):
+        prefix = ""
+
+    prefix_len = len(prefix)
+
+    for zipinfo in zip_file.infolist():
+        filename = zipinfo.filename
+        if len(filename) <= prefix_len:
+            continue
+        zipinfo.filename = filename[prefix_len:]
+        yield zipinfo
+
+
 def download_zip(call, download_url, pack_dir):
     contents = download_contents(call, download_url)
     if contents is None:
@@ -287,7 +316,7 @@ def download_zip(call, download_url, pack_dir):
         return
 
     modzip = zipfile.ZipFile(contents)
-    modzip.extractall(pack_dir)
+    modzip.extractall(pack_dir, get_members_without_commonprefix(modzip))
 
 
 def download_mod_file(call, mod_file, pack_dir):
@@ -308,8 +337,24 @@ def download_logo(call, logo_url, pack_dir):
     return logo_name
 
 
+def get_mod_file(mod_files, mod_file_id=None):
+    if mod_file_id is None:
+        return mod_files[0]
+
+    for mod_file in mod_files:
+        if mod_file["id"] == mod_file_id:
+            return mod_file
+
+    return None
+
+
 def install_fyi_mod(
-    call, install_dir: Path, spelunky_fyi_root: str, api_token: str, install_code: str
+    call,
+    install_dir: Path,
+    spelunky_fyi_root: str,
+    api_token: str,
+    install_code: str,
+    mod_file_id: Optional[str] = None,
 ):
     mods_dir = install_dir / "Mods"
     packs_dir = mods_dir / "Packs"
@@ -345,7 +390,12 @@ def install_fyi_mod(
         logger.critical("Mod `%s` has no files to download.", install_code)
         return
 
-    latest_mod_file = mod_details["mod_files"][0]
+    mod_file = get_mod_file(mod_details["mod_files"], mod_file_id)
+    if mod_file is None:
+        logger.critical(
+            "Mod file `%s` with mod file id %s not found.", install_code, mod_file_id
+        )
+        return
 
     pack_dir = packs_dir / f"fyi.{install_code}"
     if not pack_dir.exists():
@@ -355,14 +405,14 @@ def install_fyi_mod(
     if not pack_metadata_dir.exists():
         pack_metadata_dir.mkdir(parents=True, exist_ok=True)
 
-    download_mod_file(call, latest_mod_file, pack_dir)
+    download_mod_file(call, mod_file, pack_dir)
 
     logo_url = mod_details["logo"]
     logo_name = None
     if logo_url:
         logo_name = download_logo(call, logo_url, pack_metadata_dir)
 
-    write_manifest(pack_metadata_dir, mod_details, latest_mod_file, logo_name)
+    write_manifest(pack_metadata_dir, mod_details, mod_file, logo_name)
 
     logger.info("Finished installing %s to %s", install_code, pack_dir)
     call("play:reload")

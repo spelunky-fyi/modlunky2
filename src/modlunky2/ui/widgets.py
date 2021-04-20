@@ -4,6 +4,7 @@ from queue import Empty
 
 import tkinter as tk
 from tkinter import PhotoImage, ttk
+import webbrowser
 
 from modlunky2.constants import BASE_DIR
 
@@ -358,3 +359,13 @@ class DebounceEntry(Entry):
         self._on_key_func = func
         if debounce_ms is not None:
             self._debounce_ms = debounce_ms
+
+
+class Link(tk.Label):
+    def __init__(self, parent, url, *args, **kwargs):
+        super().__init__(parent, fg="blue", cursor="hand2", *args, **kwargs)
+        self.url = url
+        self.bind("<Button-1>", self.open)
+
+    def open(self, _ev):
+        webbrowser.open_new_tab(self.url)

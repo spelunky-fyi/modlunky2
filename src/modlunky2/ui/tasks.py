@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from multiprocessing import Process, Queue
 from queue import Empty
 
+from modlunky2.utils import tb_info
+
 from .logs import register_queue_handler, QueueHandler
 
 logger = logging.getLogger("modlunky2")
@@ -93,8 +95,10 @@ class Worker:
         def func():
             try:
                 task.callback(self.call, **kwargs)
-            except Exception as err:  # pylint: disable=broad-except
-                logger.critical("Failed to execute command %s: %s", repr(msg.name), err)
+            except Exception:  # pylint: disable=broad-except
+                logger.critical(
+                    "Failed to execute command %s: %s", repr(msg.name), tb_info()
+                )
             if task.on_complete:
                 self.call(task.on_complete)
 
