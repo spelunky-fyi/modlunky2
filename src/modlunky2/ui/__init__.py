@@ -94,8 +94,9 @@ class ModlunkyUI:
             # TODO: dynamic sizing for larger windows
             wraplength="640",
         )
-        style.configure("Update.TButton", bg="#bfbfbf", font="sans 12 bold")
+        style.configure("Update.TButton", font="sans 12 bold")
         style.configure("TOptionMenu", anchor="w")
+        style.configure("Link.TLabel", foreground="royal blue")
 
         default_background = style.lookup("TFrame", "background")
         self.root.configure(bg=default_background)

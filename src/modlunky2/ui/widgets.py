@@ -309,6 +309,9 @@ class PopupWindow(ttk.Frame):
 
         self.win.bind("<Escape>", self.on_escape)
 
+        self.win.focus_force()
+        self.win.lift()
+
     def on_escape(self, _event=None):
         self.destroy()
 
@@ -361,9 +364,9 @@ class DebounceEntry(Entry):
             self._debounce_ms = debounce_ms
 
 
-class Link(tk.Label):
+class Link(ttk.Label):
     def __init__(self, parent, url, *args, **kwargs):
-        super().__init__(parent, fg="blue", cursor="hand2", *args, **kwargs)
+        super().__init__(parent, style="Link.TLabel", cursor="hand2", *args, **kwargs)
         self.url = url
         self.bind("<Button-1>", self.open)
 
