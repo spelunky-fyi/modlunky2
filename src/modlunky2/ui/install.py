@@ -355,6 +355,7 @@ def install_fyi_mod(
     api_token: str,
     install_code: str,
     mod_file_id: Optional[str] = None,
+    channel_name: Optional[str] = None,
 ):
     mods_dir = install_dir / "Mods"
     packs_dir = mods_dir / "Packs"
@@ -415,6 +416,8 @@ def install_fyi_mod(
     write_manifest(pack_metadata_dir, mod_details, mod_file, logo_name)
 
     logger.info("Finished installing %s to %s", install_code, pack_dir)
+    if channel_name is not None:
+        call("fyi:install-complete", channel_name=channel_name)
     call("play:reload")
 
 

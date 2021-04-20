@@ -20,9 +20,27 @@ class WebSocketThread(threading.Thread):
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager
         self.api_token = modlunky_config.config_file.spelunky_fyi_api_token
-        self.backoff = 0.2
+        self.backoff = 0.8
         self.max_backoff = 5
         self.retry_num = 0
+        self.websocket = None
+
+        self.task_manager.register_handler(
+            "fyi:install-complete", self.handle_install_complete
+        )
+
+    def handle_install_complete(self, channel_name):
+        if self.websocket is None:
+            return
+
+        asyncio.get_event_loop().run_until_complete(
+            self.send(
+                {
+                    "action": "install-complete",
+                    "channel-name": channel_name,
+                }
+            )
+        )
 
     def token_changed(self):
         return self.modlunky_config.config_file.spelunky_fyi_api_token != self.api_token
@@ -39,7 +57,14 @@ class WebSocketThread(threading.Thread):
             "ws/gateway/ml/",
         )
 
-    async def handle_message(self, websocket, message):
+    async def send(self, payload):
+        if self.websocket is None:
+            logger.warning("Send message on disconnected websocket.")
+            return
+
+        return await self.websocket.send(json.dumps(payload))
+
+    async def handle_message(self, message):
         try:
             payload = json.loads(message)
         except Exception:  # pylint: disable=broad-except
@@ -58,22 +83,21 @@ class WebSocketThread(threading.Thread):
             if "channel-name" not in payload:
                 return
 
-            await websocket.send(
-                json.dumps(
-                    {
-                        "action": "announce",
-                        "channel-name": payload["channel-name"],
-                    }
-                )
+            await self.send(
+                {
+                    "action": "announce",
+                    "channel-name": payload["channel-name"],
+                }
             )
+
         elif payload["action"] == "web-disconnected":
             pass
         elif payload["action"] == "install":
-            await self.handle_install(payload.get("data", {}))
+            await self.handle_install(payload["channel-name"], payload.get("data", {}))
         else:
             logger.debug("Unknown action (%s). Ignoring", payload)
 
-    async def handle_install(self, data):
+    async def handle_install(self, channel_name, data):
 
         if "install-code" not in data:
             logger.warning("Invalid install request: %s", data)
@@ -85,17 +109,23 @@ class WebSocketThread(threading.Thread):
             "api_token": self.api_token,
             "install_code": data["install-code"],
             "mod_file_id": data.get("mod-file-id"),
+            "channel_name": channel_name,
         }
         self.task_manager.call("install:install_fyi_mod", **kwargs)
 
     async def listen_inner(self):
         headers = {"Authorization": f"Token {self.api_token}"}
-        async with websockets.connect(self.ws_url, extra_headers=headers) as websocket:
+        try:
+            self.websocket = await websockets.connect(
+                self.ws_url, extra_headers=headers
+            )
             self.retry_num = 0
             logger.info("Connected to spelunky.fyi")
-            async for message in websocket:
+            async for message in self.websocket:
                 logger.debug(message)
-                await self.handle_message(websocket, message)
+                await self.handle_message(message)
+        finally:
+            self.websocket = None
 
     async def listen(self):
         while True:
@@ -108,13 +138,12 @@ class WebSocketThread(threading.Thread):
             except websockets.exceptions.ConnectionClosedError:
                 backoff = self.get_backoff()
                 logger.warning(
-                    "Websocket connection went away. Trying again in %s seconds",
-                    backoff,
+                    "Websocket connection went away. Will keep trying...",
                 )
                 await asyncio.sleep(backoff)
             except ConnectionError:
                 backoff = self.get_backoff()
-                logger.warning(
+                logger.debug(
                     "Couldn't get connection to spelunky.fyi. Trying again in %s seconds...",
                     backoff,
                 )
