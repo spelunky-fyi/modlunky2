@@ -123,16 +123,16 @@ class TaskManager:
         self._receivers = {}
         self.register("pong", self.handle_pong)
 
-    def register(self, name, callback):
-        if name in self._receivers:
+    def register(self, name, callback, overwrite=False):
+        if not overwrite and name in self._receivers:
             raise RuntimeError(f"{name} is already registered...")
         self._receivers[name] = callback
 
     def register_task(self, name, callback, threaded=False, on_complete=None):
         self.worker.register(name, callback, threaded, on_complete)
 
-    def register_handler(self, name, callback):
-        self.register(name, callback)
+    def register_handler(self, name, callback, overwrite=False):
+        self.register(name, callback, overwrite)
 
     def call(self, name, **kwargs):
         if not kwargs:

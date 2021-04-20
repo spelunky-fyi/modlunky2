@@ -26,20 +26,20 @@ class WebSocketThread(threading.Thread):
         self.websocket = None
 
         self.task_manager.register_handler(
-            "fyi:install-complete", self.handle_install_complete
+            "fyi:install-complete", self.install_complete_sync, True
         )
 
-    def handle_install_complete(self, channel_name):
-        if self.websocket is None:
-            return
+    def install_complete_sync(self, channel_name):
+        return asyncio.get_event_loop().run_until_complete(
+            self.install_complete(channel_name)
+        )
 
-        asyncio.get_event_loop().run_until_complete(
-            self.send(
-                {
-                    "action": "install-complete",
-                    "channel-name": channel_name,
-                }
-            )
+    async def install_complete(self, channel_name):
+        return await self.send(
+            {
+                "action": "install-complete",
+                "channel-name": channel_name,
+            }
         )
 
     def token_changed(self):
@@ -125,6 +125,11 @@ class WebSocketThread(threading.Thread):
                 logger.debug(message)
                 await self.handle_message(message)
         finally:
+            if self.websocket is not None:
+                try:
+                    await self.websocket.close()
+                except Exception:  # pylint: disable=broad-except
+                    pass
             self.websocket = None
 
     async def listen(self):
@@ -174,6 +179,8 @@ class WebSocketThread(threading.Thread):
 
         for task in pending:
             task.cancel()
+
+        await asyncio.sleep(1)
 
     def run(self):
         loop = asyncio.new_event_loop()
