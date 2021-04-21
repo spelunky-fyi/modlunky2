@@ -96,6 +96,7 @@ class ConfigFile:
         self.install_dir = None
         self.playlunky_version = None
         self.playlunky_console = False
+        self.playlunky_shortcut = False
         self.geometry = None
         self.spelunky_fyi_root = None
         self.spelunky_fyi_api_token = None
@@ -138,6 +139,7 @@ class ConfigFile:
         # Initialize playlunky config
         obj.playlunky_version = config_data.get("playlunky-version")
         obj.playlunky_console = config_data.get("playlunky-console", False)
+        obj.playlunky_shortcut = config_data.get("playlunky-shortcut", False)
 
         # Initialize geometry
         obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
@@ -184,7 +186,10 @@ class ConfigFile:
 
         if self.playlunky_version is not None:
             out["playlunky-version"] = self.playlunky_version
-        out["playlunky-console"] = self.playlunky_console
+        if self.playlunky_console:
+            out["playlunky-console"] = self.playlunky_console
+        if self.playlunky_shortcut:
+            out["playlunky-shortcut"] = self.playlunky_shortcut
 
         out["geometry"] = self.geometry
 

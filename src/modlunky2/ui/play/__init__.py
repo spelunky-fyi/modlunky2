@@ -3,6 +3,7 @@
 import configparser
 import json
 import logging
+import os
 import shutil
 import subprocess
 import threading
@@ -32,6 +33,9 @@ from modlunky2.ui.widgets import (
     DebounceEntry,
 )
 from modlunky2.utils import open_directory, tb_info, is_patched
+
+if "nt" in os.name:
+    import winshell  # type: ignore
 
 logger = logging.getLogger("modlunky2")
 
@@ -362,10 +366,14 @@ class VersionFrame(ttk.LabelFrame):
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
-        if value != self.modlunky_config.config_file.playlunky_version:
-            self.modlunky_config.config_file.playlunky_version = value
-            self.modlunky_config.config_file.save()
-            self.render()
+        if value == self.modlunky_config.config_file.playlunky_version:
+            return
+
+        self.modlunky_config.config_file.playlunky_version = value
+        self.modlunky_config.config_file.save()
+        self.render()
+        if self.modlunky_config.config_file.playlunky_shortcut:
+            self.parent.options_frame.make_shortcut()
 
     def render(self):
         self.available_releases = self.get_available_releases()
@@ -445,6 +453,18 @@ class OptionsFrame(ttk.Frame):
             command=self.handle_console_checkbutton,
         )
 
+        self.desktop_shortcut_var = tk.BooleanVar()
+        self.desktop_shortcut_var.set(
+            self.modlunky_config.config_file.playlunky_shortcut
+        )
+        self.desktop_shortcut_checkbox = ttk.Checkbutton(
+            self,
+            text="Desktop Shortcut",
+            variable=self.desktop_shortcut_var,
+            compound="left",
+            command=self.handle_desktop_shortcut,
+        )
+
         for section_idx, (section, options) in enumerate(SECTIONS.items()):
             section_ypad = (5, 0)
             if section_idx == 0:
@@ -474,6 +494,10 @@ class OptionsFrame(ttk.Frame):
                     row=row_num, column=0, padx=3, sticky="w"
                 )
                 row_num += 1
+                self.desktop_shortcut_checkbox.grid(
+                    row=row_num, column=0, padx=3, sticky="w"
+                )
+                row_num += 1
 
     @staticmethod
     def format_text(text):
@@ -484,6 +508,44 @@ class OptionsFrame(ttk.Frame):
             self.enable_console_var.get()
         )
         self.modlunky_config.config_file.save()
+
+    @property
+    def shortcut_path(self):
+        return Path(winshell.desktop(), "playlunky.lnk")
+
+    def make_shortcut(self):
+        version = self.modlunky_config.config_file.playlunky_version
+        if not version:
+            return
+
+        exe_path = PLAYLUNKY_DATA_DIR / version / PLAYLUNKY_EXE
+
+        if "nt" not in os.name:
+            logger.debug("Making shortcut to %s", exe_path)
+            return
+
+        with winshell.shortcut(self.shortcut_path) as link:
+            link.path = f"{exe_path}"
+            link.description = "Shortcut to playlunky"
+
+    def remove_shortcut(self):
+        if "nt" not in os.name:
+            logger.debug("Removing shortcut")
+            return
+
+        self.shortcut_path.unlink()
+
+    def handle_desktop_shortcut(self):
+
+        shortcut = self.desktop_shortcut_var.get()
+        self.modlunky_config.config_file.playlunky_shortcut = shortcut
+
+        self.modlunky_config.config_file.save()
+
+        if shortcut:
+            self.make_shortcut()
+        else:
+            self.remove_shortcut()
 
 
 class FiltersFrame(ttk.LabelFrame):
