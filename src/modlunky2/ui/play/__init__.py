@@ -511,7 +511,7 @@ class OptionsFrame(ttk.Frame):
 
     @property
     def shortcut_path(self):
-        return Path(winshell.desktop(), "playlunky.lnk")
+        return Path(winshell.desktop(), "Playlunky.lnk")
 
     def make_shortcut(self):
         version = self.modlunky_config.config_file.playlunky_version
@@ -524,8 +524,13 @@ class OptionsFrame(ttk.Frame):
             logger.debug("Making shortcut to %s", exe_path)
             return
 
-        with winshell.shortcut(self.shortcut_path) as link:
+        install_dir = self.modlunky_config.install_dir
+        arguments = f'--exe_dir="{install_dir}"'
+
+        with winshell.shortcut(f"{self.shortcut_path}") as link:
             link.path = f"{exe_path}"
+            link.working_directory = f"{exe_path.parent}"
+            link.arguments = arguments
             link.description = "Shortcut to playlunky"
 
     def remove_shortcut(self):
@@ -533,7 +538,8 @@ class OptionsFrame(ttk.Frame):
             logger.debug("Removing shortcut")
             return
 
-        self.shortcut_path.unlink()
+        if self.shortcut_path.exists():
+            self.shortcut_path.unlink()
 
     def handle_desktop_shortcut(self):
 
