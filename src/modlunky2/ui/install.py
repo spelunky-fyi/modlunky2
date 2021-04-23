@@ -288,15 +288,6 @@ def download_file(call, url: str, dest_path: Path):
     with dest_path.open("wb") as dest_file:
         shutil.copyfileobj(contents, dest_file)
 
-    if dest_path.suffix == ".lua":
-        lua_path = Path(dest_path)
-
-        try:
-            lua_path.rename(lua_path.parent / "main.lua")
-
-        except Exception as err:
-            logger.warning(err)
-
 def get_members_without_commonprefix(zip_file):
     paths = set()
 
@@ -336,8 +327,12 @@ def download_mod_file(call, mod_file, pack_dir):
     download_url = mod_file["download_url"]
     filename = Path(mod_file["filename"])
 
+    if filename.suffix == ".lua":
+        filename = Path("main.lua")
+
     if filename.suffix == ".zip":
         download_zip(call, download_url, pack_dir)
+
     else:
         download_file(call, download_url, pack_dir / filename)
 
