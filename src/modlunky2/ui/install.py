@@ -291,7 +291,9 @@ def get_members_without_commonprefix(zip_file):
     for name in zip_file.namelist():
         if name.endswith("/"):
             continue
-        paths.add("/".join(name.split("/")[:-1]) + "/")
+        path_parts = name.split("/")[:-1]
+        if path_parts:
+            paths.add("/".join(path_parts) + "/")
 
     # now find the common path prefix (if any)
     prefix = commonprefix(list(paths))
