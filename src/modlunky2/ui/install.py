@@ -164,7 +164,7 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
     elif source.suffix == ".lua":
         main_lua = dest_dir / "main.lua"
         logger.info("Copying file %s to %s", source.name, main_lua)
-        shutil.copy(source.resolve(), main.lua)
+        shutil.copy(source.resolve(), main_lua)
 
     else:
         logger.info("Copying file %s to %s", source.name, dest_dir)
