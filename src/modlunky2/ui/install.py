@@ -285,7 +285,6 @@ def download_file(call, url: str, dest_path: Path):
         logger.warning("Failed to download file from %s", url)
         return
 
-
     with dest_path.open("wb") as dest_file:
         shutil.copyfileobj(contents, dest_file)
 
