@@ -159,12 +159,12 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
     if source.suffix == ".zip":
         logger.info("Extracting %s to %s", source.name, dest_dir)
         with zipfile.ZipFile(source) as zip_file:
-            zip_file.extractall(dest_dir, get_members_without_commonprefix(zip_file))
+            zip_file.extractall(dest_dir, get_zip_members(zip_file))
 
     elif source.suffix == ".lua":
         main_lua = dest_dir / "main.lua"
         logger.info("Copying file %s to %s", source.name, main_lua)
-        shutil.copy(source.resolve(), main_lua)
+        shutil.copy(source.resolve(), main_lua.resolve())
 
     else:
         logger.info("Copying file %s to %s", source.name, dest_dir)
@@ -288,13 +288,19 @@ def download_file(call, url: str, dest_path: Path):
     with dest_path.open("wb") as dest_file:
         shutil.copyfileobj(contents, dest_file)
 
-def get_members_without_commonprefix(zip_file):
+
+def get_zip_members(zip_file):
     paths = set()
+    num_lua_files = 0
 
     # Get path prefixes
     for name in zip_file.namelist():
         if name.endswith("/"):
             continue
+
+        if name.endswith(".lua"):
+            num_lua_files += 1
+
         path_parts = name.split("/")[:-1]
         if path_parts:
             paths.add("/".join(path_parts) + "/")
@@ -308,10 +314,12 @@ def get_members_without_commonprefix(zip_file):
     prefix_len = len(prefix)
 
     for zipinfo in zip_file.infolist():
-        filename = zipinfo.filename
+        filename: str = zipinfo.filename
         if len(filename) <= prefix_len:
             continue
         zipinfo.filename = filename[prefix_len:]
+        if filename.endswith(".lua") and num_lua_files == 1:
+            zipinfo.filename = "main.lua"
         yield zipinfo
 
 
@@ -322,7 +330,7 @@ def download_zip(call, download_url, pack_dir):
         return
 
     modzip = zipfile.ZipFile(contents)
-    modzip.extractall(pack_dir, get_members_without_commonprefix(modzip))
+    modzip.extractall(pack_dir, get_zip_members(modzip))
 
 
 def download_mod_file(call, mod_file, pack_dir):
