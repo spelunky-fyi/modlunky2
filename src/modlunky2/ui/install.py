@@ -161,6 +161,11 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
         with zipfile.ZipFile(source) as zip_file:
             zip_file.extractall(dest_dir, get_members_without_commonprefix(zip_file))
 
+    elif source.suffix == ".lua":
+        main_lua = dest_dir / "main.lua"
+        logger.info("Copying file %s to %s", source.name, main_lua)
+        shutil.copy(source.resolve(), main_lua)
+
     else:
         logger.info("Copying file %s to %s", source.name, dest_dir)
         shutil.copy(source.resolve(), dest_dir.resolve())
@@ -283,7 +288,6 @@ def download_file(call, url: str, dest_path: Path):
     with dest_path.open("wb") as dest_file:
         shutil.copyfileobj(contents, dest_file)
 
-
 def get_members_without_commonprefix(zip_file):
     paths = set()
 
@@ -325,8 +329,12 @@ def download_mod_file(call, mod_file, pack_dir):
     download_url = mod_file["download_url"]
     filename = Path(mod_file["filename"])
 
+    if filename.suffix == ".lua":
+        filename = Path("main.lua")
+
     if filename.suffix == ".zip":
         download_zip(call, download_url, pack_dir)
+
     else:
         download_file(call, download_url, pack_dir / filename)
 
