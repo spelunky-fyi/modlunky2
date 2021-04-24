@@ -25,6 +25,23 @@ MODS = Path("Mods")
 
 TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
 
+LEGACY_ENTITIES = [
+    "axolotl_full_grid.png",
+    "axolotl_full.png",
+    "rockdog_full_grid.png",
+    "rockdog_full.png",
+    "turkey_full_grid.png",
+    "turkey_full.png",
+    "qilin_full_grid.png",
+    "qilin_full.png",
+    "monty_full_grid.png",
+    "monty_full.png",
+    "percy_full_grid.png",
+    "percy_full.png",
+    "poochi_full_grid.png",
+    "poochi_full.png",
+]
+
 
 def try_load_vorbis():
     try:
@@ -66,6 +83,13 @@ def extract_assets(
         (mods_dir / ".compressed" / EXTRACTED_DIR / dir_).mkdir(
             parents=True, exist_ok=True
         )
+
+    for legacy_entity in LEGACY_ENTITIES:
+        legacy_path = (
+            mods_dir / EXTRACTED_DIR / "Data" / "Textures" / "Entities" / legacy_entity
+        )
+        if legacy_path.exists():
+            legacy_path.unlink()
 
     with exe_filename.open("rb") as exe:
         asset_store = AssetStore.load_from_file(exe)
