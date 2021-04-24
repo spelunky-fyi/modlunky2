@@ -304,6 +304,8 @@ def get_zip_members(zip_file):
         path_parts = name.split("/")[:-1]
         if path_parts:
             paths.add("/".join(path_parts) + "/")
+        else:
+            paths.add("")
 
     # now find the common path prefix (if any)
     prefix = commonprefix(list(paths))
