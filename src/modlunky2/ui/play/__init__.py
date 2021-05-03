@@ -847,20 +847,41 @@ class Pack:
             command=self.on_check,
         )
 
+        button_padding = 1
         self.buttons = ttk.Frame(parent)
         self.buttons.rowconfigure(0, weight=1)
+
+        self.buttons.update_button = ttk.Button(
+            self.buttons,
+            padding=button_padding,
+            image=self.play_tab.update_icon,
+            command=self.open_pack_dir,
+        )
+        # self.buttons.update_button.grid(row=0, column=0, padx=(1, 0), sticky="e")
+
+        self.buttons.options_button = ttk.Button(
+            self.buttons,
+            padding=button_padding,
+            image=self.play_tab.options_icon,
+            command=self.open_pack_dir,
+        )
+        # self.buttons.options_button.grid(row=0, column=1, padx=(1, 0), sticky="e")
+
         self.buttons.folder_button = ttk.Button(
             self.buttons,
+            padding=button_padding,
             image=self.play_tab.folder_icon,
             command=self.open_pack_dir,
         )
-        self.buttons.folder_button.grid(row=0, column=0, sticky="e")
+        self.buttons.folder_button.grid(row=0, column=2, padx=(1, 0), sticky="e")
+
         self.buttons.trash_button = ttk.Button(
             self.buttons,
+            padding=button_padding,
             image=self.play_tab.trash_icon,
             command=self.remove_pack,
         )
-        self.buttons.trash_button.grid(row=0, column=1, sticky="e")
+        self.buttons.trash_button.grid(row=0, column=3, padx=(1, 0), sticky="e")
         self.on_load()
 
     def on_load(self):
@@ -998,10 +1019,16 @@ class PlayTab(Tab):
         self.playlunky_running = False
 
         self.folder_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "folder.png").resize((30, 30), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "folder.png").resize((36, 36), Image.ANTIALIAS)
         )
         self.trash_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "trash.png").resize((30, 30), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "trash.png").resize((36, 36), Image.ANTIALIAS)
+        )
+        self.options_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "options.png").resize((36, 36), Image.ANTIALIAS)
+        )
+        self.update_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "update.png").resize((36, 36), Image.ANTIALIAS)
         )
 
         self.rowconfigure(0, minsize=200)
@@ -1292,7 +1319,7 @@ class PlayTab(Tab):
             if display:
                 if row_num > 0:
                     sep = ttk.Separator(self.packs_frame)
-                    sep.grid(row=row_num, column=0, columnspan=2, pady=1, sticky="ew")
+                    sep.grid(row=row_num, column=0, columnspan=3, pady=1, sticky="ew")
                     self.separators.append(sep)
                     row_num += 1
                 pack.grid(row_num)
