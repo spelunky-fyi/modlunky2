@@ -102,7 +102,6 @@ class Pack:
             install_code=self.slug,
             overwrite=True,
         )
-        logger.info("Coming soon...")
 
     def is_fyi_pack(self):
         if "slug" not in self.manifest:
