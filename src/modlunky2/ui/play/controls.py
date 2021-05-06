@@ -10,18 +10,19 @@ from modlunky2.utils import open_directory
 logger = logging.getLogger("modlunky2")
 
 
-class ControlsFrame(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config, *args, **kwargs):
-        super().__init__(parent, text="Stuff & Things", *args, **kwargs)
+class ControlsFrame(ttk.Frame):
+    def __init__(self, parent, play_tab, modlunky_config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.parent = parent
         self.modlunky_config = modlunky_config
+        self.play_tab = play_tab
 
         self.columnconfigure(0, weight=1)
 
         self.refresh_button = ttk.Button(
             self, text="Refresh Mods", command=self.refresh_mods
         )
-        self.refresh_button.grid(row=1, column=0, pady=3, padx=10, sticky="nswe")
+        self.refresh_button.grid(row=0, column=0, pady=3, padx=10, sticky="nswe")
         ToolTip(
             self.refresh_button,
             (
@@ -33,18 +34,18 @@ class ControlsFrame(ttk.LabelFrame):
         self.open_packs_button = ttk.Button(
             self, text="Open Packs Directory", command=self.open_packs
         )
-        self.open_packs_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
+        self.open_packs_button.grid(row=1, column=0, pady=3, padx=10, sticky="nswe")
         ToolTip(self.open_packs_button, ("Open the directory where Packs are saved"))
 
         self.guide_button = ttk.Button(self, text="User Guide", command=self.guide)
-        self.guide_button.grid(row=3, column=0, pady=3, padx=10, sticky="nswe")
+        self.guide_button.grid(row=2, column=0, pady=3, padx=10, sticky="nswe")
         ToolTip(self.guide_button, ("Open the User Guide"))
 
         self.update_releases_button = ttk.Button(
             self, text="Update Releases", command=self.update_releases
         )
         self.update_releases_button.grid(
-            row=4, column=0, pady=3, padx=10, sticky="nswe"
+            row=3, column=0, pady=3, padx=10, sticky="nswe"
         )
         ToolTip(
             self.update_releases_button,
@@ -52,6 +53,17 @@ class ControlsFrame(ttk.LabelFrame):
                 "If you want to check for a new version of Playlunky\n"
                 "you can force an update with this button."
             ),
+        )
+
+        self.check_fyi_updates_button = ttk.Button(
+            self, text="Check for Mod Updates", command=self.check_fyi_updates
+        )
+        self.check_fyi_updates_button.grid(
+            row=4, column=0, pady=3, padx=10, sticky="nswe"
+        )
+        ToolTip(
+            self.check_fyi_updates_button,
+            ("Check to see if any mods have updates available."),
         )
 
         self.clear_cache_button = ttk.Button(
@@ -67,7 +79,7 @@ class ControlsFrame(ttk.LabelFrame):
         )
 
     def refresh_mods(self):
-        self.parent.on_load()
+        self.play_tab.on_load()
 
     def open_packs(self):
         packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
@@ -81,7 +93,10 @@ class ControlsFrame(ttk.LabelFrame):
         webbrowser.open_new_tab("https://github.com/spelunky-fyi/Playlunky/wiki")
 
     def update_releases(self):
-        self.parent.version_frame.task_manager.call("play:cache_releases")
+        self.play_tab.version_frame.task_manager.call("play:cache_releases")
+
+    def check_fyi_updates(self):
+        self.play_tab.packs_frame.cache_fyi_pack_details()
 
     def clear_cache(self):
         cache_dir = self.modlunky_config.install_dir / "Mods/Packs/.db"

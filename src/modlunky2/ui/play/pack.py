@@ -48,14 +48,14 @@ class Pack:
         self.buttons.update_button = ttk.Button(
             self.buttons,
             padding=button_padding,
-            image=self.play_tab.update_icon,
+            image=self.play_tab.packs_frame.update_icon,
             command=self.open_pack_dir,
         )
 
         self.buttons.options_button = ttk.Button(
             self.buttons,
             padding=button_padding,
-            image=self.play_tab.options_icon,
+            image=self.play_tab.packs_frame.options_icon,
             command=self.open_pack_dir,
         )
         # self.buttons.options_button.grid(row=0, column=1, padx=(1, 0), sticky="e")
@@ -63,7 +63,7 @@ class Pack:
         self.buttons.folder_button = ttk.Button(
             self.buttons,
             padding=button_padding,
-            image=self.play_tab.folder_icon,
+            image=self.play_tab.packs_frame.folder_icon,
             command=self.open_pack_dir,
         )
         self.buttons.folder_button.grid(row=0, column=2, padx=(1, 0), sticky="e")
@@ -71,11 +71,27 @@ class Pack:
         self.buttons.trash_button = ttk.Button(
             self.buttons,
             padding=button_padding,
-            image=self.play_tab.trash_icon,
+            image=self.play_tab.packs_frame.trash_icon,
             command=self.remove_pack,
         )
         self.buttons.trash_button.grid(row=0, column=3, padx=(1, 0), sticky="e")
         self.on_load()
+
+    @property
+    def slug(self):
+        return self.manifest.get("slug")
+
+    def is_fyi_pack(self):
+        if "slug" not in self.manifest:
+            return False
+
+        if "mod_file" not in self.manifest:
+            return False
+
+        if "id" not in self.manifest["mod_file"]:
+            return False
+
+        return True
 
     def on_load(self):
         if self.manifest_path.exists():
@@ -99,6 +115,8 @@ class Pack:
         else:
             self.logo_img = None
             self.logo.configure(image=None)
+
+        self.render_buttons()
 
     def forget(self):
         self.logo.grid_forget()
@@ -148,7 +166,7 @@ class Pack:
             self.play_tab.load_order.insert(self.folder)
         else:
             self.play_tab.load_order.delete(self.folder)
-        self.play_tab.render_packs()
+        self.play_tab.packs_frame.render_packs()
 
     def open_pack_dir(self):
         if self.folder.startswith("/"):

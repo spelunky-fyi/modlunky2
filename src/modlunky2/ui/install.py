@@ -9,13 +9,14 @@ from io import BytesIO
 from pathlib import Path
 from tkinter import ttk
 from os.path import commonprefix
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 
 import requests
 from requests import HTTPError
 
 from modlunky2.ui.widgets import Entry, Tab
 from modlunky2.utils import tb_info
+from modlunky2.api import SpelunkyFYIClient
 
 logger = logging.getLogger("modlunky2")
 
@@ -357,17 +358,6 @@ def download_logo(call, logo_url, pack_dir):
     return logo_name
 
 
-def get_mod_file(mod_files, mod_file_id=None):
-    if mod_file_id is None:
-        return mod_files[0]
-
-    for mod_file in mod_files:
-        if mod_file["id"] == mod_file_id:
-            return mod_file
-
-    return None
-
-
 def install_fyi_mod(
     call,
     install_dir: Path,
@@ -381,37 +371,14 @@ def install_fyi_mod(
     packs_dir = mods_dir / "Packs"
     metadata_dir = mods_dir / ".ml/pack-metadata"
 
-    url = urljoin(spelunky_fyi_root, f"api/mods/{install_code}/")
-    logger.debug("Checking for mod at %s", url)
-    response = requests.get(
-        url,
-        headers={
-            "Authorization": f"Token {api_token}",
-        },
-    )
+    api_client = SpelunkyFYIClient(spelunky_fyi_root, api_token)
+    logger.debug("Checking for mod: %s", install_code)
 
-    if response.status_code == 401:
-        logger.critical(
-            "Request was unauthorized. Make sure you have a valid API token."
-        )
+    mod_details = api_client.get_mod(install_code)
+    if mod_details is None:
         return
 
-    if response.status_code == 404:
-        logger.critical("No mod found with install code: %s", install_code)
-        return
-
-    try:
-        response.raise_for_status()
-    except HTTPError:
-        logger.critical("Failed to download mod. Try again later.")
-        return
-
-    mod_details = response.json()
-    if not mod_details["mod_files"]:
-        logger.critical("Mod `%s` has no files to download.", install_code)
-        return
-
-    mod_file = get_mod_file(mod_details["mod_files"], mod_file_id)
+    mod_file = api_client.get_mod_file_from_details(mod_details, mod_file_id)
     if mod_file is None:
         logger.critical(
             "Mod file `%s` with mod file id %s not found.", install_code, mod_file_id

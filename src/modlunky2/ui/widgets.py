@@ -108,13 +108,13 @@ class ToolTip:
 
 
 class Tab(ttk.Frame):
-    """ Base class that all tabs should inherit from."""
+    """Base class that all tabs should inherit from."""
 
     show_console = True
     save_needed = False
 
     def on_load(self):
-        """ Called whenever the tab is loaded."""
+        """Called whenever the tab is loaded."""
 
 
 class ScrollableFrame(ttk.Frame):
@@ -140,7 +140,7 @@ class ScrollableLabelFrame(ttk.Frame):
         super().__init__(self.inner.scrollable_frame)
 
 
-class ScrollableMixin(ttk.Frame):
+class ScrollableMixin:
     def on_theme_change(self, _event):
         background = self.style.lookup("TFrame", "background")
         self.canvas.configure(background=background)

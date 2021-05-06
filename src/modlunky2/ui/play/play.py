@@ -4,13 +4,9 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk
 
-from PIL import Image, ImageTk
-
-from modlunky2.constants import BASE_DIR
 from modlunky2.ui.play.config import SECTIONS, PlaylunkyConfig
 from modlunky2.ui.widgets import (
     ScrollableFrameLegacy,
-    ScrollableLabelFrame,
     Tab,
 )
 from modlunky2.utils import is_patched
@@ -24,12 +20,10 @@ from .controls import ControlsFrame
 from .filters import FiltersFrame
 from .load_order import LoadOrderFrame
 from .options import OptionsFrame
-from .pack import Pack
+from .packs import PacksFrame
 from .releases import VersionFrame, parse_download_url
 
 logger = logging.getLogger("modlunky2")
-
-ICON_PATH = BASE_DIR / "static/images"
 
 
 def launch_playlunky(_call, install_dir, exe_path, use_console):
@@ -70,19 +64,6 @@ class PlayTab(Tab):
         self.task_manager.register_handler("play:reload", self.on_load)
         self.playlunky_running = False
 
-        self.folder_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "folder.png").resize((36, 36), Image.ANTIALIAS)
-        )
-        self.trash_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "trash.png").resize((36, 36), Image.ANTIALIAS)
-        )
-        self.options_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "options.png").resize((36, 36), Image.ANTIALIAS)
-        )
-        self.update_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "update.png").resize((36, 36), Image.ANTIALIAS)
-        )
-
         self.rowconfigure(0, minsize=200)
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=1)
@@ -96,31 +77,27 @@ class PlayTab(Tab):
         self.play_wrapper.columnconfigure(0, weight=1)
         self.play_wrapper.rowconfigure(1, weight=1)
 
-        self.filter_frame = FiltersFrame(self.play_wrapper)
+        self.filter_frame = FiltersFrame(self.play_wrapper, play_tab=self)
         self.filter_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.packs_frame = ScrollableLabelFrame(
-            self.play_wrapper, text="Select Mods to Play"
+        self.packs_frame = PacksFrame(
+            self, self.play_wrapper, self.modlunky_config, self.task_manager
         )
-        self.packs_frame.rowconfigure(0, weight=1)
-        self.packs_frame.columnconfigure(1, weight=1)
         self.packs_frame.grid(
             row=1, column=0, columnspan=2, pady=5, padx=5, sticky="nswe"
         )
 
+        # Load Order Frame
         self.load_order = LoadOrderFrame(self)
         self.load_order.grid(row=0, column=1, rowspan=2, pady=5, padx=5, sticky="nswe")
 
+        # Versions Frame
         self.version_frame = VersionFrame(self, modlunky_config, task_manager)
         self.version_frame.grid(
             row=2, column=1, rowspan=2, pady=5, padx=5, sticky="nswe"
         )
 
-        self.controls_frame = ControlsFrame(self, modlunky_config)
-        self.controls_frame.grid(
-            row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
-        )
-
+        # Options Frame
         self.scrollable_options_frame = ScrollableFrameLegacy(self, text="Options")
         self.scrollable_options_frame.grid(
             row=0, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
@@ -130,6 +107,20 @@ class PlayTab(Tab):
         )
         self.options_frame.grid(row=0, column=0, sticky="nsew")
 
+        # Controls Frame
+        self.scrollable_controls_frame = ScrollableFrameLegacy(
+            self, text="Stuff & Things"
+        )
+        self.scrollable_controls_frame.scrollable_frame.columnconfigure(0, weight=1)
+        self.scrollable_controls_frame.grid(
+            row=2, column=2, rowspan=2, pady=5, padx=5, sticky="nswe"
+        )
+        self.controls_frame = ControlsFrame(
+            self.scrollable_controls_frame.scrollable_frame, self, modlunky_config
+        )
+        self.controls_frame.grid(row=0, column=0, padx=(0, 20), sticky="nswe")
+
+        # Play Button
         self.button_play = ttk.Button(
             self, text="Play!", state=tk.DISABLED, command=self.play
         )
@@ -137,10 +128,6 @@ class PlayTab(Tab):
 
         self.version_frame.render()
         self.version_frame.cache_releases()
-
-        self.packs = []
-        self.separators = []
-        self.pack_objs = {}
 
         self.ini = None
 
@@ -203,7 +190,7 @@ class PlayTab(Tab):
                     selected = False
                     line = line[2:]
 
-                pack = self.pack_objs.get(line)
+                pack = self.packs_frame.pack_objs.get(line)
                 if pack is None:
                     continue
 
@@ -212,7 +199,7 @@ class PlayTab(Tab):
     def write_load_order(self):
         load_order_path = self.load_order_path
         with load_order_path.open("w") as load_order_file:
-            all_packs = set(self.pack_objs.keys())
+            all_packs = set(self.packs_frame.pack_objs.keys())
             for pack in self.load_order.all():
                 all_packs.remove(pack)
                 load_order_file.write(f"{pack}\n")
@@ -319,84 +306,6 @@ class PlayTab(Tab):
         self.enable_button()
         self.version_frame.render()
 
-    @staticmethod
-    def diff_packs(before, after):
-        before, after = set(before), set(after)
-        return list(after - before), list(before - after)
-
-    def get_packs(self):
-        packs = []
-        packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
-        if not packs_dir.exists():
-            return packs
-
-        for path in packs_dir.iterdir():
-            if path.name.startswith("."):
-                continue
-
-            if not path.is_dir():
-                continue
-
-            packs.append(
-                str(path.relative_to(self.modlunky_config.install_dir / "Mods/Packs"))
-            )
-        return packs
-
-    def render_packs(self):
-        query = self.filter_frame.name.get()
-        if query:
-            query = query.lower()
-
-        filter_selected = self.filter_frame.selected_var.get()
-
-        for sep in self.separators:
-            sep.destroy()
-        self.separators.clear()
-
-        row_num = 0
-        for pack_name in self.packs:
-            display = True
-            pack = self.pack_objs[pack_name]
-            pack.forget()
-            pack.render_buttons()
-
-            if query and query not in pack_name.lower():
-                display = False
-
-            if filter_selected == "Selected" and not pack.selected():
-                display = False
-            elif filter_selected == "Unselected" and pack.selected():
-                display = False
-
-            if display:
-                if row_num > 0:
-                    sep = ttk.Separator(self.packs_frame)
-                    sep.grid(row=row_num, column=0, columnspan=3, pady=1, sticky="ew")
-                    self.separators.append(sep)
-                    row_num += 1
-                pack.grid(row_num)
-                row_num += 1
-
     def on_load(self):
         self.make_dirs()
-        packs = self.get_packs()
-        packs_added, packs_removed = self.diff_packs(self.packs, packs)
-
-        for pack_name in packs_added:
-            pack = Pack(self, self.packs_frame, self.modlunky_config, pack_name)
-            self.pack_objs[pack_name] = pack
-
-        for pack_name in packs_removed:
-            pack = self.pack_objs[pack_name]
-            pack.destroy()
-            del self.pack_objs[pack_name]
-
-        for pack in self.pack_objs.values():
-            pack.on_load()
-
-        self.packs = [
-            pack.folder
-            for pack in sorted(self.pack_objs.values(), key=lambda p: p.name)
-        ]
-
-        self.render_packs()
+        self.packs_frame.on_load()

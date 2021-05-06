@@ -2,12 +2,7 @@
 
 # modlunky2
 
-Repository for modding interface for Spelunky 2.
-
-# Credits
-
-Special thanks to  `SciresM`, `Cloppershy`, `iojonmbnmb`, and `Dregu` for all of the help
-in making this tool a reality.
+Modlunky 2 is a tool for creating and using mods related to Spelunky 2.
 
 ## Installation
 
@@ -18,7 +13,11 @@ in making this tool a reality.
 Follow the instructions in the [Modlunky 2 Wiki](https://github.com/spelunky-fyi/modlunky2/wiki).
 
 ## Disclaimer
-You are strongly discouraged from using any modding tools in your actual online Steam installation as to prevent unlocking achievements, corrupting your savefile and cheating in the leaderboards. You should make a copy of your game somewhere else and install [Mr. Goldbergs Steam Emulator](https://gitlab.com/Mr_Goldberg/goldberg_emulator/-/releases) in the game directory. (TL;DR: Copy the steam_api64.dll from the zip to the offline game directory and create steam_appid.txt with the text `418530` in it.) Also block the modded installation in your firewall. If you break anything using this tool you get to keep both pieces. Do not report modding related bugs to Blitworks.
+You are strongly discouraged from using any modding tools in your actual online Steam installation as to prevent unlocking achievements, corrupting your savefile and cheating in the leaderboards.
+
+You can make a copy of your game somewhere else and install [Mr. Goldbergs Steam Emulator](https://gitlab.com/Mr_Goldberg/goldberg_emulator/-/releases) in the game directory. (TL;DR: Copy the steam_api64.dll from the zip to the offline game directory and create steam_appid.txt with the text `418530` in it.) Also block the modded installation in your firewall.
+
+If you break anything using this tool you get to keep both pieces. Do not report modding related bugs to Blitworks.
 
 ## Development
 
@@ -86,3 +85,16 @@ See: https://stackoverflow.com/a/52054580
 ```
 python build-exe.py
 ```
+
+## Contributors
+
+Special thanks to the following contributors for helping make modlunky possible:
+
+* `garebear`
+* `SciresM`
+* `Cloppershy`
+* `iojonmbnmb`
+* `Dregu`
+* `JackHasWifi`
+* `mriswithe`
+* `Malacath`

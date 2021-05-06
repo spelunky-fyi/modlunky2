@@ -9,9 +9,10 @@ logger = logging.getLogger("modlunky2")
 
 
 class FiltersFrame(ttk.LabelFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, play_tab):
         super().__init__(parent, text="Filters")
         self.parent = parent
+        self.play_tab = play_tab
 
         self.name_label = ttk.Label(self, text="Name:")
         self.name_label.grid(row=0, column=0, pady=(5, 5), padx=(5, 0), sticky="w")
@@ -37,10 +38,10 @@ class FiltersFrame(ttk.LabelFrame):
         )
 
     def selected_command(self, _event=None):
-        self.parent.master.render_packs()
+        self.play_tab.packs_frame.render_packs()
 
     def on_name_key(self, _event=None):
         name = self.name.get().strip()
         if name != self.name_last_seen:
             self.name_last_seen = name
-            self.parent.master.render_packs()
+            self.play_tab.packs_frame.render_packs()
