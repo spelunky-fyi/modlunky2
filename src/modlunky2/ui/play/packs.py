@@ -37,7 +37,7 @@ def _cache_fyi_pack_details(
 
     for pack in packs:
         logging.debug("Getting latest details for %s", pack)
-        details = api_client.get_mod(pack)
+        details, _code = api_client.get_mod(pack)
         if details is None:
             return
 
@@ -132,12 +132,15 @@ class PacksFrame(ScrollableLabelFrame):
         return sorted(packs)
 
     def cache_fyi_pack_details(self):
+        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
+        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+
+        if not api_token:
+            return
+
         fyi_packs = self.get_fyi_pack_names()
         if not fyi_packs:
             return
-
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
 
         self.task_manager.call(
             "play:cache_fyi_pack_details",

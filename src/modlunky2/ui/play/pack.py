@@ -49,7 +49,7 @@ class Pack:
             self.buttons,
             padding=button_padding,
             image=self.play_tab.packs_frame.update_icon,
-            command=self.open_pack_dir,
+            command=self.update_pack,
         )
 
         self.buttons.options_button = ttk.Button(
@@ -81,6 +81,9 @@ class Pack:
     def slug(self):
         return self.manifest.get("slug")
 
+    def update_pack(self):
+        logger.info("Coming soon...")
+
     def is_fyi_pack(self):
         if "slug" not in self.manifest:
             return False
@@ -92,6 +95,32 @@ class Pack:
             return False
 
         return True
+
+    def get_latest_id(self):
+        latest_path = self.pack_metadata_path / "latest.json"
+        if not latest_path.exists():
+            return None
+
+        with latest_path.open("r", encoding="utf-8") as handle:
+            try:
+                return json.load(handle).get("id")
+            except json.JSONDecodeError:
+                return None
+
+    def check_needs_update(self):
+        if not self.is_fyi_pack():
+            self.needs_update = False
+            return
+
+        latest_id = self.get_latest_id()
+        if not latest_id:
+            self.needs_update = False
+            return
+
+        if latest_id == self.manifest["mod_file"]["id"]:
+            self.needs_update = False
+        else:
+            self.needs_update = True
 
     def on_load(self):
         if self.manifest_path.exists():
@@ -116,6 +145,7 @@ class Pack:
             self.logo_img = None
             self.logo.configure(image=None)
 
+        self.check_needs_update()
         self.render_buttons()
 
     def forget(self):

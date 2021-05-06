@@ -12,7 +12,6 @@ from os.path import commonprefix
 from urllib.parse import urlparse
 
 import requests
-from requests import HTTPError
 
 from modlunky2.ui.widgets import Entry, Tab
 from modlunky2.utils import tb_info
@@ -374,8 +373,10 @@ def install_fyi_mod(
     api_client = SpelunkyFYIClient(spelunky_fyi_root, api_token)
     logger.debug("Checking for mod: %s", install_code)
 
-    mod_details = api_client.get_mod(install_code)
+    mod_details, code = api_client.get_mod(install_code)
     if mod_details is None:
+        if code == 404:
+            logger.debug("No mod found with install code: %s", install_code)
         return
 
     mod_file = api_client.get_mod_file_from_details(mod_details, mod_file_id)

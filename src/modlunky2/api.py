@@ -31,19 +31,19 @@ class SpelunkyFYIClient:
             logger.critical(
                 "Request was unauthorized. Make sure you have a valid API token."
             )
-            return
+            return None, response.status_code
 
         if response.status_code == 404:
-            logger.critical("No mod found with install code: %s", slug)
-            return
+            logger.debug("No mod found: %s", slug)
+            return None, response.status_code
 
         try:
             response.raise_for_status()
         except HTTPError:
-            logger.critical("Failed to download mod. Try again later.")
-            return
+            logger.critical("Failed to get mod details (%s). Try again later.", slug)
+            return None, response.status_code
 
-        return response.json()
+        return response.json(), response.status_code
 
     @staticmethod
     def get_mod_file_from_details(details, mod_file_id=None):

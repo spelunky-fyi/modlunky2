@@ -309,3 +309,4 @@ class PlayTab(Tab):
     def on_load(self):
         self.make_dirs()
         self.packs_frame.on_load()
+        self.controls_frame.on_load()
