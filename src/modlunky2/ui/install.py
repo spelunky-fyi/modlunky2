@@ -365,10 +365,30 @@ def install_fyi_mod(
     install_code: str,
     mod_file_id: Optional[str] = None,
     channel_name: Optional[str] = None,
+    overwrite: bool = False,
 ):
     mods_dir = install_dir / "Mods"
     packs_dir = mods_dir / "Packs"
     metadata_dir = mods_dir / ".ml/pack-metadata"
+
+    pack_dir = packs_dir / f"fyi.{install_code}"
+    if pack_dir.exists():
+        if overwrite:
+            logging.debug("Removing previous installation at %s", pack_dir)
+            shutil.rmtree(pack_dir)
+        else:
+            call(
+                "install:needs_confirmation",
+                install_dir=install_dir,
+                spelunky_fyi_root=spelunky_fyi_root,
+                api_token=api_token,
+                install_code=install_code,
+                mod_file_id=mod_file_id,
+                channel_name=channel_name,
+            )
+            return
+
+    pack_dir.mkdir(parents=True, exist_ok=True)
 
     api_client = SpelunkyFYIClient(spelunky_fyi_root, api_token)
     logger.debug("Checking for mod: %s", install_code)
@@ -385,10 +405,6 @@ def install_fyi_mod(
             "Mod file `%s` with mod file id %s not found.", install_code, mod_file_id
         )
         return
-
-    pack_dir = packs_dir / f"fyi.{install_code}"
-    if not pack_dir.exists():
-        pack_dir.mkdir(parents=True, exist_ok=True)
 
     pack_metadata_dir = metadata_dir / f"fyi.{install_code}"
     if not pack_metadata_dir.exists():
@@ -426,6 +442,9 @@ class FyiInstall(ttk.LabelFrame):
             install_fyi_mod,
             True,
         )
+        self.task_manager.register_handler(
+            "install:needs_confirmation", self.on_needs_confirmation
+        )
 
         frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
@@ -457,6 +476,39 @@ class FyiInstall(ttk.LabelFrame):
         self.entry.bind("<KeyRelease>", self._on_key)
 
         self.button_install = ttk.Button(frame, text="Install", command=self.install)
+
+    def on_needs_confirmation(
+        self,
+        install_dir: Path,
+        spelunky_fyi_root: str,
+        api_token: str,
+        install_code: str,
+        mod_file_id: Optional[str] = None,
+        channel_name: Optional[str] = None,
+    ):
+        answer = tk.messagebox.askokcancel(
+            title="Pack Exists",
+            message=(
+                "The pack you're installing already exists.\n"
+                "\n"
+                "Do you want to overwrite the existing installation?\n"
+            ),
+            icon=tk.messagebox.WARNING,
+        )
+
+        if not answer:
+            return
+
+        self.task_manager.call(
+            "install:install_fyi_mod",
+            install_dir=install_dir,
+            spelunky_fyi_root=spelunky_fyi_root,
+            api_token=api_token,
+            install_code=install_code,
+            mod_file_id=mod_file_id,
+            channel_name=channel_name,
+            overwrite=True,
+        )
 
     def install(self):
         spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root

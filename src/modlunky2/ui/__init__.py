@@ -265,7 +265,7 @@ class ModlunkyUI:
                 self.root.after(100, self.after_task_manager)
                 return
 
-            self.task_manager.dispatch(msg)
+            self.root.after_idle(self.task_manager.dispatch, msg)
 
     def handle_resize(self, event):
         if not isinstance(event.widget, tk.Tk):

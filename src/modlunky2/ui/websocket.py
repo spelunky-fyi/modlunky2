@@ -110,6 +110,7 @@ class WebSocketThread(threading.Thread):
             "install_code": data["install-code"],
             "mod_file_id": data.get("mod-file-id"),
             "channel_name": channel_name,
+            "overwrite": False,
         }
         self.task_manager.call("install:install_fyi_mod", **kwargs)
 
