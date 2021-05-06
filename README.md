@@ -51,8 +51,7 @@ Whenever developing the project you'll want to activate the virtualenv in your t
 Once you have your virtual environment setup and activated you'll want to finish setting up the development environment.
 
 ```console
-> pip install -r requirements.txt
-> pip install -r requirements-dev.txt
+> pip install --upgrade -r requirements.txt -r requirements-dev.txt -r requirements-win.txt
 > python setup.py develop
 ```
 
