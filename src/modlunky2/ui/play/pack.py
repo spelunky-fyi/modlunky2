@@ -82,6 +82,26 @@ class Pack:
         return self.manifest.get("slug")
 
     def update_pack(self):
+        answer = tk.messagebox.askokcancel(
+            title="Update Pack?",
+            message=(f"Are you sure you want to update {self.slug}?\n"),
+            icon=tk.messagebox.INFO,
+        )
+
+        if not answer:
+            return
+
+        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
+        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+
+        self.play_tab.task_manager.call(
+            "install:install_fyi_mod",
+            install_dir=self.modlunky_config.install_dir,
+            spelunky_fyi_root=spelunky_fyi_root,
+            api_token=api_token,
+            install_code=self.slug,
+            overwrite=True,
+        )
         logger.info("Coming soon...")
 
     def is_fyi_pack(self):
@@ -165,7 +185,12 @@ class Pack:
             self.buttons.folder_button["state"] = tk.NORMAL
 
         if self.needs_update:
+            api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
             self.buttons.update_button.grid(row=0, column=0, padx=(1, 0), sticky="e")
+            if api_token:
+                self.buttons.update_button["state"] = tk.NORMAL
+            else:
+                self.buttons.update_button["state"] = tk.DISABLED
         else:
             self.buttons.update_button.grid_forget()
 
