@@ -8,6 +8,12 @@ from urllib.parse import urljoin
 
 import websockets
 
+# These are needed to make IDE and pyinstaller happy because
+# the websockets library uses a weird lazy loader
+import websockets.exceptions
+from websockets.legacy.client import connect as ws_connect
+
+
 from modlunky2.utils import tb_info
 
 
@@ -117,9 +123,7 @@ class WebSocketThread(threading.Thread):
     async def listen_inner(self):
         headers = {"Authorization": f"Token {self.api_token}"}
         try:
-            self.websocket = await websockets.connect(
-                self.ws_url, extra_headers=headers
-            )
+            self.websocket = await ws_connect(self.ws_url, extra_headers=headers)
             self.retry_num = 0
             logger.info("Connected to spelunky.fyi")
             async for message in self.websocket:
