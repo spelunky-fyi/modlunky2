@@ -83,6 +83,7 @@ def cache_fyi_pack_details(
 
     try:
         _cache_fyi_pack_details(call, install_dir, spelunky_fyi_root, api_token, packs)
+        call("play:reload")
     finally:
         cache_lock.release()
 
