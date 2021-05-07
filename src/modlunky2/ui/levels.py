@@ -12,6 +12,8 @@ from tkinter import filedialog, ttk
 
 import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
+import glob
+from fnmatch import fnmatch
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
@@ -46,7 +48,6 @@ class LevelsTab(Tab):
         # TODO: Get actual resolution
         self.screen_width = 1290
         self.screen_height = 720
-        self.extracts_mode = True
         self.dual_mode = False
         self.tab_control = tab_control
         self.install_dir = modlunky_config.install_dir
@@ -62,7 +63,7 @@ class LevelsTab(Tab):
         self.lvl_editor_start_frame.rowconfigure(0, weight=1)
 
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
-        self.overrides_path = self.install_dir / "Mods" / "Overrides"
+        self.overrides_path = self.install_dir / "Mods" / "Packs"
 
         self.welcome_label = tk.Label(
             self.lvl_editor_start_frame,
@@ -70,9 +71,8 @@ class LevelsTab(Tab):
                 "Welcome to the Spelunky 2 Level Editor! "
                 "Created by JackHasWifi with lots of help from "
                 "Garebear, Fingerspit, Wolfo, and the community\n\n "
-                "NOTICE: Saving when viewing extracts will save the "
-                "changes to a new file in overrides.\n"
-                "When loading from extracts, if a file exists in overrides,\nit will be loaded from there instead.\n\n"
+                "NOTICE: Saving will save the "
+                "changes to a file in your selected pack.\n"
                 "BIGGER NOTICE: Please make backups of your files. This is still in beta stages.."
             ),
             anchor="center",
@@ -104,42 +104,23 @@ class LevelsTab(Tab):
         self.node = None
         self.sister_locations = None
 
-        def select_lvl_folder():
-            initial_dir = self.modlunky_config.install_dir / "Mods/Packs"
-            if not initial_dir.exists():
-                initial_dir = Path("/")
-            dirname = filedialog.askdirectory(
-                parent=self, initialdir=initial_dir, title="Please select a directory"
-            )
-            if not dirname:
-                return
-            else:
-                self.extracts_mode = False
-                self.lvls_path = dirname
-                self.load_editor()
-
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
-                self.extracts_mode = True
                 self.lvls_path = self.extracts_path
                 self.load_editor()
+            else:
+                tk.messagebox.showerror(
+                    "Oops?",
+                    "Please extract your game before using the level editor",
+                )
 
         self.btn_lvl_extracts = ttk.Button(
             self.lvl_editor_start_frame,
-            text="Load From Extracts",
+            text="Open Editor",
             command=load_extracts_lvls,
         )
         self.btn_lvl_extracts.grid(
             row=1, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 1)
-        )
-
-        self.btn_lvl_folder = ttk.Button(
-            self.lvl_editor_start_frame,
-            text="Load Levels Folder",
-            command=select_lvl_folder,
-        )
-        self.btn_lvl_folder.grid(
-            row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 10)
         )
 
     def on_load(self):
@@ -174,15 +155,14 @@ class LevelsTab(Tab):
         self.tree_files["columns"] = ("1",)
         self.tree_files["show"] = "headings"
         self.tree_files.column("1", width=100, anchor="w")
-        self.tree_files.heading("1", text="Level Files")
+        self.tree_files.heading("1", text="Select Pack")
         self.my_list = sorted(os.listdir(self.lvls_path))
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
         # Loads list of all the lvl files in the left farthest treeview
-        for file in self.my_list:
-            if str(file).endswith(".lvl"):
-                self.tree_files.insert("", "end", values=str(file), text=str(file))
+        #paths = Path(self.overrides_path).glob('*/') #.glob('**/*.png')
+        self.load_packs()
 
         # Seperates Level Rules and Level Editor into two tabs
         self.tab_control = ttk.Notebook(self)
@@ -195,7 +175,7 @@ class LevelsTab(Tab):
         self.variables_tab = ttk.Frame(self.tab_control)
 
         self.button_back = tk.Button(
-            self, text="Go Back", bg="black", fg="white", command=self.go_back
+            self, text="Exit Editor", bg="black", fg="white", command=self.go_back
         )
         self.button_back.grid(row=1, column=0, sticky="nswe")
 
@@ -1014,33 +994,147 @@ class LevelsTab(Tab):
         )
         self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
 
-    def tree_filesitemclick(self, _event):
-        if self.save_needed and self.last_selected_file is not None:
-            msg_box = tk.messagebox.askquestion(
-                "Continue?",
-                "You have unsaved changes to "
-                + str(self.tree_files.item(self.last_selected_file, option="text"))
-                + "\nContinue without saving?",
-                icon="warning",
-            )
-            if msg_box == "yes":
-                self.save_needed = False
-                self.button_save["state"] = tk.DISABLED
-                logger.debug("Entered new files witout saving")
+    def reset(self):
+        for i in self.tree_levels.get_children():
+            self.tree_levels.delete(i)
+
+    def load_packs(self):
+        self.reset()
+        print("loading packs")
+        for i in self.tree_files.get_children():
+            self.tree_files.delete(i)
+        self.tree_files.heading("1", text="Select Pack")
+        for filepath in glob.iglob(str(self.overrides_path) + '/*/'):
+            # because path is object not string
+            path_in_str = str(filepath)
+            pack_name = os.path.basename(os.path.normpath(path_in_str))
+            # Do thing with the path
+            self.tree_files.insert("", "end", values=str(pack_name), text=str(pack_name))
+        self.tree_files.insert("", "end", values=str("[Create_New_Pack]"), text=str("[Create_New_Pack]"))
+
+    def load_pack_lvls(self, lvl_dir):
+        self.reset()
+        self.lvls_path = Path(lvl_dir)
+        print("lvls_path = " + str(lvl_dir))
+        defaults_path = self.extracts_path
+        for i in self.tree_files.get_children():
+            self.tree_files.delete(i)
+        self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+        if not str(lvl_dir).endswith("Arena"):
+            self.tree_files.insert("", "end", values=str("ARENA"), text=str("ARENA"))
+        else:
+            defaults_path = self.extracts_path / "Arena"
+        # Load lvls frome extracts that selected pack doesn't have
+
+        root = str(lvl_dir).split("Aren")[0]
+        pattern = "*.lvl"
+
+        for filepath in glob.iglob(str(defaults_path) + '/***.lvl'):
+            lvl_in_use = False
+            path_in_str = str(filepath)
+            lvl_name = os.path.basename(os.path.normpath(path_in_str))
+            for path, subdirs, files in os.walk(Path(root)):
+                for name in files:
+                    if fnmatch(name, pattern):
+                        found_lvl =str(os.path.join(path, name))
+                        if os.path.basename(os.path.normpath(found_lvl))==str(lvl_name):
+                            lvl_in_use = True
+                            self.tree_files.insert("", "end", values=str(lvl_name), text=str(lvl_name))
+            if not lvl_in_use:
+                self.tree_files.insert("", "end", values=str(lvl_name), text=str(lvl_name))
+
+    def create_pack_dialog(self):
+        win = PopupWindow("Create Pack", self.modlunky_config)
+
+        col1_lbl = ttk.Label(win, text="Name: ")
+        col1_ent = ttk.Entry(win)
+        col1_ent.insert(0, "New_Pack")  # Default to rooms current name
+        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nswe")
+
+        def update_then_destroy_pack():
+            pack_name = ""
+            for char in str(col1_ent.get()):
+                if str(char)!=" ":
+                    pack_name+=str(char)
+                else:
+                    pack_name+="_"
+            col1_ent.delete(0, 'end')
+            col1_ent.insert(0, pack_name)
+            if not os.path.isdir(self.overrides_path / str(col1_ent.get())):
+                os.mkdir(self.overrides_path / str(col1_ent.get()))
+                self.load_packs()
+                win.destroy()
             else:
-                self.tree_files.selection_set(self.last_selected_file)
-                return
+                print("Pack name taken")
+                col1_ent.delete(0, 'end')
+                col1_ent.insert(0, "Name Taken")
+
+        separator = ttk.Separator(win)
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="nsew")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy_pack)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+
+
+    def tree_filesitemclick(self, _event):
         item_text = ""
-        self.canvas.delete("all")
-        self.canvas_dual.delete("all")
-        self.canvas.grid_remove()
-        self.canvas_dual.grid_remove()
-        self.foreground_label.grid_remove()
-        self.background_label.grid_remove()
         for item in self.tree_files.selection():
-            self.last_selected_file = item
             item_text = self.tree_files.item(item, "text")
-            self.read_lvl_file(item_text)
+        if item_text=="<<BACK":
+            if self.tree_files.heading(0)['text'].endswith("Arena"):
+                self.tree_files.heading("1", text=self.tree_files.heading(0)['text'].split("/")[0])
+                self.load_pack_lvls(Path(self.overrides_path / self.tree_files.heading(0)['text'] / "Data" / "Levels"))
+            else:
+                self.load_packs()
+        elif item_text=="ARENA" and self.tree_files.heading(0)['text']!="Select Pack":
+            self.tree_files.heading("1", text=self.tree_files.heading(0)['text'] + "/Arena")
+            base_path = str(self.tree_files.heading(0)['text']).split("/")[0]
+            self.load_pack_lvls(Path(self.overrides_path / base_path / "Data" / "Levels"/ "Arena"))
+        elif item_text=="[Create_New_Pack]":
+            print("Creating new pack")
+            self.create_pack_dialog()
+        elif self.tree_files.heading(0)['text']=="Select Pack":
+            for item in self.tree_files.selection():
+                self.last_selected_file = item
+                item_text = self.tree_files.item(item, "text")
+                self.tree_files.heading("1", text=item_text)
+            self.load_pack_lvls(Path(self.overrides_path / self.tree_files.heading(0)['text']) / "Data" / "Levels")
+        else:
+            if self.save_needed and self.last_selected_file is not None and self.tree_files.heading(0)['text']!="Select Pack":
+                msg_box = tk.messagebox.askquestion(
+                    "Continue?",
+                    "You have unsaved changes to "
+                    + str(self.tree_files.item(self.last_selected_file, option="text"))
+                    + "\nContinue without saving?",
+                    icon="warning",
+                )
+                if msg_box == "yes":
+                    self.save_needed = False
+                    self.button_save["state"] = tk.DISABLED
+                    logger.debug("Entered new files witout saving")
+                else:
+                    self.tree_files.selection_set(self.last_selected_file)
+                    return
+            self.reset()
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
+            for item in self.tree_files.selection():
+                self.last_selected_file = item
+                item_text = self.tree_files.item(item, "text")
+                self.read_lvl_file(item_text)
 
     def _on_mousewheel(self, event):
         scroll_dir = None
@@ -1313,27 +1407,30 @@ class LevelsTab(Tab):
                     monster_chances,
                     level_templates,
                 )
-                path = None
-                if not self.extracts_mode:
-                    path = (
-                        self.lvls_path
-                        + "/"
-                        + str(
-                            self.tree_files.item(self.last_selected_file, option="text")
-                        )
-                    )
-                else:
-                    logger.debug("adding to overrides")
-                    path = (
-                        self.install_dir
-                        / "Mods"
-                        / "Overrides"
-                        / str(
-                            self.tree_files.item(self.last_selected_file, option="text")
-                        )
-                    )
-                with Path(path).open("w", encoding="cp1252") as handle:
+                save_path = None
+                if not os.path.exists(Path(self.lvls_path)):
+                    os.makedirs(Path(self.lvls_path))
+                save_path = Path(self.lvls_path / str(self.tree_files.item(self.last_selected_file, option="text")))
+                print("Saving to " + str(save_path))
+
+                with Path(save_path).open("w", encoding="cp1252") as handle:
                     level_file.write(handle)
+
+                base_path = str(self.lvls_path).split("Data")[0]
+                root = base_path
+                pattern = "*.lvl"
+
+                # gets rid of copies of the file in the wrong place
+                for path, subdirs, files in os.walk(Path(root)):
+                    for name in files:
+                        if fnmatch(name, pattern):
+                            found_lvl_path = str(os.path.join(path, name))
+                            import ntpath
+                            found_lvl = ntpath.basename(found_lvl_path)
+                            print(str(found_lvl) + " found")
+                            if Path(found_lvl_path)!=Path(save_path):
+                                os.remove(found_lvl_path)
+
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
@@ -1359,23 +1456,14 @@ class LevelsTab(Tab):
                 self.save_changes()
 
         def get_level(file):
-            if not self.extracts_mode:
-                if os.path.exists(Path(self.lvls_path + "/" + file)):
-                    levelp = LevelFile.from_path(Path(self.lvls_path + "/" + file))
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levelp = LevelFile.from_path(Path(self.extracts_path) / file)
+            if os.path.exists(Path(self.lvls_path / file)):
+                levelp = LevelFile.from_path(Path(self.lvls_path / file))
             else:
-                if os.path.exists(Path(self.overrides_path / file)):
-                    levelp = LevelFile.from_path(Path(self.overrides_path / file))
-                else:
-                    levelp = LevelFile.from_path(Path(self.extracts_path) / file)
+                levelp = LevelFile.from_path(Path(self.extracts_path) / file)
             return levelp
 
         usable_codes_string = (
-            r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`"""
+            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
             r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
             r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
             r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
@@ -1532,16 +1620,7 @@ class LevelsTab(Tab):
                                         template_count = template_count + 1
                     level[0].tile_codes = tile_codes_new
 
-                    if not self.extracts_mode:
-                        path = self.lvls_path + "/" + str(level[1][2].split(" ")[0])
-                    else:
-                        logger.debug("adding to overrides")
-                        path = (
-                            self.install_dir
-                            / "Mods"
-                            / "Overrides"
-                            / str(level[1][2].split(" ")[0])
-                        )
+                    path = Path(self.lvls_path / str(level[1][2].split(" ")[0]))
                     with Path(path).open("w", encoding="cp1252") as handle:
                         level[0].write(handle)
                         logger.debug("Fixed conflicts in %s", level[1][2].split(" ")[0])
@@ -1559,38 +1638,22 @@ class LevelsTab(Tab):
 
         def append_level(item):
             self.depend_order_label["text"] += " -> " + item
-            if not self.extracts_mode:
-                if os.path.exists(Path(self.lvls_path + "/" + item)):
-                    levels.append(
-                        [
-                            item + " custom",
-                            LevelFile.from_path(Path(self.lvls_path + "/" + item)),
-                        ]
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        [
-                            item + " extracts",
-                            LevelFile.from_path(Path(self.extracts_path) / item),
-                        ]
-                    )
+            if os.path.exists(Path(self.lvls_path / item)):
+                levels.append(
+                    [
+                        item + " custom",
+                        LevelFile.from_path(Path(self.lvls_path / item)),
+                    ]
+                )
             else:
-                if os.path.exists(Path(self.overrides_path / item)):
-                    levels.append(
-                        [
-                            item + " overrides",
-                            LevelFile.from_path(Path(self.overrides_path / item)),
-                        ]
-                    )
-                else:
-                    levels.append(
-                        [
-                            item + " extracts",
-                            LevelFile.from_path(Path(self.extracts_path) / item),
-                        ]
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    [
+                        item + " extracts",
+                        LevelFile.from_path(Path(self.extracts_path) / item),
+                    ]
                     )
 
         self.depend_order_label["text"] = ""
@@ -2728,7 +2791,7 @@ class LevelsTab(Tab):
     def read_lvl_file(self, lvl):
         self.last_selected_room = None
         self.usable_codes_string = (
-            r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`"""
+            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
             r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
             r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
             r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
@@ -2846,272 +2909,81 @@ class LevelsTab(Tab):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_volcano.png"
 
-        if not self.extracts_mode:
-            lvl_path = self.lvls_path + "/" + lvl
+        print("searching " + str(Path(self.lvls_path / lvl)))
+        if Path(self.lvls_path / lvl).exists():
+            logger.debug("Found this lvl in pack; loading it instead")
+            lvl_path = Path(self.lvls_path) / lvl
         else:
-            if (self.overrides_path / lvl).exists():
-                logger.debug("Found this lvl in overrides; loading it instead")
-                lvl_path = self.overrides_path / lvl
+            if self.tree_files.heading(0)['text'].endswith("Arena"):
+                lvl_path = self.extracts_path / "Arena" / lvl
             else:
-                lvl_path = self.lvls_path / lvl
+                lvl_path = self.extracts_path / lvl
 
         # Levels to load dependency tilecodes from
         levels = []
         if not lvl.startswith("base"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "generic.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(Path(self.lvls_path + "/" + "generic.lvl"))
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
-                    )
+            if Path(self.lvls_path / "generic.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "generic.lvl")))
             else:
-                if Path(self.overrides_path / "generic.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "generic.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "generic.lvl"))
         if lvl.startswith("base"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "basecamp.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(Path(self.lvls_path + "/" + "basecamp.lvl"))
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
-                    )
+            if Path(self.lvls_path / "basecamp.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "basecamp.lvl")))
             else:
-                if Path(self.overrides_path / "basecamp.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "basecamp.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl"))
         elif lvl.startswith("cave"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "dwellingarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "dwellingarea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "dwellingarea.lvl"
-                        )
-                    )
+            if Path(self.lvls_path / "dwellingarea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "dwellingarea.lvl")))
             else:
-                if Path(self.overrides_path / "dwellingarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "dwellingarea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "dwellingarea.lvl"
-                        )
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl"))
         elif (
             lvl.startswith("blackmark")
             or lvl.startswith("beehive")
             or lvl.startswith("challenge_moon")
         ):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "junglearea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "junglearea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
-                    )
+            if Path(self.lvls_path / "junglearea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "junglearea.lvl")))
             else:
-                if Path(self.overrides_path / "junglearea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "junglearea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl"))
         elif lvl.startswith("vlads"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "volcanoarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "volcanoarea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "volcanoarea.lvl"
-                        )
-                    )
+            if Path(self.lvls_path / "volcanoarea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "volcanoarea.lvl")))
             else:
-                if Path(self.overrides_path / "volcanoarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "volcanoarea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(self.extracts_path / "volcanoarea.lvl")
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "volcanoarea.lvl"))
         elif lvl.startswith("lake") or lvl.startswith("challenge_star"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "tidepoolarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "tidepoolarea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "tidepoolarea.lvl"
-                        )
-                    )
+            if Path(self.lvls_path / "tidepoolarea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "tidepoolarea.lvl")))
             else:
-                if Path(self.overrides_path / "tidepoolarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "tidepoolarea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "tidepoolarea.lvl"
-                        )
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl"))
         elif (
             lvl.startswith("hallofush")
             or lvl.startswith("challenge_star")
             or lvl.startswith("babylonarea_1")
             or lvl.startswith("palace")
         ):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "babylonarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "babylonarea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "babylonarea.lvl"
-                        )
-                    )
+            if Path(self.lvls_path / "babylonarea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "babylonarea.lvl")))
             else:
-                if Path(self.overrides_path / "babylonarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "babylonarea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "babylonarea.lvl"
-                        )
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl"))
         elif lvl.startswith("challenge_sun"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "sunkencityarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.lvls_path + "/" + "sunkencityarea.lvl")
-                        )
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "sunkencityarea.lvl"
-                        )
-                    )
+            if Path(self.lvls_path / "sunkencityarea.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "sunkencityarea.lvl")))
             else:
-                if Path(self.overrides_path / "sunkencityarea.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "sunkencityarea.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.extracts_path) / "sunkencityarea.lvl"
-                        )
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl"))
         elif lvl.startswith("end"):
-            if not self.extracts_mode:
-                if Path(self.lvls_path + "/" + "ending.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(Path(self.lvls_path + "/" + "ending.lvl"))
-                    )
-                else:
-                    logger.debug(
-                        "local dependency lvl not found, attempting load from extracts"
-                    )
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
-                    )
+            if Path(self.lvls_path / "ending.lvl").is_dir():
+                levels.append(LevelFile.from_path(Path(self.lvls_path / "ending.lvl")))
             else:
-                if Path(self.overrides_path / "ending.lvl").is_dir():
-                    levels.append(
-                        LevelFile.from_path(
-                            Path(self.overrides_path + "/" + "ending.lvl")
-                        )
-                    )
-                else:
-                    levels.append(
-                        LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
-                    )
+                logger.debug("local dependency lvl not found, attempting load from extracts")
+                levels.append(LevelFile.from_path(Path(self.extracts_path) / "ending.lvl"))
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
         level = None
