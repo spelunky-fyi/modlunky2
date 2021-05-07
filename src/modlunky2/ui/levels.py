@@ -14,6 +14,9 @@ import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 import glob
 from fnmatch import fnmatch
+import shutil
+from shutil import copyfile
+import datetime
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
@@ -43,7 +46,7 @@ class LevelsTab(Tab):
         self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(self, self, self.modlunky_config)
+        self.tree_levels = LevelsTree(self, self, self.modlunky_config, selectmode="browse")
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -1015,10 +1018,12 @@ class LevelsTab(Tab):
     def load_pack_lvls(self, lvl_dir):
         self.reset()
         self.lvls_path = Path(lvl_dir)
+        self.organize_pack()
         print("lvls_path = " + str(lvl_dir))
         defaults_path = self.extracts_path
         for i in self.tree_files.get_children():
             self.tree_files.delete(i)
+
         self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
             self.tree_files.insert("", "end", values=str("ARENA"), text=str("ARENA"))
@@ -1026,7 +1031,8 @@ class LevelsTab(Tab):
             defaults_path = self.extracts_path / "Arena"
         # Load lvls frome extracts that selected pack doesn't have
 
-        root = str(lvl_dir).split("Aren")[0]
+        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        root = Path(self.overrides_path / loaded_pack)
         pattern = "*.lvl"
 
         for filepath in glob.iglob(str(defaults_path) + '/***.lvl'):
@@ -1084,6 +1090,31 @@ class LevelsTab(Tab):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
+    def organize_pack(self):
+        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        root = Path(self.overrides_path / loaded_pack)
+        pattern = "*.lvl"
+
+        # gets rid of copies of the file in the wrong place
+        for path, subdirs, files in os.walk(Path(root)):
+            for name in files:
+                if fnmatch(name, pattern):
+                    found_lvl_path = str(os.path.join(path, name))
+                    found_lvl_dir = os.path.dirname(found_lvl_path)
+                    found_lvl = os.path.basename(found_lvl_path)
+                    if found_lvl.startswith("dm"):
+                        if Path(found_lvl_dir) != Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena"):
+                            print(str(found_lvl) + " found arena lvl in wrong location. Fixing that.")
+                            if not os.path.exists(Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena")):
+                                os.makedirs(Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena"))
+                            shutil.move(Path(found_lvl_path), Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena" / found_lvl))
+                    else:
+                        if Path(found_lvl_dir) != Path(self.overrides_path / loaded_pack / "Data" / "Levels"):
+                            print(str(found_lvl) + " found lvl in wrong location. Fixing that.")
+                            if not os.path.exists(Path(self.overrides_path / loaded_pack / "Data" / "Levels")):
+                                os.makedirs(Path(self.overrides_path / loaded_pack / "Data" / "Levels"))
+                            shutil.move(Path(found_lvl_path), Path(self.overrides_path / loaded_pack / "Data" / "Levels" / found_lvl))
+
 
     def tree_filesitemclick(self, _event):
         item_text = ""
@@ -1092,13 +1123,14 @@ class LevelsTab(Tab):
         if item_text=="<<BACK":
             if self.tree_files.heading(0)['text'].endswith("Arena"):
                 self.tree_files.heading("1", text=self.tree_files.heading(0)['text'].split("/")[0])
-                self.load_pack_lvls(Path(self.overrides_path / self.tree_files.heading(0)['text'] / "Data" / "Levels"))
+                loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+                self.load_pack_lvls(Path(self.overrides_path / loaded_pack / "Data" / "Levels"))
             else:
                 self.load_packs()
         elif item_text=="ARENA" and self.tree_files.heading(0)['text']!="Select Pack":
             self.tree_files.heading("1", text=self.tree_files.heading(0)['text'] + "/Arena")
-            base_path = str(self.tree_files.heading(0)['text']).split("/")[0]
-            self.load_pack_lvls(Path(self.overrides_path / base_path / "Data" / "Levels"/ "Arena"))
+            loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+            self.load_pack_lvls(Path(self.overrides_path / loaded_pack / "Data" / "Levels"/ "Arena"))
         elif item_text=="[Create_New_Pack]":
             print("Creating new pack")
             self.create_pack_dialog()
@@ -1107,7 +1139,8 @@ class LevelsTab(Tab):
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
                 self.tree_files.heading("1", text=item_text)
-            self.load_pack_lvls(Path(self.overrides_path / self.tree_files.heading(0)['text']) / "Data" / "Levels")
+                loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+                self.load_pack_lvls(Path(self.overrides_path / loaded_pack) / "Data" / "Levels")
         else:
             if self.save_needed and self.last_selected_file is not None and self.tree_files.heading(0)['text']!="Select Pack":
                 msg_box = tk.messagebox.askquestion(
@@ -1269,6 +1302,30 @@ class LevelsTab(Tab):
             self.room_select(None)
             self.remember_changes()
 
+    def make_backup(self, file):
+        print("Making backup..")
+        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        backup_dir = str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
+        if os.path.isfile(file):
+            lvl_name = os.path.basename(file) + "_" + ("{date:%Y-%m-%d_%H_%M_%S}").format(date=datetime.datetime.now())
+            if not os.path.exists(Path(backup_dir)):
+                os.makedirs(Path(backup_dir))
+            copyfile(file, backup_dir + "/" + lvl_name)
+            print("Backup made!")
+
+            # Removes oldest backup every 50 backups
+            path, dirs, files = next(os.walk(backup_dir))
+            file_count = len(files)
+            print("This mod has " + str(file_count) + " backups.")
+            list_of_files = os.listdir(backup_dir)
+            full_path = [backup_dir + "/{0}".format(x) for x in list_of_files]
+            if len(list_of_files) >= 50:
+                print("Deleting oldest backup")
+                oldest_file = min(full_path, key=os.path.getctime)
+                os.remove(oldest_file)
+        else:dd
+            print("Backup not needed for what was a default file.")
+
     def save_changes(self):
         if self.save_needed:
             try:
@@ -1411,26 +1468,13 @@ class LevelsTab(Tab):
                 if not os.path.exists(Path(self.lvls_path)):
                     os.makedirs(Path(self.lvls_path))
                 save_path = Path(self.lvls_path / str(self.tree_files.item(self.last_selected_file, option="text")))
+                self.make_backup(save_path)
                 print("Saving to " + str(save_path))
 
                 with Path(save_path).open("w", encoding="cp1252") as handle:
                     level_file.write(handle)
 
-                base_path = str(self.lvls_path).split("Data")[0]
-                root = base_path
-                pattern = "*.lvl"
-
-                # gets rid of copies of the file in the wrong place
-                for path, subdirs, files in os.walk(Path(root)):
-                    for name in files:
-                        if fnmatch(name, pattern):
-                            found_lvl_path = str(os.path.join(path, name))
-                            found_lvl = os.path.basename(found_lvl_path)
-                            print(str(found_lvl) + " found")
-                            if Path(found_lvl_path)!=Path(save_path):
-                                if str(found_lvl) == str(self.tree_files.item(self.last_selected_file, option="text")):
-                                    os.remove(found_lvl_path)
-
+                print("Saved!")
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
@@ -1913,6 +1957,13 @@ class LevelsTab(Tab):
                 logger.debug("Changes remembered!")
                 self.save_needed = True
                 self.button_save["state"] = tk.NORMAL
+            else:
+                self.canvas.delete("all")
+                self.canvas_dual.delete("all")
+                self.canvas.grid_remove()
+                self.canvas_dual.grid_remove()
+                self.foreground_label.grid_remove()
+                self.background_label.grid_remove()
         except Exception:  # pylint: disable=broad-except
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
@@ -2914,6 +2965,7 @@ class LevelsTab(Tab):
             logger.debug("Found this lvl in pack; loading it instead")
             lvl_path = Path(self.lvls_path) / lvl
         else:
+            logger.debug("Did not find this lvl in pack; loading it from extracts instead")
             if self.tree_files.heading(0)['text'].endswith("Arena"):
                 lvl_path = self.extracts_path / "Arena" / lvl
             else:
