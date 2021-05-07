@@ -1425,11 +1425,11 @@ class LevelsTab(Tab):
                     for name in files:
                         if fnmatch(name, pattern):
                             found_lvl_path = str(os.path.join(path, name))
-                            import ntpath
-                            found_lvl = ntpath.basename(found_lvl_path)
+                            found_lvl = os.path.basename(found_lvl_path)
                             print(str(found_lvl) + " found")
                             if Path(found_lvl_path)!=Path(save_path):
-                                os.remove(found_lvl_path)
+                                if str(found_lvl) == str(self.tree_files.item(self.last_selected_file, option="text")):
+                                    os.remove(found_lvl_path)
 
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
