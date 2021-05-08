@@ -30,6 +30,7 @@ from .monsters.big import (
 )
 from .tilecode_extras import TilecodeExtras
 from .menu_leader import MenuLeaderSheet
+from .menu_basic import MenuBasicSheet, PetHeadsSheet
 
 
 def get_all_sprite_loaders(entities_json: Optional[dict], textures_json: Optional[dict], base_path: str):
@@ -68,6 +69,8 @@ def get_all_sprite_loaders(entities_json: Optional[dict], textures_json: Optiona
         Mounts(entities_json, textures_json, base_path),
         Pets(entities_json, textures_json, base_path),
         MenuLeaderSheet(base_path),
+        MenuBasicSheet(base_path),
+        PetHeadsSheet(BASE_DIR / 'static'),
         Basic1(entities_json, textures_json, base_path),
         Basic2(entities_json, textures_json, base_path),
         Basic3(entities_json, textures_json, base_path),
