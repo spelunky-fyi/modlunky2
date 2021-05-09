@@ -60,29 +60,40 @@ class LevelsTab(Tab):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.lvl_editor_start_frame = ttk.Frame(self)
+        self.lvl_editor_start_frame = tk.Frame(self, bg="black",)
         self.lvl_editor_start_frame.grid(row=0, column=0, columnspan=2, sticky="nswe")
         self.lvl_editor_start_frame.columnconfigure(0, weight=1)
-        self.lvl_editor_start_frame.rowconfigure(0, weight=1)
+        self.lvl_editor_start_frame.rowconfigure(1, weight=1)
 
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
         self.overrides_path = self.install_dir / "Mods" / "Packs"
 
+        self.welcome_label_title = tk.Label(
+            self.lvl_editor_start_frame,
+            text=("Spelunky 2 Level Editor"),
+            anchor="center",
+            bg="black",
+            fg="white",
+            font=("Arial", 45)
+        )
+        self.welcome_label_title.grid(row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10))
+
         self.welcome_label = tk.Label(
             self.lvl_editor_start_frame,
             text=(
-                "Welcome to the Spelunky 2 Level Editor! "
+                "Welcome to the Spelunky 2 Level Editor!\n"
                 "Created by JackHasWifi with lots of help from "
-                "Garebear, Fingerspit, Wolfo, and the community\n\n "
-                "NOTICE: Saving will save the "
-                "changes to a file in your selected pack.\n"
+                "Garebear, Fingerspit, Wolfo, and the community.\n\n "
+                "NOTICE: Saving will save "
+                "changes to a file in your selected pack and never overwrite its extracts counterpart.\n"
                 "BIGGER NOTICE: Please make backups of your files. This is still in beta stages.."
             ),
             anchor="center",
             bg="black",
             fg="white",
+            font=("Arial", 12)
         )
-        self.welcome_label.grid(row=0, column=0, sticky="nswe", ipady=30, padx=(10, 10))
+        self.welcome_label.grid(row=1, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
         # Init Attributes
         self.lvls_path = None
@@ -123,7 +134,7 @@ class LevelsTab(Tab):
             command=load_extracts_lvls,
         )
         self.btn_lvl_extracts.grid(
-            row=1, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(10, 1)
+            row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(20, 20)
         )
 
     def on_load(self):
@@ -147,7 +158,7 @@ class LevelsTab(Tab):
 
         # Loads lvl Files
         self.tree_files = ttk.Treeview(
-            self, selectmode="browse"
+            self, selectmode="browse", padding=[-15,0,0,0]
         )  # This tree shows all the lvl files loaded from the chosen dir
         self.tree_files.place(x=30, y=95)
         self.vsb_tree_files = ttk.Scrollbar(
@@ -155,11 +166,7 @@ class LevelsTab(Tab):
         )
         self.vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_files.configure(yscrollcommand=self.vsb_tree_files.set)
-        self.tree_files["columns"] = ("1",)
-        self.tree_files["show"] = "headings"
-        self.tree_files.column("1", width=100, anchor="w")
-        self.tree_files.heading("1", text="Select Pack")
-        self.my_list = sorted(os.listdir(self.lvls_path))
+        self.tree_files.heading('#0', text='Select Pack', anchor='center')
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
@@ -998,22 +1005,39 @@ class LevelsTab(Tab):
         self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
 
     def reset(self):
+        print("Resetting..")
         for i in self.tree_levels.get_children():
             self.tree_levels.delete(i)
+        try:
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
+        except:
+            print("canvas does not exist yet")
+
 
     def load_packs(self):
         self.reset()
         print("loading packs")
+
         for i in self.tree_files.get_children():
             self.tree_files.delete(i)
-        self.tree_files.heading("1", text="Select Pack")
+        self.tree_files.heading("#0", text="Select Pack")
+        self.icons_packs = []
+        i = 0
         for filepath in glob.iglob(str(self.overrides_path) + '/*/'):
+            self.icons_packs.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/folder.png").resize((25,25))))
             # because path is object not string
             path_in_str = str(filepath)
             pack_name = os.path.basename(os.path.normpath(path_in_str))
             # Do thing with the path
-            self.tree_files.insert("", "end", values=str(pack_name), text=str(pack_name))
-        self.tree_files.insert("", "end", values=str("[Create_New_Pack]"), text=str("[Create_New_Pack]"))
+            self.tree_files.insert("", "end", text=str(pack_name), image=self.icons_packs[i])
+            i = i + 1
+        self.icon_add = ImageTk.PhotoImage(Image.open("modlunky2/static/images/add.png").resize((25,25)))
+        self.tree_files.insert("", "end", text=str("[Create_New_Pack]"), image=self.icon_add)
 
     def load_pack_lvls(self, lvl_dir):
         self.reset()
@@ -1026,15 +1050,17 @@ class LevelsTab(Tab):
 
         self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
-            self.tree_files.insert("", "end", values=str("ARENA"), text=str("ARENA"))
+            self.tree_files.insert("", "end", text=str("ARENA"), image=self.icons_packs[0])
         else:
             defaults_path = self.extracts_path / "Arena"
         # Load lvls frome extracts that selected pack doesn't have
 
-        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
         root = Path(self.overrides_path / loaded_pack)
         pattern = "*.lvl"
 
+        self.icons_lvls = []
+        i = 0
         for filepath in glob.iglob(str(defaults_path) + '/***.lvl'):
             lvl_in_use = False
             path_in_str = str(filepath)
@@ -1045,9 +1071,13 @@ class LevelsTab(Tab):
                         found_lvl =str(os.path.join(path, name))
                         if os.path.basename(os.path.normpath(found_lvl))==str(lvl_name):
                             lvl_in_use = True
-                            self.tree_files.insert("", "end", values=str(lvl_name), text=str(lvl_name))
+                            self.icons_lvls.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl_modded.png").resize((25,25))))
+                            self.tree_files.insert("", "end", text=str(lvl_name), image=self.icons_lvls[i])
+                            i = i + 1
             if not lvl_in_use:
-                self.tree_files.insert("", "end", values=str(lvl_name), text=str(lvl_name))
+                self.icons_lvls.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl.png").resize((25,25))))
+                self.tree_files.insert("", "end", text=str(lvl_name), image=self.icons_lvls[i])
+                i = i + 1
 
     def create_pack_dialog(self):
         win = PopupWindow("Create Pack", self.modlunky_config)
@@ -1091,7 +1121,7 @@ class LevelsTab(Tab):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def organize_pack(self):
-        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
         root = Path(self.overrides_path / loaded_pack)
         pattern = "*.lvl"
 
@@ -1117,53 +1147,49 @@ class LevelsTab(Tab):
 
 
     def tree_filesitemclick(self, _event):
+        if self.save_needed and self.last_selected_file is not None and self.tree_files.heading("#0")['text']!="Select Pack":
+            msg_box = tk.messagebox.askquestion(
+                "Continue?",
+                "You have unsaved changes to "
+                + str(self.tree_files.item(self.last_selected_file, option="text"))
+                + "\nContinue without saving?",
+                icon="warning",
+            )
+            if msg_box == "yes":
+                self.save_needed = False
+                self.button_save["state"] = tk.DISABLED
+                logger.debug("Entered new files witout saving")
+            else:
+                self.tree_files.selection_set(self.last_selected_file)
+                return
+
         item_text = ""
         for item in self.tree_files.selection():
             item_text = self.tree_files.item(item, "text")
         if item_text=="<<BACK":
-            if self.tree_files.heading(0)['text'].endswith("Arena"):
-                self.tree_files.heading("1", text=self.tree_files.heading(0)['text'].split("/")[0])
-                loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
-                self.load_pack_lvls(Path(self.overrides_path / loaded_pack / "Data" / "Levels"))
+            if self.tree_files.heading("#0")['text'].endswith("Arena"):
+                self.tree_files.heading("#0", text=self.tree_files.heading("#0")['text'].split("/")[0])
+                self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
+                self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack / "Data" / "Levels"))
             else:
                 self.load_packs()
-        elif item_text=="ARENA" and self.tree_files.heading(0)['text']!="Select Pack":
-            self.tree_files.heading("1", text=self.tree_files.heading(0)['text'] + "/Arena")
-            loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
-            self.load_pack_lvls(Path(self.overrides_path / loaded_pack / "Data" / "Levels"/ "Arena"))
+        elif item_text=="ARENA" and self.tree_files.heading("#0")['text']!="Select Pack":
+            self.tree_files.heading("#0", text=self.tree_files.heading("#0")['text'] + "/Arena")
+            self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
+            self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack / "Data" / "Levels"/ "Arena"))
         elif item_text=="[Create_New_Pack]":
             print("Creating new pack")
             self.create_pack_dialog()
-        elif self.tree_files.heading(0)['text']=="Select Pack":
+            #self.tree_files.heading('#0', text='Select Pack', anchor='center')
+        elif self.tree_files.heading("#0")['text']=="Select Pack":
             for item in self.tree_files.selection():
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
-                self.tree_files.heading("1", text=item_text)
-                loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
-                self.load_pack_lvls(Path(self.overrides_path / loaded_pack) / "Data" / "Levels")
+                self.tree_files.heading("#0", text=item_text)
+                self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
+                self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack) / "Data" / "Levels")
         else:
-            if self.save_needed and self.last_selected_file is not None and self.tree_files.heading(0)['text']!="Select Pack":
-                msg_box = tk.messagebox.askquestion(
-                    "Continue?",
-                    "You have unsaved changes to "
-                    + str(self.tree_files.item(self.last_selected_file, option="text"))
-                    + "\nContinue without saving?",
-                    icon="warning",
-                )
-                if msg_box == "yes":
-                    self.save_needed = False
-                    self.button_save["state"] = tk.DISABLED
-                    logger.debug("Entered new files witout saving")
-                else:
-                    self.tree_files.selection_set(self.last_selected_file)
-                    return
             self.reset()
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
             for item in self.tree_files.selection():
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
@@ -1304,7 +1330,7 @@ class LevelsTab(Tab):
 
     def make_backup(self, file):
         print("Making backup..")
-        loaded_pack = self.tree_files.heading(0)['text'].split("/")[0]
+        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
         backup_dir = str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
         if os.path.isfile(file):
             lvl_name = os.path.basename(file) + "_" + ("{date:%Y-%m-%d_%H_%M_%S}").format(date=datetime.datetime.now())
@@ -1323,7 +1349,7 @@ class LevelsTab(Tab):
                 print("Deleting oldest backup")
                 oldest_file = min(full_path, key=os.path.getctime)
                 os.remove(oldest_file)
-        else:dd
+        else:
             print("Backup not needed for what was a default file.")
 
     def save_changes(self):
@@ -1475,6 +1501,10 @@ class LevelsTab(Tab):
                     level_file.write(handle)
 
                 print("Saved!")
+                # This was my attempt at changing the icon purple when a file is saved so the user knows its now modified
+                # for item in self.tree_levels.selection():
+                #    self.icon_modded = ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl_modded.png").resize((25,25)))
+                #    item.configure(image=self.icon_modded)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
@@ -2966,7 +2996,7 @@ class LevelsTab(Tab):
             lvl_path = Path(self.lvls_path) / lvl
         else:
             logger.debug("Did not find this lvl in pack; loading it from extracts instead")
-            if self.tree_files.heading(0)['text'].endswith("Arena"):
+            if self.tree_files.heading("#0")['text'].endswith("Arena"):
                 lvl_path = self.extracts_path / "Arena" / lvl
             else:
                 lvl_path = self.extracts_path / lvl
