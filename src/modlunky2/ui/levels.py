@@ -1,22 +1,22 @@
 # pylint: disable=too-many-lines
 
+import datetime
+import glob
 import logging
 import os
 import os.path
+import shutil
 import tempfile
 import tkinter as tk
 import tkinter.messagebox as tkMessageBox
 from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
-from tkinter import filedialog, ttk
+from shutil import copyfile
+from tkinter import ttk
 
 import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
-import glob
-from fnmatch import fnmatch
-import shutil
-from shutil import copyfile
-import datetime
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
@@ -124,6 +124,10 @@ class LevelsTab(Tab):
         self.lvl_biome = None
         self.node = None
         self.sister_locations = None
+        self.icons_packs = None
+        self.icon_add = None
+        self.icons_lvls = None
+        self.loaded_pack = None
 
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
@@ -1012,7 +1016,7 @@ class LevelsTab(Tab):
         self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
 
     def reset(self):
-        print("Resetting..")
+        logger.debug("Resetting..")
         for i in self.tree_levels.get_children():
             self.tree_levels.delete(i)
         try:
@@ -1022,12 +1026,12 @@ class LevelsTab(Tab):
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
-        except:
-            print("canvas does not exist yet")
+        except Exception:  # pylint: disable=broad-except
+            logger.debug("canvas does not exist yet")
 
     def load_packs(self):
         self.reset()
-        print("loading packs")
+        logger.debug("loading packs")
 
         for i in self.tree_files.get_children():
             self.tree_files.delete(i)
@@ -1059,7 +1063,7 @@ class LevelsTab(Tab):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
-        print("lvls_path = " + str(lvl_dir))
+        logger.debug("lvls_path = %s", lvl_dir)
         defaults_path = self.extracts_path
         for i in self.tree_files.get_children():
             self.tree_files.delete(i)
@@ -1083,7 +1087,7 @@ class LevelsTab(Tab):
             lvl_in_use = False
             path_in_str = str(filepath)
             lvl_name = os.path.basename(os.path.normpath(path_in_str))
-            for path, subdirs, files in os.walk(Path(root)):
+            for path, _, files in os.walk(Path(root)):
                 for name in files:
                     if fnmatch(name, pattern):
                         found_lvl = str(os.path.join(path, name))
@@ -1136,7 +1140,7 @@ class LevelsTab(Tab):
                 self.load_packs()
                 win.destroy()
             else:
-                print("Pack name taken")
+                logger.warning("Pack name taken")
                 col1_ent.delete(0, "end")
                 col1_ent.insert(0, "Name Taken")
 
@@ -1160,7 +1164,7 @@ class LevelsTab(Tab):
         pattern = "*.lvl"
 
         # gets rid of copies of the file in the wrong place
-        for path, subdirs, files in os.walk(Path(root)):
+        for path, _, files in os.walk(Path(root)):
             for name in files:
                 if fnmatch(name, pattern):
                     found_lvl_path = str(os.path.join(path, name))
@@ -1174,9 +1178,9 @@ class LevelsTab(Tab):
                             / "Levels"
                             / "Arena"
                         ):
-                            print(
-                                str(found_lvl)
-                                + " found arena lvl in wrong location. Fixing that."
+                            logger.debug(
+                                "%s found arena lvl in wrong location. Fixing that.",
+                                found_lvl,
                             )
                             if not os.path.exists(
                                 Path(
@@ -1211,9 +1215,9 @@ class LevelsTab(Tab):
                         if Path(found_lvl_dir) != Path(
                             self.overrides_path / loaded_pack / "Data" / "Levels"
                         ):
-                            print(
-                                str(found_lvl)
-                                + " found lvl in wrong location. Fixing that."
+                            logger.debug(
+                                "%s found lvl in wrong location. Fixing that.",
+                                found_lvl,
                             )
                             if not os.path.exists(
                                 Path(
@@ -1291,7 +1295,7 @@ class LevelsTab(Tab):
                 )
             )
         elif item_text == "[Create_New_Pack]":
-            print("Creating new pack")
+            logger.debug("Creating new pack")
             self.create_pack_dialog()
             # self.tree_files.heading('#0', text='Select Pack', anchor='center')
         elif self.tree_files.heading("#0")["text"] == "Select Pack":
@@ -1444,7 +1448,7 @@ class LevelsTab(Tab):
             self.remember_changes()
 
     def make_backup(self, file):
-        print("Making backup..")
+        logger.debug("Making backup..")
         loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
         backup_dir = (
             str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
@@ -1458,20 +1462,20 @@ class LevelsTab(Tab):
             if not os.path.exists(Path(backup_dir)):
                 os.makedirs(Path(backup_dir))
             copyfile(file, backup_dir + "/" + lvl_name)
-            print("Backup made!")
+            logger.debug("Backup made!")
 
             # Removes oldest backup every 50 backups
-            path, dirs, files = next(os.walk(backup_dir))
+            _, _, files = next(os.walk(backup_dir))
             file_count = len(files)
-            print("This mod has " + str(file_count) + " backups.")
+            logger.debug("This mod has %s backups.", file_count)
             list_of_files = os.listdir(backup_dir)
             full_path = [backup_dir + "/{0}".format(x) for x in list_of_files]
             if len(list_of_files) >= 50:
-                print("Deleting oldest backup")
+                logger.debug("Deleting oldest backup")
                 oldest_file = min(full_path, key=os.path.getctime)
                 os.remove(oldest_file)
         else:
-            print("Backup not needed for what was a default file.")
+            logger.debug("Backup not needed for what was a default file.")
 
     def save_changes(self):
         if self.save_needed:
@@ -1619,15 +1623,18 @@ class LevelsTab(Tab):
                     / str(self.tree_files.item(self.last_selected_file, option="text"))
                 )
                 self.make_backup(save_path)
-                print("Saving to " + str(save_path))
+                logger.debug("Saving to %s", save_path)
 
                 with Path(save_path).open("w", encoding="cp1252") as handle:
                     level_file.write(handle)
 
-                print("Saved!")
-                # This was my attempt at changing the icon purple when a file is saved so the user knows its now modified
+                logger.debug("Saved!")
+                # This was my attempt at changing the icon purple when a file is saved so the user
+                # knows its now modified
                 # for item in self.tree_levels.selection():
-                #    self.icon_modded = ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl_modded.png").resize((25,25)))
+                #    self.icon_modded = ImageTk.PhotoImage(Image.open(
+                #       BASE_DIR / "modlunky2/static/images/lvl_modded.png"
+                #    ).resize((25,25)))
                 #    item.configure(image=self.icon_modded)
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
@@ -1750,7 +1757,7 @@ class LevelsTab(Tab):
                                         old_code
                                     )  # adds back replaced code since its now free for use again
                             else:
-                                print("Not enough unique tilecodes left")
+                                logger.warning("Not enough unique tilecodes left")
                                 self.tree_filesitemclick(self)
                                 self.check_dependencies()
                                 return
@@ -3114,7 +3121,7 @@ class LevelsTab(Tab):
             self.lvl_biome = "volcano"
             self.lvl_bg_path = self.textures_dir / "bg_volcano.png"
 
-        print("searching " + str(Path(self.lvls_path / lvl)))
+        logger.debug("searching %s", self.lvls_path / lvl)
         if Path(self.lvls_path / lvl).exists():
             logger.debug("Found this lvl in pack; loading it instead")
             lvl_path = Path(self.lvls_path) / lvl
