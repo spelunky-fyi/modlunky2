@@ -1,0 +1,268 @@
+// ------------------------------
+//  AREA EIGHT (COSMIC OCEAN) - SUNKEN CITY
+// ------------------------------
+
+\-back_room_chance 0                        // % chance of a second room (default = 5%)
+\-back_room_interconnection_chance 0        // % chance of a second room interconnection (default = 20%)
+\-back_room_hidden_door_chance 0            // 1/N chance of a hidden door (default = 500)
+\-back_room_hidden_door_cache_chance 0      // 1/N chance of a hidden door to a cache (default = 1000)
+\-mount_chance 0                            // 1/N chance of a mount (default = 5000)
+\-altar_room_chance 0                       // 1/N chance of an altar room (default = 14)
+\-idol_room_chance 0                        // 1/N chance of an idol room (default = 10)
+\-floor_side_spread_chance 0                // 1/N chance of a spreadable floor spreading to its side (default = 10)
+\-floor_bottom_spread_chance 0              // 1/N chance of a spreadable floor spreading to its bottom (default = 5)
+\-max_liquid_particles 2000                 // Maximum number of liquid drops that can be created until no more liquid rooms are allowed
+\-flagged_liquid_rooms 7                    // Number of random rooms that will be flagged for being eligible to spawn liquid
+\-liquid_gravity 10.0                       // Liquid vertical gravity (default -10.0)
+\-machine_bigroom_chance 0                  // 1/N chance of spawning a machine big room (default = 0)
+\-machine_wideroom_chance 0                 // 1/N chance of spawning a machine wide room (default = 0)
+\-machine_tallroom_chance 0                 // 1/N chance of spawning a machine tall room (default = 0)
+\-machine_rewardroom_chance 0               // 1/N chance of spawning a machine reward room (default = 0)
+
+// ------------------------------
+//  TILE CODES
+// ------------------------------
+
+\?chunk_ground              5
+\?chunk_air                 6
+\?chunk_door                8   // Chunk with entrance or exit in it
+
+\?empty                     0
+\?floor                     1
+\?floor%50                  2   // 50% chance of floor, 50% chance of empty
+\?sunken_floor              =
+\?sunken_floor%50           -
+\?floor_hard                X   // Indestructible ("hard") floor
+\?floor_hard%50%floor       Y   // 50% chance of hard floor, 50% chance of regular floor
+\?adjacent_floor            Z   // Hard floor or empty depending on whether this leads to another second layer room
+\?door                      9   // Exit or entrance
+\?door2                     D   // Door to other Layer
+
+\?treasure                  t   // Gold (30%), gem (30%), treasure chest (20%), crate (10%), bones/pot (5%), or nothing (5%)
+\?spikes                    ^
+\?push_block                4
+\?pipe                      p
+\?regenerating_block        r
+\?bigspear_trap             C
+\?bone_block                f
+\?sticky_trap               B
+
+\?altar                     x   // Each side of the altar
+\?idol                      I   // Idol statue
+\?vault_wall                |   // Vault wall
+\?coffin                    g   // Character coffin (NPC/Player)
+
+\?shop_sign                 K
+\?shop_door                 k
+\?lamp_hang                 l
+\?shop_wall                 .
+\?shop_item                 S
+\?wanted_poster             W
+\?shopkeeper                $   // Shopkeeper and items
+
+\?storage_guy               G   // Storage guy
+\?storage_floor             q   // Storage floors
+\?autowalltorch             M
+
+\?mother_statue             s
+\?eggplant_door             U
+
+\?giant_frog                n
+\?guts_floor                T
+
+\?water                     w
+
+// ------------------------------
+//  LEVEL CHANCES
+// ------------------------------
+
+\%arrowtrap_chance          35
+\%bigspeartrap_chance       35
+\%stickytrap_chance         25
+\%skulldrop_chance          10
+\%eggsac_chance             20
+
+// ------------------------------
+//  MONSTER CHANCES
+// ------------------------------
+
+\+frog          30
+\+firefrog      50
+\+tadpole       30
+\+giantfly      40
+\+critterslime  60
+
+// ------------------------------
+//  TEMPLATES
+// ------------------------------
+//
+//  !ignore     Ignore the following template. This is to make building rooms easier.
+//  !flip       Flip the following template to make another. i.e. The following template = two templates.
+//  !onlyflip   Flip the following template (original is ignored)
+//  !dual       The next template contains both a frontal and back room
+//  !rare       The next template is rare (only 5% chance of a rare template being used).
+//  !hard       The next template is hard (only appear in the second two levels of the area).
+//  !liquid     The next template contains liquid (used to limit the number of liquid drops)
+
+////////////////////////////////////////////////////////////////////////////////
+\.entrance
+////////////////////////////////////////////////////////////////////////////////
+\!flip
+==00======
+1100=====1
+0000000000
+00rr111100
+0rrr000rr0
+01r1000rr0
+11110901r1
+0011111111
+
+\!flip
+000rrr0000
+000r1r0000
+0p11111=10
+0ppppppp10
+0r11000p10
+0r11000010
+00pp090011
+00p1111111
+
+////////////////////////////////////////////////////////////////////////////////
+\.exit
+////////////////////////////////////////////////////////////////////////////////
+
+-=========
+002====200
+000====000
+00======00
+0008000000
+0000000000
+0000000000
+11======12
+
+1111111100
+0080000000
+0000000000
+0000000000
+0r======r0
+0r000000r0
+rr=000=rr0
+00=000=110
+
+////////////////////////////////////////////////////////////////////////////////
+\.side
+////////////////////////////////////////////////////////////////////////////////
+
+\!flip
+00p1111100
+02p1112111
+0pp0000111
+0p00000100
+0p00000r00
+0pp0110r00
+0211111111
+0001110000
+
+\!flip
+\!liquid
+======0000
+=www=====0
+=w=w=www=0
+=w=wwwww=0
+=w==ww=w=0
+00C0000000
+0===0000==
+00-00000==
+
+\!flip
+=11111====
+00rrrrrr00
+==1rrrr1==
+0211111120
+0021111200
+0000000000
+0000000000
+1100000011
+
+////////////////////////////////////////////////////////////////////////////////
+\.coffin_player     // Coffin room holding a dead player (both sides must be open)
+////////////////////////////////////////////////////////////////////////////////
+
+==1=======
+=pp000000=
+=p10000g0=
+1p11======
+0p10000000
+0000001100
+1111======
+1111111111
+
+=======1==
+=000000pp=
+=g000001p=
+======11p1
+00000001p0
+0011000000
+======1111
+1111111111
+
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_door
+////////////////////////////////////////////////////////////////////////////////
+
+\!flip
+000000
+00090=
+2=====
+
+\!flip
+000000
+0090=0
+=====0
+
+\!flip
+000000
+0=0900
+=====2
+
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_ground
+////////////////////////////////////////////////////////////////////////////////
+
+\!ignore
+00000
+00000
+00000
+
+
+\!liquid
+\!flip
+1r111
+1wwwr
+1www1
+
+\!flip
+2p112
+1ppp0
+11111
+////////////////////////////////////////////////////////////////////////////////
+\.chunk_air
+////////////////////////////////////////////////////////////////////////////////
+
+00000
+00000
+00000
+
+00000
+0rrr0
+00000
+
+\!flip
+11100
+22200
+00000
+
+\!flip
+12121
+10101
+20202
