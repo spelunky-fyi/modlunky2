@@ -407,7 +407,7 @@ def test_parser():
                             background=[],
                         ),
                         Chunk(
-                            comment="",
+                            comment="// Room",
                             settings=[TemplateSetting.FLIP, TemplateSetting.LIQUID],
                             foreground=[
                                 ["=", "=", "=", "=", "=", "=", "0", "0", "0", "0"],
