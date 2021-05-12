@@ -13,7 +13,7 @@ def rgba_to_png(data):
 
 
 def dds_to_png(data):
-    """ Takes a .DDS `Image` and returns .png data."""
+    """Takes a .DDS `Image` and returns .png data."""
     img = Image.open(io.BytesIO(data))
     img.tile[0] = img.tile[0][:-1] + ((img.tile[0][-1][0][::-1], 0, 1),)
     new_data = io.BytesIO()
@@ -22,7 +22,7 @@ def dds_to_png(data):
 
 
 def png_to_dds(img):
-    """ Takes a .png `Image` and returns .DDS data."""
+    """Takes a .png `Image` and returns .DDS data."""
 
     img = img.convert("RGBA")
 
