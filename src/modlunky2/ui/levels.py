@@ -46,7 +46,9 @@ class LevelsTab(Tab):
         self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(self, self, self.modlunky_config, selectmode="browse")
+        self.tree_levels = LevelsTree(
+            self, self, self.modlunky_config, selectmode="browse"
+        )
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -60,7 +62,10 @@ class LevelsTab(Tab):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.lvl_editor_start_frame = tk.Frame(self, bg="black",)
+        self.lvl_editor_start_frame = tk.Frame(
+            self,
+            bg="black",
+        )
         self.lvl_editor_start_frame.grid(row=0, column=0, columnspan=2, sticky="nswe")
         self.lvl_editor_start_frame.columnconfigure(0, weight=1)
         self.lvl_editor_start_frame.rowconfigure(1, weight=1)
@@ -74,9 +79,11 @@ class LevelsTab(Tab):
             anchor="center",
             bg="black",
             fg="white",
-            font=("Arial", 45)
+            font=("Arial", 45),
         )
-        self.welcome_label_title.grid(row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10))
+        self.welcome_label_title.grid(
+            row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10)
+        )
 
         self.welcome_label = tk.Label(
             self.lvl_editor_start_frame,
@@ -91,7 +98,7 @@ class LevelsTab(Tab):
             anchor="center",
             bg="black",
             fg="white",
-            font=("Arial", 12)
+            font=("Arial", 12),
         )
         self.welcome_label.grid(row=1, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
@@ -158,7 +165,7 @@ class LevelsTab(Tab):
 
         # Loads lvl Files
         self.tree_files = ttk.Treeview(
-            self, selectmode="browse", padding=[-15,0,0,0]
+            self, selectmode="browse", padding=[-15, 0, 0, 0]
         )  # This tree shows all the lvl files loaded from the chosen dir
         self.tree_files.place(x=30, y=95)
         self.vsb_tree_files = ttk.Scrollbar(
@@ -166,12 +173,12 @@ class LevelsTab(Tab):
         )
         self.vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_files.configure(yscrollcommand=self.vsb_tree_files.set)
-        self.tree_files.heading('#0', text='Select Pack', anchor='center')
+        self.tree_files.heading("#0", text="Select Pack", anchor="center")
         self.tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
         # Loads list of all the lvl files in the left farthest treeview
-        #paths = Path(self.overrides_path).glob('*/') #.glob('**/*.png')
+        # paths = Path(self.overrides_path).glob('*/') #.glob('**/*.png')
         self.load_packs()
 
         # Seperates Level Rules and Level Editor into two tabs
@@ -1018,7 +1025,6 @@ class LevelsTab(Tab):
         except:
             print("canvas does not exist yet")
 
-
     def load_packs(self):
         self.reset()
         print("loading packs")
@@ -1028,16 +1034,26 @@ class LevelsTab(Tab):
         self.tree_files.heading("#0", text="Select Pack")
         self.icons_packs = []
         i = 0
-        for filepath in glob.iglob(str(self.overrides_path) + '/*/'):
-            self.icons_packs.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/folder.png").resize((25,25))))
+        for filepath in glob.iglob(str(self.overrides_path) + "/*/"):
+            self.icons_packs.append(
+                ImageTk.PhotoImage(
+                    Image.open(BASE_DIR / "static/images/folder.png").resize((25, 25))
+                )
+            )
             # because path is object not string
             path_in_str = str(filepath)
             pack_name = os.path.basename(os.path.normpath(path_in_str))
             # Do thing with the path
-            self.tree_files.insert("", "end", text=str(pack_name), image=self.icons_packs[i])
+            self.tree_files.insert(
+                "", "end", text=str(pack_name), image=self.icons_packs[i]
+            )
             i = i + 1
-        self.icon_add = ImageTk.PhotoImage(Image.open("modlunky2/static/images/add.png").resize((25,25)))
-        self.tree_files.insert("", "end", text=str("[Create_New_Pack]"), image=self.icon_add)
+        self.icon_add = ImageTk.PhotoImage(
+            Image.open(BASE_DIR / "static/images/add.png").resize((25, 25))
+        )
+        self.tree_files.insert(
+            "", "end", text=str("[Create_New_Pack]"), image=self.icon_add
+        )
 
     def load_pack_lvls(self, lvl_dir):
         self.reset()
@@ -1050,33 +1066,51 @@ class LevelsTab(Tab):
 
         self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
-            self.tree_files.insert("", "end", text=str("ARENA"), image=self.icons_packs[0])
+            self.tree_files.insert(
+                "", "end", text=str("ARENA"), image=self.icons_packs[0]
+            )
         else:
             defaults_path = self.extracts_path / "Arena"
         # Load lvls frome extracts that selected pack doesn't have
 
-        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
+        loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
         root = Path(self.overrides_path / loaded_pack)
         pattern = "*.lvl"
 
         self.icons_lvls = []
         i = 0
-        for filepath in glob.iglob(str(defaults_path) + '/***.lvl'):
+        for filepath in glob.iglob(str(defaults_path) + "/***.lvl"):
             lvl_in_use = False
             path_in_str = str(filepath)
             lvl_name = os.path.basename(os.path.normpath(path_in_str))
             for path, subdirs, files in os.walk(Path(root)):
                 for name in files:
                     if fnmatch(name, pattern):
-                        found_lvl =str(os.path.join(path, name))
-                        if os.path.basename(os.path.normpath(found_lvl))==str(lvl_name):
+                        found_lvl = str(os.path.join(path, name))
+                        if os.path.basename(os.path.normpath(found_lvl)) == str(
+                            lvl_name
+                        ):
                             lvl_in_use = True
-                            self.icons_lvls.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl_modded.png").resize((25,25))))
-                            self.tree_files.insert("", "end", text=str(lvl_name), image=self.icons_lvls[i])
+                            self.icons_lvls.append(
+                                ImageTk.PhotoImage(
+                                    Image.open(
+                                        BASE_DIR / "static/images/lvl_modded.png"
+                                    ).resize((25, 25))
+                                )
+                            )
+                            self.tree_files.insert(
+                                "", "end", text=str(lvl_name), image=self.icons_lvls[i]
+                            )
                             i = i + 1
             if not lvl_in_use:
-                self.icons_lvls.append(ImageTk.PhotoImage(Image.open("modlunky2/static/images/lvl.png").resize((25,25))))
-                self.tree_files.insert("", "end", text=str(lvl_name), image=self.icons_lvls[i])
+                self.icons_lvls.append(
+                    ImageTk.PhotoImage(
+                        Image.open(BASE_DIR / "static/images/lvl.png").resize((25, 25))
+                    )
+                )
+                self.tree_files.insert(
+                    "", "end", text=str(lvl_name), image=self.icons_lvls[i]
+                )
                 i = i + 1
 
     def create_pack_dialog(self):
@@ -1091,11 +1125,11 @@ class LevelsTab(Tab):
         def update_then_destroy_pack():
             pack_name = ""
             for char in str(col1_ent.get()):
-                if str(char)!=" ":
-                    pack_name+=str(char)
+                if str(char) != " ":
+                    pack_name += str(char)
                 else:
-                    pack_name+="_"
-            col1_ent.delete(0, 'end')
+                    pack_name += "_"
+            col1_ent.delete(0, "end")
             col1_ent.insert(0, pack_name)
             if not os.path.isdir(self.overrides_path / str(col1_ent.get())):
                 os.mkdir(self.overrides_path / str(col1_ent.get()))
@@ -1103,7 +1137,7 @@ class LevelsTab(Tab):
                 win.destroy()
             else:
                 print("Pack name taken")
-                col1_ent.delete(0, 'end')
+                col1_ent.delete(0, "end")
                 col1_ent.insert(0, "Name Taken")
 
         separator = ttk.Separator(win)
@@ -1121,7 +1155,7 @@ class LevelsTab(Tab):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def organize_pack(self):
-        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
+        loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
         root = Path(self.overrides_path / loaded_pack)
         pattern = "*.lvl"
 
@@ -1133,21 +1167,87 @@ class LevelsTab(Tab):
                     found_lvl_dir = os.path.dirname(found_lvl_path)
                     found_lvl = os.path.basename(found_lvl_path)
                     if found_lvl.startswith("dm"):
-                        if Path(found_lvl_dir) != Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena"):
-                            print(str(found_lvl) + " found arena lvl in wrong location. Fixing that.")
-                            if not os.path.exists(Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena")):
-                                os.makedirs(Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena"))
-                            shutil.move(Path(found_lvl_path), Path(self.overrides_path / loaded_pack / "Data" / "Levels" / "Arena" / found_lvl))
+                        if Path(found_lvl_dir) != Path(
+                            self.overrides_path
+                            / loaded_pack
+                            / "Data"
+                            / "Levels"
+                            / "Arena"
+                        ):
+                            print(
+                                str(found_lvl)
+                                + " found arena lvl in wrong location. Fixing that."
+                            )
+                            if not os.path.exists(
+                                Path(
+                                    self.overrides_path
+                                    / loaded_pack
+                                    / "Data"
+                                    / "Levels"
+                                    / "Arena"
+                                )
+                            ):
+                                os.makedirs(
+                                    Path(
+                                        self.overrides_path
+                                        / loaded_pack
+                                        / "Data"
+                                        / "Levels"
+                                        / "Arena"
+                                    )
+                                )
+                            shutil.move(
+                                Path(found_lvl_path),
+                                Path(
+                                    self.overrides_path
+                                    / loaded_pack
+                                    / "Data"
+                                    / "Levels"
+                                    / "Arena"
+                                    / found_lvl
+                                ),
+                            )
                     else:
-                        if Path(found_lvl_dir) != Path(self.overrides_path / loaded_pack / "Data" / "Levels"):
-                            print(str(found_lvl) + " found lvl in wrong location. Fixing that.")
-                            if not os.path.exists(Path(self.overrides_path / loaded_pack / "Data" / "Levels")):
-                                os.makedirs(Path(self.overrides_path / loaded_pack / "Data" / "Levels"))
-                            shutil.move(Path(found_lvl_path), Path(self.overrides_path / loaded_pack / "Data" / "Levels" / found_lvl))
-
+                        if Path(found_lvl_dir) != Path(
+                            self.overrides_path / loaded_pack / "Data" / "Levels"
+                        ):
+                            print(
+                                str(found_lvl)
+                                + " found lvl in wrong location. Fixing that."
+                            )
+                            if not os.path.exists(
+                                Path(
+                                    self.overrides_path
+                                    / loaded_pack
+                                    / "Data"
+                                    / "Levels"
+                                )
+                            ):
+                                os.makedirs(
+                                    Path(
+                                        self.overrides_path
+                                        / loaded_pack
+                                        / "Data"
+                                        / "Levels"
+                                    )
+                                )
+                            shutil.move(
+                                Path(found_lvl_path),
+                                Path(
+                                    self.overrides_path
+                                    / loaded_pack
+                                    / "Data"
+                                    / "Levels"
+                                    / found_lvl
+                                ),
+                            )
 
     def tree_filesitemclick(self, _event):
-        if self.save_needed and self.last_selected_file is not None and self.tree_files.heading("#0")['text']!="Select Pack":
+        if (
+            self.save_needed
+            and self.last_selected_file is not None
+            and self.tree_files.heading("#0")["text"] != "Select Pack"
+        ):
             msg_box = tk.messagebox.askquestion(
                 "Continue?",
                 "You have unsaved changes to "
@@ -1166,28 +1266,43 @@ class LevelsTab(Tab):
         item_text = ""
         for item in self.tree_files.selection():
             item_text = self.tree_files.item(item, "text")
-        if item_text=="<<BACK":
-            if self.tree_files.heading("#0")['text'].endswith("Arena"):
-                self.tree_files.heading("#0", text=self.tree_files.heading("#0")['text'].split("/")[0])
-                self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
-                self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack / "Data" / "Levels"))
+        if item_text == "<<BACK":
+            if self.tree_files.heading("#0")["text"].endswith("Arena"):
+                self.tree_files.heading(
+                    "#0", text=self.tree_files.heading("#0")["text"].split("/")[0]
+                )
+                self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+                self.load_pack_lvls(
+                    Path(self.overrides_path / self.loaded_pack / "Data" / "Levels")
+                )
             else:
                 self.load_packs()
-        elif item_text=="ARENA" and self.tree_files.heading("#0")['text']!="Select Pack":
-            self.tree_files.heading("#0", text=self.tree_files.heading("#0")['text'] + "/Arena")
-            self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
-            self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack / "Data" / "Levels"/ "Arena"))
-        elif item_text=="[Create_New_Pack]":
+        elif (
+            item_text == "ARENA"
+            and self.tree_files.heading("#0")["text"] != "Select Pack"
+        ):
+            self.tree_files.heading(
+                "#0", text=self.tree_files.heading("#0")["text"] + "/Arena"
+            )
+            self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+            self.load_pack_lvls(
+                Path(
+                    self.overrides_path / self.loaded_pack / "Data" / "Levels" / "Arena"
+                )
+            )
+        elif item_text == "[Create_New_Pack]":
             print("Creating new pack")
             self.create_pack_dialog()
-            #self.tree_files.heading('#0', text='Select Pack', anchor='center')
-        elif self.tree_files.heading("#0")['text']=="Select Pack":
+            # self.tree_files.heading('#0', text='Select Pack', anchor='center')
+        elif self.tree_files.heading("#0")["text"] == "Select Pack":
             for item in self.tree_files.selection():
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
                 self.tree_files.heading("#0", text=item_text)
-                self.loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
-                self.load_pack_lvls(Path(self.overrides_path / self.loaded_pack) / "Data" / "Levels")
+                self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+                self.load_pack_lvls(
+                    Path(self.overrides_path / self.loaded_pack) / "Data" / "Levels"
+                )
         else:
             self.reset()
             for item in self.tree_files.selection():
@@ -1330,10 +1445,16 @@ class LevelsTab(Tab):
 
     def make_backup(self, file):
         print("Making backup..")
-        loaded_pack = self.tree_files.heading("#0")['text'].split("/")[0]
-        backup_dir = str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
+        loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+        backup_dir = (
+            str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
+        )
         if os.path.isfile(file):
-            lvl_name = os.path.basename(file) + "_" + ("{date:%Y-%m-%d_%H_%M_%S}").format(date=datetime.datetime.now())
+            lvl_name = (
+                os.path.basename(file)
+                + "_"
+                + ("{date:%Y-%m-%d_%H_%M_%S}").format(date=datetime.datetime.now())
+            )
             if not os.path.exists(Path(backup_dir)):
                 os.makedirs(Path(backup_dir))
             copyfile(file, backup_dir + "/" + lvl_name)
@@ -1493,7 +1614,10 @@ class LevelsTab(Tab):
                 save_path = None
                 if not os.path.exists(Path(self.lvls_path)):
                     os.makedirs(Path(self.lvls_path))
-                save_path = Path(self.lvls_path / str(self.tree_files.item(self.last_selected_file, option="text")))
+                save_path = Path(
+                    self.lvls_path
+                    / str(self.tree_files.item(self.last_selected_file, option="text"))
+                )
                 self.make_backup(save_path)
                 print("Saving to " + str(save_path))
 
@@ -1728,7 +1852,7 @@ class LevelsTab(Tab):
                         item + " extracts",
                         LevelFile.from_path(Path(self.extracts_path) / item),
                     ]
-                    )
+                )
 
         self.depend_order_label["text"] = ""
         if str(self.tree_files.item(self.last_selected_file, option="text")).startswith(
@@ -2995,8 +3119,10 @@ class LevelsTab(Tab):
             logger.debug("Found this lvl in pack; loading it instead")
             lvl_path = Path(self.lvls_path) / lvl
         else:
-            logger.debug("Did not find this lvl in pack; loading it from extracts instead")
-            if self.tree_files.heading("#0")['text'].endswith("Arena"):
+            logger.debug(
+                "Did not find this lvl in pack; loading it from extracts instead"
+            )
+            if self.tree_files.heading("#0")["text"].endswith("Arena"):
                 lvl_path = self.extracts_path / "Arena" / lvl
             else:
                 lvl_path = self.extracts_path / lvl
@@ -3007,42 +3133,76 @@ class LevelsTab(Tab):
             if Path(self.lvls_path / "generic.lvl").is_dir():
                 levels.append(LevelFile.from_path(Path(self.lvls_path / "generic.lvl")))
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "generic.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
+                )
         if lvl.startswith("base"):
             if Path(self.lvls_path / "basecamp.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "basecamp.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "basecamp.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
+                )
         elif lvl.startswith("cave"):
             if Path(self.lvls_path / "dwellingarea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "dwellingarea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "dwellingarea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl")
+                )
         elif (
             lvl.startswith("blackmark")
             or lvl.startswith("beehive")
             or lvl.startswith("challenge_moon")
         ):
             if Path(self.lvls_path / "junglearea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "junglearea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "junglearea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
+                )
         elif lvl.startswith("vlads"):
             if Path(self.lvls_path / "volcanoarea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "volcanoarea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "volcanoarea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "volcanoarea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "volcanoarea.lvl")
+                )
         elif lvl.startswith("lake") or lvl.startswith("challenge_star"):
             if Path(self.lvls_path / "tidepoolarea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "tidepoolarea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "tidepoolarea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl")
+                )
         elif (
             lvl.startswith("hallofush")
             or lvl.startswith("challenge_star")
@@ -3050,22 +3210,38 @@ class LevelsTab(Tab):
             or lvl.startswith("palace")
         ):
             if Path(self.lvls_path / "babylonarea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "babylonarea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "babylonarea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl")
+                )
         elif lvl.startswith("challenge_sun"):
             if Path(self.lvls_path / "sunkencityarea.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "sunkencityarea.lvl")))
+                levels.append(
+                    LevelFile.from_path(Path(self.lvls_path / "sunkencityarea.lvl"))
+                )
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl")
+                )
         elif lvl.startswith("end"):
             if Path(self.lvls_path / "ending.lvl").is_dir():
                 levels.append(LevelFile.from_path(Path(self.lvls_path / "ending.lvl")))
             else:
-                logger.debug("local dependency lvl not found, attempting load from extracts")
-                levels.append(LevelFile.from_path(Path(self.extracts_path) / "ending.lvl"))
+                logger.debug(
+                    "local dependency lvl not found, attempting load from extracts"
+                )
+                levels.append(
+                    LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
+                )
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
         level = None
