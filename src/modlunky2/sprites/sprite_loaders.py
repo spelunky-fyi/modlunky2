@@ -72,7 +72,7 @@ def get_all_sprite_loaders(
         Pets(entities_json, textures_json, base_path),
         MenuLeaderSheet(base_path),
         MenuBasicSheet(base_path),
-        PetHeadsSheet(BASE_DIR / 'static'),
+        PetHeadsSheet(BASE_DIR / "static"),
         Basic1(entities_json, textures_json, base_path),
         Basic2(entities_json, textures_json, base_path),
         Basic3(entities_json, textures_json, base_path),
