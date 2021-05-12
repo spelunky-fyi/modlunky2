@@ -53,7 +53,7 @@ class Patcher:
             self.exe_handle.seek(self.exe_handle.tell() - overlap)
 
     def is_checksum_patched(self) -> bool:
-        """ Returns true of the binary has already been patched."""
+        """Returns true of the binary has already been patched."""
         self.exe_handle.seek(0)
         return self.find(CHECKSUM_PATCH_START) == -1
 

@@ -42,7 +42,7 @@ logger = logging.getLogger("modlunky2")
 
 @dataclass
 class ExeAssetBlock:
-    """ Represent a block of information about an asset in the exe."""
+    """Represent a block of information about an asset in the exe."""
 
     # Position in the exe where asset is read from, or written to.
     offset: int
@@ -139,7 +139,7 @@ class ExeAsset:
         return hash_[:min_len] == self.asset_block.filepath_hash[:min_len]
 
     def load_data(self, handle):
-        """ Cache data on the asset. Must be called before extraction."""
+        """Cache data on the asset. Must be called before extraction."""
         handle.seek(self.asset_block.asset_offset)
         self.data = handle.read(self.asset_block.asset_len)
 
@@ -205,7 +205,7 @@ class ExeAsset:
 
 
 class AssetStore:
-    """ Represents a bundle of asset blocks read from, or to be packed into, an exe."""
+    """Represents a bundle of asset blocks read from, or to be packed into, an exe."""
 
     BUNDLE_OFFSET = 0x400
 
@@ -410,7 +410,7 @@ class AssetStore:
         self.exe_handle.write(pack("<II", 0, 0))
 
     def recalculate_key(self):
-        """ Recalculate the key from the current assets."""
+        """Recalculate the key from the current assets."""
         new_key = Key()
         for asset in self.assets:
             if asset.filepath is None:

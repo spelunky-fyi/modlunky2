@@ -71,7 +71,7 @@ TILENAMES = [
 
 
 class TilecodeExtras(BaseSpriteLoader):
-    """ Extra tiles used for the level editor. """
+    """Extra tiles used for the level editor."""
 
     _sprite_sheet_path = Path("static/images/tilecodeextras.png")
     _chunk_size = 50

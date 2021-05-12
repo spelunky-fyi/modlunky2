@@ -10,7 +10,7 @@ from .level_settings import LevelSettings, LevelSetting
 from .level_templates import LevelTemplates, LevelTemplate
 from .monster_chances import MonsterChances, MonsterChance
 from .tile_codes import TileCodes, TileCode
-from .utils import DirectivePrefixes, Peekable
+from .utils import DirectivePrefixes, Peekable, format_comment
 
 SECTION_COMMENT = "// ------------------------------"
 
@@ -118,7 +118,7 @@ class LevelFile:
             return cls.from_handle(level_fh)
 
     def write(self, handle: TextIO):
-        handle.write(f"{self.comment}\n")
+        handle.write(format_comment(self.comment))
         self.level_settings.write(handle)
         self.tile_codes.write(handle)
         self.level_chances.write(handle)

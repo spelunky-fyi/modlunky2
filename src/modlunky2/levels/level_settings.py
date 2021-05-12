@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from typing import ClassVar, Generic, Optional, TextIO, TypeVar
 
-from .utils import DirectivePrefixes, split_comment, to_line
+from .utils import DirectivePrefixes, split_comment, to_line, format_comment
 
 T = TypeVar("T")  # pylint: disable=invalid-name
 
@@ -51,8 +51,7 @@ class LevelSettings:
         self._inner[obj.name] = obj
 
     def write(self, handle: TextIO):
-        if self.comment:
-            handle.write(f"{self.comment}\n")
+        handle.write(format_comment(self.comment))
         for obj in self._inner.values():
             handle.write(obj.to_line())
         handle.write("\n")

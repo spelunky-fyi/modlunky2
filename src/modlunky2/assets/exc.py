@@ -1,13 +1,13 @@
 class Error(Exception):
-    """ Root Exception for modlunky2.assets package. """
+    """Root Exception for modlunky2.assets package."""
 
 
 class FileConflict(Error):
-    """ Raised when multiple assets of the same name are found across packs."""
+    """Raised when multiple assets of the same name are found across packs."""
 
 
 class MultipleMatchingAssets(Error):
-    """ Raised when multiple assets of the same name are found in a single pack."""
+    """Raised when multiple assets of the same name are found in a single pack."""
 
 
 class MissingAsset(Error):
