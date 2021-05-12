@@ -12,6 +12,7 @@ class MenuBasicSheet(BaseSpriteLoader):
         "basic_poochi": (18, 7, 19, 8),
     }
 
+
 class PetHeadsSheet(BaseSpriteLoader):
     _sprite_sheet_path = Path("images/pet_heads.png")
     _chunk_size = 128

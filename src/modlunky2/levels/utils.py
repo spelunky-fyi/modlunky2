@@ -15,10 +15,22 @@ def parse_chance_values(values: str) -> List[int]:
 def to_line(prefix, name, name_padding, value, value_padding, comment) -> str:
     line = f"{prefix}{name:<{name_padding}}"
     if comment:
-        line = f"{line} {value:<{value_padding}} // {comment}"
+        line = f"{line} {value:<{value_padding}} // {comment.lstrip('/ ')}"
     else:
         line = f"{line} {value}"
     return f"{line}\n"
+
+
+def format_comment(comment: str) -> str:
+    if not comment:
+        return ""
+
+    out = ""
+    for line in comment.splitlines():
+        line = line.lstrip("/ ")
+        out += f"// {line}\n"
+
+    return f"{out}\n"
 
 
 class Peekable:

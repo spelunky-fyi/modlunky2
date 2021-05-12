@@ -5,7 +5,7 @@ from collections import OrderedDict
 from itertools import zip_longest
 from typing import ClassVar, List, Optional, TextIO, Tuple
 
-from modlunky2.levels.utils import split_comment
+from modlunky2.levels.utils import split_comment, format_comment
 
 from .utils import DirectivePrefixes
 
@@ -165,8 +165,7 @@ class LevelTemplates:
         self._inner[obj.name] = obj
 
     def write(self, handle: TextIO):
-        if self.comment:
-            handle.write(f"{self.comment}\n")
+        handle.write(format_comment(self.comment))
         for idx, template in enumerate(self._inner.values()):
             template.write(handle)
             if idx < len(self._inner) - 1:
@@ -216,8 +215,7 @@ class Chunk:
         return chunk
 
     def write(self, handle: TextIO):
-        if self.comment:
-            handle.write(f"// {self.comment.rstrip()}\n")
+        handle.write(format_comment(self.comment))
 
         for setting in self.settings:
             handle.write(setting.to_line())
@@ -279,7 +277,7 @@ class LevelTemplate:
         handle.write(f"{TEMPLATE_COMMENT}\n")
         name_line = f"{self.prefix}{self.name}"
         if self.comment:
-            name_line += f"   // {self.comment}"
+            name_line += f"   {format_comment(self.comment).rstrip()}"
         handle.write(f"{name_line}\n")
         handle.write(f"{TEMPLATE_COMMENT}\n\n")
 
