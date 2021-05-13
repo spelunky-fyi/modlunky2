@@ -367,7 +367,6 @@ PNG_NAMES_TO_DDS_NAMES = {
 
 EXTRACTED_DIR = PurePosixPath("Extracted")
 PACKS_DIR = PurePosixPath("Packs")
-OVERRIDES_DIR = PurePosixPath("Overrides")
 
 FILEPATH_DIRS = [
     PurePosixPath(path).parent

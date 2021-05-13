@@ -71,7 +71,7 @@ class LevelsTab(Tab):
         self.lvl_editor_start_frame.rowconfigure(1, weight=1)
 
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
-        self.overrides_path = self.install_dir / "Mods" / "Packs"
+        self.packs_path = self.install_dir / "Mods" / "Packs"
 
         self.welcome_label_title = tk.Label(
             self.lvl_editor_start_frame,
@@ -182,7 +182,7 @@ class LevelsTab(Tab):
         self.vsb_tree_files.grid(row=0, column=0, sticky="nse")
 
         # Loads list of all the lvl files in the left farthest treeview
-        # paths = Path(self.overrides_path).glob('*/') #.glob('**/*.png')
+        # paths = Path(self.packs_path).glob('*/') #.glob('**/*.png')
         self.load_packs()
 
         # Seperates Level Rules and Level Editor into two tabs
@@ -1038,7 +1038,7 @@ class LevelsTab(Tab):
         self.tree_files.heading("#0", text="Select Pack")
         self.icons_packs = []
         i = 0
-        for filepath in glob.iglob(str(self.overrides_path) + "/*/"):
+        for filepath in glob.iglob(str(self.packs_path) + "/*/"):
             self.icons_packs.append(
                 ImageTk.PhotoImage(
                     Image.open(BASE_DIR / "static/images/folder.png").resize((25, 25))
@@ -1078,7 +1078,7 @@ class LevelsTab(Tab):
         # Load lvls frome extracts that selected pack doesn't have
 
         loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
-        root = Path(self.overrides_path / loaded_pack)
+        root = Path(self.packs_path / loaded_pack)
         pattern = "*.lvl"
 
         self.icons_lvls = []
@@ -1135,8 +1135,8 @@ class LevelsTab(Tab):
                     pack_name += "_"
             col1_ent.delete(0, "end")
             col1_ent.insert(0, pack_name)
-            if not os.path.isdir(self.overrides_path / str(col1_ent.get())):
-                os.mkdir(self.overrides_path / str(col1_ent.get()))
+            if not os.path.isdir(self.packs_path / str(col1_ent.get())):
+                os.mkdir(self.packs_path / str(col1_ent.get()))
                 self.load_packs()
                 win.destroy()
             else:
@@ -1160,7 +1160,7 @@ class LevelsTab(Tab):
 
     def organize_pack(self):
         loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
-        root = Path(self.overrides_path / loaded_pack)
+        root = Path(self.packs_path / loaded_pack)
         pattern = "*.lvl"
 
         # gets rid of copies of the file in the wrong place
@@ -1172,11 +1172,7 @@ class LevelsTab(Tab):
                     found_lvl = os.path.basename(found_lvl_path)
                     if found_lvl.startswith("dm"):
                         if Path(found_lvl_dir) != Path(
-                            self.overrides_path
-                            / loaded_pack
-                            / "Data"
-                            / "Levels"
-                            / "Arena"
+                            self.packs_path / loaded_pack / "Data" / "Levels" / "Arena"
                         ):
                             logger.debug(
                                 "%s found arena lvl in wrong location. Fixing that.",
@@ -1184,7 +1180,7 @@ class LevelsTab(Tab):
                             )
                             if not os.path.exists(
                                 Path(
-                                    self.overrides_path
+                                    self.packs_path
                                     / loaded_pack
                                     / "Data"
                                     / "Levels"
@@ -1193,7 +1189,7 @@ class LevelsTab(Tab):
                             ):
                                 os.makedirs(
                                     Path(
-                                        self.overrides_path
+                                        self.packs_path
                                         / loaded_pack
                                         / "Data"
                                         / "Levels"
@@ -1203,7 +1199,7 @@ class LevelsTab(Tab):
                             shutil.move(
                                 Path(found_lvl_path),
                                 Path(
-                                    self.overrides_path
+                                    self.packs_path
                                     / loaded_pack
                                     / "Data"
                                     / "Levels"
@@ -1213,23 +1209,18 @@ class LevelsTab(Tab):
                             )
                     else:
                         if Path(found_lvl_dir) != Path(
-                            self.overrides_path / loaded_pack / "Data" / "Levels"
+                            self.packs_path / loaded_pack / "Data" / "Levels"
                         ):
                             logger.debug(
                                 "%s found lvl in wrong location. Fixing that.",
                                 found_lvl,
                             )
                             if not os.path.exists(
-                                Path(
-                                    self.overrides_path
-                                    / loaded_pack
-                                    / "Data"
-                                    / "Levels"
-                                )
+                                Path(self.packs_path / loaded_pack / "Data" / "Levels")
                             ):
                                 os.makedirs(
                                     Path(
-                                        self.overrides_path
+                                        self.packs_path
                                         / loaded_pack
                                         / "Data"
                                         / "Levels"
@@ -1238,7 +1229,7 @@ class LevelsTab(Tab):
                             shutil.move(
                                 Path(found_lvl_path),
                                 Path(
-                                    self.overrides_path
+                                    self.packs_path
                                     / loaded_pack
                                     / "Data"
                                     / "Levels"
@@ -1277,7 +1268,7 @@ class LevelsTab(Tab):
                 )
                 self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
-                    Path(self.overrides_path / self.loaded_pack / "Data" / "Levels")
+                    Path(self.packs_path / self.loaded_pack / "Data" / "Levels")
                 )
             else:
                 self.load_packs()
@@ -1290,9 +1281,7 @@ class LevelsTab(Tab):
             )
             self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
             self.load_pack_lvls(
-                Path(
-                    self.overrides_path / self.loaded_pack / "Data" / "Levels" / "Arena"
-                )
+                Path(self.packs_path / self.loaded_pack / "Data" / "Levels" / "Arena")
             )
         elif item_text == "[Create_New_Pack]":
             logger.debug("Creating new pack")
@@ -1305,7 +1294,7 @@ class LevelsTab(Tab):
                 self.tree_files.heading("#0", text=item_text)
                 self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
-                    Path(self.overrides_path / self.loaded_pack) / "Data" / "Levels"
+                    Path(self.packs_path / self.loaded_pack) / "Data" / "Levels"
                 )
         else:
             self.reset()
@@ -1450,9 +1439,7 @@ class LevelsTab(Tab):
     def make_backup(self, file):
         logger.debug("Making backup..")
         loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
-        backup_dir = (
-            str(self.overrides_path).split("Pack")[0] + "Backups/" + loaded_pack
-        )
+        backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
         if os.path.isfile(file):
             lvl_name = (
                 os.path.basename(file)

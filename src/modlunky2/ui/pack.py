@@ -193,12 +193,6 @@ class PackTab(Tab):
 
     def get_packs(self):
         pack_dirs = []
-        overrides_dir = self.modlunky_config.install_dir / "Mods" / "Overrides"
-        if overrides_dir.exists():
-            pack_dirs.append(
-                overrides_dir.relative_to(self.modlunky_config.install_dir / "Mods")
-            )
-
         packs_dir = self.modlunky_config.install_dir / "Mods" / "Packs"
         if packs_dir.exists():
             for dir_ in packs_dir.iterdir():
@@ -207,7 +201,9 @@ class PackTab(Tab):
                 if dir_.name == ".db":
                     continue
                 pack_dirs.append(
-                    dir_.relative_to(self.modlunky_config.install_dir / "Mods")
+                    dir_.relative_to(
+                        self.modlunky_config.install_dir / "Mods" / "Packs"
+                    )
                 )
 
         return pack_dirs

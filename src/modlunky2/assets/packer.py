@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .assets import AssetStore
-from .constants import DEFAULT_COMPRESSION_LEVEL, EXTRACTED_DIR, OVERRIDES_DIR
+from .constants import DEFAULT_COMPRESSION_LEVEL, EXTRACTED_DIR
 from .exc import MissingAsset
 from .patcher import Patcher
 
@@ -67,7 +67,6 @@ def main():
     search_dirs = []
     for search_dir in args.pack_dir:
         search_dirs.append(search_dir)
-    search_dirs.append(OVERRIDES_DIR)
 
     with dest.open("rb+") as dest_file:
         asset_store = AssetStore.load_from_file(dest_file)

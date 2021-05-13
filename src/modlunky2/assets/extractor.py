@@ -7,13 +7,12 @@ from .constants import (
     DEFAULT_COMPRESSION_LEVEL,
     EXTRACTED_DIR,
     FILEPATH_DIRS,
-    OVERRIDES_DIR,
     PACKS_DIR,
 )
 
 DEFAULT_MODS_DIR = "Mods"
 
-TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
+TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR]
 
 
 def main():
@@ -73,7 +72,7 @@ def main():
     logging.basicConfig(format="%(levelname)s - %(message)s", level=logging.INFO)
 
     if args.mkdirs:
-        # Make all directories for extraction and overrides
+        # Make all directories for extraction
         for dir_ in TOP_LEVEL_DIRS:
             (mods_dir / dir_).mkdir(parents=True, exist_ok=True)
 

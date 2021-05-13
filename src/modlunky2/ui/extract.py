@@ -11,7 +11,6 @@ from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.constants import (
     EXTRACTED_DIR,
     FILEPATH_DIRS,
-    OVERRIDES_DIR,
     PACKS_DIR,
 )
 from modlunky2.utils import is_patched, open_directory
@@ -23,7 +22,7 @@ logger = logging.getLogger("modlunky2")
 
 MODS = Path("Mods")
 
-TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR, OVERRIDES_DIR]
+TOP_LEVEL_DIRS = [EXTRACTED_DIR, PACKS_DIR]
 
 LEGACY_ENTITIES = [
     "axolotl_full_grid.png",
