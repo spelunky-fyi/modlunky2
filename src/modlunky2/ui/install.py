@@ -3,12 +3,12 @@ import logging
 import re
 import shutil
 import tkinter as tk
-from typing import Optional
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from tkinter import ttk
 from os.path import commonprefix
+from tkinter import filedialog, ttk
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -58,7 +58,7 @@ class SourceChooser(ttk.Frame):
         if not initial_dir.exists():
             initial_dir = Path("/")
 
-        filename = tk.filedialog.askopenfilename(parent=self, initialdir=initial_dir)
+        filename = filedialog.askopenfilename(parent=self, initialdir=initial_dir)
         if not filename:
             self.file_chooser_var.set("")
             self.master.master.render()
@@ -111,7 +111,7 @@ class DestinationChooser(ttk.Frame):
             logger.critical("Expected Packs dir not found.")
             return
 
-        directory = tk.filedialog.askdirectory(parent=self, initialdir=initial_dir)
+        directory = filedialog.askdirectory(parent=self, initialdir=initial_dir)
         if not directory:
             self.file_chooser_var.set("")
             self.master.master.render()

@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from urllib.parse import urljoin
 
 from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, guess_install_dir
@@ -101,7 +101,7 @@ class InstallDir(ttk.LabelFrame):
 
     def browse_install_dir(self):
         install_dir = self.install_dir_var.get()
-        directory = tk.filedialog.askdirectory(initialdir=install_dir)
+        directory = filedialog.askdirectory(initialdir=install_dir)
         if directory:
             self.install_dir_var.set(directory)
             self.modlunky_config.config_file.install_dir = Path(directory)
