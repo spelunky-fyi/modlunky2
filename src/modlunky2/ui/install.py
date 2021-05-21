@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 import requests
 
 from modlunky2.ui.widgets import Entry, Tab
-from modlunky2.utils import tb_info
+from modlunky2.utils import tb_info, zipinfo_fixup_filename
 from modlunky2.api import SpelunkyFYIClient
 
 logger = logging.getLogger("modlunky2")
@@ -316,6 +316,7 @@ def get_zip_members(zip_file):
     prefix_len = len(prefix)
 
     for zipinfo in zip_file.infolist():
+        zipinfo_fixup_filename(zipinfo)
         filename: str = zipinfo.filename
         if len(filename) <= prefix_len:
             continue
