@@ -24,6 +24,7 @@ from .install import InstallTab
 from .logs import QueueHandler, register_queue_handler
 from .error import ErrorTab
 from .websocket import WebSocketThread
+from .s99 import S99Tab, s99_client_path
 
 logger = logging.getLogger("modlunky2")
 
@@ -185,6 +186,13 @@ class ModlunkyUI:
             modlunky_ui=self,
             modlunky_config=modlunky_config,
         )
+        if s99_client_path(modlunky_config.launcher_exe).exists():
+            self.register_tab(
+                "Spelunky 99",
+                S99Tab,
+                tab_control=self.tab_control,
+                modlunky_config=modlunky_config,
+            )
         self.register_tab(
             "Settings",
             SettingsTab,
