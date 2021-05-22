@@ -1,4 +1,6 @@
 import zipfile
+import struct
+import zlib
 from io import BytesIO
 
 from modlunky2.ui.install import get_zip_members
@@ -51,3 +53,28 @@ def test_unwrap_common_dir():
 def test_bat_frend_regression():
     in_files = ["main.lua", "mod_info.json", "custom_images/batty.png"]
     compare_zip(in_files, in_files)
+
+
+def test_unicode_filename():
+    in_files = [_.decode("cp437") for _ in [b"\xb0\xa1\xb3\xaa\xb4\xd9", b"main.lua"]]
+    expected = ["\uac00\ub098\ub2e4", "main.lua"]
+
+    # Write extra field: 0x7075 "Info-ZIP Unicode Path Extra Field"
+    zip_file = make_zip(in_files)
+    for idx, info in enumerate(zip_file.infolist()):
+        zip_info = zip_file.getinfo(in_files[idx])
+        encoded_name = expected[idx].encode("utf8")
+        zip_info.extra = (
+            struct.pack(
+                "<HHBL",
+                0x7075,
+                len(encoded_name) + 5,
+                1,
+                zlib.crc32(in_files[idx].encode("cp437")),
+            )
+            + encoded_name
+        )
+
+    # Check if the unicode filename is used instead
+    for idx, out_file in enumerate(get_zip_members(zip_file)):
+        assert out_file.filename == expected[idx]
