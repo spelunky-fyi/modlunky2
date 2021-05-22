@@ -1,6 +1,6 @@
 import logging
-import selectors
 import subprocess
+import time
 import threading
 import os
 import tkinter as tk
@@ -8,8 +8,14 @@ from tkinter import ttk
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import Tab
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
+
+
+def tail_file(file_handle, log_func):
+    for line in file_handle:
+        log_func(line.strip())
 
 
 def s99_client_path(launcher_exe):
@@ -37,12 +43,17 @@ class S99Client(threading.Thread):
         self.api_token = api_token
 
     def run(self):
+        try:
+            self._run()
+        except Exception:  # pylint: disable=broad-except
+            logger.critical("Failed in client thread: %s", tb_info())
+
+    def _run(self):
         if not self.api_token:
             logger.warning("No API Token...")
             return
 
         if not self.exe_path.exists():
-            print(self.exe_path)
             logger.warning("No exe found...")
             return
 
@@ -54,6 +65,7 @@ class S99Client(threading.Thread):
 
         client_proc = subprocess.Popen(
             cmd,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -61,31 +73,24 @@ class S99Client(threading.Thread):
         )
 
         shutting_down = False
-        watching = {client_proc.stdout, client_proc.stderr}
+        stdout_logger = threading.Thread(
+            target=tail_file, args=(client_proc.stdout, logger.info)
+        )
+        stdout_logger.start()
+        stderr_logger = threading.Thread(
+            target=tail_file, args=(client_proc.stderr, logger.warning)
+        )
+        stderr_logger.start()
 
-        sel = selectors.DefaultSelector()
-        for to_watch in watching:
-            sel.register(to_watch, selectors.EVENT_READ)
-
-        while watching:
+        while True:
             if not shutting_down and self.shut_down:
                 shutting_down = True
                 client_proc.kill()
+                break
+            time.sleep(0.1)
 
-            events = sel.select(timeout=self.select_timeout)
-            for (key, _) in events:
-                line = key.fileobj.readline().strip()
-
-                if not line:
-                    watching.remove(key.fileobj)
-                    sel.unregister(key.fileobj)
-                    break
-
-                if key.fileobj is client_proc.stdout:
-                    logger.info(line)
-                else:
-                    logger.warning(line)
-
+        stdout_logger.join()
+        stderr_logger.join()
         logger.info("Client closed.")
 
 
@@ -191,7 +196,6 @@ class S99Tab(Tab):
         self.enable_disconnect_button()
 
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
-        print()
         self.client_thread = S99Client(self.client_path, api_token)
         self.client_thread.start()
 
