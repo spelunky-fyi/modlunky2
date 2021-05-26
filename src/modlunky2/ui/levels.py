@@ -1041,7 +1041,7 @@ class LevelsTab(Tab):
         for filepath in glob.iglob(str(self.packs_path) + "/*/"):
             self.icons_packs.append(
                 ImageTk.PhotoImage(
-                    Image.open(BASE_DIR / "static/images/folder.png").resize((25, 25))
+                    Image.open(BASE_DIR / "static/images/folder.png").resize((20, 20))
                 )
             )
             # because path is object not string
@@ -1053,7 +1053,7 @@ class LevelsTab(Tab):
             )
             i = i + 1
         self.icon_add = ImageTk.PhotoImage(
-            Image.open(BASE_DIR / "static/images/add.png").resize((25, 25))
+            Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
         )
         self.tree_files.insert(
             "", "end", text=str("[Create_New_Pack]"), image=self.icon_add
@@ -1078,6 +1078,7 @@ class LevelsTab(Tab):
         # Load lvls frome extracts that selected pack doesn't have
 
         loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+        # self.textures_dir = self.packs_path / loaded_pack / "Data/Textures"
         root = Path(self.packs_path / loaded_pack)
         pattern = "*.lvl"
 
@@ -1099,7 +1100,7 @@ class LevelsTab(Tab):
                                 ImageTk.PhotoImage(
                                     Image.open(
                                         BASE_DIR / "static/images/lvl_modded.png"
-                                    ).resize((25, 25))
+                                    ).resize((20, 20))
                                 )
                             )
                             self.tree_files.insert(
@@ -1109,7 +1110,7 @@ class LevelsTab(Tab):
             if not lvl_in_use:
                 self.icons_lvls.append(
                     ImageTk.PhotoImage(
-                        Image.open(BASE_DIR / "static/images/lvl.png").resize((25, 25))
+                        Image.open(BASE_DIR / "static/images/lvl.png").resize((20, 20))
                     )
                 )
                 self.tree_files.insert(
@@ -1268,7 +1269,7 @@ class LevelsTab(Tab):
                 )
                 self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
-                    Path(self.packs_path / self.loaded_pack / "Data" / "Levels")
+                    Path(self.packs_path / self.loaded_pack / "Data" / "Levels"),
                 )
             else:
                 self.load_packs()
@@ -2434,6 +2435,8 @@ class LevelsTab(Tab):
 
     def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
+        tile_lua = False
+        alt_tile_lua = False
 
         invalid_tilecodes = []
         if tile not in VALID_TILE_CODES:
@@ -2442,12 +2445,20 @@ class LevelsTab(Tab):
         if alt_tile not in VALID_TILE_CODES:
             invalid_tilecodes.append(alt_tile)
 
-        if invalid_tilecodes:
-            tkMessageBox.showinfo(
+        i = 0
+        for invalid_tile in invalid_tilecodes:
+            lua_tile = tkMessageBox.askquestion(
                 "Uh Oh!",
-                f"You've entered invalid tilecodes: {', '.join(invalid_tilecodes)}",
+                str(invalid_tile) + " isn't a valid tile id. Add as a custom lua tile?",
             )
-            return
+            if lua_tile == "yes":
+                if i == 0:
+                    tile_lua = True
+                else:
+                    alt_tile_lua = True
+            else:
+                return
+            i = i + 1
 
         new_tile_code = tile
         if int(percent) < 100:
@@ -3533,7 +3544,7 @@ class LevelsTab(Tab):
             )
 
         if img is None:
-            img = self._sprite_fetcher.get("unknown")
+            img = self._sprite_fetcher.get("lua_tile")
         width, height = img.size
         resize = True
 
