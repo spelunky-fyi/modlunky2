@@ -67,6 +67,17 @@ TILENAMES = [
     "tiamat",
     "sunken_floor_hard",
     "eggplant_child",
+    "dustwall",
+    "red_skeleton",
+    "hundun",
+    "leaf",
+    "rope",
+    "udjat_target",
+    "forcefield_horizontal_top",
+    "forcefield_horizontal",
+    "lua_tile",
+    "playerbag",
+    "rope_unrolled",
 ]
 
 

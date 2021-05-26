@@ -81,6 +81,9 @@ class SurfaceDecoSheet(AbstractDecoSheet):
     _chunk_size = 128
     _chunk_map = {
         "construction_sign": (5, 12, 6, 13),
+        "boombox": (5, 14, 6, 15),
+        "tutorial_speedrun_sign": (7, 14, 8, 15),
+        "tutorial_menu_sign": (7, 14, 8, 15),
         "singlebed": (0, 15, 1, 16),
         "dresser": (2, 14, 3, 15),
         "bunkbed": (0, 13, 2, 15),

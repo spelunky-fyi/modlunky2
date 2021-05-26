@@ -21,6 +21,7 @@ class JournalBigMonsterSheet(BaseSpriteLoader):
         "journal_lavamander": (2, 2, 3, 3),
         "journal_panxie": (3, 2, 4, 3),
         "journal_celestial_jellyfish": (4, 2, 5, 3),
+        "cosmic_jelly": (4, 2, 5, 3),
         "journal_eggplant_minister": (0, 3, 1, 4),
         "journal_mech_rider": (1, 3, 2, 4),
         "journal_great_humphead": (2, 3, 3, 4),

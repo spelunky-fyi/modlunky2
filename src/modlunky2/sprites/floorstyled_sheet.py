@@ -29,6 +29,7 @@ class DuatStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "duat"
     _additional_chunks = {
         "duat_floor": (7, 2, 8, 3),
+        "altar_duat": (8, 1, 10, 2),
         "push_block": (7, 2, 8, 3),
     }
 
