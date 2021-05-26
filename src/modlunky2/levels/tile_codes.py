@@ -362,11 +362,11 @@ class TileCodes:
         return list(self._inner.values())
 
     def get(self, name):
-        TileCode.validate_name(name)
+        # TileCode.validate_name(name)
         return self._inner.get(name)
 
     def set_obj(self, obj: "TileCode"):
-        # obj.validate()
+        obj.validate()
         self._inner[obj.name] = obj
 
     def write(self, handle: TextIO):
@@ -393,7 +393,7 @@ class TileCode:
             raise ValueError("Directive missing name.")
 
         obj = cls(name, value, comment)
-        # obj.validate()
+        obj.validate()
 
         return obj
 
@@ -414,7 +414,7 @@ class TileCode:
             )
 
     def validate(self):
-        self.validate_name(self.name)
+        # self.validate_name(self.name)
         self.validate_value()
 
     def to_line(self) -> str:
