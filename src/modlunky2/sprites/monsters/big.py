@@ -12,6 +12,7 @@ class Big1(BaseJsonSpriteLoader):
         "giantspider": (0, 10, 2, 12),
         "giant_spider": (0, 10, 2, 12),
         "queenbee": (0, 14, 2, 16),
+        "queen_bee": (0, 14, 2, 16),
         "giant_spider_additional": (14, 10, 16, 12),
     }
     _entity_names = [

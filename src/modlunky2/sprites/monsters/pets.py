@@ -10,6 +10,9 @@ class Pets(BaseJsonSpriteLoader):
         "monty": (0, 0, 1, 1),
         "percy": (0, 4, 1, 5),
         "poochi": (0, 8, 1, 9),
+        "pet_monty": (0, 0, 1, 1),
+        "pet_percy": (0, 4, 1, 5),
+        "pet_poochi": (0, 8, 1, 9),
     }
     _entity_names = [
         "ENT_TYPE_MONS_PET_DOG",
