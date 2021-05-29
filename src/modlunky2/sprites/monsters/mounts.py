@@ -9,10 +9,14 @@ class Mounts(BaseJsonSpriteLoader):
     _chunk_size = 128
     _chunk_map = {
         "turkey": (0, 0, 1, 1),
+        "mount_turkey": (0, 0, 1, 1),
         **chunks_from_animation("turkey_neck", (12, 1, 13, 2), 4),
         "rockdog": (0, 4, 1, 5),
         "axolotl": (0, 8, 1, 9),
         "qilin": (0, 12, 1, 13),
+        "mount_rockdog": (0, 4, 1, 5),
+        "mount_axolotl": (0, 8, 1, 9),
+        "mount_qilin": (0, 12, 1, 13),
     }
     _entity_names = [
         "ENT_TYPE_MOUNT_TURKEY",

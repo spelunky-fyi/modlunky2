@@ -10,6 +10,12 @@ class Ghost(BaseJsonSpriteLoader):
     _chunk_map = {
         "ghist_shopkeeper": (7, 10, 8, 11),
         "ghost": (0, 0, 2, 2),
+        "ghost_med_sad": (0, 4, 2, 6),
+        "ghost_med_happy": (0, 6, 2, 8),
+        "ghost_small_sad": (0, 10, 1, 11),
+        "ghost_small_angry": (0, 11, 1, 12),
+        "ghost_small_happy": (0, 12, 1, 13),
+        "ghost_small_surprised": (0, 13, 1, 14),
         **chunks_from_animation("ghist_angry_0", (7, 11, 8, 12), 3),
         **chunks_from_animation("ghist_angry_1", (10, 11, 11, 12), 3),
         **chunks_from_animation("ghist_angry_2", (13, 11, 14, 12), 1),

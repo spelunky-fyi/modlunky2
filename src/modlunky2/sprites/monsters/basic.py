@@ -21,6 +21,7 @@ class Basic1(BaseJsonSpriteLoader):
         "cobra": (0, 10, 1, 11),
         "scorpion": (0, 12, 1, 13),
         "golden_monkey": (14, 9, 15, 10),
+        "monkey_gold": (14, 9, 15, 10),
         "bee": (9, 12, 10, 13),
         "magmar": (4, 14, 5, 15),
         "additional_golden_monkey_0": (11, 10, 12, 11),
@@ -105,6 +106,10 @@ class Monsters1(BaseJsonSpriteLoader):
         "mosquito": (0, 14, 1, 15),
         "witchdoctor_additional_0": (12, 10, 13, 11),
         "witchdoctor_additional_1": (13, 10, 14, 11),
+        "lizard": (9, 6, 10, 7),
+        "mole": (0, 4, 1, 5),
+        "monkey": (0, 13, 1, 14),
+        "firebug": (0, 3, 1, 4),
     }
     _entity_names = [
         "ENT_TYPE_MONS_ROBOT",
@@ -131,6 +136,7 @@ class Monsters2(BaseJsonSpriteLoader):
     _chunk_size = 128
     _chunk_map = {
         "jiangshi": (0, 0, 1, 1),
+        "assassin": (0, 6, 1, 7),
         "octopus": (0, 2, 1, 3),
         "hermitcrab": (11, 5, 12, 6),
         "crocman": (0, 8, 1, 9),
@@ -169,6 +175,8 @@ class Monsters3(BaseJsonSpriteLoader):
         "yeti": (0, 0, 1, 1),
         "jumpdog": (0, 6, 1, 7),
         "olmite": (0, 7, 1, 8),
+        "frog": (0, 11, 1, 12),
+        "frog_orange": (0, 12, 1, 13),
         "firefrog_dead_0": (5, 12, 6, 13),
         "firefrog_dead_1": (6, 12, 7, 13),
         **chunks_from_animation("olmite_body_armored_1", (0, 8, 1, 9), 4),

@@ -241,6 +241,111 @@ VALID_TILE_CODES = set(
         "yang",
         "yeti",
         "zoo_exhibit",
+        "cog_door",  # Community tile codes -------------------------------------------------
+        "totem_trap",  # -------#
+        "dustwall",  # ---------#
+        "bat",  # --------------#
+        "skeleton",  # ---------#
+        "red_skeleton",  # -----#
+        "lizard",  # -----------#
+        "mole",  # -------------#
+        "monkey",  # -----------#
+        "firebug",  # ----------#
+        "vampire",  # ----------#
+        "osiris",  # -----------#
+        "anubis2",  # ----------#
+        "assassin",  # ---------#
+        "yeti_king",  # --------#
+        "yeti_queen",  # -------#
+        "bee",  # --------------#
+        "bee_queen",  # --------#
+        "frog",  # -------------#
+        "frog_orange",  # ------#
+        "hundun",  # -----------#
+        "scarab",  # -----------#
+        "cosmic_jelly",  # -----#
+        "ghost",  # ------------#
+        "ghost_med_sad",  # ----#
+        "ghost_med_happy",  # --#
+        "ghost_small_angry",  # #
+        "ghost_small_sad",  # --#
+        "ghost_small_surprised",  #
+        "ghost_small_happy",  # #
+        "leaf",  # -------------#
+        "udjat_key",  # --------#
+        "tutorial_speedrun_sign",  #
+        "tutorial_menu_sign",  #
+        "boombox",  # ----------#
+        "eggplant",  # ---------#
+        "gold_bar",  # ---------#
+        "diamond",  # ----------#
+        "emerald",  # ----------#
+        "sapphire",  # ---------#
+        "ruby",  # -------------#
+        "rope_pile",  # --------#
+        "rope",  # -------------#
+        "bomb_bag",  # ---------#
+        "bomb_box",  # ---------#
+        "giantfood",  # --------#
+        "elixir",  # -----------#
+        "seeded_run_unlocker",  #
+        "specs",  # ------------#
+        "climbing_gloves",  # --#
+        "pitchers_mitt",  # ----#
+        "shoes_spring",  # -----#
+        "shoes_spike",  # ------#
+        "paste",  # ------------#
+        "compass",  # ----------#
+        "compass_alien",  # ----#
+        "parachute",  # --------#
+        "udjat_eye",  # --------#
+        "kapala",  # -----------#
+        "hedjet",  # -----------#
+        "crown",  # ------------#
+        "eggplant_crown",  # ---#
+        "true_crown",  # -------#
+        "tablet",  # -----------#
+        "bone_key",  # ---------#
+        "playerbag",  # --------#
+        "cape",  # -------------#
+        "vlads_cape",  # -------#
+        "back_jetpack",  # -----#
+        "back_telepack",  # ----#
+        "back_hoverpack",  # ---#
+        "back_powerpack",  # ---#
+        "gun_webgun",  # -------#
+        "gun_shotgun",  # ------#
+        "gun_freezeray",  # ----#
+        "camera",  # -----------#
+        "teleporter",  # -------#
+        "boomerang",  # --------#
+        "machete",  # ----------#
+        "excalibur",  # --------#
+        "excalibur_broken",  # -#
+        "scepter",  # ----------#
+        "clonegun",  # ---------#
+        "shield_wooden",  # ----#
+        "shield_metal",  # -----#
+        "udjat_target",  # -----#
+        "mount_rockdog",  # ----#
+        "mount_axolotl",  # ----#
+        "mount_qilin",  # ------#
+        "humphead",  # ---------#
+        "present",  # ----------#
+        "forcefield_horizontal",  #
+        "forcefield_horizontal_top",  #
+        "pet_monty",  # --------#
+        "pet_percy",  # --------#
+        "pet_poochi",  # -------#
+        "lion_trap",  # --------#
+        "bomb",  # -------------#
+        "rope_unrolled",  # ----#
+        "cosmic_orb",  # -------#
+        "monkey_gold",  # ------#
+        "altar_duat",  # -------#
+        "spikeball",  # --------#
+        "excalibur_stone_empty",  #
+        "cobweb",  # -----------#
     ]
 )
 
@@ -257,7 +362,7 @@ class TileCodes:
         return list(self._inner.values())
 
     def get(self, name):
-        TileCode.validate_name(name)
+        # TileCode.validate_name(name)
         return self._inner.get(name)
 
     def set_obj(self, obj: "TileCode"):
@@ -309,7 +414,7 @@ class TileCode:
             )
 
     def validate(self):
-        self.validate_name(self.name)
+        # self.validate_name(self.name)
         self.validate_value()
 
     def to_line(self) -> str:
