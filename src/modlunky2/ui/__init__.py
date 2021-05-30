@@ -10,7 +10,7 @@ from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
 from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
-from modlunky2.utils import tb_info, temp_chdir
+from modlunky2.utils import is_windows, tb_info, temp_chdir
 
 from .tasks import TaskManager, PING_INTERVAL
 from .settings import SettingsTab
@@ -25,6 +25,10 @@ from .logs import QueueHandler, register_queue_handler
 from .error import ErrorTab
 from .websocket import WebSocketThread
 from .s99 import S99Tab, s99_client_path
+
+if is_windows():
+    from .trackers import TrackersTab
+
 
 logger = logging.getLogger("modlunky2")
 
@@ -186,6 +190,13 @@ class ModlunkyUI:
             modlunky_ui=self,
             modlunky_config=modlunky_config,
         )
+        if is_windows():
+            self.register_tab(
+                "Trackers",
+                TrackersTab,
+                tab_control=self.tab_control,
+                modlunky_config=modlunky_config,
+            )
         if s99_client_path(modlunky_config.launcher_exe).exists():
             self.register_tab(
                 "Spelunky 99",

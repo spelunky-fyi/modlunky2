@@ -33,7 +33,7 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.sprites.tilecode_extras import TILENAMES
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
-from modlunky2.utils import tb_info
+from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -1334,14 +1334,14 @@ class LevelsTab(Tab):
         self.canvas_grids.xview_scroll(scroll_dir, "units")
 
     def _bind_to_mousewheel(self, _event):
-        if "nt" in os.name:
+        if is_windows():
             self.canvas_grids.bind_all("<MouseWheel>", self._on_mousewheel)
         else:
             self.canvas_grids.bind_all("<Button-4>", self._on_mousewheel)
             self.canvas_grids.bind_all("<Button-5>", self._on_mousewheel)
 
     def _unbind_from_mousewheel(self, _event):
-        if "nt" in os.name:
+        if is_windows():
             self.canvas_grids.unbind_all("<MouseWheel>")
         else:
             self.canvas_grids.unbind_all("<Button-4>")

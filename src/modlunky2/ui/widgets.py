@@ -1,4 +1,3 @@
-import os
 import re
 from queue import Empty
 
@@ -7,6 +6,7 @@ from tkinter import PhotoImage, ttk
 import webbrowser
 
 from modlunky2.constants import BASE_DIR
+from modlunky2.utils import is_windows
 
 
 class ScrolledText(ttk.Frame):
@@ -180,14 +180,14 @@ class ScrollableMixin:
         self.canvas.yview_scroll(scroll_dir, "units")
 
     def _bind_to_mousewheel(self, _event):
-        if "nt" in os.name:
+        if is_windows():
             self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         else:
             self.canvas.bind_all("<Button-4>", self._on_mousewheel)
             self.canvas.bind_all("<Button-5>", self._on_mousewheel)
 
     def _unbind_from_mousewheel(self, _event):
-        if "nt" in os.name:
+        if is_windows():
             self.canvas.unbind_all("<MouseWheel>")
         else:
             self.canvas.unbind_all("<Button-4>")

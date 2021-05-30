@@ -1,17 +1,17 @@
 import logging
-import os
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
 from modlunky2.ui.play.config import SECTIONS
+from modlunky2.utils import is_windows
 
 from .constants import (
     PLAYLUNKY_DATA_DIR,
     PLAYLUNKY_EXE,
 )
 
-if "nt" in os.name:
+if is_windows():
     import winshell  # type: ignore
 
 logger = logging.getLogger("modlunky2")
@@ -105,7 +105,7 @@ class OptionsFrame(ttk.Frame):
 
         exe_path = PLAYLUNKY_DATA_DIR / version / PLAYLUNKY_EXE
 
-        if "nt" not in os.name:
+        if not is_windows():
             logger.debug("Making shortcut to %s", exe_path)
             return
 
@@ -119,7 +119,7 @@ class OptionsFrame(ttk.Frame):
             link.description = "Shortcut to playlunky"
 
     def remove_shortcut(self):
-        if "nt" not in os.name:
+        if not is_windows():
             logger.debug("Removing shortcut")
             return
 

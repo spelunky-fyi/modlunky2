@@ -34,11 +34,15 @@ def tb_info():
     return "".join(traceback.format_exception(*sys.exc_info())).strip()
 
 
+def is_windows():
+    return "nt" in os.name
+
+
 def open_directory(directory):
     if not directory.exists():
         return
 
-    if "nt" not in os.name:
+    if not is_windows():
         subprocess.run(["xdg-open", f"{directory}"], check=False)
         return
 

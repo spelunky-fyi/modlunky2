@@ -8,7 +8,7 @@ from tkinter import ttk
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import Tab
-from modlunky2.utils import tb_info
+from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
 
@@ -24,7 +24,7 @@ def s99_client_path(launcher_exe):
     else:
         client_dir = BASE_DIR / "../../dist"
 
-    if "nt" in os.name:
+    if is_windows():
         return client_dir / "s99-client.exe"
 
     return client_dir / "s99-client"
