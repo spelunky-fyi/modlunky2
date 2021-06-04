@@ -6,7 +6,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
-from modlunky2.constants import BASE_DIR
+from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.ui.widgets import Tab
 from modlunky2.utils import is_windows, tb_info
 
@@ -18,9 +18,9 @@ def tail_file(file_handle, log_func):
         log_func(line.strip())
 
 
-def s99_client_path(launcher_exe):
-    if launcher_exe:
-        client_dir = launcher_exe.resolve().parent
+def s99_client_path():
+    if IS_EXE:
+        client_dir = BASE_DIR
     else:
         client_dir = BASE_DIR / "../../dist"
 
@@ -105,21 +105,35 @@ class S99Tab(Tab):
         self.s99_frame = ttk.LabelFrame(self, text="Spelunky 99")
         self.s99_frame.grid(sticky="nsew")
 
-        self.s99_frame.rowconfigure(0, weight=1)
-        self.s99_frame.rowconfigure(1, minsize=60)
-        self.s99_frame.rowconfigure(2, minsize=60)
+        self.s99_frame.rowconfigure(0, weight=0)
+        self.s99_frame.rowconfigure(1, weight=0)
+        self.s99_frame.rowconfigure(2, weight=1)
+        self.s99_frame.rowconfigure(3, minsize=60)
+        self.s99_frame.rowconfigure(4, minsize=60)
         self.s99_frame.columnconfigure(0, weight=1)
 
-        self.welcome_label = ttk.Label(
+        ttk.Label(
             self.s99_frame,
             text=(
-                "Welcome to the Spelunky 99 Client.\n"
-                "Click Connect and then launch the game with Playlunky.\n\n"
+                "Spelunky 99!\n\n"
+                "Spelunky 99 is currently in closed beta but will be available soon.\n\n"
+            ),
+            anchor="center",
+            justify="center",
+            font=("Arial", 12, "bold"),
+        ).grid(row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10))
+        ttk.Separator(self.s99_frame).grid(row=1, column=0, sticky="ew")
+        ttk.Label(
+            self.s99_frame,
+            text=(
+                "Beta User Instructions:\n\n"
+                "* Click Connect and verify that the log shows you're receiving messages.\n"
+                "* Download the mod pack per provided instructions.\n"
+                "* Select the Spelunky 99 Mod on the Playlunky tab and hit Play!\n\n\n"
                 "Note: Make sure you have an API token configured in the Settings tab."
             ),
             anchor="center",
-        )
-        self.welcome_label.grid(row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10))
+        ).grid(row=2, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
         self.button_connect = ttk.Button(
             self.s99_frame,
@@ -127,7 +141,7 @@ class S99Tab(Tab):
             command=self.connect,
             state=tk.DISABLED,
         )
-        self.button_connect.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_connect.grid(row=3, column=0, pady=5, padx=5, sticky="nswe")
 
         self.button_disconnect = ttk.Button(
             self.s99_frame,
@@ -135,7 +149,7 @@ class S99Tab(Tab):
             command=self.disconnect,
             state=tk.DISABLED,
         )
-        self.button_disconnect.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_disconnect.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
 
         self.client_thread = None
         self.after(1000, self.after_client_thread)
@@ -143,7 +157,7 @@ class S99Tab(Tab):
 
     @property
     def client_path(self):
-        return s99_client_path(self.modlunky_config.launcher_exe)
+        return s99_client_path()
 
     def render_buttons(self):
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token

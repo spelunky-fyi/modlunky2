@@ -1,9 +1,27 @@
+import json
+from enum import Enum
 from typing import TYPE_CHECKING
+
+from modlunky2.constants import BASE_DIR
 
 from .unordered_map import UnorderedMap
 
 if TYPE_CHECKING:
     from . import Spel2Process
+
+
+def _make_entity_type_enum():
+    with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+        entities_json = json.load(entities_file)
+
+        enum_values = {
+            name[len("ENT_TYPE_") :]: obj["id"] for name, obj in entities_json.items()
+        }
+
+    return Enum("EntityType", enum_values)
+
+
+EntityType = _make_entity_type_enum()
 
 
 class EntityMap(UnorderedMap):
@@ -25,6 +43,9 @@ class EntityDBEntry:
 
     def id(self):  # pylint: disable=invalid-name
         return self._proc.read_u32(self._offset + 0x14)
+
+    def name(self):
+        return EntityType(self.id()).name
 
 
 class EntityDB:

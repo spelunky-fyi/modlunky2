@@ -9,7 +9,7 @@ from tkinter import PhotoImage, ttk
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import Tab
 from modlunky2.utils import tb_info
-from modlunky2.winmem import find_spelunky2_pid, Spel2Process
+from modlunky2.mem import find_spelunky2_pid, Spel2Process
 
 logger = logging.getLogger("modlunky2")
 
