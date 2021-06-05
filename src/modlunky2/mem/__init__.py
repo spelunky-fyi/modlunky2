@@ -1,11 +1,10 @@
 import ctypes
-from ctypes.wintypes import DWORD, HANDLE
+from ctypes.wintypes import DWORD, HANDLE, LONG, MAX_PATH, WPARAM
 from typing import Optional
 from pathlib import Path
 from struct import unpack, calcsize
 
 import pywintypes
-import psutil
 import win32api
 import win32con
 import win32process
@@ -14,15 +13,55 @@ from .entities import EntityDB
 from .state import State
 
 VirtualQueryEx = ctypes.windll.kernel32.VirtualQueryEx
+CreateToolhelp32Snapshot = ctypes.windll.kernel32.CreateToolhelp32Snapshot
+Process32First = ctypes.windll.kernel32.Process32First
+Process32Next = ctypes.windll.kernel32.Process32Next
+CloseHandle = ctypes.windll.kernel32.CloseHandle
 
 
-def find_spelunky2_pid() -> Optional[psutil.Process]:
-    for proc in psutil.process_iter():
-        try:
-            if proc.name() == "Spel2.exe":
-                return proc.pid
-        except psutil.NoSuchProcess:
-            continue
+TH32CS_SNAPPROCESS = 0x00000002
+INVALID_HANDLE_VALUE = -1
+
+
+class PROCESSENTRY32(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", DWORD),
+        ("cntUsage", DWORD),
+        ("th32ProcessID", DWORD),
+        ("th32DefaultHeapID", WPARAM),
+        ("th32ModuleID", DWORD),
+        ("cntThreads", DWORD),
+        ("th32ParentProcessID", DWORD),
+        ("pcPriClassBase", LONG),
+        ("dwFlags", DWORD),
+        ("szExeFile", ctypes.c_char * MAX_PATH),
+    ]
+
+
+def process_list():
+    processes = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if processes == INVALID_HANDLE_VALUE:
+        return
+
+    pe32 = PROCESSENTRY32()
+    pe32.dwSize = (  # pylint: disable=attribute-defined-outside-init, invalid-name
+        ctypes.sizeof(PROCESSENTRY32)
+    )
+    if Process32First(processes, ctypes.byref(pe32)) == win32con.FALSE:
+        return None
+
+    while True:
+        yield pe32
+        if Process32Next(processes, ctypes.byref(pe32)) == win32con.FALSE:
+            break
+
+    CloseHandle(processes)
+
+
+def find_spelunky2_pid() -> Optional[DWORD]:
+    for proc in process_list():
+        if proc.szExeFile == b"Spel2.exe":
+            return proc.th32ProcessID
 
 
 class _MEMORY_BASIC_INFORMATION64(ctypes.Structure):  # pylint: disable=invalid-name
@@ -66,6 +105,16 @@ class MemoryBasicInformation:
 
         return cls(mbi)
 
+    def pprint(self):
+        print("MemoryBasicInformation:")
+        print(f"    Base Address: {hex(self.base_address)}")
+        print(f"    Allocation Base: {hex(self.allocation_base)}")
+        print(f"    Allocation Protect: {self.allocation_protect}")
+        print(f"    Region Size: {self.region_size}")
+        print(f"    State: {self.state}")
+        print(f"    Protect: {self.protect}")
+        print(f"    Type: {self.type}")
+
 
 class Spel2Process:
     def __init__(self, proc_handle):
@@ -86,6 +135,20 @@ class Spel2Process:
             return win32process.ReadProcessMemory(self.proc_handle, offset, size)
         except pywintypes.error:
             return None
+
+    def read_bool(self, offset):
+        result = self.read_memory(offset, 1)
+        if result is None:
+            return None
+
+        return unpack(b"<?", result)[0]
+
+    def read_u8(self, offset):
+        result = self.read_memory(offset, 1)
+        if result is None:
+            return None
+
+        return unpack(b"<B", result)[0]
 
     def read_u16(self, offset):
         result = self.read_memory(offset, 2)
@@ -187,12 +250,8 @@ class Spel2Process:
     def find_in_page(self, mbi: MemoryBasicInformation, needle):
         return self.find(mbi.base_address, needle, mbi.region_size)
 
-    def memory_pages(self):
-        min_addr = 0x10000
-        max_addr = 0x00007FFFFFFEFFFF
-
+    def memory_pages(self, min_addr=0x10000, max_addr=0x00007FFFFFFEFFFF):
         addr = min_addr
-
         while True:
             mbi = MemoryBasicInformation.from_virtual_query(self.proc_handle, addr)
             if not mbi:
@@ -239,13 +298,13 @@ class Spel2Process:
         return exe + offset
 
     def get_feedcode(self):
-        for page in self.memory_pages():
+        for page in self.memory_pages(min_addr=0x40000000000):
             result = self.find_in_page(page, b"\x00\xde\xc0\xed\xfe")
             if result:
                 return result
         return None
 
-    def get_state(self):
+    def get_state(self) -> State:
         return State(self)
 
     def get_entity_db(self):

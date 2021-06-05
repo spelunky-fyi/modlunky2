@@ -7,6 +7,7 @@ from tkinter import PhotoImage, ttk
 
 
 from modlunky2.constants import BASE_DIR
+from modlunky2.mem.state import RunRecapFlags
 from modlunky2.ui.widgets import Tab
 from modlunky2.utils import tb_info
 from modlunky2.mem import find_spelunky2_pid, Spel2Process
@@ -130,14 +131,8 @@ class WatcherThread(threading.Thread):
             )
             return
 
-        feedcode = None
-        for page in proc.memory_pages():
-            result = proc.find_in_page(page, b"\x00\xde\xc0\xed\xfe")
-            if result:
-                feedcode = result
-                break
-
-        if feedcode is None:
+        state = proc.get_state()
+        if state is None:
             self.queue.put(
                 {
                     "command": "die",
@@ -146,14 +141,13 @@ class WatcherThread(threading.Thread):
             )
             return
 
-        journal_flags_addr = feedcode + 0x995
         while True:
             if not shutting_down and self.shut_down:
                 shutting_down = True
                 break
 
-            journal_flags = proc.read_u32(journal_flags_addr)
-            if journal_flags is None:
+            run_recap_flags = state.run_recap_flags()
+            if run_recap_flags is None:
                 self.queue.put(
                     {
                         "command": "die",
@@ -162,7 +156,7 @@ class WatcherThread(threading.Thread):
                 )
                 return
 
-            is_pacifist = bool(journal_flags & 1)
+            is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
             self.queue.put({"command": "is_pacifist", "data": is_pacifist})
             time.sleep(0.1)
 

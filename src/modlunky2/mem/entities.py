@@ -79,3 +79,12 @@ class Entity:
     def type(self):
         result = self._proc.read_void_p(self._offset + 8)
         return EntityDBEntry(self._proc, result)
+
+    def as_mount(self) -> "Mount":
+        return Mount(self._proc, self._offset)
+
+
+class Mount(Entity):
+    def is_tamed(self) -> bool:
+        offset = self._offset + 0x149
+        return self._proc.read_bool(offset)
