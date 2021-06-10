@@ -119,6 +119,7 @@ class MemoryBasicInformation:
 class Spel2Process:
     def __init__(self, proc_handle):
         self.proc_handle = proc_handle
+        self._state = None
 
     @classmethod
     def from_pid(cls, pid):
@@ -306,6 +307,12 @@ class Spel2Process:
 
     def get_state(self) -> State:
         return State(self)
+
+    @property
+    def state(self) -> State:
+        if self._state is None:
+            self._state = self.get_state()
+        return self._state
 
     def get_entity_db(self):
         return EntityDB(self)
