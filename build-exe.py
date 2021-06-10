@@ -6,6 +6,7 @@ DATA = [
     "dist/libvorbis.dll;.",
     "src/modlunky2/VERSION;.",
     "src/modlunky2/static;static",
+    "dist/s99-client.exe;.",
 ]
 BASE_DIR = Path(__file__).parent.resolve()
 

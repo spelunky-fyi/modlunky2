@@ -6,4 +6,4 @@ appdirs==1.4.4
 sfyi-fsb5==1.1
 pyperclip==1.8.2
 websockets==9.1
-psutil==5.8.0
+fnvhash==0.1.0

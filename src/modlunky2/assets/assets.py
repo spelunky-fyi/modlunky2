@@ -476,9 +476,9 @@ class AssetStore:
 
 
 class ResolutionPolicy(Enum):
-    RaiseError = 1
-    FirstWins = 2
-    LastWins = 3
+    RAISE_ERROR = 1
+    FIRST_WINS = 2
+    LAST_WINS = 3
 
 
 @dataclass
@@ -523,7 +523,7 @@ class DiskBundle:
         search_dirs,
         fallback_dir,
         compressed_dir,
-        resolution_policy=ResolutionPolicy.RaiseError,
+        resolution_policy=ResolutionPolicy.RAISE_ERROR,
     ):
 
         modfiles_by_filename = defaultdict(list)
@@ -556,7 +556,7 @@ class DiskBundle:
                 continue
 
             if (
-                resolution_policy == ResolutionPolicy.RaiseError
+                resolution_policy == ResolutionPolicy.RAISE_ERROR
                 and len(modpack_files) >= 2
             ):
                 raise FileConflict(
@@ -564,9 +564,9 @@ class DiskBundle:
                 )
 
             idx = 0
-            if resolution_policy == ResolutionPolicy.FirstWins:
+            if resolution_policy == ResolutionPolicy.FIRST_WINS:
                 idx = 0
-            elif resolution_policy == ResolutionPolicy.LastWins:
+            elif resolution_policy == ResolutionPolicy.LAST_WINS:
                 idx = -1
 
             asset_path = modpack_files[idx]
