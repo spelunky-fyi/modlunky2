@@ -521,6 +521,8 @@ class FyiInstall(ttk.LabelFrame):
             return
 
         install_code = self.entry.get().strip()
+        install_code = Path(urlparse(install_code).path).name
+
         if not self.VALID_SLUG.match(install_code):
             logger.critical("Invalid Install Code...")
             return
