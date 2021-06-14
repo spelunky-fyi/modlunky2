@@ -87,6 +87,10 @@ class S99Client(threading.Thread):
                 shutting_down = True
                 client_proc.kill()
                 break
+
+            if client_proc.poll():
+                break
+
             time.sleep(0.1)
 
         stdout_logger.join()
