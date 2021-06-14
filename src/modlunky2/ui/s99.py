@@ -6,11 +6,16 @@ import os
 import tkinter as tk
 from tkinter import ttk, PhotoImage
 
+from PIL import Image, ImageTk
+
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.ui.widgets import Tab
 from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
+
+
+ICON_PATH = BASE_DIR / "static/images"
 
 
 def tail_file(file_handle, log_func):
@@ -116,8 +121,17 @@ class S99Tab(Tab):
         self.s99_frame.rowconfigure(4, minsize=60)
         self.s99_frame.columnconfigure(0, weight=1)
 
+        self.help_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "help.png").resize((24, 24), Image.ANTIALIAS)
+        )
+
+        self.header_frame = ttk.Frame(self.s99_frame)
+        self.header_frame.grid(row=0, column=0, sticky="nswe")
+        self.header_frame.rowconfigure(0, weight=1)
+        self.header_frame.columnconfigure(0, weight=1)
+
         ttk.Label(
-            self.s99_frame,
+            self.header_frame,
             text=(
                 "Spelunky 99 is currently in closed beta but will be available soon."
             ),
@@ -125,18 +139,14 @@ class S99Tab(Tab):
             justify="center",
             font=("Arial", 12, "bold"),
         ).grid(row=0, column=0, sticky="nwe", pady=(5, 5), padx=(10, 10))
+        ttk.Button(
+            self.header_frame,
+            padding=1,
+            image=self.help_icon,
+            command=self.show_help,
+        ).grid(row=0, column=1, padx=5, pady=5, sticky="e")
+
         ttk.Separator(self.s99_frame).grid(row=1, column=0, sticky="ew")
-        # ttk.Label(
-        #     self.s99_frame,
-        #     text=(
-        #         "Beta User Instructions:\n\n"
-        #         "* Click Connect and verify that the log shows you're receiving messages.\n"
-        #         "* Download the mod pack per provided instructions.\n"
-        #         "* Select the Spelunky 99 Mod on the Playlunky tab and hit Play!\n\n\n"
-        #         "Note: Make sure you have an API token configured in the Settings tab."
-        #     ),
-        #     anchor="center",
-        # ).grid(row=2, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
         self.background_img = PhotoImage(
             file=BASE_DIR / "static/images/montyfication.png"
@@ -184,6 +194,24 @@ class S99Tab(Tab):
     @property
     def client_path(self):
         return s99_client_path()
+
+    def show_help(self):
+        # TODO: TopLevel with message below + credits:
+        #   jeremyhay - creating spelunky 99
+        #   logo - jackhaswifi + spudley
+        #   splash - greeni porchini
+        # ttk.Label(
+        #     self.s99_frame,
+        #     text=(
+        #         "Beta User Instructions:\n\n"
+        #         "* Click Connect and verify that the log shows you're receiving messages.\n"
+        #         "* Download the mod pack per provided instructions.\n"
+        #         "* Select the Spelunky 99 Mod on the Playlunky tab and hit Play!\n\n\n"
+        #         "Note: Make sure you have an API token configured in the Settings tab."
+        #     ),
+        #     anchor="center",
+        # ).grid(row=2, column=0, sticky="nwe", ipady=30, padx=(10, 10))
+        logger.info("todo")
 
     def render_buttons(self):
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
