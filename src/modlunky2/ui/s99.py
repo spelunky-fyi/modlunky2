@@ -9,7 +9,7 @@ from tkinter import ttk, PhotoImage
 from PIL import Image, ImageTk
 
 from modlunky2.constants import BASE_DIR, IS_EXE
-from modlunky2.ui.widgets import Tab
+from modlunky2.ui.widgets import PopupWindow, Tab
 from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -101,6 +101,53 @@ class S99Client(threading.Thread):
         stdout_logger.join()
         stderr_logger.join()
         logger.info("Client closed.")
+
+
+class Help(PopupWindow):
+    def __init__(self, modlunky_config, *args, **kwargs):
+        super().__init__("Spelunky 99 Help", modlunky_config, *args, **kwargs)
+        self.columnconfigure(0, weight=1)
+
+        ttk.Label(
+            self,
+            text=("Beta User Instructions:"),
+            font=("Arial", 10, "bold"),
+        ).grid(row=0, column=0, sticky="nwe", padx=5)
+        ttk.Label(
+            self,
+            text=(
+                "* Click Connect and verify that the log shows you're receiving messages.\n"
+                "* Download the mod pack per provided instructions.\n"
+                "* Select the Spelunky 99 Mod on the Playlunky tab and hit Play!\n\n"
+                "Note: Make sure you have an API token configured in the Settings tab."
+            ),
+        ).grid(row=1, column=0, sticky="nwe", padx=5)
+
+        ttk.Separator(self).grid(row=2, column=0, pady=5, sticky="nsew")
+
+        ttk.Label(
+            self,
+            text=("Credits:"),
+            font=("Arial", 10, "bold"),
+        ).grid(row=3, column=0, sticky="nwe", padx=5)
+        ttk.Label(
+            self,
+            text=(
+                "* jeremyhay - Creator of Spelunky 99\n"
+                "* garebear - Modlunky / spelunky.fyi Integration\n"
+                "* JackHasWifi / Spudley - Spelunky 99 Logo\n"
+                "* The Greeni Porcini - Splash Screen Art\n"
+            ),
+        ).grid(row=4, column=0, sticky="nwe", padx=5)
+
+        ttk.Separator(self).grid(row=5, column=0, pady=5, sticky="nsew")
+
+        buttons = ttk.Frame(self)
+        buttons.grid(row=6, column=0, sticky="nsew")
+        buttons.columnconfigure(0, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Ok", command=self.destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
 
 
 class S99Tab(Tab):
@@ -196,22 +243,7 @@ class S99Tab(Tab):
         return s99_client_path()
 
     def show_help(self):
-        # TODO: TopLevel with message below + credits:
-        #   jeremyhay - creating spelunky 99
-        #   logo - jackhaswifi + spudley
-        #   splash - greeni porchini
-        # ttk.Label(
-        #     self.s99_frame,
-        #     text=(
-        #         "Beta User Instructions:\n\n"
-        #         "* Click Connect and verify that the log shows you're receiving messages.\n"
-        #         "* Download the mod pack per provided instructions.\n"
-        #         "* Select the Spelunky 99 Mod on the Playlunky tab and hit Play!\n\n\n"
-        #         "Note: Make sure you have an API token configured in the Settings tab."
-        #     ),
-        #     anchor="center",
-        # ).grid(row=2, column=0, sticky="nwe", ipady=30, padx=(10, 10))
-        logger.info("todo")
+        Help(self.modlunky_config)
 
     def render_buttons(self):
         api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
