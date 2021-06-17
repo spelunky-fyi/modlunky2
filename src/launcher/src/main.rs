@@ -53,7 +53,7 @@ fn unzip(dest: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn verify_release_cache(release_dir: &PathBuf) -> Result<()> {
+fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()> {
     let mut should_invalidate = false;
 
     for known_file in KNOWN_FILES {
@@ -62,6 +62,10 @@ fn verify_release_cache(release_dir: &PathBuf) -> Result<()> {
         if !path.exists() {
             should_invalidate = true;
             break;
+        }
+
+        if !verify_hashes {
+            continue;
         }
 
         if let Some(expected_hash) = get_hash(known_file) {
@@ -103,6 +107,12 @@ fn main() -> Result<()> {
                 .takes_value(false),
         )
         .arg(
+            Arg::with_name("verify-hashes")
+                .long("verify-hashes")
+                .required(false)
+                .takes_value(false),
+        )
+        .arg(
             Arg::with_name("remainder")
                 .multiple(true)
                 .allow_hyphen_values(true),
@@ -110,6 +120,7 @@ fn main() -> Result<()> {
         .get_matches();
 
     let should_clear_cache: bool = launcher_matches.is_present("clear-cache");
+    let should_verify_hashes: bool = launcher_matches.is_present("verify-hashes");
     let remainder: Vec<_> = launcher_matches
         .values_of("remainder")
         .map_or_else(|| vec![], |v| v.collect());
@@ -133,7 +144,7 @@ fn main() -> Result<()> {
             println!("Clearing cached directory at {:?}", release_dir);
             std::fs::remove_dir_all(&release_dir)?;
         } else {
-            verify_release_cache(&release_dir)?;
+            verify_release_cache(&release_dir, should_verify_hashes)?;
         }
     }
 
