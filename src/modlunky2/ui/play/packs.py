@@ -36,29 +36,40 @@ def _cache_fyi_pack_details(
     metadata_dir = mods_dir / ".ml/pack-metadata"
 
     for pack in packs:
-        logging.debug("Getting latest details for %s", pack)
-        details, _code = api_client.get_mod(pack)
-        if details is None:
-            return
-
-        mod_file = api_client.get_mod_file_from_details(details)
-        if mod_file is None:
-            return
-
         pack_metadata_dir = metadata_dir / f"fyi.{pack}"
         if not pack_metadata_dir.exists():
             pack_metadata_dir.mkdir(parents=True, exist_ok=True)
 
-        pack_details_latest = pack_metadata_dir / "latest.json"
-        temp_path = pack_metadata_dir / "latest.json.tmp"
+        skip_file = pack_metadata_dir / ".skip"
+        if skip_file.exists():
+            continue
 
+        logging.debug("Getting latest details for %s", pack)
+        details, code = api_client.get_mod(pack)
+        if code == 404:
+            skip_file.touch()
+            continue
+
+        if details is None:
+            continue
+
+        mod_file = api_client.get_mod_file_from_details(details)
+        if mod_file is None:
+            continue
+
+        latest_details = {
+            "id": mod_file["id"],
+        }
+        pack_details_latest = pack_metadata_dir / "latest.json"
+        if pack_details_latest.exists():
+            with pack_details_latest.open("r", encoding="utf-8") as handle:
+                prev_lastest_details = json.load(handle)
+                if latest_details == prev_lastest_details:
+                    continue
+
+        temp_path = pack_metadata_dir / "latest.json.tmp"
         with temp_path.open("w", encoding="utf-8") as handle:
-            json.dump(
-                {
-                    "id": mod_file["id"],
-                },
-                handle,
-            )
+            json.dump(latest_details, handle)
 
         logger.debug("Copying %s to %s", temp_path, pack_details_latest)
         copyfile(temp_path, pack_details_latest)
@@ -94,6 +105,8 @@ class PacksFrame(ScrollableLabelFrame):
 
     def __init__(self, play_tab, parent, modlunky_config, task_manager):
         super().__init__(parent, text="Select Mods to Play")
+        self._loaded = False
+
         self.rowconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
@@ -123,7 +136,9 @@ class PacksFrame(ScrollableLabelFrame):
             Image.open(ICON_PATH / "update.png").resize((36, 36), Image.ANTIALIAS)
         )
 
-        self.schedule_cache_fyi_pack_details()
+        # Schedule cache update in the future. Will attempt immediate pull first
+        # time the tab is loaded.
+        self.after(self.CACHE_FYI_INTERVAL, self.schedule_cache_fyi_pack_details)
 
     def get_fyi_pack_names(self):
         packs = set()
@@ -241,3 +256,7 @@ class PacksFrame(ScrollableLabelFrame):
         ]
 
         self.render_packs()
+
+        if not self._loaded:
+            self.cache_fyi_pack_details()
+            self._loaded = True
