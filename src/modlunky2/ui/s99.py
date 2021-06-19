@@ -134,6 +134,7 @@ class Help(PopupWindow):
             self,
             text=(
                 "* jeremyhay - Creator of Spelunky 99\n"
+                "* Xanagear - Design / Promotion\n"
                 "* garebear - Modlunky / spelunky.fyi Integration\n"
                 "* JackHasWifi / Spudley - Spelunky 99 Logo\n"
                 "* The Greeni Porcini - Splash Screen Art\n"
@@ -236,6 +237,9 @@ class S99Tab(Tab):
 
         self.client_thread = None
         self.after(1000, self.after_client_thread)
+        self.render_buttons()
+
+    def on_load(self):
         self.render_buttons()
 
     @property
