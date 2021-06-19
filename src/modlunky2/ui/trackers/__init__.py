@@ -6,8 +6,7 @@ from modlunky2.config import Config
 
 from modlunky2.ui.widgets import PopupWindow, Tab
 
-
-# from .pacifist import PacifistWindow
+from .pacifist import PacifistButtons, PacifistWindow
 
 logger = logging.getLogger("modlunky2")
 
@@ -30,11 +29,11 @@ def get_text_color(bg_color):
 
 class ChooseChroma(PopupWindow):
     def __init__(
-        self, options_frame: "OptionsFrame", modlunky_config: Config, *args, **kwargs
+        self, options_frame: "OptionsFrame", ml_config: Config, *args, **kwargs
     ):
-        super().__init__("Choose Chroma Key", modlunky_config, *args, **kwargs)
+        super().__init__("Choose Chroma Key", ml_config, *args, **kwargs)
         self.options_frame = options_frame
-        self.modlunky_config = modlunky_config
+        self.ml_config = ml_config
         self.columnconfigure(0, weight=1)
 
         color_buttons = ttk.Frame(self)
@@ -87,12 +86,12 @@ class ChooseChroma(PopupWindow):
             command=self.destroy,
         ).grid(row=0, column=1, padx=1, pady=5, sticky="nsew")
 
-        chroma_key = self.modlunky_config.config_file.tracker_chroma_key
+        chroma_key = self.ml_config.config_file.tracker_chroma_key
         self.update_chroma_label(chroma_key)
 
     def save_choice(self):
-        self.modlunky_config.config_file.tracker_chroma_key = self.chroma_label["text"]
-        self.modlunky_config.config_file.save()
+        self.ml_config.config_file.tracker_chroma_key = self.chroma_label["text"]
+        self.ml_config.config_file.save()
         self.options_frame.render()
         self.destroy()
 
@@ -111,9 +110,9 @@ class ChooseChroma(PopupWindow):
 
 
 class OptionsFrame(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+    def __init__(self, parent, ml_config: Config, *args, **kwargs):
         super().__init__(parent, text="Options", *args, **kwargs)
-        self.modlunky_config = modlunky_config
+        self.ml_config = ml_config
 
         self.columnconfigure(0, weight=1)
 
@@ -128,7 +127,7 @@ class OptionsFrame(ttk.LabelFrame):
         self.chroma_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
 
     def render(self):
-        chroma_key = self.modlunky_config.config_file.tracker_chroma_key
+        chroma_key = self.ml_config.config_file.tracker_chroma_key
         self.chroma_label.config(
             text=chroma_key,
             bg=chroma_key,
@@ -136,13 +135,13 @@ class OptionsFrame(ttk.LabelFrame):
         )
 
     def choose_chroma(self):
-        ChooseChroma(options_frame=self, modlunky_config=self.modlunky_config)
+        ChooseChroma(options_frame=self, ml_config=self.ml_config)
 
 
 class TrackersTab(Tab):
-    def __init__(self, tab_control, modlunky_config, *args, **kwargs):
+    def __init__(self, tab_control, ml_config: Config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
-        self.modlunky_config = modlunky_config
+        self.ml_config = ml_config
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -150,35 +149,15 @@ class TrackersTab(Tab):
         self.trackers_frame = ttk.LabelFrame(self, text="Trackers")
         self.trackers_frame.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
-        self.trackers_frame.rowconfigure(0, minsize=60)
         self.trackers_frame.rowconfigure(1, weight=1)
         self.trackers_frame.columnconfigure(0, weight=1)
 
-        self.button_pacifist = ttk.Button(
-            self.trackers_frame,
-            text="Pacifist",
-            command=self.pacifist,
+        PacifistButtons(self.trackers_frame, ml_config=self.ml_config).grid(
+            row=0, column=0, sticky="nswe"
         )
-        self.button_pacifist.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.options_frame = OptionsFrame(self, modlunky_config)
+        self.options_frame = OptionsFrame(self, ml_config)
         self.options_frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
 
     def on_load(self):
         self.options_frame.render()
-
-    def enable_pacifist_button(self):
-        self.button_pacifist["state"] = tk.NORMAL
-
-    def disable_pacifist_button(self):
-        self.button_pacifist["state"] = tk.DISABLED
-
-    def pacifist(self):
-        self.disable_pacifist_button()
-        # PacifistWindow(
-        #     title="Pacifist Tracker",
-        #     on_close=self.on_pacifist_close,
-        # )
-
-    def on_pacifist_close(self):
-        self.enable_pacifist_button()

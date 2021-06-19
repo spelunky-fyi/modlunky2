@@ -199,7 +199,7 @@ class ModlunkyUI:
                 "Trackers",
                 TrackersTab,
                 tab_control=self.tab_control,
-                modlunky_config=modlunky_config,
+                ml_config=modlunky_config,
             )
         self.register_tab(
             "Spelunky 99",
