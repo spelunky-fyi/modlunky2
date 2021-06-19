@@ -4,8 +4,11 @@ import tkinter as tk
 from tkinter import ttk
 from queue import Empty
 
+from win32process import ReadProcessMemory
+
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
+from modlunky2.mem.entities import MOUNTS, Player, TELEPORT_ENTITIES
 from modlunky2.mem.state import RunRecapFlags
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
@@ -51,13 +54,21 @@ class FailedMemoryRead(Exception):
     """Failed to read memory from Spelunky2 process."""
 
 
-class ModifierState:
+class RunState:
     def __init__(self, proc: Spel2Process):
         self._proc = proc
 
+        self.world = 0
+        self.level = 0
+        self.theme = 0
+
+        # Run Modifiers
         self.pacifist = True
         self.no_gold = True
         self.no_tp = True
+
+        # Category Criteria
+        self.has_mounted_tame = False
 
     def update_pacifist(self, run_recap_flags):
         self.pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
@@ -65,14 +76,42 @@ class ModifierState:
     def update_no_gold(self, run_recap_flags):
         self.no_gold = bool(run_recap_flags & RunRecapFlags.NO_GOLD)
 
-    def update_no_tp(self):
-        pass
+    def update_no_tp(self, item_types):
+        for item_type in item_types:
+            print(item_type)
+            if item_type in TELEPORT_ENTITIES:
+                self.no_tp = False
+                return
+
+    def update_has_mounted_tame(self, player_overlay):
+        if not player_overlay:
+            return
+
+        if player_overlay.type.id in MOUNTS:
+            mount = player_overlay.as_mount()
+            if mount.is_tamed:
+                self.has_mounted_tame = True
+
+    def get_critical_state(self, var):
+        result = getattr(self._proc.state, var)
+        if result is None:
+            raise ReadProcessMemory(f"Failed to read critical state for {var}")
+        return result
+
+    def update_global_state(self):
+        self.world = self.get_critical_state("world")
+        self.level = self.get_critical_state("level")
+        self.theme = self.get_critical_state("theme")
 
     def update(self):
-        run_recap_flags = self._proc.state.run_recap_flags()
-        if run_recap_flags is None:
-            raise FailedMemoryRead("Failed to read run recap flags...")
+        self.update_global_state()
+        run_recap_flags = self.get_critical_state("run_recap_flags")
+        player1 = self._proc.state.players[0]
+        if player1 is None:
+            return
+        item_types = self.get_player_item_types(player1)
 
+        # Check Modifiers
         if self.pacifist:
             self.update_pacifist(run_recap_flags)
 
@@ -80,19 +119,57 @@ class ModifierState:
             self.update_no_gold(run_recap_flags)
 
         if self.no_tp:
-            self.update_no_tp()
+            self.update_no_tp(item_types)
 
-    def get_display(self, show_pacifist, show_no_gold, show_no_tp):
+        # Check Category Criteria
+        overlay = player1.overlay
+        if overlay and not self.has_mounted_tame:
+            self.update_has_mounted_tame(overlay)
+
+    def get_player_item_types(self, player: Player):
+        item_types = set()
+        entity_map = self._proc.state.uid_to_entity
+        for item in player.items:
+            entity_type = entity_map.get(item).type.entity_type
+            if entity_type is not None:
+                item_types.add(entity_type)
+        return item_types
+
+    def is_low_percent(self):
+        if self.has_mounted_tame:
+            return False
+
+        return True
+
+    def get_category(self):
+        if self.is_low_percent():
+            return "Low%"
+
+        return "Any%"
+
+    def should_show_late_modifiers(self):
+        if self.world > 1:
+            return True
+
+        if self.level > 2:
+            return True
+
+        return False
+
+    def get_display(self):
         out = []
 
-        if show_no_tp and self.no_tp:
+        if self.should_show_late_modifiers():
+            if self.pacifist:
+                out.append("Pacifist")
+
+            if self.no_gold:
+                out.append("No Gold")
+
+        if not self.is_low_percent() and self.no_tp:
             out.append("No TP")
 
-        if show_pacifist and self.pacifist:
-            out.append("Pacifist")
-
-        if show_no_gold and self.no_gold:
-            out.append("No Gold")
+        out.append(self.get_category())
 
         return " ".join(out)
 
@@ -101,14 +178,14 @@ class CategoryWatcherThread(WatcherThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.time_total = None
-        self.modifier_state = None
+        self.run_state = None
 
     def initialize(self):
         self.time_total = 0
-        self.modifier_state = ModifierState(self.proc)
+        self.run_state = RunState(self.proc)
 
     def get_time_total(self):
-        time_total = self.proc.state.time_total()
+        time_total = self.proc.state.time_total
         if time_total is None:
             raise FailedMemoryRead("Failed to read time_total")
         return time_total
@@ -124,8 +201,8 @@ class CategoryWatcherThread(WatcherThread):
             self.initialize()
         self.time_total = new_time_total
 
-        self.modifier_state.update()
-        label = self.modifier_state.get_display(True, True, True)
+        self.run_state.update()
+        label = self.run_state.get_display()
         self.send(Command.LABEL, label)
 
     def poll(self):

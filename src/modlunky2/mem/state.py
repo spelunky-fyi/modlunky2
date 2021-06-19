@@ -1,63 +1,11 @@
 import enum
-from typing import Optional, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 from struct import unpack
 
-from .entities import EntityMap, Entity
+from .entities import EntityMap, Player
 
 if TYPE_CHECKING:
     from . import Spel2Process
-
-
-class Player:
-    def __init__(self, proc, offset):
-        self._proc: "Spel2Process" = proc
-        self._offset = offset
-
-    def overlay(self) -> Optional[Entity]:
-        offset = self._offset + 0x10
-        entity_ptr = self._proc.read_void_p(offset)
-        if not entity_ptr:
-            return None
-        return Entity(self._proc, entity_ptr)
-
-    def items(self):
-        offset = self._offset + 0x18
-        return self._proc.read_vector(offset, "<L")
-
-    def inside(self):
-        """std::map. Need to implement red/black tree."""
-        # inside = player1_ent_addr + 0x128
-        # print("inside", hex(inside))
-        # print("")
-
-        # node1_addr = proc.read_void_p(inside)
-        # print("node1_addr", hex(node1_addr))
-        # print("")
-
-        # x = proc.read_memory(node1_addr, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(node1_addr + (8 * 3), 4))
-        # print(proc.read_memory(node1_addr + (8 * 3) + 4, 16))
-        # print("x more", proc.read_u16(node1_addr + (8 * 3) + 4))
-
-        # print("")
-        # p = pointers[0]
-        # x = proc.read_memory(p, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(p + (8 * 3), 4))
-        # print(proc.read_memory(p + (8 * 3) + 4, 16))
-        # print("x more", proc.read_u16(p + (8 * 3) + 4))
-
-        # print("")
-        # p = pointers[2]
-        # x = proc.read_memory(p, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(p + (8 * 3), 4))
-        # print("x more", hex(proc.read_u16(p + (8 * 3) + 4)))
-        # item_count = proc.read_u64(inside + 8)
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -91,20 +39,138 @@ class HudFlags(enum.IntFlag):
     HAVE_CLOVER = 1 << 23 - 1
 
 
+class Screen(enum.IntEnum):
+    LOGO = 0
+    INTRO = 1
+    PROLOGUE = 2
+    TITLE = 3
+    MAIN_MENU = 4
+    OPTIONS = 5
+    LEADERBOARDS = 7
+    SEED_INPUT = 8
+    CHARACTER_SELECT = 9
+    TEAM_SELECT = 10
+    CAMP = 11
+    LEVEL = 12
+    LEVEL_TRANSITION = 13
+    DEATH = 14
+    SPACESHIP = 15
+    ENDING = 16
+    CREDITS = 17
+    SCORES = 18
+    CONSTELLATION = 19
+    RECAP = 20
+    ARENA_MENU = 21
+    ARENA_INTRO = 25
+    ARENA_MATCH = 26
+    ARENA_SCORES = 27
+    LOADING_ONLINE = 28
+    LOBBY = 29
+
+
+class Theme(enum.IntEnum):
+    DWELLING = 1
+    JUNGLE = 2
+    VOLCANA = 3
+    OLMEC = 4
+    TIDE_POOL = 5
+    TEMPLE = 6
+    ICE_CAVES = 7
+    NEO_BABYLON = 8
+    SUNKEN_CITY = 9
+    COSMIC_OCEAN = 10
+    CITY_OF_GOLD = 11
+    DUAT = 12
+    ABZU = 13
+    TIAMAT = 14
+    EGGPLANT_WORLD = 15
+    HUNDUN = 16
+    BASE_CAMP = 17
+    ARENA = 18
+
+
+class WinState(enum.IntEnum):
+    UNKNOWN = -1
+    NO_WIN = 0
+    TIAMAT = 1
+    HUNDUN = 2
+    COSMIC_OCEAN = 3
+
+
 class State:
     def __init__(self, proc):
         self._proc: "Spel2Process" = proc
         self._offset = proc.get_feedcode() - 0x5F
+        self._uid_to_entity = None
 
+    @property
+    def screen_last(self):
+        return self._proc.read_i32(self._offset + 0x08)
+
+    @property
+    def screen(self):
+        return self._proc.read_i32(self._offset + 0x0C)
+
+    @property
+    def screen_next(self):
+        return self._proc.read_i32(self._offset + 0x10)
+
+    @property
+    def world_start(self):
+        return self._proc.read_u8(self._offset + 0x5C)
+
+    @property
+    def level_start(self):
+        return self._proc.read_u8(self._offset + 0x5D)
+
+    @property
+    def theme_start(self):
+        return Theme(self._proc.read_u8(self._offset + 0x5E))
+
+    @property
+    def time_total(self):
+        return self._proc.read_u32(self._offset + 0x64)
+
+    @property
+    def world(self):
+        return self._proc.read_u8(self._offset + 0x68)
+
+    @property
+    def world_next(self):
+        return self._proc.read_u8(self._offset + 0x69)
+
+    @property
+    def level(self):
+        return self._proc.read_u8(self._offset + 0x6A)
+
+    @property
+    def level_next(self):
+        return self._proc.read_u8(self._offset + 0x6B)
+
+    @property
+    def theme(self):
+        return Theme(self._proc.read_u8(self._offset + 0x74))
+
+    @property
+    def theme_next(self):
+        return Theme(self._proc.read_u8(self._offset + 0x75))
+
+    @property
+    def win_state(self):
+        return WinState(self._proc.read_i8(self._offset + 0x76))
+
+    @property
     def run_recap_flags(self):
         offset = self._offset + 0x9F4
         return RunRecapFlags(self._proc.read_u32(offset))
 
+    @property
     def hud_flags(self):
         offset = self._offset + 0xA10
         return HudFlags(self._proc.read_u32(offset))
 
-    def players(self):  # items
+    @property
+    def players(self) -> List[Player]:  # items
         offset = self._offset + 0x12B0
         items_ptr = self._proc.read_void_p(offset) + 8
         player_pointers = self._proc.read_memory(items_ptr, 8 * 4)
@@ -122,10 +188,9 @@ class State:
 
         return players
 
-    def time_total(self):
-        offset = self._offset + 0x64
-        return self._proc.read_u32(offset)
-
+    @property
     def uid_to_entity(self):
-        offset = self._offset + 0x1308
-        return EntityMap(self._proc, offset)
+        if self._uid_to_entity is None:
+            offset = self._offset + 0x1308
+            self._uid_to_entity = EntityMap(self._proc, offset)
+        return self._uid_to_entity

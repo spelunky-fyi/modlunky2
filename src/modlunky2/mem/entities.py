@@ -1,6 +1,6 @@
 import json
-from enum import Enum
-from typing import TYPE_CHECKING
+from enum import IntEnum
+from typing import Optional, TYPE_CHECKING
 
 from modlunky2.constants import BASE_DIR
 
@@ -18,10 +18,37 @@ def _make_entity_type_enum():
             name[len("ENT_TYPE_") :]: obj["id"] for name, obj in entities_json.items()
         }
 
-    return Enum("EntityType", enum_values)
+    return IntEnum("EntityType", enum_values)
 
 
 EntityType = _make_entity_type_enum()
+
+
+MOUNTS = {
+    EntityType.MOUNT_TURKEY,
+    EntityType.MOUNT_ROCKDOG,
+    EntityType.MOUNT_AXOLOTL,
+    EntityType.MOUNT_MECH,
+    EntityType.MOUNT_QILIN,
+}
+
+BACKPACKS = {
+    EntityType.ITEM_HOVERPACK,
+    EntityType.ITEM_JETPACK,
+    EntityType.ITEM_POWERPACK,
+    EntityType.ITEM_TELEPORTER_BACKPACK,
+}
+
+SHIELDS = {
+    EntityType.ITEM_METAL_SHIELD,
+    EntityType.ITEM_WOODEN_SHIELD,
+}
+
+TELEPORT_ENTITIES = {
+    EntityType.ITEM_TELEPORTER,
+    EntityType.ITEM_TELEPORTER_BACKPACK,
+    EntityType.ITEM_POWERUP_TRUECROWN,
+}
 
 
 class EntityMap(UnorderedMap):
@@ -41,11 +68,17 @@ class EntityDBEntry:
         self._proc: "Spel2Process" = proc
         self._offset = offset
 
+    @property
     def id(self):  # pylint: disable=invalid-name
         return self._proc.read_u32(self._offset + 0x14)
 
+    @property
+    def entity_type(self):
+        return EntityType(self.id)
+
+    @property
     def name(self):
-        return EntityType(self.id()).name
+        return self.entity_type.name
 
 
 class EntityDB:
@@ -76,15 +109,77 @@ class Entity:
         self._proc: "Spel2Process" = proc
         self._offset = offset
 
+    @property
     def type(self):
         result = self._proc.read_void_p(self._offset + 8)
         return EntityDBEntry(self._proc, result)
 
+    @property
+    def overlay(self) -> Optional["Entity"]:
+        offset = self._offset + 0x10
+        entity_ptr = self._proc.read_void_p(offset)
+        if not entity_ptr:
+            return None
+        return Entity(self._proc, entity_ptr)
+
+    @property
+    def items(self):
+        offset = self._offset + 0x18
+        return self._proc.read_vector(offset, "<L")
+
+    def as_movable(self) -> "Movable":
+        return Movable(self._proc, self._offset)
+
     def as_mount(self) -> "Mount":
         return Mount(self._proc, self._offset)
 
+    def as_player(self) -> "Player":
+        return Player(self._proc, self._offset)
 
-class Mount(Entity):
+
+class Movable(Entity):
+    pass
+
+
+class Mount(Movable):
+    @property
     def is_tamed(self) -> bool:
         offset = self._offset + 0x149
         return self._proc.read_bool(offset)
+
+
+class Player(Movable):
+    def inside(self):
+        """std::map. Need to implement red/black tree."""
+        # inside = player1_ent_addr + 0x128
+        # print("inside", hex(inside))
+        # print("")
+
+        # node1_addr = proc.read_void_p(inside)
+        # print("node1_addr", hex(node1_addr))
+        # print("")
+
+        # x = proc.read_memory(node1_addr, 8 * 3)
+        # pointers = unpack(b"PPP", x)
+        # print("x", list(map(hex, pointers)))
+        # print("x more", proc.read_memory(node1_addr + (8 * 3), 4))
+        # print(proc.read_memory(node1_addr + (8 * 3) + 4, 16))
+        # print("x more", proc.read_u16(node1_addr + (8 * 3) + 4))
+
+        # print("")
+        # p = pointers[0]
+        # x = proc.read_memory(p, 8 * 3)
+        # pointers = unpack(b"PPP", x)
+        # print("x", list(map(hex, pointers)))
+        # print("x more", proc.read_memory(p + (8 * 3), 4))
+        # print(proc.read_memory(p + (8 * 3) + 4, 16))
+        # print("x more", proc.read_u16(p + (8 * 3) + 4))
+
+        # print("")
+        # p = pointers[2]
+        # x = proc.read_memory(p, 8 * 3)
+        # pointers = unpack(b"PPP", x)
+        # print("x", list(map(hex, pointers)))
+        # print("x more", proc.read_memory(p + (8 * 3), 4))
+        # print("x more", hex(proc.read_u16(p + (8 * 3) + 4)))
+        # item_count = proc.read_u64(inside + 8)

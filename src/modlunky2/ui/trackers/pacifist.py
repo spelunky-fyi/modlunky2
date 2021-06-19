@@ -48,7 +48,7 @@ class PacifistButtons(ttk.Frame):
 
 class PacifistWatcherThread(WatcherThread):
     def poll(self):
-        run_recap_flags = self.proc.state.run_recap_flags()
+        run_recap_flags = self.proc.state.run_recap_flags
         if run_recap_flags is None:
             self.die("Failed to read expected address...")
             self.shutdown()
