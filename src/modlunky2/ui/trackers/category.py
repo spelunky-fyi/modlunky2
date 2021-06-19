@@ -221,6 +221,9 @@ class RunState:
         return True
 
     def get_category(self):
+        if self.health <= 0:
+            return "Death%"
+
         if self.is_low_percent():
             return "Low%"
 

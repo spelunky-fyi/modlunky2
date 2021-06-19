@@ -164,7 +164,7 @@ class Entity:
 class Movable(Entity):
     @property
     def health(self):
-        return self._proc.read_u8(self._offset + 0x10F)
+        return self._proc.read_i8(self._offset + 0x10F)
 
 
 class Mount(Movable):
