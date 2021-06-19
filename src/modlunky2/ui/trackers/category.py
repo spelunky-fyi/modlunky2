@@ -4,8 +4,6 @@ import tkinter as tk
 from tkinter import ttk
 from queue import Empty
 
-from win32process import ReadProcessMemory
-
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
@@ -110,7 +108,7 @@ class RunState:
     def get_critical_state(self, var):
         result = getattr(self._proc.state, var)
         if result is None:
-            raise ReadProcessMemory(f"Failed to read critical state for {var}")
+            raise FailedMemoryRead(f"Failed to read critical state for {var}")
         return result
 
     def update_global_state(self):
