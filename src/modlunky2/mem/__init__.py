@@ -151,12 +151,26 @@ class Spel2Process:
 
         return unpack(b"<B", result)[0]
 
+    def read_i8(self, offset):
+        result = self.read_memory(offset, 1)
+        if result is None:
+            return None
+
+        return unpack(b"<b", result)[0]
+
     def read_u16(self, offset):
         result = self.read_memory(offset, 2)
         if result is None:
             return None
 
         return unpack(b"<H", result)[0]
+
+    def read_i16(self, offset):
+        result = self.read_memory(offset, 2)
+        if result is None:
+            return None
+
+        return unpack(b"<h", result)[0]
 
     def read_u32(self, offset):
         result = self.read_memory(offset, 4)

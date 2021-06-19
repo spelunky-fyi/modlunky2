@@ -8,8 +8,14 @@ from win32process import ReadProcessMemory
 
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
-from modlunky2.mem.entities import MOUNTS, Player, TELEPORT_ENTITIES
-from modlunky2.mem.state import RunRecapFlags
+from modlunky2.mem.entities import (
+    EntityType,
+    Inventory,
+    MOUNTS,
+    Player,
+    TELEPORT_ENTITIES,
+)
+from modlunky2.mem.state import HudFlags, RunRecapFlags
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
 
@@ -62,6 +68,13 @@ class RunState:
         self.level = 0
         self.theme = 0
 
+        self.health = 4
+        self.bombs = 4
+        self.ropes = 4
+
+        self.poisoned = False
+        self.cursed = False
+
         # Run Modifiers
         self.pacifist = True
         self.no_gold = True
@@ -69,6 +82,9 @@ class RunState:
 
         # Category Criteria
         self.has_mounted_tame = False
+        self.increased_starting_items = False
+        self.cured_status = False
+        self.had_clover = False
 
     def update_pacifist(self, run_recap_flags):
         self.pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
@@ -78,7 +94,6 @@ class RunState:
 
     def update_no_tp(self, item_types):
         for item_type in item_types:
-            print(item_type)
             if item_type in TELEPORT_ENTITIES:
                 self.no_tp = False
                 return
@@ -103,13 +118,68 @@ class RunState:
         self.level = self.get_critical_state("level")
         self.theme = self.get_critical_state("theme")
 
+    def update_starting_resources(self, player: Player, inventory: Inventory):
+        health = player.health
+        if health is not None:
+            if health > self.health:
+                self.increased_starting_items = True
+            self.health = health
+
+        bombs = inventory.bombs
+        if bombs is not None:
+            if bombs > self.bombs:
+                self.increased_starting_items = True
+            self.bombs = bombs
+
+        ropes = inventory.ropes
+        if ropes is not None:
+            if ropes > self.ropes:
+                delta = ropes - self.ropes
+                # Increasing ropes by less than rope pile means
+                # you're likely picking up a single rope you dropped
+                # which is allowed.
+                if delta > 3:
+                    self.increased_starting_items = True
+            self.ropes = ropes
+
+    def update_status_effects(self, item_types):
+        is_poisoned = False
+        is_cursed = False
+
+        for item_type in item_types:
+            if item_type == EntityType.LOGICAL_POISONED_EFFECT:
+                is_poisoned = True
+            elif item_type == EntityType.LOGICAL_CURSED_EFFECT:
+                is_cursed = True
+
+        if self.poisoned and not is_poisoned:
+            self.cured_status = True
+
+        if self.cursed and not is_cursed:
+            self.cured_status = True
+
+        self.poisoned = is_poisoned
+        self.cursed = is_cursed
+
+    def update_had_clover(self, hud_flags: HudFlags):
+        self.had_clover = bool(hud_flags & HudFlags.HAVE_CLOVER)
+
     def update(self):
         self.update_global_state()
         run_recap_flags = self.get_critical_state("run_recap_flags")
-        player1 = self._proc.state.players[0]
-        if player1 is None:
+        hud_flags = self.get_critical_state("hud_flags")
+
+        player = self._proc.state.players[0]
+        inventory = player.inventory
+
+        if player is None or inventory is None:
             return
-        item_types = self.get_player_item_types(player1)
+        item_types = self.get_player_item_types(player)
+        self.update_starting_resources(player, inventory)
+        self.update_status_effects(item_types)
+
+        if not self.had_clover:
+            self.update_had_clover(hud_flags)
 
         # Check Modifiers
         if self.pacifist:
@@ -122,7 +192,7 @@ class RunState:
             self.update_no_tp(item_types)
 
         # Check Category Criteria
-        overlay = player1.overlay
+        overlay = player.overlay
         if overlay and not self.has_mounted_tame:
             self.update_has_mounted_tame(overlay)
 
@@ -139,6 +209,15 @@ class RunState:
         if self.has_mounted_tame:
             return False
 
+        if self.increased_starting_items:
+            return False
+
+        if self.cured_status:
+            return False
+
+        if self.had_clover:
+            return False
+
         return True
 
     def get_category(self):
@@ -147,7 +226,7 @@ class RunState:
 
         return "Any%"
 
-    def should_show_late_modifiers(self):
+    def should_show_modifiers(self):
         if self.world > 1:
             return True
 
@@ -159,15 +238,15 @@ class RunState:
     def get_display(self):
         out = []
 
-        if self.should_show_late_modifiers():
+        if self.should_show_modifiers():
             if self.pacifist:
                 out.append("Pacifist")
 
             if self.no_gold:
                 out.append("No Gold")
 
-        if not self.is_low_percent() and self.no_tp:
-            out.append("No TP")
+            if not self.is_low_percent() and self.no_tp:
+                out.append("No TP")
 
         out.append(self.get_category())
 

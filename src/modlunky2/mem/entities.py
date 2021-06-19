@@ -50,6 +50,30 @@ TELEPORT_ENTITIES = {
     EntityType.ITEM_POWERUP_TRUECROWN,
 }
 
+CHAIN_POWERUP_ENTITIES = {
+    EntityType.ITEM_POWERUP_UDJATEYE,
+    EntityType.ITEM_POWERUP_CROWN,
+    EntityType.ITEM_POWERUP_HEDJET,
+    EntityType.ITEM_POWERUP_ANKH,
+    EntityType.ITEM_POWERUP_TABLETOFDESTINY,
+}
+
+NON_CHAIN_POWERUP_ENTITIES = {
+    EntityType.ITEM_POWERUP_CLIMBING_GLOVES,
+    EntityType.ITEM_POWERUP_COMPASS,
+    EntityType.ITEM_POWERUP_EGGPLANTCROWN,
+    EntityType.ITEM_POWERUP_KAPALA,
+    EntityType.ITEM_POWERUP_PARACHUTE,
+    EntityType.ITEM_POWERUP_PASTE,
+    EntityType.ITEM_POWERUP_PITCHERSMITT,
+    EntityType.ITEM_POWERUP_SKELETON_KEY,
+    EntityType.ITEM_POWERUP_SPECIALCOMPASS,
+    EntityType.ITEM_POWERUP_SPECTACLES,
+    EntityType.ITEM_POWERUP_SPIKE_SHOES,
+    EntityType.ITEM_POWERUP_SPRING_SHOES,
+    EntityType.ITEM_POWERUP_TRUECROWN,
+}
+
 
 class EntityMap(UnorderedMap):
     KEY_CHAR = "<L"
@@ -138,7 +162,9 @@ class Entity:
 
 
 class Movable(Entity):
-    pass
+    @property
+    def health(self):
+        return self._proc.read_u8(self._offset + 0x10F)
 
 
 class Mount(Movable):
@@ -148,7 +174,37 @@ class Mount(Movable):
         return self._proc.read_bool(offset)
 
 
+class Inventory:
+    def __init__(self, proc, offset):
+        self._proc: "Spel2Process" = proc
+        self._offset = offset
+
+    @property
+    def bombs(self):
+        return self._proc.read_u8(self._offset + 0x04)
+
+    @property
+    def ropes(self):
+        return self._proc.read_u8(self._offset + 0x05)
+
+    @property
+    def poison_tick_timer(self):
+        return self._proc.read_i16(self._offset + 0x06)
+
+    @property
+    def cursed(self):
+        return self._proc.read_bool(self._offset + 0x08)
+
+
 class Player(Movable):
+    @property
+    def inventory(self):
+        offset = self._offset + 0x138
+        inventory_ptr = self._proc.read_void_p(offset)
+        if not inventory_ptr:
+            return None
+        return Inventory(self._proc, inventory_ptr)
+
     def inside(self):
         """std::map. Need to implement red/black tree."""
         # inside = player1_ent_addr + 0x128
