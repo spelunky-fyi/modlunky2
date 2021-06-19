@@ -9,7 +9,7 @@ from multiprocessing import Queue
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
 from modlunky2.version import current_version, latest_version
-from modlunky2.config import MIN_WIDTH, MIN_HEIGHT
+from modlunky2.config import Config, MIN_WIDTH, MIN_HEIGHT
 from modlunky2.utils import is_windows, tb_info, temp_chdir
 
 from .tasks import TaskManager, PING_INTERVAL
@@ -45,7 +45,7 @@ def update_start(_call, launcher_exe):
 
 
 class ModlunkyUI:
-    def __init__(self, modlunky_config, log_level=logging.INFO):
+    def __init__(self, modlunky_config: Config, log_level=logging.INFO):
         self.modlunky_config = modlunky_config
 
         self.current_version = current_version()
