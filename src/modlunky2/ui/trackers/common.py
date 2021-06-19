@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import threading
 import time
@@ -10,6 +11,10 @@ from modlunky2.mem import find_spelunky2_pid, Spel2Process
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
+
+
+class CommonCommand(Enum):
+    DIE = "die"
 
 
 class WatcherThread(threading.Thread):
@@ -30,30 +35,37 @@ class WatcherThread(threading.Thread):
     def poll(self):
         raise NotImplementedError()
 
+    def _really_poll(self):
+        try:
+            self.poll()
+        except Exception:  # pylint: disable=broad-except
+            logger.critical("Unexpected Exception while polling: %s", tb_info())
+            self.shutdown()
+
+    def shutdown(self):
+        self.shut_down = True
+
+    def send(self, command: CommonCommand, data):
+        self.queue.put({"command": command, "data": data})
+
+    def die(self, message):
+        self.send(CommonCommand.DIE, message)
+
     def _run(self):
         shutting_down = False
 
         pid = find_spelunky2_pid()
         if pid is None:
-            self.queue.put(
-                {"command": "die", "data": "Failed to find running Spel2.exe"}
-            )
+            self.die("Failed to find running Spel2.exe")
             return
 
         self.proc = Spel2Process.from_pid(pid)
         if self.proc is None:
-            self.queue.put(
-                {"command": "die", "data": "Failed to open handle to Spel2.exe"}
-            )
+            self.die("Failed to open handle to Spel2.exe")
             return
 
         if self.proc.state is None:
-            self.queue.put(
-                {
-                    "command": "die",
-                    "data": "Failed to open handle to expected array of bytes",
-                }
-            )
+            self.die("Failed to open handle to expected array of bytes")
             return
 
         while True:
@@ -61,9 +73,7 @@ class WatcherThread(threading.Thread):
                 shutting_down = True
                 break
 
-            okay = self.poll()
-            if not okay:
-                return
+            self._really_poll()
             time.sleep(0.1)
 
         logger.info("Stopped watching process memory")

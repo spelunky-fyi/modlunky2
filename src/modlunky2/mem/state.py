@@ -122,6 +122,10 @@ class State:
 
         return players
 
+    def time_total(self):
+        offset = self._offset + 0x64
+        return self._proc.read_u32(offset)
+
     def uid_to_entity(self):
         offset = self._offset + 0x1308
         return EntityMap(self._proc, offset)

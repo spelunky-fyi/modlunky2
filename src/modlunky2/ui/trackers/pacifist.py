@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -6,9 +7,13 @@ from queue import Empty
 from modlunky2.config import Config
 from modlunky2.mem.state import RunRecapFlags
 
-from .common import TrackerWindow, WatcherThread
+from .common import TrackerWindow, WatcherThread, CommonCommand
 
 logger = logging.getLogger("modlunky2")
+
+
+class Command(Enum):
+    IS_PACIFIST = "is_pacifist"
 
 
 class PacifistButtons(ttk.Frame):
@@ -45,18 +50,11 @@ class PacifistWatcherThread(WatcherThread):
     def poll(self):
         run_recap_flags = self.proc.state.run_recap_flags()
         if run_recap_flags is None:
-            self.queue.put(
-                {
-                    "command": "die",
-                    "data": "Failed to read expected address...",
-                }
-            )
-            return False
+            self.die("Failed to read expected address...")
+            self.shutdown()
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
-        self.queue.put({"command": "is_pacifist", "data": is_pacifist})
-
-        return True
+        self.send(Command.IS_PACIFIST, is_pacifist)
 
 
 class PacifistWindow(TrackerWindow):
@@ -76,24 +74,32 @@ class PacifistWindow(TrackerWindow):
         self.after(100, self.after_watcher_thread)
 
     def after_watcher_thread(self):
+        schedule_again = True
         try:
             while True:
+                if self.watcher_thread and not self.watcher_thread.is_alive():
+                    logger.warning("Thread went away. Closing window.")
+                    schedule_again = False
+                    self.destroy()
+
                 try:
                     msg = self.queue.get_nowait()
                 except Empty:
                     break
 
-                if msg["command"] == "die":
+                if msg["command"] == CommonCommand.DIE:
                     logger.critical("%s", msg["data"])
+                    schedule_again = False
                     self.destroy()
-                elif msg["command"] == "is_pacifist":
+                elif msg["command"] == Command.IS_PACIFIST:
                     is_pacifist = msg["data"]
                     if is_pacifist:
                         self.label.configure(text="Pacifist")
                     else:
                         self.label.configure(text="MURDERER!")
         finally:
-            self.after(100, self.after_watcher_thread)
+            if schedule_again:
+                self.after(100, self.after_watcher_thread)
 
     def destroy(self):
         if self.watcher_thread and self.watcher_thread.is_alive():

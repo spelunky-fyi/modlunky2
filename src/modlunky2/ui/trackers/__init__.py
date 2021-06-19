@@ -2,6 +2,7 @@ import logging
 from tkinter import ttk
 
 from modlunky2.config import Config
+from modlunky2.ui.trackers.category import CategoryButtons
 from modlunky2.ui.widgets import Tab
 
 from .options import OptionsFrame
@@ -14,15 +15,18 @@ class TrackersFrame(ttk.LabelFrame):
     def __init__(self, parent, ml_config: Config, *args, **kwargs):
         super().__init__(parent, text="Trackers", *args, **kwargs)
         self.ml_config = ml_config
+        self.button_index = 0
 
-        self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
-        PacifistButtons(self, ml_config=self.ml_config).grid(
-            row=0,
-            column=0,
-            sticky="nswe",
-        )
+        self.add_button(PacifistButtons(self, self.ml_config))
+        self.add_button(CategoryButtons(self, self.ml_config))
+
+        self.rowconfigure(self.button_index, weight=1)
+
+    def add_button(self, button):
+        button.grid(column=0, row=self.button_index, sticky="nsew")
+        self.button_index += 1
 
 
 class TrackersTab(Tab):
