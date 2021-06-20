@@ -163,7 +163,12 @@ class RunState:
         if not player_overlay:
             return
 
-        if player_overlay.type.id in MOUNTS:
+        entity_type: EntityType = player_overlay.type.id
+        # Allowed to ride tamed qilin in tiamats
+        if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
+            return
+
+        if entity_type in MOUNTS:
             mount = player_overlay.as_mount()
             if mount.is_tamed:
                 self.has_mounted_tame = True
