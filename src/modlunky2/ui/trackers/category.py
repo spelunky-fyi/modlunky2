@@ -7,10 +7,13 @@ from queue import Empty
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
+    BACKPACKS,
     EntityType,
     Inventory,
     MOUNTS,
+    NON_CHAIN_POWERUP_ENTITIES,
     Player,
+    SHIELDS,
     TELEPORT_ENTITIES,
 )
 from modlunky2.mem.state import HudFlags, RunRecapFlags
@@ -78,32 +81,39 @@ class RunState:
         self.no_gold = True
         self.no_tp = True
 
-        # Category Criteria
+        # There are a lot of checks associated with low%
+        # if any are violated then don't bother checking them
+        self.is_low_percent = True
+
+        # Low%
         self.has_mounted_tame = False
         self.increased_starting_items = False
         self.cured_status = False
         self.had_clover = False
+        self.wore_backpack = False
+        self.held_shield = False
+        self.has_non_chain_powerup = False
 
     def update_pacifist(self, run_recap_flags):
+        if not self.pacifist:
+            return
+
         self.pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
 
     def update_no_gold(self, run_recap_flags):
+        if not self.no_gold:
+            return
+
         self.no_gold = bool(run_recap_flags & RunRecapFlags.NO_GOLD)
 
     def update_no_tp(self, item_types):
+        if not self.no_tp:
+            return
+
         for item_type in item_types:
             if item_type in TELEPORT_ENTITIES:
                 self.no_tp = False
                 return
-
-    def update_has_mounted_tame(self, player_overlay):
-        if not player_overlay:
-            return
-
-        if player_overlay.type.id in MOUNTS:
-            mount = player_overlay.as_mount()
-            if mount.is_tamed:
-                self.has_mounted_tame = True
 
     def get_critical_state(self, var):
         result = getattr(self._proc.state, var)
@@ -116,17 +126,35 @@ class RunState:
         self.level = self.get_critical_state("level")
         self.theme = self.get_critical_state("theme")
 
+    def update_has_mounted_tame(self, player_overlay):
+        if not self.is_low_percent:
+            return
+
+        if not player_overlay:
+            return
+
+        if player_overlay.type.id in MOUNTS:
+            mount = player_overlay.as_mount()
+            if mount.is_tamed:
+                self.has_mounted_tame = True
+                self.is_low_percent = False
+
     def update_starting_resources(self, player: Player, inventory: Inventory):
+        if not self.is_low_percent:
+            return
+
         health = player.health
         if health is not None:
             if health > self.health:
                 self.increased_starting_items = True
+                self.is_low_percent = False
             self.health = health
 
         bombs = inventory.bombs
         if bombs is not None:
             if bombs > self.bombs:
                 self.increased_starting_items = True
+                self.is_low_percent = False
             self.bombs = bombs
 
         ropes = inventory.ropes
@@ -136,11 +164,15 @@ class RunState:
                 # Increasing ropes by less than rope pile means
                 # you're likely picking up a single rope you dropped
                 # which is allowed.
-                if delta > 3:
+                if delta > 2:
                     self.increased_starting_items = True
+                    self.is_low_percent = False
             self.ropes = ropes
 
     def update_status_effects(self, item_types):
+        if not self.is_low_percent:
+            return
+
         is_poisoned = False
         is_cursed = False
 
@@ -152,47 +184,83 @@ class RunState:
 
         if self.poisoned and not is_poisoned:
             self.cured_status = True
+            self.is_low_percent = False
 
         if self.cursed and not is_cursed:
             self.cured_status = True
+            self.is_low_percent = False
 
         self.poisoned = is_poisoned
         self.cursed = is_cursed
 
     def update_had_clover(self, hud_flags: HudFlags):
+        if not self.is_low_percent:
+            return
+
         self.had_clover = bool(hud_flags & HudFlags.HAVE_CLOVER)
+        if self.had_clover:
+            self.is_low_percent = False
+
+    def update_wore_backpack(self, item_types):
+        if not self.is_low_percent:
+            return
+
+        for item_type in item_types:
+            if item_type in BACKPACKS:
+                self.wore_backpack = True
+                self.is_low_percent = False
+                return
+
+    def update_held_shield(self, item_types):
+        if not self.is_low_percent:
+            return
+
+        for item_type in item_types:
+            if item_type in SHIELDS:
+                self.held_shield = True
+                self.is_low_percent = False
+                return
+
+    def update_has_non_chain_powerup(self, item_types):
+        if not self.is_low_percent:
+            return
+
+        for item_type in item_types:
+            if item_type in NON_CHAIN_POWERUP_ENTITIES:
+                self.has_non_chain_powerup = True
+                self.is_low_percent = False
+                return
 
     def update(self):
         self.update_global_state()
+        player = self._proc.state.players[0]
+        if player is None:
+            return
+
+        inventory = player.inventory
+        if inventory is None:
+            return
+
         run_recap_flags = self.get_critical_state("run_recap_flags")
         hud_flags = self.get_critical_state("hud_flags")
-
-        player = self._proc.state.players[0]
-        inventory = player.inventory
-
-        if player is None or inventory is None:
-            return
         item_types = self.get_player_item_types(player)
-        self.update_starting_resources(player, inventory)
-        self.update_status_effects(item_types)
-
-        if not self.had_clover:
-            self.update_had_clover(hud_flags)
 
         # Check Modifiers
-        if self.pacifist:
-            self.update_pacifist(run_recap_flags)
-
-        if self.no_gold:
-            self.update_no_gold(run_recap_flags)
-
-        if self.no_tp:
-            self.update_no_tp(item_types)
+        self.update_pacifist(run_recap_flags)
+        self.update_no_gold(run_recap_flags)
+        self.update_no_tp(item_types)
 
         # Check Category Criteria
         overlay = player.overlay
-        if overlay and not self.has_mounted_tame:
-            self.update_has_mounted_tame(overlay)
+
+        # Low%
+        self.update_has_mounted_tame(overlay)
+        self.update_starting_resources(player, inventory)
+        self.update_status_effects(item_types)
+        self.update_had_clover(hud_flags)
+        self.update_wore_backpack(item_types)
+        self.update_held_shield(item_types)
+        self.update_has_non_chain_powerup(item_types)
 
     def get_player_item_types(self, player: Player):
         item_types = set()
@@ -203,29 +271,20 @@ class RunState:
                 item_types.add(entity_type)
         return item_types
 
-    def is_low_percent(self):
-        if self.has_mounted_tame:
-            return False
+    def get_low_catery(self):
+        return "Low%"
 
-        if self.increased_starting_items:
-            return False
-
-        if self.cured_status:
-            return False
-
-        if self.had_clover:
-            return False
-
-        return True
+    def get_any_category(self):
+        return "Any%"
 
     def get_category(self):
         if self.health <= 0:
             return "Death%"
 
-        if self.is_low_percent():
-            return "Low%"
+        if self.is_low_percent:
+            return self.get_low_catery()
 
-        return "Any%"
+        return self.get_any_category()
 
     def should_show_modifiers(self):
         if self.world > 1:
@@ -246,7 +305,7 @@ class RunState:
             if self.no_gold:
                 out.append("No Gold")
 
-            if not self.is_low_percent() and self.no_tp:
+            if not self.is_low_percent and self.no_tp:
                 out.append("No TP")
 
         out.append(self.get_category())

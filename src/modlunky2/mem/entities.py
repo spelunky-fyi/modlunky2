@@ -33,10 +33,34 @@ MOUNTS = {
 }
 
 BACKPACKS = {
+    EntityType.ITEM_CAPE,
+    EntityType.ITEM_VLADS_CAPE,
     EntityType.ITEM_HOVERPACK,
     EntityType.ITEM_JETPACK,
     EntityType.ITEM_POWERPACK,
     EntityType.ITEM_TELEPORTER_BACKPACK,
+}
+
+LOW_BANNED_ATTACKABLES = {
+    EntityType.ITEM_WEBGUN,
+    EntityType.ITEM_SHOTGUN,
+    EntityType.ITEM_FREEZERAY,
+    EntityType.ITEM_CLONEGUN,
+    EntityType.ITEM_CAMERA,
+    EntityType.ITEM_TELEPORTER,
+    EntityType.ITEM_BOOMERANG,
+    EntityType.ITEM_MACHETE,
+    EntityType.ITEM_BROKENEXCALIBUR,
+    EntityType.ITEM_PLASMACANNON,
+    EntityType.ITEM_LIGHT_ARROW,
+    EntityType.ITEM_CROSSBOW,
+    # Allowed in moon challenge, sun challenge, waddlers lair,
+    # once on hundun w/ arrow of light
+    EntityType.ITEM_HOUYIBOW,
+    # Allowed in Abzu
+    EntityType.ITEM_EXCALIBUR,
+    # Allowed to be used in moon challenge
+    EntityType.ITEM_MATTOCK,
 }
 
 SHIELDS = {
@@ -73,6 +97,26 @@ NON_CHAIN_POWERUP_ENTITIES = {
     EntityType.ITEM_POWERUP_SPRING_SHOES,
     EntityType.ITEM_POWERUP_TRUECROWN,
 }
+
+
+class CharState(IntEnum):
+    FLAILING = 0
+    STANDING = 1
+    SITTING = 2
+    HANGING = 4
+    DUCKING = 5
+    CLIMBING = 6
+    PUSHING = 7
+    JUMPING = 8
+    FALLING = 9
+    DROPPING = 10
+    ATTACKING = 12
+    THROWING = 17
+    STUNNED = 18
+    ENTERING = 19
+    LOADING = 20
+    EXITING = 21
+    DYING = 22
 
 
 class EntityMap(UnorderedMap):
@@ -163,8 +207,26 @@ class Entity:
 
 class Movable(Entity):
     @property
+    def state(self):
+        result = self._proc.read_u8(self._offset + 0x10C)
+        if result is None:
+            return None
+        return CharState(result)
+
+    @property
+    def last_state(self):
+        result = self._proc.read_u8(self._offset + 0x10D)
+        if result is None:
+            return None
+        return CharState(result)
+
+    @property
     def health(self):
         return self._proc.read_i8(self._offset + 0x10F)
+
+    @property
+    def holding_uid(self):
+        return self._proc.read_i32(self._offset + 0x108)
 
 
 class Mount(Movable):
