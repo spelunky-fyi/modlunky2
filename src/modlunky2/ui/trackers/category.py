@@ -3,7 +3,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 from queue import Empty
-from typing import Optional
+from typing import Optional, Set
 
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
@@ -14,6 +14,7 @@ from modlunky2.mem.entities import (
     EntityType,
     Inventory,
     LOW_BANNED_ATTACKABLES,
+    LOW_BANNED_THROWABLES,
     Layer,
     MOUNTS,
     NON_CHAIN_POWERUP_ENTITIES,
@@ -76,6 +77,8 @@ class RunState:
 
         self.player_state: Optional[CharState] = None
         self.player_last_state: Optional[CharState] = None
+        self.player_item_types: Set[EntityType] = set()
+        self.player_last_item_types: Set[EntityType] = set()
 
         self.health = 4
         self.bombs = 4
@@ -122,11 +125,11 @@ class RunState:
 
         self.no_gold = bool(run_recap_flags & RunRecapFlags.NO_GOLD)
 
-    def update_no_tp(self, item_types):
+    def update_no_tp(self):
         if not self.no_tp:
             return
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type in TELEPORT_ENTITIES:
                 self.no_tp = False
                 return
@@ -185,14 +188,14 @@ class RunState:
                     self.is_low_percent = False
             self.ropes = ropes
 
-    def update_status_effects(self, item_types):
+    def update_status_effects(self):
         if not self.is_low_percent:
             return
 
         is_poisoned = False
         is_cursed = False
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type == EntityType.LOGICAL_POISONED_EFFECT:
                 is_poisoned = True
             elif item_type == EntityType.LOGICAL_CURSED_EFFECT:
@@ -217,60 +220,53 @@ class RunState:
         if self.had_clover:
             self.is_low_percent = False
 
-    def update_wore_backpack(self, item_types):
+    def update_wore_backpack(self):
         if not self.is_low_percent:
             return
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type in BACKPACKS:
                 self.wore_backpack = True
                 self.is_low_percent = False
                 return
 
-    def update_held_shield(self, item_types):
+    def update_held_shield(self):
         if not self.is_low_percent:
             return
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type in SHIELDS:
                 self.held_shield = True
                 self.is_low_percent = False
                 return
 
-    def update_has_non_chain_powerup(self, item_types):
+    def update_has_non_chain_powerup(self):
         if not self.is_low_percent:
             return
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type in NON_CHAIN_POWERUP_ENTITIES:
                 self.has_non_chain_powerup = True
                 self.is_low_percent = False
                 return
 
-    def update_attacked_with(
-        self,
-        layer: Layer,
-        quest_flags: QuestFlags,
-        item_types,
-    ):
+    def update_attacked_with(self, layer: Layer):
         if not self.is_low_percent:
             return
 
-        if (
-            self.player_state != CharState.ATTACKING
-            and self.player_last_state != CharState.ATTACKING
-        ):
+        if self.player_state != CharState.ATTACKING:
             return
 
-        for item_type in item_types:
+        for item_type in self.player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
                 if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
                     continue
 
                 if (
                     item_type == EntityType.ITEM_MATTOCK
-                    and quest_flags & QuestFlags.MOON_CHALLENGE
                     and layer == Layer.BACK
+                    and self.moon_challenge_level
+                    and (self.world, self.level) in self.moon_challenge_level
                 ):
                     continue
 
@@ -302,6 +298,22 @@ class RunState:
                 self.is_low_percent = False
                 return
 
+    def update_attacked_with_throwables(self):
+        if not self.is_low_percent:
+            return
+
+        if (
+            self.player_state != CharState.THROWING
+            and self.player_last_state != CharState.THROWING
+        ):
+            return
+
+        for item_type in self.player_item_types | self.player_last_item_types:
+            if item_type in LOW_BANNED_THROWABLES:
+                self.attacked_with = True
+                self.is_low_percent = False
+                return
+
     def update_challenge_levels(self, quest_flags):
         if self.moon_challenge_level is None:
             if quest_flags & QuestFlags.MOON_CHALLENGE:
@@ -311,8 +323,8 @@ class RunState:
             if quest_flags & QuestFlags.SUN_CHALLENGE:
                 self.sun_challenge_level = (self.world, self.level)
 
-    def update_chain(self, item_types):
-        for item_type in item_types:
+    def update_chain(self):
+        for item_type in self.player_item_types:
             if item_type in CHAIN_POWERUP_ENTITIES:
                 self.chain_powerups.add(item_type)
             elif item_type == EntityType.ITEM_HOUYIBOW:
@@ -343,14 +355,14 @@ class RunState:
         run_recap_flags = self.get_critical_state("run_recap_flags")
         hud_flags = self.get_critical_state("hud_flags")
         quest_flags = self.get_critical_state("quest_flags")
-        item_types = self.get_player_item_types(player)
+        self.update_player_item_types(player)
 
         self.update_challenge_levels(quest_flags)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp(item_types)
+        self.update_no_tp()
 
         # Check Category Criteria
         overlay = player.overlay
@@ -358,24 +370,37 @@ class RunState:
         # Low%
         self.update_has_mounted_tame(overlay)
         self.update_starting_resources(player, inventory)
-        self.update_status_effects(item_types)
+        self.update_status_effects()
         self.update_had_clover(hud_flags)
-        self.update_wore_backpack(item_types)
-        self.update_held_shield(item_types)
-        self.update_has_non_chain_powerup(item_types)
-        self.update_attacked_with(layer, quest_flags, item_types)
+        self.update_wore_backpack()
+        self.update_held_shield()
+        self.update_has_non_chain_powerup()
+        self.update_attacked_with(
+            layer,
+        )
+        self.update_attacked_with_throwables()
 
         # Other Category Specifiers
-        self.update_chain(item_types)
+        self.update_chain()
 
-    def get_player_item_types(self, player: Player):
+    def update_player_item_types(self, player: Player):
         item_types = set()
         entity_map = self._proc.state.uid_to_entity
         for item in player.items:
-            entity_type = entity_map.get(item).type.entity_type
+            entity = entity_map.get(item)
+            if entity is None:
+                continue
+
+            entity_type = entity.type
+            if entity_type is None:
+                continue
+
+            entity_type = entity_type.entity_type
             if entity_type is not None:
                 item_types.add(entity_type)
-        return item_types
+
+        self.player_last_item_types = self.player_item_types
+        self.player_item_types = item_types
 
     def get_low_category(self):
         if self.hou_yis_bow:
