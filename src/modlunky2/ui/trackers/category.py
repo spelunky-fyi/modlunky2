@@ -8,6 +8,7 @@ from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
     BACKPACKS,
+    CHAIN_POWERUP_ENTITIES,
     CharState,
     EntityType,
     Inventory,
@@ -18,7 +19,7 @@ from modlunky2.mem.entities import (
     SHIELDS,
     TELEPORT_ENTITIES,
 )
-from modlunky2.mem.state import HudFlags, RunRecapFlags
+from modlunky2.mem.state import HudFlags, RunRecapFlags, Theme
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
 
@@ -97,6 +98,11 @@ class RunState:
         self.has_non_chain_powerup = False
         self.attacked_with = False
 
+        # Other category specifiers
+        self.chain_powerups = set()
+        self.hou_yis_bow = False
+        self.chain_theme = None
+
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
             return
@@ -142,13 +148,15 @@ class RunState:
                 self.has_mounted_tame = True
                 self.is_low_percent = False
 
-    def update_starting_resources(self, player: Player, inventory: Inventory):
+    def update_starting_resources(
+        self, player: Player, state: CharState, inventory: Inventory
+    ):
         if not self.is_low_percent:
             return
 
         health = player.health
         if health is not None:
-            if health > self.health:
+            if health > self.health and state != CharState.DYING:
                 self.increased_starting_items = True
                 self.is_low_percent = False
             self.health = health
@@ -238,9 +246,9 @@ class RunState:
         if not self.is_low_percent:
             return
 
-        # There's a lot of caveats for chain categories. Check check up
-        # to world 1
-        if self.world > 1:
+        # There's a lot of caveats for chain categories. Skip checks on certain worlds
+        # TODO: limit to moon/sun/waddlers/hundun and only for mattock/hou yi's bow
+        if self.world in [2, 7] or (self.world, self.level) in [(7, 4)]:
             return
 
         if state != CharState.ATTACKING and last_state != CharState.ATTACKING:
@@ -251,6 +259,16 @@ class RunState:
                 self.attacked_with = True
                 self.is_low_percent = False
                 return
+
+    def update_chain(self, item_types):
+        for item_type in item_types:
+            if item_type in CHAIN_POWERUP_ENTITIES:
+                self.chain_powerups.add(item_type)
+            elif item_type == EntityType.ITEM_HOUYIBOW:
+                self.hou_yis_bow = True
+
+        if self.theme in [Theme.TEMPLE, Theme.TIDE_POOL]:
+            self.chain_theme = self.theme
 
     def update(self):
         self.update_global_state()
@@ -279,13 +297,16 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(overlay)
-        self.update_starting_resources(player, inventory)
+        self.update_starting_resources(player, state, inventory)
         self.update_status_effects(item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(item_types)
         self.update_held_shield(item_types)
         self.update_has_non_chain_powerup(item_types)
         self.update_attacked_with(state, last_state, item_types)
+
+        # Other Category Specifiers
+        self.update_chain(item_types)
 
     def get_player_item_types(self, player: Player):
         item_types = set()
@@ -297,9 +318,46 @@ class RunState:
         return item_types
 
     def get_low_catery(self):
+        if self.hou_yis_bow:
+            if self.chain_powerups:
+                return "Chain Low% Cosmic Ocean"
+            else:
+                return "Low% Cosmic Ocean"
+
+        if self.chain_powerups:
+            if self.chain_theme is None:
+                return "Chain Low% Sunken City"
+            elif self.chain_theme == Theme.TIDE_POOL:
+                return "Chain Low% Abzu"
+            elif self.chain_theme == Theme.TEMPLE:
+                return "Chain Low% Duat"
+
+        if self.world >= 7:
+            return "Low% Sunken City"
+
         return "Low%"
 
     def get_any_category(self):
+        if self.hou_yis_bow:
+            return "Cosmic Ocean%"
+
+        if (
+            EntityType.ITEM_POWERUP_ANKH in self.chain_powerups
+            and len(self.chain_powerups) == 1
+        ):
+            return "Sunken City%"
+
+        if self.chain_powerups:
+            if self.chain_theme is None:
+                return "Chain Sunken City%"
+            elif self.chain_theme == Theme.TIDE_POOL:
+                return "Sunken City% Abzu"
+            elif self.chain_theme == Theme.TEMPLE:
+                return "Sunken City% Duat"
+
+        if self.world >= 7:
+            return "Sunken City%"
+
         return "Any%"
 
     def get_category(self):
