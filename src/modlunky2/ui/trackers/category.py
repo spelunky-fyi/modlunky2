@@ -317,7 +317,7 @@ class RunState:
                 item_types.add(entity_type)
         return item_types
 
-    def get_low_catery(self):
+    def get_low_category(self):
         if self.hou_yis_bow:
             if self.chain_powerups:
                 return "Chain Low% Cosmic Ocean"
@@ -365,7 +365,7 @@ class RunState:
             return "Death%"
 
         if self.is_low_percent:
-            return self.get_low_catery()
+            return self.get_low_category()
 
         return self.get_any_category()
 
