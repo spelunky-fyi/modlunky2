@@ -74,6 +74,7 @@ class RunState:
         self.world = 0
         self.level = 0
         self.theme = 0
+        self.level_started = False
 
         self.player_state: Optional[CharState] = None
         self.player_last_state: Optional[CharState] = None
@@ -83,6 +84,7 @@ class RunState:
         self.health = 4
         self.bombs = 4
         self.ropes = 4
+        self.level_start_ropes = 4
 
         self.poisoned = False
         self.cursed = False
@@ -141,9 +143,18 @@ class RunState:
         return result
 
     def update_global_state(self):
-        self.world = self.get_critical_state("world")
-        self.level = self.get_critical_state("level")
-        self.theme = self.get_critical_state("theme")
+        world = self.get_critical_state("world")
+        level = self.get_critical_state("level")
+        theme = self.get_critical_state("theme")
+
+        if (world, level) != (self.world, self.level):
+            self.level_started = True
+        else:
+            self.level_started = False
+
+        self.world = world
+        self.level = level
+        self.theme = theme
 
     def update_has_mounted_tame(self, player_overlay):
         if not self.is_low_percent:
@@ -164,9 +175,19 @@ class RunState:
 
         health = player.health
         if health is not None:
+            # If health was previously 0 just set the current value since you
+            # likely got health from ressurection
+            if self.health <= 0:
+                self.health = health
+
             if health > self.health and self.player_state != CharState.DYING:
                 self.increased_starting_items = True
                 self.is_low_percent = False
+
+            if health > 4:
+                self.increased_starting_items = True
+                self.is_low_percent = False
+
             self.health = health
 
         bombs = inventory.bombs
@@ -174,18 +195,16 @@ class RunState:
             if bombs > self.bombs:
                 self.increased_starting_items = True
                 self.is_low_percent = False
+            if bombs > 4:
+                self.increased_starting_items = True
+                self.is_low_percent = False
             self.bombs = bombs
 
         ropes = inventory.ropes
         if ropes is not None:
-            if ropes > self.ropes:
-                delta = ropes - self.ropes
-                # Increasing ropes by less than rope pile means
-                # you're likely picking up a single rope you dropped
-                # which is allowed.
-                if delta > 2:
-                    self.increased_starting_items = True
-                    self.is_low_percent = False
+            if ropes > self.level_start_ropes or ropes > 4:
+                self.increased_starting_items = True
+                self.is_low_percent = False
             self.ropes = ropes
 
     def update_status_effects(self):
@@ -335,8 +354,13 @@ class RunState:
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.chain_theme = Theme.TIDE_POOL
 
+    def update_on_level_start(self):
+        if not self.level_started:
+            return
+
+        self.level_start_ropes = self.ropes
+
     def update(self):
-        self.update_global_state()
         player = self._proc.state.players[0]
         if player is None:
             return
@@ -355,6 +379,9 @@ class RunState:
         run_recap_flags = self.get_critical_state("run_recap_flags")
         hud_flags = self.get_critical_state("hud_flags")
         quest_flags = self.get_critical_state("quest_flags")
+
+        self.update_global_state()
+        self.update_on_level_start()
         self.update_player_item_types(player)
 
         self.update_challenge_levels(quest_flags)
