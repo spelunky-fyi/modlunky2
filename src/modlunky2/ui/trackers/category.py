@@ -8,8 +8,10 @@ from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
     BACKPACKS,
+    CharState,
     EntityType,
     Inventory,
+    LOW_BANNED_ATTACKABLES,
     MOUNTS,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
@@ -93,6 +95,7 @@ class RunState:
         self.wore_backpack = False
         self.held_shield = False
         self.has_non_chain_powerup = False
+        self.attacked_with = False
 
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
@@ -231,6 +234,24 @@ class RunState:
                 self.is_low_percent = False
                 return
 
+    def update_attacked_with(self, state: CharState, last_state: CharState, item_types):
+        if not self.is_low_percent:
+            return
+
+        # There's a lot of caveats for chain categories. Check check up
+        # to world 1
+        if self.world > 1:
+            return
+
+        if state != CharState.ATTACKING and last_state != CharState.ATTACKING:
+            return
+
+        for item_type in item_types:
+            if item_type in LOW_BANNED_ATTACKABLES:
+                self.attacked_with = True
+                self.is_low_percent = False
+                return
+
     def update(self):
         self.update_global_state()
         player = self._proc.state.players[0]
@@ -238,7 +259,10 @@ class RunState:
             return
 
         inventory = player.inventory
-        if inventory is None:
+        state = player.state
+        last_state = player.last_state
+
+        if not all(var is not None for var in [inventory, state, last_state]):
             return
 
         run_recap_flags = self.get_critical_state("run_recap_flags")
@@ -261,6 +285,7 @@ class RunState:
         self.update_wore_backpack(item_types)
         self.update_held_shield(item_types)
         self.update_has_non_chain_powerup(item_types)
+        self.update_attacked_with(state, last_state, item_types)
 
     def get_player_item_types(self, player: Player):
         item_types = set()
