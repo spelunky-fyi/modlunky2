@@ -45,6 +45,12 @@ class QuestFlags(enum.IntFlag):
     SUN_CHALLENGE = 1 << 27 - 1
 
 
+class PresenceFlags(enum.IntFlag):
+    MOON_CHALLENGE = 1 << 9 - 1
+    STAR_CHALLENGE = 1 << 10 - 1
+    SUN_CHALLENGE = 1 << 11 - 1
+
+
 class Screen(enum.IntEnum):
     LOGO = 0
     INTRO = 1
@@ -173,6 +179,11 @@ class State:
     @property
     def win_state(self):
         return WinState(self._proc.read_i8(self._offset + 0x76))
+
+    @property
+    def presence_flags(self):
+        offset = self._offset + 0xA14
+        return PresenceFlags(self._proc.read_u32(offset))
 
     @property
     def run_recap_flags(self):

@@ -22,7 +22,12 @@ from modlunky2.mem.entities import (
     SHIELDS,
     TELEPORT_ENTITIES,
 )
-from modlunky2.mem.state import HudFlags, QuestFlags, RunRecapFlags, Theme
+from modlunky2.mem.state import (
+    HudFlags,
+    PresenceFlags,
+    RunRecapFlags,
+    Theme,
+)
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
 
@@ -112,8 +117,6 @@ class RunState:
         self.chain_powerups = set()
         self.hou_yis_bow = False
         self.chain_theme = None
-        self.moon_challenge_level = None
-        self.sun_challenge_level = None
 
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
@@ -264,11 +267,14 @@ class RunState:
                 self.is_low_percent = False
                 return
 
-    def update_attacked_with(self, layer: Layer):
+    def update_attacked_with(self, layer: Layer, presence_flags: PresenceFlags):
         if not self.is_low_percent:
             return
 
-        if self.player_state != CharState.ATTACKING:
+        if (
+            self.player_state != CharState.ATTACKING
+            and self.player_last_state != CharState.ATTACKING
+        ):
             return
 
         for item_type in self.player_item_types:
@@ -279,29 +285,22 @@ class RunState:
                 if (
                     item_type == EntityType.ITEM_MATTOCK
                     and layer == Layer.BACK
-                    and self.moon_challenge_level
-                    and (self.world, self.level) in self.moon_challenge_level
+                    and presence_flags & PresenceFlags.MOON_CHALLENGE
                 ):
                     continue
 
                 if item_type == EntityType.ITEM_HOUYIBOW:
                     if layer == Layer.BACK:
                         # Moon challenge
-                        if (
-                            self.moon_challenge_level
-                            and (self.world, self.level) in self.moon_challenge_level
-                        ):
+                        if presence_flags & PresenceFlags.MOON_CHALLENGE:
                             continue
 
                         # Sun Challenge
-                        if (
-                            self.sun_challenge_level
-                            and (self.world, self.level) in self.sun_challenge_level
-                        ):
+                        if presence_flags & PresenceFlags.SUN_CHALLENGE:
                             continue
 
                         # Waddler
-                        if (self.world, self.level) == (7, 1):
+                        if (self.world, self.level) in [(3, 1), (5, 1), (7, 1)]:
                             continue
 
                     # Hundun
@@ -327,15 +326,6 @@ class RunState:
                 self.attacked_with = True
                 self.is_low_percent = False
                 return
-
-    def update_challenge_levels(self, quest_flags):
-        if self.moon_challenge_level is None:
-            if quest_flags & QuestFlags.MOON_CHALLENGE:
-                self.moon_challenge_level = (self.world, self.level)
-
-        if self.sun_challenge_level is None:
-            if quest_flags & QuestFlags.SUN_CHALLENGE:
-                self.sun_challenge_level = (self.world, self.level)
 
     def update_chain(self):
         for item_type in self.player_item_types:
@@ -375,13 +365,10 @@ class RunState:
 
         run_recap_flags = self.get_critical_state("run_recap_flags")
         hud_flags = self.get_critical_state("hud_flags")
-        quest_flags = self.get_critical_state("quest_flags")
-
+        presence_flags = self.get_critical_state("presence_flags")
         self.update_global_state()
         self.update_on_level_start()
         self.update_player_item_types(player)
-
-        self.update_challenge_levels(quest_flags)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
@@ -399,9 +386,7 @@ class RunState:
         self.update_wore_backpack()
         self.update_held_shield()
         self.update_has_non_chain_powerup()
-        self.update_attacked_with(
-            layer,
-        )
+        self.update_attacked_with(layer, presence_flags)
         self.update_attacked_with_throwables()
 
         # Other Category Specifiers
