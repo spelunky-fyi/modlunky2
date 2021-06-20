@@ -103,6 +103,7 @@ class CharState(IntEnum):
     FLAILING = 0
     STANDING = 1
     SITTING = 2
+    UNKNOWN_1 = 3
     HANGING = 4
     DUCKING = 5
     CLIMBING = 6
@@ -110,7 +111,12 @@ class CharState(IntEnum):
     JUMPING = 8
     FALLING = 9
     DROPPING = 10
+    UNKNOWN_2 = 11
     ATTACKING = 12
+    UNKNOWN_3 = 13
+    UNKNOWN_4 = 14
+    UNKNOWN_5 = 15
+    UNKNOWN_6 = 16
     THROWING = 17
     STUNNED = 18
     ENTERING = 19

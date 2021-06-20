@@ -46,6 +46,7 @@ class Screen(enum.IntEnum):
     TITLE = 3
     MAIN_MENU = 4
     OPTIONS = 5
+    UNKNOWN_1 = 6
     LEADERBOARDS = 7
     SEED_INPUT = 8
     CHARACTER_SELECT = 9
@@ -61,6 +62,9 @@ class Screen(enum.IntEnum):
     CONSTELLATION = 19
     RECAP = 20
     ARENA_MENU = 21
+    UNKNOWN_2 = 22
+    UNKNOWN_3 = 23
+    UNKNOWN_4 = 24
     ARENA_INTRO = 25
     ARENA_MATCH = 26
     ARENA_SCORES = 27
