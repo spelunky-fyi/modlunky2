@@ -175,27 +175,17 @@ class RunState:
 
         health = player.health
         if health is not None:
-            # If health was previously 0 just set the current value since you
-            # likely got health from ressurection
-            if self.health <= 0:
-                self.health = health
 
-            if health > self.health and self.player_state != CharState.DYING:
+            if (
+                health > self.health and self.player_state != CharState.DYING
+            ) or health > 4:
                 self.increased_starting_items = True
                 self.is_low_percent = False
-
-            if health > 4:
-                self.increased_starting_items = True
-                self.is_low_percent = False
-
             self.health = health
 
         bombs = inventory.bombs
         if bombs is not None:
-            if bombs > self.bombs:
-                self.increased_starting_items = True
-                self.is_low_percent = False
-            if bombs > 4:
+            if bombs > self.bombs or bombs > 4:
                 self.increased_starting_items = True
                 self.is_low_percent = False
             self.bombs = bombs
@@ -359,6 +349,8 @@ class RunState:
             return
 
         self.level_start_ropes = self.ropes
+        if self.theme == Theme.DUAT:
+            self.health = 4
 
     def update(self):
         player = self._proc.state.players[0]
