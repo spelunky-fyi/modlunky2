@@ -39,6 +39,12 @@ class HudFlags(enum.IntFlag):
     HAVE_CLOVER = 1 << 23 - 1
 
 
+class QuestFlags(enum.IntFlag):
+    MOON_CHALLENGE = 1 << 25 - 1
+    STAR_CHALLENGE = 1 << 26 - 1
+    SUN_CHALLENGE = 1 << 27 - 1
+
+
 class Screen(enum.IntEnum):
     LOGO = 0
     INTRO = 1
@@ -118,6 +124,11 @@ class State:
     @property
     def screen_next(self):
         return self._proc.read_i32(self._offset + 0x10)
+
+    @property
+    def quest_flags(self):
+        offset = self._offset + 0x38
+        return QuestFlags(self._proc.read_u32(offset))
 
     @property
     def world_start(self):

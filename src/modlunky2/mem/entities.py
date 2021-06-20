@@ -99,6 +99,11 @@ NON_CHAIN_POWERUP_ENTITIES = {
 }
 
 
+class Layer(IntEnum):
+    FRONT = 0
+    BACK = 1
+
+
 class CharState(IntEnum):
     FLAILING = 0
     STANDING = 1
@@ -123,6 +128,14 @@ class CharState(IntEnum):
     LOADING = 20
     EXITING = 21
     DYING = 22
+    UNKNOWN_7 = 23
+    UNKNOWN_8 = 24
+    UNKNOWN_9 = 25
+    UNKNOWN_10 = 26
+    UNKNOWN_11 = 27
+    UNKNOWN_12 = 28
+    UNKNOWN_13 = 29
+    UNKNOWN_14 = 30
 
 
 class EntityMap(UnorderedMap):
@@ -200,6 +213,13 @@ class Entity:
     def items(self):
         offset = self._offset + 0x18
         return self._proc.read_vector(offset, "<L")
+
+    @property
+    def layer(self):
+        result = self._proc.read_u8(self._offset + 0x98)
+        if result is None:
+            return None
+        return Layer(result)
 
     def as_movable(self) -> "Movable":
         return Movable(self._proc, self._offset)

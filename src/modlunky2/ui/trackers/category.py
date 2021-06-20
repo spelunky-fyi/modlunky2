@@ -3,6 +3,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 from queue import Empty
+from typing import Optional
 
 from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
@@ -13,13 +14,14 @@ from modlunky2.mem.entities import (
     EntityType,
     Inventory,
     LOW_BANNED_ATTACKABLES,
+    Layer,
     MOUNTS,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
     TELEPORT_ENTITIES,
 )
-from modlunky2.mem.state import HudFlags, RunRecapFlags, Theme
+from modlunky2.mem.state import HudFlags, QuestFlags, RunRecapFlags, Theme
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
 
@@ -72,6 +74,9 @@ class RunState:
         self.level = 0
         self.theme = 0
 
+        self.player_state: Optional[CharState] = None
+        self.player_last_state: Optional[CharState] = None
+
         self.health = 4
         self.bombs = 4
         self.ropes = 4
@@ -102,6 +107,8 @@ class RunState:
         self.chain_powerups = set()
         self.hou_yis_bow = False
         self.chain_theme = None
+        self.moon_challenge_level = None
+        self.sun_challenge_level = None
 
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
@@ -148,15 +155,13 @@ class RunState:
                 self.has_mounted_tame = True
                 self.is_low_percent = False
 
-    def update_starting_resources(
-        self, player: Player, state: CharState, inventory: Inventory
-    ):
+    def update_starting_resources(self, player: Player, inventory: Inventory):
         if not self.is_low_percent:
             return
 
         health = player.health
         if health is not None:
-            if health > self.health and state != CharState.DYING:
+            if health > self.health and self.player_state != CharState.DYING:
                 self.increased_starting_items = True
                 self.is_low_percent = False
             self.health = health
@@ -242,23 +247,69 @@ class RunState:
                 self.is_low_percent = False
                 return
 
-    def update_attacked_with(self, state: CharState, last_state: CharState, item_types):
+    def update_attacked_with(
+        self,
+        layer: Layer,
+        quest_flags: QuestFlags,
+        item_types,
+    ):
         if not self.is_low_percent:
             return
 
-        # There's a lot of caveats for chain categories. Skip checks on certain worlds
-        # TODO: limit to moon/sun/waddlers/hundun and only for mattock/hou yi's bow
-        if self.world in [2, 7] or (self.world, self.level) in [(7, 4)]:
-            return
-
-        if state != CharState.ATTACKING and last_state != CharState.ATTACKING:
+        if (
+            self.player_state != CharState.ATTACKING
+            and self.player_last_state != CharState.ATTACKING
+        ):
             return
 
         for item_type in item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
+                if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
+                    continue
+
+                if (
+                    item_type == EntityType.ITEM_MATTOCK
+                    and quest_flags & QuestFlags.MOON_CHALLENGE
+                    and layer == Layer.BACK
+                ):
+                    continue
+
+                if item_type == EntityType.ITEM_HOUYIBOW:
+                    if layer == Layer.BACK:
+                        # Moon challenge
+                        if (
+                            self.moon_challenge_level
+                            and (self.world, self.level) in self.moon_challenge_level
+                        ):
+                            continue
+
+                        # Sun Challenge
+                        if (
+                            self.sun_challenge_level
+                            and (self.world, self.level) in self.sun_challenge_level
+                        ):
+                            continue
+
+                        # Waddler
+                        if (self.world, self.level) == (7, 1):
+                            continue
+
+                    # Hundun
+                    if (self.world, self.level) == (7, 4):
+                        continue
+
                 self.attacked_with = True
                 self.is_low_percent = False
                 return
+
+    def update_challenge_levels(self, quest_flags):
+        if self.moon_challenge_level is None:
+            if quest_flags & QuestFlags.MOON_CHALLENGE:
+                self.moon_challenge_level = (self.world, self.level)
+
+        if self.sun_challenge_level is None:
+            if quest_flags & QuestFlags.SUN_CHALLENGE:
+                self.sun_challenge_level = (self.world, self.level)
 
     def update_chain(self, item_types):
         for item_type in item_types:
@@ -267,8 +318,10 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW:
                 self.hou_yis_bow = True
 
-        if self.theme in [Theme.TEMPLE, Theme.TIDE_POOL]:
-            self.chain_theme = self.theme
+        if self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
+            self.chain_theme = Theme.TEMPLE
+        elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
+            self.chain_theme = Theme.TIDE_POOL
 
     def update(self):
         self.update_global_state()
@@ -279,13 +332,20 @@ class RunState:
         inventory = player.inventory
         state = player.state
         last_state = player.last_state
+        layer = player.layer
 
-        if not all(var is not None for var in [inventory, state, last_state]):
+        if not all(var is not None for var in [inventory, state, last_state, layer]):
             return
+
+        self.player_state = state
+        self.player_last_state = last_state
 
         run_recap_flags = self.get_critical_state("run_recap_flags")
         hud_flags = self.get_critical_state("hud_flags")
+        quest_flags = self.get_critical_state("quest_flags")
         item_types = self.get_player_item_types(player)
+
+        self.update_challenge_levels(quest_flags)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
@@ -297,13 +357,13 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(overlay)
-        self.update_starting_resources(player, state, inventory)
+        self.update_starting_resources(player, inventory)
         self.update_status_effects(item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(item_types)
         self.update_held_shield(item_types)
         self.update_has_non_chain_powerup(item_types)
-        self.update_attacked_with(state, last_state, item_types)
+        self.update_attacked_with(layer, quest_flags, item_types)
 
         # Other Category Specifiers
         self.update_chain(item_types)
@@ -361,7 +421,7 @@ class RunState:
         return "Any%"
 
     def get_category(self):
-        if self.health <= 0:
+        if self.player_state == CharState.DYING:
             return "Death%"
 
         if self.is_low_percent:
@@ -376,6 +436,9 @@ class RunState:
         if self.level > 2:
             return True
 
+        if self.player_state == CharState.DYING:
+            return True
+
         return False
 
     def get_display(self):
@@ -388,7 +451,9 @@ class RunState:
             if self.no_gold:
                 out.append("No Gold")
 
-            if not self.is_low_percent and self.no_tp:
+            if self.no_tp and (
+                not self.is_low_percent or self.player_state == CharState.DYING
+            ):
                 out.append("No TP")
 
         out.append(self.get_category())
