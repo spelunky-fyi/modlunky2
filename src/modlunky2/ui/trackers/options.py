@@ -10,16 +10,16 @@ from .utils import get_text_color
 logger = logging.getLogger("modlunky2")
 
 
-CHROMA_GREEN = "#00ff00"
-CHROMA_MAGENTA = "#ff00ff"
-CHROMA_BLUE = "#0000ff"
+COLOR_GREEN = "#00ff00"
+COLOR_MAGENTA = "#ff00ff"
+COLOR_BLUE = "#0000ff"
 
 
-class ChooseChroma(PopupWindow):
+class ChooseColor(PopupWindow):
     def __init__(
         self, options_frame: "OptionsFrame", ml_config: Config, *args, **kwargs
     ):
-        super().__init__("Choose Chroma Key", ml_config, *args, **kwargs)
+        super().__init__("Choose Color Key", ml_config, *args, **kwargs)
         self.options_frame = options_frame
         self.modlunky_config = ml_config
         self.columnconfigure(0, weight=1)
@@ -31,17 +31,17 @@ class ChooseChroma(PopupWindow):
         ttk.Button(
             color_buttons,
             text="Magenta",
-            command=lambda: self.update_chroma_label(CHROMA_MAGENTA),
+            command=lambda: self.update_color_label(COLOR_MAGENTA),
         ).grid(row=0, column=0, padx=2, pady=5, sticky="nsew")
         ttk.Button(
             color_buttons,
             text="Green",
-            command=lambda: self.update_chroma_label(CHROMA_GREEN),
+            command=lambda: self.update_color_label(COLOR_GREEN),
         ).grid(row=0, column=1, padx=2, pady=5, sticky="nsew")
         ttk.Button(
             color_buttons,
             text="Blue",
-            command=lambda: self.update_chroma_label(CHROMA_BLUE),
+            command=lambda: self.update_color_label(COLOR_BLUE),
         ).grid(row=0, column=2, padx=2, pady=5, sticky="nsew")
         ttk.Button(
             color_buttons,
@@ -51,10 +51,10 @@ class ChooseChroma(PopupWindow):
 
         ttk.Separator(self).grid(row=1, column=0, pady=5, sticky="nsew")
 
-        self.chroma_label = tk.Label(
+        self.color_label = tk.Label(
             self, font=tk.font.Font(family="Helvitica", size=16, weight="bold")
         )
-        self.chroma_label.grid(row=2, column=0, ipadx=5, padx=5, pady=5, sticky="nsew")
+        self.color_label.grid(row=2, column=0, ipadx=5, padx=5, pady=5, sticky="nsew")
 
         ttk.Separator(self).grid(row=3, column=0, pady=5, sticky="nsew")
 
@@ -74,11 +74,11 @@ class ChooseChroma(PopupWindow):
             command=self.destroy,
         ).grid(row=0, column=1, padx=1, pady=5, sticky="nsew")
 
-        chroma_key = self.modlunky_config.config_file.tracker_chroma_key
-        self.update_chroma_label(chroma_key)
+        color_key = self.modlunky_config.config_file.tracker_color_key
+        self.update_color_label(color_key)
 
     def save_choice(self):
-        self.modlunky_config.config_file.tracker_chroma_key = self.chroma_label["text"]
+        self.modlunky_config.config_file.tracker_color_key = self.color_label["text"]
         self.modlunky_config.config_file.save()
         self.options_frame.render()
         self.destroy()
@@ -87,13 +87,13 @@ class ChooseChroma(PopupWindow):
         _, hex_code = colorchooser.askcolor(parent=self, title="Choose color")
         if hex_code is None:
             return
-        self.update_chroma_label(hex_code)
+        self.update_color_label(hex_code)
 
-    def update_chroma_label(self, chroma_key):
-        self.chroma_label.config(
-            text=chroma_key,
-            bg=chroma_key,
-            fg=get_text_color(chroma_key),
+    def update_color_label(self, color_key):
+        self.color_label.config(
+            text=color_key,
+            bg=color_key,
+            fg=get_text_color(color_key),
         )
 
 
@@ -105,22 +105,22 @@ class OptionsFrame(ttk.LabelFrame):
         self.columnconfigure(0, weight=1)
 
         self.rowconfigure(0, minsize=60)
-        self.chroma_button = ttk.Button(
-            self, text="Chroma Key", command=self.choose_chroma
+        self.color_button = ttk.Button(
+            self, text="Color Key", command=self.choose_color
         )
-        self.chroma_button.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-        self.chroma_label = tk.Label(
+        self.color_button.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        self.color_label = tk.Label(
             self, font=tk.font.Font(family="Helvitica", size=16, weight="bold")
         )
-        self.chroma_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
+        self.color_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
 
     def render(self):
-        chroma_key = self.ml_config.config_file.tracker_chroma_key
-        self.chroma_label.config(
-            text=chroma_key,
-            bg=chroma_key,
-            fg=get_text_color(chroma_key),
+        color_key = self.ml_config.config_file.tracker_color_key
+        self.color_label.config(
+            text=color_key,
+            bg=color_key,
+            fg=get_text_color(color_key),
         )
 
-    def choose_chroma(self):
-        ChooseChroma(options_frame=self, ml_config=self.ml_config)
+    def choose_color(self):
+        ChooseColor(options_frame=self, ml_config=self.ml_config)

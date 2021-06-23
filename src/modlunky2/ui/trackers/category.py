@@ -5,7 +5,10 @@ from tkinter import ttk
 from queue import Empty
 from typing import Optional, Set
 
+from PIL import Image, ImageTk
+
 from modlunky2.config import Config
+from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
     BACKPACKS,
@@ -34,6 +37,9 @@ from .common import TrackerWindow, WatcherThread, CommonCommand
 logger = logging.getLogger("modlunky2")
 
 
+ICON_PATH = BASE_DIR / "static/images"
+
+
 class Command(Enum):
     LABEL = "label"
 
@@ -45,19 +51,25 @@ class CategoryButtons(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
 
+        self.cat_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "cat2.png").resize((24, 24), Image.ANTIALIAS)
+        )
+
         self.category_button = ttk.Button(
             self,
+            image=self.cat_icon,
             text="Category",
+            compound="left",
             command=self.launch,
         )
         self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
-        chroma_key = self.ml_config.config_file.tracker_chroma_key
+        color_key = self.ml_config.config_file.tracker_color_key
         self.disable_button()
         CategoryWindow(
             title="Category Tracker",
-            chroma_key=chroma_key,
+            color_key=color_key,
             on_close=self.enable_button,
         )
 
@@ -541,8 +553,9 @@ class CategoryWindow(TrackerWindow):
         super().__init__(*args, **kwargs)
 
         font = tk.font.Font(family="Helvitica", size=42, weight="bold")
+
         self.label = tk.Label(
-            self, text="Connecting...", bg=self.chroma_key, fg="white", font=font
+            self, text="Connecting...", bg=self.color_key, fg="white", font=font
         )
         self.label.columnconfigure(0, weight=1)
         self.label.rowconfigure(0, weight=1)

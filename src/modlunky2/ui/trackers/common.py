@@ -80,17 +80,17 @@ class WatcherThread(threading.Thread):
 
 
 class TrackerWindow(tk.Toplevel):
-    def __init__(self, title, on_close, *args, chroma_key="#ff00ff", **kwargs):
+    def __init__(self, title, on_close, *args, color_key="#ff00ff", **kwargs):
         super().__init__(*args, **kwargs)
         self.attributes("-topmost", "true")
         self.on_close = on_close
         self.queue = Queue()
-        self.chroma_key = chroma_key
+        self.color_key = color_key
 
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
         self.iconphoto(False, self.icon_png)
 
-        self.configure(bg=chroma_key)
+        self.configure(bg=color_key)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 

@@ -32,7 +32,7 @@ NOT_PRESENT = object()
 SPELUNKY_FYI_ROOT_DEFAULT = "https://spelunky.fyi/"
 LAST_INSTALL_BROWSE_DEFAULT = "/"
 
-DEFAULT_CHROMA_KEY = "#ff00ff"
+DEFAULT_COLOR_KEY = "#ff00ff"
 
 logger = logging.getLogger("modlunky2")
 
@@ -105,7 +105,7 @@ class ConfigFile:
         self.theme = None
         self.last_install_browse = None
         self.last_tab = None
-        self.tracker_chroma_key = None
+        self.tracker_color_key = None
 
     @classmethod
     def from_path(cls, config_path: Path, exe_dir=None):
@@ -157,9 +157,7 @@ class ConfigFile:
         obj.last_tab = config_data.get("last-tab")
 
         # Tracker Config
-        obj.tracker_chroma_key = config_data.get(
-            "tracker-chroma-key", DEFAULT_CHROMA_KEY
-        )
+        obj.tracker_color_key = config_data.get("tracker-color-key", DEFAULT_COLOR_KEY)
 
         if needs_save:
             obj.save()
@@ -210,8 +208,8 @@ class ConfigFile:
         if self.last_tab:
             out["last-tab"] = self.last_tab
 
-        if self.tracker_chroma_key != DEFAULT_CHROMA_KEY:
-            out["tracker-chroma-key"] = self.tracker_chroma_key
+        if self.tracker_color_key != DEFAULT_COLOR_KEY:
+            out["tracker-color-key"] = self.tracker_color_key
 
         out["theme"] = self.theme
 

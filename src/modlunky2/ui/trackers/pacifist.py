@@ -31,11 +31,11 @@ class PacifistButtons(ttk.Frame):
         self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
-        chroma_key = self.ml_config.config_file.tracker_chroma_key
+        color_key = self.ml_config.config_file.tracker_color_key
         self.disable_button()
         PacifistWindow(
             title="Pacifist Tracker",
-            chroma_key=chroma_key,
+            color_key=color_key,
             on_close=self.enable_button,
         )
 
@@ -63,7 +63,7 @@ class PacifistWindow(TrackerWindow):
 
         font = tk.font.Font(family="Helvitica", size=42, weight="bold")
         self.label = tk.Label(
-            self, text="Connecting...", bg=self.chroma_key, fg="white", font=font
+            self, text="Connecting...", bg=self.color_key, fg="white", font=font
         )
         self.label.columnconfigure(0, weight=1)
         self.label.rowconfigure(0, weight=1)
