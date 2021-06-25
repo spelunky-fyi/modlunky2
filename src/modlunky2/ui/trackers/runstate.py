@@ -59,11 +59,8 @@ class RunState:
         self.no_gold = True
         self.no_tp = True
 
-        # There are a lot of checks associated with low%
-        # if any are violated then don't bother checking them
-        self.is_low_percent = True
-
         # Low%
+        self.is_low_percent = True
         self.has_mounted_tame = False
         self.increased_starting_items = False
         self.cured_status = False
@@ -73,10 +70,24 @@ class RunState:
         self.has_non_chain_powerup = False
         self.attacked_with = False
 
-        # Other category specifiers
-        self.chain_powerups = set()
+        # Low% if Chain
+        self.failed_low_if_not_chain = False
+        self.lc_has_mounted_qilin = False
+        self.lc_has_swung_excalibur = False
+        self.lc_has_fired_hou_yis_bow = False
+        self.lc_has_swung_mattock = False
+
+        # Chain
+        self.is_chain: Optional[bool] = None  # None if not yet, False if failed chain
         self.hou_yis_bow = False
         self.chain_theme = None
+        self.has_chain_powerup = False
+        self.had_udjat_eye = False
+        self.had_world2_chain_headwear = False
+        self.had_ankh = False
+        self.held_world4_chain_item = False
+        self.had_tablet_of_destiny = False
+        self.held_ushabti = False
 
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
@@ -129,6 +140,8 @@ class RunState:
         entity_type: EntityType = player_overlay.type.id
         # Allowed to ride tamed qilin in tiamats
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
+            self.lc_has_mounted_qilin = True
+            self.failed_low_if_not_chain = True
             return
 
         if entity_type in MOUNTS:
@@ -217,6 +230,16 @@ class RunState:
                 self.is_low_percent = False
                 return
 
+    def update_has_chain_powerup(self):
+        if self.has_chain_powerup:
+            return
+
+        for item_type in self.player_item_types:
+            if item_type in CHAIN_POWERUP_ENTITIES:
+                self.has_chain_powerup = True
+                self.failed_low_if_not_chain = True
+                return
+
     def update_has_non_chain_powerup(self):
         if not self.is_low_percent:
             return
@@ -240,6 +263,8 @@ class RunState:
         for item_type in self.player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
                 if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
+                    self.lc_has_swung_excalibur = True
+                    self.failed_low_if_not_chain = True
                     continue
 
                 if (
@@ -247,24 +272,30 @@ class RunState:
                     and layer == Layer.BACK
                     and presence_flags & PresenceFlags.MOON_CHALLENGE
                 ):
+                    self.lc_has_swung_mattock = True
+                    self.failed_low_if_not_chain = True
                     continue
 
                 if item_type == EntityType.ITEM_HOUYIBOW:
                     if layer == Layer.BACK:
-                        # Moon challenge
-                        if presence_flags & PresenceFlags.MOON_CHALLENGE:
-                            continue
-
-                        # Sun Challenge
-                        if presence_flags & PresenceFlags.SUN_CHALLENGE:
-                            continue
-
-                        # Waddler
-                        if (self.world, self.level) in [(3, 1), (5, 1), (7, 1)]:
+                        if (
+                            # Moon challenge
+                            (presence_flags & PresenceFlags.MOON_CHALLENGE)
+                            or
+                            # Sun Challenge
+                            (presence_flags & PresenceFlags.SUN_CHALLENGE)
+                            or
+                            # Waddler
+                            ((self.world, self.level) in [(3, 1), (5, 1), (7, 1)])
+                        ):
+                            self.lc_has_fired_hou_yis_bow = True
+                            self.failed_low_if_not_chain = True
                             continue
 
                     # Hundun
                     if (self.world, self.level) == (7, 4):
+                        self.lc_has_fired_hou_yis_bow = True
+                        self.failed_low_if_not_chain = True
                         continue
 
                 self.attacked_with = True
@@ -288,9 +319,25 @@ class RunState:
                 return
 
     def update_chain(self):
+        if self.is_chain is False:
+            return
+
         for item_type in self.player_item_types:
-            if item_type in CHAIN_POWERUP_ENTITIES:
-                self.chain_powerups.add(item_type)
+            if item_type == EntityType.ITEM_POWERUP_UDJATEYE:
+                self.had_udjat_eye = True
+            elif item_type in [
+                EntityType.ITEM_POWERUP_CROWN,
+                EntityType.ITEM_POWERUP_HEDJET,
+            ]:
+                self.had_world2_chain_headwear = True
+            elif item_type == EntityType.ITEM_POWERUP_ANKH:
+                self.had_ankh = True
+            elif item_type in [EntityType.ITEM_EXCALIBUR, EntityType.ITEM_SCEPTER]:
+                self.held_world4_chain_item = True
+            elif item_type == EntityType.ITEM_POWERUP_TABLETOFDESTINY:
+                self.had_tablet_of_destiny = True
+            elif item_type == EntityType.ITEM_USHABTI:
+                self.held_ushabti = True
             elif item_type == EntityType.ITEM_HOUYIBOW:
                 self.hou_yis_bow = True
 
@@ -298,6 +345,54 @@ class RunState:
             self.chain_theme = Theme.TEMPLE
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.chain_theme = Theme.TIDE_POOL
+
+    def update_is_chain(self):
+        if self.is_chain is False:
+            return
+
+        if self.world == 1:
+            if self.had_udjat_eye:
+                self.is_chain = True
+
+        elif self.world == 2:
+            if self.had_world2_chain_headwear:
+                self.is_chain = True
+
+        elif self.world == 3:
+            if not self.had_world2_chain_headwear:
+                self.is_chain = False
+
+        elif self.world == 4:
+            if not all([self.had_world2_chain_headwear, self.had_ankh]):
+                self.is_chain = False
+
+            if self.theme == Theme.TIAMAT and self.level == 4:
+                self.is_chain = False
+            elif self.theme == Theme.TEMPLE and self.level in (3, 4):
+                self.is_chain = False
+
+        elif self.world == 5:
+            if not all(
+                [
+                    self.had_world2_chain_headwear,
+                    self.had_ankh,
+                    self.held_world4_chain_item,
+                    self.had_tablet_of_destiny,
+                ]
+            ):
+                self.is_chain = False
+
+        elif (self.world, self.level) == (6, 4):
+            if not all(
+                [
+                    self.had_world2_chain_headwear,
+                    self.had_ankh,
+                    self.held_world4_chain_item,
+                    self.had_tablet_of_destiny,
+                    self.held_ushabti,
+                ]
+            ):
+                self.is_chain = False
 
     def update_on_level_start(self):
         if not self.level_started:
@@ -349,8 +444,10 @@ class RunState:
         self.update_attacked_with(layer, presence_flags)
         self.update_attacked_with_throwables()
 
-        # Other Category Specifiers
+        # Chain
         self.update_chain()
+        self.update_has_chain_powerup()
+        self.update_is_chain()
 
     def update_player_item_types(self, player: Player):
         item_types = set()
@@ -373,12 +470,12 @@ class RunState:
 
     def get_low_category(self):
         if self.hou_yis_bow:
-            if self.chain_powerups:
+            if self.is_chain:
                 return "Chain Low% Cosmic Ocean"
             else:
                 return "Low% Cosmic Ocean"
 
-        if self.chain_powerups:
+        if self.is_chain:
             if self.chain_theme is None:
                 return "Chain Low% Sunken City"
             elif self.chain_theme == Theme.TIDE_POOL:
@@ -395,13 +492,12 @@ class RunState:
         if self.hou_yis_bow:
             return "Cosmic Ocean%"
 
-        if (
-            EntityType.ITEM_POWERUP_ANKH in self.chain_powerups
-            and len(self.chain_powerups) == 1
+        if self.had_ankh and not any(
+            [self.had_udjat_eye, self.had_world2_chain_headwear]
         ):
             return "Sunken City%"
 
-        if self.chain_powerups:
+        if self.is_chain:
             if self.chain_theme is None:
                 return "Chain Sunken City%"
             elif self.chain_theme == Theme.TIDE_POOL:
@@ -414,11 +510,20 @@ class RunState:
 
         return "Any%"
 
+    def is_low_category(self):
+        if not self.is_low_percent:
+            return False
+
+        if not self.is_chain and self.failed_low_if_not_chain:
+            return False
+
+        return True
+
     def get_category(self):
         if self.player_state == CharState.DYING:
             return "Death%"
 
-        if self.is_low_percent:
+        if self.is_low_category():
             return self.get_low_category()
 
         return self.get_any_category()

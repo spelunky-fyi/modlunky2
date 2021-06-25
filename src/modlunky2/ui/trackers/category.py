@@ -100,13 +100,17 @@ class CategoryWatcherThread(WatcherThread):
 
 
 class CategoryWindow(TrackerWindow):
+
+    POLL_INTERVAL = 16
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         font = tk.font.Font(family="Helvitica", size=42, weight="bold")
 
+        self.text = "Connecting..."
         self.label = tk.Label(
-            self, text="Connecting...", bg=self.color_key, fg="white", font=font
+            self, text=self.text, bg=self.color_key, fg="white", font=font
         )
         self.label.columnconfigure(0, weight=1)
         self.label.rowconfigure(0, weight=1)
@@ -114,7 +118,7 @@ class CategoryWindow(TrackerWindow):
 
         self.watcher_thread = CategoryWatcherThread(self.queue)
         self.watcher_thread.start()
-        self.after(100, self.after_watcher_thread)
+        self.after(self.POLL_INTERVAL, self.after_watcher_thread)
 
     def after_watcher_thread(self):
         schedule_again = True
@@ -135,11 +139,14 @@ class CategoryWindow(TrackerWindow):
                     schedule_again = False
                     self.destroy()
                 elif msg["command"] == Command.LABEL:
-                    self.label.configure(text=msg["data"])
+                    new_text = msg["data"]
+                    if new_text != self.text:
+                        self.text = new_text
+                        self.label.configure(text=self.text)
 
         finally:
             if schedule_again:
-                self.after(100, self.after_watcher_thread)
+                self.after(self.POLL_INTERVAL, self.after_watcher_thread)
 
     def destroy(self):
         if self.watcher_thread and self.watcher_thread.is_alive():
