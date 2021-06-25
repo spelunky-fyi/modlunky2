@@ -350,15 +350,11 @@ class RunState:
         if self.is_chain is False:
             return
 
-        if self.world == 1:
-            if self.had_udjat_eye:
+        if self.is_chain is None:
+            if any([self.had_udjat_eye, self.had_world2_chain_headwear]):
                 self.is_chain = True
 
-        elif self.world == 2:
-            if self.had_world2_chain_headwear:
-                self.is_chain = True
-
-        elif self.world == 3:
+        if self.world == 3:
             if not self.had_world2_chain_headwear:
                 self.is_chain = False
 
@@ -366,10 +362,23 @@ class RunState:
             if not all([self.had_world2_chain_headwear, self.had_ankh]):
                 self.is_chain = False
 
-            if self.theme == Theme.TIAMAT and self.level == 4:
-                self.is_chain = False
-            elif self.theme == Theme.TEMPLE and self.level in (3, 4):
-                self.is_chain = False
+            if self.theme == Theme.TIDE_POOL:
+                # Didn't go to Abzu
+                if self.level == 4:
+                    self.is_chain = False
+
+                # Didn't pick up excalibur
+                if self.level > 2 and not self.held_world4_chain_item:
+                    self.is_chain = False
+
+            elif self.theme == Theme.TEMPLE:
+                # Didn't go to City of Gold or Duat
+                if self.level in (3, 4):
+                    self.is_chain = False
+
+                # Didn't pick up scepter
+                if self.level > 1 and not self.held_world4_chain_item:
+                    self.is_chain = False
 
         elif self.world == 5:
             if not all(
@@ -382,7 +391,7 @@ class RunState:
             ):
                 self.is_chain = False
 
-        elif (self.world, self.level) == (6, 4):
+        elif self.world == 6 and self.level > 2:
             if not all(
                 [
                     self.had_world2_chain_headwear,
