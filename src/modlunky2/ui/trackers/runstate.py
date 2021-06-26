@@ -559,9 +559,7 @@ class RunState:
             if self.no_gold:
                 out.append("No Gold")
 
-            if self.no_tp and (
-                not self.is_low_percent or self.player_state == CharState.DYING
-            ):
+            if self.no_tp and not self.is_low_category():
                 out.append("No TP")
 
         out.append(self.get_category())
