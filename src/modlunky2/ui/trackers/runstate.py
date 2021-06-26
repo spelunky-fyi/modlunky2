@@ -22,6 +22,7 @@ from modlunky2.mem.state import (
     PresenceFlags,
     RunRecapFlags,
     Theme,
+    WinState,
 )
 
 
@@ -45,6 +46,7 @@ class RunState:
         self.player_last_state: Optional[CharState] = None
         self.player_item_types: Set[EntityType] = set()
         self.player_last_item_types: Set[EntityType] = set()
+        self.win_state: WinState = WinState.UNKNOWN
 
         self.health = 4
         self.bombs = 4
@@ -54,10 +56,15 @@ class RunState:
         self.poisoned = False
         self.cursed = False
 
+        # Score
+        self.is_score_run = False
+        self.hou_yis_waddler = False
+
         # Run Modifiers
         self.pacifist = True
         self.no_gold = True
         self.no_tp = True
+        self.eggplant = False
 
         # Low%
         self.is_low_percent = True
@@ -110,6 +117,30 @@ class RunState:
                 self.no_tp = False
                 return
 
+    def update_eggplant(self):
+        if self.eggplant:
+            return
+
+        # TODO: Remove if we ever add a better heuristic
+        if self.world < 7:
+            return
+
+        for item_type in self.player_item_types:
+            if item_type == EntityType.ITEM_POWERUP_EGGPLANTCROWN:
+                self.eggplant = True
+                return
+
+    def update_score_items(self):
+        for item_type in self.player_item_types:
+            if item_type in [
+                EntityType.ITEM_PLASMACANNON,
+                EntityType.ITEM_POWERUP_TRUECROWN,
+            ]:
+                self.is_score_run = True
+
+            elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
+                self.hou_yis_waddler = True
+
     def get_critical_state(self, var):
         result = getattr(self._proc.state, var)
         if result is None:
@@ -120,6 +151,7 @@ class RunState:
         world = self.get_critical_state("world")
         level = self.get_critical_state("level")
         theme = self.get_critical_state("theme")
+        win_state = self.get_critical_state("win_state")
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -129,6 +161,7 @@ class RunState:
         self.world = world
         self.level = level
         self.theme = theme
+        self.win_state = win_state
 
     def update_has_mounted_tame(self, player_overlay):
         if not self.is_low_percent:
@@ -434,10 +467,13 @@ class RunState:
         self.update_on_level_start()
         self.update_player_item_types(player)
 
+        self.update_score_items()
+
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
         self.update_no_tp()
+        self.update_eggplant()
 
         # Check Category Criteria
         overlay = player.overlay
@@ -478,7 +514,10 @@ class RunState:
         self.player_item_types = item_types
 
     def get_low_category(self):
-        if self.hou_yis_bow:
+        if self.win_state == WinState.TIAMAT:
+            return "Low%"
+
+        if self.hou_yis_bow and self.win_state != WinState.HUNDUN:
             if self.is_chain:
                 return "Chain Low% Cosmic Ocean"
             else:
@@ -498,7 +537,11 @@ class RunState:
         return "Low%"
 
     def get_any_category(self):
-        if self.hou_yis_bow:
+
+        if self.win_state == WinState.TIAMAT:
+            return "Any%"
+
+        if self.hou_yis_bow and self.win_state != WinState.HUNDUN:
             return "Cosmic Ocean%"
 
         if self.had_ankh and not any(
@@ -550,6 +593,21 @@ class RunState:
         return False
 
     def get_display(self):
+        if self.is_score_run:
+            return self.get_score_display()
+
+        return self.get_speed_display()
+
+    def get_score_display(self):
+        if self.win_state in [WinState.TIAMAT, WinState.HUNDUN]:
+            return "Score NO CO"
+
+        if self.hou_yis_waddler:
+            return "Score"
+
+        return "Score NO CO"
+
+    def get_speed_display(self):
         out = []
 
         if self.should_show_modifiers():
@@ -561,6 +619,9 @@ class RunState:
 
             if self.no_tp and not self.is_low_category():
                 out.append("No TP")
+
+        if self.eggplant:
+            out.append("Eggplant")
 
         out.append(self.get_category())
 
