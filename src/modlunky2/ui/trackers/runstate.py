@@ -563,10 +563,16 @@ class RunState:
         return "Any%"
 
     def is_low_category(self):
+        # Failed hard requirements of low%
         if not self.is_low_percent:
             return False
 
+        # Failed chain requirements while not being chain
         if not self.is_chain and self.failed_low_if_not_chain:
+            return False
+
+        # Chain run but exited at Tiamat
+        if self.is_chain and self.win_state == WinState.TIAMAT:
             return False
 
         return True

@@ -89,7 +89,9 @@ CHAIN_POWERUP_ENTITIES = {
 NON_CHAIN_POWERUP_ENTITIES = {
     EntityType.ITEM_POWERUP_CLIMBING_GLOVES,
     EntityType.ITEM_POWERUP_COMPASS,
-    EntityType.ITEM_POWERUP_EGGPLANTCROWN,
+    # Explicitly excluded as having the crown is a valid modifier to every
+    # category.
+    # EntityType.ITEM_POWERUP_EGGPLANTCROWN,
     EntityType.ITEM_POWERUP_KAPALA,
     EntityType.ITEM_POWERUP_PARACHUTE,
     EntityType.ITEM_POWERUP_PASTE,
