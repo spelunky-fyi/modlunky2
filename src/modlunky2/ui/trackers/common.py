@@ -15,6 +15,7 @@ logger = logging.getLogger("modlunky2")
 
 TRACKERS_DIR = DATA_DIR / "trackers"
 
+
 class CommonCommand(Enum):
     DIE = "die"
 
@@ -82,7 +83,9 @@ class WatcherThread(threading.Thread):
 
 
 class TrackerWindow(tk.Toplevel):
-    def __init__(self, title, on_close, file_name, *args, color_key="#ff00ff", **kwargs):
+    def __init__(
+        self, title, on_close, file_name, *args, color_key="#ff00ff", **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.attributes("-topmost", "true")
         self.on_close = on_close
