@@ -62,6 +62,8 @@ class Node:
         key_size = calcsize(key_char)
         value_size = calcsize(value_char)
         data = proc.read_memory(offset, cls.SIZE)
+        if data is None:
+            return None
 
         next_ = unpack("P", data[0 : 0 + 8])[0]
         prev = unpack("P", data[8 : 8 + 8])[0]
@@ -99,6 +101,8 @@ class UnorderedMap:
         next_ = bucket.first
         while True:
             node = self.get_node(next_)
+            if node is None:
+                return None
 
             # Found key!
             if node.key == key:
