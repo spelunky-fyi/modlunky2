@@ -606,12 +606,12 @@ class RunState:
 
     def get_score_display(self):
         if self.win_state in [WinState.TIAMAT, WinState.HUNDUN]:
-            return "Score NO CO"
+            return "Score No CO"
 
         if self.hou_yis_waddler:
             return "Score"
 
-        return "Score NO CO"
+        return "Score No CO"
 
     def get_speed_display(self):
         out = []
