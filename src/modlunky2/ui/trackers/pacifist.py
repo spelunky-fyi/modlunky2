@@ -1,5 +1,6 @@
 from enum import Enum
 import logging
+from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
 from queue import Empty
@@ -59,15 +60,7 @@ class PacifistWatcherThread(WatcherThread):
 
 class PacifistWindow(TrackerWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        font = tk.font.Font(family="Helvitica", size=42, weight="bold")
-        self.label = tk.Label(
-            self, text="Connecting...", bg=self.color_key, fg="white", font=font
-        )
-        self.label.columnconfigure(0, weight=1)
-        self.label.rowconfigure(0, weight=1)
-        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        super().__init__(file_name="pacifist.txt", *args, **kwargs)
 
         self.watcher_thread = PacifistWatcherThread(self.queue)
         self.watcher_thread.start()
@@ -78,9 +71,8 @@ class PacifistWindow(TrackerWindow):
         try:
             while True:
                 if self.watcher_thread and not self.watcher_thread.is_alive():
-                    logger.warning("Thread went away. Closing window.")
+                    self.shut_down(WARNING, "Thread went away. Closing window.")
                     schedule_again = False
-                    self.destroy()
 
                 try:
                     msg = self.queue.get_nowait()
@@ -88,15 +80,13 @@ class PacifistWindow(TrackerWindow):
                     break
 
                 if msg["command"] == CommonCommand.DIE:
-                    logger.critical("%s", msg["data"])
                     schedule_again = False
-                    self.destroy()
+                    self.shut_down(CRITICAL, msg["data"])
                 elif msg["command"] == Command.IS_PACIFIST:
                     is_pacifist = msg["data"]
-                    if is_pacifist:
-                        self.label.configure(text="Pacifist")
-                    else:
-                        self.label.configure(text="MURDERER!")
+                    new_text = "Pacifist" if is_pacifist else "MURDERER!"
+                    self.update_text(new_text)
+
         finally:
             if schedule_again:
                 self.after(100, self.after_watcher_thread)

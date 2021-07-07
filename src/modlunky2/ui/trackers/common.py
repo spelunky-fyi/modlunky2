@@ -6,11 +6,14 @@ import tkinter as tk
 from queue import Queue
 from tkinter import PhotoImage
 
+from modlunky2.config import DATA_DIR
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import find_spelunky2_pid, Spel2Process
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
+
+TRACKERS_DIR = DATA_DIR / "trackers"
 
 
 class CommonCommand(Enum):
@@ -80,7 +83,9 @@ class WatcherThread(threading.Thread):
 
 
 class TrackerWindow(tk.Toplevel):
-    def __init__(self, title, on_close, *args, color_key="#ff00ff", **kwargs):
+    def __init__(
+        self, title, on_close, file_name, *args, color_key="#ff00ff", **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.attributes("-topmost", "true")
         self.on_close = on_close
@@ -108,6 +113,21 @@ class TrackerWindow(tk.Toplevel):
         self.bind("<Button-1>", self.clickwin)
         self.bind("<B1-Motion>", self.dragwin)
 
+        font = tk.font.Font(family="Helvitica", size=42, weight="bold")
+
+        self.text = "Connecting..."
+        self.label = tk.Label(
+            self, text=self.text, bg=self.color_key, fg="white", font=font
+        )
+        self.label.columnconfigure(0, weight=1)
+        self.label.rowconfigure(0, weight=1)
+        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        TRACKERS_DIR.mkdir(parents=True, exist_ok=True)
+        self.text_file = TRACKERS_DIR / file_name
+        with self.text_file.open("w") as handle:
+            handle.write(self.text)
+
     def dragwin(self, _event):
         x_coord = self.winfo_pointerx() - self._offsetx
         y_coord = self.winfo_pointery() - self._offsety
@@ -122,3 +142,17 @@ class TrackerWindow(tk.Toplevel):
             self.menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.menu.grab_release()
+
+    def update_text(self, new_text):
+        if new_text == self.text:
+            return
+        self.text = new_text
+        self.label.configure(text=self.text)
+        with self.text_file.open("w") as handle:
+            handle.write(new_text)
+
+    def shut_down(self, level, message):
+        logger.log(level, "%s", message)
+        with self.text_file.open("w") as handle:
+            handle.write("Not running")
+        self.destroy()

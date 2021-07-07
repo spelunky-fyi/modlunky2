@@ -1,5 +1,6 @@
 from enum import Enum
 import logging
+from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
 from queue import Empty
@@ -104,17 +105,7 @@ class CategoryWindow(TrackerWindow):
     POLL_INTERVAL = 16
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        font = tk.font.Font(family="Helvitica", size=42, weight="bold")
-
-        self.text = "Connecting..."
-        self.label = tk.Label(
-            self, text=self.text, bg=self.color_key, fg="white", font=font
-        )
-        self.label.columnconfigure(0, weight=1)
-        self.label.rowconfigure(0, weight=1)
-        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        super().__init__(file_name="category.txt", *args, **kwargs)
 
         self.watcher_thread = CategoryWatcherThread(self.queue)
         self.watcher_thread.start()
@@ -125,9 +116,8 @@ class CategoryWindow(TrackerWindow):
         try:
             while True:
                 if self.watcher_thread and not self.watcher_thread.is_alive():
-                    logger.warning("Thread went away. Closing window.")
+                    self.shut_down(WARNING, "Thread went away. Closing window.")
                     schedule_again = False
-                    self.destroy()
 
                 try:
                     msg = self.queue.get_nowait()
@@ -135,14 +125,10 @@ class CategoryWindow(TrackerWindow):
                     break
 
                 if msg["command"] == CommonCommand.DIE:
-                    logger.critical("%s", msg["data"])
                     schedule_again = False
-                    self.destroy()
+                    self.shut_down(CRITICAL, msg["data"])
                 elif msg["command"] == Command.LABEL:
-                    new_text = msg["data"]
-                    if new_text != self.text:
-                        self.text = new_text
-                        self.label.configure(text=self.text)
+                    self.update_text(msg["data"])
 
         finally:
             if schedule_again:
