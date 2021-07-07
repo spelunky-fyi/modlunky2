@@ -105,7 +105,7 @@ class CategoryWindow(TrackerWindow):
     POLL_INTERVAL = 16
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(file_name="category.txt", *args, **kwargs)
 
         self.watcher_thread = CategoryWatcherThread(self.queue)
         self.watcher_thread.start()

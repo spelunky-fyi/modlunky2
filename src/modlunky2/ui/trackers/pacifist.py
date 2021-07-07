@@ -60,7 +60,7 @@ class PacifistWatcherThread(WatcherThread):
 
 class PacifistWindow(TrackerWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(file_name="pacifist.txt", *args, **kwargs)
 
         self.watcher_thread = PacifistWatcherThread(self.queue)
         self.watcher_thread.start()
