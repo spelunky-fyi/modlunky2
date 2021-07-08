@@ -88,7 +88,6 @@ class RunState:
         # Chain
         self.is_chain: Optional[bool] = None  # None if not yet, False if failed chain
         self.hou_yis_bow = False
-        self.chain_theme = None
         self.has_chain_powerup = False
         self.had_udjat_eye = False
         self.had_world2_chain_headwear = False
@@ -96,6 +95,9 @@ class RunState:
         self.held_world4_chain_item = False
         self.had_tablet_of_destiny = False
         self.held_ushabti = False
+
+        self.world2_theme = None
+        self.world4_theme = None
 
     def update_pacifist(self, run_recap_flags):
         if not self.pacifist:
@@ -378,10 +380,16 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW:
                 self.hou_yis_bow = True
 
-        if self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
-            self.chain_theme = Theme.TEMPLE
+    def update_world_themes(self):
+        if self.world not in [2, 4]:
+            return
+
+        if self.theme in [Theme.JUNGLE, Theme.VOLCANA]:
+            self.world2_theme = self.theme
+        elif self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
+            self.world4_theme = Theme.TEMPLE
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
-            self.chain_theme = Theme.TIDE_POOL
+            self.world4_theme = Theme.TIDE_POOL
 
     def update_is_chain(self):
         if self.is_chain is False:
@@ -443,6 +451,8 @@ class RunState:
     def update_on_level_start(self):
         if not self.level_started:
             return
+
+        self.update_world_themes()
 
         self.level_start_ropes = self.ropes
         if self.theme == Theme.DUAT:
@@ -521,9 +531,16 @@ class RunState:
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types
 
+    def get_plain_low_percent(self):
+        themes = (self.world2_theme, self.world4_theme)
+        if themes[0] == Theme.JUNGLE and themes[1] != Theme.TIDE_POOL:
+            return "Low% Jungle/Temple"
+
+        return "Low%"
+
     def get_low_category(self):
         if self.win_state == WinState.TIAMAT:
-            return "Low%"
+            return self.get_plain_low_percent()
 
         if self.hou_yis_bow and self.win_state != WinState.HUNDUN:
             if self.is_chain:
@@ -532,17 +549,17 @@ class RunState:
                 return "Low% Cosmic Ocean"
 
         if self.is_chain:
-            if self.chain_theme is None:
+            if self.world4_theme is None:
                 return "Chain Low% Sunken City"
-            elif self.chain_theme == Theme.TIDE_POOL:
+            elif self.world4_theme == Theme.TIDE_POOL:
                 return "Chain Low% Abzu"
-            elif self.chain_theme == Theme.TEMPLE:
+            elif self.world4_theme == Theme.TEMPLE:
                 return "Chain Low% Duat"
 
         if self.world >= 7:
             return "Low% Sunken City"
 
-        return "Low%"
+        return self.get_plain_low_percent()
 
     def get_any_category(self):
 
@@ -558,11 +575,11 @@ class RunState:
             return "Sunken City%"
 
         if self.is_chain:
-            if self.chain_theme is None:
+            if self.world4_theme is None:
                 return "Chain Sunken City%"
-            elif self.chain_theme == Theme.TIDE_POOL:
+            elif self.world4_theme == Theme.TIDE_POOL:
                 return "Sunken City% Abzu"
-            elif self.chain_theme == Theme.TEMPLE:
+            elif self.world4_theme == Theme.TEMPLE:
                 return "Sunken City% Duat"
 
         if self.world >= 7:
