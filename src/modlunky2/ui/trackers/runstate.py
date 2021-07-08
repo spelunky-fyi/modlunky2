@@ -81,8 +81,9 @@ class RunState:
         self.failed_low_if_not_chain = False
         self.lc_has_mounted_qilin = False
         self.lc_has_swung_excalibur = False
-        self.lc_has_fired_hou_yis_bow = False
-        self.lc_has_swung_mattock = False
+
+        # Moon Challenge Mattock is okay if you're going CO
+        self.mc_has_swung_mattock = False
 
         # Chain
         self.is_chain: Optional[bool] = None  # None if not yet, False if failed chain
@@ -313,8 +314,7 @@ class RunState:
                     and layer == Layer.BACK
                     and presence_flags & PresenceFlags.MOON_CHALLENGE
                 ):
-                    self.lc_has_swung_mattock = True
-                    self.failed_low_if_not_chain = True
+                    self.mc_has_swung_mattock = True
                     continue
 
                 if item_type == EntityType.ITEM_HOUYIBOW:
@@ -329,14 +329,10 @@ class RunState:
                             # Waddler
                             ((self.world, self.level) in [(3, 1), (5, 1), (7, 1)])
                         ):
-                            self.lc_has_fired_hou_yis_bow = True
-                            self.failed_low_if_not_chain = True
                             continue
 
                     # Hundun
                     if (self.world, self.level) == (7, 4):
-                        self.lc_has_fired_hou_yis_bow = True
-                        self.failed_low_if_not_chain = True
                         continue
 
                 self.attacked_with = True
@@ -451,6 +447,10 @@ class RunState:
         self.level_start_ropes = self.ropes
         if self.theme == Theme.DUAT:
             self.health = 4
+
+        if self.theme == Theme.OLMEC:
+            if self.mc_has_swung_mattock and not self.hou_yis_bow:
+                self.is_low_percent = False
 
     def update(self):
         player = self._proc.state.players[0]
