@@ -215,6 +215,14 @@ class RunState:
         if not self.is_low_percent:
             return
 
+        # Logical effects disappear sometimes...
+        if self.player_state in {
+            CharState.ENTERING,
+            CharState.LOADING,
+            CharState.EXITING,
+        }:
+            return
+
         is_poisoned = False
         is_cursed = False
 

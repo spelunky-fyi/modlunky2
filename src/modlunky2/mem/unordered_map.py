@@ -41,6 +41,8 @@ class Bucket:
     @classmethod
     def from_offset(cls, proc, offset):
         data = proc.read_memory(offset, cls.SIZE)
+        if data is None:
+            return None
 
         first = unpack("P", data[0 : 0 + 8])[0]
         last = unpack("P", data[8 : 8 + 8])[0]
@@ -93,6 +95,8 @@ class UnorderedMap:
             meta = self._get_meta()
 
         bucket = self.get_bucket(key, meta)
+        if bucket is None:
+            return None
 
         # Empty bucket
         if bucket.first == meta.end:
