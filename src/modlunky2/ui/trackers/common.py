@@ -99,15 +99,16 @@ class WatcherThread(threading.Thread):
                 shutting_down = True
                 break
 
-            interval = self.ATTACH_INTERVAL
+            interval = self.POLL_INTERVAL
             if self.proc is None:
-                self._attach()
+                if not self._attach():
+                    interval = self.ATTACH_INTERVAL
             elif self.proc.running():
-                interval = self.POLL_INTERVAL
                 self._really_poll()
             else:
                 self.wait()
-                self._attach()
+                if not self._attach():
+                    interval = self.ATTACH_INTERVAL
 
             time.sleep(interval)
 
