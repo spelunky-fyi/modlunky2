@@ -45,8 +45,10 @@ class WatcherThread(threading.Thread):
         try:
             self.poll()
         except Exception:  # pylint: disable=broad-except
-            logger.critical("Unexpected Exception while polling: %s", tb_info())
-            self.shutdown()
+            # If the game is no longer running, we assume that caused the failure
+            if self.proc.running():
+                logger.critical("Unexpected Exception while polling: %s", tb_info())
+                self.shutdown()
 
     def shutdown(self):
         self.shut_down = True
@@ -85,7 +87,12 @@ class WatcherThread(threading.Thread):
                 shutting_down = True
                 break
 
-            self._really_poll()
+            if self.proc.running():
+                self._really_poll()
+            else:
+                self.die("Spel2.exe exited")
+                self.shutdown()
+
             time.sleep(0.1)
 
         logger.info("Stopped watching process memory")

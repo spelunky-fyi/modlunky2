@@ -131,6 +131,9 @@ class Spel2Process:
 
         return cls(handle)
 
+    def running(self):
+        return win32con.STILL_ACTIVE == win32process.GetExitCodeProcess(self.proc_handle)
+
     def read_memory(self, offset, size):
         try:
             return win32process.ReadProcessMemory(self.proc_handle, offset, size)
