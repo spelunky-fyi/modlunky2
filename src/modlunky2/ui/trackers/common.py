@@ -22,6 +22,9 @@ class CommonCommand(Enum):
 
 
 class WatcherThread(threading.Thread):
+    POLL_INTERVAL = 0.1
+    ATTACH_INTERVAL = 1.0
+
     def __init__(self, queue):
         super().__init__()
         self.shut_down = False
@@ -96,15 +99,17 @@ class WatcherThread(threading.Thread):
                 shutting_down = True
                 break
 
+            interval = self.ATTACH_INTERVAL
             if self.proc is None:
                 self._attach()
             elif self.proc.running():
+                interval = self.POLL_INTERVAL
                 self._really_poll()
             else:
                 self.wait()
                 self._attach()
 
-            time.sleep(0.1)
+            time.sleep(interval)
 
         logger.info("Stopped watching process memory")
 
