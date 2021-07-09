@@ -35,6 +35,9 @@ class WatcherThread(threading.Thread):
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed in thread: %s", tb_info())
 
+    def initialize(self):
+        raise NotImplementedError()
+
     def poll(self):
         raise NotImplementedError()
 
@@ -54,21 +57,27 @@ class WatcherThread(threading.Thread):
     def die(self, message):
         self.send(CommonCommand.DIE, message)
 
-    def _run(self):
-        shutting_down = False
-
+    def _attach(self):
         pid = find_spelunky2_pid()
         if pid is None:
             self.die("Failed to find running Spel2.exe")
-            return
+            return False
 
         self.proc = Spel2Process.from_pid(pid)
         if self.proc is None:
             self.die("Failed to open handle to Spel2.exe")
-            return
+            return False
 
         if self.proc.state is None:
             self.die("Failed to open handle to expected array of bytes")
+            return False
+
+        self.initialize()
+        return True
+
+    def _run(self):
+        shutting_down = False
+        if not self._attach():
             return
 
         while True:

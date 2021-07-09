@@ -48,6 +48,10 @@ class PacifistButtons(ttk.Frame):
 
 
 class PacifistWatcherThread(WatcherThread):
+    def initialize(self):
+        #  Nothing to initialize
+        return
+
     def poll(self):
         run_recap_flags = self.proc.state.run_recap_flags
         if run_recap_flags is None:

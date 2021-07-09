@@ -78,10 +78,6 @@ class CategoryWatcherThread(WatcherThread):
         return time_total
 
     def _poll(self):
-        # If we've never been initialized go ahead and do that now.
-        if self.time_total is None:
-            self.initialize()
-
         # Check if we've reset, if so, reinitialize
         new_time_total = self.get_time_total()
         if new_time_total < self.time_total:
