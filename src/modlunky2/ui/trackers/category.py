@@ -125,6 +125,8 @@ class CategoryWindow(TrackerWindow):
                 if msg["command"] == CommonCommand.DIE:
                     schedule_again = False
                     self.shut_down(CRITICAL, msg["data"])
+                elif msg["command"] == CommonCommand.WAIT:
+                    self.update_text("Waiting for game...")
                 elif msg["command"] == Command.LABEL:
                     self.update_text(msg["data"])
 

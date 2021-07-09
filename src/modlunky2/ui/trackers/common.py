@@ -18,6 +18,7 @@ TRACKERS_DIR = DATA_DIR / "trackers"
 
 class CommonCommand(Enum):
     DIE = "die"
+    WAIT = "wait"
 
 
 class WatcherThread(threading.Thread):
@@ -27,7 +28,6 @@ class WatcherThread(threading.Thread):
         self.queue: Queue = queue
 
         self.proc = None
-        self.state = None
 
     def run(self):
         try:
@@ -59,39 +59,50 @@ class WatcherThread(threading.Thread):
     def die(self, message):
         self.send(CommonCommand.DIE, message)
 
+    def wait(self):
+        self.proc = None
+        self.send(CommonCommand.WAIT, None)
+
     def _attach(self):
         pid = find_spelunky2_pid()
         if pid is None:
-            self.die("Failed to find running Spel2.exe")
+            # This is fine, we'll try again later
             return False
 
-        self.proc = Spel2Process.from_pid(pid)
-        if self.proc is None:
+        proc = Spel2Process.from_pid(pid)
+        if proc is None:
             self.die("Failed to open handle to Spel2.exe")
             return False
 
-        if self.proc.state is None:
+        if proc.get_feedcode() is None:
+            # Game might still be starting, we should try again
+            return False
+
+        if proc.state is None:
             self.die("Failed to open handle to expected array of bytes")
             return False
 
+        self.proc = proc
         self.initialize()
         return True
 
     def _run(self):
         shutting_down = False
         if not self._attach():
-            return
+            self.wait()
 
         while True:
             if not shutting_down and self.shut_down:
                 shutting_down = True
                 break
 
-            if self.proc.running():
+            if self.proc is None:
+                self._attach()
+            elif self.proc.running():
                 self._really_poll()
             else:
-                self.die("Spel2.exe exited")
-                self.shutdown()
+                self.wait()
+                self._attach()
 
             time.sleep(0.1)
 
