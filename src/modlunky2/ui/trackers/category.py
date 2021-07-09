@@ -53,7 +53,9 @@ class CategoryButtons(ttk.Frame):
         )
 
     def enable_button(self):
-        self.category_button["state"] = tk.NORMAL
+        # If we're in the midst of destroy() the button might not exist
+        if self.category_button.winfo_exists():
+            self.category_button["state"] = tk.NORMAL
 
     def disable_button(self):
         self.category_button["state"] = tk.DISABLED

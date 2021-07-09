@@ -153,6 +153,9 @@ class TrackerWindow(tk.Toplevel):
 
     def shut_down(self, level, message):
         logger.log(level, "%s", message)
+        self.destroy()
+
+    def destroy(self) -> None:
         with self.text_file.open("w") as handle:
             handle.write("Not running")
-        self.destroy()
+        return super().destroy()
