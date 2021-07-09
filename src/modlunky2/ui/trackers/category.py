@@ -78,10 +78,6 @@ class CategoryWatcherThread(WatcherThread):
         return time_total
 
     def _poll(self):
-        # If we've never been initialized go ahead and do that now.
-        if self.time_total is None:
-            self.initialize()
-
         # Check if we've reset, if so, reinitialize
         new_time_total = self.get_time_total()
         if new_time_total < self.time_total:
@@ -129,6 +125,8 @@ class CategoryWindow(TrackerWindow):
                 if msg["command"] == CommonCommand.DIE:
                     schedule_again = False
                     self.shut_down(CRITICAL, msg["data"])
+                elif msg["command"] == CommonCommand.WAIT:
+                    self.update_text("Waiting for game...")
                 elif msg["command"] == Command.LABEL:
                     self.update_text(msg["data"])
 

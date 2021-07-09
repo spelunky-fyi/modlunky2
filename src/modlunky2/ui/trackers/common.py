@@ -18,22 +18,28 @@ TRACKERS_DIR = DATA_DIR / "trackers"
 
 class CommonCommand(Enum):
     DIE = "die"
+    WAIT = "wait"
 
 
 class WatcherThread(threading.Thread):
+    POLL_INTERVAL = 0.1
+    ATTACH_INTERVAL = 1.0
+
     def __init__(self, queue):
         super().__init__()
         self.shut_down = False
         self.queue: Queue = queue
 
         self.proc = None
-        self.state = None
 
     def run(self):
         try:
             self._run()
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed in thread: %s", tb_info())
+
+    def initialize(self):
+        raise NotImplementedError()
 
     def poll(self):
         raise NotImplementedError()
@@ -42,8 +48,10 @@ class WatcherThread(threading.Thread):
         try:
             self.poll()
         except Exception:  # pylint: disable=broad-except
-            logger.critical("Unexpected Exception while polling: %s", tb_info())
-            self.shutdown()
+            # If the game is no longer running, we assume that caused the failure
+            if self.proc.running():
+                logger.critical("Unexpected Exception while polling: %s", tb_info())
+                self.shutdown()
 
     def shutdown(self):
         self.shut_down = True
@@ -54,30 +62,54 @@ class WatcherThread(threading.Thread):
     def die(self, message):
         self.send(CommonCommand.DIE, message)
 
-    def _run(self):
-        shutting_down = False
+    def wait(self):
+        self.proc = None
+        self.send(CommonCommand.WAIT, None)
 
+    def _attach(self):
         pid = find_spelunky2_pid()
         if pid is None:
-            self.die("Failed to find running Spel2.exe")
-            return
+            # This is fine, we'll try again later
+            return False
 
-        self.proc = Spel2Process.from_pid(pid)
-        if self.proc is None:
+        proc = Spel2Process.from_pid(pid)
+        if proc is None:
             self.die("Failed to open handle to Spel2.exe")
-            return
+            return False
 
-        if self.proc.state is None:
+        if proc.get_feedcode() is None:
+            # Game might still be starting, we should try again
+            return False
+
+        if proc.state is None:
             self.die("Failed to open handle to expected array of bytes")
-            return
+            return False
+
+        self.proc = proc
+        self.initialize()
+        return True
+
+    def _run(self):
+        shutting_down = False
+        if not self._attach():
+            self.wait()
 
         while True:
             if not shutting_down and self.shut_down:
                 shutting_down = True
                 break
 
-            self._really_poll()
-            time.sleep(0.1)
+            interval = self.ATTACH_INTERVAL
+            if self.proc is None:
+                self._attach()
+            elif self.proc.running():
+                interval = self.POLL_INTERVAL
+                self._really_poll()
+            else:
+                self.wait()
+                self._attach()
+
+            time.sleep(interval)
 
         logger.info("Stopped watching process memory")
 
