@@ -77,12 +77,8 @@ class WatcherThread(threading.Thread):
             self.die("Failed to open handle to Spel2.exe")
             return False
 
-        if proc.get_feedcode() is None:
-            # Game might still be starting, we should try again
-            return False
-
         if proc.state is None:
-            self.die("Failed to open handle to expected array of bytes")
+            # Game might still be starting, we should try again
             return False
 
         self.proc = proc
@@ -107,8 +103,7 @@ class WatcherThread(threading.Thread):
                 self._really_poll()
             else:
                 self.wait()
-                if not self._attach():
-                    interval = self.ATTACH_INTERVAL
+                interval = self.ATTACH_INTERVAL
 
             time.sleep(interval)
 

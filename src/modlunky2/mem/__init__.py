@@ -10,7 +10,7 @@ import win32con
 import win32process
 
 from .entities import EntityDB
-from .state import State
+from .state import FeedcodeNotFound, State
 
 VirtualQueryEx = ctypes.windll.kernel32.VirtualQueryEx
 CreateToolhelp32Snapshot = ctypes.windll.kernel32.CreateToolhelp32Snapshot
@@ -325,7 +325,11 @@ class Spel2Process:
         return None
 
     def get_state(self) -> State:
-        return State(self)
+        try:
+            return State(self)
+        except FeedcodeNotFound:
+            # This can happen if the game is starting up or shutting down
+            return None
 
     @property
     def state(self) -> State:
