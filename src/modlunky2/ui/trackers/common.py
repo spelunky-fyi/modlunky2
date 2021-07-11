@@ -103,8 +103,7 @@ class WatcherThread(threading.Thread):
                 self._really_poll()
             else:
                 self.wait()
-                if not self._attach():
-                    interval = self.ATTACH_INTERVAL
+                interval = self.ATTACH_INTERVAL
 
             time.sleep(interval)
 
