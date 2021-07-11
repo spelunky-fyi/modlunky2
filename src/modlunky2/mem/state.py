@@ -113,10 +113,17 @@ class WinState(enum.IntEnum):
     COSMIC_OCEAN = 3
 
 
+class FeedcodeNotFound(Exception):
+    """Failed to find feedcode within Spelunky2 memory."""
+
+
 class State:
     def __init__(self, proc):
         self._proc: "Spel2Process" = proc
-        self._offset = proc.get_feedcode() - 0x5F
+        feedcode = proc.get_feedcode()
+        if feedcode is None:
+            raise FeedcodeNotFound("Failed to find feedcode within Spelunky2 memory")
+        self._offset = feedcode - 0x5F
         self._uid_to_entity = None
 
     @property
