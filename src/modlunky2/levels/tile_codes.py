@@ -241,151 +241,152 @@ VALID_TILE_CODES = set(
         "yang",
         "yeti",
         "zoo_exhibit",
-        "cog_door",  # Community tile codes -------------------------------------------------
-        "totem_trap",  # -------#
-        "dustwall",  # ---------#
-        "bat",  # --------------#
-        "skeleton",  # ---------#
-        "red_skeleton",  # -----#
-        "lizard",  # -----------#
-        "mole",  # -------------#
-        "monkey",  # -----------#
-        "firebug",  # ----------#
-        "vampire",  # ----------#
-        "osiris",  # -----------#
-        "anubis2",  # ----------#
-        "assassin",  # ---------#
-        "yeti_king",  # --------#
-        "yeti_queen",  # -------#
-        "bee",  # --------------#
-        "bee_queen",  # --------#
-        "frog",  # -------------#
-        "frog_orange",  # ------#
-        "hundun",  # -----------#
-        "scarab",  # -----------#
-        "cosmic_jelly",  # -----#
-        "ghost",  # ------------#
-        "ghost_med_sad",  # ----#
-        "ghost_med_happy",  # --#
-        "ghost_small_angry",  # #
-        "ghost_small_sad",  # --#
-        "ghost_small_surprised",  #
-        "ghost_small_happy",  # #
-        "leaf",  # -------------#
-        "udjat_key",  # --------#
-        "tutorial_speedrun_sign",  #
-        "tutorial_menu_sign",  #
-        "boombox",  # ----------#
-        "eggplant",  # ---------#
-        "gold_bar",  # ---------#
-        "diamond",  # ----------#
-        "emerald",  # ----------#
-        "sapphire",  # ---------#
-        "ruby",  # -------------#
-        "rope_pile",  # --------#
-        "rope",  # -------------#
-        "bomb_bag",  # ---------#
-        "bomb_box",  # ---------#
-        "giantfood",  # --------#
-        "elixir",  # -----------#
-        "seeded_run_unlocker",  #
-        "specs",  # ------------#
-        "climbing_gloves",  # --#
-        "pitchers_mitt",  # ----#
-        "shoes_spring",  # -----#
-        "shoes_spike",  # ------#
-        "paste",  # ------------#
-        "compass",  # ----------#
-        "compass_alien",  # ----#
-        "parachute",  # --------#
-        "udjat_eye",  # --------#
-        "kapala",  # -----------#
-        "hedjet",  # -----------#
-        "crown",  # ------------#
-        "eggplant_crown",  # ---#
-        "true_crown",  # -------#
-        "tablet",  # -----------#
-        "bone_key",  # ---------#
-        "playerbag",  # --------#
-        "cape",  # -------------#
-        "vlads_cape",  # -------#
-        "back_jetpack",  # -----#
-        "back_telepack",  # ----#
-        "back_hoverpack",  # ---#
-        "back_powerpack",  # ---#
-        "gun_webgun",  # -------#
-        "gun_shotgun",  # ------#
-        "gun_freezeray",  # ----#
-        "camera",  # -----------#
-        "teleporter",  # -------#
-        "boomerang",  # --------#
-        "machete",  # ----------#
-        "excalibur",  # --------#
-        "excalibur_broken",  # -#
-        "scepter",  # ----------#
-        "clonegun",  # ---------#
-        "shield_wooden",  # ----#
-        "shield_metal",  # -----#
-        "udjat_target",  # -----#
-        "mount_rockdog",  # ----#
-        "mount_axolotl",  # ----#
-        "mount_qilin",  # ------#
-        "humphead",  # ---------#
-        "present",  # ----------#
-        "forcefield_horizontal",  #
-        "forcefield_horizontal_top",  #
-        "pet_monty",  # --------#
-        "pet_percy",  # --------#
-        "pet_poochi",  # -------#
-        "lion_trap",  # --------#
-        "bomb",  # -------------#
-        "rope_unrolled",  # ----#
-        "cosmic_orb",  # -------#
-        "monkey_gold",  # ------#
-        "altar_duat",  # -------#
-        "spikeball",  # --------#
-        "excalibur_stone_empty",  #
-        "cobweb",  # -----------#
-        "eggsac",  # -----------#
-        "eggsac_left",  # --#
-        "eggsac_right",  #
-        "eggsac_top",  # --#
-        "eggsac__bottom",  #
-        "grub",  # ------------#
-        "spider",  # ----------#
-        "spider_hanging",  #  -#
-        "skull_drop_trap",  # -#
-        "lava_pot",  # --------#
-        "proto_shopkeeper",  # #
-        "shopkeeper_clone",  # #
-        "tadpole",  #  --------#
-        "ghist_present",  # ---#
-        "palace_sign",  # -----#
-        "critter_dungbeetle",  #
-        "critter_butterfly",  ##
-        "critter_snail",  # ---#
-        "critter_fish",  # ----#
-        "critter_crab",  # ----#
-        "critter_locust",  # --#
-        "critter_penguin",  # -#
-        "critter_firefly",  # -#
-        "critter_drone",  # ---#
-        "bubble_platform",  # -#
-        "punishball",  # --------#
-        "punishball_attach",  # -#
-        "giant_fly",  # --------#
-        "flying_fish",  # ------#
-        "crabman",  # ----------#
-        "spikeball_trap",  # ---#
-        "spikeball_no_bounce",  #
-        "slidingwall",  # ------#
-        "boulder",  # ----------#
-        "apep",  # -------------#
-        "apep_left",  # --------#
-        "apep_right",  # -------#
-        "olmite_naked",  # -----#
-        "olmite_helmet",  # ----#
-        "olmite_armored",  # ---#
+        # Community tile codes
+        "cog_door",
+        "totem_trap",
+        "dustwall",
+        "bat",
+        "skeleton",
+        "red_skeleton",
+        "lizard",
+        "mole",
+        "monkey",
+        "firebug",
+        "vampire",
+        "osiris",
+        "anubis2",
+        "assassin",
+        "yeti_king",
+        "yeti_queen",
+        "bee",
+        "bee_queen",
+        "frog",
+        "frog_orange",
+        "hundun",
+        "scarab",
+        "cosmic_jelly",
+        "ghost",
+        "ghost_med_sad",
+        "ghost_med_happy",
+        "ghost_small_angry",
+        "ghost_small_sad",
+        "ghost_small_surprised",
+        "ghost_small_happy",
+        "leaf",
+        "udjat_key",
+        "tutorial_speedrun_sign",
+        "tutorial_menu_sign",
+        "boombox",
+        "eggplant",
+        "gold_bar",
+        "diamond",
+        "emerald",
+        "sapphire",
+        "ruby",
+        "rope_pile",
+        "rope",
+        "bomb_bag",
+        "bomb_box",
+        "giantfood",
+        "elixir",
+        "seeded_run_unlocker",
+        "specs",
+        "climbing_gloves",
+        "pitchers_mitt",
+        "shoes_spring",
+        "shoes_spike",
+        "paste",
+        "compass",
+        "compass_alien",
+        "parachute",
+        "udjat_eye",
+        "kapala",
+        "hedjet",
+        "crown",
+        "eggplant_crown",
+        "true_crown",
+        "tablet",
+        "bone_key",
+        "playerbag",
+        "cape",
+        "vlads_cape",
+        "back_jetpack",
+        "back_telepack",
+        "back_hoverpack",
+        "back_powerpack",
+        "gun_webgun",
+        "gun_shotgun",
+        "gun_freezeray",
+        "camera",
+        "teleporter",
+        "boomerang",
+        "machete",
+        "excalibur",
+        "excalibur_broken",
+        "scepter",
+        "clonegun",
+        "shield_wooden",
+        "shield_metal",
+        "udjat_target",
+        "mount_rockdog",
+        "mount_axolotl",
+        "mount_qilin",
+        "humphead",
+        "present",
+        "forcefield_horizontal",
+        "forcefield_horizontal_top",
+        "pet_monty",
+        "pet_percy",
+        "pet_poochi",
+        "lion_trap",
+        "bomb",
+        "rope_unrolled",
+        "cosmic_orb",
+        "monkey_gold",
+        "altar_duat",
+        "spikeball",
+        "excalibur_stone_empty",
+        "cobweb",
+        "eggsac",
+        "eggsac_left",
+        "eggsac_right",
+        "eggsac_top",
+        "eggsac_bottom",
+        "grub",
+        "spider",
+        "spider_hanging",
+        "skull_drop_trap",
+        "lava_pot",
+        "proto_shopkeeper",
+        "shopkeeper_clone",
+        "tadpole",
+        "ghist_present",
+        "palace_sign",
+        "critter_dungbeetle",
+        "critter_butterfly",
+        "critter_snail",
+        "critter_fish",
+        "critter_crab",
+        "critter_locust",
+        "critter_penguin",
+        "critter_firefly",
+        "critter_drone",
+        "bubble_platform",
+        "punishball",
+        "punishball_attach",
+        "giant_fly",
+        "flying_fish",
+        "crabman",
+        "spikeball_trap",
+        "spikeball_no_bounce",
+        "slidingwall",
+        "boulder",
+        "apep",
+        "apep_left",
+        "apep_right",
+        "olmite_naked",
+        "olmite_helmet",
+        "olmite_armored",
     ]
 )
 

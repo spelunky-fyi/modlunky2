@@ -128,6 +128,12 @@ class LevelsTab(Tab):
         self.icon_add = None
         self.icons_lvls = None
         self.loaded_pack = None
+        self.last_selected_tab = None
+        self.list_preview_tiles_ref = None
+        self.full_size = None
+        self.tiles_full = None
+        self.tiles_full_dual = None
+        self.mag_full = None
 
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
@@ -194,7 +200,6 @@ class LevelsTab(Tab):
         def tab_selected(event):
             selection = event.widget.select()
             tab = event.widget.tab(selection, "text")
-            print("text:", tab)
             self.last_selected_tab = str(tab)
             if str(tab) == "Full Level View":
                 self.load_full_preview()
@@ -301,7 +306,7 @@ class LevelsTab(Tab):
 
         self.current_value_full = tk.DoubleVar()
 
-        def slider_changed(event):
+        def slider_changed(_event):
             self.load_full_preview()
 
         self.slider_zoom_full = tk.Scale(
@@ -396,8 +401,8 @@ class LevelsTab(Tab):
         self.canvas_full_dual.grid_remove()
 
         def toggle_layer():
-            x = self.switch_variable_full.get()
-            if x == "0":
+            x_coord = self.switch_variable_full.get()
+            if x_coord == "0":
                 self.canvas_full.grid()
                 self.canvas_full_dual.grid_remove()
             else:
@@ -2582,8 +2587,6 @@ class LevelsTab(Tab):
 
     def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
-        tile_lua = False
-        alt_tile_lua = False
 
         invalid_tilecodes = []
         if tile not in VALID_TILE_CODES:
@@ -2598,12 +2601,7 @@ class LevelsTab(Tab):
                 "Uh Oh!",
                 str(invalid_tile) + " isn't a valid tile id. Add as a custom lua tile?",
             )
-            if lua_tile == "yes":
-                if i == 0:
-                    tile_lua = True
-                else:
-                    alt_tile_lua = True
-            else:
+            if lua_tile != "yes":
                 return
             i = i + 1
 
@@ -2833,20 +2831,19 @@ class LevelsTab(Tab):
             self.combobox_alt.grid()
 
     def load_full_preview(self):
-        file_id = None
         self.list_preview_tiles_ref = []
-        # sets default level size for levels that might now have a size variable like the challenge levels. 8x8 is what I went with
+        # sets default level size for levels that might now have a size variable like the challenge levels.
+        # 8x8 is what I went with
         level_height = 8 * 8
         level_width = 8 * 10
 
         self.full_size = None
         if len(self.tree_files.selection()) > 0:
-            # file_id = self.tree_files.selection()[0]
             for entry in self.tree.get_children():
                 if self.tree.item(entry, option="values")[0] == "size":
                     self.full_size = self.tree.item(entry, option="values")[1]
-                    print("Size found: " + self.tree.item(entry, option="values")[1])
-                    if self.full_size != None:
+                    logger.debug("Size found: %s", self.tree.item(entry, option="values")[1])
+                    if self.full_size is not None:
                         level_height = int(self.full_size.split(", ")[1]) * 8
                         level_width = int(self.full_size.split(", ")[0]) * 10
                     else:
@@ -2869,8 +2866,8 @@ class LevelsTab(Tab):
 
         self.canvas_full.grid()
 
-        def flip_text(x):
-            return x[::-1]
+        def flip_text(x_coord):
+            return x_coord[::-1]
 
         for room_template in self.tree_levels.get_children():
             room_x = 0
@@ -2921,8 +2918,8 @@ class LevelsTab(Tab):
                     self.tree_levels.item(room_template, option="text").split("-")[1]
                 )
 
-            print(self.tree_levels.item(room_template, option="text"))
-            print("Room pos: " + str(room_x) + "x" + str(room_y))
+            logger.debug("%s", self.tree_levels.item(room_template, option="text"))
+            logger.debug("Room pos: %sx%s", room_x, room_y)
             current_room_tiles = []
             current_room_tiles_dual = []
             layers = []
@@ -2932,21 +2929,19 @@ class LevelsTab(Tab):
                 for cr_line in self.tree_levels.item(template, option="values"):
                     if str(cr_line).startswith(r"\!"):
                         logger.debug("found tag %s", cr_line)
-                        if str(cr_line) == "\!onlyflip":
+                        if str(cr_line) == r"\!onlyflip":
                             flip_room = True
-                        elif str(cr_line) == "\!ignore":
+                        elif str(cr_line) == r"\!ignore":
                             continue
-                        # print("tag found")
                     else:
                         logger.debug("appending %s", cr_line)
-                        # print("appending %s", cr_line)
                         load_line = ""
                         load_line_dual = ""
                         dual_mode = False
                         for char in str(cr_line):
                             if str(char) == " ":
                                 dual_mode = True
-                                print("dual room found")
+                                logger.debug("dual room found")
 
                                 if flip_room:
                                     current_room_tiles.append(flip_text(str(load_line)))
@@ -3011,7 +3006,6 @@ class LevelsTab(Tab):
                                     if tiles:
                                         tile_name = str(tiles[-1][0]).split(" ", 1)[0]
                                         new_ref = True
-                                        ref_count = 0
                                         for (
                                             preview_tile_ref
                                         ) in self.list_preview_tiles_ref:
@@ -3134,24 +3128,24 @@ class LevelsTab(Tab):
 
             self.lvl_bg = ImageTk.PhotoImage(self.im_output)
             canvas.create_image(0, 0, image=self.lvl_bg, anchor="nw")
-        except:
-            print("we tried lol")
+        except Exception as err:  # pylint: disable=broad-except
+            logger.critical("Failed to draw full grid: %s", err)
 
         # finishes by drawing grid on top
         for i in range(0, cols + 2):
             canvas.create_line(
-                (i) * self.mag_full,
+                i * self.mag_full,
                 0,
-                (i) * self.mag_full,
-                (rows) * self.mag_full,
+                i * self.mag_full,
+                rows * self.mag_full,
                 fill="#F0F0F0",
             )
         for i in range(0, rows):
             canvas.create_line(
                 0,
-                (i) * self.mag_full,
+                i * self.mag_full,
                 self.mag_full * (cols + 2),
-                (i) * self.mag_full,
+                i * self.mag_full,
                 fill="#F0F0F0",
             )
 
