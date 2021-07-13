@@ -2842,7 +2842,9 @@ class LevelsTab(Tab):
             for entry in self.tree.get_children():
                 if self.tree.item(entry, option="values")[0] == "size":
                     self.full_size = self.tree.item(entry, option="values")[1]
-                    logger.debug("Size found: %s", self.tree.item(entry, option="values")[1])
+                    logger.debug(
+                        "Size found: %s", self.tree.item(entry, option="values")[1]
+                    )
                     if self.full_size is not None:
                         level_height = int(self.full_size.split(", ")[1]) * 8
                         level_width = int(self.full_size.split(", ")[0]) * 10
