@@ -560,7 +560,7 @@ class RunState:
             elif self.world4_theme == Theme.TEMPLE:
                 return "Chain Low% Duat"
 
-        if self.world >= 7:
+        if self.world >= 7 or self.win_state == WinState.HUNDUN:
             return "Low% Sunken City"
 
         return self.get_plain_low_percent()
@@ -586,7 +586,7 @@ class RunState:
             elif self.world4_theme == Theme.TEMPLE:
                 return "Sunken City% Duat"
 
-        if self.world >= 7:
+        if self.world >= 7 or self.win_state == WinState.HUNDUN:
             return "Sunken City%"
 
         return "Any%"
