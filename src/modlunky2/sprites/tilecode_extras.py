@@ -78,6 +78,10 @@ TILENAMES = [
     "lua_tile",
     "playerbag",
     "rope_unrolled",
+    "bubble_platform",
+    "apep",
+    "apep_left",
+    "apep_right",
 ]
 
 
