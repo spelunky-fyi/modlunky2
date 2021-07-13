@@ -347,8 +347,10 @@ VALID_TILE_CODES = set(
         "excalibur_stone_empty",  #
         "cobweb",  # -----------#
         "eggsac",  # -----------#
-        "eggsac_left/_top",  # --#
-        "eggsac_right/_bottom",  #
+        "eggsac_left",  # --#
+        "eggsac_right",  #
+        "eggsac_top",  # --#
+        "eggsac__bottom",  #
         "grub",  # ------------#
         "spider",  # ----------#
         "spider_hanging",  #  -#
