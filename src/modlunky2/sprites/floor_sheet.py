@@ -76,6 +76,7 @@ class BabylonFloorSheet(AbstractFloorSheet):
     biome_name = "babylon"
     _additional_chunks = {
         "mushroom_base": (9, 11, 10, 12),
+        "palace_sign": (3, 8, 5, 10),
     }
 
 
