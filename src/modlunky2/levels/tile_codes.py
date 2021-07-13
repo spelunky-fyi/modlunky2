@@ -346,6 +346,44 @@ VALID_TILE_CODES = set(
         "spikeball",  # --------#
         "excalibur_stone_empty",  #
         "cobweb",  # -----------#
+        "eggsac",  # -----------#
+        "eggsac_left/_top",  # --#
+        "eggsac_right/_bottom",  #
+        "grub",  # ------------#
+        "spider",  # ----------#
+        "spider_hanging",  #  -#
+        "skull_drop_trap",  # -#
+        "lava_pot",  # --------#
+        "proto_shopkeeper",  # #
+        "shopkeeper_clone",  # #
+        "tadpole",  #  --------#
+        "ghist_present",  # ---#
+        "palace_sign",  # -----#
+        "critter_dungbeetle",  #
+        "critter_butterfly",  ##
+        "critter_snail",  # ---#
+        "critter_fish",  # ----#
+        "critter_crab",  # ----#
+        "critter_locust",  # --#
+        "critter_penguin",  # -#
+        "critter_firefly",  # -#
+        "critter_drone",  # ---#
+        "bubble_platform",  # -#
+        "punishball",  # --------#
+        "punishball_attach",  # -#
+        "giant_fly",  # --------#
+        "flying_fish",  # ------#
+        "crabman",  # ----------#
+        "spikeball_trap",  # ---#
+        "spikeball_no_bounce",  #
+        "slidingwall",  # ------#
+        "boulder",  # ----------#
+        "apep",  # -------------#
+        "apep_left",  # --------#
+        "apep_right",  # -------#
+        "olmite_naked",  # -----#
+        "olmite_helmet",  # ----#
+        "olmite_armored",  # ---#
     ]
 )
 
