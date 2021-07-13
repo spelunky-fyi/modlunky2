@@ -59,6 +59,7 @@ class Big4(BaseJsonSpriteLoader):
         "crabman": (0, 0, 2, 2),
         "lavamander": (10, 4, 12, 6),
         "giantfly": (0, 12, 2, 14),
+        "giant_fly": (0, 12, 2, 14),
         "crabman_open_claw": (14, 2, 15, 3),
         "crabman_closed_claw": (15, 2, 16, 3),
         "crabman_chain_claw": (14, 3, 15, 4),
