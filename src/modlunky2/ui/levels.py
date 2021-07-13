@@ -128,6 +128,12 @@ class LevelsTab(Tab):
         self.icon_add = None
         self.icons_lvls = None
         self.loaded_pack = None
+        self.last_selected_tab = None
+        self.list_preview_tiles_ref = None
+        self.full_size = None
+        self.tiles_full = None
+        self.tiles_full_dual = None
+        self.mag_full = None
 
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
@@ -189,10 +195,22 @@ class LevelsTab(Tab):
         self.tab_control = ttk.Notebook(self)
         self.tab_control.grid(row=0, column=1, rowspan=3, sticky="nwse")
 
+        self.last_selected_tab = None
+
+        def tab_selected(event):
+            selection = event.widget.select()
+            tab = event.widget.tab(selection, "text")
+            self.last_selected_tab = str(tab)
+            if str(tab) == "Full Level View":
+                self.load_full_preview()
+
+        self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
+
         self.rules_tab = ttk.Frame(self.tab_control)
         self.editor_tab = ttk.Frame(
             self.tab_control
         )  # Tab 2 is the actual level editor
+        self.preview_tab = ttk.Frame(self.tab_control)
         self.variables_tab = ttk.Frame(self.tab_control)
 
         self.button_back = tk.Button(
@@ -283,6 +301,136 @@ class LevelsTab(Tab):
         self.tree_chances_monsters.heading("3", text="Notes")
         self.tree_chances_monsters.grid(row=2, column=0, sticky="nwse")
         self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
+
+        #  View Tab
+
+        self.current_value_full = tk.DoubleVar()
+
+        def slider_changed(_event):
+            self.load_full_preview()
+
+        self.slider_zoom_full = tk.Scale(
+            self.preview_tab,
+            from_=2,
+            to=100,
+            orient="horizontal",
+            variable=self.current_value_full,
+        )  # command=slider_changed,
+        self.slider_zoom_full.set(50)
+        self.slider_zoom_full.bind("<ButtonRelease-1>", slider_changed)
+        self.slider_zoom_full.grid(row=0, column=0, columnspan=2, sticky="nw")
+
+        self.preview_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+        self.preview_tab.rowconfigure(1, weight=1)  # Row 0 = List box / Label
+
+        self.canvas_grids_full = tk.Canvas(  # this is the main level editor grid
+            self.preview_tab,
+            bg="#292929",
+        )
+        self.canvas_grids_full.grid(row=1, column=0, columnspan=2, sticky="nw")
+
+        self.canvas_grids_full.columnconfigure(2, weight=1)
+        self.canvas_grids_full.rowconfigure(0, weight=1)
+
+        self.scrollable_canvas_frame_full = tk.Frame(
+            self.canvas_grids_full, bg="#343434"
+        )
+
+        # offsets the screen so user can freely scroll around work area
+        self.scrollable_canvas_frame_full.columnconfigure(
+            0, minsize=int(int(self.screen_width) / 2)
+        )
+        self.scrollable_canvas_frame_full.columnconfigure(1, weight=1)
+        self.scrollable_canvas_frame_full.columnconfigure(2, minsize=50)
+        self.scrollable_canvas_frame_full.columnconfigure(
+            4, minsize=int(int(self.screen_width) / 2)
+        )
+        self.scrollable_canvas_frame_full.rowconfigure(
+            0, minsize=int(int(self.screen_height) / 2)
+        )
+        self.scrollable_canvas_frame_full.rowconfigure(1, weight=1)
+        self.scrollable_canvas_frame_full.rowconfigure(2, minsize=100)
+        self.scrollable_canvas_frame_full.rowconfigure(2, minsize=100)
+        self.scrollable_canvas_frame_full.rowconfigure(
+            4, minsize=int(int(self.screen_height) / 2)
+        )
+
+        self.scrollable_canvas_frame_full.grid(row=0, column=0, sticky="nwes")
+        self.vbar_full = ttk.Scrollbar(
+            self.preview_tab, orient="vertical", command=self.canvas_grids_full.yview
+        )
+        self.vbar_full.grid(row=0, column=0, rowspan=4, columnspan=7, sticky="nse")
+        self.hbar_full = ttk.Scrollbar(
+            self.preview_tab, orient="horizontal", command=self.canvas_grids_full.xview
+        )
+        self.hbar_full.grid(row=0, column=0, rowspan=4, columnspan=8, sticky="wes")
+
+        self.canvas_grids_full.config(
+            xscrollcommand=self.hbar_full.set, yscrollcommand=self.vbar_full.set
+        )
+        x_origin = self.canvas_grids_full.winfo_screenwidth()
+        y_origin = self.canvas_grids_full.winfo_screenheight()
+        self.canvas_grids_full.create_window(
+            (x_origin, y_origin),
+            window=self.scrollable_canvas_frame_full,
+            anchor="center",
+        )
+        self.canvas_grids_full["width"] = x_origin
+        self.canvas_grids_full["height"] = y_origin
+        self.canvas_grids_full.bind("<Enter>", self._bind_to_mousewheel)
+        self.canvas_grids_full.bind("<Leave>", self._unbind_from_mousewheel)
+        self.scrollable_canvas_frame_full.bind(
+            "<Configure>",
+            lambda e: self.canvas_grids_full.configure(
+                scrollregion=self.canvas_grids_full.bbox("all")
+            ),
+        )
+
+        self.canvas_full = tk.Canvas(  # this is the main level editor grid
+            self.scrollable_canvas_frame_full,
+            bg="#343434",
+        )
+        self.canvas_full.grid(row=1, column=1)
+        # self.canvas_full.grid_remove()
+
+        self.canvas_full_dual = tk.Canvas(  # this is the main level editor grid
+            self.scrollable_canvas_frame_full,
+            bg="#343434",
+        )
+        self.canvas_full_dual.grid(row=1, column=1)
+        self.canvas_full_dual.grid_remove()
+
+        def toggle_layer():
+            x_coord = self.switch_variable_full.get()
+            if x_coord == "0":
+                self.canvas_full.grid()
+                self.canvas_full_dual.grid_remove()
+            else:
+                self.canvas_full.grid_remove()
+                self.canvas_full_dual.grid()
+
+        self.switch_variable_full = tk.StringVar()
+        self.front_preview = tk.Radiobutton(
+            self.preview_tab,
+            text="Foreground",
+            variable=self.switch_variable_full,
+            indicatoron=False,
+            value="0",
+            width=8,
+            command=toggle_layer,
+        )
+        self.switch_variable_full.set("0")
+        self.front_preview.grid(column=0, row=1, sticky="ne")
+        self.back_preview = tk.Radiobutton(
+            self.preview_tab,
+            text="Background",
+            variable=self.switch_variable_full,
+            indicatoron=False,
+            value="1",
+            width=8,
+            command=toggle_layer,
+        )
+        self.back_preview.grid(column=1, row=1, sticky="nw")
 
         # Variables Tab
         self.variables_tab.columnconfigure(0, weight=1)  # Column 1 = Everything Else
@@ -420,6 +568,7 @@ class LevelsTab(Tab):
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
+        self.tab_control.add(self.preview_tab, text="Full Level View")
         self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
         self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -1303,6 +1452,9 @@ class LevelsTab(Tab):
                 self.last_selected_file = item
                 item_text = self.tree_files.item(item, "text")
                 self.read_lvl_file(item_text)
+
+        if self.last_selected_tab == "Full Level View":
+            self.load_full_preview()
 
     def _on_mousewheel(self, event):
         scroll_dir = None
@@ -2435,8 +2587,6 @@ class LevelsTab(Tab):
 
     def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
-        tile_lua = False
-        alt_tile_lua = False
 
         invalid_tilecodes = []
         if tile not in VALID_TILE_CODES:
@@ -2451,12 +2601,7 @@ class LevelsTab(Tab):
                 "Uh Oh!",
                 str(invalid_tile) + " isn't a valid tile id. Add as a custom lua tile?",
             )
-            if lua_tile == "yes":
-                if i == 0:
-                    tile_lua = True
-                else:
-                    alt_tile_lua = True
-            else:
+            if lua_tile != "yes":
                 return
             i = i + 1
 
@@ -2684,6 +2829,325 @@ class LevelsTab(Tab):
         else:
             self.combobox.grid(columnspan=1)
             self.combobox_alt.grid()
+
+    def load_full_preview(self):
+        self.list_preview_tiles_ref = []
+        # sets default level size for levels that might now have a size variable like the challenge levels.
+        # 8x8 is what I went with
+        level_height = 8 * 8
+        level_width = 8 * 10
+
+        self.full_size = None
+        if len(self.tree_files.selection()) > 0:
+            for entry in self.tree.get_children():
+                if self.tree.item(entry, option="values")[0] == "size":
+                    self.full_size = self.tree.item(entry, option="values")[1]
+                    logger.debug("Size found: %s", self.tree.item(entry, option="values")[1])
+                    if self.full_size is not None:
+                        level_height = int(self.full_size.split(", ")[1]) * 8
+                        level_width = int(self.full_size.split(", ")[0]) * 10
+                    else:
+                        level_height = int(8)
+                        level_width = int(8)
+                    self.canvas_full.delete("all")
+                    self.canvas_full_dual.delete("all")
+                    self._draw_grid_full(level_width, level_height, self.canvas_full)
+                    self._draw_grid_full(
+                        level_width, level_height, self.canvas_full_dual
+                    )
+            # if self.full_size == None:
+            #    self.canvas_full.grid_remove()
+            #    self.canvas_full_dual.grid_remove()
+            #    return  # don't even try cause there's no size parameter for the level lol
+        else:
+            self.canvas_full.grid_remove()
+            self.canvas_full_dual.grid_remove()
+            return
+
+        self.canvas_full.grid()
+
+        def flip_text(x_coord):
+            return x_coord[::-1]
+
+        for room_template in self.tree_levels.get_children():
+            room_x = 0
+            room_y = 0
+            if self.tree_levels.item(room_template, option="text").startswith(
+                "setroom"
+            ):
+                room_y = int(
+                    self.tree_levels.item(room_template, option="text")
+                    .split("-")[0]
+                    .split("room")[1]
+                )
+            elif self.tree_levels.item(room_template, option="text").startswith(
+                "challenge_"
+            ):
+                if (
+                    len(self.tree_levels.item(room_template, option="text").split("-"))
+                    == 2
+                ):
+                    room_y = int(
+                        self.tree_levels.item(room_template, option="text")
+                        .split("-")[0]
+                        .split("challenge_")[1]
+                    )
+                else:
+                    continue
+            elif self.tree_levels.item(room_template, option="text").startswith(
+                "palaceofpleasure_"
+            ):
+                room_y = int(
+                    self.tree_levels.item(room_template, option="text")
+                    .split("-")[0]
+                    .split("palaceofpleasure_")[1]
+                )
+            else:
+                continue
+
+            flip_room = False
+            if len(self.tree_levels.item(room_template, option="text").split("//")) > 0:
+                room_x = int(
+                    self.tree_levels.item(room_template, option="text")
+                    .split("-")[1]
+                    .split("//")[0]
+                    .strip()
+                )
+            else:
+                room_x = int(
+                    self.tree_levels.item(room_template, option="text").split("-")[1]
+                )
+
+            logger.debug("%s", self.tree_levels.item(room_template, option="text"))
+            logger.debug("Room pos: %sx%s", room_x, room_y)
+            current_room_tiles = []
+            current_room_tiles_dual = []
+            layers = []
+
+            if len(self.tree_levels.get_children(room_template)) != 0:
+                template = self.tree_levels.get_children(room_template)[0]
+                for cr_line in self.tree_levels.item(template, option="values"):
+                    if str(cr_line).startswith(r"\!"):
+                        logger.debug("found tag %s", cr_line)
+                        if str(cr_line) == r"\!onlyflip":
+                            flip_room = True
+                        elif str(cr_line) == r"\!ignore":
+                            continue
+                    else:
+                        logger.debug("appending %s", cr_line)
+                        load_line = ""
+                        load_line_dual = ""
+                        dual_mode = False
+                        for char in str(cr_line):
+                            if str(char) == " ":
+                                dual_mode = True
+                                logger.debug("dual room found")
+
+                                if flip_room:
+                                    current_room_tiles.append(flip_text(str(load_line)))
+                                else:
+                                    current_room_tiles.append(str(load_line))
+                            else:
+                                if dual_mode:
+                                    load_line_dual += str(char)
+                                else:
+                                    load_line += str(char)
+                        if dual_mode:
+                            if flip_room:
+                                current_room_tiles_dual.append(
+                                    flip_text(str(load_line_dual))
+                                )
+                            else:
+                                current_room_tiles_dual.append(str(load_line_dual))
+                        else:
+                            if flip_room:
+                                current_room_tiles.append(flip_text(str(load_line)))
+                            else:
+                                current_room_tiles.append(str(load_line))
+
+                # Create a grid of None to store the references to the tiles
+                self.tiles_full = [
+                    [None for _ in range(level_width)] for _ in range(level_height)
+                ]  # tile image displays
+
+                self.tiles_full_dual = [
+                    [None for _ in range(level_width)] for _ in range(level_height)
+                ]  # tile image displays
+
+                currow = -1
+                curcol = 0
+
+                layers.append(current_room_tiles)
+                layers.append(current_room_tiles_dual)
+
+                for layer in layers:
+                    canvas_to_fill = None
+                    grid_storage = None
+                    if layer == current_room_tiles:
+                        canvas_to_fill = self.canvas_full
+                        grid_storage = self.tiles_full
+                    else:
+                        canvas_to_fill = self.canvas_full_dual
+                        grid_storage = self.tiles_full_dual
+                    for room_row in layer:
+                        curcol = 0
+                        currow = currow + 1
+                        tile_image_full = None
+                        logger.debug("Room row: %s", room_row)
+                        for block in str(room_row):
+                            if str(block) != " ":
+                                tile_name = ""
+                                for _pallete_block in self.tile_pallete_ref_in_use:
+                                    tiles = [
+                                        c
+                                        for c in self.tile_pallete_ref_in_use
+                                        if str(" " + block) in str(c[0])
+                                    ]
+                                    if tiles:
+                                        tile_name = str(tiles[-1][0]).split(" ", 1)[0]
+                                        new_ref = True
+                                        for (
+                                            preview_tile_ref
+                                        ) in self.list_preview_tiles_ref:
+                                            if tile_name == str(preview_tile_ref[0]):
+                                                new_ref = False
+                                                tile_image_full = preview_tile_ref[1]
+
+                                        if new_ref:
+                                            tile_ref = []
+                                            tile_image = ImageTk.PhotoImage(
+                                                ImageTk.getimage(tiles[-1][1])
+                                                .resize(
+                                                    (self.mag_full, self.mag_full),
+                                                    Image.ANTIALIAS,
+                                                )
+                                                .convert("RGBA")
+                                            )
+                                            tile_ref.append(tile_name)
+                                            tile_ref.append(tile_image)
+                                            self.list_preview_tiles_ref.append(tile_ref)
+                                            tile_image_full = (
+                                                self.list_preview_tiles_ref[
+                                                    len(self.list_preview_tiles_ref) - 1
+                                                ][1]
+                                            )
+                                    else:
+                                        # There's a missing tile id somehow
+                                        logger.debug("%s Not Found", block)
+
+                                x_coord = 0
+                                y_coord = 0
+                                for tile_name_ref in self.draw_mode:
+                                    if tile_name == str(tile_name_ref[0]):
+                                        x_coord, y_coord = self.adjust_texture_xy(
+                                            tile_image_full.width(),
+                                            tile_image_full.height(),
+                                            tile_name_ref[1],
+                                        )
+                                grid_storage[currow][
+                                    curcol
+                                ] = canvas_to_fill.create_image(
+                                    (room_x * 10 * (self.mag_full))
+                                    + curcol * self.mag_full
+                                    - x_coord,
+                                    (room_y * 8 * (self.mag_full))
+                                    + currow * self.mag_full
+                                    - y_coord,
+                                    image=tile_image_full,
+                                    anchor="nw",
+                                )
+                                _coords = (
+                                    curcol * self.mag_full,
+                                    currow * self.mag_full,
+                                    curcol * self.mag_full + self.mag_full,
+                                    currow * self.mag_full + self.mag_full,
+                                )
+                            curcol = curcol + 1
+
+    def _draw_grid_full(self, cols, rows, canvas):
+        # resizes canvas for grids
+        self.mag_full = int(self.slider_zoom_full.get() / 2)
+
+        canvas["width"] = (self.mag_full * cols) - 3
+        canvas["height"] = (self.mag_full * rows) - 3
+        # self.canvas_grids_full["width"] = (self.mag_full * cols) - 3 * 10
+        # self.canvas_grids_full["height"] = (self.mag_full * rows) - 3 * 4 * 8
+        # self.scrollable_canvas_frame_full["width"] = (self.mag_full * cols) - 3 * 10
+        # self.scrollable_canvas_frame_full["height"] = (self.mag_full * rows) - 3 * 8
+        # self.canvas_grids_full["width"] = (self.mag_full * cols) - 3 * 10
+        # self.canvas_grids_full["height"] = (self.mag_full * rows) - 3 * 8
+
+        self.cur_lvl_bg_path = (
+            self.lvl_bg_path
+        )  # store as a temp dif variable so it can switch back to the normal bg when needed
+
+        try:
+            file_id = self.tree_files.selection()[0]
+            room_item = self.tree_levels.selection()[0]
+            room_id = self.tree_levels.parent(
+                room_item
+            )  # checks which room is being opened to see if a special bg is needed
+            factor = 1.0  # keeps image the same
+            if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
+                self.tree_levels.item(room_id, option="text")
+            ).startswith(
+                r"\.setroom1"
+            ):  # mothership rooms are setroom10-1 to setroom13-2
+                self.cur_lvl_bg_path = self.textures_dir / "bg_mothership.png"
+            elif str(self.tree_files.item(file_id, option="text")).startswith(
+                "blackmark"
+            ):
+                factor = 2.5  # brightens the image for black market
+            elif (
+                str(self.tree_files.item(file_id, option="text")).startswith("generic")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "cosmic"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith("duat")
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "palace"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "ending_hard"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_m"
+                )
+                or str(self.tree_files.item(file_id, option="text")).startswith(
+                    "challenge_st"
+                )
+            ):
+                factor = 0  # darkens the image for cosmic ocean and duat and others
+            image = Image.open(self.cur_lvl_bg_path).convert("RGBA")
+            image = image.resize(
+                (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
+            )  ## The (250, 250) is (height, width)
+            enhancer = ImageEnhance.Brightness(image)
+
+            self.im_output = enhancer.enhance(factor)
+
+            self.lvl_bg = ImageTk.PhotoImage(self.im_output)
+            canvas.create_image(0, 0, image=self.lvl_bg, anchor="nw")
+        except Exception as err:  # pylint: disable=broad-except
+            logger.critical("Failed to draw full grid: %s", err)
+
+        # finishes by drawing grid on top
+        for i in range(0, cols + 2):
+            canvas.create_line(
+                i * self.mag_full,
+                0,
+                i * self.mag_full,
+                rows * self.mag_full,
+                fill="#F0F0F0",
+            )
+        for i in range(0, rows):
+            canvas.create_line(
+                0,
+                i * self.mag_full,
+                self.mag_full * (cols + 2),
+                i * self.mag_full,
+                fill="#F0F0F0",
+            )
 
     def _draw_grid(self, cols, rows, canvas, dual):
         # resizes canvas for grids
@@ -3310,6 +3774,7 @@ class LevelsTab(Tab):
         self.populate_tilecode_pallete()
 
         level_rules = level.level_settings.all()
+        self.full_size = None
         bad_chars = ["[", "]", '"', "'", "(", ")"]
         for rules in level_rules:
             value_final = str(rules.value)

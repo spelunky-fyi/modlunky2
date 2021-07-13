@@ -52,7 +52,8 @@ class IceCavesDecoSheet(AbstractDecoSheet):
     biome_name = "ice"
     _chunk_size = 128
     _chunk_map = {
-        "moai_statue": (0, 7, 4, 12),
+        "moai_statue": (0, 7, 2, 12),
+        "boulder": (0, 5, 2, 7),
     }
 
 

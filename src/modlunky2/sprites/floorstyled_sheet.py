@@ -66,6 +66,7 @@ class PagodaStyledFloorSheet(AbstractFloorStyledSheet):
         "door2": (8, 6, 10, 8),
         "pagoda_floor": (7, 2, 8, 3),
         "slidingwall_ceiling": (5, 8, 6, 10),
+        "slidingwall": (5, 8, 6, 10),
         "slidingwall_switch": (6, 8, 7, 9),
     }
 
