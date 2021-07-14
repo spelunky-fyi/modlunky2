@@ -243,11 +243,11 @@ class RunState:
             elif item_type == EntityType.LOGICAL_CURSED_EFFECT:
                 is_cursed = True
 
-        if self.poisoned and not is_poisoned:
+        if self.poisoned and not is_poisoned and self.player_state != CharState.DYING:
             self.cured_status = True
             self.is_low_percent = False
 
-        if self.cursed and not is_cursed:
+        if self.cursed and not is_cursed and self.player_state != CharState.DYING:
             self.cured_status = True
             self.is_low_percent = False
 
