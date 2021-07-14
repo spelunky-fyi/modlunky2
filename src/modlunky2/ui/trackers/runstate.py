@@ -41,7 +41,7 @@ class RunState:
         self.world = 0
         self.level = 0
         self.theme = 0
-        self.screen = 0
+        self.screen = Screen.UNKNOWN
         self.level_started = False
 
         self.player_state: Optional[CharState] = None
@@ -156,7 +156,7 @@ class RunState:
         world = self.get_critical_state("world")
         level = self.get_critical_state("level")
         theme = self.get_critical_state("theme")
-        screen = Screen(self.get_critical_state("screen"))
+        screen = self.get_critical_state("screen")
         win_state = self.get_critical_state("win_state")
 
         if (world, level) != (self.world, self.level):
@@ -167,7 +167,11 @@ class RunState:
         self.world = world
         self.level = level
         self.theme = theme
-        self.screen = screen
+        # Cope with weird screen value during shutdown
+        try:
+            self.screen = Screen(screen)
+        except ValueError:
+            self.screen = Screen.UNKNOWN
         self.win_state = win_state
 
     def update_has_mounted_tame(self, player_overlay):

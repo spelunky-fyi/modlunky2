@@ -52,6 +52,7 @@ class PresenceFlags(enum.IntFlag):
 
 
 class Screen(enum.IntEnum):
+    UNKNOWN = -1
     LOGO = 0
     INTRO = 1
     PROLOGUE = 2
