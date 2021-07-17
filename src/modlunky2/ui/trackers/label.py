@@ -21,6 +21,7 @@ class Label(Enum):
     NO_GOLD = LabelMetadata("No Gold", start=True)
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
+    # TODO shift complexity of chain low into here
     CHAIN_LOW = LabelMetadata("Chain Low", percent_priority=3)
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
     ANY = LabelMetadata(
@@ -36,7 +37,7 @@ class Label(Enum):
     TRUE_CROWN = LabelMetadata("True Crown")
     COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
     SCORE = LabelMetadata("Score")
-    SCORE_NO_CO = LabelMetadata("Score No CO")
+    NO_CO = LabelMetadata("No CO", start=True)
 
 
 class RunLabel:
@@ -52,7 +53,7 @@ class RunLabel:
             frozenset({Label.CHAIN_LOW, Label.LOW}),
             frozenset({Label.ABZU, Label.DUAT}),
             frozenset({Label.NO_GOLD, Label.MILLIONAIRE}),
-            frozenset({Label.SCORE_NO_CO, Label.COSMIC_OCEAN}),
+            frozenset({Label.COSMIC_OCEAN, Label.NO_CO}),
         ]
     )
 
@@ -62,6 +63,7 @@ class RunLabel:
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.ABZU] |= {Label.CHAIN, Label.CHAIN_LOW}
     _ONLY_SHOW_WITH[Label.DUAT] |= {Label.CHAIN, Label.CHAIN_LOW}
+    _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
 
     # Some labels hide others, e.g. we want "Low%" not "Low% Any"
     _HIDES = defaultdict(set)
@@ -81,12 +83,12 @@ class RunLabel:
         Label.DUAT,
     }
 
+    # Score hides almost
+    _HIDES[Label.SCORE] |= set(Label) - {Label.SCORE, Label.NO_CO}
+
     # Low% implies No TP and No Jetpack
     for k in (Label.CHAIN_LOW, Label.LOW):
         _HIDES[k] |= {Label.NO_TELEPORTER, Label.NO_JETPACK}
-    # Score categories shouldn't appear with anything except themselvse
-    for k in (Label.SCORE, Label.SCORE_NO_CO):
-        _HIDES[k] = set(Label) - {k}
 
     def __init__(self, starting=None) -> None:
         self._set: Set[Label] = (

@@ -1,5 +1,8 @@
 from modlunky2.ui.trackers.label import Label, RunLabel
 
+# TODO check _MUTUALLY_EXCLUSIVE doesn't contain _HIDES or _ONLY_SHOW_WITH 'pairs'
+# TODO check _ONLY_SHOW_WITH things aren't hidden by the labels they require
+
 
 def test_mossranking_alignment():
     main_speed = [
@@ -34,7 +37,7 @@ def test_mossranking_alignment():
     ]
     main_score = [
         ({Label.SCORE, Label.ANY}, "Score"),
-        ({Label.SCORE_NO_CO, Label.ANY}, "Score No CO"),
+        ({Label.SCORE, Label.NO_CO, Label.ANY}, "Score No CO"),
     ]
     misc = [
         ({Label.NO_GOLD, Label.COSMIC_OCEAN}, "No Gold Cosmic Ocean%"),
