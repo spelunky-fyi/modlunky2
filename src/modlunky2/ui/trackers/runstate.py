@@ -412,8 +412,32 @@ class RunState:
             self.world2_theme = self.theme
         elif self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
+            if self.is_chain:
+                self.run_label.add(Label.DUAT)
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
+            if self.is_chain:
+                self.run_label.add(Label.ABZU)
+
+        if self.world2_theme is Theme.JUNGLE and self.world4_theme is Theme.TEMPLE:
+            self.run_label.add(Label.JUNGLE_TEMPLE)
+
+        if self.world is Theme.SUNKEN_CITY:
+            self.run_label.set_terminus(Label.SUNKEN_CITY)
+
+    def update_terminus(self):
+        if self.player_state == CharState.DYING:
+            self.run_label.set_terminus(Label.DEATH)
+        elif self.hou_yis_bow and self.win_state is not WinState.HUNDUN:
+            self.run_label.set_terminus(Label.COSMIC_OCEAN)
+        elif self.had_ankh and self.win_state is not WinState.TIAMAT:
+            self.run_label.set_terminus(Label.SUNKEN_CITY)
+        elif self.world is Theme.SUNKEN_CITY:
+            self.run_label.set_terminus(Label.SUNKEN_CITY)
+        elif self.world is Theme.COSMIC_OCEAN:
+            self.run_label.set_terminus(Label.COSMIC_OCEAN)
+        else:
+            self.run_label.set_terminus(Label.ANY)
 
     def update_is_chain(self):
         if self.is_chain is False:
@@ -472,6 +496,9 @@ class RunState:
             ):
                 self.fail_chain()
 
+        if self.win_state is WinState.TIAMAT:
+            self.fail_chain()
+
     def start_chain(self):
         self.is_chain = True
         self.run_label.add(Label.CHAIN)
@@ -482,8 +509,6 @@ class RunState:
         self.is_chain = False
         self.run_label.discard(Label.CHAIN)
         self.run_label.discard(Label.CHAIN_LOW)
-        self.run_label.discard(Label.ABZU)
-        self.run_label.discard(Label.DUAT)
 
     def fail_all_low(self):
         self.is_low_percent = False
@@ -553,6 +578,8 @@ class RunState:
         self.update_chain()
         self.update_has_chain_powerup()
         self.update_is_chain()
+
+        self.update_terminus()
 
     def update_player_item_types(self, player: Player):
         item_types = set()
