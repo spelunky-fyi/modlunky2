@@ -1,0 +1,174 @@
+from collections import defaultdict
+from enum import Enum
+from typing import Optional, Set
+
+
+class LabelMetadata:
+    def __init__(
+        self, label, start=False, hide_early=None, percent_priority=None, terminus=False
+    ) -> None:
+        self.label = label
+        self.start = start
+        self.hide_early = start if hide_early is None else hide_early
+        self.percent_priority = percent_priority
+        self.terminus = terminus
+
+
+# Order of values is the order they'll appear in
+class Label(Enum):
+    NO_JETPACK = LabelMetadata("No Jetpack", start=True)
+    NO_TELEPORTER = LabelMetadata("No TP", start=True)
+    NO_GOLD = LabelMetadata("No Gold", start=True)
+    PACIFIST = LabelMetadata("Pacifist", start=True)
+    CHAIN = LabelMetadata("Chain")
+    CHAIN_LOW = LabelMetadata("Chain Low", percent_priority=3)
+    LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
+    ANY = LabelMetadata(
+        "Any", start=True, hide_early=False, percent_priority=2, terminus=True
+    )
+    SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=2, terminus=True)
+    DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
+    JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
+    DUAT = LabelMetadata("Duat")
+    ABZU = LabelMetadata("Abzu")
+    MILLIONAIRE = LabelMetadata("Millionaire")
+    EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
+    TRUE_CROWN = LabelMetadata("True Crown")
+    COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
+    SCORE = LabelMetadata("Score")
+    SCORE_NO_CO = LabelMetadata("Score No CO")
+
+
+class RunLabel:
+    _STARTING = frozenset([k for k in Label if k.value.start])
+    _HIDE_EARLY = frozenset([k for k in Label if k.value.hide_early])
+    _TERMINI = frozenset([k for k in Label if k.value.terminus])
+
+    # Something's broken if a run supposedly meets the criteria for more than one of these
+    _MUTUALLY_EXCLUSIVE = frozenset(
+        [
+            frozenset(_TERMINI),
+            frozenset({Label.CHAIN, Label.LOW}),
+            frozenset({Label.CHAIN_LOW, Label.LOW}),
+            frozenset({Label.ABZU, Label.DUAT}),
+            frozenset({Label.NO_GOLD, Label.MILLIONAIRE}),
+            frozenset({Label.SCORE_NO_CO, Label.COSMIC_OCEAN}),
+        ]
+    )
+
+    # Some labels hide others, e.g. we want "Low%" not "Low% Any"
+    _HIDES = defaultdict(set)
+    _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
+    _HIDES[Label.ABZU] |= {Label.CHAIN}
+    _HIDES[Label.DUAT] |= {Label.CHAIN}
+
+    _HIDES[Label.CHAIN_LOW] |= {Label.CHAIN, Label.SUNKEN_CITY}
+    _HIDES[Label.LOW] |= {Label.ANY}
+
+    _HIDES[Label.NO_GOLD] |= {Label.ANY}
+    _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
+    _HIDES[Label.COSMIC_OCEAN] |= {Label.NO_TELEPORTER, Label.ABZU, Label.DUAT}
+
+    # Low% implies No TP and No Jetpack
+    for k in (Label.CHAIN_LOW, Label.LOW):
+        _HIDES[k] |= {Label.NO_TELEPORTER, Label.NO_JETPACK}
+    # No Jetpack is only applicable to Cosmic Ocean
+    for k in _TERMINI - {Label.COSMIC_OCEAN}:
+        _HIDES[k] = {Label.NO_JETPACK, Label.TRUE_CROWN}
+    # Score categories shouldn't appear with anything except themselvse
+    for k in (Label.SCORE, Label.SCORE_NO_CO):
+        _HIDES[k] = set(Label) - {k}
+
+    def __init__(self, starting=None) -> None:
+        self._set: Set[Label] = (
+            set(self._STARTING) if starting is None else set(starting)
+        )
+
+        termini = list(self._set & self._TERMINI)
+        if len(termini) != 1:
+            raise ValueError("Expected exactly 1 terminus, found {}".format(termini))
+        self._terminus = termini[0]
+
+    def add(self, label):
+        if label.value.start:
+            raise ValueError("Attempted to add starting label {}".format(label))
+        if label.value.terminus:
+            raise ValueError("Attempted to add a terminus, {}".format(label))
+
+        # Avoid re-validating if nothing's changed
+        if label in self._set:
+            return
+        self._set.add(label)
+        self._validate()
+
+    def discard(self, label):
+        if label.value.terminus:
+            raise ValueError("Attempted to discard a terminus, {}".format(label))
+
+        # Avoid re-validating if nothing's changed
+        if label not in self._set:
+            return
+        self._set.remove(label)
+        self._validate()
+
+    def set_terminus(self, label):
+        if not label.value.terminus:
+            raise ValueError("Attempted to use {} as a terminus".format(label))
+        self._set.remove(self._terminus)
+        self._set.add(label)
+        self._terminus = label
+        self._validate()
+
+    def _validate(self):
+        # Note that we're validating while the run is in progress.
+        # For example, we should allow "Chain Low%" without "Abzu" or "Duat".
+        for mut in self._MUTUALLY_EXCLUSIVE:
+            inter = mut & self._set
+            if len(inter) > 1:
+                raise Exception("Found mutually-exclusive labels {}".format(inter))
+
+    def _visible(self, hide_early) -> Set[Label]:
+        vis = set(self._set)
+        for needle, to_hide in self._HIDES.items():
+            if needle in self._set:
+                vis -= to_hide
+
+        if hide_early:
+            vis -= self._HIDE_EARLY
+
+        return vis
+
+    @classmethod
+    def _percent(cls, labels: Set[Label]) -> Optional[Label]:
+        found = None
+        for candidate in labels:
+            if candidate.value.percent_priority is None:
+                continue
+
+            if found is None:
+                found = candidate
+            elif candidate.value.percent_priority == found.value.percent_priority:
+                raise Exception(
+                    "Showing labels with equal percent_priority {} {}".format(
+                        candidate, found
+                    )
+                )
+            elif candidate.value.percent_priority > found.value.percent_priority:
+                found = candidate
+
+        return found
+
+    def text(self, hide_early) -> str:
+        vis = self._visible(hide_early)
+        perc = self._percent(vis)
+        parts = []
+
+        for candidate in Label:
+            if candidate not in vis:
+                continue
+            if perc is candidate:
+                parts.append(candidate.value.label + "%")
+            else:
+                parts.append(candidate.value.label)
+
+        return " ".join(parts)
