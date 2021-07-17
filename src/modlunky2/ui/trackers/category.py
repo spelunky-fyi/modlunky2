@@ -43,6 +43,19 @@ class CategoryButtons(ttk.Frame):
         )
         self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
+        self.always_show_modifiers = tk.BooleanVar()
+        self.always_show_modifiers.set(False)
+        self.always_show_modifiers_checkbox = ttk.Checkbutton(
+            self,
+            text="Always Show Modifiers",
+            variable=self.always_show_modifiers,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.always_show_modifiers_checkbox.grid(
+            row=0, column=1, pady=5, padx=5, sticky="nw"
+        )
+
     def launch(self):
         color_key = self.ml_config.config_file.tracker_color_key
         self.disable_button()
@@ -50,6 +63,7 @@ class CategoryButtons(ttk.Frame):
             title="Category Tracker",
             color_key=color_key,
             on_close=self.enable_button,
+            always_show_modifiers=self.always_show_modifiers.get(),
         )
 
     def enable_button(self):
@@ -62,14 +76,18 @@ class CategoryButtons(ttk.Frame):
 
 
 class CategoryWatcherThread(WatcherThread):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, always_show_modifiers=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.time_total = None
         self.run_state = None
+        self.always_show_modifiers = always_show_modifiers
 
     def initialize(self):
         self.time_total = 0
-        self.run_state = RunState(self.proc)
+        self.run_state = RunState(
+            self.proc,
+            always_show_modifiers=self.always_show_modifiers,
+        )
 
     def get_time_total(self):
         time_total = self.proc.state.time_total
@@ -102,10 +120,13 @@ class CategoryWindow(TrackerWindow):
 
     POLL_INTERVAL = 16
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, always_show_modifiers=False, **kwargs):
         super().__init__(file_name="category.txt", *args, **kwargs)
 
-        self.watcher_thread = CategoryWatcherThread(self.queue)
+        self.watcher_thread = CategoryWatcherThread(
+            self.queue,
+            always_show_modifiers=always_show_modifiers,
+        )
         self.watcher_thread.start()
         self.after(self.POLL_INTERVAL, self.after_watcher_thread)
 

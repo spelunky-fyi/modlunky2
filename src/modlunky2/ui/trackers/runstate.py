@@ -35,8 +35,9 @@ class FailedMemoryRead(Exception):
 
 
 class RunState:
-    def __init__(self, proc: Spel2Process):
+    def __init__(self, proc: Spel2Process, always_show_modifiers=False):
         self._proc = proc
+        self.always_show_modifiers = always_show_modifiers
 
         self.world = 0
         self.level = 0
@@ -620,6 +621,9 @@ class RunState:
         return self.get_any_category()
 
     def should_show_modifiers(self):
+        if self.always_show_modifiers:
+            return True
+
         if self.screen == Screen.SCORES:
             return True
 
