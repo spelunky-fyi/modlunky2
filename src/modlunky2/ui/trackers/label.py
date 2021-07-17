@@ -56,6 +56,13 @@ class RunLabel:
         ]
     )
 
+    # Some labels are only shown in conjunction with another
+    _ONLY_SHOW_WITH = defaultdict(set)
+    _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.NO_JETPACK}
+    _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
+    _ONLY_SHOW_WITH[Label.ABZU] |= {Label.CHAIN, Label.CHAIN_LOW}
+    _ONLY_SHOW_WITH[Label.DUAT] |= {Label.CHAIN, Label.CHAIN_LOW}
+
     # Some labels hide others, e.g. we want "Low%" not "Low% Any"
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
@@ -72,9 +79,6 @@ class RunLabel:
     # Low% implies No TP and No Jetpack
     for k in (Label.CHAIN_LOW, Label.LOW):
         _HIDES[k] |= {Label.NO_TELEPORTER, Label.NO_JETPACK}
-    # No Jetpack is only applicable to Cosmic Ocean
-    for k in _TERMINI - {Label.COSMIC_OCEAN}:
-        _HIDES[k] = {Label.NO_JETPACK, Label.TRUE_CROWN}
     # Score categories shouldn't appear with anything except themselvse
     for k in (Label.SCORE, Label.SCORE_NO_CO):
         _HIDES[k] = set(Label) - {k}
@@ -89,7 +93,7 @@ class RunLabel:
             raise ValueError("Expected exactly 1 terminus, found {}".format(termini))
         self._terminus = termini[0]
 
-    def add(self, label):
+    def add(self, label: Label):
         if label.value.start:
             raise ValueError("Attempted to add starting label {}".format(label))
         if label.value.terminus:
@@ -101,7 +105,7 @@ class RunLabel:
         self._set.add(label)
         self._validate()
 
-    def discard(self, label):
+    def discard(self, label: Label):
         if label.value.terminus:
             raise ValueError("Attempted to discard a terminus, {}".format(label))
 
@@ -111,7 +115,7 @@ class RunLabel:
         self._set.remove(label)
         self._validate()
 
-    def set_terminus(self, label):
+    def set_terminus(self, label: Label):
         if not label.value.terminus:
             raise ValueError("Attempted to use {} as a terminus".format(label))
         self._set.remove(self._terminus)
@@ -129,9 +133,16 @@ class RunLabel:
 
     def _visible(self, hide_early) -> Set[Label]:
         vis = set(self._set)
+
         for needle, to_hide in self._HIDES.items():
             if needle in self._set:
                 vis -= to_hide
+
+        for needle, need in self._ONLY_SHOW_WITH.items():
+            if needle not in self._set:
+                continue
+            if self._set.isdisjoint(need):
+                vis.discard(needle)
 
         if hide_early:
             vis -= self._HIDE_EARLY

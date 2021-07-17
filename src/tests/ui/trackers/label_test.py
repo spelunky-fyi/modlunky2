@@ -27,8 +27,8 @@ def test_mossranking_alignment():
             {Label.NO_TELEPORTER, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
             "No TP Sunken City% Duat",
         ),
-        ({Label.ABZU, Label.SUNKEN_CITY}, "Sunken City% Abzu"),
-        ({Label.DUAT, Label.SUNKEN_CITY}, "Sunken City% Duat"),
+        ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Sunken City% Abzu"),
+        ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Sunken City% Duat"),
         ({Label.NO_GOLD, Label.ANY}, "No Gold"),
         ({Label.NO_GOLD, Label.LOW, Label.ANY}, "No Gold Low%"),
     ]
