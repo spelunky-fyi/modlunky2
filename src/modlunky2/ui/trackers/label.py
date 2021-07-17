@@ -74,7 +74,12 @@ class RunLabel:
 
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
-    _HIDES[Label.COSMIC_OCEAN] |= {Label.NO_TELEPORTER, Label.CHAIN, Label.ABZU, Label.DUAT}
+    _HIDES[Label.COSMIC_OCEAN] |= {
+        Label.NO_TELEPORTER,
+        Label.CHAIN,
+        Label.ABZU,
+        Label.DUAT,
+    }
 
     # Low% implies No TP and No Jetpack
     for k in (Label.CHAIN_LOW, Label.LOW):
@@ -92,6 +97,7 @@ class RunLabel:
         if len(termini) != 1:
             raise ValueError("Expected exactly 1 terminus, found {}".format(termini))
         self._terminus = termini[0]
+        self._cached_text: Optional[str] = None
 
     def add(self, label: Label):
         if label.value.start:
@@ -103,7 +109,7 @@ class RunLabel:
         if label in self._set:
             return
         self._set.add(label)
-        self._validate()
+        self._modified()
 
     def discard(self, label: Label):
         if label.value.terminus:
@@ -113,7 +119,7 @@ class RunLabel:
         if label not in self._set:
             return
         self._set.remove(label)
-        self._validate()
+        self._modified()
 
     def set_terminus(self, label: Label):
         if not label.value.terminus:
@@ -121,6 +127,10 @@ class RunLabel:
         self._set.remove(self._terminus)
         self._set.add(label)
         self._terminus = label
+        self._modified()
+
+    def _modified(self):
+        self._cached_text = None
         self._validate()
 
     def _validate(self):
@@ -170,6 +180,9 @@ class RunLabel:
         return found
 
     def text(self, hide_early) -> str:
+        if self._cached_text is not None:
+            return self._cached_text
+
         vis = self._visible(hide_early)
         perc = self._percent(vis)
         parts = []
@@ -182,4 +195,5 @@ class RunLabel:
             else:
                 parts.append(candidate.value.label)
 
-        return " ".join(parts)
+        self._cached_text = " ".join(parts)
+        return self._cached_text
