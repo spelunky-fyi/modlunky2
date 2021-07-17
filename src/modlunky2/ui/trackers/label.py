@@ -74,7 +74,7 @@ class RunLabel:
 
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
-    _HIDES[Label.COSMIC_OCEAN] |= {Label.NO_TELEPORTER, Label.ABZU, Label.DUAT}
+    _HIDES[Label.COSMIC_OCEAN] |= {Label.NO_TELEPORTER, Label.CHAIN, Label.ABZU, Label.DUAT}
 
     # Low% implies No TP and No Jetpack
     for k in (Label.CHAIN_LOW, Label.LOW):
