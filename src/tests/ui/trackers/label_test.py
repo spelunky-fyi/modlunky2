@@ -104,6 +104,7 @@ def test_mossranking_alignment():
             "Duat Eggplant%",
         ),
         ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
+        ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
         (
             {
                 Label.CHAIN,
@@ -125,6 +126,10 @@ def test_mossranking_alignment():
             "Chain Low% Duat Eggplant",
         ),
         ({Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY}, "No Gold Eggplant%"),
+        (
+            {Label.NO_GOLD, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+            "No Gold Low% Eggplant",
+        ),
         (
             {
                 Label.NO_GOLD,
