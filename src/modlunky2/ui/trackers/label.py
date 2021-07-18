@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Set
 
+
 @dataclass
 class LabelMetadata:
     text: str
@@ -78,7 +79,6 @@ class RunLabel:
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
-
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
     _HIDES[Label.COSMIC_OCEAN] |= {
@@ -87,8 +87,8 @@ class RunLabel:
         Label.DUAT,
     }
 
-    # Score hides almost everything
-    _HIDES[Label.SCORE] |= set(Label) - {Label.SCORE, Label.NO_CO}
+    # Score hides almost everythinge
+    _SCORE_LABELS = {Label.SCORE, Label.NO_CO}
 
     def __init__(self, starting=None) -> None:
         self._set: Set[Label] = (
@@ -145,6 +145,9 @@ class RunLabel:
 
     def _visible(self, hide_early) -> Set[Label]:
         vis = set(self._set)
+
+        if Label.SCORE in vis:
+            vis &= self._SCORE_LABELS
 
         if hide_early:
             vis -= self._HIDE_EARLY
