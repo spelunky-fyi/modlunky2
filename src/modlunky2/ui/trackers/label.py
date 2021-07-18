@@ -138,18 +138,16 @@ class RunLabel:
     def _visible(self, hide_early) -> Set[Label]:
         vis = set(self._set)
 
+        if hide_early:
+            vis -= self._HIDE_EARLY
+
         for needle, to_hide in self._HIDES.items():
-            if needle in self._set:
+            if needle in vis:
                 vis -= to_hide
 
         for needle, need in self._ONLY_SHOW_WITH.items():
-            if needle not in self._set:
-                continue
-            if self._set.isdisjoint(need):
+            if needle in vis and self._set.isdisjoint(need):
                 vis.discard(needle)
-
-        if hide_early:
-            vis -= self._HIDE_EARLY
 
         # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
         if Label.SUNKEN_CITY in self._set and not self._set.isdisjoint(
