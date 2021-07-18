@@ -307,9 +307,17 @@ class RunState:
             if item_type in CHAIN_POWERUP_ENTITIES:
                 self.has_chain_powerup = True
                 self.failed_low_if_not_chain = True
-                if not self.is_chain:
-                    self.run_label.discard(Label.LOW)
-                return
+
+        if self.is_chain:
+            return
+
+        # Fail low if we've failed the chain and pick up a non-starting powerup
+        for item_type in self.player_item_types:
+            if item_type in {
+                EntityType.ITEM_POWERUP_ANKH,
+                EntityType.ITEM_POWERUP_TABLETOFDESTINY,
+            }:
+                self.fail_low()
 
     def update_has_non_chain_powerup(self):
         if not self.is_low_percent:
