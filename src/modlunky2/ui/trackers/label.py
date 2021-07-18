@@ -1,19 +1,27 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Set
 
-
+@dataclass
 class LabelMetadata:
+    text: str
+    start: bool
+    add_ok: bool
+    hide_early: bool
+    percent_priority: Optional[int]
+    terminus: bool
+
     def __init__(
         self,
-        label,
+        text,
         start=False,
         add_ok=None,
         hide_early=None,
         percent_priority=None,
         terminus=False,
     ) -> None:
-        self.label = label
+        self.text = text
         self.start = start
         self.add_ok = not start if add_ok is None else add_ok
         self.hide_early = start if hide_early is None else hide_early
@@ -192,9 +200,9 @@ class RunLabel:
             if candidate not in vis:
                 continue
             if perc is candidate:
-                parts.append(candidate.value.label + "%")
+                parts.append(candidate.value.text + "%")
             else:
-                parts.append(candidate.value.label)
+                parts.append(candidate.value.text)
 
         self._cached_text = " ".join(parts)
         return self._cached_text
