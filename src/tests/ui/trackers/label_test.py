@@ -1,8 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import List
 from modlunky2.ui.trackers.label import Label, RunLabel
-
-# TODO check _MUTUALLY_EXCLUSIVE doesn't contain _HIDES or _ONLY_SHOW_WITH 'pairs'
 
 
 @dataclass(frozen=True)
@@ -12,12 +11,7 @@ class VisibiltyEdge:
     reason: str
 
 
-def test_visibility_bipartite():
-    # If the visibiltiy dependencies aren't bipartite:
-    # * We need to iterate/traverse and detect cycles
-    # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
-    # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder
-
+def _build_visibility_edges() -> List[VisibiltyEdge]:
     edge_list = []
     for dep, hides_set in RunLabel._HIDES.items():  # pylint: disable=protected-access
         for label in hides_set:
@@ -27,11 +21,29 @@ def test_visibility_bipartite():
         with_set,
     ) in RunLabel._ONLY_SHOW_WITH.items():  # pylint: disable=protected-access
         for dep in with_set:
-            edge_list.append(VisibiltyEdge(label, dep, "_HIDES"))
+            edge_list.append(VisibiltyEdge(label, dep, "_ONLY_SHOW_WITH"))
 
+    return edge_list
+
+
+def test_visibility_deps_not_mutually_exclusive():
+    mut_ex_edges = []
+    for edge in _build_visibility_edges():
+        for mut_ex in RunLabel._MUTUALLY_EXCLUSIVE:  # pylint: disable=protected-access
+            if mut_ex >= {edge.label, edge.depends_on}:
+                mut_ex_edges.append(edge)
+
+    assert mut_ex_edges == []
+
+
+def test_visibility_bipartite():
+    # If the visibiltiy dependencies aren't bipartite:
+    # * We need to iterate/traverse and detect cycles
+    # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
+    # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder
     edges_by_label = defaultdict(set)
     edges_by_dep = defaultdict(set)
-    for edge in edge_list:
+    for edge in _build_visibility_edges():
         edges_by_label[edge.label].add(edge)
         edges_by_dep[edge.depends_on].add(edge)
 
