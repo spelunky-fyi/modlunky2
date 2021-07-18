@@ -5,10 +5,11 @@ from typing import Optional, Set
 
 class LabelMetadata:
     def __init__(
-        self, label, start=False, hide_early=None, percent_priority=None, terminus=False
+        self, label, start=False, add_ok=None, hide_early=None, percent_priority=None, terminus=False
     ) -> None:
         self.label = label
         self.start = start
+        self.add_ok = not start if add_ok is None else add_ok
         self.hide_early = start if hide_early is None else hide_early
         self.percent_priority = percent_priority
         self.terminus = terminus
@@ -35,7 +36,7 @@ class Label(Enum):
     TRUE_CROWN = LabelMetadata("True Crown")
     COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
     SCORE = LabelMetadata("Score")
-    NO_CO = LabelMetadata("No CO", start=True)
+    NO_CO = LabelMetadata("No CO", start=True, add_ok=True)
 
 
 class RunLabel:
@@ -55,7 +56,7 @@ class RunLabel:
 
     # Some labels are only shown in conjunction with another
     _ONLY_SHOW_WITH = defaultdict(set)
-    _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.NO_JETPACK}
+    _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.COSMIC_OCEAN}
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
 
@@ -87,8 +88,8 @@ class RunLabel:
         self._cached_text: Optional[str] = None
 
     def add(self, label: Label):
-        if label.value.start:
-            raise ValueError("Attempted to add starting label {}".format(label))
+        if not label.value.add_ok:
+            raise ValueError("Attempted to add label {}".format(label))
         if label.value.terminus:
             raise ValueError("Attempted to add a terminus, {}".format(label))
 
