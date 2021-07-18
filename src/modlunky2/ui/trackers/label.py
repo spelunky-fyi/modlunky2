@@ -5,7 +5,13 @@ from typing import Optional, Set
 
 class LabelMetadata:
     def __init__(
-        self, label, start=False, add_ok=None, hide_early=None, percent_priority=None, terminus=False
+        self,
+        label,
+        start=False,
+        add_ok=None,
+        hide_early=None,
+        percent_priority=None,
+        terminus=False,
     ) -> None:
         self.label = label
         self.start = start
@@ -44,13 +50,13 @@ class RunLabel:
     _HIDE_EARLY = frozenset([k for k in Label if k.value.hide_early])
     _TERMINI = frozenset([k for k in Label if k.value.terminus])
 
-    # Something's broken if a run supposedly meets the criteria for more than one of these
+    # Something's broken if a run supposedly meets the criteria for more than one of these.
+    # We tolerate CO and No CO together to simplify updating the terminus.
     _MUTUALLY_EXCLUSIVE = frozenset(
         [
             frozenset(_TERMINI),
             frozenset({Label.ABZU, Label.DUAT}),
             frozenset({Label.NO_GOLD, Label.MILLIONAIRE}),
-            frozenset({Label.COSMIC_OCEAN, Label.NO_CO}),
         ]
     )
 
@@ -73,7 +79,7 @@ class RunLabel:
         Label.DUAT,
     }
 
-    # Score hides almost
+    # Score hides almost everything
     _HIDES[Label.SCORE] |= set(Label) - {Label.SCORE, Label.NO_CO}
 
     def __init__(self, starting=None) -> None:

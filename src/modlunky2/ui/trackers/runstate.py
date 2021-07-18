@@ -432,16 +432,21 @@ class RunState:
 
     def update_terminus(self):
         terminus = Label.ANY
-        if self.player_state == CharState.DYING:
+        if self.theme is Theme.COSMIC_OCEAN:
+            terminus = Label.COSMIC_OCEAN
+        elif self.player_state == CharState.DYING:
             terminus = Label.DEATH
+        elif self.win_state is WinState.TIAMAT:
+            terminus = Label.ANY
         elif self.hou_yis_bow and self.win_state is not WinState.HUNDUN:
             terminus = Label.COSMIC_OCEAN
-        elif self.had_ankh and self.win_state is not WinState.TIAMAT:
+        elif (
+            self.had_ankh
+            or self.is_chain
+            or self.world == 7
+            or self.win_state is WinState.HUNDUN
+        ):
             terminus = Label.SUNKEN_CITY
-        elif self.world is Theme.SUNKEN_CITY:
-            terminus = Label.SUNKEN_CITY
-        elif self.world is Theme.COSMIC_OCEAN:
-            terminus = Label.COSMIC_OCEAN
 
         if terminus is Label.COSMIC_OCEAN:
             self.run_label.discard(Label.NO_CO)
