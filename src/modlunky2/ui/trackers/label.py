@@ -51,7 +51,7 @@ class Label(Enum):
     TRUE_CROWN = LabelMetadata("True Crown")
     COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
     SCORE = LabelMetadata("Score")
-    NO_CO = LabelMetadata("No CO", start=True, add_ok=True)
+    NO_CO = LabelMetadata("No CO", start=True, hide_early=False, add_ok=True)
 
 
 class RunLabel:

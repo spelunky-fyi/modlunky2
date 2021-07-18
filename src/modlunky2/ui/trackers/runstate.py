@@ -64,6 +64,8 @@ class RunState:
         self.cursed = False
 
         # Score
+        # For score runs, we require the bow to be carried to Olmec before it's CO.
+        # This allows moving the bow while mininig the moon challenge.
         self.is_score_run = False
         self.hou_yis_waddler = False
 
@@ -446,14 +448,13 @@ class RunState:
             terminus = Label.DEATH
         elif self.win_state is WinState.TIAMAT:
             terminus = Label.ANY
-        elif self.hou_yis_bow and self.win_state is not WinState.HUNDUN:
+        elif self.win_state is WinState.HUNDUN:
+            terminus = Label.SUNKEN_CITY
+        elif self.hou_yis_waddler:
             terminus = Label.COSMIC_OCEAN
-        elif (
-            self.had_ankh
-            or self.is_chain
-            or self.world == 7
-            or self.win_state is WinState.HUNDUN
-        ):
+        elif self.hou_yis_bow and not self.is_score_run:
+            terminus = Label.COSMIC_OCEAN
+        elif self.had_ankh or self.is_chain or self.world == 7:
             terminus = Label.SUNKEN_CITY
 
         if terminus is Label.COSMIC_OCEAN:
