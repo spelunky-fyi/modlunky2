@@ -69,13 +69,15 @@ class RunLabel:
         ]
     )
 
-    # Some labels are only shown in conjunction with another
+    # Some labels are only shown in conjunction with another.
+    # We show the key if any label in the value is present.
     _ONLY_SHOW_WITH = defaultdict(set)
     _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.COSMIC_OCEAN}
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
 
-    # Some labels hide others, e.g. we want "Low%" not "Low% Any"
+    # Some labels hide others, e.g. we want "Low%" not "Low% Any".
+    # If the key is present, hide all of the labels in the value
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}

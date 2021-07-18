@@ -1,7 +1,53 @@
+from collections import defaultdict
+from dataclasses import dataclass
 from modlunky2.ui.trackers.label import Label, RunLabel
 
 # TODO check _MUTUALLY_EXCLUSIVE doesn't contain _HIDES or _ONLY_SHOW_WITH 'pairs'
-# TODO check _ONLY_SHOW_WITH things aren't hidden by the labels they require
+
+
+@dataclass(frozen=True)
+class VisibiltyEdge:
+    label: Label
+    depends_on: Label
+    reason: str
+
+
+def test_visibility_bipartite():
+    # If the visibiltiy dependencies aren't bipartite:
+    # * Cycles are possible, visibility isn't clearly defined
+    # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
+    # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder
+
+    edge_list = []
+    for dep, hides_set in RunLabel._HIDES.items():  # pylint: disable=protected-access
+        for label in hides_set:
+            edge_list.append(VisibiltyEdge(label, dep, "_HIDES"))
+    for (
+        label,
+        with_set,
+    ) in RunLabel._ONLY_SHOW_WITH.items():  # pylint: disable=protected-access
+        for dep in with_set:
+            edge_list.append(VisibiltyEdge(label, dep, "_HIDES"))
+
+    edges_by_label = defaultdict(set)
+    edges_by_dep = defaultdict(set)
+    for edge in edge_list:
+        edges_by_label[edge.label].add(edge)
+        edges_by_dep[edge.depends_on].add(edge)
+
+    labels_that_are_deps = set()
+    for label, edges in edges_by_label.items():
+        for edge in edges:
+            if label in edges_by_dep:
+                labels_that_are_deps.add(edge)
+    assert labels_that_are_deps == set()
+
+    deps_that_are_labels = set()
+    for dep, edges in edges_by_dep.items():
+        for edge in edges:
+            if dep in edges_by_label:
+                deps_that_are_labels.add(edge)
+    assert labels_that_are_deps == set()
 
 
 def test_mossranking_alignment():
