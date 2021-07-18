@@ -40,6 +40,8 @@ class RunState:
         self._proc = proc
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
+        self._old_classic_text = None
+        self._old_new_text = None
 
         self.world = 0
         self.level = 0
@@ -705,10 +707,24 @@ class RunState:
         return False
 
     def get_display(self):
-        if self.is_score_run:
-            return self.get_score_display()
+        classic_text = (
+            self.get_score_display() if self.is_score_run else self.get_speed_display()
+        )
+        new_text = self.run_label.text(not self.should_show_modifiers())
 
-        return self.get_speed_display()
+        # Only log a warning when text changes.
+        if classic_text != new_text and (
+            classic_text != self._old_classic_text or new_text != self._old_new_text
+        ):
+            logger.warning(
+                "Category text differs. Classic '%s' vs New '%s'",
+                classic_text,
+                new_text,
+            )
+
+        self._old_classic_text = classic_text
+        self._old_new_text = new_text
+        return classic_text
 
     def get_score_display(self):
         if self.win_state in [WinState.TIAMAT, WinState.HUNDUN]:
