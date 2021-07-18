@@ -12,11 +12,11 @@ def test_mossranking_alignment():
         ({Label.LOW, Label.JUNGLE_TEMPLE, Label.ANY}, "Low% Jungle/Temple"),
         ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
         (
-            {Label.CHAIN, Label.CHAIN_LOW, Label.ABZU, Label.SUNKEN_CITY},
+            {Label.CHAIN, Label.LOW, Label.ABZU, Label.SUNKEN_CITY},
             "Chain Low% Abzu",
         ),
         (
-            {Label.CHAIN, Label.CHAIN_LOW, Label.DUAT, Label.SUNKEN_CITY},
+            {Label.CHAIN, Label.LOW, Label.DUAT, Label.SUNKEN_CITY},
             "Chain Low% Duat",
         ),
         ({Label.COSMIC_OCEAN}, "Cosmic Ocean%"),
@@ -50,11 +50,11 @@ def test_mossranking_alignment():
         ({Label.NO_JETPACK, Label.COSMIC_OCEAN}, "No Jetpack Cosmic Ocean%"),
         ({Label.LOW, Label.COSMIC_OCEAN}, "Low% Cosmic Ocean"),
         (
-            {Label.CHAIN, Label.CHAIN_LOW, Label.ABZU, Label.COSMIC_OCEAN},
+            {Label.CHAIN, Label.LOW, Label.ABZU, Label.COSMIC_OCEAN},
             "Chain Low% Cosmic Ocean",
         ),
         (
-            {Label.CHAIN, Label.CHAIN_LOW, Label.DUAT, Label.COSMIC_OCEAN},
+            {Label.CHAIN, Label.LOW, Label.DUAT, Label.COSMIC_OCEAN},
             "Chain Low% Cosmic Ocean",
         ),
         # We accept % after SC even though it doesn't really align
@@ -78,7 +78,7 @@ def test_mossranking_alignment():
             {
                 Label.NO_GOLD,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.ABZU,
                 Label.SUNKEN_CITY,
             },
@@ -88,7 +88,7 @@ def test_mossranking_alignment():
             {
                 Label.NO_GOLD,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.DUAT,
                 Label.SUNKEN_CITY,
             },
@@ -107,7 +107,7 @@ def test_mossranking_alignment():
         (
             {
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.EGGPLANT,
                 Label.ABZU,
                 Label.SUNKEN_CITY,
@@ -117,7 +117,7 @@ def test_mossranking_alignment():
         (
             {
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.EGGPLANT,
                 Label.DUAT,
                 Label.SUNKEN_CITY,
@@ -129,7 +129,7 @@ def test_mossranking_alignment():
             {
                 Label.NO_GOLD,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.ABZU,
                 Label.EGGPLANT,
                 Label.SUNKEN_CITY,
@@ -140,7 +140,7 @@ def test_mossranking_alignment():
             {
                 Label.NO_GOLD,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.DUAT,
                 Label.EGGPLANT,
                 Label.SUNKEN_CITY,
@@ -160,7 +160,7 @@ def test_mossranking_alignment():
             {
                 Label.PACIFIST,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.ABZU,
                 Label.SUNKEN_CITY,
             },
@@ -170,7 +170,7 @@ def test_mossranking_alignment():
             {
                 Label.PACIFIST,
                 Label.CHAIN,
-                Label.CHAIN_LOW,
+                Label.LOW,
                 Label.DUAT,
                 Label.SUNKEN_CITY,
             },

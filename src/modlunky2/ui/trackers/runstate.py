@@ -196,14 +196,15 @@ class RunState:
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            self.run_label.discard(Label.LOW)
+            if not self.is_chain:
+                self.run_label.discard(Label.LOW)
             return
 
         if entity_type in MOUNTS:
             mount = player_overlay.as_mount()
             if mount.is_tamed:
                 self.has_mounted_tame = True
-                self.fail_all_low()
+                self.fail_low()
 
     def update_starting_resources(self, player: Player, inventory: Inventory):
         if not self.is_low_percent:
@@ -216,21 +217,21 @@ class RunState:
                 health > self.health and self.player_state != CharState.DYING
             ) or health > 4:
                 self.increased_starting_items = True
-                self.fail_all_low()
+                self.fail_low()
             self.health = health
 
         bombs = inventory.bombs
         if bombs is not None:
             if bombs > self.bombs or bombs > 4:
                 self.increased_starting_items = True
-                self.fail_all_low()
+                self.fail_low()
             self.bombs = bombs
 
         ropes = inventory.ropes
         if ropes is not None:
             if ropes > self.level_start_ropes or ropes > 4:
                 self.increased_starting_items = True
-                self.fail_all_low()
+                self.fail_low()
             self.ropes = ropes
 
     def update_status_effects(self):
@@ -256,11 +257,11 @@ class RunState:
 
         if self.poisoned and not is_poisoned and self.player_state != CharState.DYING:
             self.cured_status = True
-            self.fail_all_low()
+            self.fail_low()
 
         if self.cursed and not is_cursed and self.player_state != CharState.DYING:
             self.cured_status = True
-            self.fail_all_low()
+            self.fail_low()
 
         self.poisoned = is_poisoned
         self.cursed = is_cursed
@@ -271,7 +272,7 @@ class RunState:
 
         self.had_clover = bool(hud_flags & HudFlags.HAVE_CLOVER)
         if self.had_clover:
-            self.fail_all_low()
+            self.fail_low()
 
     def update_wore_backpack(self):
         if EntityType.ITEM_JETPACK in self.player_item_types:
@@ -283,7 +284,7 @@ class RunState:
         for item_type in self.player_item_types:
             if item_type in BACKPACKS:
                 self.wore_backpack = True
-                self.fail_all_low()
+                self.fail_low()
                 return
 
     def update_held_shield(self):
@@ -293,7 +294,7 @@ class RunState:
         for item_type in self.player_item_types:
             if item_type in SHIELDS:
                 self.held_shield = True
-                self.fail_all_low()
+                self.fail_low()
                 return
 
     def update_has_chain_powerup(self):
@@ -304,7 +305,8 @@ class RunState:
             if item_type in CHAIN_POWERUP_ENTITIES:
                 self.has_chain_powerup = True
                 self.failed_low_if_not_chain = True
-                self.run_label.discard(Label.LOW)
+                if not self.is_chain:
+                    self.run_label.discard(Label.LOW)
                 return
 
     def update_has_non_chain_powerup(self):
@@ -314,7 +316,7 @@ class RunState:
         for item_type in self.player_item_types:
             if item_type in NON_CHAIN_POWERUP_ENTITIES:
                 self.has_non_chain_powerup = True
-                self.fail_all_low()
+                self.fail_low()
                 return
 
     def update_attacked_with(self, layer: Layer, presence_flags: PresenceFlags):
@@ -332,7 +334,8 @@ class RunState:
                 if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
                     self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
-                    self.run_label.discard(Label.LOW)
+                    if not self.is_chain:
+                        self.run_label.discard(Label.LOW)
                     continue
 
                 if (
@@ -362,7 +365,7 @@ class RunState:
                         continue
 
                 self.attacked_with = True
-                self.fail_all_low()
+                self.fail_low()
                 return
 
     def update_attacked_with_throwables(self):
@@ -378,7 +381,7 @@ class RunState:
         for item_type in self.player_item_types | self.player_last_item_types:
             if item_type in LOW_BANNED_THROWABLES:
                 self.attacked_with = True
-                self.fail_all_low()
+                self.fail_low()
                 return
 
     def update_chain(self):
@@ -507,17 +510,15 @@ class RunState:
     def start_chain(self):
         self.is_chain = True
         self.run_label.add(Label.CHAIN)
-        if self.is_low_percent:
-            self.run_label.add(Label.CHAIN_LOW)
 
     def fail_chain(self):
         self.is_chain = False
         self.run_label.discard(Label.CHAIN)
-        self.run_label.discard(Label.CHAIN_LOW)
-
-    def fail_all_low(self):
         self.is_low_percent = False
-        self.run_label.discard(Label.CHAIN_LOW)
+        self.run_label.discard(Label.LOW)
+
+    def fail_low(self):
+        self.is_low_percent = False
         self.run_label.discard(Label.LOW)
 
     def update_on_level_start(self):
@@ -532,7 +533,7 @@ class RunState:
 
         if self.theme == Theme.OLMEC:
             if self.mc_has_swung_mattock and not self.hou_yis_bow:
-                self.fail_all_low()
+                self.fail_low()
 
     def update(self):
         player = self._proc.state.players[0]

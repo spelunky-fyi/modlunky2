@@ -21,8 +21,6 @@ class Label(Enum):
     NO_GOLD = LabelMetadata("No Gold", start=True)
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
-    # TODO shift complexity of chain low into here
-    CHAIN_LOW = LabelMetadata("Chain Low", percent_priority=3)
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
@@ -49,8 +47,6 @@ class RunLabel:
     _MUTUALLY_EXCLUSIVE = frozenset(
         [
             frozenset(_TERMINI),
-            frozenset({Label.CHAIN, Label.LOW}),
-            frozenset({Label.CHAIN_LOW, Label.LOW}),
             frozenset({Label.ABZU, Label.DUAT}),
             frozenset({Label.NO_GOLD, Label.MILLIONAIRE}),
             frozenset({Label.COSMIC_OCEAN, Label.NO_CO}),
@@ -61,34 +57,23 @@ class RunLabel:
     _ONLY_SHOW_WITH = defaultdict(set)
     _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.NO_JETPACK}
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
-    _ONLY_SHOW_WITH[Label.ABZU] |= {Label.CHAIN, Label.CHAIN_LOW}
-    _ONLY_SHOW_WITH[Label.DUAT] |= {Label.CHAIN, Label.CHAIN_LOW}
     _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
 
     # Some labels hide others, e.g. we want "Low%" not "Low% Any"
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
-    _HIDES[Label.ABZU] |= {Label.CHAIN}
-    _HIDES[Label.DUAT] |= {Label.CHAIN}
-
-    _HIDES[Label.CHAIN_LOW] |= {Label.CHAIN, Label.SUNKEN_CITY}
-    _HIDES[Label.LOW] |= {Label.ANY}
+    _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
 
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
     _HIDES[Label.COSMIC_OCEAN] |= {
         Label.NO_TELEPORTER,
-        Label.CHAIN,
         Label.ABZU,
         Label.DUAT,
     }
 
     # Score hides almost
     _HIDES[Label.SCORE] |= set(Label) - {Label.SCORE, Label.NO_CO}
-
-    # Low% implies No TP and No Jetpack
-    for k in (Label.CHAIN_LOW, Label.LOW):
-        _HIDES[k] |= {Label.NO_TELEPORTER, Label.NO_JETPACK}
 
     def __init__(self, starting=None) -> None:
         self._set: Set[Label] = (
@@ -137,7 +122,7 @@ class RunLabel:
 
     def _validate(self):
         # Note that we're validating while the run is in progress.
-        # For example, we should allow "Chain Low%" without "Abzu" or "Duat".
+        # For example, we should allow "Chain" without "Abzu" or "Duat".
         for mut in self._MUTUALLY_EXCLUSIVE:
             inter = mut & self._set
             if len(inter) > 1:
@@ -158,6 +143,15 @@ class RunLabel:
 
         if hide_early:
             vis -= self._HIDE_EARLY
+
+        # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
+        if Label.SUNKEN_CITY in self._set and not self._set.isdisjoint(
+            {Label.ABZU, Label.DUAT}
+        ):
+            if Label.LOW in self._set:
+                vis.discard(Label.SUNKEN_CITY)
+            else:
+                vis.discard(Label.CHAIN)
 
         return vis
 
