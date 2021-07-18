@@ -150,7 +150,6 @@ def test_mossranking_alignment():
             "Duat Eggplant%",
         ),
         ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
-        ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
         (
             {
                 Label.CHAIN,
@@ -246,6 +245,11 @@ def test_mossranking_alignment():
             "No Gold Pacifist Eggplant%",
         ),
     ]
-    for labels, text in main_speed + main_score + misc + pacifist:
+    mismatches = []
+    for labels, expected in main_speed + main_score + misc + pacifist:
         run_label = RunLabel(labels)
-        assert run_label.text(hide_early=False) == text
+        actual = run_label.text(hide_early=False)
+        if actual != expected:
+            mismatches.append((labels, actual, expected))
+
+    assert mismatches == []
