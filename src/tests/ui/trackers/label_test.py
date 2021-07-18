@@ -14,7 +14,7 @@ class VisibiltyEdge:
 
 def test_visibility_bipartite():
     # If the visibiltiy dependencies aren't bipartite:
-    # * Cycles are possible, visibility isn't clearly defined
+    # * We need to iterate/traverse and detect cycles
     # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
     # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder
 
