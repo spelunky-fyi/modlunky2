@@ -530,8 +530,8 @@ class RunState:
     def fail_chain(self):
         self.is_chain = False
         self.run_label.discard(Label.CHAIN)
-        self.is_low_percent = False
-        self.run_label.discard(Label.LOW)
+        if self.failed_low_if_not_chain:
+            self.fail_low()
 
     def fail_low(self):
         self.is_low_percent = False
