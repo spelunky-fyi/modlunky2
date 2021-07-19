@@ -7,27 +7,19 @@ from typing import Optional, Set
 @dataclass
 class LabelMetadata:
     text: str
-    start: bool
-    add_ok: bool
-    hide_early: bool
-    percent_priority: Optional[int]
-    terminus: bool
+    start: bool = False
+    add_ok: Optional[bool] = None
+    hide_early: Optional[bool] = None
+    percent_priority: Optional[int] = None
+    terminus: bool = False
 
-    def __init__(
+    def __post_init__(
         self,
-        text,
-        start=False,
-        add_ok=None,
-        hide_early=None,
-        percent_priority=None,
-        terminus=False,
     ) -> None:
-        self.text = text
-        self.start = start
-        self.add_ok = not start if add_ok is None else add_ok
-        self.hide_early = start if hide_early is None else hide_early
-        self.percent_priority = percent_priority
-        self.terminus = terminus
+        if self.add_ok is None:
+            self.add_ok = not self.start
+        if self.hide_early is None:
+            self.hide_early = self.start
 
 
 # Order of values is the order they'll appear in
