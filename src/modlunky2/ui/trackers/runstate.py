@@ -726,11 +726,11 @@ class RunState:
         )
         new_text = self.run_label.text(not self.should_show_modifiers())
 
-        # Only log a warning when text changes.
+        # Only log when text changes.
         if classic_text != new_text and (
             classic_text != self._old_classic_text or new_text != self._old_new_text
         ):
-            logger.warning(
+            logger.info(
                 "Category text differs. Classic '%s' vs New '%s'",
                 classic_text,
                 new_text,
@@ -738,7 +738,7 @@ class RunState:
 
         self._old_classic_text = classic_text
         self._old_new_text = new_text
-        return classic_text
+        return new_text
 
     def get_score_display(self):
         if self.win_state in [WinState.TIAMAT, WinState.HUNDUN]:
