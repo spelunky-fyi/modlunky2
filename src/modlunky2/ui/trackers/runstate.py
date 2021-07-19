@@ -434,8 +434,10 @@ class RunState:
             if self.is_chain:
                 self.run_label.add(Label.ABZU)
 
-        if self.world2_theme is Theme.JUNGLE and self.world4_theme is Theme.TEMPLE:
+        if self.world2_theme is Theme.JUNGLE and self.world4_theme in {None, Theme.TEMPLE}:
             self.run_label.add(Label.JUNGLE_TEMPLE)
+        else:
+            self.run_label.discard(Label.JUNGLE_TEMPLE)
 
         if self.world is Theme.SUNKEN_CITY:
             self.run_label.set_terminus(Label.SUNKEN_CITY)
