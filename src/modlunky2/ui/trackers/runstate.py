@@ -53,6 +53,8 @@ class RunState:
         self.player_last_item_types: Set[EntityType] = set()
         self.win_state: WinState = WinState.UNKNOWN
 
+        self.final_death = False
+
         self.health = 4
         self.bombs = 4
         self.ropes = 4
@@ -185,6 +187,17 @@ class RunState:
         except ValueError:
             self.screen = Screen.UNKNOWN
         self.win_state = win_state
+
+    def update_final_death(self):
+        if self.final_death:
+            return
+
+        if (
+            self.player_state is CharState.DYING
+            and EntityType.ITEM_POWERUP_ANKH not in self.player_item_types
+        ):
+            self.final_death = True
+            return
 
     def update_has_mounted_tame(self, player_overlay):
         if not self.is_low_percent:
@@ -447,7 +460,7 @@ class RunState:
         terminus = Label.ANY
         if self.theme is Theme.COSMIC_OCEAN:
             terminus = Label.COSMIC_OCEAN
-        elif self.player_state == CharState.DYING:
+        elif self.final_death:
             terminus = Label.DEATH
         elif self.win_state is WinState.TIAMAT:
             terminus = Label.ANY
@@ -576,6 +589,7 @@ class RunState:
         self.update_global_state()
         self.update_on_level_start()
         self.update_player_item_types(player)
+        self.update_final_death()
 
         self.update_score_items()
 
@@ -718,7 +732,7 @@ class RunState:
         if self.level > 2:
             return True
 
-        if self.player_state == CharState.DYING:
+        if self.final_death:
             return True
 
         return False
