@@ -91,15 +91,15 @@ class RunLabel:
 
         termini = list(self._set & self._TERMINI)
         if len(termini) != 1:
-            raise ValueError("Expected exactly 1 terminus, found {}".format(termini))
+            raise ValueError(f"Expected exactly 1 terminus, found {termini}")
         self._terminus = termini[0]
         self._cached_text: Optional[str] = None
 
     def add(self, label: Label):
         if not label.value.add_ok:
-            raise ValueError("Attempted to add label {}".format(label))
+            raise ValueError(f"Attempted to add label {label}")
         if label.value.terminus:
-            raise ValueError("Attempted to add a terminus, {}".format(label))
+            raise ValueError(f"Attempted to add a terminus, {label}")
 
         # Avoid re-validating if nothing's changed
         if label in self._set:
@@ -109,7 +109,7 @@ class RunLabel:
 
     def discard(self, label: Label):
         if label.value.terminus:
-            raise ValueError("Attempted to discard a terminus, {}".format(label))
+            raise ValueError(f"Attempted to discard a terminus, {label}")
 
         # Avoid re-validating if nothing's changed
         if label not in self._set:
@@ -119,7 +119,7 @@ class RunLabel:
 
     def set_terminus(self, label: Label):
         if not label.value.terminus:
-            raise ValueError("Attempted to use {} as a terminus".format(label))
+            raise ValueError(f"Attempted to use {label} as a terminus")
         self._set.remove(self._terminus)
         self._set.add(label)
         self._terminus = label
@@ -135,7 +135,7 @@ class RunLabel:
         for mut in self._MUTUALLY_EXCLUSIVE:
             inter = mut & self._set
             if len(inter) > 1:
-                raise Exception("Found mutually-exclusive labels {}".format(inter))
+                raise Exception(f"Found mutually-exclusive labels {inter}")
 
     def _visible(self, hide_early) -> Set[Label]:
         vis = set(self._set)
@@ -178,9 +178,7 @@ class RunLabel:
                 found = candidate
             elif candidate.value.percent_priority == found.value.percent_priority:
                 raise Exception(
-                    "Showing labels with equal percent_priority {} {}".format(
-                        candidate, found
-                    )
+                    f"Showing labels with equal percent_priority {candidate} {candidate}"
                 )
             elif candidate.value.percent_priority > found.value.percent_priority:
                 found = candidate
