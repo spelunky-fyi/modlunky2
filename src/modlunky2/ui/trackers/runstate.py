@@ -199,7 +199,7 @@ class RunState:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
             if not self.is_chain:
-                self.run_label.discard(Label.LOW)
+                self.fail_low()
             return
 
         if entity_type in MOUNTS:
@@ -345,7 +345,7 @@ class RunState:
                     self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
                     if not self.is_chain:
-                        self.run_label.discard(Label.LOW)
+                        self.fail_low()
                     continue
 
                 if (
