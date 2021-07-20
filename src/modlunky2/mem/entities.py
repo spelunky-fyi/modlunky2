@@ -274,6 +274,11 @@ class Inventory:
         self._offset = offset
 
     @property
+    def money(self):
+        """Amount of money collected in the current level"""
+        return self._proc.read_u32(self._offset)
+
+    @property
     def bombs(self):
         return self._proc.read_u8(self._offset + 0x04)
 
@@ -288,6 +293,11 @@ class Inventory:
     @property
     def cursed(self):
         return self._proc.read_bool(self._offset + 0x08)
+
+    @property
+    def collected_money_total(self):
+        """Amount of money collected in earlier levels."""
+        return self._proc.read_u32(self._offset + 0x1520)
 
 
 class Player(Movable):
