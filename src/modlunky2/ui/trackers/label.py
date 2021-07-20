@@ -178,7 +178,7 @@ class RunLabel:
                 found = candidate
             elif candidate.value.percent_priority == found.value.percent_priority:
                 raise Exception(
-                    f"Showing labels with equal percent_priority {candidate} {candidate}"
+                    f"Showing labels with equal percent_priority {candidate} {found}"
                 )
             elif candidate.value.percent_priority > found.value.percent_priority:
                 found = candidate

@@ -40,8 +40,6 @@ class RunState:
         self._proc = proc
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
-        self._old_classic_text = None
-        self._old_new_text = None
 
         self.world = 0
         self.level = 0
