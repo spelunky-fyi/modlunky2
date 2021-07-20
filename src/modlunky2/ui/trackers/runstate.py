@@ -548,10 +548,11 @@ class RunState:
         shop = self.get_critical_state("money_shop_total")
         self.net_score = collected + shop
 
-        if self.net_score >= 1_000_000:
+        # The category requires completion, which gives at least a $100K bonus.
+        if self.net_score >= 900_000:
             self.run_label.add(Label.MILLIONAIRE)
 
-        if self.net_score < 1_000_000 and not self.clone_gun_wo_bow:
+        if self.net_score < 900_000 and not self.clone_gun_wo_bow:
             self.run_label.discard(Label.MILLIONAIRE)
 
         if self.clone_gun_wo_bow or self.hou_yis_bow:
