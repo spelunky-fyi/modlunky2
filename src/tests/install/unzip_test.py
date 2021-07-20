@@ -61,7 +61,7 @@ def test_unicode_filename():
 
     # Write extra field: 0x7075 "Info-ZIP Unicode Path Extra Field"
     zip_file = make_zip(in_files)
-    for idx, info in enumerate(zip_file.infolist()):
+    for idx, _ in enumerate(zip_file.infolist()):
         zip_info = zip_file.getinfo(in_files[idx])
         encoded_name = expected[idx].encode("utf8")
         zip_info.extra = (
