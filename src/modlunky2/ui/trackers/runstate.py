@@ -552,7 +552,12 @@ class RunState:
         if self.net_score >= 900_000:
             self.run_label.add(Label.MILLIONAIRE)
 
-        if self.net_score < 900_000 and not self.clone_gun_wo_bow:
+        # We drop millionaire if either:
+        # * You used to have enough money, but no longer do
+        # * You picked up the clone gun, but won without enough money
+        if self.net_score < 900_000 and (
+            not self.clone_gun_wo_bow or self.win_state is not WinState.NO_WIN
+        ):
             self.run_label.discard(Label.MILLIONAIRE)
 
         if self.clone_gun_wo_bow or self.hou_yis_bow:
