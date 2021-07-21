@@ -205,7 +205,7 @@ class State:
 
     @property
     def money_shop_total(self):
-        """The total amount spent at shops. This is non-positive during the run.
+        """The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
         If the run ends in a victory, the bonus will be added to this during the score screen.
         """
         offset = self._offset + 0x58

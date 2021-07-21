@@ -544,9 +544,13 @@ class RunState:
             self.fail_chain()
 
     def update_millionaire(self, inventory: Inventory):
-        collected = inventory.money + inventory.collected_money_total
-        shop = self.get_critical_state("money_shop_total")
-        self.net_score = collected + shop
+        collected_this_level = inventory.money
+        collected_prev_levels = inventory.collected_money_total
+        shop_and_bonus = self.get_critical_state("money_shop_total")
+        if collected_this_level is not None and collected_prev_levels is not None:
+            self.net_score = (
+                collected_this_level + collected_prev_levels + shop_and_bonus
+            )
 
         # The category requires completion, which gives at least a $100K bonus.
         if self.net_score >= 900_000:
