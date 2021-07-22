@@ -109,6 +109,9 @@ def unwrap_optional(opt_type: type) -> type:
     return union_args[0]
 
 
+### Loading structs from buffers
+
+
 def validate_collection_field_type(a_field: dataclasses.Field):
     try:
         collection_type = a_field.type.__origin__
@@ -135,7 +138,7 @@ def validate_collection_field_type(a_field: dataclasses.Field):
     c_type = a_field.metadata[MetadataKey.C_TYPE]
     if c_type is None and not dataclasses.is_dataclass(type_args[0]):
         raise ValueError(
-            f"tuple field {a_field.name} must either have a c_type, or the first type parameter must be a dataclass. Got {type_args[0]}"
+            f"field {a_field.name} must have a c_type, or a dataclass as the first type parameter (got {type_args[0]})"
         )
 
 
@@ -158,7 +161,7 @@ def element_size_for_field(a_field: dataclasses.Field):
         return cls._size_as_element_  # pylint: disable=protected-access
     except AttributeError:
         raise ValueError(  # pylint: disable=raise-missing-from
-            f"{field_name} must have _size_as_element_ attribute to be used as a field"
+            f"{field_name} must have _size_as_element_ attribute to be used as in an array"
         )
 
 
@@ -168,24 +171,25 @@ def collection_type_for_field(a_field: dataclasses.Field):
 
 
 def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
-    print(f"reading dataclass {cls!r}")
+    # TODO do validation once per "top level" call, collect all type errors up-front
+
     field_data = {}
-    field_list = list(dataclasses.fields(cls))
-    for a_field in field_list:
+    for a_field in dataclasses.fields(cls):
+        # TODO check for overlapping fields
         if not a_field.init:
             continue
         field_data[a_field.name] = field_from_buffer(a_field, buf, offset)
 
+    # TODO catch excpetion to provide field info
     return cls(**field_data)
 
 
 def field_from_buffer(a_field: dataclasses.Field, buf, base_offset: int = 0) -> Any:
-    print(f"reading field {a_field.name!r} {a_field.type!r} {a_field.metadata!r} ...")
     field_offset = base_offset + a_field.metadata[MetadataKey.OFFSET]
     count = a_field.metadata[MetadataKey.COUNT]
     # Read single values directly
     if count == 1:
-        return field_element_from_buffer(a_field, buf, field_offset)
+        return field_value_fom_buffer(a_field, buf, field_offset)
 
     if count <= 0:
         raise ValueError(f"field {a_field.name} has non-positive count {count}")
@@ -195,40 +199,50 @@ def field_from_buffer(a_field: dataclasses.Field, buf, base_offset: int = 0) -> 
     values = []
     for i in range(0, count):
         elem_offset = field_offset + elem_size * i
-        values.append(field_element_from_buffer(a_field, buf, elem_offset))
+        # TODO keep track of index for error reporting
+        values.append(field_value_fom_buffer(a_field, buf, elem_offset))
     return collection_type(values)
 
 
-def field_element_from_buffer(a_field: dataclasses.Field, buf, elem_offset) -> Any:
-    print(
-        f"reading element for field {a_field.name!r} {a_field.type!r} {a_field.metadata!r} ..."
-    )
+def field_value_fom_buffer(a_field: dataclasses.Field, buf, elem_offset) -> Any:
     c_type = a_field.metadata.get(MetadataKey.C_TYPE)
     count = a_field.metadata.get(MetadataKey.COUNT)
 
-    # TODO: Check if type is tuple or frozenset, since those aren't expected for single values.
     # TODO: Consider whether support array size 1
-    underlying_type = a_field.type
+    py_type = a_field.type
     if count > 1:
         validate_collection_field_type(a_field)
-        underlying_type = underlying_type.__args__[0]
+        py_type = py_type.__args__[0]
 
     if c_type is not None:
+        # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
+        # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
         val = c_type.from_buffer(buf, elem_offset).value
         try:
-            return underlying_type(val)
+            return py_type(val)
         except Exception as err:
-            # TODO add this in other places, provide more detail
             raise Exception(
                 f"failed to construct value for field {a_field.name}"
             ) from err
 
-    if dataclasses.is_dataclass(underlying_type):
-        return dataclass_from_buffer(underlying_type, buf, elem_offset)
+    # TODO keep track of the 'path', for use in sub-field error reporting
+    if dataclasses.is_dataclass(py_type):
+        return dataclass_from_buffer(py_type, buf, elem_offset)
     else:
         raise Exception(
             "Field {a_field.name} isn't a dataclass and doesn't have a c_type"
         )
 
+
+### Memory loading
+
+# TODO Support pointers. Identify needed memory ranges top-down, fetch and store for use as we build objects bottom-up
+
+
+def dataclass_memory_range(_: type) -> range:
+    raise NotImplementedError()
+
+
+### Demo ugliness :)
 
 print(dataclass_from_buffer(State, DEMO_BUFFER))
