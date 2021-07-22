@@ -4,8 +4,10 @@ from tkinter import ttk, colorchooser
 from modlunky2.config import Config
 
 from modlunky2.ui.widgets import PopupWindow
+from modlunky2.utils import open_directory
 
 from .utils import get_text_color
+from .common import TRACKERS_DIR
 
 logger = logging.getLogger("modlunky2")
 
@@ -105,6 +107,8 @@ class OptionsFrame(ttk.LabelFrame):
         self.columnconfigure(0, weight=1)
 
         self.rowconfigure(0, minsize=60)
+        self.rowconfigure(1, minsize=60)
+
         self.color_button = ttk.Button(
             self, text="Color Key", command=self.choose_color
         )
@@ -113,6 +117,10 @@ class OptionsFrame(ttk.LabelFrame):
             self, font=tk.font.Font(family="Helvitica", size=16, weight="bold")
         )
         self.color_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
+
+        ttk.Button(
+            self, text="Tracker Files", command=lambda: open_directory(TRACKERS_DIR)
+        ).grid(row=1, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
 
     def render(self):
         color_key = self.ml_config.config_file.tracker_color_key
