@@ -1,3 +1,4 @@
+from __future__ import annotations
 import array
 import ctypes
 from dataclasses import dataclass
@@ -5,6 +6,7 @@ import dataclasses
 from enum import IntEnum, IntFlag
 from ctypes import c_uint32, c_uint8
 from typing import Any, ClassVar, Optional, Tuple, Union
+import typing
 
 
 class HudFlags(IntFlag):
@@ -36,7 +38,7 @@ class StructFieldMeta:
         metadata[self._METADATA_KEY] = self
 
     @classmethod
-    def from_field(cls, field: dataclasses.Field) -> "StructFieldMeta":
+    def from_field(cls, field: dataclasses.Field) -> StructFieldMeta:
         if cls._METADATA_KEY not in field.metadata:
             raise ValueError(f"field {field.name} has no stuct_field() metadata")
         return field.metadata[cls._METADATA_KEY]
@@ -52,6 +54,8 @@ def struct_field(
 ):
     if metadata is None:
         metadata = {}
+    if count < 1:
+        raise ValueError(f"count must be positive (got {count})")
     field_meta = StructFieldMeta(offset=offset, c_type=c_type, count=count)
     field_meta.put_into(metadata)
     return dataclasses.field(metadata=metadata, **kwargs)
@@ -124,131 +128,174 @@ def unwrap_optional(opt_type: type) -> type:
 
 ### Loading structs from buffers
 
-# TODO PEP 563 compatability, where field.type will become a string
-# from __future__ import annotations breaks us now, and it becomes default in Python 10
-# Maybe dataclass will handle it for us though
 
+@dataclass(frozen=True)
+class StructField:
+    name: str
+    offset: int
+    # If > 1 this is an array. Must be positive
+    count: int
 
-def validate_collection_field_type(field: dataclasses.Field):
-    try:
-        collection_type = field.type.__origin__
-    except ValueError as err:
-        raise ValueError(
-            f"field {field.name} has positive count and must be tuple or frozenset. Got type {field.type}"
-        ) from err
+    # If the field is an array, the python collection type to use
+    collection_type: Optional[type]
+    # For non-arrays, the python type of the field
+    # For arrays, the python type of the elements
+    py_type: type
+    c_type: Optional[type]
 
-    if collection_type is not tuple:
-        raise ValueError(
-            f"field {field.name} has positive count and must be tuple or frozenset. Got type {field.type}"
-        )
+    @classmethod
+    def within_dataclass(cls, a_dataclass: type) -> Tuple[StructField, ...]:
+        # We use get_type_hints() because it's updated for PEPs
+        type_hints = typing.get_type_hints(a_dataclass)
+        struct_fields = []
 
-    # For tuples, we need to do some more checks
-    type_args = field.type.__args__
-    if len(type_args) != 2:
-        raise ValueError(
-            f"tuple field {field.name} must have 2 type parameters. Got {len(type_args)}"
-        )
-    if type_args[1] is not Ellipsis:
-        raise ValueError(
-            f"tuple field {field.name} second type parameter must be '...'. Got {type_args[1]}"
-        )
-    struct_meta = StructFieldMeta.from_field(field)
-    if struct_meta.c_type is None and not dataclasses.is_dataclass(type_args[0]):
-        raise ValueError(
-            f"field {field.name} must have a c_type, or a dataclass as the first type parameter (got {type_args[0]})"
-        )
+        # TODO check for overlapping fields
+        for dc_field in dataclasses.fields(a_dataclass):
+            if not dc_field.init:
+                continue
 
+            meta = StructFieldMeta.from_field(dc_field)
 
-def element_size_for_field(field: dataclasses.Field):
-    validate_collection_field_type(field)
-    field_name = field.name
-    struct_meta = StructFieldMeta.from_field(field)
+            type_info = type_hints[dc_field.name]
+            collection_type = None
+            py_type = None
+            if meta.count == 1:
+                py_type = cls._py_type_for_single(dc_field.name, type_info, meta)
+            else:
+                collection_type, py_type = cls._collection_type_info(
+                    dc_field.name, type_info, meta
+                )
 
-    # TODO consider alignment
+            sc_field = StructField(
+                name=dc_field.name,
+                offset=meta.offset,
+                count=meta.count,
+                c_type=meta.c_type,
+                collection_type=collection_type,
+                py_type=py_type,
+            )
+            struct_fields.append(sc_field)
+        return tuple(struct_fields)
 
-    if struct_meta.c_type is not None:
-        return ctypes.sizeof(struct_meta.c_type)
+    def element_size(self):
+        # TODO consider alignment
 
-    # For both tuple and frozenset, the first type parameter is what we want
-    cls = field.type.__args__[0]
-    if not dataclasses.is_dataclass(cls):
-        raise ValueError(f"{field_name} doesn't have a c_type and isn't a dataclass")
-    try:
-        return cls._size_as_element_  # pylint: disable=protected-access
-    except AttributeError:
-        raise ValueError(  # pylint: disable=raise-missing-from
-            f"{field_name} must have _size_as_element_ attribute to be used as in an array"
-        )
+        if self.c_type is not None:
+            return ctypes.sizeof(self.c_type)
 
+        try:
+            return self.py_type._size_as_element_  # pylint: disable=protected-access
+        except AttributeError:
+            raise ValueError(  # pylint: disable=raise-missing-from
+                f"{self.py_type} must have _size_as_element_ attribute to be used as in an array in field {self.name}"
+            )
 
-def collection_type_for_field(field: dataclasses.Field):
-    validate_collection_field_type(field)
-    return field.type.__origin__
+    def size(self):
+        if self.count > 1:
+            return self.element_size() * self.count
+
+        if self.c_type is None:
+            return dataclass_memory_range(self.py_type).stop
+        else:
+            return ctypes.sizeof(self.c_type)
+
+    def from_buffer(self, buf, base_offset: int) -> Any:
+        val_offset = base_offset + self.offset
+        # Read single values directly
+        if self.count == 1:
+            return self._value_from_buffer(buf, val_offset)
+
+        elem_size = self.element_size()
+        values = []
+        for i in range(0, self.count):
+            elem_offset = val_offset + elem_size * i
+            # TODO keep track of index for error reporting
+            values.append(self._value_from_buffer(buf, elem_offset))
+        return self.collection_type(values)
+
+    def _value_from_buffer(self, buf, val_offset) -> Any:
+        # This doesn't use self.offset because the caller is exepceted to compute the position
+
+        # TODO: Consider whether support array size 1
+        if self.c_type is not None:
+            val = self.c_type.from_buffer(buf, val_offset).value
+            try:
+                return self.py_type(val)
+            except Exception as err:
+                raise Exception(
+                    f"failed to construct value for field {self.name}"
+                ) from err
+
+        # TODO keep track of the 'path', for use in sub-field error reporting
+        return dataclass_from_buffer(self.py_type, buf, val_offset)
+
+    @classmethod
+    def _collection_type_info(cls, field_name, type_info, meta):
+        try:
+            collection_type = type_info.__origin__
+        except ValueError as err:
+            raise ValueError(
+                f"field {field_name} has positive count and must be tuple or frozenset. Got type {type_info}"
+            ) from err
+
+        if collection_type not in {tuple, frozenset}:
+            raise ValueError(
+                f"field {field_name} has positive count and must be tuple or frozenset. Got type {type_info}"
+            )
+
+        # For tuples, we need to do some more checks
+        py_type = None
+        if collection_type is tuple:
+            py_type = cls._py_type_for_tuple(field_name, type_info.__args__, meta)
+        elif collection_type is frozenset:
+            py_type = cls._py_type_for_frozenset(field_name, type_info.__args__, meta)
+        else:
+            raise Exception(
+                f"field {field_name} has unhandled collection type {collection_type}"
+            )
+
+        return (collection_type, py_type)
+
+    @classmethod
+    def _py_type_for_single(cls, field_name, type_info, meta):
+        # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
+        # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
+        if meta.c_type is None and not dataclasses.is_dataclass(type_info):
+            raise ValueError(
+                f"field {field_name} must have a c_type or a dataclass as its type (got {type_info})"
+            )
+        return type_info
+
+    @classmethod
+    def _py_type_for_tuple(cls, field_name, type_args, meta):
+        if len(type_args) != 2:
+            raise ValueError(
+                f"tuple field {field_name} must have 2 type parameters. Got {len(type_args)}"
+            )
+        if type_args[1] is not Ellipsis:
+            raise ValueError(
+                f"tuple field {field_name} second type parameter must be '...'. Got {type_args[1]}"
+            )
+        return cls._py_type_for_single(field_name, type_args[0], meta)
+
+    @classmethod
+    def _py_type_for_frozenset(cls, field_name, type_args, meta):
+        if len(type_args) != 1:
+            raise ValueError(
+                f"frozenset field {field_name} must have 1 type parameter. Got {len(type_args)}"
+            )
+        return cls._py_type_for_single(field_name, type_args[0], meta)
 
 
 def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
     # TODO do validation once per "top level" call, collect all type errors up-front
 
     field_data = {}
-    for field in dataclasses.fields(cls):
-        # TODO check for overlapping fields
-        if not field.init:
-            continue
-        field_data[field.name] = field_from_buffer(field, buf, offset)
+    for field in StructField.within_dataclass(cls):
+        field_data[field.name] = field.from_buffer(buf, offset)
 
     # TODO catch excpetion to provide field info
     return cls(**field_data)
-
-
-def field_from_buffer(field: dataclasses.Field, buf, base_offset: int = 0) -> Any:
-    struct_meta = StructFieldMeta.from_field(field)
-    field_offset = base_offset + struct_meta.offset
-    # Read single values directly
-    if struct_meta.count == 1:
-        return field_value_fom_buffer(field, buf, field_offset)
-
-    if struct_meta.count <= 0:
-        raise ValueError(
-            f"field {field.name} has non-positive count {struct_meta.count}"
-        )
-
-    collection_type = collection_type_for_field(field)
-    elem_size = element_size_for_field(field)
-    values = []
-    for i in range(0, struct_meta.count):
-        elem_offset = field_offset + elem_size * i
-        # TODO keep track of index for error reporting
-        values.append(field_value_fom_buffer(field, buf, elem_offset))
-    return collection_type(values)
-
-
-def field_value_fom_buffer(field: dataclasses.Field, buf, elem_offset) -> Any:
-    struct_meta = StructFieldMeta.from_field(field)
-
-    # TODO: Consider whether support array size 1
-    py_type = field.type
-    if struct_meta.count > 1:
-        validate_collection_field_type(field)
-        py_type = py_type.__args__[0]
-
-    if struct_meta.c_type is not None:
-        # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
-        # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
-        val = struct_meta.c_type.from_buffer(buf, elem_offset).value
-        try:
-            return py_type(val)
-        except Exception as err:
-            raise Exception(
-                f"failed to construct value for field {field.name}"
-            ) from err
-
-    # TODO keep track of the 'path', for use in sub-field error reporting
-    if dataclasses.is_dataclass(py_type):
-        return dataclass_from_buffer(py_type, buf, elem_offset)
-    else:
-        raise Exception(
-            "Field {field.name} isn't a dataclass and doesn't have a c_type"
-        )
 
 
 ### Memory loading
@@ -264,25 +311,10 @@ def field_value_fom_buffer(field: dataclasses.Field, buf, elem_offset) -> Any:
 def dataclass_memory_range(cls: type) -> range:
     lower = None
     upper = None
-    for field in dataclasses.fields(cls):
-        struct_meta = StructFieldMeta.from_field(field)
-        if lower is None or struct_meta.offset < lower:
-            lower = struct_meta.offset
-
-        size = None
-        if struct_meta.count == 1:
-            if struct_meta.c_type is None:
-                size = dataclass_memory_range(field.type).stop
-            else:
-                size = ctypes.sizeof(struct_meta.c_type)
-        elif struct_meta.count > 1:
-            size = element_size_for_field(field) * struct_meta.count
-        else:
-            raise ValueError(
-                f"field {field.name} has non-positive count ({struct_meta.count})"
-            )
-
-        field_upper = struct_meta.offset + size
+    for field in StructField.within_dataclass(cls):
+        if lower is None or field.offset < lower:
+            lower = field.offset
+        field_upper = field.offset + field.size()
         if upper is None or field_upper > upper:
             upper = field_upper
 
