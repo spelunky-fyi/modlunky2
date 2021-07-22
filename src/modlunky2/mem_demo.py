@@ -63,6 +63,37 @@ class State:
     player_list: Tuple[Player, ...] = struct_field(0x8, count=2)
 
 
+# Demo output:
+# State(
+#     level=2,
+#     hud_flags=<HudFlags.HAVE_CLOVER: 4194304>,
+#     win_state=<WinState.COSMIC_OCEAN: 3>,
+#     direct_player=Player(bombs=99, ropes=42),
+#     nums_list=(99, 0),
+#     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
+#     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
+DEMO_BUFFER = array.array(
+    "B",
+    [
+        0x02,
+        0x00,
+        0x00,
+        0x40,
+        0x00,
+        0x03,
+        0x63,
+        0x2A,
+        0x01,
+        0x02,
+        0x00,
+        0x00,
+        0x03,
+        0x04,
+        0x00,
+        0x00,
+    ],
+)
+
 # Unused for now, maybe handy for pointers
 def unwrap_optional(opt_type: type) -> type:
     if opt_type.__origin__ is not Union:
@@ -200,26 +231,4 @@ def field_element_from_buffer(a_field: dataclasses.Field, buf, elem_offset) -> A
         )
 
 
-state_fields = dataclasses.fields(State)
-a_buf = array.array(
-    "B",
-    [
-        0x02,
-        0x00,
-        0x00,
-        0x40,
-        0x00,
-        0x03,
-        0x63,
-        0x2A,
-        0x01,
-        0x02,
-        0x00,
-        0x00,
-        0x03,
-        0x04,
-        0x00,
-        0x00,
-    ],
-)
-print(dataclass_from_buffer(State, a_buf))
+print(dataclass_from_buffer(State, DEMO_BUFFER))
