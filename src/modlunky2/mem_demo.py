@@ -145,7 +145,7 @@ def validate_collection_field_type(field: dataclasses.Field):
 def element_size_for_field(field: dataclasses.Field):
     validate_collection_field_type(field)
     field_name = field.name
-    c_type = field.metadata.get(MetadataKey.C_TYPE)
+    c_type = field.metadata[MetadataKey.C_TYPE]
 
     # TODO consider alignment
 
@@ -244,9 +244,40 @@ def field_value_fom_buffer(field: dataclasses.Field, buf, elem_offset) -> Any:
 
 
 def dataclass_memory_range(cls: type) -> range:
-    raise NotImplementedError()
+    lower = None
+    upper = None
+    for field in dataclasses.fields(cls):
+        offset = field.metadata[MetadataKey.OFFSET]
+        count = field.metadata[MetadataKey.COUNT]
+        c_type = field.metadata[MetadataKey.C_TYPE]
+        if lower is None or offset < lower:
+            lower = offset
+
+        size = None
+        if count == 1:
+            if c_type is None:
+                size = dataclass_memory_range(field.type).stop
+            else:
+                size = ctypes.sizeof(c_type)
+        elif count > 1:
+            size = element_size_for_field(field) * count
+        else:
+            raise ValueError(f"field {field.name} has non-positive count ({count})")
+
+        field_upper = offset + size
+        if upper is None or field_upper > upper:
+            upper = field_upper
+
+    # TODO as part of dataclass validation, check there's at least 1 field
+    if lower is None:
+        raise Exception("lower was None when sizing {cls}")
+    if upper is None:
+        raise Exception("upper was None when sizing {cls}")
+
+    return range(lower, upper)
 
 
 ### Demo ugliness :)
 
 print(dataclass_from_buffer(State, DEMO_BUFFER))
+print(f"memory range for State is {dataclass_memory_range(State)}")
