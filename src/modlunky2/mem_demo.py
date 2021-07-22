@@ -2,9 +2,9 @@ import array
 import ctypes
 from dataclasses import dataclass
 import dataclasses
-from enum import Enum, IntEnum, IntFlag
+from enum import IntEnum, IntFlag
 from ctypes import c_uint32, c_uint8
-from typing import Any, ClassVar, Tuple, Union
+from typing import Any, ClassVar, Optional, Tuple, Union
 
 
 class HudFlags(IntFlag):
@@ -22,10 +22,24 @@ class WinState(IntEnum):
     COSMIC_OCEAN = 3
 
 
-class MetadataKey(Enum):
-    OFFSET = "ml2_offset"
-    C_TYPE = "ml2_c_type"
-    COUNT = "ml2_count"
+@dataclass(frozen=True)
+class StructFieldMeta:
+    _METADATA_KEY: ClassVar[str] = "ml2_field_metadata"
+
+    offset: int
+    c_type: Optional[type]
+    count: int
+
+    def put_into(self, metadata: dict):
+        if self._METADATA_KEY in metadata:
+            raise ValueError(f"metadata dict already has {self._METADATA_KEY}")
+        metadata[self._METADATA_KEY] = self
+
+    @classmethod
+    def from_field(cls, field: dataclasses.Field) -> "StructFieldMeta":
+        if cls._METADATA_KEY not in field.metadata:
+            raise ValueError(f"field {field.name} has no stuct_field() metadata")
+        return field.metadata[cls._METADATA_KEY]
 
 
 # TODO: fallback value for enums?
@@ -38,9 +52,8 @@ def struct_field(
 ):
     if metadata is None:
         metadata = {}
-    metadata[MetadataKey.OFFSET] = offset
-    metadata[MetadataKey.C_TYPE] = c_type
-    metadata[MetadataKey.COUNT] = count
+    field_meta = StructFieldMeta(offset=offset, c_type=c_type, count=count)
+    field_meta.put_into(metadata)
     return dataclasses.field(metadata=metadata, **kwargs)
 
 
@@ -111,6 +124,10 @@ def unwrap_optional(opt_type: type) -> type:
 
 ### Loading structs from buffers
 
+# TODO PEP 563 compatability, where field.type will become a string
+# from __future__ import annotations breaks us now, and it becomes default in Python 10
+# Maybe dataclass will handle it for us though
+
 
 def validate_collection_field_type(field: dataclasses.Field):
     try:
@@ -135,8 +152,8 @@ def validate_collection_field_type(field: dataclasses.Field):
         raise ValueError(
             f"tuple field {field.name} second type parameter must be '...'. Got {type_args[1]}"
         )
-    c_type = field.metadata[MetadataKey.C_TYPE]
-    if c_type is None and not dataclasses.is_dataclass(type_args[0]):
+    struct_meta = StructFieldMeta.from_field(field)
+    if struct_meta.c_type is None and not dataclasses.is_dataclass(type_args[0]):
         raise ValueError(
             f"field {field.name} must have a c_type, or a dataclass as the first type parameter (got {type_args[0]})"
         )
@@ -145,12 +162,12 @@ def validate_collection_field_type(field: dataclasses.Field):
 def element_size_for_field(field: dataclasses.Field):
     validate_collection_field_type(field)
     field_name = field.name
-    c_type = field.metadata[MetadataKey.C_TYPE]
+    struct_meta = StructFieldMeta.from_field(field)
 
     # TODO consider alignment
 
-    if c_type is not None:
-        return ctypes.sizeof(c_type)
+    if struct_meta.c_type is not None:
+        return ctypes.sizeof(struct_meta.c_type)
 
     # For both tuple and frozenset, the first type parameter is what we want
     cls = field.type.__args__[0]
@@ -184,19 +201,21 @@ def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
 
 
 def field_from_buffer(field: dataclasses.Field, buf, base_offset: int = 0) -> Any:
-    field_offset = base_offset + field.metadata[MetadataKey.OFFSET]
-    count = field.metadata[MetadataKey.COUNT]
+    struct_meta = StructFieldMeta.from_field(field)
+    field_offset = base_offset + struct_meta.offset
     # Read single values directly
-    if count == 1:
+    if struct_meta.count == 1:
         return field_value_fom_buffer(field, buf, field_offset)
 
-    if count <= 0:
-        raise ValueError(f"field {field.name} has non-positive count {count}")
+    if struct_meta.count <= 0:
+        raise ValueError(
+            f"field {field.name} has non-positive count {struct_meta.count}"
+        )
 
     collection_type = collection_type_for_field(field)
     elem_size = element_size_for_field(field)
     values = []
-    for i in range(0, count):
+    for i in range(0, struct_meta.count):
         elem_offset = field_offset + elem_size * i
         # TODO keep track of index for error reporting
         values.append(field_value_fom_buffer(field, buf, elem_offset))
@@ -204,19 +223,18 @@ def field_from_buffer(field: dataclasses.Field, buf, base_offset: int = 0) -> An
 
 
 def field_value_fom_buffer(field: dataclasses.Field, buf, elem_offset) -> Any:
-    c_type = field.metadata.get(MetadataKey.C_TYPE)
-    count = field.metadata.get(MetadataKey.COUNT)
+    struct_meta = StructFieldMeta.from_field(field)
 
     # TODO: Consider whether support array size 1
     py_type = field.type
-    if count > 1:
+    if struct_meta.count > 1:
         validate_collection_field_type(field)
         py_type = py_type.__args__[0]
 
-    if c_type is not None:
+    if struct_meta.c_type is not None:
         # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
         # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
-        val = c_type.from_buffer(buf, elem_offset).value
+        val = struct_meta.c_type.from_buffer(buf, elem_offset).value
         try:
             return py_type(val)
         except Exception as err:
@@ -247,24 +265,24 @@ def dataclass_memory_range(cls: type) -> range:
     lower = None
     upper = None
     for field in dataclasses.fields(cls):
-        offset = field.metadata[MetadataKey.OFFSET]
-        count = field.metadata[MetadataKey.COUNT]
-        c_type = field.metadata[MetadataKey.C_TYPE]
-        if lower is None or offset < lower:
-            lower = offset
+        struct_meta = StructFieldMeta.from_field(field)
+        if lower is None or struct_meta.offset < lower:
+            lower = struct_meta.offset
 
         size = None
-        if count == 1:
-            if c_type is None:
+        if struct_meta.count == 1:
+            if struct_meta.c_type is None:
                 size = dataclass_memory_range(field.type).stop
             else:
-                size = ctypes.sizeof(c_type)
-        elif count > 1:
-            size = element_size_for_field(field) * count
+                size = ctypes.sizeof(struct_meta.c_type)
+        elif struct_meta.count > 1:
+            size = element_size_for_field(field) * struct_meta.count
         else:
-            raise ValueError(f"field {field.name} has non-positive count ({count})")
+            raise ValueError(
+                f"field {field.name} has non-positive count ({struct_meta.count})"
+            )
 
-        field_upper = offset + size
+        field_upper = struct_meta.offset + size
         if upper is None or field_upper > upper:
             upper = field_upper
 
