@@ -57,7 +57,6 @@ class RunLabel:
         [
             frozenset(_TERMINI),
             frozenset({Label.ABZU, Label.DUAT}),
-            frozenset({Label.NO_GOLD, Label.MILLIONAIRE}),
         ]
     )
 

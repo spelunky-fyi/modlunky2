@@ -105,6 +105,10 @@ class RunState:
         self.had_tablet_of_destiny = False
         self.held_ushabti = False
 
+        # Millionaire
+        self.net_score = 0
+        self.clone_gun_wo_bow = False
+
         self.world2_theme = None
         self.world4_theme = None
 
@@ -539,6 +543,34 @@ class RunState:
         if self.win_state is WinState.TIAMAT:
             self.fail_chain()
 
+    def update_millionaire(self, inventory: Inventory):
+        collected_this_level = inventory.money
+        collected_prev_levels = inventory.collected_money_total
+        shop_and_bonus = self.get_critical_state("money_shop_total")
+        if collected_this_level is not None and collected_prev_levels is not None:
+            self.net_score = (
+                collected_this_level + collected_prev_levels + shop_and_bonus
+            )
+
+        # The category requires completion, which gives at least a $100K bonus.
+        if self.net_score >= 900_000:
+            self.run_label.add(Label.MILLIONAIRE)
+
+        # We drop millionaire if either:
+        # * You used to have enough money, but no longer do
+        # * You picked up the clone gun, but won without enough money
+        if self.net_score < 900_000 and (
+            not self.clone_gun_wo_bow or self.win_state is not WinState.NO_WIN
+        ):
+            self.run_label.discard(Label.MILLIONAIRE)
+
+        if self.clone_gun_wo_bow or self.hou_yis_bow:
+            return
+        # If the clone gun is picked up, without picking up the bow, we assume this is a millionaire attempt.
+        if EntityType.ITEM_CLONEGUN in self.player_item_types:
+            self.clone_gun_wo_bow = True
+            self.run_label.add(Label.MILLIONAIRE)
+
     def start_chain(self):
         self.is_chain = True
         self.run_label.add(Label.CHAIN)
@@ -617,6 +649,8 @@ class RunState:
         self.update_chain()
         self.update_has_chain_powerup()
         self.update_is_chain()
+
+        self.update_millionaire(inventory)
 
         self.update_terminus()
 

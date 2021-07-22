@@ -204,6 +204,14 @@ class State:
         return HudFlags(self._proc.read_u32(offset))
 
     @property
+    def money_shop_total(self):
+        """The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
+        If the run ends in a victory, the bonus will be added to this during the score screen.
+        """
+        offset = self._offset + 0x58
+        return self._proc.read_i32(offset)
+
+    @property
     def players(self) -> List[Player]:  # items
         offset = self._offset + 0x12B0
         items_ptr = self._proc.read_void_p(offset) + 8
