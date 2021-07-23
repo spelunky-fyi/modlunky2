@@ -257,7 +257,7 @@ class StructField:
         return (collection_type, py_type)
 
     _allowed_c_types = [(ctypes.c_bool, bool)]
-    _int_c_types = (
+    for c_type in [
         ctypes.c_int8,
         ctypes.c_uint8,
         ctypes.c_int16,
@@ -266,7 +266,8 @@ class StructField:
         ctypes.c_uint32,
         ctypes.c_int64,
         ctypes.c_uint64,
-    )
+    ]:
+        _allowed_c_types.append((c_type, int))
     _int_enum_types = frozenset([IntEnum, IntFlag])
     for c_type in [
         ctypes.c_float,
@@ -278,20 +279,6 @@ class StructField:
     @classmethod
     def _check_c_and_py_types_match(cls, field_name, c_type, py_type):
         expected_type = None
-        if c_type in cls._int_c_types:
-            if py_type is int:
-                return
-            try:
-                if set(py_type.__mro__).isdisjoint(cls._int_enum_types):
-                    raise ValueError(
-                        f"field {field_name} has an int c_type ({c_type}) but the python type ({py_type}) isn't int, IntEnum, or IntFlag"
-                    )
-            except AttributeError:
-                raise ValueError(  # pylint: disable=raise-missing-from
-                    f"field {field_name} has an int c_type ({c_type}) but the python type isn't int, IntEnum, or IntFlag"
-                )
-            return
-
         for known_c_type, known_py_type in cls._allowed_c_types:
             if known_c_type is c_type:
                 expected_type = known_py_type
@@ -299,7 +286,7 @@ class StructField:
         if expected_type is None:
             raise ValueError(f"field {field_name} has an unsupported c_type {c_type}")
 
-        if py_type is not expected_type:
+        if expected_type not in py_type.__mro__:
             raise ValueError(
                 f"field {field_name} has type {py_type}, but we expect {expected_type} for c_type {c_type}"
             )
