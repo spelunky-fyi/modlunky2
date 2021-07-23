@@ -199,26 +199,26 @@ class StructField:
         else:
             return ctypes.sizeof(self.c_type)
 
-    def from_buffer(self, buf, base_offset: int) -> Any:
-        val_offset = base_offset + self.offset
+    def from_buffer(self, buf: array.array) -> Any:
+        val_offset = 0 + self.offset
         # Read single values directly
         if self.count == 1:
-            return self._value_from_buffer(buf, val_offset)
+            return self._value_from_buffer(buf[val_offset:])
 
         elem_size = self.element_size()
         values = []
         for i in range(0, self.count):
             elem_offset = val_offset + elem_size * i
             # TODO keep track of index for error reporting
-            values.append(self._value_from_buffer(buf, elem_offset))
+            values.append(self._value_from_buffer(buf[elem_offset:]))
         return self.collection_type(values)
 
-    def _value_from_buffer(self, buf, val_offset) -> Any:
+    def _value_from_buffer(self, buf: array.array) -> Any:
         # This doesn't use self.offset because the caller is exepceted to compute the position
 
         # TODO: Consider whether support array size 1
         if self.c_type is not None:
-            val = self.c_type.from_buffer(buf, val_offset).value
+            val = self.c_type.from_buffer(buf).value
             try:
                 return self.py_type(val)
             except Exception as err:
@@ -227,7 +227,7 @@ class StructField:
                 ) from err
 
         # TODO keep track of the 'path', for use in sub-field error reporting
-        return dataclass_from_buffer(self.py_type, buf, val_offset)
+        return dataclass_from_buffer(self.py_type, buf)
 
     @classmethod
     def _collection_type_info(cls, field_name, type_info, meta):
@@ -337,7 +337,7 @@ def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
 
     field_data = {}
     for field in StructField.within_dataclass(cls):
-        field_data[field.name] = field.from_buffer(buf, offset)
+        field_data[field.name] = field.from_buffer(buf[offset:])
 
     # TODO catch excpetion to provide field info
     return cls(**field_data)
