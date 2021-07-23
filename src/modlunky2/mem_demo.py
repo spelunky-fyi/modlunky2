@@ -1,5 +1,4 @@
 from __future__ import annotations
-import array
 import ctypes
 from dataclasses import dataclass
 import dataclasses
@@ -89,8 +88,7 @@ class State:
 #     nums_list=(99, 0),
 #     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
 #     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
-DEMO_BUFFER = array.array(
-    "B",
+DEMO_BUFFER = bytearray(
     [
         0x02,
         0x00,
@@ -108,7 +106,7 @@ DEMO_BUFFER = array.array(
         0x04,
         0x00,
         0x00,
-    ],
+    ]
 )
 
 # Unused for now, maybe handy for pointers
@@ -199,7 +197,7 @@ class StructField:
         else:
             return ctypes.sizeof(self.c_type)
 
-    def from_buffer(self, buf: array.array) -> Any:
+    def from_buffer(self, buf: bytearray) -> Any:
         val_offset = 0 + self.offset
         # Read single values directly
         if self.count == 1:
@@ -213,7 +211,7 @@ class StructField:
             values.append(self._value_from_buffer(buf[elem_offset:]))
         return self.collection_type(values)
 
-    def _value_from_buffer(self, buf: array.array) -> Any:
+    def _value_from_buffer(self, buf: bytearray) -> Any:
         # This doesn't use self.offset because the caller is exepceted to compute the position
 
         # TODO: Consider whether support array size 1
