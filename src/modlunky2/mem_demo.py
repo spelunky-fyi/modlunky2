@@ -256,14 +256,72 @@ class StructField:
 
         return (collection_type, py_type)
 
+    _allowed_c_types = [(ctypes.c_bool, bool)]
+    _int_c_types = (
+        ctypes.c_int8,
+        ctypes.c_uint8,
+        ctypes.c_int16,
+        ctypes.c_uint16,
+        ctypes.c_int32,
+        ctypes.c_uint32,
+        ctypes.c_int64,
+        ctypes.c_uint64,
+    )
+    _int_enum_types = frozenset([IntEnum, IntFlag])
+    for c_type in [
+        ctypes.c_float,
+        ctypes.c_double,
+        ctypes.c_longdouble,
+    ]:
+        _allowed_c_types.append((c_type, float))
+
     @classmethod
-    def _py_type_for_single(cls, field_name, type_info, meta):
+    def _check_c_and_py_types_match(cls, field_name, c_type, py_type):
+        expected_type = None
+        if c_type in cls._int_c_types:
+            if py_type is int:
+                return
+            try:
+                if set(py_type.__mro__).isdisjoint(cls._int_enum_types):
+                    raise ValueError(
+                        f"field {field_name} has an int c_type ({c_type}) but the python type ({py_type}) isn't int, IntEnum, or IntFlag"
+                    )
+            except AttributeError:
+                raise ValueError(  # pylint: disable=raise-missing-from
+                    f"field {field_name} has an int c_type ({c_type}) but the python type isn't int, IntEnum, or IntFlag"
+                )
+            return
+
+        for known_c_type, known_py_type in cls._allowed_c_types:
+            if known_c_type is c_type:
+                expected_type = known_py_type
+                break
+        if expected_type is None:
+            raise ValueError(f"field {field_name} has an unsupported c_type {c_type}")
+
+        if py_type is not expected_type:
+            raise ValueError(
+                f"field {field_name} has type {py_type}, but we expect {expected_type} for c_type {c_type}"
+            )
+
+    @classmethod
+    def _py_type_for_single(cls, field_name, type_info, meta: StructFieldMeta):
         # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
         # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
         if meta.c_type is None and not dataclasses.is_dataclass(type_info):
             raise ValueError(
                 f"field {field_name} must have a c_type or a dataclass as its type (got {type_info})"
             )
+        if meta.c_type is None:
+            try:
+                # Validate by trying to construct StructField
+                cls.within_dataclass(type_info)
+            except Exception as err:
+                raise ValueError(
+                    "field {field_name} has an invalid dataclass {type_info}"
+                ) from err
+        else:
+            cls._check_c_and_py_types_match(field_name, meta.c_type, type_info)
         return type_info
 
     @classmethod
