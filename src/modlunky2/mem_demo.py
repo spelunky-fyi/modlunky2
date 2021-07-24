@@ -16,6 +16,14 @@ class MemoryReader(ABC):
         raise NotImplementedError()
 
 
+@dataclass
+class FieldPath:
+    path_parts: Tuple[str] = ()
+
+    def __str__(self):
+        return ".".join(self.path_parts)
+
+
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 
@@ -29,7 +37,7 @@ class MemType(Generic[T], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_type(self, py_type: type):
+    def validate_field(self, path: FieldPath, py_type: type):
         raise NotImplementedError()
 
     @abstractmethod
@@ -104,7 +112,7 @@ class StructField:
     # For non-arrays, the python type of the field
     # For arrays, the python type of the elements
     py_type: type
-    c_type: Optional[type]
+    mem_type: MemType
 
     @classmethod
     def within_dataclass(cls, a_dataclass: type) -> Tuple[StructField, ...]:
@@ -119,43 +127,35 @@ class StructField:
 
             meta = StructFieldMeta.from_field(dc_field)
 
-            type_info = type_hints[dc_field.name]
             collection_type = None
-            py_type = None
-            if meta.count == 1:
-                py_type = cls._py_type_for_single(dc_field.name, type_info, meta)
-            else:
+            py_type = type_hints[dc_field.name]
+            mem_type = None
+            if meta.count > 1:
                 collection_type, py_type = cls._collection_type_info(
-                    dc_field.name, type_info, meta
+                    dc_field.name, py_type
                 )
+            mem_type = cls._mem_type_for_single(dc_field.name, py_type, meta)
 
             sc_field = StructField(
                 name=dc_field.name,
                 offset=meta.offset,
                 count=meta.count,
-                c_type=meta.c_type,
                 collection_type=collection_type,
                 py_type=py_type,
+                mem_type=mem_type,
             )
             struct_fields.append(sc_field)
         return tuple(struct_fields)
 
     def element_size(self):
         # TODO consider alignment
-
-        if self.c_type is not None:
-            return ScalarCType(self.c_type, self.py_type).element_size()
-
-        return DataclassType(self.py_type).element_size()
+        return self.mem_type.element_size()
 
     def size(self):
         if self.count > 1:
             return self.element_size() * self.count
 
-        if self.c_type is None:
-            return DataclassType(self.py_type).element_size()
-        else:
-            return ScalarCType(self.c_type, self.py_type).element_size()
+        return self.mem_type.field_size()
 
     def from_buffer(self, buf: bytearray) -> Any:
         val_offset = 0 + self.offset
@@ -171,24 +171,21 @@ class StructField:
             values.append(self._value_from_buffer(buf[elem_offset:]))
         return self.collection_type(values)
 
+    def validate(self, path: FieldPath):
+        my_name = self.name
+        if self.count > 1:
+            my_name += "[]"
+        my_path = FieldPath(path.path_parts + tuple([my_name]))
+
+        self.mem_type.validate_field(my_path, self.py_type)
+
     def _value_from_buffer(self, buf: bytearray) -> Any:
         # This doesn't use self.offset because the caller is exepceted to compute the position
 
-        # TODO: Consider whether support array size 1
-        if self.c_type is not None:
-            val = self.c_type.from_buffer(buf).value
-            try:
-                return self.py_type(val)
-            except Exception as err:
-                raise Exception(
-                    f"failed to construct value for field {self.name}"
-                ) from err
-
-        # TODO keep track of the 'path', for use in sub-field error reporting
-        return DataclassType(self.py_type).from_bytes(buf, mem_reader=None)
+        return self.mem_type.from_bytes(buf, mem_reader=None)
 
     @classmethod
-    def _collection_type_info(cls, field_name, type_info, meta):
+    def _collection_type_info(cls, field_name, type_info):
         try:
             collection_type = type_info.__origin__
         except ValueError as err:
@@ -202,11 +199,11 @@ class StructField:
             )
 
         # For tuples, we need to do some more checks
-        py_type = None
+        py_type = type_info.__args__[0]
         if collection_type is tuple:
-            py_type = cls._py_type_for_tuple(field_name, type_info.__args__, meta)
+            cls._check_tuple_type_args(field_name, type_info.__args__)
         elif collection_type is frozenset:
-            py_type = cls._py_type_for_frozenset(field_name, type_info.__args__, meta)
+            py_type = cls._check_frozenset_type_args(field_name, type_info.__args__)
         else:
             raise Exception(
                 f"field {field_name} has unhandled collection type {collection_type}"
@@ -215,27 +212,18 @@ class StructField:
         return (collection_type, py_type)
 
     @classmethod
-    def _check_c_and_py_types_match(cls, field_name, c_type, py_type):
-        try:
-            ScalarCType(c_type, py_type).check_type(py_type)
-        except Exception as err:
-            raise ValueError(f"validation failed for field {field_name}") from err
-
-    @classmethod
-    def _py_type_for_single(cls, field_name, py_type, meta: StructFieldMeta):
+    def _mem_type_for_single(cls, field_name, py_type, meta: StructFieldMeta):
         if meta.c_type is None and not dataclasses.is_dataclass(py_type):
             raise ValueError(
                 f"field {field_name} must have a c_type or a dataclass as its type (got {py_type})"
             )
         if meta.c_type is None:
-            pass  # TODO nieve code below circular right now. Need to split construction and check
-            # DataclassType(cls).check_type(py_type)
+            return DataclassType(py_type)
         else:
-            cls._check_c_and_py_types_match(field_name, meta.c_type, py_type)
-        return py_type
+            return ScalarCType(meta.c_type, py_type)
 
     @classmethod
-    def _py_type_for_tuple(cls, field_name, type_args, meta):
+    def _check_tuple_type_args(cls, field_name, type_args):
         if len(type_args) != 2:
             raise ValueError(
                 f"tuple field {field_name} must have 2 type parameters. Got {len(type_args)}"
@@ -244,19 +232,19 @@ class StructField:
             raise ValueError(
                 f"tuple field {field_name} second type parameter must be '...'. Got {type_args[1]}"
             )
-        return cls._py_type_for_single(field_name, type_args[0], meta)
 
     @classmethod
-    def _py_type_for_frozenset(cls, field_name, type_args, meta):
+    def _check_frozenset_type_args(cls, field_name, type_args):
         if len(type_args) != 1:
             raise ValueError(
                 f"frozenset field {field_name} must have 1 type parameter. Got {len(type_args)}"
             )
-        return cls._py_type_for_single(field_name, type_args[0], meta)
 
 
 def dataclass_from_buffer(cls: type, buf) -> Any:
-    return DataclassType(cls).from_bytes(buf, mem_reader=None)
+    mem_type = DataclassType(cls)
+    mem_type.validate()
+    return mem_type.from_bytes(buf, mem_reader=None)
 
 
 def _build_allowed_c_types():
@@ -290,29 +278,30 @@ class ScalarCType(MemType[T]):
     # Dict doesn't work correctly, presumably c_foo isn't hashable
     _allowed_c_types: ClassVar[Tuple[Tuple[type, type]]] = _build_allowed_c_types()
 
-    def __post_init__(self):
-        expected_type = None
-        for known_c_type, known_py_type in self._allowed_c_types:
-            if known_c_type is self.c_type:
-                expected_type = known_py_type
-                break
-        if expected_type is None:
-            raise ValueError(f"Unsupported c_type {self.c_type}")
-
-        if expected_type not in self.py_type.__mro__:
-            raise ValueError(
-                f"For C-type {self.c_type} we expect the py_type ({self.py_type}) to be a subtype of {expected_type} "
-            )
-
     def field_size(self) -> int:
         return ctypes.sizeof(self.c_type)
 
     def element_size(self) -> int:
         return self.field_size()
 
-    def check_type(self, py_type: type):
+    def validate_field(self, path: FieldPath, py_type: type):
+        expected_type = None
+        for known_c_type, known_py_type in self._allowed_c_types:
+            if known_c_type is self.c_type:
+                expected_type = known_py_type
+                break
+        if expected_type is None:
+            raise ValueError(f"field {path} has unsupported c_type {self.c_type}")
+
+        if expected_type not in self.py_type.__mro__:
+            raise ValueError(
+                f"field {path} has {self.c_type} we expect the py_type ({self.py_type}) to be a subtype of {expected_type} "
+            )
+
         if self.py_type not in py_type.__mro__:
-            raise TypeError(f"{py_type} must be a subtype of {self.py_type}")
+            raise TypeError(
+                f"field {path}: {py_type} must be a subtype of {self.py_type}"
+            )
 
     def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
         mem_value = self.c_type.from_buffer(buf).value
@@ -341,9 +330,19 @@ class DataclassType(MemType[T]):
                 f"{self.dataclass} must have _size_as_element_ attribute to be used in array field"
             )
 
-    def check_type(self, py_type: type):
+    def validate(self):
+        path = FieldPath()
+        for field in self.struct_fields:
+            field.validate(path)
+
+    def validate_field(self, path: FieldPath, py_type: type):
         if self.dataclass not in py_type.__mro__:
-            raise TypeError(f"{py_type} must be a subtype of {self.dataclass}")
+            raise TypeError(
+                f"field {path} {py_type} must be a subtype of {self.dataclass}"
+            )
+
+        for field in self.struct_fields:
+            field.validate(path)
 
     def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
         # TODO do validation once per "top level" call, collect all type errors up-front
