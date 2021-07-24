@@ -9,10 +9,10 @@ from typing import Any, ClassVar, Generic, List, Optional, Tuple, TypeVar, Union
 import typing
 
 
-# Abstract memory-reader interface
+# Abstract memory-reader interface, used if pointers are derefrenced.
 class MemoryReader(ABC):
     @abstractmethod
-    def read(self, offset, size) -> bytes:
+    def read(self, addr: int, size: int) -> Optional[bytes]:
         raise NotImplementedError()
 
 
@@ -27,14 +27,27 @@ class FieldPath:
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 
+# MemType abstracts constructing a field value from memory.
+#
+# Instances are expected to be reusable:
+# * For multiple fields
+# * For multiple from_bytes() calls
+#
+# If from_bytes() uses mem_reader:
+# * validate_field() should check that the py_type is Optional
+# * from_bytes() should return None if MemoryReader.read() returns None
 class MemType(Generic[T], ABC):
+    # The number of bytes needed for from_bytes() to succeed
     @abstractmethod
     def field_size(self) -> int:
         raise NotImplementedError()
 
-    @abstractmethod
+    # The number of bytes this occupies in an array.
+    #
+    # This will be equal to field_size() unless we're only using part of the
+    # in-memory representation (e.g. only first 2 struct fields)
     def element_size(self) -> int:
-        raise NotImplementedError()
+        return self.field_size()
 
     @abstractmethod
     def validate_field(self, path: FieldPath, py_type: type):
@@ -65,7 +78,9 @@ class StructFieldMeta:
         return field.metadata[cls._METADATA_KEY]
 
 
-# TODO: fallback value for enums?
+# TODO: wire in pointers
+
+
 def struct_field(
     offset: int,
     c_type: type = None,
@@ -80,24 +95,6 @@ def struct_field(
     field_meta = StructFieldMeta(offset=offset, c_type=c_type, count=count)
     field_meta.put_into(metadata)
     return dataclasses.field(metadata=metadata, **kwargs)
-
-
-# Unused for now, maybe handy for pointers
-def unwrap_optional(opt_type: type) -> type:
-    if opt_type.__origin__ is not Union:
-        raise ValueError("Not a union type. Can't be Optional")
-    union_args = opt_type.__args__
-    num_args = len(union_args)
-    if num_args != 2:
-        raise ValueError(f"Not an Optional type. Expected 2 union args, got {num_args}")
-    if union_args[1] is not type(None):
-        raise ValueError(
-            f"Not an Optional type. Expected second Union arg to be None, got {union_args[1]}"
-        )
-    return union_args[0]
-
-
-### Loading structs from buffers
 
 
 @dataclass(frozen=True)
@@ -281,9 +278,6 @@ class ScalarCType(MemType[T]):
     def field_size(self) -> int:
         return ctypes.sizeof(self.c_type)
 
-    def element_size(self) -> int:
-        return self.field_size()
-
     def validate_field(self, path: FieldPath, py_type: type):
         expected_type = None
         for known_c_type, known_py_type in self._allowed_c_types:
@@ -295,7 +289,7 @@ class ScalarCType(MemType[T]):
 
         if expected_type not in self.py_type.__mro__:
             raise ValueError(
-                f"field {path} has {self.c_type} we expect the py_type ({self.py_type}) to be a subtype of {expected_type} "
+                f"field {path} has {self.c_type} we expect the py_type ({self.py_type}) to be a subtype of {expected_type}"  # pylint: disable=line-too-long
             )
 
         if self.py_type not in py_type.__mro__:
@@ -373,15 +367,50 @@ class DataclassType(MemType[T]):
         return range(lower, upper)
 
 
+def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
+    try:
+        if py_type.__origin__ is not Union:
+            raise ValueError(f"field {path} must be Optional, got {py_type}")
+    except AttributeError as err:
+        raise ValueError(f"field {path} must be Optional") from err
+
+    num_args = len(py_type.__args__)
+    if num_args != 2:
+        raise ValueError(
+            f"field {path} must be Optional. Expected 2 Union args, got {num_args}"
+        )
+
+    second_arg = py_type.__args__[1]
+    if second_arg is not type(None):
+        raise ValueError(
+            f"field {path} must be Optional. Expected second Union arg to be None, got {second_arg}"
+        )
+
+    return py_type.__args__[0]
+
+
+@dataclass(frozen=True)
 class Pointer(MemType[T]):
-    # TODO return to this once MemType refactor is done
-    # We need to be able to call field_size for the type we point at
+    mem_type: MemType[T]
+    read_size: int = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "read_size", self.mem_type.field_size())
 
     def field_size(self) -> int:
         return ctypes.sizeof(ctypes.c_void_p)
 
+    def validate_field(self, path: FieldPath, py_type: type):
+        pointed_py_type = unwrap_optional_type(path, py_type)
+        self.mem_type.validate_field(path, pointed_py_type)
+
     def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
-        _ = ctypes.c_void_p.from_buffer(buf)
+        addr = ctypes.c_void_p.from_buffer(buf).value
+        buf = mem_reader.read(addr, self.read_size)
+        if buf is None:
+            return None
+
+        return self.mem_type.from_bytes(buf, mem_reader)
 
 
 ### Demo
