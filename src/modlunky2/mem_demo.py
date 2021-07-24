@@ -1,10 +1,11 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
 import ctypes
 from dataclasses import dataclass
 import dataclasses
 from enum import IntEnum, IntFlag
 from ctypes import c_uint32, c_uint8
-from typing import Any, ClassVar, Optional, Tuple, Union
+from typing import Any, ClassVar, Generic, List, Optional, Tuple, TypeVar, Union
 import typing
 
 
@@ -21,6 +22,34 @@ class WinState(IntEnum):
     TIAMAT = 1
     HUNDUN = 2
     COSMIC_OCEAN = 3
+
+
+# Abstract memory-reader interface
+class MemoryReader(ABC):
+    @abstractmethod
+    def read(self, offset, size) -> bytes:
+        raise NotImplementedError()
+
+
+T = TypeVar("T")  # pylint: disable=invalid-name
+
+
+class MemType(Generic[T], ABC):
+    @abstractmethod
+    def field_size(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def element_size(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_type(self, py_type: type):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+        raise NotImplementedError()
 
 
 @dataclass(frozen=True)
@@ -193,7 +222,7 @@ class StructField:
             return self.element_size() * self.count
 
         if self.c_type is None:
-            return dataclass_memory_range(self.py_type).stop
+            return DataclassType(self.py_type).memory_range().stop
         else:
             return ctypes.sizeof(self.c_type)
 
@@ -225,7 +254,7 @@ class StructField:
                 ) from err
 
         # TODO keep track of the 'path', for use in sub-field error reporting
-        return dataclass_from_buffer(self.py_type, buf)
+        return DataclassType(self.py_type).from_bytes(buf, mem_reader=None)
 
     @classmethod
     def _collection_type_info(cls, field_name, type_info, meta):
@@ -290,24 +319,17 @@ class StructField:
             )
 
     @classmethod
-    def _py_type_for_single(cls, field_name, type_info, meta: StructFieldMeta):
-        # TODO Check c_type is something we expect. We don't handle strings, and pointers are handled elsewhre
-        # TODO Check if py_type is something we expect: bool, int, float, subclass of Enum
-        if meta.c_type is None and not dataclasses.is_dataclass(type_info):
+    def _py_type_for_single(cls, field_name, py_type, meta: StructFieldMeta):
+        if meta.c_type is None and not dataclasses.is_dataclass(py_type):
             raise ValueError(
-                f"field {field_name} must have a c_type or a dataclass as its type (got {type_info})"
+                f"field {field_name} must have a c_type or a dataclass as its type (got {py_type})"
             )
         if meta.c_type is None:
-            try:
-                # Validate by trying to construct StructField
-                cls.within_dataclass(type_info)
-            except Exception as err:
-                raise ValueError(
-                    "field {field_name} has an invalid dataclass {type_info}"
-                ) from err
+            pass  # TODO nieve code below circular right now. Need to split construction and check
+            # DataclassType(cls).check_type(py_type)
         else:
-            cls._check_c_and_py_types_match(field_name, meta.c_type, type_info)
-        return type_info
+            cls._check_c_and_py_types_match(field_name, meta.c_type, py_type)
+        return py_type
 
     @classmethod
     def _py_type_for_tuple(cls, field_name, type_args, meta):
@@ -330,15 +352,8 @@ class StructField:
         return cls._py_type_for_single(field_name, type_args[0], meta)
 
 
-def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
-    # TODO do validation once per "top level" call, collect all type errors up-front
-
-    field_data = {}
-    for field in StructField.within_dataclass(cls):
-        field_data[field.name] = field.from_buffer(buf[offset:])
-
-    # TODO catch excpetion to provide field info
-    return cls(**field_data)
+def dataclass_from_buffer(cls: type, buf) -> Any:
+    return DataclassType(cls).from_bytes(buf, mem_reader=None)
 
 
 ### Memory loading
@@ -351,26 +366,73 @@ def dataclass_from_buffer(cls: type, buf, offset: int = 0) -> Any:
 # No intention to support strings. Null termination is obnoxious
 
 
-def dataclass_memory_range(cls: type) -> range:
-    lower = None
-    upper = None
-    for field in StructField.within_dataclass(cls):
-        if lower is None or field.offset < lower:
-            lower = field.offset
-        field_upper = field.offset + field.size()
-        if upper is None or field_upper > upper:
-            upper = field_upper
+@dataclass(frozen=True)
+class DataclassType(MemType[T]):
+    # TODO move all the dataclass logic into here
+    dataclass: T
+    struct_fields: List[StructField] = dataclasses.field(init=False)
 
-    # TODO as part of dataclass validation, check there's at least 1 field
-    if lower is None:
-        raise Exception("lower was None when sizing {cls}")
-    if upper is None:
-        raise Exception("upper was None when sizing {cls}")
+    def __post_init__(self):
+        object.__setattr__(
+            self, "struct_fields", StructField.within_dataclass(self.dataclass)
+        )
 
-    return range(lower, upper)
+    def field_size(self) -> int:
+        return self.memory_range().stop
+
+    def element_size(self) -> int:
+        try:
+            return self.dataclass._size_as_element_  # pylint: disable=protected-access
+        except AttributeError:
+            raise ValueError(  # pylint: disable=raise-missing-from
+                f"{self.dataclass} must have _size_as_element_ attribute to be used in array field"
+            )
+
+    def check_type(self, py_type: type):
+        if self.dataclass not in py_type.__mro__:
+            raise TypeError(f"{py_type} must be a subtype of {self.dataclass}")
+
+    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+        # TODO do validation once per "top level" call, collect all type errors up-front
+
+        field_data = {}
+        for field in self.struct_fields:
+            field_data[field.name] = field.from_buffer(buf)
+
+        # TODO catch excpetion to provide field info
+        return self.dataclass(**field_data)
+
+    def memory_range(self) -> range:
+        lower = None
+        upper = None
+        for field in self.struct_fields:
+            if lower is None or field.offset < lower:
+                lower = field.offset
+            field_upper = field.offset + field.size()
+            if upper is None or field_upper > upper:
+                upper = field_upper
+
+        # TODO as part of dataclass validation, check there's at least 1 field
+        if lower is None:
+            raise Exception("lower was None when sizing {cls}")
+        if upper is None:
+            raise Exception("upper was None when sizing {cls}")
+
+        return range(lower, upper)
+
+
+class Pointer(MemType[T]):
+    # TODO return to this once MemType refactor is done
+    # We need to be able to call field_size for the type we point at
+
+    def field_size(self) -> int:
+        return ctypes.sizeof(ctypes.c_void_p)
+
+    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+        _ = ctypes.c_void_p.from_buffer(buf)
 
 
 ### Demo ugliness :)
 
 print(dataclass_from_buffer(State, DEMO_BUFFER))
-print(f"memory range for State is {dataclass_memory_range(State)}")
+print(f"memory range for State is {DataclassType(State).memory_range()}")
