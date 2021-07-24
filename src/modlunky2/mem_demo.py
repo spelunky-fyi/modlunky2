@@ -208,23 +208,18 @@ class StructField:
         # TODO consider alignment
 
         if self.c_type is not None:
-            return ctypes.sizeof(self.c_type)
+            return ScalarCType(self.c_type, self.py_type).element_size()
 
-        try:
-            return self.py_type._size_as_element_  # pylint: disable=protected-access
-        except AttributeError:
-            raise ValueError(  # pylint: disable=raise-missing-from
-                f"{self.py_type} must have _size_as_element_ attribute to be used as in an array in field {self.name}"
-            )
+        return DataclassType(self.py_type).element_size()
 
     def size(self):
         if self.count > 1:
             return self.element_size() * self.count
 
         if self.c_type is None:
-            return DataclassType(self.py_type).memory_range().stop
+            return DataclassType(self.py_type).element_size()
         else:
-            return ctypes.sizeof(self.c_type)
+            return ScalarCType(self.c_type, self.py_type).element_size()
 
     def from_buffer(self, buf: bytearray) -> Any:
         val_offset = 0 + self.offset
@@ -283,40 +278,12 @@ class StructField:
 
         return (collection_type, py_type)
 
-    _allowed_c_types = [(ctypes.c_bool, bool)]
-    for c_type in [
-        ctypes.c_int8,
-        ctypes.c_uint8,
-        ctypes.c_int16,
-        ctypes.c_uint16,
-        ctypes.c_int32,
-        ctypes.c_uint32,
-        ctypes.c_int64,
-        ctypes.c_uint64,
-    ]:
-        _allowed_c_types.append((c_type, int))
-    _int_enum_types = frozenset([IntEnum, IntFlag])
-    for c_type in [
-        ctypes.c_float,
-        ctypes.c_double,
-        ctypes.c_longdouble,
-    ]:
-        _allowed_c_types.append((c_type, float))
-
     @classmethod
     def _check_c_and_py_types_match(cls, field_name, c_type, py_type):
-        expected_type = None
-        for known_c_type, known_py_type in cls._allowed_c_types:
-            if known_c_type is c_type:
-                expected_type = known_py_type
-                break
-        if expected_type is None:
-            raise ValueError(f"field {field_name} has an unsupported c_type {c_type}")
-
-        if expected_type not in py_type.__mro__:
-            raise ValueError(
-                f"field {field_name} has type {py_type}, but we expect {expected_type} for c_type {c_type}"
-            )
+        try:
+            ScalarCType(c_type, py_type).check_type(py_type)
+        except Exception as err:
+            raise ValueError(f"validation failed for field {field_name}") from err
 
     @classmethod
     def _py_type_for_single(cls, field_name, py_type, meta: StructFieldMeta):
@@ -356,14 +323,64 @@ def dataclass_from_buffer(cls: type, buf) -> Any:
     return DataclassType(cls).from_bytes(buf, mem_reader=None)
 
 
-### Memory loading
+def _build_allowed_c_types():
+    pair_list = [(ctypes.c_bool, bool)]
+    for c_type in [
+        ctypes.c_int8,
+        ctypes.c_uint8,
+        ctypes.c_int16,
+        ctypes.c_uint16,
+        ctypes.c_int32,
+        ctypes.c_uint32,
+        ctypes.c_int64,
+        ctypes.c_uint64,
+    ]:
+        pair_list.append((c_type, int))
+    for c_type in [
+        ctypes.c_float,
+        ctypes.c_double,
+        ctypes.c_longdouble,
+    ]:
+        pair_list.append((c_type, float))
 
-# TODO Support pointers. Identify needed memory ranges top-down, fetch and store for use as we build objects bottom-up
-# If memory read fails, we either fail overall read or treat all pointers into that range as broken.
-# We should dedupe ranges and coalesce overlapping ranges (if they exist?).
-# For pointers, the dataclass field must be Optional to cope with null.
-# Maybe use c_type=c_void_p for pointers.
-# No intention to support strings. Null termination is obnoxious
+    return tuple(pair_list)
+
+
+@dataclass(frozen=True)
+class ScalarCType(MemType[T]):
+    c_type: type
+    py_type: type  # Should match T. TODO can we write that explcitly?
+
+    # Dict doesn't work correctly, presumably c_foo isn't hashable
+    _allowed_c_types: ClassVar[Tuple[Tuple[type, type]]] = _build_allowed_c_types()
+
+    def __post_init__(self):
+        expected_type = None
+        for known_c_type, known_py_type in self._allowed_c_types:
+            if known_c_type is self.c_type:
+                expected_type = known_py_type
+                break
+        if expected_type is None:
+            raise ValueError(f"Unsupported c_type {self.c_type}")
+
+        if expected_type not in self.py_type.__mro__:
+            raise ValueError(
+                f"For C-type {self.c_type} we expect the py_type ({self.py_type}) to be a subtype of {expected_type} "
+            )
+
+    def field_size(self) -> int:
+        return ctypes.sizeof(self.c_type)
+
+    def element_size(self) -> int:
+        return self.field_size()
+
+    def check_type(self, py_type: type):
+        if self.py_type not in py_type.__mro__:
+            raise TypeError(f"{py_type} must be a subtype of {self.py_type}")
+
+    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+        mem_value = self.c_type.from_buffer(buf).value
+        return self.py_type(mem_value)
 
 
 @dataclass(frozen=True)
