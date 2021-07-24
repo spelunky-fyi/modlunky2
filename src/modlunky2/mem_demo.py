@@ -9,21 +9,6 @@ from typing import Any, ClassVar, Generic, List, Optional, Tuple, TypeVar, Union
 import typing
 
 
-class HudFlags(IntFlag):
-    UPBEAT_DWELLING_MUSIC = 1 << 1 - 1
-    RUNNING_TUTORIAL_SPEEDRUN = 1 << 3 - 1
-    ALLOW_PAUSE = 1 << 20 - 1
-    HAVE_CLOVER = 1 << 23 - 1
-
-
-class WinState(IntEnum):
-    UNKNOWN = -1
-    NO_WIN = 0
-    TIAMAT = 1
-    HUNDUN = 2
-    COSMIC_OCEAN = 3
-
-
 # Abstract memory-reader interface
 class MemoryReader(ABC):
     @abstractmethod
@@ -88,55 +73,6 @@ def struct_field(
     field_meta.put_into(metadata)
     return dataclasses.field(metadata=metadata, **kwargs)
 
-
-@dataclass(frozen=True)
-class Player:
-    # Overall struct size, used for computing array element offsets
-    _size_as_element_: ClassVar[int] = 4
-    bombs: int = struct_field(0x0, c_uint8)
-    ropes: int = struct_field(0x1, c_uint8)
-
-
-@dataclass(frozen=True)
-class State:
-    level: int = struct_field(0x0, c_uint8)
-    hud_flags: HudFlags = struct_field(0x1, c_uint32)
-    win_state: WinState = struct_field(0x5, c_uint8)
-    direct_player: Player = struct_field(0x6)
-    nums_list: Tuple[int, ...] = struct_field(0x6, count=2, c_type=c_uint8)
-    enum_list: Tuple[WinState, ...] = struct_field(0xA, count=2, c_type=c_uint8)
-    player_list: Tuple[Player, ...] = struct_field(0x8, count=2)
-
-
-# Demo output:
-# State(
-#     level=2,
-#     hud_flags=<HudFlags.HAVE_CLOVER: 4194304>,
-#     win_state=<WinState.COSMIC_OCEAN: 3>,
-#     direct_player=Player(bombs=99, ropes=42),
-#     nums_list=(99, 0),
-#     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
-#     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
-DEMO_BUFFER = bytearray(
-    [
-        0x02,
-        0x00,
-        0x00,
-        0x40,
-        0x00,
-        0x03,
-        0x63,
-        0x2A,
-        0x01,
-        0x02,
-        0x00,
-        0x00,
-        0x03,
-        0x04,
-        0x00,
-        0x00,
-    ]
-)
 
 # Unused for now, maybe handy for pointers
 def unwrap_optional(opt_type: type) -> type:
@@ -449,7 +385,72 @@ class Pointer(MemType[T]):
         _ = ctypes.c_void_p.from_buffer(buf)
 
 
-### Demo ugliness :)
+### Demo
+
+
+class HudFlags(IntFlag):
+    UPBEAT_DWELLING_MUSIC = 1 << 1 - 1
+    RUNNING_TUTORIAL_SPEEDRUN = 1 << 3 - 1
+    ALLOW_PAUSE = 1 << 20 - 1
+    HAVE_CLOVER = 1 << 23 - 1
+
+
+class WinState(IntEnum):
+    UNKNOWN = -1
+    NO_WIN = 0
+    TIAMAT = 1
+    HUNDUN = 2
+    COSMIC_OCEAN = 3
+
+
+@dataclass(frozen=True)
+class Player:
+    # Overall struct size, used for computing array element offsets
+    _size_as_element_: ClassVar[int] = 4
+    bombs: int = struct_field(0x0, c_uint8)
+    ropes: int = struct_field(0x1, c_uint8)
+
+
+@dataclass(frozen=True)
+class State:
+    level: int = struct_field(0x0, c_uint8)
+    hud_flags: HudFlags = struct_field(0x1, c_uint32)
+    win_state: WinState = struct_field(0x5, c_uint8)
+    direct_player: Player = struct_field(0x6)
+    nums_list: Tuple[int, ...] = struct_field(0x6, count=2, c_type=c_uint8)
+    enum_list: Tuple[WinState, ...] = struct_field(0xA, count=2, c_type=c_uint8)
+    player_list: Tuple[Player, ...] = struct_field(0x8, count=2)
+
+
+# Demo output:
+# State(
+#     level=2,
+#     hud_flags=<HudFlags.HAVE_CLOVER: 4194304>,
+#     win_state=<WinState.COSMIC_OCEAN: 3>,
+#     direct_player=Player(bombs=99, ropes=42),
+#     nums_list=(99, 0),
+#     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
+#     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
+DEMO_BUFFER = bytearray(
+    [
+        0x02,
+        0x00,
+        0x00,
+        0x40,
+        0x00,
+        0x03,
+        0x63,
+        0x2A,
+        0x01,
+        0x02,
+        0x00,
+        0x00,
+        0x03,
+        0x04,
+        0x00,
+        0x00,
+    ]
+)
 
 print(dataclass_from_buffer(State, DEMO_BUFFER))
 print(f"memory range for State is {DataclassType(State).memory_range()}")
