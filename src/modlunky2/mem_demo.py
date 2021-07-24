@@ -50,7 +50,7 @@ class MemType(Generic[T], ABC):
     #
     # If needed, mem_reader can be used to follow pointers.
     @abstractmethod
-    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
         raise NotImplementedError()
 
 
@@ -119,7 +119,7 @@ class StructField:
 
         return self.mem_type.field_size()
 
-    def from_buffer(self, buf: bytearray) -> Any:
+    def from_buffer(self, buf: bytes) -> Any:
         val_offset = 0 + self.offset
         # Read single values directly
         if self.count == 1:
@@ -141,7 +141,7 @@ class StructField:
 
         self.mem_type.validate_field(my_path, self.py_type)
 
-    def _value_from_buffer(self, buf: bytearray) -> Any:
+    def _value_from_buffer(self, buf: bytes) -> Any:
         # This doesn't use self.offset because the caller is exepceted to compute the position
 
         return self.mem_type.from_bytes(buf, mem_reader=None)
@@ -262,8 +262,8 @@ class ScalarCType(MemType[T]):
                 f"field {path}: {py_type} must be a subtype of {self.py_type}"
             )
 
-    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
-        mem_value = self.c_type.from_buffer(buf).value
+    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+        mem_value = self.c_type.from_buffer_copy(buf).value
         return self.py_type(mem_value)
 
 
@@ -303,7 +303,7 @@ class DataclassType(MemType[T]):
         for field in self.struct_fields:
             field.validate(path)
 
-    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
         # TODO do validation once per "top level" call, collect all type errors up-front
 
         field_data = {}
@@ -370,8 +370,8 @@ class Pointer(MemType[T]):
         pointed_py_type = unwrap_optional_type(path, py_type)
         self.mem_type.validate_field(path, pointed_py_type)
 
-    def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
-        addr = ctypes.c_void_p.from_buffer(buf).value
+    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+        addr = ctypes.c_void_p.from_buffer_copy(buf).value
         buf = mem_reader.read(addr, self.read_size)
         if buf is None:
             return None
@@ -467,7 +467,7 @@ class State:
 #     nums_list=(99, 0),
 #     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
 #     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
-DEMO_BUFFER = bytearray(
+DEMO_BUFFER = bytes(
     [
         0x02,
         0x00,
