@@ -16,14 +16,6 @@ class MemoryReader(ABC):
         raise NotImplementedError()
 
 
-@dataclass
-class FieldPath:
-    path_parts: Tuple[str] = ()
-
-    def __str__(self):
-        return ".".join(self.path_parts)
-
-
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 
@@ -49,52 +41,25 @@ class MemType(Generic[T], ABC):
     def element_size(self) -> int:
         return self.field_size()
 
+    # TODO this will be replaced with validation during construction
     @abstractmethod
     def validate_field(self, path: FieldPath, py_type: type):
         raise NotImplementedError()
 
+    # Construct an instance based on they bytes in buf.
+    #
+    # If needed, mem_reader can be used to follow pointers.
     @abstractmethod
     def from_bytes(self, buf: bytearray, mem_reader: MemoryReader) -> T:
         raise NotImplementedError()
 
 
-@dataclass(frozen=True)
-class StructFieldMeta:
-    _METADATA_KEY: ClassVar[str] = "ml2_field_metadata"
+@dataclass
+class FieldPath:
+    path_parts: Tuple[str] = ()
 
-    offset: int
-    c_type: Optional[type]
-    count: int
-
-    def put_into(self, metadata: dict):
-        if self._METADATA_KEY in metadata:
-            raise ValueError(f"metadata dict already has {self._METADATA_KEY}")
-        metadata[self._METADATA_KEY] = self
-
-    @classmethod
-    def from_field(cls, field: dataclasses.Field) -> StructFieldMeta:
-        if cls._METADATA_KEY not in field.metadata:
-            raise ValueError(f"field {field.name} has no stuct_field() metadata")
-        return field.metadata[cls._METADATA_KEY]
-
-
-# TODO: wire in pointers
-
-
-def struct_field(
-    offset: int,
-    c_type: type = None,
-    count: int = 1,
-    metadata: dict = None,
-    **kwargs,
-):
-    if metadata is None:
-        metadata = {}
-    if count < 1:
-        raise ValueError(f"count must be positive (got {count})")
-    field_meta = StructFieldMeta(offset=offset, c_type=c_type, count=count)
-    field_meta.put_into(metadata)
-    return dataclasses.field(metadata=metadata, **kwargs)
+    def __str__(self):
+        return ".".join(self.path_parts)
 
 
 @dataclass(frozen=True)
@@ -367,6 +332,7 @@ class DataclassType(MemType[T]):
         return range(lower, upper)
 
 
+# Checks that a type is Optional and returns the inner type.
 def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
     try:
         if py_type.__origin__ is not Union:
@@ -411,6 +377,48 @@ class Pointer(MemType[T]):
             return None
 
         return self.mem_type.from_bytes(buf, mem_reader)
+
+
+### DSL
+
+
+@dataclass(frozen=True)
+class StructFieldMeta:
+    _METADATA_KEY: ClassVar[str] = "ml2_field_metadata"
+
+    offset: int
+    c_type: Optional[type]
+    count: int
+
+    def put_into(self, metadata: dict):
+        if self._METADATA_KEY in metadata:
+            raise ValueError(f"metadata dict already has {self._METADATA_KEY}")
+        metadata[self._METADATA_KEY] = self
+
+    @classmethod
+    def from_field(cls, field: dataclasses.Field) -> StructFieldMeta:
+        if cls._METADATA_KEY not in field.metadata:
+            raise ValueError(f"field {field.name} has no stuct_field() metadata")
+        return field.metadata[cls._METADATA_KEY]
+
+
+# TODO: wire in pointers
+
+
+def struct_field(
+    offset: int,
+    c_type: type = None,
+    count: int = 1,
+    metadata: dict = None,
+    **kwargs,
+):
+    if metadata is None:
+        metadata = {}
+    if count < 1:
+        raise ValueError(f"count must be positive (got {count})")
+    field_meta = StructFieldMeta(offset=offset, c_type=c_type, count=count)
+    field_meta.put_into(metadata)
+    return dataclasses.field(metadata=metadata, **kwargs)
 
 
 ### Demo
