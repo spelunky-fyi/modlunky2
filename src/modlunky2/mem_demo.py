@@ -6,11 +6,11 @@ import dataclasses
 from enum import IntEnum, IntFlag
 import functools
 from typing import (
-    Any,
     Callable,
     ClassVar,
     Collection,
     Dict,
+    FrozenSet,
     Generic,
     Optional,
     Tuple,
@@ -26,6 +26,18 @@ class MemoryReader(ABC):
     @abstractmethod
     def read(self, addr: int, size: int) -> Optional[bytes]:
         raise NotImplementedError()
+
+
+# Memory backed by a bytes object. Intended for testing only.
+@dataclass(frozen=True)
+class BytesReader(MemoryReader):
+    slab: bytes
+
+    def read(self, addr: int, size: int) -> Optional[bytes]:
+        upper = addr + size
+        if upper > len(self.slab):
+            return None
+        return self.slab[addr:upper]
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -67,11 +79,6 @@ class FieldPath:
 
     def __str__(self):
         return ".".join(self.path_parts)
-
-
-def dataclass_from_bytes(cls: type, buf: bytes) -> Any:
-    mem_type = DataclassStruct(FieldPath(), cls)
-    return mem_type.from_bytes(buf, mem_reader=None)
 
 
 def _build_allowed_c_types():
@@ -313,7 +320,7 @@ class Pointer(MemType[T]):
 
     def __post_init__(self, path, py_type, deferred_mem_type):
         pointed_py_type = unwrap_optional_type(path, py_type)
-        mem_type = deferred_mem_type(py_type, pointed_py_type)
+        mem_type = deferred_mem_type(path, pointed_py_type)
 
         object.__setattr__(self, "mem_type", mem_type)
         object.__setattr__(self, "read_size", mem_type.field_size())
@@ -371,7 +378,7 @@ def struct_field(
     return dataclasses.field(metadata=metadata, **kwargs)
 
 
-auto_dc = DataclassStruct  # pylint: disable=invalid-name
+dc_struct = DataclassStruct  # pylint: disable=invalid-name
 
 
 def scalar_c_type(c_type):
@@ -391,7 +398,6 @@ uint32 = scalar_c_type(ctypes.c_uint32)
 
 
 def array(elem: DeferredMemType, count: int):
-    @functools.wraps(Array)
     def build(path: FieldPath, py_type: type):
         return Array(path, py_type, elem, count)
 
@@ -399,11 +405,31 @@ def array(elem: DeferredMemType, count: int):
 
 
 def pointer(pointed: DeferredMemType):
-    @functools.wraps(Pointer)
     def build(path: FieldPath, py_type: type):
         return Pointer(path, py_type, pointed)
 
     return build
+
+
+### UX
+
+
+def mem_type_from_bytes(
+    mem_type: MemType[T], buf: bytes, mem_reader: MemoryReader = None
+) -> T:
+    if mem_reader is None:
+        mem_reader = BytesReader(bytes())
+    return mem_type.from_bytes(buf, mem_reader)
+
+
+def mem_type_at_addr(
+    mem_type: MemType[T], addr: int, mem_reader: MemoryReader
+) -> Optional[T]:
+    size = mem_type.field_size()
+    buf = mem_reader.read(addr, size)
+    if buf is None:
+        return None
+    return mem_type.from_bytes(buf, mem_reader)
 
 
 ### Demo
@@ -437,10 +463,11 @@ class State:
     level: int = struct_field(0x0, uint8)
     hud_flags: HudFlags = struct_field(0x1, uint32)
     win_state: WinState = struct_field(0x5, uint8)
-    direct_player: Player = struct_field(0x6, auto_dc)
+    direct_player: Player = struct_field(0x6, dc_struct)
     nums_list: Tuple[int, ...] = struct_field(0x6, array(uint8, 2))
     enum_list: Tuple[WinState, ...] = struct_field(0xA, array(uint8, 2))
-    player_list: Tuple[Player, ...] = struct_field(0x8, array(auto_dc, 2))
+    player_set: FrozenSet[Player] = struct_field(0x8, array(dc_struct, 2))
+    pointed_player: Optional[Player] = struct_field(0x10, pointer(dc_struct))
 
 
 # Demo output:
@@ -452,25 +479,10 @@ class State:
 #     nums_list=(99, 42),
 #     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
 #     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
-DEMO_BUFFER = bytes(
-    [
-        0x02,
-        0x00,
-        0x00,
-        0x40,
-        0x00,
-        0x03,
-        0x63,
-        0x2A,
-        0x01,
-        0x02,
-        0x00,
-        0x00,
-        0x03,
-        0x04,
-        0x00,
-        0x00,
-    ]
-)
+DEMO_BUFFER = b"\x02\x00\x00\x40\x00\x03\x63\x2a\x01\x02\x00\x00\x03\x04\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00"
 
-print(dataclass_from_bytes(State, DEMO_BUFFER))
+state_mt = DataclassStruct(FieldPath(), State)
+player_mt = DataclassStruct(FieldPath(), Player)
+bytes_reader = BytesReader(DEMO_BUFFER)
+print(mem_type_from_bytes(state_mt, DEMO_BUFFER, bytes_reader))
+print(mem_type_at_addr(player_mt, 0x6, bytes_reader))
