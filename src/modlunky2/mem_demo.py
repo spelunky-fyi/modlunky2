@@ -175,6 +175,7 @@ def _build_allowed_c_types():
         ctypes.c_uint32,
         ctypes.c_int64,
         ctypes.c_uint64,
+        ctypes.c_void_p,
     ]:
         pair_list.append((c_type, int))
     for c_type in [
