@@ -502,9 +502,11 @@ class State:
 #     hud_flags=<HudFlags.HAVE_CLOVER: 4194304>,
 #     win_state=<WinState.COSMIC_OCEAN: 3>,
 #     direct_player=Player(bombs=99, ropes=42),
-#     nums_list=(99, 42),
-#     enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
-#     player_list=(Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)))
+#     nums_list=(99, 42), enum_list=(<WinState.NO_WIN: 0>, <WinState.NO_WIN: 0>),
+#     player_set=frozenset({Player(bombs=1, ropes=2), Player(bombs=3, ropes=4)}),
+#     pointed_player=Player(bombs=99, ropes=42)
+# )
+# Player(bombs=99, ropes=42)
 DEMO_BUFFER = b"\x02\x00\x00\x40\x00\x03\x63\x2a\x01\x02\x00\x00\x03\x04\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00"
 
 state_mt = DataclassStruct(FieldPath(), State)
