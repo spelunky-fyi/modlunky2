@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # PEP 563
 from abc import ABC, abstractmethod
 import ctypes
 from dataclasses import InitVar, dataclass
@@ -28,7 +28,7 @@ class MemoryReader(ABC):
         raise NotImplementedError()
 
 
-# Memory backed by a bytes object. Intended for testing only.
+# Memory backed by a bytes object. Intended for testing.
 @dataclass(frozen=True)
 class BytesReader(MemoryReader):
     slab: bytes
@@ -50,7 +50,7 @@ T = TypeVar("T")  # pylint: disable=invalid-name
 # * For multiple from_bytes() calls
 #
 # If from_bytes() uses mem_reader:
-# * validate_field() should check that the py_type is Optional
+# * The constructor should check that the py_type is Optional
 # * from_bytes() should return None if MemoryReader.read() returns None
 class MemType(Generic[T], ABC):
     # The number of bytes needed for from_bytes() to succeed
@@ -156,14 +156,13 @@ class DataclassStruct(MemType[T]):
 
     struct_fields: Dict[str, StructField] = dataclasses.field(init=False)
 
-    # TODO work out relationship between StructField and dataclass
     def __post_init__(self):
         if not dataclasses.is_dataclass(self.dataclass):
             raise ValueError(
                 f"field {self.path} type ({self.dataclass}) must be a dataclass"
             )
 
-        # We use get_type_hints() because it's updated for PEPs
+        # We use get_type_hints() because it's updated for PEP 563
         type_hints = typing.get_type_hints(self.dataclass)
         struct_fields = {}
         for field in dataclasses.fields(self.dataclass):
@@ -362,9 +361,6 @@ class StructFieldMeta:
         return field.metadata[cls._METADATA_KEY]
 
 
-# TODO: wire in pointers
-
-
 def struct_field(
     offset: int,
     deferred_mem_type: DeferredMemType,
@@ -394,7 +390,7 @@ uint8 = scalar_c_type(ctypes.c_uint8)
 
 uint32 = scalar_c_type(ctypes.c_uint32)
 
-# TODO other C int types
+# TODO other C scalar types
 
 
 def array(elem: DeferredMemType, count: int):
@@ -411,7 +407,7 @@ def pointer(pointed: DeferredMemType):
     return build
 
 
-### UX
+### Convenience functions
 
 
 def mem_type_from_bytes(
