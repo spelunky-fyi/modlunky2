@@ -79,6 +79,10 @@ class FieldPath:
     def __str__(self):
         return ".".join(self.path_parts)
 
+    def append(self, part):
+        suffix = tuple([str(part)])
+        return FieldPath(self.path_parts + suffix)
+
 
 # Checks that a type is Optional and returns the inner type.
 def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
@@ -256,7 +260,7 @@ class DataclassStruct(MemType[T]):
         struct_fields = {}
         for field in dataclasses.fields(self.dataclass):
             meta = StructFieldMeta.from_field(field)
-            inner_path = FieldPath(self.path.path_parts + tuple([field.name]))
+            inner_path = self.path.append(field.name)
             inner_mem_type = meta.deferred_mem_type(inner_path, type_hints[field.name])
             struct_fields[field.name] = StructField(
                 inner_path, meta.offset, inner_mem_type, inner_mem_type.field_size()
