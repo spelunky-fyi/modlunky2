@@ -80,6 +80,90 @@ class FieldPath:
         return ".".join(self.path_parts)
 
 
+# Checks that a type is Optional and returns the inner type.
+def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
+    try:
+        if py_type.__origin__ is not Union:
+            raise ValueError(f"field {path} must be Optional, got {py_type}")
+    except AttributeError as err:
+        raise ValueError(f"field {path} must be Optional") from err
+
+    num_args = len(py_type.__args__)
+    if num_args != 2:
+        raise ValueError(
+            f"field {path} must be Optional. Expected 2 Union args, got {num_args}"
+        )
+
+    second_arg = py_type.__args__[1]
+    if second_arg is not type(None):
+        raise ValueError(
+            f"field {path} must be Optional. Expected second Union arg to be None, got {second_arg}"
+        )
+
+    return py_type.__args__[0]
+
+
+# Checks the type is an unbounded tuple and returns the element type.
+def unwrap_tuple_type(path: FieldPath, py_type: type) -> type:
+    try:
+        if py_type.__origin__ is not tuple:
+            raise ValueError(f"field {path} must be tuple. Got type {py_type}")
+
+    except AttributeError:
+        raise ValueError(  # pylint: disable=raise-missing-from
+            f"field {path} must be tuple. Got type {py_type}"
+        )
+
+    args_len = len(py_type.__args__)
+    if args_len != 2:
+        raise ValueError(
+            f"tuple field {path} must have 2 type parameters. Got {args_len}"
+        )
+
+    second_arg = py_type.__args__[1]
+    if second_arg is not Ellipsis:
+        raise ValueError(
+            f"tuple field {path} second type parameter must be '...'. Got {second_arg}"
+        )
+    return py_type.__args__[0]
+
+
+# Checks that a type is frozenset and returns the element type.
+def unwrap_frozenset_type(path: FieldPath, py_type: type):
+    try:
+        if py_type.__origin__ is not frozenset:
+            raise ValueError(f"field {path} must be frozenset. Got type {py_type}")
+
+    except AttributeError:
+        raise ValueError(  # pylint: disable=raise-missing-from
+            f"field {path} must be frozenset. Got type {py_type}"
+        )
+
+    args_len = len(py_type.__args__)
+    if args_len != 1:
+        raise ValueError(
+            f"frozenset field {path} must have 1 type parameter. Got {args_len}"
+        )
+    return py_type.__args__[0]
+
+
+# Checks that a type is either tuple or frozen set. Returns the collection type and element type.
+def unwrap_collection_type(path: FieldPath, py_type: type) -> Tuple[type, type]:
+    try:
+        collection_type = py_type.__origin__
+    except AttributeError:
+        raise ValueError(  # pylint: disable=raise-missing-from
+            f"field {path} must be tuple or frozenset. Got type {py_type}"
+        )
+
+    if collection_type is tuple:
+        return (tuple, unwrap_tuple_type(path, py_type))
+    elif collection_type is frozenset:
+        return (frozenset, unwrap_frozenset_type(path, py_type))
+    else:
+        raise ValueError(f"field {path} must be tuple or frozenset. Got type {py_type}")
+
+
 def _build_allowed_c_types():
     pair_list = [(ctypes.c_bool, bool)]
     for c_type in [
@@ -136,8 +220,13 @@ class ScalarCType(MemType[T]):
         return ctypes.sizeof(self.c_type)
 
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
-        mem_value = self.c_type.from_buffer_copy(buf).value
-        return self.py_type(mem_value)
+        try:
+            mem_value = self.c_type.from_buffer_copy(buf).value
+            return self.py_type(mem_value)
+        except Exception as err:
+            raise ValueError(
+                f"failed to deserialize value for field {self.path}"
+            ) from err
 
 
 @dataclass(frozen=True)
@@ -221,29 +310,7 @@ class Array(MemType[T]):
     collection_type: Collection[T] = dataclasses.field(init=False)
 
     def __post_init__(self, path, py_type, deferred_elem_mem_type):
-        try:
-            collection_type = py_type.__origin__
-        except ValueError as err:
-            raise ValueError(
-                f"field {path} has positive count and must be tuple or frozenset. Got type {py_type}"
-            ) from err
-
-        if collection_type not in {tuple, frozenset}:
-            raise ValueError(
-                f"field {path} has positive count and must be tuple or frozenset. Got type {py_type}"
-            )
-
-        # For tuples, we need to do some more checks
-        elem_py_type = py_type.__args__[0]
-        if collection_type is tuple:
-            self._check_tuple_type_args(path, py_type.__args__)
-        elif collection_type is frozenset:
-            self._check_frozenset_type_args(path, py_type.__args__)
-        else:
-            raise Exception(
-                f"field {path} has unhandled collection type {collection_type}"
-            )
-
+        collection_type, elem_py_type = unwrap_collection_type(path, py_type)
         elem_mem_type = deferred_elem_mem_type(path, elem_py_type)
         total_field_size = elem_mem_type.element_size() * self.count
         object.__setattr__(self, "elem_mem_type", elem_mem_type)
@@ -259,52 +326,17 @@ class Array(MemType[T]):
         for i in range(0, self.count):
             elem_offset = elem_size * i
             elem_end = elem_offset + elem_size
-            # TODO keep track of index for error reporting
-            elem = self.elem_mem_type.from_bytes(buf[elem_offset:elem_end], mem_reader)
+            try:
+                elem = self.elem_mem_type.from_bytes(
+                    buf[elem_offset:elem_end], mem_reader
+                )
+            except Exception as err:
+                raise ValueError(
+                    f"failed to deserialize index {i} of field {self.path}"
+                ) from err
             values.append(elem)
 
         return self.collection_type(values)
-
-    @classmethod
-    def _check_tuple_type_args(cls, field_name, type_args):
-        if len(type_args) != 2:
-            raise ValueError(
-                f"tuple field {field_name} must have 2 type parameters. Got {len(type_args)}"
-            )
-        if type_args[1] is not Ellipsis:
-            raise ValueError(
-                f"tuple field {field_name} second type parameter must be '...'. Got {type_args[1]}"
-            )
-
-    @classmethod
-    def _check_frozenset_type_args(cls, field_name, type_args):
-        if len(type_args) != 1:
-            raise ValueError(
-                f"frozenset field {field_name} must have 1 type parameter. Got {len(type_args)}"
-            )
-
-
-# Checks that a type is Optional and returns the inner type.
-def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
-    try:
-        if py_type.__origin__ is not Union:
-            raise ValueError(f"field {path} must be Optional, got {py_type}")
-    except AttributeError as err:
-        raise ValueError(f"field {path} must be Optional") from err
-
-    num_args = len(py_type.__args__)
-    if num_args != 2:
-        raise ValueError(
-            f"field {path} must be Optional. Expected 2 Union args, got {num_args}"
-        )
-
-    second_arg = py_type.__args__[1]
-    if second_arg is not type(None):
-        raise ValueError(
-            f"field {path} must be Optional. Expected second Union arg to be None, got {second_arg}"
-        )
-
-    return py_type.__args__[0]
 
 
 @dataclass(frozen=True)
