@@ -4,7 +4,6 @@ import ctypes
 from dataclasses import InitVar, dataclass
 import dataclasses
 from enum import IntEnum, IntFlag
-import functools
 from typing import (
     Callable,
     ClassVar,
@@ -378,7 +377,6 @@ dc_struct = DataclassStruct  # pylint: disable=invalid-name
 
 
 def scalar_c_type(c_type):
-    @functools.wraps(ScalarCType)
     def build(path: FieldPath, py_type: type):
         return ScalarCType(path, py_type, c_type)
 
