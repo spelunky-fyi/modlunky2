@@ -39,6 +39,19 @@ def test_scalar_c_type_byte(py_type, expected):
     assert sc_type.from_bytes(b"\x04", EMPTY_BYTES_READER) == expected
 
 
+@pytest.mark.parametrize(
+    "addr_bytes,expected",
+    [
+        (b"\x00\x00\x00\x00\x00\x00\x00\x00", 0),
+        (b"\x0b\x00\x00\x00\x00\x00\x00\x00", 11),
+        (b"\x00\x01\x00\x00\x00\x00\x00\x00", 256),
+    ],
+)
+def test_scalar_c_type_pointer(addr_bytes, expected):
+    sc_type = ScalarCType(FieldPath(), int, ctypes.c_void_p)
+    assert sc_type.from_bytes(addr_bytes, EMPTY_BYTES_READER) == expected
+
+
 def test_scalar_c_type_mismatch():
     def build():
         ScalarCType(FieldPath(), int, ctypes.c_float)
@@ -181,7 +194,6 @@ def test_array_scalar_c_error_passthrough():
     ],
 )
 def test_pointer_uint8(addr_bytes, expected):
-    # Note that address 0 (aka null) is special-cased by c_void_p
-    bytes_reader = BytesReader(b"\x00\x03\x10")
+    bytes_reader = BytesReader(b"\x0c\x03\x10")
     arr = Pointer(FieldPath, Optional[int], deferred_uint8)
     assert arr.from_bytes(addr_bytes, bytes_reader) == expected

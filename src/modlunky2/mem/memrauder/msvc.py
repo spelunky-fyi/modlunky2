@@ -54,6 +54,11 @@ class Vector(MemType[T]):
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
         elem_size = self.elem_mem_type.element_size()
         vector_meta = self.vector_meta_mem_type.from_bytes(buf, mem_reader)
+
+        # Don't try to dereference NULL
+        if vector_meta.array_addr == 0:
+            return None
+
         elem_buf = mem_reader.read(vector_meta.array_addr, elem_size * vector_meta.size)
         if elem_buf is None:
             return None

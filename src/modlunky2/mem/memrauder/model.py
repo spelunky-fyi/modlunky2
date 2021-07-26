@@ -323,13 +323,16 @@ class ScalarCType(MemType[T]):
         return ctypes.sizeof(self.c_type)
 
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
-
         try:
             mem_value = self.c_type.from_buffer_copy(buf).value
         except Exception as err:
             raise ValueError(
                 f"failed to deserialize C value for field {self.path}"
             ) from err
+
+        # c_void_p special cases NULL as None, but that's not valid for int()
+        if mem_value is None and self.c_type is ctypes.c_void_p:
+            mem_value = 0
 
         try:
             return self.py_type(mem_value)
@@ -402,6 +405,9 @@ class Pointer(MemType[T]):
 
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> Optional[T]:
         addr = ctypes.c_void_p.from_buffer_copy(buf).value
+        if addr == 0:
+            return None
+
         buf = mem_reader.read(addr, self.read_size)
 
         if buf is None:
