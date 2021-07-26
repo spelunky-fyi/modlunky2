@@ -7,6 +7,7 @@ from modlunky2.mem.entities import (
     CHAIN_POWERUP_ENTITIES,
     CharState,
     EntityType,
+    EntityWrapper,
     Inventory,
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
@@ -197,14 +198,17 @@ class RunState:
             self.final_death = True
             return
 
-    def update_has_mounted_tame(self, player_overlay):
+    def update_has_mounted_tame(self, player_overlay: EntityWrapper):
         if not self.is_low_percent:
             return
 
         if not player_overlay:
             return
 
-        entity_type: EntityType = player_overlay.type.id
+        overlay_entity = player_overlay.as_entity(self._proc.mem_reader)
+        if overlay_entity is None:
+            return
+        entity_type: EntityType = overlay_entity.type.id
         # Allowed to ride tamed qilin in tiamats
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
@@ -214,8 +218,8 @@ class RunState:
             return
 
         if entity_type in MOUNTS:
-            mount = player_overlay.as_mount()
-            if mount.is_tamed:
+            mount = player_overlay.as_mount(self._proc.mem_reader)
+            if mount is not None and mount.is_tamed:
                 self.has_mounted_tame = True
                 self.fail_low()
 

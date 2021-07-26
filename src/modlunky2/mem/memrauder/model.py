@@ -405,7 +405,7 @@ class Pointer(MemType[T]):
 
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> Optional[T]:
         addr = ctypes.c_void_p.from_buffer_copy(buf).value
-        if addr == 0:
+        if addr is None:
             return None
 
         buf = mem_reader.read(addr, self.read_size)
