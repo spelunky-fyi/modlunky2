@@ -25,10 +25,10 @@ def struct_field(
     return dataclasses.field(metadata=metadata, **kwargs)
 
 
-dc_struct = DataclassStruct  # pylint: disable=invalid-name
+dc_struct: DeferredMemType = DataclassStruct  # pylint: disable=invalid-name
 
 
-def scalar_c_type(c_type):
+def scalar_c_type(c_type) -> DeferredMemType:
     def build(path: FieldPath, py_type: type):
         return ScalarCType(path, py_type, c_type)
 
@@ -44,19 +44,20 @@ sc_int8 = scalar_c_type(ctypes.c_int8)
 sc_int16 = scalar_c_type(ctypes.c_int16)
 sc_int32 = scalar_c_type(ctypes.c_int32)
 sc_int64 = scalar_c_type(ctypes.c_int64)
+sc_void_p = scalar_c_type(ctypes.c_void_p)
 sc_float = scalar_c_type(ctypes.c_float)
 sc_double = scalar_c_type(ctypes.c_double)
 sc_longdouble = scalar_c_type(ctypes.c_longdouble)
 
 
-def array(elem: DeferredMemType, count: int):
+def array(elem: DeferredMemType, count: int) -> DeferredMemType:
     def build(path: FieldPath, py_type: type):
         return Array(path, py_type, elem, count)
 
     return build
 
 
-def pointer(pointed: DeferredMemType):
+def pointer(pointed: DeferredMemType) -> DeferredMemType:
     def build(path: FieldPath, py_type: type):
         return Pointer(path, py_type, pointed)
 

@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Collection,
     Dict,
     Generic,
     Optional,
@@ -345,9 +344,9 @@ class Array(MemType[T]):
     deferred_elem_mem_type: InitVar[DeferredMemType]
     count: int
 
-    elem_mem_type: MemType[T] = dataclasses.field(init=False)
-    _total_field_size: MemType[T] = dataclasses.field(init=False)
-    collection_type: Collection[T] = dataclasses.field(init=False)
+    elem_mem_type: MemType = dataclasses.field(init=False)
+    _total_field_size: int = dataclasses.field(init=False)
+    collection_type: T = dataclasses.field(init=False)
 
     def __post_init__(self, py_type, deferred_elem_mem_type):
         collection_type, elem_py_type = unwrap_collection_type(self.path, py_type)
@@ -365,7 +364,7 @@ class Array(MemType[T]):
         elem_size = self.elem_mem_type.element_size()
         for i in range(0, self.count):
             elem_offset = elem_size * i
-            elem_end = elem_offset + elem_size
+            elem_end = elem_size * (i + 1)
             try:
                 elem = self.elem_mem_type.from_bytes(
                     buf[elem_offset:elem_end], mem_reader
@@ -401,7 +400,7 @@ class Pointer(MemType[T]):
     def field_size(self) -> int:
         return ctypes.sizeof(ctypes.c_void_p)
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> Optional[T]:
         addr = ctypes.c_void_p.from_buffer_copy(buf).value
         buf = mem_reader.read(addr, self.read_size)
 
