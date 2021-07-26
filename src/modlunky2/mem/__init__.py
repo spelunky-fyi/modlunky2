@@ -133,6 +133,10 @@ class MemoryBasicInformation:
         print(f"    Type: {self.type}")
 
 
+class FeedcodeNotFound(Exception):
+    """Failed to find feedcode within Spelunky2 memory."""
+
+
 class Spel2Process:
     def __init__(self, proc_handle):
         self.proc_handle = proc_handle
@@ -335,7 +339,7 @@ class Spel2Process:
 
         return exe + offset
 
-    def get_feedcode(self):
+    def try_get_feedcode(self) -> Optional[int]:
         if self._feedcode is not None:
             return self._feedcode
         for page in self.memory_pages(min_addr=0x40000000000):
@@ -345,12 +349,15 @@ class Spel2Process:
                 return result
         return None
 
+    def get_feedcode(self) -> int:
+        feedcode = self.try_get_feedcode()
+        if feedcode is None:
+            raise FeedcodeNotFound()
+        return feedcode
+
     @property
     def state(self) -> State:
-        feedcode = self.get_feedcode()
-        if feedcode is None:
-            return None
-        addr = feedcode - 0x5F
+        addr = self.get_feedcode() - 0x5F
         return mem_type_at_addr(STATE_MEM_TYPE, addr, self._mem_reader)
 
     def get_entity_db(self):
@@ -358,10 +365,7 @@ class Spel2Process:
 
     @property
     def players(self) -> List[Player]:  # items
-        feedcode = self.get_feedcode()
-        if feedcode is None:
-            return None
-        addr = feedcode - 0x5F + 0x12B0
+        addr = self.get_feedcode() - 0x5F + 0x12B0
         items_ptr = self.read_void_p(addr) + 8
         player_pointers = self.read_memory(items_ptr, 8 * 4)
 
@@ -380,8 +384,5 @@ class Spel2Process:
 
     @property
     def uid_to_entity(self):
-        feedcode = self.get_feedcode()
-        if feedcode is None:
-            return None
-        addr = feedcode - 0x5F + 0x1308
+        addr = self.get_feedcode() - 0x5F + 0x1308
         return EntityMap(self, addr)
