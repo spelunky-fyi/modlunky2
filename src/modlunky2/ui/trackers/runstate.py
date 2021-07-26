@@ -600,7 +600,7 @@ class RunState:
                 self.fail_low()
 
     def update(self):
-        player = self._proc.state.players[0]
+        player = self._proc.players[0]
         if player is None:
             return
 
@@ -656,7 +656,7 @@ class RunState:
 
     def update_player_item_types(self, player: Player):
         item_types = set()
-        entity_map = self._proc.state.uid_to_entity
+        entity_map = self._proc.uid_to_entity
         for item in player.items:
             entity = entity_map.get(item)
             if entity is None:

@@ -1,6 +1,7 @@
 import ctypes
 from ctypes.wintypes import DWORD, HANDLE, LONG, MAX_PATH, WPARAM
-from typing import Optional
+from dataclasses import dataclass
+from typing import List, Optional
 from pathlib import Path
 from struct import unpack, calcsize
 
@@ -9,8 +10,14 @@ import win32api
 import win32con
 import win32process
 
-from .entities import EntityDB
-from .state import FeedcodeNotFound, State
+from .entities import EntityDB, EntityMap, Player
+from .state import State
+from .memrauder.model import (
+    DataclassStruct,
+    FieldPath,
+    MemoryReader,
+    mem_type_at_addr,
+)
 
 VirtualQueryEx = ctypes.windll.kernel32.VirtualQueryEx
 CreateToolhelp32Snapshot = ctypes.windll.kernel32.CreateToolhelp32Snapshot
@@ -21,6 +28,16 @@ CloseHandle = ctypes.windll.kernel32.CloseHandle
 
 TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = -1
+
+STATE_MEM_TYPE = DataclassStruct(FieldPath(), State)
+
+
+@dataclass
+class Spel2Reader(MemoryReader):
+    proc: "Spel2Process"
+
+    def read(self, addr: int, size: int) -> Optional[bytes]:
+        return self.proc.read_memory(addr, size)
 
 
 class PROCESSENTRY32(ctypes.Structure):
@@ -119,7 +136,8 @@ class MemoryBasicInformation:
 class Spel2Process:
     def __init__(self, proc_handle):
         self.proc_handle = proc_handle
-        self._state = None
+        self._feedcode = None
+        self._mem_reader = Spel2Reader(self)
 
     @classmethod
     def from_pid(cls, pid):
@@ -318,24 +336,52 @@ class Spel2Process:
         return exe + offset
 
     def get_feedcode(self):
+        if self._feedcode is not None:
+            return self._feedcode
         for page in self.memory_pages(min_addr=0x40000000000):
             result = self.find_in_page(page, b"\x00\xde\xc0\xed\xfe")
             if result:
+                self._feedcode = result
                 return result
         return None
 
-    def get_state(self) -> State:
-        try:
-            return State(self)
-        except FeedcodeNotFound:
-            # This can happen if the game is starting up or shutting down
-            return None
-
     @property
     def state(self) -> State:
-        if self._state is None:
-            self._state = self.get_state()
-        return self._state
+        feedcode = self.get_feedcode()
+        if feedcode is None:
+            return None
+        addr = feedcode - 0x5F
+        return mem_type_at_addr(STATE_MEM_TYPE, addr, self._mem_reader)
 
     def get_entity_db(self):
         return EntityDB(self)
+
+    @property
+    def players(self) -> List[Player]:  # items
+        feedcode = self.get_feedcode()
+        if feedcode is None:
+            return None
+        addr = feedcode - 0x5F + 0x12B0
+        items_ptr = self.read_void_p(addr) + 8
+        player_pointers = self.read_memory(items_ptr, 8 * 4)
+
+        players = []
+
+        for idx in range(0, len(player_pointers), 8):
+            player_pointer = player_pointers[idx : idx + 8]
+            if player_pointer == b"\x00\x00\x00\x00\x00\x00\x00\x00":
+                players.append(None)
+                continue
+
+            player_pointer = unpack("P", player_pointer)[0]
+            players.append(Player(self, player_pointer))
+
+        return players
+
+    @property
+    def uid_to_entity(self):
+        feedcode = self.get_feedcode()
+        if feedcode is None:
+            return None
+        addr = feedcode - 0x5F + 0x1308
+        return EntityMap(self, addr)
