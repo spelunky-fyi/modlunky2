@@ -4,6 +4,7 @@ import ctypes
 from dataclasses import InitVar, dataclass
 import dataclasses
 from typing import (
+    Any,
     Callable,
     ClassVar,
     Collection,
@@ -37,7 +38,6 @@ class BytesReader(MemoryReader):
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
-
 
 # MemType abstracts constructing a field value from memory.
 #
@@ -245,6 +245,9 @@ class DataclassStruct(MemType[T]):
             view = buf[meta.offset : upper]
             try:
                 field_data[name] = meta.mem_type.from_bytes(view, mem_reader)
+            except ScalarCValueConstructionError:
+                # If we failed to convert a leaf value, abandon building the object but re-raise the exception
+                raise
             except Exception as err:
                 raise ValueError(f"failed to get value for field {meta.path}") from err
 
@@ -281,6 +284,15 @@ def _build_allowed_c_types():
 
 
 @dataclass(frozen=True)
+class ScalarCValueConstructionError(Exception):
+    path: FieldPath
+    value: Any
+
+    def __str__(self):
+        return f"failed to construct Python value from C value ({self.value}) for field {self.path}"
+
+
+@dataclass(frozen=True)
 class ScalarCType(MemType[T]):
     path: FieldPath
     py_type: T
@@ -312,13 +324,18 @@ class ScalarCType(MemType[T]):
         return ctypes.sizeof(self.c_type)
 
     def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+
         try:
             mem_value = self.c_type.from_buffer_copy(buf).value
-            return self.py_type(mem_value)
         except Exception as err:
             raise ValueError(
-                f"failed to deserialize value for field {self.path}"
+                f"failed to deserialize C value for field {self.path}"
             ) from err
+
+        try:
+            return self.py_type(mem_value)
+        except Exception as err:
+            raise ScalarCValueConstructionError(self.path, mem_value) from err
 
 
 @dataclass(frozen=True)
@@ -353,11 +370,14 @@ class Array(MemType[T]):
                 elem = self.elem_mem_type.from_bytes(
                     buf[elem_offset:elem_end], mem_reader
                 )
+                values.append(elem)
+            except ScalarCValueConstructionError:
+                # TODO include index when re-raising?
+                raise
             except Exception as err:
                 raise ValueError(
                     f"failed to deserialize index {i} of field {self.path}"
                 ) from err
-            values.append(elem)
 
         return self.collection_type(values)
 

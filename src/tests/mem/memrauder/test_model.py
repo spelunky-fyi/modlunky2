@@ -11,6 +11,7 @@ from modlunky2.mem.memrauder.model import (
     FieldPath,
     Pointer,
     ScalarCType,
+    ScalarCValueConstructionError,
     StructFieldMeta,
 )
 
@@ -52,6 +53,15 @@ def test_scalar_c_type_too_small():
         sc_type.from_bytes(b"", EMPTY_BYTES_READER)
 
     with pytest.raises(ValueError):
+        read()
+
+
+def test_scalar_c_type_construction_error():
+    def read():
+        sc_type = ScalarCType(FieldPath(), FourEnum, ctypes.c_uint8)
+        sc_type.from_bytes(b"\x00", EMPTY_BYTES_READER)
+
+    with pytest.raises(ScalarCValueConstructionError):
         read()
 
 
@@ -101,6 +111,33 @@ def test_dataclass_struct_nested():
     ) == Outer(0, 2, Inner(3, 5))
 
 
+def test_dataclass_struct_general_error():
+    meta_0 = {}
+    StructFieldMeta(0x0, deferred_uint8).put_into(meta_0)
+
+    @dataclass
+    class MyStruct:
+        field_a: FourEnum = field(metadata=meta_0)
+
+    dc_struct = DataclassStruct(FieldPath(), MyStruct)
+    with pytest.raises(ValueError):
+        # Too few bytes in buffer
+        dc_struct.from_bytes(b"", EMPTY_BYTES_READER)
+
+
+def test_dataclass_struct_scalar_c_error_passthrough():
+    meta_0 = {}
+    StructFieldMeta(0x0, deferred_uint8).put_into(meta_0)
+
+    @dataclass
+    class MyStruct:
+        field_a: FourEnum = field(metadata=meta_0)
+
+    dc_struct = DataclassStruct(FieldPath(), MyStruct)
+    with pytest.raises(ScalarCValueConstructionError):
+        dc_struct.from_bytes(b"\x00", EMPTY_BYTES_READER)
+
+
 @pytest.mark.parametrize(
     "py_type,expected", [(Tuple[int, ...], (10, 2)), (FrozenSet[int], {10, 2})]
 )
@@ -124,6 +161,15 @@ def test_array_too_small():
         sc_type.from_bytes(b"", EMPTY_BYTES_READER)
 
     with pytest.raises(ValueError):
+        read()
+
+
+def test_array_scalar_c_error_passthrough():
+    def read():
+        sc_type = Array(FieldPath, Tuple[FourEnum, ...], deferred_uint8, count=2)
+        sc_type.from_bytes(b"\x04\x00", EMPTY_BYTES_READER)
+
+    with pytest.raises(ScalarCValueConstructionError):
         read()
 
 
