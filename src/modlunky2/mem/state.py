@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 import enum
 
-from modlunky2.mem.memrauder.dsl import struct_field, c_int32, c_uint32, c_int8, c_uint8
+from modlunky2.mem.memrauder.dsl import (
+    struct_field,
+    sc_int32,
+    sc_uint32,
+    sc_int8,
+    sc_uint8,
+)
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -116,24 +122,24 @@ class FeedcodeNotFound(Exception):
 
 @dataclass(frozen=True)
 class State:
-    screen_last: int = struct_field(0x08, c_int32)
-    screen: int = struct_field(0x0C, c_int32)
-    screen_next: int = struct_field(0x10, c_int32)
-    quest_flags: QuestFlags = struct_field(0x38, c_uint32)
-    world_start: int = struct_field(0x5C, c_uint8)
-    level_start: int = struct_field(0x5D, c_uint8)
-    theme_start: int = struct_field(0x5E, c_uint8)
-    time_total: int = struct_field(0x64, c_uint32)
-    world: int = struct_field(0x68, c_uint8)
-    world_next: int = struct_field(0x69, c_uint8)
-    level: int = struct_field(0x6A, c_uint8)
-    level_next: int = struct_field(0x6B, c_uint8)
-    theme: Theme = struct_field(0x74, c_uint8)
-    theme_next: Theme = struct_field(0x75, c_uint8)
-    win_state: WinState = struct_field(0x76, c_int8)
-    presence_flags: PresenceFlags = struct_field(0xA14, c_uint32)
-    run_recap_flags: RunRecapFlags = struct_field(0x9F4, c_uint32)
-    hud_flags: HudFlags = struct_field(0xA10, c_uint32)
+    screen_last: int = struct_field(0x08, sc_int32)
+    screen: int = struct_field(0x0C, sc_int32)
+    screen_next: int = struct_field(0x10, sc_int32)
+    quest_flags: QuestFlags = struct_field(0x38, sc_uint32)
+    world_start: int = struct_field(0x5C, sc_uint8)
+    level_start: int = struct_field(0x5D, sc_uint8)
+    theme_start: int = struct_field(0x5E, sc_uint8)
+    time_total: int = struct_field(0x64, sc_uint32)
+    world: int = struct_field(0x68, sc_uint8)
+    world_next: int = struct_field(0x69, sc_uint8)
+    level: int = struct_field(0x6A, sc_uint8)
+    level_next: int = struct_field(0x6B, sc_uint8)
+    theme: Theme = struct_field(0x74, sc_uint8)
+    theme_next: Theme = struct_field(0x75, sc_uint8)
+    win_state: WinState = struct_field(0x76, sc_int8)
+    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
+    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32)
+    hud_flags: HudFlags = struct_field(0xA10, sc_uint32)
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
-    money_shop_total: int = struct_field(0x58, c_int32)
+    money_shop_total: int = struct_field(0x58, sc_int32)
