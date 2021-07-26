@@ -164,18 +164,12 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
                 self.hou_yis_waddler = True
 
-    def get_critical_state(self, var):
-        result = getattr(self._proc.state, var)
-        if result is None:
-            raise FailedMemoryRead(f"Failed to read critical state for {var}")
-        return result
-
     def update_global_state(self):
-        world = self.get_critical_state("world")
-        level = self.get_critical_state("level")
-        theme = self.get_critical_state("theme")
-        screen = self.get_critical_state("screen")
-        win_state = self.get_critical_state("win_state")
+        world = self._proc.state.world
+        level = self._proc.state.level
+        theme = self._proc.state.theme
+        screen = self._proc.state.screen
+        win_state = self._proc.state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -546,7 +540,7 @@ class RunState:
     def update_millionaire(self, inventory: Inventory):
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
-        shop_and_bonus = self.get_critical_state("money_shop_total")
+        shop_and_bonus = self._proc.state.money_shop_total
         if collected_this_level is not None and collected_prev_levels is not None:
             self.net_score = (
                 collected_this_level + collected_prev_levels + shop_and_bonus
@@ -615,9 +609,9 @@ class RunState:
         self.player_state = state
         self.player_last_state = last_state
 
-        run_recap_flags = self.get_critical_state("run_recap_flags")
-        hud_flags = self.get_critical_state("hud_flags")
-        presence_flags = self.get_critical_state("presence_flags")
+        run_recap_flags = self._proc.state.run_recap_flags
+        hud_flags = self._proc.state.hud_flags
+        presence_flags = self._proc.state.presence_flags
         self.update_global_state()
         self.update_on_level_start()
         self.update_player_item_types(player)
