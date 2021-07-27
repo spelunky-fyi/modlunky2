@@ -73,7 +73,9 @@ class PacifistWatcherThread(WatcherThread):
             self.die("Failed to read expected address...")
             self.shutdown()
 
-        player = self.proc.players[0]
+        player = None
+        if self.proc.state.items is not None:
+            player = self.proc.state.items.players[0]
         if player and player.inventory:
             self.kills_total = player.inventory.kills_total
 
