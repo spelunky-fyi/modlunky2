@@ -170,12 +170,18 @@ class EntityMap(UnorderedMap):
     KEY_CHAR = "<L"
     VALUE_CHAR = "P"
 
-    def get(self, key, meta=None):
+    def get(self, key: int, meta=None) -> EntityWrapper:
         result = super().get(key)
         if result is None:
             return None
 
-        return Entity(self._proc, result)
+        return EntityWrapper(result)
+
+    def get_as_entity(self, key: int, mem_reader: MemoryReader) -> Optional[Entity]:
+        result = self.get(key)
+        if result is None:
+            return None
+        return result.as_entity(mem_reader)
 
 
 @dataclass(frozen=True)

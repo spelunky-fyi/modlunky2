@@ -658,7 +658,7 @@ class RunState:
         item_types = set()
         entity_map = self._proc.uid_to_entity
         for item in player.items:
-            entity = entity_map.get(item)
+            entity = entity_map.get_as_entity(item, self._proc.mem_reader)
             if entity is None:
                 continue
 
