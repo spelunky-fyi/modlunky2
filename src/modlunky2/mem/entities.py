@@ -295,6 +295,14 @@ class Inventory:
         return self._proc.read_bool(self._offset + 0x08)
 
     @property
+    def kills_level(self):
+        return self._proc.read_u32(self._offset + 0x1424)
+
+    @property
+    def kills_total(self):
+        return self._proc.read_u32(self._offset + 0x1428)
+
+    @property
     def collected_money_total(self):
         """Amount of money collected in earlier levels."""
         return self._proc.read_u32(self._offset + 0x1520)
