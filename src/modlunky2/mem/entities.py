@@ -6,7 +6,6 @@ from typing import ClassVar, Optional, TYPE_CHECKING, Tuple
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem.memrauder.dsl import (
-    array,
     struct_field,
     dc_struct,
     pointer,
@@ -198,18 +197,6 @@ class EntityDBEntry:
     @property
     def name(self):
         return self.entity_type.name
-
-
-@dataclass(frozen=True)
-class EntityDB:
-    ENTITY_DB_ENTRIES: ClassVar[int] = 911  # Number off entries
-
-    db: Tuple[EntityDBEntry, ...] = struct_field(  # pylint: disable=invalid-name
-        0x00, array(dc_struct, ENTITY_DB_ENTRIES)
-    )
-
-    def get_entity_db_entry_by_id(self, entity_id) -> EntityDBEntry:
-        return self.db[entity_id]
 
 
 @dataclass(frozen=True)

@@ -11,7 +11,7 @@ import win32api
 import win32con
 import win32process
 
-from .entities import EntityDB, EntityMap
+from .entities import EntityMap
 from .state import State
 from .memrauder.model import (
     DataclassStruct,
@@ -31,7 +31,6 @@ TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = -1
 
 STATE_MEM_TYPE = DataclassStruct(FieldPath(), State)
-ENTITY_DB_MEM_TYPE = DataclassStruct(FieldPath(), EntityDB)
 
 
 @dataclass
@@ -361,15 +360,6 @@ class Spel2Process:
     def state(self) -> State:
         addr = self.get_feedcode() - 0x5F
         return mem_type_at_addr(STATE_MEM_TYPE, addr, self.mem_reader)
-
-    def get_entity_db(self):
-        offset = self.get_offset_past_bundle()
-        entity_db_addr = self._get_entity_db_ptr(offset)
-        return mem_type_at_addr(ENTITY_DB_MEM_TYPE, entity_db_addr, self.mem_reader)
-
-    def _get_entity_db_ptr(self, offset):
-        entity_instr = self.find(offset, b"\x48\xB8\x02\x55\xA7\x74\x52\x9D\x51\x43")
-        return self.read_void_p(entity_instr + self.read_u32(entity_instr - 4))
 
     @property
     def uid_to_entity(self):
