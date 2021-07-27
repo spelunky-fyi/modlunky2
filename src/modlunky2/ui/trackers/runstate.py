@@ -657,6 +657,8 @@ class RunState:
     def update_player_item_types(self, player: Player):
         item_types = set()
         entity_map = self._proc.uid_to_entity
+        if player.items is None:
+            return
         for item in player.items:
             entity = entity_map.get_as_entity(item, self._proc.mem_reader)
             if entity is None:
