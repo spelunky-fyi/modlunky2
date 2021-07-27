@@ -11,7 +11,7 @@ import win32api
 import win32con
 import win32process
 
-from .entities import EntityDB, EntityMap, Player
+from .entities import EntityDB, EntityMap
 from .state import State
 from .memrauder.model import (
     DataclassStruct,
@@ -370,26 +370,6 @@ class Spel2Process:
     def _get_entity_db_ptr(self, offset):
         entity_instr = self.find(offset, b"\x48\xB8\x02\x55\xA7\x74\x52\x9D\x51\x43")
         return self.read_void_p(entity_instr + self.read_u32(entity_instr - 4))
-
-    # TODO put players back into State
-    @property
-    def players(self) -> List[Player]:  # items
-        addr = self.get_feedcode() - 0x5F + 0x12B0
-        items_ptr = self.read_void_p(addr) + 8
-        player_pointers = self.read_memory(items_ptr, 8 * 4)
-
-        players = []
-
-        for idx in range(0, len(player_pointers), 8):
-            player_pointer = player_pointers[idx : idx + 8]
-            if player_pointer == b"\x00\x00\x00\x00\x00\x00\x00\x00":
-                players.append(None)
-                continue
-
-            player_pointer = unpack("P", player_pointer)[0]
-            players.append(Player(self, player_pointer))
-
-        return players
 
     @property
     def uid_to_entity(self):

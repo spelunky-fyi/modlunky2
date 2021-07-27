@@ -1,8 +1,14 @@
 from dataclasses import dataclass
 import enum
+from typing import Optional, Tuple
+
+from modlunky2.mem.entities import Player
 
 from modlunky2.mem.memrauder.dsl import (
+    array,
+    pointer,
     struct_field,
+    dc_struct,
     sc_int32,
     sc_uint32,
     sc_int8,
@@ -121,6 +127,13 @@ class FeedcodeNotFound(Exception):
 
 
 @dataclass(frozen=True)
+class Items:
+    players: Tuple[Optional[Player], ...] = struct_field(
+        0x08, array(pointer(dc_struct), 4)
+    )
+
+
+@dataclass(frozen=True)
 class State:
     screen_last: int = struct_field(0x08, sc_int32)
     screen: int = struct_field(0x0C, sc_int32)
@@ -143,3 +156,4 @@ class State:
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
     money_shop_total: int = struct_field(0x58, sc_int32)
+    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct))

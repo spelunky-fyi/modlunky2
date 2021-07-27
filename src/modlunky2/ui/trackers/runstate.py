@@ -598,7 +598,9 @@ class RunState:
                 self.fail_low()
 
     def update(self):
-        player = self._proc.players[0]
+        if self._proc.state.items is None:
+            return
+        player = self._proc.state.items.players[0]
         if player is None:
             return
 
