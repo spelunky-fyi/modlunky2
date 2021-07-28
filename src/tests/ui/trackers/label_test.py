@@ -52,7 +52,6 @@ MOSSRANKING_CATEGORIES = [
         {Label.CHAIN, Label.LOW, Label.DUAT, Label.COSMIC_OCEAN},
         "Chain Low% Cosmic Ocean",
     ),
-    # We accept % after SC even though it doesn't really align
     (
         {Label.NO_TELEPORTER, Label.NO_GOLD, Label.SUNKEN_CITY},
         "No TP No Gold Sunken City%",
@@ -92,11 +91,11 @@ MOSSRANKING_CATEGORIES = [
     ({Label.EGGPLANT, Label.SUNKEN_CITY}, "Eggplant%"),
     (
         {Label.EGGPLANT, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
-        "Abzu Eggplant%",
+        "Eggplant% Abzu",
     ),
     (
         {Label.EGGPLANT, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
-        "Duat Eggplant%",
+        "Eggplant% Duat",
     ),
     ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
     (
@@ -107,7 +106,7 @@ MOSSRANKING_CATEGORIES = [
             Label.ABZU,
             Label.SUNKEN_CITY,
         },
-        "Chain Low% Abzu Eggplant",
+        "Chain Low% Eggplant Abzu",
     ),
     (
         {
@@ -117,7 +116,7 @@ MOSSRANKING_CATEGORIES = [
             Label.DUAT,
             Label.SUNKEN_CITY,
         },
-        "Chain Low% Duat Eggplant",
+        "Chain Low% Eggplant Duat",
     ),
     ({Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY}, "No Gold Eggplant%"),
     (
@@ -133,7 +132,7 @@ MOSSRANKING_CATEGORIES = [
             Label.EGGPLANT,
             Label.SUNKEN_CITY,
         },
-        "No Gold Chain Low% Abzu Eggplant",
+        "No Gold Chain Low% Eggplant Abzu",
     ),
     (
         {
@@ -144,7 +143,7 @@ MOSSRANKING_CATEGORIES = [
             Label.EGGPLANT,
             Label.SUNKEN_CITY,
         },
-        "No Gold Chain Low% Duat Eggplant",
+        "No Gold Chain Low% Eggplant Duat",
     ),
     ({Label.MILLIONAIRE, Label.ANY}, "Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
@@ -153,6 +152,7 @@ MOSSRANKING_CATEGORIES = [
     # Pacifist tab
     ({Label.PACIFIST, Label.SUNKEN_CITY}, "Pacifist Sunken City%"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
+    ({Label.PACIFIST, Label.COSMIC_OCEAN}, "Pacifist Cosmic Ocean%"),
     ({Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY}, "Pacifist Low% Sunken City"),
     (
         {
