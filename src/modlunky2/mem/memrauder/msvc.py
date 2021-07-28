@@ -7,8 +7,8 @@ from modlunky2.mem.memrauder.model import (
     DataclassStruct,
     DeferredMemType,
     FieldPath,
+    MemContext,
     MemType,
-    MemoryReader,
     ScalarCValueConstructionError,
     unwrap_optional_type,
     unwrap_collection_type,
@@ -51,15 +51,17 @@ class Vector(MemType[T]):
     def field_size(self) -> int:
         return self.vector_meta_mem_type.field_size()
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         elem_size = self.elem_mem_type.element_size()
-        vector_meta = self.vector_meta_mem_type.from_bytes(buf, mem_reader)
+        vector_meta = self.vector_meta_mem_type.from_bytes(buf, mem_ctx)
 
         # Don't try to dereference NULL
         if vector_meta.array_addr == 0:
             return None
 
-        elem_buf = mem_reader.read(vector_meta.array_addr, elem_size * vector_meta.size)
+        elem_buf = mem_ctx.mem_reader.read(
+            vector_meta.array_addr, elem_size * vector_meta.size
+        )
         if elem_buf is None:
             return None
 
@@ -69,7 +71,7 @@ class Vector(MemType[T]):
             elem_end = elem_size * (i + 1)
             try:
                 elem = self.elem_mem_type.from_bytes(
-                    elem_buf[elem_offset:elem_end], mem_reader
+                    elem_buf[elem_offset:elem_end], mem_ctx
                 )
                 values.append(elem)
             except ScalarCValueConstructionError:

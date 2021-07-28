@@ -7,6 +7,7 @@ from modlunky2.mem.memrauder.model import (
     ScalarCType,
     Array,
     Pointer,
+    PolyPointerType,
     DeferredMemType,
     FieldPath,
 )
@@ -60,5 +61,12 @@ def array(elem: DeferredMemType, count: int) -> DeferredMemType:
 def pointer(pointed: DeferredMemType) -> DeferredMemType:
     def build(path: FieldPath, py_type: type):
         return Pointer(path, py_type, pointed)
+
+    return build
+
+
+def poly_pointer(pointed: DeferredMemType) -> DeferredMemType:
+    def build(path: FieldPath, py_type: type):
+        return PolyPointerType(path, py_type, pointed)
 
     return build

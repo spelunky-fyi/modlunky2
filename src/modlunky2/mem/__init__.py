@@ -17,7 +17,7 @@ from .memrauder.model import (
     DataclassStruct,
     FieldPath,
     MemoryReader,
-    mem_type_at_addr,
+    MemContext,
 )
 
 VirtualQueryEx = ctypes.windll.kernel32.VirtualQueryEx
@@ -142,7 +142,7 @@ class Spel2Process:
     def __init__(self, proc_handle):
         self.proc_handle = proc_handle
         self._feedcode = None
-        self.mem_reader = Spel2Reader(self)
+        self.mem_ctx = MemContext(Spel2Reader(self))
 
     @classmethod
     def from_pid(cls, pid):
@@ -359,7 +359,7 @@ class Spel2Process:
     @property
     def state(self) -> State:
         addr = self.get_feedcode() - 0x5F
-        return mem_type_at_addr(STATE_MEM_TYPE, addr, self.mem_reader)
+        return self.mem_ctx.type_at_addr(STATE_MEM_TYPE, addr)
 
     @property
     def uid_to_entity(self):

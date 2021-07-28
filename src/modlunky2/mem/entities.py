@@ -17,12 +17,7 @@ from modlunky2.mem.memrauder.dsl import (
     sc_void_p,
     sc_bool,
 )
-from modlunky2.mem.memrauder.model import (
-    DataclassStruct,
-    FieldPath,
-    MemoryReader,
-    mem_type_at_addr,
-)
+from modlunky2.mem.memrauder.model import MemContext
 from modlunky2.mem.memrauder.msvc import vector
 
 from .unordered_map import UnorderedMap
@@ -176,11 +171,11 @@ class EntityMap(UnorderedMap):
 
         return EntityWrapper(result)
 
-    def get_as_entity(self, key: int, mem_reader: MemoryReader) -> Optional[Entity]:
+    def get_as_entity(self, key: int, mem_ctx: MemContext) -> Optional[Entity]:
         result = self.get(key)
         if result is None:
             return None
-        return result.as_entity(mem_reader)
+        return result.as_entity(mem_ctx)
 
 
 @dataclass(frozen=True)
@@ -239,20 +234,14 @@ class Player(Movable):
 
 
 class EntityWrapper(int):
-    def as_entity(self, mem_reader: MemoryReader) -> Optional[Entity]:
-        return mem_type_at_addr(ENTITY_MEM_TYPE, self, mem_reader)
+    def as_entity(self, mem_ctx: MemContext) -> Optional[Entity]:
+        return mem_ctx.type_at_addr(Entity, self)
 
-    def as_movable(self, mem_reader: MemoryReader) -> Optional[Movable]:
-        return mem_type_at_addr(MOVABLE_MEM_TYPE, self, mem_reader)
+    def as_movable(self, mem_ctx: MemContext) -> Optional[Movable]:
+        return mem_ctx.type_at_addr(Movable, self)
 
-    def as_mount(self, mem_reader: MemoryReader) -> Optional[Mount]:
-        return mem_type_at_addr(MOUNT_MEM_TYPE, self, mem_reader)
+    def as_mount(self, mem_ctx: MemContext) -> Optional[Mount]:
+        return mem_ctx.type_at_addr(Mount, self)
 
-    def as_player(self, mem_reader: MemoryReader) -> Optional[Player]:
-        return mem_type_at_addr(PLAYER_MEM_TYPE, self, mem_reader)
-
-
-ENTITY_MEM_TYPE = DataclassStruct(FieldPath(), Entity)
-MOVABLE_MEM_TYPE = DataclassStruct(FieldPath(), Movable)
-MOUNT_MEM_TYPE = DataclassStruct(FieldPath(), Mount)
-PLAYER_MEM_TYPE = DataclassStruct(FieldPath(), Player)
+    def as_player(self, mem_ctx: MemContext) -> Optional[Player]:
+        return mem_ctx.type_at_addr(Player, self)
