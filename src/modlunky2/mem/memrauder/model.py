@@ -474,6 +474,9 @@ class PolyPointer(Generic[T]):
         return self.addr is not None
 
     def as_type(self, cls: C) -> Optional[C]:
+        if not dataclasses.is_dataclass(cls):
+            raise ValueError("Target class ({cls}) must be a dataclass")
+
         if not self.present():
             return None
 
