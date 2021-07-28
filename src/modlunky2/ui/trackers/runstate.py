@@ -35,10 +35,6 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 logger = logging.getLogger("modlunky2")
 
 
-class FailedMemoryRead(Exception):
-    """Failed to read memory from Spelunky2 process."""
-
-
 class RunState:
     def __init__(self, proc: Spel2Process, always_show_modifiers=False):
         self._proc = proc
@@ -590,8 +586,7 @@ class RunState:
             if self.mc_has_swung_mattock and not self.hou_yis_bow:
                 self.fail_low()
 
-    def update(self):
-        game_state = self._proc.get_state()
+    def update(self, game_state: State):
         if game_state.items is None:
             return
         player = game_state.items.players[0]
