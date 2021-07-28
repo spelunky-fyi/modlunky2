@@ -30,8 +30,6 @@ CloseHandle = ctypes.windll.kernel32.CloseHandle
 TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = -1
 
-STATE_MEM_TYPE = DataclassStruct(FieldPath(), State)
-
 
 @dataclass
 class Spel2Reader(MemoryReader):
@@ -359,7 +357,7 @@ class Spel2Process:
     @property
     def state(self) -> State:
         addr = self.get_feedcode() - 0x5F
-        return self.mem_ctx.type_at_addr(STATE_MEM_TYPE, addr)
+        return self.mem_ctx.type_at_addr(State, addr)
 
     @property
     def uid_to_entity(self):

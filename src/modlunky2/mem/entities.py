@@ -6,6 +6,7 @@ from typing import ClassVar, Optional, TYPE_CHECKING, Tuple
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem.memrauder.dsl import (
+    poly_pointer,
     struct_field,
     dc_struct,
     pointer,
@@ -14,10 +15,12 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int8,
     sc_int16,
     sc_int32,
-    sc_void_p,
     sc_bool,
 )
-from modlunky2.mem.memrauder.model import MemContext
+from modlunky2.mem.memrauder.model import (
+    MemContext,
+    PolyPointer,
+)
 from modlunky2.mem.memrauder.msvc import vector
 
 from .unordered_map import UnorderedMap
@@ -160,24 +163,6 @@ class CharState(IntEnum):
     UNKNOWN_14 = 30
 
 
-class EntityMap(UnorderedMap):
-    KEY_CHAR = "<L"
-    VALUE_CHAR = "P"
-
-    def get(self, key: int, meta=None) -> EntityWrapper:
-        result = super().get(key)
-        if result is None:
-            return None
-
-        return EntityWrapper(result)
-
-    def get_as_entity(self, key: int, mem_ctx: MemContext) -> Optional[Entity]:
-        result = self.get(key)
-        if result is None:
-            return None
-        return result.as_entity(mem_ctx)
-
-
 @dataclass(frozen=True)
 class EntityDBEntry:
     _size_as_element_: ClassVar[int] = 256  # Size of EntityDB struct
@@ -194,12 +179,40 @@ class EntityDBEntry:
         return self.entity_type.name
 
 
+# EntityReduced exists only to break the circular dependency via 'overlay'
 @dataclass(frozen=True)
-class Entity:
+class EntityReduced:
     type: Optional[EntityDBEntry] = struct_field(0x08, pointer(dc_struct))
-    overlay: EntityWrapper = struct_field(0x10, sc_void_p)
     items: Optional[Tuple[int, ...]] = struct_field(0x18, vector(sc_uint32))
     layer: int = struct_field(0x98, sc_uint8)
+
+
+@dataclass(frozen=True)
+class Entity(EntityReduced):
+    overlay: PolyPointer[EntityReduced] = struct_field(0x10, poly_pointer(dc_struct))
+
+
+class EntityMap(UnorderedMap):
+    KEY_CHAR = "<L"
+    VALUE_CHAR = "P"
+
+    def get(self, key: int, meta=None) -> int:
+        result = super().get(key)
+        if result is None:
+            return None
+
+        return result
+
+    def get_poly_pointer(self, key: int, mem_ctx: MemContext) -> PolyPointer[Entity]:
+        result = self.get(key)
+        if result is None:
+            return PolyPointer.make_empty(mem_ctx)
+
+        entity = mem_ctx.type_at_addr(Entity, result)
+        if entity is None:
+            return PolyPointer.make_empty(mem_ctx)
+
+        return PolyPointer(result, entity, mem_ctx)
 
 
 @dataclass(frozen=True)
@@ -231,17 +244,3 @@ class Inventory:
 @dataclass(frozen=True)
 class Player(Movable):
     inventory: Optional[Inventory] = struct_field(0x138, pointer(dc_struct))
-
-
-class EntityWrapper(int):
-    def as_entity(self, mem_ctx: MemContext) -> Optional[Entity]:
-        return mem_ctx.type_at_addr(Entity, self)
-
-    def as_movable(self, mem_ctx: MemContext) -> Optional[Movable]:
-        return mem_ctx.type_at_addr(Movable, self)
-
-    def as_mount(self, mem_ctx: MemContext) -> Optional[Mount]:
-        return mem_ctx.type_at_addr(Mount, self)
-
-    def as_player(self, mem_ctx: MemContext) -> Optional[Player]:
-        return mem_ctx.type_at_addr(Player, self)

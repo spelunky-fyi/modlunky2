@@ -6,18 +6,20 @@ from modlunky2.mem.entities import (
     BACKPACKS,
     CHAIN_POWERUP_ENTITIES,
     CharState,
+    Entity,
     EntityType,
-    EntityWrapper,
     Inventory,
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
     Layer,
     MOUNTS,
+    Mount,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
     TELEPORT_ENTITIES,
 )
+from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
@@ -198,17 +200,14 @@ class RunState:
             self.final_death = True
             return
 
-    def update_has_mounted_tame(self, player_overlay: EntityWrapper):
+    def update_has_mounted_tame(self, player_overlay: PolyPointer[Entity]):
         if not self.is_low_percent:
             return
 
-        if not player_overlay:
+        if not player_overlay.present():
             return
 
-        overlay_entity = player_overlay.as_entity(self._proc.mem_reader)
-        if overlay_entity is None:
-            return
-        entity_type: EntityType = overlay_entity.type.id
+        entity_type: EntityType = player_overlay.value.type.id
         # Allowed to ride tamed qilin in tiamats
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
@@ -218,7 +217,7 @@ class RunState:
             return
 
         if entity_type in MOUNTS:
-            mount = player_overlay.as_mount(self._proc.mem_reader)
+            mount = player_overlay.as_type(Mount)
             if mount is not None and mount.is_tamed:
                 self.has_mounted_tame = True
                 self.fail_low()
@@ -660,7 +659,7 @@ class RunState:
         if player.items is None:
             return
         for item in player.items:
-            entity = entity_map.get_as_entity(item, self._proc.mem_reader)
+            entity = entity_map.get_poly_pointer(item, self._proc.mem_ctx).value
             if entity is None:
                 continue
 
