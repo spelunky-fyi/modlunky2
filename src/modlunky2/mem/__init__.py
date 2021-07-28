@@ -354,8 +354,7 @@ class Spel2Process:
             raise FeedcodeNotFound()
         return feedcode
 
-    @property
-    def state(self) -> State:
+    def get_state(self) -> Optional[State]:
         addr = self.get_feedcode() - 0x5F
         return self.mem_ctx.type_at_addr(State, addr)
 

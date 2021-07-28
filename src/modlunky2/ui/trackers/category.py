@@ -90,10 +90,10 @@ class CategoryWatcherThread(WatcherThread):
         )
 
     def get_time_total(self):
-        time_total = self.proc.state.time_total
-        if time_total is None:
-            raise FailedMemoryRead("Failed to read time_total")
-        return time_total
+        game_state = self.proc.get_state()
+        if game_state is None:
+            raise FailedMemoryRead("Failed to read state")
+        return game_state.time_total
 
     def _poll(self):
         # Check if we've reset, if so, reinitialize

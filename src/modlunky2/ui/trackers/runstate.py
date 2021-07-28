@@ -25,6 +25,7 @@ from modlunky2.mem.state import (
     PresenceFlags,
     RunRecapFlags,
     Screen,
+    State,
     Theme,
     WinState,
 )
@@ -167,12 +168,12 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
                 self.hou_yis_waddler = True
 
-    def update_global_state(self):
-        world = self._proc.state.world
-        level = self._proc.state.level
-        theme = self._proc.state.theme
-        screen = self._proc.state.screen
-        win_state = self._proc.state.win_state
+    def update_global_state(self, game_state: State):
+        world = game_state.world
+        level = game_state.level
+        theme = game_state.theme
+        screen = game_state.screen
+        win_state = game_state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -227,28 +228,24 @@ class RunState:
             return
 
         health = player.health
-        if health is not None:
-
-            if (
-                health > self.health and self.player_state != CharState.DYING
-            ) or health > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.health = health
+        if (
+            health > self.health and self.player_state != CharState.DYING
+        ) or health > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.health = health
 
         bombs = inventory.bombs
-        if bombs is not None:
-            if bombs > self.bombs or bombs > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.bombs = bombs
+        if bombs > self.bombs or bombs > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.bombs = bombs
 
         ropes = inventory.ropes
-        if ropes is not None:
-            if ropes > self.level_start_ropes or ropes > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.ropes = ropes
+        if ropes > self.level_start_ropes or ropes > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.ropes = ropes
 
     def update_status_effects(self):
         if not self.is_low_percent:
@@ -540,14 +537,11 @@ class RunState:
         if self.win_state is WinState.TIAMAT:
             self.fail_chain()
 
-    def update_millionaire(self, inventory: Inventory):
+    def update_millionaire(self, game_state: State, inventory: Inventory):
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
-        shop_and_bonus = self._proc.state.money_shop_total
-        if collected_this_level is not None and collected_prev_levels is not None:
-            self.net_score = (
-                collected_this_level + collected_prev_levels + shop_and_bonus
-            )
+        shop_and_bonus = game_state.money_shop_total
+        self.net_score = collected_this_level + collected_prev_levels + shop_and_bonus
 
         # The category requires completion, which gives at least a $100K bonus.
         if self.net_score >= 900_000:
@@ -597,9 +591,10 @@ class RunState:
                 self.fail_low()
 
     def update(self):
-        if self._proc.state.items is None:
+        game_state = self._proc.get_state()
+        if game_state.items is None:
             return
-        player = self._proc.state.items.players[0]
+        player = game_state.items.players[0]
         if player is None:
             return
 
@@ -608,16 +603,16 @@ class RunState:
         last_state = player.last_state
         layer = player.layer
 
-        if not all(var is not None for var in [inventory, state, last_state, layer]):
+        if inventory is None:
             return
 
         self.player_state = state
         self.player_last_state = last_state
 
-        run_recap_flags = self._proc.state.run_recap_flags
-        hud_flags = self._proc.state.hud_flags
-        presence_flags = self._proc.state.presence_flags
-        self.update_global_state()
+        run_recap_flags = game_state.run_recap_flags
+        hud_flags = game_state.hud_flags
+        presence_flags = game_state.presence_flags
+        self.update_global_state(game_state)
         self.update_on_level_start()
         self.update_player_item_types(player)
         self.update_final_death()
@@ -649,7 +644,7 @@ class RunState:
         self.update_has_chain_powerup()
         self.update_is_chain()
 
-        self.update_millionaire(inventory)
+        self.update_millionaire(game_state, inventory)
 
         self.update_terminus()
 
@@ -659,17 +654,15 @@ class RunState:
         if player.items is None:
             return
         for item in player.items:
-            entity = entity_map.get_poly_pointer(item, self._proc.mem_ctx).value
-            if entity is None:
+            entity_poly = entity_map.get_poly_pointer(item, self._proc.mem_ctx)
+            if not entity_poly.present():
                 continue
 
-            entity_type = entity.type
+            entity_type = entity_poly.value.type
             if entity_type is None:
                 continue
 
-            entity_type = entity_type.entity_type
-            if entity_type is not None:
-                item_types.add(entity_type)
+            item_types.add(entity_type.entity_type)
 
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types

@@ -171,7 +171,7 @@ class EntityDBEntry:
 
     # TODO try constructing eagerly
     @property
-    def entity_type(self):
+    def entity_type(self) -> EntityType:
         return EntityType(self.id)
 
     @property

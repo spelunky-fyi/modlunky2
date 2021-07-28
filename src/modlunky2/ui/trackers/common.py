@@ -82,7 +82,7 @@ class WatcherThread(threading.Thread):
             return False
 
         try:
-            proc.state
+            proc.get_state()
         except (FeedcodeNotFound, ScalarCValueConstructionError):
             # Game might still be starting, we should try again
             return False
