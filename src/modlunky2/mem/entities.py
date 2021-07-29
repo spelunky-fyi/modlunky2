@@ -202,17 +202,17 @@ class EntityDBEntry:
 @dataclass(frozen=True)
 class Entity:
     type: Optional[EntityDBEntry] = struct_field(0x08, pointer(dc_struct))
+    overlay: EntityWrapper = struct_field(0x10, sc_void_p)
     items: Optional[Tuple[int, ...]] = struct_field(0x18, vector(sc_uint32))
     layer: int = struct_field(0x98, sc_uint8)
-    overlay: EntityWrapper = struct_field(0x10, sc_void_p)
 
 
 @dataclass(frozen=True)
 class Movable(Entity):
     state: CharState = struct_field(0x10C, sc_uint8)
+    holding_uid: int = struct_field(0x108, sc_int32)
     last_state: CharState = struct_field(0x10D, sc_uint8)
     health: int = struct_field(0x10F, sc_int8)
-    holding_uid: int = struct_field(0x108, sc_int32)
 
 
 @dataclass(frozen=True)

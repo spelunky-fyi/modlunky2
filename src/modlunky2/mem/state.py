@@ -139,6 +139,9 @@ class State:
     screen: int = struct_field(0x0C, sc_int32)
     screen_next: int = struct_field(0x10, sc_int32)
     quest_flags: QuestFlags = struct_field(0x38, sc_uint32)
+    # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
+    # If the run ends in a victory, the bonus will be added to this during the score screen.
+    money_shop_total: int = struct_field(0x58, sc_int32)
     world_start: int = struct_field(0x5C, sc_uint8)
     level_start: int = struct_field(0x5D, sc_uint8)
     theme_start: int = struct_field(0x5E, sc_uint8)
@@ -150,10 +153,7 @@ class State:
     theme: Theme = struct_field(0x74, sc_uint8)
     theme_next: Theme = struct_field(0x75, sc_uint8)
     win_state: WinState = struct_field(0x76, sc_int8)
-    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
     run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32)
     hud_flags: HudFlags = struct_field(0xA10, sc_uint32)
-    # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
-    # If the run ends in a victory, the bonus will be added to this during the score screen.
-    money_shop_total: int = struct_field(0x58, sc_int32)
+    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
     items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct))
