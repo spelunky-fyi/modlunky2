@@ -7,6 +7,7 @@ from modlunky2.mem.entities import (
     CHAIN_POWERUP_ENTITIES,
     CharState,
     EntityType,
+    EntityWrapper,
     Inventory,
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
@@ -164,18 +165,12 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
                 self.hou_yis_waddler = True
 
-    def get_critical_state(self, var):
-        result = getattr(self._proc.state, var)
-        if result is None:
-            raise FailedMemoryRead(f"Failed to read critical state for {var}")
-        return result
-
     def update_global_state(self):
-        world = self.get_critical_state("world")
-        level = self.get_critical_state("level")
-        theme = self.get_critical_state("theme")
-        screen = self.get_critical_state("screen")
-        win_state = self.get_critical_state("win_state")
+        world = self._proc.state.world
+        level = self._proc.state.level
+        theme = self._proc.state.theme
+        screen = self._proc.state.screen
+        win_state = self._proc.state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -203,14 +198,17 @@ class RunState:
             self.final_death = True
             return
 
-    def update_has_mounted_tame(self, player_overlay):
+    def update_has_mounted_tame(self, player_overlay: EntityWrapper):
         if not self.is_low_percent:
             return
 
         if not player_overlay:
             return
 
-        entity_type: EntityType = player_overlay.type.id
+        overlay_entity = player_overlay.as_entity(self._proc.mem_reader)
+        if overlay_entity is None:
+            return
+        entity_type: EntityType = overlay_entity.type.id
         # Allowed to ride tamed qilin in tiamats
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
@@ -220,8 +218,8 @@ class RunState:
             return
 
         if entity_type in MOUNTS:
-            mount = player_overlay.as_mount()
-            if mount.is_tamed:
+            mount = player_overlay.as_mount(self._proc.mem_reader)
+            if mount is not None and mount.is_tamed:
                 self.has_mounted_tame = True
                 self.fail_low()
 
@@ -546,7 +544,7 @@ class RunState:
     def update_millionaire(self, inventory: Inventory):
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
-        shop_and_bonus = self.get_critical_state("money_shop_total")
+        shop_and_bonus = self._proc.state.money_shop_total
         if collected_this_level is not None and collected_prev_levels is not None:
             self.net_score = (
                 collected_this_level + collected_prev_levels + shop_and_bonus
@@ -600,7 +598,9 @@ class RunState:
                 self.fail_low()
 
     def update(self):
-        player = self._proc.state.players[0]
+        if self._proc.state.items is None:
+            return
+        player = self._proc.state.items.players[0]
         if player is None:
             return
 
@@ -615,9 +615,9 @@ class RunState:
         self.player_state = state
         self.player_last_state = last_state
 
-        run_recap_flags = self.get_critical_state("run_recap_flags")
-        hud_flags = self.get_critical_state("hud_flags")
-        presence_flags = self.get_critical_state("presence_flags")
+        run_recap_flags = self._proc.state.run_recap_flags
+        hud_flags = self._proc.state.hud_flags
+        presence_flags = self._proc.state.presence_flags
         self.update_global_state()
         self.update_on_level_start()
         self.update_player_item_types(player)
@@ -656,9 +656,11 @@ class RunState:
 
     def update_player_item_types(self, player: Player):
         item_types = set()
-        entity_map = self._proc.state.uid_to_entity
+        entity_map = self._proc.uid_to_entity
+        if player.items is None:
+            return
         for item in player.items:
-            entity = entity_map.get(item)
+            entity = entity_map.get_as_entity(item, self._proc.mem_reader)
             if entity is None:
                 continue
 

@@ -1,11 +1,19 @@
+from dataclasses import dataclass
 import enum
-from typing import List, TYPE_CHECKING
-from struct import unpack
+from typing import Optional, Tuple
 
-from .entities import EntityMap, Player
+from modlunky2.mem.entities import Player
 
-if TYPE_CHECKING:
-    from . import Spel2Process
+from modlunky2.mem.memrauder.dsl import (
+    array,
+    pointer,
+    struct_field,
+    dc_struct,
+    sc_int32,
+    sc_uint32,
+    sc_int8,
+    sc_uint8,
+)
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -118,121 +126,34 @@ class FeedcodeNotFound(Exception):
     """Failed to find feedcode within Spelunky2 memory."""
 
 
+@dataclass(frozen=True)
+class Items:
+    players: Tuple[Optional[Player], ...] = struct_field(
+        0x08, array(pointer(dc_struct), 4)
+    )
+
+
+@dataclass(frozen=True)
 class State:
-    def __init__(self, proc):
-        self._proc: "Spel2Process" = proc
-        feedcode = proc.get_feedcode()
-        if feedcode is None:
-            raise FeedcodeNotFound("Failed to find feedcode within Spelunky2 memory")
-        self._offset = feedcode - 0x5F
-        self._uid_to_entity = None
-
-    @property
-    def screen_last(self):
-        return self._proc.read_i32(self._offset + 0x08)
-
-    @property
-    def screen(self):
-        return self._proc.read_i32(self._offset + 0x0C)
-
-    @property
-    def screen_next(self):
-        return self._proc.read_i32(self._offset + 0x10)
-
-    @property
-    def quest_flags(self):
-        offset = self._offset + 0x38
-        return QuestFlags(self._proc.read_u32(offset))
-
-    @property
-    def world_start(self):
-        return self._proc.read_u8(self._offset + 0x5C)
-
-    @property
-    def level_start(self):
-        return self._proc.read_u8(self._offset + 0x5D)
-
-    @property
-    def theme_start(self):
-        return Theme(self._proc.read_u8(self._offset + 0x5E))
-
-    @property
-    def time_total(self):
-        return self._proc.read_u32(self._offset + 0x64)
-
-    @property
-    def world(self):
-        return self._proc.read_u8(self._offset + 0x68)
-
-    @property
-    def world_next(self):
-        return self._proc.read_u8(self._offset + 0x69)
-
-    @property
-    def level(self):
-        return self._proc.read_u8(self._offset + 0x6A)
-
-    @property
-    def level_next(self):
-        return self._proc.read_u8(self._offset + 0x6B)
-
-    @property
-    def theme(self):
-        return Theme(self._proc.read_u8(self._offset + 0x74))
-
-    @property
-    def theme_next(self):
-        return Theme(self._proc.read_u8(self._offset + 0x75))
-
-    @property
-    def win_state(self):
-        return WinState(self._proc.read_i8(self._offset + 0x76))
-
-    @property
-    def presence_flags(self):
-        offset = self._offset + 0xA14
-        return PresenceFlags(self._proc.read_u32(offset))
-
-    @property
-    def run_recap_flags(self):
-        offset = self._offset + 0x9F4
-        return RunRecapFlags(self._proc.read_u32(offset))
-
-    @property
-    def hud_flags(self):
-        offset = self._offset + 0xA10
-        return HudFlags(self._proc.read_u32(offset))
-
-    @property
-    def money_shop_total(self):
-        """The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
-        If the run ends in a victory, the bonus will be added to this during the score screen.
-        """
-        offset = self._offset + 0x58
-        return self._proc.read_i32(offset)
-
-    @property
-    def players(self) -> List[Player]:  # items
-        offset = self._offset + 0x12B0
-        items_ptr = self._proc.read_void_p(offset) + 8
-        player_pointers = self._proc.read_memory(items_ptr, 8 * 4)
-
-        players = []
-
-        for idx in range(0, len(player_pointers), 8):
-            player_pointer = player_pointers[idx : idx + 8]
-            if player_pointer == b"\x00\x00\x00\x00\x00\x00\x00\x00":
-                players.append(None)
-                continue
-
-            player_pointer = unpack("P", player_pointer)[0]
-            players.append(Player(self._proc, player_pointer))
-
-        return players
-
-    @property
-    def uid_to_entity(self):
-        if self._uid_to_entity is None:
-            offset = self._offset + 0x1308
-            self._uid_to_entity = EntityMap(self._proc, offset)
-        return self._uid_to_entity
+    screen_last: int = struct_field(0x08, sc_int32)
+    screen: int = struct_field(0x0C, sc_int32)
+    screen_next: int = struct_field(0x10, sc_int32)
+    quest_flags: QuestFlags = struct_field(0x38, sc_uint32)
+    # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
+    # If the run ends in a victory, the bonus will be added to this during the score screen.
+    money_shop_total: int = struct_field(0x58, sc_int32)
+    world_start: int = struct_field(0x5C, sc_uint8)
+    level_start: int = struct_field(0x5D, sc_uint8)
+    theme_start: int = struct_field(0x5E, sc_uint8)
+    time_total: int = struct_field(0x64, sc_uint32)
+    world: int = struct_field(0x68, sc_uint8)
+    world_next: int = struct_field(0x69, sc_uint8)
+    level: int = struct_field(0x6A, sc_uint8)
+    level_next: int = struct_field(0x6B, sc_uint8)
+    theme: Theme = struct_field(0x74, sc_uint8)
+    theme_next: Theme = struct_field(0x75, sc_uint8)
+    win_state: WinState = struct_field(0x76, sc_int8)
+    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32)
+    hud_flags: HudFlags = struct_field(0xA10, sc_uint32)
+    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
+    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct))

@@ -1,8 +1,29 @@
+from __future__ import annotations  # PEP 563
+from dataclasses import dataclass
 import json
 from enum import IntEnum
-from typing import Optional, TYPE_CHECKING
+from typing import ClassVar, Optional, TYPE_CHECKING, Tuple
 
 from modlunky2.constants import BASE_DIR
+from modlunky2.mem.memrauder.dsl import (
+    struct_field,
+    dc_struct,
+    pointer,
+    sc_uint8,
+    sc_uint32,
+    sc_int8,
+    sc_int16,
+    sc_int32,
+    sc_void_p,
+    sc_bool,
+)
+from modlunky2.mem.memrauder.model import (
+    DataclassStruct,
+    FieldPath,
+    MemoryReader,
+    mem_type_at_addr,
+)
+from modlunky2.mem.memrauder.msvc import vector
 
 from .unordered_map import UnorderedMap
 
@@ -148,23 +169,27 @@ class EntityMap(UnorderedMap):
     KEY_CHAR = "<L"
     VALUE_CHAR = "P"
 
-    def get(self, key, meta=None):
+    def get(self, key: int, meta=None) -> EntityWrapper:
         result = super().get(key)
         if result is None:
             return None
 
-        return Entity(self._proc, result)
+        return EntityWrapper(result)
+
+    def get_as_entity(self, key: int, mem_reader: MemoryReader) -> Optional[Entity]:
+        result = self.get(key)
+        if result is None:
+            return None
+        return result.as_entity(mem_reader)
 
 
+@dataclass(frozen=True)
 class EntityDBEntry:
-    def __init__(self, proc, offset):
-        self._proc: "Spel2Process" = proc
-        self._offset = offset
+    _size_as_element_: ClassVar[int] = 256  # Size of EntityDB struct
 
-    @property
-    def id(self):  # pylint: disable=invalid-name
-        return self._proc.read_u32(self._offset + 0x14)
+    id: int = struct_field(0x14, sc_uint32)  # pylint: disable=invalid-name
 
+    # TODO try constructing eagerly
     @property
     def entity_type(self):
         return EntityType(self.id)
@@ -174,180 +199,60 @@ class EntityDBEntry:
         return self.entity_type.name
 
 
-class EntityDB:
-
-    ENTITY_DB_SIZE = 256  # Size of EntityDB
-
-    def __init__(self, proc):
-        self._proc: "Spel2Process" = proc
-        self._offset = proc.get_offset_past_bundle()
-        self._entity_db_ptr = self._get_entity_db_ptr()
-
-    def _get_entity_db_ptr(self):
-        entity_instr = self._proc.find(
-            self._offset, b"\x48\xB8\x02\x55\xA7\x74\x52\x9D\x51\x43"
-        )
-        return self._proc.read_void_p(
-            entity_instr + self._proc.read_u32(entity_instr - 4)
-        )
-
-    def get_entity_db_entry_by_id(self, entity_id) -> EntityDBEntry:
-        return EntityDBEntry(
-            self._proc, self._entity_db_ptr + (self.ENTITY_DB_SIZE * entity_id)
-        )
-
-
+@dataclass(frozen=True)
 class Entity:
-    def __init__(self, proc, offset):
-        self._proc: "Spel2Process" = proc
-        self._offset = offset
-
-    @property
-    def type(self):
-        result = self._proc.read_void_p(self._offset + 8)
-        return EntityDBEntry(self._proc, result)
-
-    @property
-    def overlay(self) -> Optional["Entity"]:
-        offset = self._offset + 0x10
-        entity_ptr = self._proc.read_void_p(offset)
-        if not entity_ptr:
-            return None
-        return Entity(self._proc, entity_ptr)
-
-    @property
-    def items(self):
-        offset = self._offset + 0x18
-        return self._proc.read_vector(offset, "<L")
-
-    @property
-    def layer(self):
-        result = self._proc.read_u8(self._offset + 0x98)
-        if result is None:
-            return None
-        return Layer(result)
-
-    def as_movable(self) -> "Movable":
-        return Movable(self._proc, self._offset)
-
-    def as_mount(self) -> "Mount":
-        return Mount(self._proc, self._offset)
-
-    def as_player(self) -> "Player":
-        return Player(self._proc, self._offset)
+    type: Optional[EntityDBEntry] = struct_field(0x08, pointer(dc_struct))
+    overlay: EntityWrapper = struct_field(0x10, sc_void_p)
+    items: Optional[Tuple[int, ...]] = struct_field(0x18, vector(sc_uint32))
+    layer: int = struct_field(0x98, sc_uint8)
 
 
+@dataclass(frozen=True)
 class Movable(Entity):
-    @property
-    def state(self):
-        result = self._proc.read_u8(self._offset + 0x10C)
-        if result is None:
-            return None
-        return CharState(result)
-
-    @property
-    def last_state(self):
-        result = self._proc.read_u8(self._offset + 0x10D)
-        if result is None:
-            return None
-        return CharState(result)
-
-    @property
-    def health(self):
-        return self._proc.read_i8(self._offset + 0x10F)
-
-    @property
-    def holding_uid(self):
-        return self._proc.read_i32(self._offset + 0x108)
+    holding_uid: int = struct_field(0x108, sc_int32)
+    state: CharState = struct_field(0x10C, sc_uint8)
+    last_state: CharState = struct_field(0x10D, sc_uint8)
+    health: int = struct_field(0x10F, sc_int8)
 
 
+@dataclass(frozen=True)
 class Mount(Movable):
-    @property
-    def is_tamed(self) -> bool:
-        offset = self._offset + 0x149
-        return self._proc.read_bool(offset)
+    is_tamed: bool = struct_field(0x149, sc_bool)
 
 
+@dataclass(frozen=True)
 class Inventory:
-    def __init__(self, proc, offset):
-        self._proc: "Spel2Process" = proc
-        self._offset = offset
-
-    @property
-    def money(self):
-        """Amount of money collected in the current level"""
-        return self._proc.read_u32(self._offset)
-
-    @property
-    def bombs(self):
-        return self._proc.read_u8(self._offset + 0x04)
-
-    @property
-    def ropes(self):
-        return self._proc.read_u8(self._offset + 0x05)
-
-    @property
-    def poison_tick_timer(self):
-        return self._proc.read_i16(self._offset + 0x06)
-
-    @property
-    def cursed(self):
-        return self._proc.read_bool(self._offset + 0x08)
-
-    @property
-    def kills_level(self):
-        return self._proc.read_u32(self._offset + 0x1424)
-
-    @property
-    def kills_total(self):
-        return self._proc.read_u32(self._offset + 0x1428)
-
-    @property
-    def collected_money_total(self):
-        """Amount of money collected in earlier levels."""
-        return self._proc.read_u32(self._offset + 0x1520)
+    # Amount of money collected in the current level
+    money: int = struct_field(0x00, sc_uint32)
+    bombs: int = struct_field(0x04, sc_uint8)
+    ropes: int = struct_field(0x05, sc_uint8)
+    poison_tick_timer: int = struct_field(0x06, sc_int16)
+    cursed: bool = struct_field(0x08, sc_bool)
+    kills_level: int = struct_field(0x1424, sc_uint32)
+    kills_total: int = struct_field(0x1428, sc_uint32)
+    collected_money_total: int = struct_field(0x1520, sc_uint32)
 
 
+@dataclass(frozen=True)
 class Player(Movable):
-    @property
-    def inventory(self):
-        offset = self._offset + 0x138
-        inventory_ptr = self._proc.read_void_p(offset)
-        if not inventory_ptr:
-            return None
-        return Inventory(self._proc, inventory_ptr)
+    inventory: Optional[Inventory] = struct_field(0x138, pointer(dc_struct))
 
-    def inside(self):
-        """std::map. Need to implement red/black tree."""
-        # inside = player1_ent_addr + 0x128
-        # print("inside", hex(inside))
-        # print("")
 
-        # node1_addr = proc.read_void_p(inside)
-        # print("node1_addr", hex(node1_addr))
-        # print("")
+class EntityWrapper(int):
+    def as_entity(self, mem_reader: MemoryReader) -> Optional[Entity]:
+        return mem_type_at_addr(ENTITY_MEM_TYPE, self, mem_reader)
 
-        # x = proc.read_memory(node1_addr, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(node1_addr + (8 * 3), 4))
-        # print(proc.read_memory(node1_addr + (8 * 3) + 4, 16))
-        # print("x more", proc.read_u16(node1_addr + (8 * 3) + 4))
+    def as_movable(self, mem_reader: MemoryReader) -> Optional[Movable]:
+        return mem_type_at_addr(MOVABLE_MEM_TYPE, self, mem_reader)
 
-        # print("")
-        # p = pointers[0]
-        # x = proc.read_memory(p, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(p + (8 * 3), 4))
-        # print(proc.read_memory(p + (8 * 3) + 4, 16))
-        # print("x more", proc.read_u16(p + (8 * 3) + 4))
+    def as_mount(self, mem_reader: MemoryReader) -> Optional[Mount]:
+        return mem_type_at_addr(MOUNT_MEM_TYPE, self, mem_reader)
 
-        # print("")
-        # p = pointers[2]
-        # x = proc.read_memory(p, 8 * 3)
-        # pointers = unpack(b"PPP", x)
-        # print("x", list(map(hex, pointers)))
-        # print("x more", proc.read_memory(p + (8 * 3), 4))
-        # print("x more", hex(proc.read_u16(p + (8 * 3) + 4)))
-        # item_count = proc.read_u64(inside + 8)
+    def as_player(self, mem_reader: MemoryReader) -> Optional[Player]:
+        return mem_type_at_addr(PLAYER_MEM_TYPE, self, mem_reader)
+
+
+ENTITY_MEM_TYPE = DataclassStruct(FieldPath(), Entity)
+MOVABLE_MEM_TYPE = DataclassStruct(FieldPath(), Movable)
+MOUNT_MEM_TYPE = DataclassStruct(FieldPath(), Mount)
+PLAYER_MEM_TYPE = DataclassStruct(FieldPath(), Player)
