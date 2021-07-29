@@ -209,8 +209,8 @@ class Entity:
 
 @dataclass(frozen=True)
 class Movable(Entity):
-    state: CharState = struct_field(0x10C, sc_uint8)
     holding_uid: int = struct_field(0x108, sc_int32)
+    state: CharState = struct_field(0x10C, sc_uint8)
     last_state: CharState = struct_field(0x10D, sc_uint8)
     health: int = struct_field(0x10F, sc_int8)
 
