@@ -4,18 +4,20 @@ from enum import IntEnum, IntFlag
 from typing import FrozenSet, Optional, Set, Tuple
 import pytest
 
+from modlunky2.mem.memrauder.dsl import struct_field, sc_int8
 from modlunky2.mem.memrauder.model import (
     Array,
     BytesReader,
     DataclassStruct,
     FieldPath,
+    MemContext,
     Pointer,
+    PolyPointer,
+    PolyPointerType,
     ScalarCType,
     ScalarCValueConstructionError,
     StructFieldMeta,
 )
-
-EMPTY_BYTES_READER = BytesReader(bytes())
 
 
 def deferred_uint8(path, elm_type):
@@ -36,7 +38,7 @@ class SecondBitFlag(IntFlag):
 )
 def test_scalar_c_type_byte(py_type, expected):
     sc_type = ScalarCType(FieldPath(), py_type, ctypes.c_uint8)
-    assert sc_type.from_bytes(b"\x04", EMPTY_BYTES_READER) == expected
+    assert sc_type.from_bytes(b"\x04", MemContext()) == expected
 
 
 @pytest.mark.parametrize(
@@ -49,7 +51,7 @@ def test_scalar_c_type_byte(py_type, expected):
 )
 def test_scalar_c_type_pointer(addr_bytes, expected):
     sc_type = ScalarCType(FieldPath(), int, ctypes.c_void_p)
-    assert sc_type.from_bytes(addr_bytes, EMPTY_BYTES_READER) == expected
+    assert sc_type.from_bytes(addr_bytes, MemContext()) == expected
 
 
 def test_scalar_c_type_mismatch():
@@ -63,7 +65,7 @@ def test_scalar_c_type_mismatch():
 def test_scalar_c_type_too_small():
     def read():
         sc_type = ScalarCType(FieldPath(), int, ctypes.c_uint8)
-        sc_type.from_bytes(b"", EMPTY_BYTES_READER)
+        sc_type.from_bytes(b"", MemContext())
 
     with pytest.raises(ValueError):
         read()
@@ -72,7 +74,7 @@ def test_scalar_c_type_too_small():
 def test_scalar_c_type_construction_error():
     def read():
         sc_type = ScalarCType(FieldPath(), FourEnum, ctypes.c_uint8)
-        sc_type.from_bytes(b"\x00", EMPTY_BYTES_READER)
+        sc_type.from_bytes(b"\x00", MemContext())
 
     with pytest.raises(ScalarCValueConstructionError):
         read()
@@ -90,9 +92,7 @@ def test_dataclass_struct_simple():
         field_b: int = field(metadata=meta_3)
 
     dc_struct = DataclassStruct(FieldPath(), MyStruct)
-    assert dc_struct.from_bytes(b"\x00\x01\x02\x03", EMPTY_BYTES_READER) == MyStruct(
-        0, 3
-    )
+    assert dc_struct.from_bytes(b"\x00\x01\x02\x03", MemContext()) == MyStruct(0, 3)
 
 
 def test_dataclass_struct_nested():
@@ -119,9 +119,9 @@ def test_dataclass_struct_nested():
         inner: Inner = field(metadata=meta_3_inner)
 
     dc_outer = DataclassStruct(FieldPath(), Outer)
-    assert dc_outer.from_bytes(
-        b"\x00\x01\x02\x03\x04\x05", EMPTY_BYTES_READER
-    ) == Outer(0, 2, Inner(3, 5))
+    assert dc_outer.from_bytes(b"\x00\x01\x02\x03\x04\x05", MemContext()) == Outer(
+        0, 2, Inner(3, 5)
+    )
 
 
 def test_dataclass_struct_general_error():
@@ -135,7 +135,7 @@ def test_dataclass_struct_general_error():
     dc_struct = DataclassStruct(FieldPath(), MyStruct)
     with pytest.raises(ValueError):
         # Too few bytes in buffer
-        dc_struct.from_bytes(b"", EMPTY_BYTES_READER)
+        dc_struct.from_bytes(b"", MemContext())
 
 
 def test_dataclass_struct_scalar_c_error_passthrough():
@@ -148,7 +148,7 @@ def test_dataclass_struct_scalar_c_error_passthrough():
 
     dc_struct = DataclassStruct(FieldPath(), MyStruct)
     with pytest.raises(ScalarCValueConstructionError):
-        dc_struct.from_bytes(b"\x00", EMPTY_BYTES_READER)
+        dc_struct.from_bytes(b"\x00", MemContext())
 
 
 @pytest.mark.parametrize(
@@ -156,7 +156,7 @@ def test_dataclass_struct_scalar_c_error_passthrough():
 )
 def test_array_uint8(py_type, expected):
     arr = Array(FieldPath, py_type, deferred_uint8, count=2)
-    assert arr.from_bytes(b"\x0a\x02", EMPTY_BYTES_READER) == expected
+    assert arr.from_bytes(b"\x0a\x02", MemContext()) == expected
 
 
 @pytest.mark.parametrize("py_type", (Tuple[int, int], Set[int], int, FrozenSet[float]))
@@ -171,7 +171,7 @@ def test_array_type_mismatch(py_type):
 def test_array_too_small():
     def read():
         sc_type = Array(FieldPath, Tuple[int, ...], deferred_uint8, count=2)
-        sc_type.from_bytes(b"", EMPTY_BYTES_READER)
+        sc_type.from_bytes(b"", MemContext())
 
     with pytest.raises(ValueError):
         read()
@@ -180,7 +180,7 @@ def test_array_too_small():
 def test_array_scalar_c_error_passthrough():
     def read():
         sc_type = Array(FieldPath, Tuple[FourEnum, ...], deferred_uint8, count=2)
-        sc_type.from_bytes(b"\x04\x00", EMPTY_BYTES_READER)
+        sc_type.from_bytes(b"\x04\x00", MemContext())
 
     with pytest.raises(ScalarCValueConstructionError):
         read()
@@ -194,6 +194,78 @@ def test_array_scalar_c_error_passthrough():
     ],
 )
 def test_pointer_uint8(addr_bytes, expected):
-    bytes_reader = BytesReader(b"\x0c\x03\x10")
+    mem_ctx = MemContext(BytesReader(b"\x0c\x03\x10"))
     arr = Pointer(FieldPath, Optional[int], deferred_uint8)
-    assert arr.from_bytes(addr_bytes, bytes_reader) == expected
+    assert arr.from_bytes(addr_bytes, mem_ctx) == expected
+
+
+@dataclass
+class Supreme:
+    num1: int = struct_field(0x0, sc_int8)
+
+
+@dataclass
+class Middle(Supreme):
+    num2: int = struct_field(0x1, sc_int8)
+
+
+@dataclass
+class Lowest(Middle):
+    num3: int = struct_field(0x2, sc_int8)
+
+
+SUPREME_POINTER_BYTES = b"\x01\x00\x00\x00\x00\x00\x00\x00"
+SUPREME_POINTER_ADDR = 1
+LOWEST_BYTES_READER = BytesReader(b"\x00\x01\x02\x03")
+
+
+@pytest.mark.parametrize(
+    "cls,expected_val",
+    [(Supreme, Supreme(1)), (Middle, Middle(1, 2)), (Lowest, Lowest(1, 2, 3))],
+)
+def test_poly_pointer_castless(cls, expected_val):
+    pp_type = PolyPointerType(FieldPath(), PolyPointer[cls], DataclassStruct)
+    pp_supreme = pp_type.from_bytes(
+        SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
+    )
+    assert pp_supreme.addr == SUPREME_POINTER_ADDR
+    assert pp_supreme.value == expected_val
+
+
+@pytest.mark.parametrize(
+    "cls,expected_val",
+    [(Supreme, Supreme(1)), (Middle, Middle(1, 2)), (Lowest, Lowest(1, 2, 3))],
+)
+def test_poly_pointer_cast_down(cls, expected_val):
+    pp_type = PolyPointerType(FieldPath(), PolyPointer[Supreme], DataclassStruct)
+    pp_supreme = pp_type.from_bytes(
+        SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
+    )
+
+    cast_val = pp_supreme.as_type(cls)
+    assert cast_val == expected_val
+
+    pp_poly = pp_supreme.as_poly_type(cls)
+
+    assert pp_poly.addr == SUPREME_POINTER_ADDR
+    assert pp_poly.value == expected_val
+
+
+@pytest.mark.parametrize(
+    "cls",
+    [(Supreme), (Middle), (Lowest)],
+)
+def test_poly_pointer_cast_up(cls):
+    pp_type = PolyPointerType(FieldPath(), PolyPointer[Lowest], DataclassStruct)
+    pp_lowest = pp_type.from_bytes(
+        SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
+    )
+    expected_val = Lowest(1, 2, 3)
+
+    cast_val = pp_lowest.as_type(cls)
+    assert cast_val == expected_val
+
+    pp_poly = pp_lowest.as_poly_type(cls)
+
+    assert pp_poly.addr == SUPREME_POINTER_ADDR
+    assert pp_poly.value == expected_val

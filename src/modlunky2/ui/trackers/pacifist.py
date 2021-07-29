@@ -68,15 +68,16 @@ class PacifistWatcherThread(WatcherThread):
         self.kills_total = 0
 
     def poll(self):
-        run_recap_flags = self.proc.state.run_recap_flags
+        game_state = self.proc.get_state()
+        run_recap_flags = game_state.run_recap_flags
         if run_recap_flags is None:
             self.die("Failed to read expected address...")
             self.shutdown()
 
         player = None
-        if self.proc.state.items is not None:
-            player = self.proc.state.items.players[0]
-        if player and player.inventory:
+        if game_state.items is not None:
+            player = game_state.items.players[0]
+        if player is not None and player.inventory is not None:
             self.kills_total = player.inventory.kills_total
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)

@@ -36,6 +36,9 @@ class BytesReader(MemoryReader):
         return self.slab[addr:upper]
 
 
+_EMPTY_BYTES_READER = BytesReader(bytes())
+
+
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 # MemType abstracts constructing a field value from memory.
@@ -64,11 +67,45 @@ class MemType(Generic[T], ABC):
     #
     # If needed, mem_reader can be used to follow pointers.
     @abstractmethod
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         raise NotImplementedError()
 
 
+# MemContext automatically creates, and caches, DataclassStruct instances.
+# It also holds a MemoryReader to simplify usage of both DataclassStruct
+# and PolyPointer.
 @dataclass
+class MemContext:
+    mem_reader: MemoryReader = _EMPTY_BYTES_READER
+    _type_map: Dict[type, DataclassStruct] = dataclasses.field(default_factory=dict)
+
+    def get_mem_type(self, cls: type) -> DataclassStruct:
+        if cls in self._type_map:
+            return self._type_map[cls]
+
+        if not dataclasses.is_dataclass(cls):
+            raise ValueError(f"type {cls} must be a dataclass")
+
+        mem_type = DataclassStruct(FieldPath(), cls)
+        self._type_map[cls] = mem_type
+        return mem_type
+
+    def type_from_bytes(self, cls: type, buf: bytes):
+        return self.get_mem_type(cls).from_bytes(buf, self)
+
+    def type_at_addr(self, cls: type, addr: int):
+        mem_type = self.get_mem_type(cls)
+        if self.mem_reader is None:
+            return None
+
+        buf = self.mem_reader.read(addr, mem_type.field_size())
+        if buf is None:
+            return None
+
+        return mem_type.from_bytes(buf, self)
+
+
+@dataclass(frozen=True)
 class FieldPath:
     path_parts: Tuple[str] = ()
 
@@ -86,7 +123,7 @@ def unwrap_optional_type(path: FieldPath, py_type: type) -> type:
         if py_type.__origin__ is not Union:
             raise ValueError(f"field {path} must be Optional, got {py_type}")
     except AttributeError as err:
-        raise ValueError(f"field {path} must be Optional") from err
+        raise ValueError(f"field {path} must be Optional, got {py_type}") from err
 
     num_args = len(py_type.__args__)
     if num_args != 2:
@@ -218,6 +255,8 @@ class DataclassStruct(MemType[T]):
                 inner_path, meta.offset, inner_mem_type, inner_mem_type.field_size()
             )
 
+        # TODO search for dataclasses in MRO and check that our offsets don't overlap
+
         object.__setattr__(self, "struct_fields", struct_fields)
 
     def field_size(self) -> int:
@@ -237,13 +276,13 @@ class DataclassStruct(MemType[T]):
                 f"{self.dataclass} must have _size_as_element_ attribute to be used in array field"
             )
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         field_data = {}
         for name, meta in self.struct_fields.items():
             upper = meta.offset + meta.field_size
             view = buf[meta.offset : upper]
             try:
-                field_data[name] = meta.mem_type.from_bytes(view, mem_reader)
+                field_data[name] = meta.mem_type.from_bytes(view, mem_ctx)
             except ScalarCValueConstructionError:
                 # If we failed to convert a leaf value, abandon building the object but re-raise the exception
                 raise
@@ -322,7 +361,7 @@ class ScalarCType(MemType[T]):
     def field_size(self) -> int:
         return ctypes.sizeof(self.c_type)
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         try:
             mem_value = self.c_type.from_buffer_copy(buf).value
         except Exception as err:
@@ -362,16 +401,14 @@ class Array(MemType[T]):
     def field_size(self) -> int:
         return self._total_field_size
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> T:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         values = []
         elem_size = self.elem_mem_type.element_size()
         for i in range(0, self.count):
             elem_offset = elem_size * i
             elem_end = elem_size * (i + 1)
             try:
-                elem = self.elem_mem_type.from_bytes(
-                    buf[elem_offset:elem_end], mem_reader
-                )
+                elem = self.elem_mem_type.from_bytes(buf[elem_offset:elem_end], mem_ctx)
                 values.append(elem)
             except ScalarCValueConstructionError:
                 # TODO include index when re-raising?
@@ -403,35 +440,105 @@ class Pointer(MemType[T]):
     def field_size(self) -> int:
         return ctypes.sizeof(ctypes.c_void_p)
 
-    def from_bytes(self, buf: bytes, mem_reader: MemoryReader) -> Optional[T]:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> Optional[T]:
         addr = ctypes.c_void_p.from_buffer_copy(buf).value
         if addr is None:
             return None
 
-        buf = mem_reader.read(addr, self.read_size)
+        buf = mem_ctx.mem_reader.read(addr, self.read_size)
 
         if buf is None:
             return None
 
-        return self.mem_type.from_bytes(buf, mem_reader)
+        return self.mem_type.from_bytes(buf, mem_ctx)
 
 
-_EMPTY_BYTES_READER = BytesReader(bytes())
+C = TypeVar("C")  # pylint: disable=invalid-name
 
 
-def mem_type_from_bytes(
-    mem_type: MemType[T], buf: bytes, mem_reader: MemoryReader = None
-) -> T:
-    if mem_reader is None:
-        mem_reader = _EMPTY_BYTES_READER
-    return mem_type.from_bytes(buf, mem_reader)
+# A PolyPointer encapsulates both a value, and the address it was obtained from.
+# This facilitates casting between classes.
+@dataclass(frozen=True)
+class PolyPointer(Generic[T]):
+    addr: Optional[int]
+    value: Optional[T]
+    mem_ctx: MemContext
+
+    def __post_init__(self):
+        if (self.addr is None) != (self.value is None):
+            raise ValueError(
+                "addr and value must either both be None, or both non-None"
+            )
+
+    def present(self):
+        return self.addr is not None
+
+    def as_type(self, cls: C) -> Optional[C]:
+        if not dataclasses.is_dataclass(cls):
+            raise ValueError("Target class ({cls}) must be a dataclass")
+
+        if not self.present():
+            return None
+
+        # This is an up-cast
+        if isinstance(self.value, cls):
+            return self.value
+
+        value_type = type(self.value)
+        if not issubclass(cls, value_type):
+            raise TypeError("Trying to cast {value_type} to unrelated class {cls}")
+
+        return self.mem_ctx.type_at_addr(cls, self.addr)
+
+    def as_poly_type(self, cls: C) -> PolyPointer[C]:
+        new_value = self.as_type(cls)
+        return PolyPointer(self.addr, new_value, self.mem_ctx)
+
+    @staticmethod
+    def make_empty(mem_ctx: MemContext) -> PolyPointer:
+        return PolyPointer(None, None, mem_ctx)
 
 
-def mem_type_at_addr(
-    mem_type: MemType[T], addr: int, mem_reader: MemoryReader
-) -> Optional[T]:
-    size = mem_type.field_size()
-    buf = mem_reader.read(addr, size)
-    if buf is None:
-        return None
-    return mem_type.from_bytes(buf, mem_reader)
+@dataclass(frozen=True)
+class PolyPointerType(MemType[PolyPointer[T]]):
+    path: InitVar[FieldPath]
+    py_type: InitVar[type]
+    deferred_mem_type: InitVar[DeferredMemType]
+
+    mem_type: MemType[T] = dataclasses.field(init=False)
+    read_size: int = dataclasses.field(init=False)
+
+    def __post_init__(self, path, py_type, deferred_mem_type):
+        pointed_py_type = self._unwrap_poly_pointer(path, py_type)
+        mem_type = deferred_mem_type(path, pointed_py_type)
+
+        object.__setattr__(self, "mem_type", mem_type)
+        object.__setattr__(self, "read_size", mem_type.field_size())
+
+    def _unwrap_poly_pointer(self, path, py_type) -> type:
+        try:
+            if py_type.__origin__ is not PolyPointer:
+                raise ValueError(f"field {path} must be PolyPointer, got {py_type}")
+        except AttributeError as err:
+            raise ValueError(
+                f"field {path} must be PolyPointer, got {py_type}"
+            ) from err
+        return py_type.__args__[0]
+
+    def field_size(self) -> int:
+        return ctypes.sizeof(ctypes.c_void_p)
+
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> PolyPointer[T]:
+        addr = ctypes.c_void_p.from_buffer_copy(buf).value
+        if addr is None:
+            return PolyPointer.make_empty(mem_ctx)
+
+        buf = mem_ctx.mem_reader.read(addr, self.read_size)
+        if buf is None:
+            return PolyPointer.make_empty(mem_ctx)
+
+        value = self.mem_type.from_bytes(buf, mem_ctx)
+        if value is None:
+            return PolyPointer.make_empty(mem_ctx)
+
+        return PolyPointer[T](addr, value, mem_ctx)
