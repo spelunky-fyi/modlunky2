@@ -1,3 +1,4 @@
+from enum import IntEnum
 import logging
 from typing import Optional, Set
 
@@ -33,6 +34,26 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 
 
 logger = logging.getLogger("modlunky2")
+
+
+# Status of the Abzu/Duat quest chain.
+# The properties are for convenience in 'if' conditions.
+class ChainStatus(IntEnum):
+    UNSTARTED = 0
+    IN_PROGRESS = 1
+    FAILED = 2
+
+    @property
+    def unstarted(self):
+        return self is ChainStatus.UNSTARTED
+
+    @property
+    def in_progress(self):
+        return self is ChainStatus.IN_PROGRESS
+
+    @property
+    def failed(self):
+        return self is ChainStatus.FAILED
 
 
 class RunState:
@@ -95,7 +116,7 @@ class RunState:
         self.mc_has_swung_mattock = False
 
         # Chain
-        self.is_chain: Optional[bool] = None  # None if not yet, False if failed chain
+        self.chain_status = ChainStatus.UNSTARTED
         self.hou_yis_bow = False
         self.has_chain_powerup = False
         self.had_udjat_eye = False
@@ -209,7 +230,7 @@ class RunState:
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            if not self.is_chain:
+            if self.chain_status.in_progress:
                 self.fail_low()
             return
 
@@ -315,7 +336,7 @@ class RunState:
                 self.has_chain_powerup = True
                 self.failed_low_if_not_chain = True
 
-        if self.is_chain:
+        if self.chain_status.in_progress:
             return
 
         # Fail low if we've failed the chain and pick up a non-starting powerup
@@ -351,7 +372,7 @@ class RunState:
                 if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
                     self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
-                    if not self.is_chain:
+                    if not self.chain_status.in_progress:
                         self.fail_low()
                     continue
 
@@ -402,7 +423,7 @@ class RunState:
                 return
 
     def update_chain(self):
-        if self.is_chain is False:
+        if self.chain_status.failed:
             return
 
         for item_type in self.player_item_types:
@@ -432,11 +453,11 @@ class RunState:
             self.world2_theme = self.theme
         elif self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
-            if self.is_chain:
+            if self.chain_status.in_progress:
                 self.run_label.add(Label.DUAT)
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
-            if self.is_chain:
+            if self.chain_status.in_progress:
                 self.run_label.add(Label.ABZU)
 
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
@@ -464,7 +485,7 @@ class RunState:
             terminus = Label.COSMIC_OCEAN
         elif self.hou_yis_bow and not self.is_score_run:
             terminus = Label.COSMIC_OCEAN
-        elif self.had_ankh or self.is_chain or self.world == 7:
+        elif self.had_ankh or self.chain_status.in_progress or self.world == 7:
             terminus = Label.SUNKEN_CITY
 
         if terminus is Label.COSMIC_OCEAN:
@@ -474,10 +495,10 @@ class RunState:
         self.run_label.set_terminus(terminus)
 
     def update_is_chain(self):
-        if self.is_chain is False:
+        if self.chain_status.failed:
             return
 
-        if self.is_chain is None:
+        if self.chain_status.unstarted:
             if any([self.had_udjat_eye, self.had_world2_chain_headwear]):
                 self.start_chain()
 
@@ -559,11 +580,11 @@ class RunState:
             self.run_label.add(Label.MILLIONAIRE)
 
     def start_chain(self):
-        self.is_chain = True
+        self.chain_status = ChainStatus.IN_PROGRESS
         self.run_label.add(Label.CHAIN)
 
     def fail_chain(self):
-        self.is_chain = False
+        self.chain_status = ChainStatus.FAILED
         self.run_label.discard(Label.CHAIN)
         if self.failed_low_if_not_chain:
             self.fail_low()
