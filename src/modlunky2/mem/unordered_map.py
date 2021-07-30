@@ -90,9 +90,8 @@ class UnorderedMap:
     def get_node(self, offset):
         return Node.from_offset(self._proc, offset, self.KEY_CHAR, self.VALUE_CHAR)
 
-    def get(self, key, meta: UnorderedMapMeta = None):
-        if meta is None:
-            meta = self._get_meta()
+    def get(self, key):
+        meta = self._get_meta()
 
         bucket = self.get_bucket(key, meta)
         if bucket is None:

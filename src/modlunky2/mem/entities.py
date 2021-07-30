@@ -196,7 +196,7 @@ class EntityMap(UnorderedMap):
     KEY_CHAR = "<L"
     VALUE_CHAR = "P"
 
-    def get(self, key: int, meta=None) -> int:
+    def get(self, key: int) -> int:
         result = super().get(key)
         if result is None:
             return None
