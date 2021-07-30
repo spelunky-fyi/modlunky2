@@ -255,3 +255,51 @@ def test_mossranking_alignment(labels, expected):
     run_label = RunLabel(labels)
     actual = run_label.text(hide_early=False)
     assert actual == expected
+
+
+ASSORTED_LABELS = [
+    # Intermediate states
+    (
+        {Label.CHAIN, Label.LOW, Label.SUNKEN_CITY},
+        "Chain Low% Sunken City",
+    ),
+    (
+        {Label.CHAIN, Label.SUNKEN_CITY},
+        "Chain Sunken City%",
+    ),
+    # Chain Death%
+    (
+        {Label.CHAIN, Label.ABZU, Label.DEATH},
+        "Death% Abzu",
+    ),
+    (
+        {Label.CHAIN, Label.LOW, Label.ABZU, Label.DEATH},
+        "Chain Low% Death Abzu",
+    ),
+    # Chain CO
+    (
+        {Label.NO_JETPACK, Label.CHAIN, Label.LOW, Label.ABZU, Label.COSMIC_OCEAN},
+        "Chain Low% Cosmic Ocean",
+    ),
+    (
+        {Label.NO_JETPACK, Label.CHAIN, Label.ABZU, Label.COSMIC_OCEAN},
+        "No Jetpack Cosmic Ocean%",
+    ),
+    (
+        {
+            Label.NO_JETPACK,
+            Label.CHAIN,
+            Label.JUNGLE_TEMPLE,
+            Label.DUAT,
+            Label.COSMIC_OCEAN,
+        },
+        "No Jetpack Cosmic Ocean%",
+    ),
+]
+
+
+@mark.parametrize("labels,expected", ASSORTED_LABELS)
+def test_assorted_labels(labels, expected):
+    run_label = RunLabel(labels)
+    actual = run_label.text(hide_early=False)
+    assert actual == expected
