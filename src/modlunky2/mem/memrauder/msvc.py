@@ -1,6 +1,7 @@
 import ctypes
 import dataclasses
 from dataclasses import InitVar, dataclass
+import math
 from typing import ClassVar, Generic, Optional, Tuple, TypeVar
 
 import fnvhash
@@ -117,14 +118,56 @@ class _UnorderedMapBucket:
 
 @dataclass(frozen=True)
 class _UnorderedMapNode:
-    # As a workaround, we fix the size and types of the fields key and value
-    # TODO Implement proper MemType for this
+    next_addr: int
+    prev_addr: int
+    key: bytes
+    value: bytes
 
-    _size_as_element_: ClassVar[int] = 32
-    next: int = struct_field(0x0, sc_void_p)
-    prev: int = struct_field(0x8, sc_void_p)
-    key: int = struct_field(0x10, sc_uint32)
-    value: int = struct_field(0x18, sc_uint64)
+
+@dataclass(frozen=True)
+class _UnorderedMapNodeType(MemType[_UnorderedMapNode]):
+    key_mem_type: InitVar[MemType]
+    val_mem_type: InitVar[MemType]
+
+    key_size: int = dataclasses.field(init=False)
+    val_offset: int = dataclasses.field(init=False)
+    val_size: int = dataclasses.field(init=False)
+    node_size: int = dataclasses.field(init=False)
+
+    next_offset: ClassVar[int] = 0x0
+    prev_offset: ClassVar[int] = 0x8
+    key_offset: ClassVar[int] = 0x10
+
+    def _align_8bytes(self, i):
+        # We assume 64-bit alignment
+        return math.ceil(i / 8) * 8
+
+    def __post_init__(self, key_mem_type, val_mem_type):
+        key_size = key_mem_type.field_size()
+        val_offset = self.key_offset + self._align_8bytes(key_mem_type.element_size())
+        val_size = val_mem_type.field_size()
+        node_size = val_offset + self._align_8bytes(val_mem_type.element_size())
+
+        object.__setattr__(self, "key_size", key_size)
+        object.__setattr__(self, "val_offset", val_offset)
+        object.__setattr__(self, "val_size", val_size)
+        object.__setattr__(self, "node_size", node_size)
+
+    def field_size(self) -> int:
+        return self.node_size
+
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
+        # Using c_uint64 because c_void_p uses None for 0
+        next_addr = ctypes.c_uint64.from_buffer_copy(buf[: self.prev_offset]).value
+        prev_addr = ctypes.c_uint64.from_buffer_copy(
+            buf[self.prev_offset : self.key_offset]
+        ).value
+        key = buf[self.key_offset : self.key_offset + self.key_size]
+        value = buf[self.val_offset : self.val_offset + self.val_size]
+
+        return _UnorderedMapNode(
+            next_addr=next_addr, prev_addr=prev_addr, key=key, value=value
+        )
 
 
 # Contains key-value pairs. Only the "core" data is fetched eagerly. Lookups are done on-demand.
@@ -133,6 +176,7 @@ class UnorderedMap(Generic[K, V]):
     meta: _UnorderedMapMeta
     key_mem_type: MemType
     val_mem_type: MemType
+    node_mem_type: MemType[_UnorderedMapNode]
     mem_ctx: MemContext
 
     def get(self, key: K) -> Optional[V]:
@@ -146,22 +190,25 @@ class UnorderedMap(Generic[K, V]):
 
         next_ = bucket.first
         while True:
-            node: _UnorderedMapNode = self.mem_ctx.type_at_addr(
-                _UnorderedMapNode, next_
+            node_buf = self.mem_ctx.mem_reader.read(
+                next_, self.node_mem_type.field_size()
             )
+            if node_buf is None:
+                return None
+            node = self.node_mem_type.from_bytes(node_buf, self.mem_ctx)
             if node is None:
                 return None
 
             # Found key!
-            if node.key == key:
-                val_bytes = bytes(ctypes.c_uint64(node.value))
-                return self.val_mem_type.from_bytes(val_bytes, self.mem_ctx)
+            node_key = self.key_mem_type.from_bytes(node.key, self.mem_ctx)
+            if node_key == key:
+                return self.val_mem_type.from_bytes(node.value, self.mem_ctx)
 
             # We've searched the final bucket. give up...
             if next_ == bucket.last:
                 return None
 
-            next_ = node.next
+            next_ = node.next_addr
 
     def _get_bucket(self, key) -> Optional[_UnorderedMapBucket]:
         idx = self._get_bucket_idx(key)
@@ -186,6 +233,7 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
 
     key_mem_type: MemType = dataclasses.field(init=False)
     val_mem_type: MemType = dataclasses.field(init=False)
+    node_mem_type: MemType = dataclasses.field(init=False)
     um_meta_mem_type: MemType[_UnorderedMapMeta] = dataclasses.field(init=False)
 
     def _unwrap_unordered_map(self, path, py_type) -> Tuple[type, type]:
@@ -224,8 +272,11 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
                 f"key for field {self.path} must implement to_bytes(val)"
             ) from err
 
+        node_mem_type = _UnorderedMapNodeType(key_mem_type, val_mem_type)
+
         object.__setattr__(self, "key_mem_type", key_mem_type)
         object.__setattr__(self, "val_mem_type", val_mem_type)
+        object.__setattr__(self, "node_mem_type", node_mem_type)
         object.__setattr__(self, "um_meta_mem_type", um_meta_mem_type)
 
     def field_size(self) -> int:
@@ -236,7 +287,9 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
 
     def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> T:
         meta = self.um_meta_mem_type.from_bytes(buf, mem_ctx)
-        return UnorderedMap(meta, self.key_mem_type, self.val_mem_type, mem_ctx)
+        return UnorderedMap(
+            meta, self.key_mem_type, self.val_mem_type, self.node_mem_type, mem_ctx
+        )
 
 
 def unordered_map(
