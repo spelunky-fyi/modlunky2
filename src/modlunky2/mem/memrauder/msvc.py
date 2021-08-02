@@ -181,6 +181,10 @@ class UnorderedMap(Generic[K, V]):
     node_mem_type: MemType[_UnorderedMapNode]
     mem_ctx: MemContext
 
+    bucket_size: ClassVar[
+        int
+    ] = _UnorderedMapBucket._size_as_element_  # pylint: disable=protected-access
+
     def get(self, key: K) -> Optional[V]:
         bucket = self._get_bucket(key)
         if bucket is None:
@@ -201,9 +205,9 @@ class UnorderedMap(Generic[K, V]):
             if node is None:
                 return None
 
-            # Found key!
             node_key = self.key_mem_type.from_bytes(node.key, self.mem_ctx)
             if node_key == key:
+                # Found key!
                 return self.val_mem_type.from_bytes(node.value, self.mem_ctx)
 
             # We've searched the final bucket. give up...
@@ -213,17 +217,13 @@ class UnorderedMap(Generic[K, V]):
             next_ = node.next_addr
 
     def _get_bucket(self, key) -> Optional[_UnorderedMapBucket]:
-        idx = self._get_bucket_idx(key)
-        bucket_size = self.mem_ctx.get_mem_type(_UnorderedMapBucket).element_size()
-        bucket_ptr = self.meta.buckets_ptr + (idx * bucket_size)
+        idx = self._hash_key(key) & self.meta.mask
+        bucket_ptr = self.meta.buckets_ptr + (idx * self.bucket_size)
         return self.mem_ctx.type_at_addr(_UnorderedMapBucket, bucket_ptr)
 
     def _hash_key(self, key) -> int:
         bytes_ = self.key_mem_type.to_bytes(key)
         return fnvhash.fnv1a_64(bytes_)
-
-    def _get_bucket_idx(self, key) -> int:
-        return self._hash_key(key) & self.meta.mask
 
 
 @dataclass(frozen=True)
