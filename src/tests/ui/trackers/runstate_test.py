@@ -38,3 +38,20 @@ def test_no_tp(item_set, expected_no_tp):
     run_state.update_no_tp(item_set)
     is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
     assert is_no_tp == expected_no_tp
+
+
+@pytest.mark.parametrize(
+    "world,item_set,expected_eggplant",
+    [
+        # Eggplant crown can only be collected in Sunken City
+        (7, {EntityType.ITEM_POWERUP_EGGPLANTCROWN}, True),
+        (6, set(), False),
+        (7, set(), False),
+        (8, set(), False),
+    ],
+)
+def test_eggplant(world, item_set, expected_eggplant):
+    run_state = RunState()
+    run_state.update_eggplant(world, item_set)
+    is_eggplant = Label.EGGPLANT in run_state.run_label._set
+    assert is_eggplant == expected_eggplant

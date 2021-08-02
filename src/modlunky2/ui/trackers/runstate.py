@@ -158,15 +158,15 @@ class RunState:
                 self.run_label.discard(Label.NO_TELEPORTER)
                 return
 
-    def update_eggplant(self):
+    def update_eggplant(self, world, player_item_types):
         if self.eggplant:
             return
 
         # TODO: Remove if we ever add a better heuristic
-        if self.world < 7:
+        if world < 7:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type == EntityType.ITEM_POWERUP_EGGPLANTCROWN:
                 self.eggplant = True
                 self.run_label.add(Label.EGGPLANT)
@@ -638,7 +638,7 @@ class RunState:
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
         self.update_no_tp(self.player_item_types)
-        self.update_eggplant()
+        self.update_eggplant(self.world, self.player_item_types)
 
         # Check Category Criteria
         overlay = player.overlay
