@@ -2,7 +2,7 @@ from __future__ import annotations  # PEP 563
 from dataclasses import dataclass
 import json
 from enum import IntEnum
-from typing import ClassVar, Optional, TYPE_CHECKING, Tuple
+from typing import ClassVar, Optional, Tuple
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem.memrauder.dsl import (
@@ -17,16 +17,8 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int32,
     sc_bool,
 )
-from modlunky2.mem.memrauder.model import (
-    MemContext,
-    PolyPointer,
-)
+from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import vector
-
-from .unordered_map import UnorderedMap
-
-if TYPE_CHECKING:
-    from . import Spel2Process
 
 
 def _make_entity_type_enum():
@@ -190,29 +182,6 @@ class EntityReduced:
 @dataclass(frozen=True)
 class Entity(EntityReduced):
     overlay: PolyPointer[EntityReduced] = struct_field(0x10, poly_pointer(dc_struct))
-
-
-class EntityMap(UnorderedMap):
-    KEY_CHAR = "<L"
-    VALUE_CHAR = "P"
-
-    def get(self, key: int) -> int:
-        result = super().get(key)
-        if result is None:
-            return None
-
-        return result
-
-    def get_poly_pointer(self, key: int, mem_ctx: MemContext) -> PolyPointer[Entity]:
-        result = self.get(key)
-        if result is None:
-            return PolyPointer.make_empty(mem_ctx)
-
-        entity = mem_ctx.type_at_addr(Entity, result)
-        if entity is None:
-            return PolyPointer.make_empty(mem_ctx)
-
-        return PolyPointer(result, entity, mem_ctx)
 
 
 @dataclass(frozen=True)
