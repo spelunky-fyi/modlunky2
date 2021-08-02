@@ -2,7 +2,6 @@ from enum import IntEnum
 import logging
 from typing import Optional, Set
 
-from modlunky2.mem import Spel2Process
 from modlunky2.mem.entities import (
     BACKPACKS,
     CHAIN_POWERUP_ENTITIES,
@@ -58,8 +57,7 @@ class ChainStatus(IntEnum):
 
 
 class RunState:
-    def __init__(self, proc: Spel2Process, always_show_modifiers=False):
-        self._proc = proc
+    def __init__(self, always_show_modifiers=False):
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
 

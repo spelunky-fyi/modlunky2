@@ -85,7 +85,6 @@ class CategoryWatcherThread(WatcherThread):
     def initialize(self):
         self.time_total = 0
         self.run_state = RunState(
-            self.proc,
             always_show_modifiers=self.always_show_modifiers,
         )
 
