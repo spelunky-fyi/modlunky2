@@ -8,7 +8,9 @@ import fnvhash
 
 from modlunky2.mem.memrauder.dsl import struct_field, sc_uint32, sc_void_p, sc_uint64
 from modlunky2.mem.memrauder.model import (
+    BiMemType,
     DataclassStruct,
+    DeferredBiMemType,
     DeferredMemType,
     FieldPath,
     MemContext,
@@ -95,10 +97,6 @@ def vector(elem: DeferredMemType) -> DeferredMemType:
     return build
 
 
-K = TypeVar("K")  # pylint: disable=invalid-name
-V = TypeVar("V")  # pylint: disable=invalid-name
-
-
 @dataclass(frozen=True)
 class _UnorderedMapMeta:
     _size_as_element_: ClassVar[int] = 64
@@ -126,7 +124,7 @@ class _UnorderedMapNode:
 
 @dataclass(frozen=True)
 class _UnorderedMapNodeType(MemType[_UnorderedMapNode]):
-    key_mem_type: InitVar[MemType]
+    key_mem_type: InitVar[BiMemType]
     val_mem_type: InitVar[MemType]
 
     key_size: int = dataclasses.field(init=False)
@@ -170,11 +168,15 @@ class _UnorderedMapNodeType(MemType[_UnorderedMapNode]):
         )
 
 
-# Contains key-value pairs. Only the "core" data is fetched eagerly. Lookups are done on-demand.
+K = TypeVar("K")  # pylint: disable=invalid-name
+V = TypeVar("V")  # pylint: disable=invalid-name
+
+# Contains key-value pairs. Only the "core" data is fetched eagerly.
+# Lookups are done on-demand, and may fail.
 @dataclass(frozen=True)
 class UnorderedMap(Generic[K, V]):
     meta: _UnorderedMapMeta
-    key_mem_type: MemType
+    key_mem_type: BiMemType
     val_mem_type: MemType
     node_mem_type: MemType[_UnorderedMapNode]
     mem_ctx: MemContext
@@ -228,10 +230,10 @@ class UnorderedMap(Generic[K, V]):
 class UnorderedMapType(MemType[UnorderedMap[K, V]]):
     path: FieldPath
     py_type: InitVar[type]
-    key_deferred_mem_type: InitVar[DeferredMemType]
+    key_deferred_mem_type: InitVar[DeferredBiMemType]
     val_deferred_mem_type: InitVar[DeferredMemType]
 
-    key_mem_type: MemType = dataclasses.field(init=False)
+    key_mem_type: BiMemType = dataclasses.field(init=False)
     val_mem_type: MemType = dataclasses.field(init=False)
     node_mem_type: MemType = dataclasses.field(init=False)
     um_meta_mem_type: MemType[_UnorderedMapMeta] = dataclasses.field(init=False)
@@ -266,10 +268,12 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
             )
 
         try:
+            # This is implied by BiMemType, but it's easy to accidentally use a
+            # MemType instead.
             key_mem_type.to_bytes
-        except AttributeError as err:
+        except (AttributeError, NotImplementedError) as err:
             raise ValueError(
-                f"key for field {self.path} must implement to_bytes(val)"
+                f"key for field {self.path} must implement BiMemType.to_bytes"
             ) from err
 
         node_mem_type = _UnorderedMapNodeType(key_mem_type, val_mem_type)
@@ -293,7 +297,7 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
 
 
 def unordered_map(
-    key_type: DeferredMemType, val_type: DeferredMemType
+    key_type: DeferredBiMemType, val_type: DeferredMemType
 ) -> DeferredMemType:
     def build(path: FieldPath, py_type: type):
         return UnorderedMapType(path, py_type, key_type, val_type)
