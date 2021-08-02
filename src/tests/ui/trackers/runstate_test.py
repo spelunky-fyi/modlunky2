@@ -1,9 +1,10 @@
 import pytest
-from modlunky2.mem.entities import EntityType
+from modlunky2.mem.entities import CharState, EntityDBEntry, EntityType, Mount
+from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
-from modlunky2.mem.state import RunRecapFlags
+from modlunky2.mem.state import RunRecapFlags, Theme
 from modlunky2.ui.trackers.label import Label
-from modlunky2.ui.trackers.runstate import RunState
+from modlunky2.ui.trackers.runstate import ChainStatus, RunState
 
 # pylint: disable=protected-access
 
@@ -77,3 +78,62 @@ def test_score_items(world, item_set, expected_score, expected_hou_yi):
     assert is_score == expected_score
 
     assert run_state.hou_yis_waddler == expected_hou_yi
+
+
+@pytest.mark.parametrize(
+    "chain_status,theme,mount_type,mount_tamed,expected_low",
+    [
+        # Mounting Qilin in Neo-Bab is never allowed
+        (ChainStatus.UNSTARTED, Theme.NEO_BABYLON, EntityType.MOUNT_QILIN, True, False),
+        (
+            ChainStatus.IN_PROGRESS,
+            Theme.NEO_BABYLON,
+            EntityType.MOUNT_QILIN,
+            True,
+            False,
+        ),
+        (ChainStatus.FAILED, Theme.NEO_BABYLON, EntityType.MOUNT_QILIN, True, False),
+        # Mounting Qilin in Tiamat's Lair is only OK during quest chain
+        (ChainStatus.UNSTARTED, Theme.TIAMAT, EntityType.MOUNT_QILIN, True, False),
+        (ChainStatus.IN_PROGRESS, Theme.TIAMAT, EntityType.MOUNT_QILIN, True, True),
+        (ChainStatus.FAILED, Theme.TIAMAT, EntityType.MOUNT_QILIN, True, False),
+        # Mounting tamed turkeys is never OK
+        (ChainStatus.UNSTARTED, Theme.TIDE_POOL, EntityType.MOUNT_TURKEY, True, False),
+        (ChainStatus.IN_PROGRESS, Theme.TEMPLE, EntityType.MOUNT_TURKEY, True, False),
+        (ChainStatus.FAILED, Theme.JUNGLE, EntityType.MOUNT_TURKEY, True, False),
+        # Mounting untamed turkeys is always OK
+        (ChainStatus.UNSTARTED, Theme.DWELLING, EntityType.MOUNT_TURKEY, False, True),
+        (ChainStatus.IN_PROGRESS, Theme.VOLCANA, EntityType.MOUNT_TURKEY, False, True),
+        (ChainStatus.FAILED, Theme.NEO_BABYLON, EntityType.MOUNT_TURKEY, False, True),
+        # Not being on a mount is OK
+        (ChainStatus.UNSTARTED, Theme.HUNDUN, None, False, True),
+        (ChainStatus.IN_PROGRESS, Theme.COSMIC_OCEAN, None, False, True),
+        (ChainStatus.FAILED, Theme.JUNGLE, None, False, True),
+    ],
+)
+def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected_low):
+    mount = make_mount(mount_type, mount_tamed)
+
+    run_state = RunState()
+    run_state.update_has_mounted_tame(chain_status, theme, mount)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+def make_mount(mount_type: EntityType, tamed: bool):
+    if mount_type is None:
+        return PolyPointer.make_empty(MemContext())
+
+    mount = Mount(
+        type=EntityDBEntry(id=mount_type),
+        items=None,
+        layer=1,
+        overlay=PolyPointer.make_empty(MemContext()),
+        holding_uid=0,
+        state=CharState.SITTING,
+        last_state=CharState.STANDING,
+        health=2,
+        is_tamed=tamed,
+    )
+    return PolyPointer(101, mount, MemContext())

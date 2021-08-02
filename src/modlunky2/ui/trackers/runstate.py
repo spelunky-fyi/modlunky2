@@ -217,7 +217,12 @@ class RunState:
             self.final_death = True
             return
 
-    def update_has_mounted_tame(self, player_overlay: PolyPointer[Entity]):
+    def update_has_mounted_tame(
+        self,
+        chain_status: ChainStatus,
+        theme: Theme,
+        player_overlay: PolyPointer[Entity],
+    ):
         if not self.is_low_percent:
             return
 
@@ -226,10 +231,10 @@ class RunState:
 
         entity_type: EntityType = player_overlay.value.type.id
         # Allowed to ride tamed qilin in tiamats
-        if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
+        if theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            if not self.chain_status.in_progress:
+            if not chain_status.in_progress:
                 self.fail_low()
             return
 
@@ -644,7 +649,7 @@ class RunState:
         overlay = player.overlay
 
         # Low%
-        self.update_has_mounted_tame(overlay)
+        self.update_has_mounted_tame(self.chain_status, self.theme, overlay)
         self.update_starting_resources(player, inventory)
         self.update_status_effects()
         self.update_had_clover(hud_flags)
