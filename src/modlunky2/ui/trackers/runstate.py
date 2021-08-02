@@ -172,8 +172,8 @@ class RunState:
                 self.run_label.add(Label.EGGPLANT)
                 return
 
-    def update_score_items(self):
-        for item_type in self.player_item_types:
+    def update_score_items(self, world, player_item_types):
+        for item_type in player_item_types:
             if item_type in [
                 EntityType.ITEM_PLASMACANNON,
                 EntityType.ITEM_POWERUP_TRUECROWN,
@@ -181,7 +181,7 @@ class RunState:
                 self.is_score_run = True
                 self.run_label.add(Label.SCORE)
 
-            elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
+            elif item_type == EntityType.ITEM_HOUYIBOW and world >= 3:
                 self.hou_yis_waddler = True
 
     def update_global_state(self, game_state: State):
@@ -632,7 +632,7 @@ class RunState:
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death()
 
-        self.update_score_items()
+        self.update_score_items(self.world, self.player_item_types)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)

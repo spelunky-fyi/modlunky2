@@ -55,3 +55,25 @@ def test_eggplant(world, item_set, expected_eggplant):
     run_state.update_eggplant(world, item_set)
     is_eggplant = Label.EGGPLANT in run_state.run_label._set
     assert is_eggplant == expected_eggplant
+
+
+@pytest.mark.parametrize(
+    "world,item_set,expected_score,expected_hou_yi",
+    [
+        (7, {EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False, False),
+        (3, {EntityType.ITEM_HOUYIBOW}, False, True),
+        (2, {EntityType.ITEM_HOUYIBOW}, False, False),
+        (1, {EntityType.ITEM_PLASMACANNON}, True, False),
+        (5, {EntityType.ITEM_PLASMACANNON}, True, False),
+        (1, set(), False, False),
+        (6, set(), False, False),
+    ],
+)
+def test_score_items(world, item_set, expected_score, expected_hou_yi):
+    run_state = RunState()
+    run_state.update_score_items(world, item_set)
+
+    is_score = Label.SCORE in run_state.run_label._set
+    assert is_score == expected_score
+
+    assert run_state.hou_yis_waddler == expected_hou_yi
