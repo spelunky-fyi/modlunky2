@@ -378,6 +378,16 @@ class ScalarCType(MemType[T]):
         except Exception as err:
             raise ScalarCValueConstructionError(self.path, mem_value) from err
 
+    def to_bytes(self, py_val) -> bytes:
+        c_val = None
+        try:
+            c_val = self.c_type(py_val)
+        except TypeError as err:
+            raise ValueError(
+                f"failed to serialize value {py_val!r} for field {self.path}"
+            ) from err
+        return bytes(c_val)
+
 
 @dataclass(frozen=True)
 class Array(MemType[T]):
