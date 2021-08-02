@@ -230,7 +230,7 @@ class RunState:
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            if self.chain_status.in_progress:
+            if not self.chain_status.in_progress:
                 self.fail_low()
             return
 
