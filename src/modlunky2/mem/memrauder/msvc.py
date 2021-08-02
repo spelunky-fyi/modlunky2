@@ -101,10 +101,10 @@ def vector(elem: DeferredMemType) -> DeferredMemType:
 class _UnorderedMapMeta:
     _size_as_element_: ClassVar[int] = 64
     end: int = struct_field(0x8, sc_uint64)
-    size: int = struct_field(0x10, sc_uint64)
+    size: int = struct_field(0x10, sc_uint64)  # unused
     buckets_ptr: int = struct_field(0x18, sc_void_p)
     mask: int = struct_field(0x30, sc_uint64)
-    bucket_size: int = struct_field(0x38, sc_uint64)
+    bucket_size: int = struct_field(0x38, sc_uint64)  # unused
 
 
 @dataclass(frozen=True)
@@ -117,7 +117,7 @@ class _UnorderedMapBucket:
 @dataclass(frozen=True)
 class _UnorderedMapNode:
     next_addr: int
-    prev_addr: int
+    prev_addr: int  # unused
     key: bytes
     value: bytes
 
@@ -201,6 +201,7 @@ class UnorderedMap(Generic[K, V]):
             )
             if node_buf is None:
                 return None
+
             node = self.node_mem_type.from_bytes(node_buf, self.mem_ctx)
             if node is None:
                 return None
@@ -254,18 +255,6 @@ class UnorderedMapType(MemType[UnorderedMap[K, V]]):
         key_mem_type = key_deferred_mem_type(self.path, key_py_type)
         val_mem_type = val_deferred_mem_type(self.path, val_py_type)
         um_meta_mem_type = DataclassStruct(self.path, _UnorderedMapMeta)
-
-        key_size = key_mem_type.field_size()
-        if key_mem_type.field_size() != 4:
-            raise ValueError(
-                f"key for field {self.path} must be 4 bytes, got {key_size}"
-            )
-
-        val_size = key_mem_type.field_size()
-        if val_mem_type.field_size() != 8:
-            raise ValueError(
-                f"value for field {self.path} must be 8 bytes, got {val_size}"
-            )
 
         try:
             # This is implied by BiMemType, but it's easy to accidentally use a
