@@ -148,11 +148,11 @@ class RunState:
         if not self.no_gold:
             self.run_label.discard(Label.NO_GOLD)
 
-    def update_no_tp(self):
+    def update_no_tp(self, player_item_types):
         if not self.no_tp:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in TELEPORT_ENTITIES:
                 self.no_tp = False
                 self.run_label.discard(Label.NO_TELEPORTER)
@@ -637,7 +637,7 @@ class RunState:
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp()
+        self.update_no_tp(self.player_item_types)
         self.update_eggplant()
 
         # Check Category Criteria
