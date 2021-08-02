@@ -84,7 +84,9 @@ class BiMemType(MemType[T]):
 @dataclass
 class MemContext:
     mem_reader: MemoryReader = _EMPTY_BYTES_READER
-    _type_map: Dict[type, DataclassStruct] = dataclasses.field(default_factory=dict)
+    _type_map: Dict[type, DataclassStruct] = dataclasses.field(
+        default_factory=dict, compare=False, repr=False
+    )
 
     def get_mem_type(self, cls: type) -> DataclassStruct:
         if cls in self._type_map:
