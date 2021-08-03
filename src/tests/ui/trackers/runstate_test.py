@@ -342,3 +342,30 @@ def test_has_chain_powerup(
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "item_set,expected_low",
+    [
+        # Exercise the most common power-ups
+        ({EntityType.ITEM_POWERUP_COMPASS}, False),
+        ({EntityType.ITEM_POWERUP_PARACHUTE}, False),
+        ({EntityType.ITEM_POWERUP_SKELETON_KEY}, False),
+        ({EntityType.ITEM_POWERUP_SPIKE_SHOES}, False),
+        ({EntityType.ITEM_POWERUP_SPRING_SHOES}, False),
+        # Having more than one isn't OK eithere
+        (
+            {EntityType.ITEM_POWERUP_PARACHUTE, EntityType.ITEM_POWERUP_SPRING_SHOES},
+            False,
+        ),
+        # Just holding the arrow of light is OK
+        ({EntityType.ITEM_LIGHT_ARROW}, True),
+        (set(), True),
+    ],
+)
+def test_has_non_chain_powerup(item_set, expected_low):
+    run_state = RunState()
+    run_state.update_has_non_chain_powerup(item_set)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low

@@ -353,11 +353,11 @@ class RunState:
             }:
                 self.fail_low()
 
-    def update_has_non_chain_powerup(self):
+    def update_has_non_chain_powerup(self, player_item_types):
         if not self.is_low_percent:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in NON_CHAIN_POWERUP_ENTITIES:
                 self.has_non_chain_powerup = True
                 self.fail_low()
@@ -657,7 +657,7 @@ class RunState:
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
-        self.update_has_non_chain_powerup()
+        self.update_has_non_chain_powerup(self.player_item_types)
         self.update_attacked_with(layer, presence_flags)
         self.update_attacked_with_throwables()
 
