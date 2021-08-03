@@ -147,6 +147,7 @@ def test_starting_resources_health(char_state, prev_health, cur_health, expected
 
     player = Player(state=char_state, health=cur_health)
     run_state.update_starting_resources(player, char_state, player.inventory)
+    assert run_state.health == cur_health
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
@@ -169,6 +170,8 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
     inventory = Inventory(bombs=cur_bombs)
     player = Player(inventory=inventory)
     run_state.update_starting_resources(player, player.state, inventory)
+
+    assert run_state.bombs == cur_bombs
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
@@ -195,6 +198,8 @@ def test_starting_resources_ropes(
     inventory = Inventory(ropes=cur_ropes)
     player = Player(inventory=inventory)
     run_state.update_starting_resources(player, player.state, inventory)
+
+    assert run_state.ropes == cur_ropes
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
