@@ -313,3 +313,32 @@ def test_held_shield(item_set, expected_low):
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "chain_status,item_set,expected_failed_low_if_not_chain,expected_low",
+    [
+        # All of  these are fine while the chain is in-progress
+        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_UDJATEYE}, True, True),
+        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_CROWN}, True, True),
+        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_HEDJET}, True, True),
+        # Starting points are OK even if we haven't updated chain status
+        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_UDJATEYE}, True, True),
+        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_CROWN}, True, True),
+        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_HEDJET}, True, True),
+        # If it's not a starting point for the chain, and chain isn't in progress, we should fail immediately
+        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_ANKH}, True, False),
+        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_TABLETOFDESTINY}, True, False),
+        (ChainStatus.FAILED, {EntityType.ITEM_POWERUP_ANKH}, True, False),
+        (ChainStatus.FAILED, {EntityType.ITEM_POWERUP_TABLETOFDESTINY}, True, False),
+    ],
+)
+def test_has_chain_powerup(
+    chain_status, item_set, expected_failed_low_if_not_chain, expected_low
+):
+    run_state = RunState()
+    run_state.update_has_chain_powerup(chain_status, item_set)
+    assert run_state.failed_low_if_not_chain == expected_failed_low_if_not_chain
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low

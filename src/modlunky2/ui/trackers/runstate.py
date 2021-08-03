@@ -331,20 +331,22 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_has_chain_powerup(self):
+    def update_has_chain_powerup(
+        self, chain_status: ChainStatus, player_item_types: Set[EntityType]
+    ):
         if self.has_chain_powerup:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in CHAIN_POWERUP_ENTITIES:
                 self.has_chain_powerup = True
                 self.failed_low_if_not_chain = True
 
-        if self.chain_status.in_progress:
+        if chain_status.in_progress:
             return
 
         # Fail low if we've failed the chain and pick up a non-starting powerup
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in {
                 EntityType.ITEM_POWERUP_ANKH,
                 EntityType.ITEM_POWERUP_TABLETOFDESTINY,
@@ -661,7 +663,7 @@ class RunState:
 
         # Chain
         self.update_chain()
-        self.update_has_chain_powerup()
+        self.update_has_chain_powerup(self.chain_status, self.player_item_types)
         self.update_is_chain()
 
         self.update_millionaire(game_state, inventory)
