@@ -1,5 +1,11 @@
 import pytest
-from modlunky2.mem.entities import EntityDBEntry, EntityType, Mount
+from modlunky2.mem.entities import (
+    EntityDBEntry,
+    EntityType,
+    Inventory,
+    Mount,
+    Player,
+)
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
 from modlunky2.mem.state import RunRecapFlags, Theme
@@ -117,6 +123,28 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
 
     run_state = RunState()
     run_state.update_has_mounted_tame(chain_status, theme, poly_mount)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "prev_bombs,cur_bombs,expected_low",
+    [
+        (4, 4, True),
+        (4, 3, True),
+        (3, 1, True),
+        (7, 7, False),
+        (1, 4, False),
+    ],
+)
+def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
+    run_state = RunState()
+    run_state.bombs = prev_bombs
+
+    inventory = Inventory(bombs=cur_bombs)
+    player = Player(inventory=inventory)
+    run_state.update_starting_resources(player, inventory)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
