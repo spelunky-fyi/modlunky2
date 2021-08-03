@@ -266,3 +266,27 @@ def test_had_clover(hud_flags, expected_low):
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "item_set,expected_no_jp,expected_low",
+    [
+        ({EntityType.ITEM_JETPACK}, False, False),
+        # We exercise the most popular backpacks
+        ({EntityType.ITEM_HOVERPACK}, True, False),
+        ({EntityType.ITEM_VLADS_CAPE}, True, False),
+        ({EntityType.ITEM_TELEPORTER_BACKPACK}, True, False),
+        # Not a backpack
+        ({EntityType.ITEM_SHOTGUN}, True, True),
+        (set(), True, True),
+    ],
+)
+def test_wore_backpack(item_set, expected_no_jp, expected_low):
+    run_state = RunState()
+    run_state.update_wore_backpack(item_set)
+
+    is_no_jp = Label.NO_JETPACK in run_state.run_label._set
+    assert is_no_jp == expected_no_jp
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low

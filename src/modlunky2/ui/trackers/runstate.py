@@ -308,14 +308,14 @@ class RunState:
         if self.had_clover:
             self.fail_low()
 
-    def update_wore_backpack(self):
-        if EntityType.ITEM_JETPACK in self.player_item_types:
+    def update_wore_backpack(self, player_item_types):
+        if EntityType.ITEM_JETPACK in player_item_types:
             self.run_label.discard(Label.NO_JETPACK)
 
         if not self.is_low_percent:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in BACKPACKS:
                 self.wore_backpack = True
                 self.fail_low()
@@ -653,7 +653,7 @@ class RunState:
         self.update_starting_resources(player, self.player_state, inventory)
         self.update_status_effects(self.player_state, self.player_item_types)
         self.update_had_clover(hud_flags)
-        self.update_wore_backpack()
+        self.update_wore_backpack(self.player_item_types)
         self.update_held_shield()
         self.update_has_non_chain_powerup()
         self.update_attacked_with(layer, presence_flags)
