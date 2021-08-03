@@ -217,5 +217,5 @@ class Inventory:
 @dataclass(frozen=True)
 class Player(Movable):
     inventory: Optional[Inventory] = struct_field(
-        0x138, pointer(dc_struct), default=None
+        0x138, pointer(dc_struct), default_factory=Inventory
     )

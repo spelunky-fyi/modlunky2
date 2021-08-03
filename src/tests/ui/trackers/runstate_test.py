@@ -1,5 +1,6 @@
 import pytest
 from modlunky2.mem.entities import (
+    CharState,
     EntityDBEntry,
     EntityType,
     Inventory,
@@ -129,6 +130,29 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
 
 
 @pytest.mark.parametrize(
+    "char_state,prev_health,cur_health,expected_low",
+    [
+        (CharState.STANDING, 4, 4, True),
+        (CharState.STANDING, 2, 1, True),
+        (CharState.STANDING, 3, 1, True),
+        (CharState.DYING, 1, 4, True),
+        (CharState.STANDING, 1, 2, False),
+        (CharState.STANDING, 2, 4, False),
+        (CharState.STANDING, 5, 5, False),
+    ],
+)
+def test_starting_resources_health(char_state, prev_health, cur_health, expected_low):
+    run_state = RunState()
+    run_state.health = prev_health
+
+    player = Player(state=char_state, health=cur_health)
+    run_state.update_starting_resources(player, char_state, player.inventory)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
     "prev_bombs,cur_bombs,expected_low",
     [
         (4, 4, True),
@@ -144,7 +168,7 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
 
     inventory = Inventory(bombs=cur_bombs)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player, inventory)
+    run_state.update_starting_resources(player, player.state, inventory)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low

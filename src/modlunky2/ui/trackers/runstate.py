@@ -244,14 +244,14 @@ class RunState:
                 self.has_mounted_tame = True
                 self.fail_low()
 
-    def update_starting_resources(self, player: Player, inventory: Inventory):
+    def update_starting_resources(
+        self, player: Player, player_state: CharState, inventory: Inventory
+    ):
         if not self.is_low_percent:
             return
 
         health = player.health
-        if (
-            health > self.health and self.player_state != CharState.DYING
-        ) or health > 4:
+        if (health > self.health and player_state != CharState.DYING) or health > 4:
             self.increased_starting_items = True
             self.fail_low()
         self.health = health
@@ -650,7 +650,7 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(self.chain_status, self.theme, overlay)
-        self.update_starting_resources(player, inventory)
+        self.update_starting_resources(player, self.player_state, inventory)
         self.update_status_effects()
         self.update_had_clover(hud_flags)
         self.update_wore_backpack()
