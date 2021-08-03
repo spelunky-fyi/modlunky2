@@ -295,3 +295,21 @@ def test_wore_backpack(item_set, expected_no_jp, expected_low):
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "item_set,expected_low",
+    [
+        ({EntityType.ITEM_METAL_SHIELD}, False),
+        ({EntityType.ITEM_WOODEN_SHIELD}, False),
+        # Just holding a camera is OK
+        ({EntityType.ITEM_CAMERA}, True),
+        (set(), True),
+    ],
+)
+def test_held_shield(item_set, expected_low):
+    run_state = RunState()
+    run_state.update_held_shield(item_set)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low

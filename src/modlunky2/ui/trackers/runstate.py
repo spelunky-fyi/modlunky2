@@ -321,11 +321,11 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_held_shield(self):
+    def update_held_shield(self, player_item_types):
         if not self.is_low_percent:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in SHIELDS:
                 self.held_shield = True
                 self.fail_low()
@@ -654,7 +654,7 @@ class RunState:
         self.update_status_effects(self.player_state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
-        self.update_held_shield()
+        self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup()
         self.update_attacked_with(layer, presence_flags)
         self.update_attacked_with_throwables()
