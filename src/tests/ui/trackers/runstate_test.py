@@ -1,5 +1,5 @@
 import pytest
-from modlunky2.mem.entities import CharState, EntityDBEntry, EntityType, Mount
+from modlunky2.mem.entities import EntityDBEntry, EntityType, Mount
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
 from modlunky2.mem.state import RunRecapFlags, Theme
@@ -112,28 +112,11 @@ def test_score_items(world, item_set, expected_score, expected_hou_yi):
     ],
 )
 def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected_low):
-    mount = make_mount(mount_type, mount_tamed)
+    mount = Mount(type=EntityDBEntry(id=mount_type), is_tamed=mount_tamed)
+    poly_mount = PolyPointer(101, mount, MemContext())
 
     run_state = RunState()
-    run_state.update_has_mounted_tame(chain_status, theme, mount)
+    run_state.update_has_mounted_tame(chain_status, theme, poly_mount)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
-
-
-def make_mount(mount_type: EntityType, tamed: bool):
-    if mount_type is None:
-        return PolyPointer.make_empty(MemContext())
-
-    mount = Mount(
-        type=EntityDBEntry(id=mount_type),
-        items=None,
-        layer=1,
-        overlay=PolyPointer.make_empty(MemContext()),
-        holding_uid=0,
-        state=CharState.SITTING,
-        last_state=CharState.STANDING,
-        health=2,
-        is_tamed=tamed,
-    )
-    return PolyPointer(101, mount, MemContext())
