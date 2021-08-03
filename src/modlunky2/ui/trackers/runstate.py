@@ -21,6 +21,7 @@ from modlunky2.mem.entities import (
     TELEPORT_ENTITIES,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
+from modlunky2.mem.memrauder.msvc import UnorderedMap
 from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
@@ -630,7 +631,7 @@ class RunState:
         presence_flags = game_state.presence_flags
         self.update_global_state(game_state)
         self.update_on_level_start()
-        self.update_player_item_types(player)
+        self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death()
 
         self.update_score_items()
@@ -664,14 +665,17 @@ class RunState:
 
         self.update_terminus()
 
-    def update_player_item_types(self, player: Player):
+    def update_player_item_types(
+        self,
+        instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]],
+        player: Player,
+    ):
         item_types = set()
-        entity_map = self._proc.uid_to_entity
         if player.items is None:
             return
         for item in player.items:
-            entity_poly = entity_map.get_poly_pointer(item, self._proc.mem_ctx)
-            if not entity_poly.present():
+            entity_poly = instance_id_to_pointer.get(item)
+            if entity_poly is None or not entity_poly.present():
                 continue
 
             entity_type = entity_poly.value.type

@@ -11,11 +11,8 @@ import win32api
 import win32con
 import win32process
 
-from .entities import EntityMap
 from .state import State
 from .memrauder.model import (
-    DataclassStruct,
-    FieldPath,
     MemoryReader,
     MemContext,
 )
@@ -266,8 +263,3 @@ class Spel2Process:
     def get_state(self) -> Optional[State]:
         addr = self.get_feedcode() - 0x5F
         return self.mem_ctx.type_at_addr(State, addr)
-
-    @property
-    def uid_to_entity(self):
-        addr = self.get_feedcode() - 0x5F + 0x1308
-        return EntityMap(self, addr)

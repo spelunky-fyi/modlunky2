@@ -2,11 +2,12 @@ from dataclasses import dataclass
 import enum
 from typing import Optional, Tuple
 
-from modlunky2.mem.entities import Player
+from modlunky2.mem.entities import Entity, Player
 
 from modlunky2.mem.memrauder.dsl import (
     array,
     pointer,
+    poly_pointer,
     struct_field,
     dc_struct,
     sc_int32,
@@ -14,6 +15,8 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int8,
     sc_uint8,
 )
+from modlunky2.mem.memrauder.model import PolyPointer
+from modlunky2.mem.memrauder.msvc import UnorderedMap, unordered_map
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -157,3 +160,6 @@ class State:
     hud_flags: HudFlags = struct_field(0xA10, sc_uint32)
     presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
     items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct))
+    instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
+        0x1308, unordered_map(sc_uint32, poly_pointer(dc_struct))
+    )

@@ -71,13 +71,22 @@ class MemType(Generic[T], ABC):
         raise NotImplementedError()
 
 
+# A MemType that supports serializing a value.
+class BiMemType(MemType[T]):
+    @abstractmethod
+    def to_bytes(self, py_val: T) -> bytes:
+        raise NotImplementedError()
+
+
 # MemContext automatically creates, and caches, DataclassStruct instances.
 # It also holds a MemoryReader to simplify usage of both DataclassStruct
 # and PolyPointer.
 @dataclass
 class MemContext:
     mem_reader: MemoryReader = _EMPTY_BYTES_READER
-    _type_map: Dict[type, DataclassStruct] = dataclasses.field(default_factory=dict)
+    _type_map: Dict[type, DataclassStruct] = dataclasses.field(
+        default_factory=dict, compare=False, repr=False
+    )
 
     def get_mem_type(self, cls: type) -> DataclassStruct:
         if cls in self._type_map:
@@ -202,6 +211,7 @@ def unwrap_collection_type(path: FieldPath, py_type: type) -> Tuple[type, type]:
 
 
 DeferredMemType = Callable[[FieldPath, Type], MemType]
+DeferredBiMemType = Callable[[FieldPath, Type], BiMemType]
 
 # Metadata stored during dataclass definition
 @dataclass(frozen=True)
@@ -331,7 +341,7 @@ class ScalarCValueConstructionError(Exception):
 
 
 @dataclass(frozen=True)
-class ScalarCType(MemType[T]):
+class ScalarCType(BiMemType[T]):
     path: FieldPath
     py_type: T
     c_type: type
@@ -377,6 +387,15 @@ class ScalarCType(MemType[T]):
             return self.py_type(mem_value)
         except Exception as err:
             raise ScalarCValueConstructionError(self.path, mem_value) from err
+
+    def to_bytes(self, py_val: T) -> bytes:
+        try:
+            c_val = self.c_type(py_val)
+        except TypeError as err:
+            raise ValueError(
+                f"failed to serialize value {py_val!r} for field {self.path}"
+            ) from err
+        return bytes(c_val)
 
 
 @dataclass(frozen=True)

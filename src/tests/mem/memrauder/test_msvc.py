@@ -1,3 +1,4 @@
+import ctypes
 from dataclasses import dataclass
 from typing import Optional, Tuple
 import pytest
@@ -8,8 +9,16 @@ from modlunky2.mem.memrauder.model import (
     DataclassStruct,
     FieldPath,
     MemContext,
+    ScalarCType,
 )
-from modlunky2.mem.memrauder.msvc import Vector, vector
+from modlunky2.mem.memrauder.msvc import (
+    UnorderedMap,
+    UnorderedMapType,
+    _UnorderedMapNode,
+    _UnorderedMapNodeType,
+    Vector,
+    vector,
+)
 
 
 @pytest.mark.parametrize(
@@ -60,3 +69,101 @@ def test_vector_dsl():
     mem_type = DataclassStruct(FieldPath(), VecWrap)
     mem_ctx = MemContext(BytesReader(arr_buf))
     assert mem_type.from_bytes(vec_wrap_buf, mem_ctx) == VecWrap((3, 9))
+
+
+uint8_type = ScalarCType(FieldPath(), int, ctypes.c_uint8)
+uint16_type = ScalarCType(FieldPath(), int, ctypes.c_uint16)
+
+
+@pytest.mark.parametrize(
+    "key_type,val_type,node_bytes,expected",
+    [
+        (
+            uint8_type,
+            uint8_type,
+            (
+                b"\x00\x01"
+                + b"\x00" * 6
+                + b"\x10"
+                + b"\x00" * 7
+                + b"\x07"
+                + b"\xff" * 7
+                + b"\x05"
+            ),
+            _UnorderedMapNode(
+                next_addr=0x100, prev_addr=0x10, key=b"\x07", value=b"\x05"
+            ),
+        ),
+        (
+            uint16_type,
+            uint8_type,
+            (
+                b"\x01\x01"
+                + b"\x00" * 6
+                + b"\x11"
+                + b"\x00" * 7
+                + b"\x07\x02"
+                + b"\xff" * 6
+                + b"\x05"
+            ),
+            _UnorderedMapNode(
+                next_addr=0x101, prev_addr=0x11, key=b"\x07\x02", value=b"\x05"
+            ),
+        ),
+    ],
+)
+def test_unordered_map_node_deserialize(key_type, val_type, node_bytes, expected):
+    node_type = _UnorderedMapNodeType(key_type, val_type)
+    node = node_type.from_bytes(node_bytes, MemContext())
+    assert node == expected
+
+
+UNORDERED_MAP_BYTES = (
+    b"\xff" * 8
+    + b"\xcd" * 8
+    + b"\xea" * 8
+    + b"\x01"  # First bucket at address 1
+    + b"\x00" * 7
+    + b"\xff" * 16  # Unused bytes between buckets_ptr and mask
+    + b"\x01"  # Mask is 1 so bucket is 1 as long as fnv1a_64() is odd
+    + b"\x00" * 7
+    + b"\xba" * 8  # meta.end
+)
+UNORDERED_MAP_MEM = (
+    b"\xff" * 17  # Our first bucket shouldn't be looked at
+    + b"\x22"  # Node at address 34
+    + b"\x00" * 7
+    + b"\xbc" * 8  # End pointer for test bucket
+    + b"\xff"  # Garbage before node
+    + b"\xbc" * 8  # next_addr just needs to not equal meta.end
+    + b"\xff" * 8  # prev_addr is unused
+    + b"\x02"  # key
+    + b"\x00" * 3
+    + b"\x57" * 4  # padding between fields
+    + b"\x03\x00"  # value
+    + b"\xff" * 6  # padding after fields
+)
+
+
+def test_unordered_map_type():
+    def uint32_deferred(field, py_type):
+        assert field == FieldPath()
+        assert py_type is int
+        return ScalarCType(FieldPath(), int, ctypes.c_uint32)
+
+    def uint16_deferred(field, py_type):
+        assert field == FieldPath()
+        assert py_type is int
+        return ScalarCType(FieldPath(), int, ctypes.c_uint16)
+
+    mem_type = UnorderedMapType(
+        FieldPath(), UnorderedMap[int, int], uint32_deferred, uint16_deferred
+    )
+    mem_ctx = MemContext(BytesReader(UNORDERED_MAP_MEM))
+    uo_map: UnorderedMap = mem_type.from_bytes(UNORDERED_MAP_BYTES, mem_ctx)
+    # Sanity check key fields before we try to call get()
+    assert uo_map.meta.buckets_ptr == 1
+    assert uo_map.meta.mask == 1
+
+    value = uo_map.get(2)
+    assert value == 3
