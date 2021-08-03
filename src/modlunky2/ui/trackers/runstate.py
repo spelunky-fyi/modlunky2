@@ -268,12 +268,12 @@ class RunState:
             self.fail_low()
         self.ropes = ropes
 
-    def update_status_effects(self):
+    def update_status_effects(self, player_state, player_item_types):
         if not self.is_low_percent:
             return
 
         # Logical effects disappear sometimes...
-        if self.player_state in {
+        if player_state in {
             CharState.ENTERING,
             CharState.LOADING,
             CharState.EXITING,
@@ -283,17 +283,17 @@ class RunState:
         is_poisoned = False
         is_cursed = False
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type == EntityType.LOGICAL_POISONED_EFFECT:
                 is_poisoned = True
             elif item_type == EntityType.LOGICAL_CURSED_EFFECT:
                 is_cursed = True
 
-        if self.poisoned and not is_poisoned and self.player_state != CharState.DYING:
+        if self.poisoned and not is_poisoned and player_state != CharState.DYING:
             self.cured_status = True
             self.fail_low()
 
-        if self.cursed and not is_cursed and self.player_state != CharState.DYING:
+        if self.cursed and not is_cursed and player_state != CharState.DYING:
             self.cured_status = True
             self.fail_low()
 
@@ -651,7 +651,7 @@ class RunState:
         # Low%
         self.update_has_mounted_tame(self.chain_status, self.theme, overlay)
         self.update_starting_resources(player, self.player_state, inventory)
-        self.update_status_effects()
+        self.update_status_effects(self.player_state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack()
         self.update_held_shield()

@@ -9,7 +9,7 @@ from modlunky2.mem.entities import (
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
-from modlunky2.mem.state import RunRecapFlags, Theme
+from modlunky2.mem.state import HudFlags, RunRecapFlags, Theme
 from modlunky2.ui.trackers.label import Label
 from modlunky2.ui.trackers.runstate import ChainStatus, RunState
 
@@ -195,6 +195,74 @@ def test_starting_resources_ropes(
     inventory = Inventory(ropes=cur_ropes)
     player = Player(inventory=inventory)
     run_state.update_starting_resources(player, player.state, inventory)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "player_state,prev_poisoned,item_set,expected_poisoned,expected_low",
+    [
+        (CharState.STANDING, False, {EntityType.LOGICAL_POISONED_EFFECT}, True, True),
+        (CharState.STANDING, True, {EntityType.LOGICAL_POISONED_EFFECT}, True, True),
+        (CharState.STANDING, True, set(), False, False),
+        (CharState.DYING, True, set(), False, True),
+        # We should skip checks during weird states
+        (CharState.ENTERING, True, set(), True, True),
+        (CharState.EXITING, True, set(), True, True),
+        (CharState.LOADING, True, set(), True, True),
+    ],
+)
+def test_status_effects_poisoned(
+    player_state, prev_poisoned, item_set, expected_poisoned, expected_low
+):
+    run_state = RunState()
+    run_state.poisoned = prev_poisoned
+
+    run_state.update_status_effects(player_state, item_set)
+    assert run_state.poisoned == expected_poisoned
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "player_state,prev_cursed,item_set,expected_cursed,expected_low",
+    [
+        (CharState.STANDING, False, {EntityType.LOGICAL_CURSED_EFFECT}, True, True),
+        (CharState.STANDING, True, {EntityType.LOGICAL_CURSED_EFFECT}, True, True),
+        (CharState.STANDING, True, set(), False, False),
+        (CharState.DYING, True, set(), False, True),
+        # We should skip checks during weird states
+        (CharState.ENTERING, True, set(), True, True),
+        (CharState.EXITING, True, set(), True, True),
+        (CharState.LOADING, True, set(), True, True),
+    ],
+)
+def test_status_effects_cursed(
+    player_state, prev_cursed, item_set, expected_cursed, expected_low
+):
+    run_state = RunState()
+    run_state.cursed = prev_cursed
+
+    run_state.update_status_effects(player_state, item_set)
+    assert run_state.cursed == expected_cursed
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "hud_flags,expected_low",
+    [
+        (HudFlags.HAVE_CLOVER, False),
+        (0, True),
+        (~HudFlags.HAVE_CLOVER, True),
+    ],
+)
+def test_had_clover(hud_flags, expected_low):
+    run_state = RunState()
+    run_state.update_had_clover(hud_flags)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
