@@ -172,3 +172,29 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "level_start_ropes,prev_ropes,cur_ropes,expected_low",
+    [
+        (4, 4, 4, True),
+        (4, 4, 3, True),
+        (3, 3, 1, True),
+        (3, 2, 3, True),
+        (7, 7, 7, False),
+        (1, 1, 4, False),
+    ],
+)
+def test_starting_resources_ropes(
+    level_start_ropes, prev_ropes, cur_ropes, expected_low
+):
+    run_state = RunState()
+    run_state.level_start_ropes = level_start_ropes
+    run_state.ropes = prev_ropes
+
+    inventory = Inventory(ropes=cur_ropes)
+    player = Player(inventory=inventory)
+    run_state.update_starting_resources(player, player.state, inventory)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
