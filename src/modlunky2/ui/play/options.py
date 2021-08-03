@@ -32,7 +32,7 @@ class OptionsFrame(ttk.Frame):
         self.enable_console_var.set(self.modlunky_config.config_file.playlunky_console)
         self.enable_console_checkbox = ttk.Checkbutton(
             self,
-            text="Enable Console",
+            text="Leave Terminal Running",
             variable=self.enable_console_var,
             compound="left",
             command=self.handle_console_checkbutton,
