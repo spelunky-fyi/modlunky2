@@ -389,7 +389,6 @@ class ScalarCType(BiMemType[T]):
             raise ScalarCValueConstructionError(self.path, mem_value) from err
 
     def to_bytes(self, py_val: T) -> bytes:
-        c_val = None
         try:
             c_val = self.c_type(py_val)
         except TypeError as err:
