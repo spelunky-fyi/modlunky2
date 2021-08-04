@@ -363,19 +363,26 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_attacked_with(self, layer: Layer, presence_flags: PresenceFlags):
+    def update_attacked_with(
+        self,
+        last_state: CharState,
+        state: CharState,
+        layer: Layer,
+        world: int,
+        level: int,
+        theme: Theme,
+        presence_flags: PresenceFlags,
+        player_item_types: Set[EntityType],
+    ):
         if not self.is_low_percent:
             return
 
-        if (
-            self.player_state != CharState.ATTACKING
-            and self.player_last_state != CharState.ATTACKING
-        ):
+        if state != CharState.ATTACKING and last_state != CharState.ATTACKING:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
-                if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
+                if item_type == EntityType.ITEM_EXCALIBUR and theme == Theme.ABZU:
                     self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
                     if not self.chain_status.in_progress:
@@ -400,12 +407,12 @@ class RunState:
                             (presence_flags & PresenceFlags.SUN_CHALLENGE)
                             or
                             # Waddler
-                            ((self.world, self.level) in [(3, 1), (5, 1), (7, 1)])
+                            ((world, level) in [(3, 1), (5, 1), (7, 1)])
                         ):
                             continue
 
                     # Hundun
-                    if (self.world, self.level) == (7, 4):
+                    if (world, level) == (7, 4):
                         continue
 
                 self.attacked_with = True
@@ -610,6 +617,7 @@ class RunState:
             self.health = 4
 
         if self.theme == Theme.OLMEC:
+            # TODO fail if we leave the bow behind, or win w/o CO
             if self.mc_has_swung_mattock and not self.hou_yis_bow:
                 self.fail_low()
 
@@ -658,7 +666,16 @@ class RunState:
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup(self.player_item_types)
-        self.update_attacked_with(layer, presence_flags)
+        self.update_attacked_with(
+            last_state,
+            state,
+            layer,
+            self.world,
+            self.level,
+            self.theme,
+            presence_flags,
+            self.player_item_types,
+        )
         self.update_attacked_with_throwables()
 
         # Chain

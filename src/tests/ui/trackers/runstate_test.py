@@ -4,12 +4,13 @@ from modlunky2.mem.entities import (
     EntityDBEntry,
     EntityType,
     Inventory,
+    Layer,
     Mount,
     Player,
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
-from modlunky2.mem.state import HudFlags, RunRecapFlags, Theme
+from modlunky2.mem.state import HudFlags, PresenceFlags, RunRecapFlags, Theme
 from modlunky2.ui.trackers.label import Label
 from modlunky2.ui.trackers.runstate import ChainStatus, RunState
 
@@ -366,6 +367,268 @@ def test_has_chain_powerup(
 def test_has_non_chain_powerup(item_set, expected_low):
     run_state = RunState()
     run_state.update_has_non_chain_powerup(item_set)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "prev_state,cur_state,item_set,expected_low",
+    [
+        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_BOOMERANG}, False),
+        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_BOOMERANG}, False),
+        # Holding things is OK
+        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_BOOMERANG}, True),
+        # Rocks are OK
+        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_ROCK}, True),
+        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_ROCK}, True),
+        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_ROCK}, True),
+        # Using the whip is OK
+        (CharState.JUMPING, CharState.CLIMBING, set(), True),
+        (CharState.STANDING, CharState.ATTACKING, set(), True),
+        (CharState.ATTACKING, CharState.STANDING, set(), True),
+    ],
+)
+def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
+    # These shouldn't be location sensitive
+    layer = Layer.FRONT
+    world = 2
+    level = 2
+    theme = Theme.JUNGLE
+    presence_flags = 0
+    run_state = RunState()
+    run_state.chain_status = ChainStatus.IN_PROGRESS
+    run_state.update_attacked_with(
+        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+    )
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "layer,theme,presence_flags,chain_status,expected_lc_has_swung_excalibur,expected_low",
+    [
+        # Not OK to swing in Tide Pool, regardless of chain or presence
+        (
+            Layer.FRONT,
+            Theme.TIDE_POOL,
+            PresenceFlags.STAR_CHALLENGE,
+            ChainStatus.UNSTARTED,
+            False,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.TIDE_POOL,
+            PresenceFlags.STAR_CHALLENGE,
+            ChainStatus.IN_PROGRESS,
+            False,
+            False,
+        ),
+        (
+            Layer.FRONT,
+            Theme.TIDE_POOL,
+            0,
+            ChainStatus.IN_PROGRESS,
+            False,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.TIDE_POOL,
+            0,
+            ChainStatus.FAILED,
+            False,
+            False,
+        ),
+        # OK in Abzu only if chain is in progress
+        (
+            Layer.FRONT,
+            Theme.ABZU,
+            0,
+            ChainStatus.IN_PROGRESS,
+            True,
+            True,
+        ),
+        (
+            Layer.BACK,
+            Theme.ABZU,
+            0,
+            ChainStatus.IN_PROGRESS,
+            True,
+            True,
+        ),
+        (
+            Layer.FRONT,
+            Theme.ABZU,
+            0,
+            ChainStatus.UNSTARTED,
+            True,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.ABZU,
+            0,
+            ChainStatus.FAILED,
+            True,
+            False,
+        ),
+        # Not OK later areas
+        (
+            Layer.FRONT,
+            Theme.ICE_CAVES,
+            ChainStatus.FAILED,
+            0,
+            False,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.NEO_BABYLON,
+            0,
+            ChainStatus.IN_PROGRESS,
+            False,
+            False,
+        ),
+    ],
+)
+def test_attacked_with_excalibur(
+    layer,
+    theme,
+    presence_flags,
+    chain_status,
+    expected_lc_has_swung_excalibur,
+    expected_low,
+):
+    prev_state = CharState.PUSHING
+    cur_state = CharState.ATTACKING
+    item_set = {EntityType.ITEM_EXCALIBUR}
+    # These should vary with theme, but there's already a lot of params
+    world = 4
+    level = 2
+    run_state = RunState()
+    run_state.chain_status = chain_status
+    run_state.update_attacked_with(
+        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+    )
+
+    # We only expect these to be set together
+    assert run_state.failed_low_if_not_chain == expected_lc_has_swung_excalibur
+    assert run_state.lc_has_swung_excalibur == expected_lc_has_swung_excalibur
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "layer,theme,presence_flags,expected_low",
+    [
+        # Front layer isn't OK with moon challenge
+        (
+            Layer.FRONT,
+            Theme.VOLCANA,
+            PresenceFlags.MOON_CHALLENGE,
+            False,
+        ),
+        (
+            Layer.FRONT,
+            Theme.JUNGLE,
+            PresenceFlags.MOON_CHALLENGE,
+            False,
+        ),
+        # In moon challenge is OK
+        (
+            Layer.BACK,
+            Theme.VOLCANA,
+            PresenceFlags.MOON_CHALLENGE,
+            True,
+        ),
+        (
+            Layer.BACK,
+            Theme.JUNGLE,
+            PresenceFlags.MOON_CHALLENGE,
+            True,
+        ),
+        # Not OK to swing in back layer w/o moon challenge
+        (
+            Layer.BACK,
+            Theme.VOLCANA,
+            0,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.JUNGLE,
+            0,
+            False,
+        ),
+        # Some places moon challenge can't spawn
+        (
+            Layer.FRONT,
+            Theme.DWELLING,
+            0,
+            False,
+        ),
+        (
+            Layer.BACK,
+            Theme.OLMEC,
+            0,
+            False,
+        ),
+    ],
+)
+def test_attacked_with_mattock(layer, theme, presence_flags, expected_low):
+    prev_state = CharState.PUSHING
+    cur_state = CharState.ATTACKING
+    item_set = {EntityType.ITEM_MATTOCK}
+    # These should vary with theme, but there's already a lot of params
+    world = 2
+    level = 2
+    run_state = RunState()
+    run_state.update_attacked_with(
+        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+    )
+
+    # We only expect this to be set when we're still low%
+    assert run_state.mc_has_swung_mattock == expected_low
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "layer,world,level,presence_flags,expected_low",
+    [
+        # Places where back layer is allowed
+        (Layer.BACK, 2, 3, PresenceFlags.MOON_CHALLENGE, True),
+        (Layer.BACK, 3, 1, 0, True),
+        (Layer.BACK, 5, 1, 0, True),
+        (Layer.BACK, 7, 1, 0, True),
+        (Layer.BACK, 7, 2, PresenceFlags.SUN_CHALLENGE, True),
+        # Front layer isn't OK just because back layer would be
+        (Layer.FRONT, 2, 3, PresenceFlags.MOON_CHALLENGE, False),
+        (Layer.FRONT, 3, 1, 0, False),
+        (Layer.FRONT, 5, 1, 0, False),
+        (Layer.FRONT, 7, 1, 0, False),
+        (Layer.FRONT, 7, 2, PresenceFlags.SUN_CHALLENGE, False),
+        # Hundun is OK
+        (Layer.FRONT, 7, 4, 0, True),
+        # CO isn't OK
+        (Layer.FRONT, 7, 5, 0, False),
+    ],
+)
+def test_attacked_with_hou_yi(layer, world, level, presence_flags, expected_low):
+    prev_state = CharState.JUMPING
+    cur_state = CharState.ATTACKING
+    item_set = {EntityType.ITEM_HOUYIBOW}
+    # This should vary with world+level, but there's already a lot of params
+    theme = Theme.DWELLING
+    run_state = RunState()
+    run_state.update_attacked_with(
+        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+    )
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
