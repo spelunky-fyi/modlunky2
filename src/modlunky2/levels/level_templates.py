@@ -157,7 +157,7 @@ class LevelTemplates:
         return list(self._inner.values())
 
     def get(self, name):
-        LevelTemplate.validate_name(name)
+        # LevelTemplate.validate_name(name)
         return self._inner.get(name)
 
     def set_obj(self, obj: "LevelTemplate"):
@@ -273,7 +273,8 @@ class LevelTemplate:
             raise ValueError(f"Name {name!r} isn't a valid level template")
 
     def validate(self):
-        self.validate_name(self.name)
+        # self.validate_name(self.name)
+        pass
 
     def write(self, handle: TextIO):
         handle.write(f"{TEMPLATE_COMMENT}\n")

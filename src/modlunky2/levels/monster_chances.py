@@ -78,7 +78,7 @@ class MonsterChances:
         return list(self._inner.values())
 
     def get(self, name):
-        MonsterChance.validate_name(name)
+        # MonsterChance.validate_name(name)
         return self._inner.get(name)
 
     def set_obj(self, obj: "MonsterChance"):
@@ -129,7 +129,7 @@ class MonsterChance:
             raise ValueError(f"Got unexpected type for {self.name}: {self.value!r}")
 
     def validate(self):
-        self.validate_name(self.name)
+        # self.validate_name(self.name)
         self.validate_value()
 
     def clean_value(self):
