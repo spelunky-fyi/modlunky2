@@ -419,17 +419,23 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_attacked_with_throwables(self):
+    def update_attacked_with_throwables(
+        self,
+        player_state: CharState,
+        player_last_state: CharState,
+        player_last_item_types: Set[EntityType],
+        player_item_types: Set[EntityType],
+    ):
         if not self.is_low_percent:
             return
 
         if (
-            self.player_state != CharState.THROWING
-            and self.player_last_state != CharState.THROWING
+            player_state != CharState.THROWING
+            and player_last_state != CharState.THROWING
         ):
             return
 
-        for item_type in self.player_item_types | self.player_last_item_types:
+        for item_type in player_item_types | player_last_item_types:
             if item_type in LOW_BANNED_THROWABLES:
                 self.attacked_with = True
                 self.fail_low()
@@ -676,7 +682,12 @@ class RunState:
             presence_flags,
             self.player_item_types,
         )
-        self.update_attacked_with_throwables()
+        self.update_attacked_with_throwables(
+            self.player_last_state,
+            self.player_state,
+            self.player_last_item_types,
+            self.player_item_types,
+        )
 
         # Chain
         self.update_chain()

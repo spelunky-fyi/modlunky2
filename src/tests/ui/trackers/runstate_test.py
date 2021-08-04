@@ -632,3 +632,50 @@ def test_attacked_with_hou_yi(layer, world, level, presence_flags, expected_low)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "prev_state,cur_state,prev_item_set,cur_item_set,expected_low",
+    [
+        (
+            CharState.THROWING,
+            CharState.STANDING,
+            {EntityType.ITEM_LIGHT_ARROW},
+            set(),
+            False,
+        ),
+        (
+            CharState.STANDING,
+            CharState.THROWING,
+            set(),
+            {EntityType.ITEM_LIGHT_ARROW},
+            False,
+        ),
+        (
+            CharState.THROWING,
+            CharState.STANDING,
+            {EntityType.ITEM_WOODEN_ARROW},
+            set(),
+            True,
+        ),
+        (
+            CharState.STANDING,
+            CharState.THROWING,
+            set(),
+            {EntityType.ITEM_WOODEN_ARROW},
+            True,
+        ),
+        # Sometimes the throwing state was a while ago
+        (CharState.THROWING, CharState.STANDING, set(), set(), True),
+    ],
+)
+def test_attacked_with_throwables(
+    prev_state, cur_state, prev_item_set, cur_item_set, expected_low
+):
+    run_state = RunState()
+    run_state.update_attacked_with_throwables(
+        prev_state, cur_state, prev_item_set, cur_item_set
+    )
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low
