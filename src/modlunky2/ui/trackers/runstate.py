@@ -206,13 +206,15 @@ class RunState:
             self.screen = Screen.UNKNOWN
         self.win_state = win_state
 
-    def update_final_death(self):
+    def update_final_death(
+        self, player_state: CharState, player_item_types: Set[EntityType]
+    ):
         if self.final_death:
             return
 
         if (
-            self.player_state is CharState.DYING
-            and EntityType.ITEM_POWERUP_ANKH not in self.player_item_types
+            player_state is CharState.DYING
+            and EntityType.ITEM_POWERUP_ANKH not in player_item_types
         ):
             self.final_death = True
             return
@@ -651,7 +653,7 @@ class RunState:
         self.update_global_state(game_state)
         self.update_on_level_start()
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
-        self.update_final_death()
+        self.update_final_death(state, self.player_item_types)
 
         self.update_score_items(self.world, self.player_item_types)
 

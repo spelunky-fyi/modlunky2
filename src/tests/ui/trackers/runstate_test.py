@@ -89,6 +89,21 @@ def test_score_items(world, item_set, expected_score, expected_hou_yi):
 
 
 @pytest.mark.parametrize(
+    "player_state,item_set,expected_final_death",
+    [
+        (CharState.STANDING, set(), False),
+        (CharState.DYING, {EntityType.ITEM_POWERUP_ANKH}, False),
+        (CharState.DYING, set(), True),
+        (CharState.DYING, {EntityType.ITEM_POWERUP_PASTE}, True),
+    ],
+)
+def test_final_death(player_state, item_set, expected_final_death):
+    run_state = RunState()
+    run_state.update_final_death(player_state, item_set)
+    assert run_state.final_death == expected_final_death
+
+
+@pytest.mark.parametrize(
     "chain_status,theme,mount_type,mount_tamed,expected_low",
     [
         # Mounting Qilin in Neo-Bab is never allowed
