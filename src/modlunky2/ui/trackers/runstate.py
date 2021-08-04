@@ -221,7 +221,6 @@ class RunState:
 
     def update_has_mounted_tame(
         self,
-        chain_status: ChainStatus,
         theme: Theme,
         player_overlay: PolyPointer[Entity],
     ):
@@ -236,7 +235,7 @@ class RunState:
         if theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            if not chain_status.in_progress:
+            if not self.chain_status.in_progress:
                 self.fail_low()
             return
 
@@ -670,7 +669,7 @@ class RunState:
         overlay = player.overlay
 
         # Low%
-        self.update_has_mounted_tame(self.chain_status, self.theme, overlay)
+        self.update_has_mounted_tame(self.theme, overlay)
         self.update_starting_resources(player, self.player_state, inventory)
         self.update_status_effects(self.player_state, self.player_item_types)
         self.update_had_clover(hud_flags)

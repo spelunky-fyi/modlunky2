@@ -139,7 +139,8 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
     poly_mount = PolyPointer(101, mount, MemContext())
 
     run_state = RunState()
-    run_state.update_has_mounted_tame(chain_status, theme, poly_mount)
+    run_state.chain_status = chain_status
+    run_state.update_has_mounted_tame(theme, poly_mount)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
