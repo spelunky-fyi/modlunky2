@@ -679,3 +679,24 @@ def test_attacked_with_throwables(
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "item_type, property_name",
+    [
+        (EntityType.ITEM_POWERUP_UDJATEYE, "had_udjat_eye"),
+        (EntityType.ITEM_POWERUP_CROWN, "had_world2_chain_headwear"),
+        (EntityType.ITEM_POWERUP_HEDJET, "had_world2_chain_headwear"),
+        (EntityType.ITEM_POWERUP_ANKH, "had_ankh"),
+        (EntityType.ITEM_EXCALIBUR, "held_world4_chain_item"),
+        (EntityType.ITEM_SCEPTER, "held_world4_chain_item"),
+        (EntityType.ITEM_POWERUP_TABLETOFDESTINY, "had_tablet_of_destiny"),
+        (EntityType.ITEM_USHABTI, "held_ushabti"),
+        (EntityType.ITEM_HOUYIBOW, "hou_yis_bow"),
+    ],
+)
+def test_chain(item_type, property_name):
+    run_state = RunState()
+    assert run_state.__getattribute__(property_name) is False
+    run_state.update_chain({item_type})
+    assert run_state.__getattribute__(property_name) is True

@@ -441,11 +441,11 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_chain(self):
+    def update_chain(self, player_item_types):
         if self.chain_status.failed:
             return
 
-        for item_type in self.player_item_types:
+        for item_type in player_item_types:
             if item_type == EntityType.ITEM_POWERUP_UDJATEYE:
                 self.had_udjat_eye = True
             elif item_type in [
@@ -690,7 +690,7 @@ class RunState:
         )
 
         # Chain
-        self.update_chain()
+        self.update_chain(self.player_item_types)
         self.update_has_chain_powerup(self.chain_status, self.player_item_types)
         self.update_is_chain()
 
