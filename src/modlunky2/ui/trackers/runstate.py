@@ -270,7 +270,9 @@ class RunState:
             self.fail_low()
         self.ropes = ropes
 
-    def update_status_effects(self, player_state, player_item_types):
+    def update_status_effects(
+        self, player_state: CharState, player_item_types: Set[EntityType]
+    ):
         if not self.is_low_percent:
             return
 
@@ -310,7 +312,7 @@ class RunState:
         if self.had_clover:
             self.fail_low()
 
-    def update_wore_backpack(self, player_item_types):
+    def update_wore_backpack(self, player_item_types: Set[EntityType]):
         if EntityType.ITEM_JETPACK in player_item_types:
             self.run_label.discard(Label.NO_JETPACK)
 
@@ -323,7 +325,7 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_held_shield(self, player_item_types):
+    def update_held_shield(self, player_item_types: Set[EntityType]):
         if not self.is_low_percent:
             return
 
@@ -355,7 +357,7 @@ class RunState:
             }:
                 self.fail_low()
 
-    def update_has_non_chain_powerup(self, player_item_types):
+    def update_has_non_chain_powerup(self, player_item_types: Set[EntityType]):
         if not self.is_low_percent:
             return
 
@@ -443,7 +445,7 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_chain(self, player_item_types):
+    def update_chain(self, player_item_types: Set[EntityType]):
         if self.chain_status.failed:
             return
 
