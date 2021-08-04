@@ -466,17 +466,17 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW:
                 self.hou_yis_bow = True
 
-    def update_world_themes(self):
-        if self.world not in [2, 4]:
+    def update_world_themes(self, world: int, theme: Theme):
+        if world not in [2, 4]:
             return
 
-        if self.theme in [Theme.JUNGLE, Theme.VOLCANA]:
-            self.world2_theme = self.theme
-        elif self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
+        if theme in [Theme.JUNGLE, Theme.VOLCANA]:
+            self.world2_theme = theme
+        elif theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
             if self.chain_status.in_progress:
                 self.run_label.add(Label.DUAT)
-        elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
+        elif theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
             if self.chain_status.in_progress:
                 self.run_label.add(Label.ABZU)
@@ -489,7 +489,8 @@ class RunState:
         else:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
 
-        if self.world is Theme.SUNKEN_CITY:
+        # TODO delete this code that can't be reached
+        if world is Theme.SUNKEN_CITY:
             self.run_label.set_terminus(Label.SUNKEN_CITY)
 
     def update_terminus(self):
@@ -614,17 +615,17 @@ class RunState:
         self.is_low_percent = False
         self.run_label.discard(Label.LOW)
 
-    def update_on_level_start(self):
+    def update_on_level_start(self, world: int, theme: Theme):
         if not self.level_started:
             return
 
-        self.update_world_themes()
+        self.update_world_themes(world, theme)
 
         self.level_start_ropes = self.ropes
-        if self.theme == Theme.DUAT:
+        if theme == Theme.DUAT:
             self.health = 4
 
-        if self.theme == Theme.OLMEC:
+        if theme == Theme.OLMEC:
             # TODO fail if we leave the bow behind, or win w/o CO
             if self.mc_has_swung_mattock and not self.hou_yis_bow:
                 self.fail_low()
@@ -651,7 +652,7 @@ class RunState:
         hud_flags = game_state.hud_flags
         presence_flags = game_state.presence_flags
         self.update_global_state(game_state)
-        self.update_on_level_start()
+        self.update_on_level_start(self.world, self.theme)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(state, self.player_item_types)
 
