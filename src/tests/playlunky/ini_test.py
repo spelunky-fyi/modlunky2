@@ -39,6 +39,7 @@ def test_legacy_keep_unknown():
 
         [script_settings]
         enable_developer_mode=off
+        enable_developer_console=off
 
         [audio_settings]
         enable_loose_audio_files=on
@@ -85,6 +86,7 @@ def test_legacy_no_unknowns():
 
         [script_settings]
         enable_developer_mode=off
+        enable_developer_console=off
 
         [audio_settings]
         enable_loose_audio_files=on

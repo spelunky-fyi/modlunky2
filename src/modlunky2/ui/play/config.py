@@ -13,6 +13,7 @@ SECTIONS = {
     ],
     "script_settings": [
         "enable_developer_mode",
+        "enable_developer_console",
     ],
     "audio_settings": [
         "enable_loose_audio_files",
@@ -44,6 +45,7 @@ class PlaylunkyConfig:
 
     # Script Settings
     enable_developer_mode: bool = False
+    enable_developer_console: bool = False
 
     # Audio Settings
     enable_loose_audio_files: bool = True

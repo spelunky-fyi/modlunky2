@@ -34,12 +34,12 @@ class Label(Enum):
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
     )
     SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=2, terminus=True)
+    EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
     DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
     JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
     DUAT = LabelMetadata("Duat")
     ABZU = LabelMetadata("Abzu")
     MILLIONAIRE = LabelMetadata("Millionaire")
-    EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
     TRUE_CROWN = LabelMetadata("True Crown")
     COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
     SCORE = LabelMetadata("Score")
@@ -153,13 +153,9 @@ class RunLabel:
             if needle in vis and self._set.isdisjoint(need):
                 vis.discard(needle)
 
-        # Handle "Chain Low% Abzu" vs "Sunken City% Abzu",
-        # treating "Death" like "Sunken City".
-        if not self._set.isdisjoint(
-            {Label.DEATH, Label.SUNKEN_CITY}
-        ) and not self._set.isdisjoint({Label.ABZU, Label.DUAT}):
+        # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
+        if not self._set.isdisjoint({Label.ABZU, Label.DUAT}):
             if Label.LOW in self._set:
-                vis.discard(Label.DEATH)
                 vis.discard(Label.SUNKEN_CITY)
             else:
                 vis.discard(Label.CHAIN)

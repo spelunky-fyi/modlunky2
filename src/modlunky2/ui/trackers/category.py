@@ -11,7 +11,7 @@ from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 
 from .common import TrackerWindow, WatcherThread, CommonCommand
-from .runstate import RunState, FailedMemoryRead
+from .runstate import RunState
 
 logger = logging.getLogger("modlunky2")
 
@@ -89,31 +89,20 @@ class CategoryWatcherThread(WatcherThread):
             always_show_modifiers=self.always_show_modifiers,
         )
 
-    def get_time_total(self):
-        time_total = self.proc.state.time_total
-        if time_total is None:
-            raise FailedMemoryRead("Failed to read time_total")
-        return time_total
-
-    def _poll(self):
+    def poll(self):
+        game_state = self.proc.get_state()
+        if game_state is None:
+            self.shutdown()
+            return
         # Check if we've reset, if so, reinitialize
-        new_time_total = self.get_time_total()
+        new_time_total = game_state.time_total
         if new_time_total < self.time_total:
             self.initialize()
         self.time_total = new_time_total
 
-        self.run_state.update()
+        self.run_state.update(game_state)
         label = self.run_state.get_display()
         self.send(Command.LABEL, label)
-
-    def poll(self):
-        try:
-            self._poll()
-        except FailedMemoryRead as err:
-            logger.critical(
-                "Failed to read expected memory... (%s). Shutting down.", err
-            )
-            self.shutdown()
 
 
 class CategoryWindow(TrackerWindow):

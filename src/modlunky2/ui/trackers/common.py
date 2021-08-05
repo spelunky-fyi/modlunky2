@@ -8,7 +8,8 @@ from tkinter import PhotoImage
 
 from modlunky2.config import DATA_DIR
 from modlunky2.constants import BASE_DIR
-from modlunky2.mem import find_spelunky2_pid, Spel2Process
+from modlunky2.mem import FeedcodeNotFound, find_spelunky2_pid, Spel2Process
+from modlunky2.mem.memrauder.model import ScalarCValueConstructionError
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -47,6 +48,9 @@ class WatcherThread(threading.Thread):
     def _really_poll(self):
         try:
             self.poll()
+        except (FeedcodeNotFound, ScalarCValueConstructionError):
+            # These exceptions are likely transient
+            return
         except Exception:  # pylint: disable=broad-except
             # If the game is no longer running, we assume that caused the failure
             if self.proc.running():
@@ -77,7 +81,9 @@ class WatcherThread(threading.Thread):
             self.die("Failed to open handle to Spel2.exe")
             return False
 
-        if proc.state is None:
+        try:
+            proc.get_state()
+        except (FeedcodeNotFound, ScalarCValueConstructionError):
             # Game might still be starting, we should try again
             return False
 

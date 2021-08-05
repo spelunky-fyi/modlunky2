@@ -1,6 +1,8 @@
+from __future__ import annotations  # PEP 563
 import ctypes
 from ctypes.wintypes import DWORD, HANDLE, LONG, MAX_PATH, WPARAM
-from typing import Optional
+from dataclasses import dataclass
+from typing import List, Optional
 from pathlib import Path
 from struct import unpack, calcsize
 
@@ -9,8 +11,11 @@ import win32api
 import win32con
 import win32process
 
-from .entities import EntityDB
-from .state import FeedcodeNotFound, State
+from .state import State
+from .memrauder.model import (
+    MemoryReader,
+    MemContext,
+)
 
 VirtualQueryEx = ctypes.windll.kernel32.VirtualQueryEx
 CreateToolhelp32Snapshot = ctypes.windll.kernel32.CreateToolhelp32Snapshot
@@ -21,6 +26,14 @@ CloseHandle = ctypes.windll.kernel32.CloseHandle
 
 TH32CS_SNAPPROCESS = 0x00000002
 INVALID_HANDLE_VALUE = -1
+
+
+@dataclass
+class Spel2Reader(MemoryReader):
+    proc: "Spel2Process"
+
+    def read(self, addr: int, size: int) -> Optional[bytes]:
+        return self.proc.read_memory(addr, size)
 
 
 class PROCESSENTRY32(ctypes.Structure):
@@ -116,10 +129,15 @@ class MemoryBasicInformation:
         print(f"    Type: {self.type}")
 
 
+class FeedcodeNotFound(Exception):
+    """Failed to find feedcode within Spelunky2 memory."""
+
+
 class Spel2Process:
     def __init__(self, proc_handle):
         self.proc_handle = proc_handle
-        self._state = None
+        self._feedcode = None
+        self.mem_ctx = MemContext(Spel2Reader(self))
 
     @classmethod
     def from_pid(cls, pid):
@@ -141,97 +159,6 @@ class Spel2Process:
             return win32process.ReadProcessMemory(self.proc_handle, offset, size)
         except pywintypes.error:
             return None
-
-    def read_bool(self, offset):
-        result = self.read_memory(offset, 1)
-        if result is None:
-            return None
-
-        return unpack(b"<?", result)[0]
-
-    def read_u8(self, offset):
-        result = self.read_memory(offset, 1)
-        if result is None:
-            return None
-
-        return unpack(b"<B", result)[0]
-
-    def read_i8(self, offset):
-        result = self.read_memory(offset, 1)
-        if result is None:
-            return None
-
-        return unpack(b"<b", result)[0]
-
-    def read_u16(self, offset):
-        result = self.read_memory(offset, 2)
-        if result is None:
-            return None
-
-        return unpack(b"<H", result)[0]
-
-    def read_i16(self, offset):
-        result = self.read_memory(offset, 2)
-        if result is None:
-            return None
-
-        return unpack(b"<h", result)[0]
-
-    def read_u32(self, offset):
-        result = self.read_memory(offset, 4)
-        if result is None:
-            return None
-
-        return unpack(b"<L", result)[0]
-
-    def read_i32(self, offset):
-        result = self.read_memory(offset, 4)
-        if result is None:
-            return None
-
-        return unpack(b"<l", result)[0]
-
-    def read_u64(self, offset):
-        result = self.read_memory(offset, 8)
-        if result is None:
-            return None
-
-        return unpack(b"<Q", result)[0]
-
-    def read_i64(self, offset):
-        result = self.read_memory(offset, 8)
-        if result is None:
-            return None
-
-        return unpack(b"<q", result)[0]
-
-    def read_void_p(self, offset):
-        result = self.read_memory(offset, calcsize(b"P"))
-        if result is None:
-            return None
-        return unpack(b"P", result)[0]
-
-    def read_vector(self, offset, format_char):
-        result = self.read_memory(offset, 24)
-        if result is None:
-            return result
-
-        data_ptr = unpack(b"P", result[8:16])[0]
-        size = unpack(b"<L", result[20:24])[0]
-        out = []
-        if not size:
-            return out
-
-        item_size = calcsize(format_char)
-
-        result = self.read_memory(data_ptr, size * item_size)
-        if result is None:
-            return None
-
-        return [
-            unpack(format_char, result[idx : idx + item_size])[0]
-            for idx in range(0, len(result), item_size)
-        ]
 
     def find(self, offset, needle, bsize=4096):
         if bsize < len(needle):
@@ -317,25 +244,22 @@ class Spel2Process:
 
         return exe + offset
 
-    def get_feedcode(self):
+    def try_get_feedcode(self) -> Optional[int]:
+        if self._feedcode is not None:
+            return self._feedcode
         for page in self.memory_pages(min_addr=0x40000000000):
             result = self.find_in_page(page, b"\x00\xde\xc0\xed\xfe")
             if result:
+                self._feedcode = result
                 return result
         return None
 
-    def get_state(self) -> State:
-        try:
-            return State(self)
-        except FeedcodeNotFound:
-            # This can happen if the game is starting up or shutting down
-            return None
+    def get_feedcode(self) -> int:
+        feedcode = self.try_get_feedcode()
+        if feedcode is None:
+            raise FeedcodeNotFound()
+        return feedcode
 
-    @property
-    def state(self) -> State:
-        if self._state is None:
-            self._state = self.get_state()
-        return self._state
-
-    def get_entity_db(self):
-        return EntityDB(self)
+    def get_state(self) -> Optional[State]:
+        addr = self.get_feedcode() - 0x5F
+        return self.mem_ctx.type_at_addr(State, addr)

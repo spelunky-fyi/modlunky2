@@ -1,3 +1,4 @@
+from enum import IntEnum
 import logging
 from typing import Optional, Set
 
@@ -6,22 +7,27 @@ from modlunky2.mem.entities import (
     BACKPACKS,
     CHAIN_POWERUP_ENTITIES,
     CharState,
+    Entity,
     EntityType,
     Inventory,
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
     Layer,
     MOUNTS,
+    Mount,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
     TELEPORT_ENTITIES,
 )
+from modlunky2.mem.memrauder.model import PolyPointer
+from modlunky2.mem.memrauder.msvc import UnorderedMap
 from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
     RunRecapFlags,
     Screen,
+    State,
     Theme,
     WinState,
 )
@@ -31,8 +37,24 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 logger = logging.getLogger("modlunky2")
 
 
-class FailedMemoryRead(Exception):
-    """Failed to read memory from Spelunky2 process."""
+# Status of the Abzu/Duat quest chain.
+# The properties are for convenience in 'if' conditions.
+class ChainStatus(IntEnum):
+    UNSTARTED = 0
+    IN_PROGRESS = 1
+    FAILED = 2
+
+    @property
+    def unstarted(self):
+        return self is ChainStatus.UNSTARTED
+
+    @property
+    def in_progress(self):
+        return self is ChainStatus.IN_PROGRESS
+
+    @property
+    def failed(self):
+        return self is ChainStatus.FAILED
 
 
 class RunState:
@@ -95,7 +117,7 @@ class RunState:
         self.mc_has_swung_mattock = False
 
         # Chain
-        self.is_chain: Optional[bool] = None  # None if not yet, False if failed chain
+        self.chain_status = ChainStatus.UNSTARTED
         self.hou_yis_bow = False
         self.has_chain_powerup = False
         self.had_udjat_eye = False
@@ -164,18 +186,12 @@ class RunState:
             elif item_type == EntityType.ITEM_HOUYIBOW and self.world >= 3:
                 self.hou_yis_waddler = True
 
-    def get_critical_state(self, var):
-        result = getattr(self._proc.state, var)
-        if result is None:
-            raise FailedMemoryRead(f"Failed to read critical state for {var}")
-        return result
-
-    def update_global_state(self):
-        world = self.get_critical_state("world")
-        level = self.get_critical_state("level")
-        theme = self.get_critical_state("theme")
-        screen = self.get_critical_state("screen")
-        win_state = self.get_critical_state("win_state")
+    def update_global_state(self, game_state: State):
+        world = game_state.world
+        level = game_state.level
+        theme = game_state.theme
+        screen = game_state.screen
+        win_state = game_state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -203,25 +219,25 @@ class RunState:
             self.final_death = True
             return
 
-    def update_has_mounted_tame(self, player_overlay):
+    def update_has_mounted_tame(self, player_overlay: PolyPointer[Entity]):
         if not self.is_low_percent:
             return
 
-        if not player_overlay:
+        if not player_overlay.present():
             return
 
-        entity_type: EntityType = player_overlay.type.id
+        entity_type: EntityType = player_overlay.value.type.id
         # Allowed to ride tamed qilin in tiamats
         if self.theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
-            if not self.is_chain:
+            if not self.chain_status.in_progress:
                 self.fail_low()
             return
 
         if entity_type in MOUNTS:
-            mount = player_overlay.as_mount()
-            if mount.is_tamed:
+            mount = player_overlay.as_type(Mount)
+            if mount is not None and mount.is_tamed:
                 self.has_mounted_tame = True
                 self.fail_low()
 
@@ -230,28 +246,24 @@ class RunState:
             return
 
         health = player.health
-        if health is not None:
-
-            if (
-                health > self.health and self.player_state != CharState.DYING
-            ) or health > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.health = health
+        if (
+            health > self.health and self.player_state != CharState.DYING
+        ) or health > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.health = health
 
         bombs = inventory.bombs
-        if bombs is not None:
-            if bombs > self.bombs or bombs > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.bombs = bombs
+        if bombs > self.bombs or bombs > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.bombs = bombs
 
         ropes = inventory.ropes
-        if ropes is not None:
-            if ropes > self.level_start_ropes or ropes > 4:
-                self.increased_starting_items = True
-                self.fail_low()
-            self.ropes = ropes
+        if ropes > self.level_start_ropes or ropes > 4:
+            self.increased_starting_items = True
+            self.fail_low()
+        self.ropes = ropes
 
     def update_status_effects(self):
         if not self.is_low_percent:
@@ -325,7 +337,7 @@ class RunState:
                 self.has_chain_powerup = True
                 self.failed_low_if_not_chain = True
 
-        if self.is_chain:
+        if self.chain_status.in_progress:
             return
 
         # Fail low if we've failed the chain and pick up a non-starting powerup
@@ -361,7 +373,7 @@ class RunState:
                 if item_type == EntityType.ITEM_EXCALIBUR and self.theme == Theme.ABZU:
                     self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
-                    if not self.is_chain:
+                    if not self.chain_status.in_progress:
                         self.fail_low()
                     continue
 
@@ -412,7 +424,7 @@ class RunState:
                 return
 
     def update_chain(self):
-        if self.is_chain is False:
+        if self.chain_status.failed:
             return
 
         for item_type in self.player_item_types:
@@ -442,11 +454,11 @@ class RunState:
             self.world2_theme = self.theme
         elif self.theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
-            if self.is_chain:
+            if self.chain_status.in_progress:
                 self.run_label.add(Label.DUAT)
         elif self.theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
-            if self.is_chain:
+            if self.chain_status.in_progress:
                 self.run_label.add(Label.ABZU)
 
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
@@ -474,7 +486,7 @@ class RunState:
             terminus = Label.COSMIC_OCEAN
         elif self.hou_yis_bow and not self.is_score_run:
             terminus = Label.COSMIC_OCEAN
-        elif self.had_ankh or self.is_chain or self.world == 7:
+        elif self.had_ankh or self.chain_status.in_progress or self.world == 7:
             terminus = Label.SUNKEN_CITY
 
         if terminus is Label.COSMIC_OCEAN:
@@ -484,10 +496,10 @@ class RunState:
         self.run_label.set_terminus(terminus)
 
     def update_is_chain(self):
-        if self.is_chain is False:
+        if self.chain_status.failed:
             return
 
-        if self.is_chain is None:
+        if self.chain_status.unstarted:
             if any([self.had_udjat_eye, self.had_world2_chain_headwear]):
                 self.start_chain()
 
@@ -543,14 +555,11 @@ class RunState:
         if self.win_state is WinState.TIAMAT:
             self.fail_chain()
 
-    def update_millionaire(self, inventory: Inventory):
+    def update_millionaire(self, game_state: State, inventory: Inventory):
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
-        shop_and_bonus = self.get_critical_state("money_shop_total")
-        if collected_this_level is not None and collected_prev_levels is not None:
-            self.net_score = (
-                collected_this_level + collected_prev_levels + shop_and_bonus
-            )
+        shop_and_bonus = game_state.money_shop_total
+        self.net_score = collected_this_level + collected_prev_levels + shop_and_bonus
 
         # The category requires completion, which gives at least a $100K bonus.
         if self.net_score >= 900_000:
@@ -572,11 +581,11 @@ class RunState:
             self.run_label.add(Label.MILLIONAIRE)
 
     def start_chain(self):
-        self.is_chain = True
+        self.chain_status = ChainStatus.IN_PROGRESS
         self.run_label.add(Label.CHAIN)
 
     def fail_chain(self):
-        self.is_chain = False
+        self.chain_status = ChainStatus.FAILED
         self.run_label.discard(Label.CHAIN)
         if self.failed_low_if_not_chain:
             self.fail_low()
@@ -599,8 +608,10 @@ class RunState:
             if self.mc_has_swung_mattock and not self.hou_yis_bow:
                 self.fail_low()
 
-    def update(self):
-        player = self._proc.state.players[0]
+    def update(self, game_state: State):
+        if game_state.items is None:
+            return
+        player = game_state.items.players[0]
         if player is None:
             return
 
@@ -609,18 +620,18 @@ class RunState:
         last_state = player.last_state
         layer = player.layer
 
-        if not all(var is not None for var in [inventory, state, last_state, layer]):
+        if inventory is None:
             return
 
         self.player_state = state
         self.player_last_state = last_state
 
-        run_recap_flags = self.get_critical_state("run_recap_flags")
-        hud_flags = self.get_critical_state("hud_flags")
-        presence_flags = self.get_critical_state("presence_flags")
-        self.update_global_state()
+        run_recap_flags = game_state.run_recap_flags
+        hud_flags = game_state.hud_flags
+        presence_flags = game_state.presence_flags
+        self.update_global_state(game_state)
         self.update_on_level_start()
-        self.update_player_item_types(player)
+        self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death()
 
         self.update_score_items()
@@ -650,25 +661,28 @@ class RunState:
         self.update_has_chain_powerup()
         self.update_is_chain()
 
-        self.update_millionaire(inventory)
+        self.update_millionaire(game_state, inventory)
 
         self.update_terminus()
 
-    def update_player_item_types(self, player: Player):
+    def update_player_item_types(
+        self,
+        instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]],
+        player: Player,
+    ):
         item_types = set()
-        entity_map = self._proc.state.uid_to_entity
+        if player.items is None:
+            return
         for item in player.items:
-            entity = entity_map.get(item)
-            if entity is None:
+            entity_poly = instance_id_to_pointer.get(item)
+            if entity_poly is None or not entity_poly.present():
                 continue
 
-            entity_type = entity.type
+            entity_type = entity_poly.value.type
             if entity_type is None:
                 continue
 
-            entity_type = entity_type.entity_type
-            if entity_type is not None:
-                item_types.add(entity_type)
+            item_types.add(entity_type.entity_type)
 
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types

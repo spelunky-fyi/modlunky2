@@ -25,6 +25,9 @@ class TrackersFrame(ttk.LabelFrame):
         self.rowconfigure(self.button_index, weight=1)
 
     def add_button(self, button):
+        if self.button_index > 0:
+            ttk.Separator(self).grid(column=0, row=self.button_index, sticky="nsew")
+            self.button_index += 1
         button.grid(column=0, row=self.button_index, sticky="nsew")
         self.button_index += 1
 
