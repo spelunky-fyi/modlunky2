@@ -494,21 +494,21 @@ class RunState:
         if world is Theme.SUNKEN_CITY:
             self.run_label.set_terminus(Label.SUNKEN_CITY)
 
-    def update_terminus(self):
+    def update_terminus(self, world: int, theme: Theme, win_state: WinState):
         terminus = Label.ANY
-        if self.theme is Theme.COSMIC_OCEAN:
+        if theme is Theme.COSMIC_OCEAN:
             terminus = Label.COSMIC_OCEAN
         elif self.final_death:
             terminus = Label.DEATH
-        elif self.win_state is WinState.TIAMAT:
+        elif win_state is WinState.TIAMAT:
             terminus = Label.ANY
-        elif self.win_state is WinState.HUNDUN:
+        elif win_state is WinState.HUNDUN:
             terminus = Label.SUNKEN_CITY
         elif self.hou_yis_waddler:
             terminus = Label.COSMIC_OCEAN
         elif self.hou_yis_bow and not self.is_score_run:
             terminus = Label.COSMIC_OCEAN
-        elif self.had_ankh or self.chain_status.in_progress or self.world == 7:
+        elif self.had_ankh or self.chain_status.in_progress or world == 7:
             terminus = Label.SUNKEN_CITY
 
         if terminus is Label.COSMIC_OCEAN:
@@ -700,7 +700,7 @@ class RunState:
 
         self.update_millionaire(game_state, inventory)
 
-        self.update_terminus()
+        self.update_terminus(self.world, self.theme, self.win_state)
 
     def update_player_item_types(
         self,

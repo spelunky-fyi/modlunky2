@@ -10,11 +10,11 @@ from modlunky2.mem.entities import (
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
-from modlunky2.mem.state import HudFlags, PresenceFlags, RunRecapFlags, Theme
+from modlunky2.mem.state import HudFlags, PresenceFlags, RunRecapFlags, Theme, WinState
 from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.ui.trackers.runstate import ChainStatus, RunState
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-lines
 
 
 @pytest.mark.parametrize(
@@ -925,3 +925,142 @@ def test_world_themes_label(
 
     is_duat = Label.DUAT in run_state.run_label._set
     assert is_duat == expected_duat
+
+
+@pytest.mark.parametrize(
+    "world,win_state,final_death,had_ankh,chain_status,expected_terminus",
+    [
+        (1, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.ANY),
+        (1, WinState.NO_WIN, True, False, ChainStatus.UNSTARTED, Label.DEATH),
+        (2, WinState.NO_WIN, False, False, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
+        (4, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.ANY),
+        # If you have the anhk, it means Sunken City%
+        (4, WinState.NO_WIN, False, True, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
+        (4, WinState.NO_WIN, False, True, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
+        (4, WinState.NO_WIN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
+        # Tried for chain, but failed before getting the ankh means falling back to Any%
+        (4, WinState.NO_WIN, False, False, ChainStatus.FAILED, Label.ANY),
+        # Died before Sunken City means Death%
+        (4, WinState.NO_WIN, True, True, ChainStatus.IN_PROGRESS, Label.DEATH),
+        # If you're in Sunken City
+        (7, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
+        (7, WinState.NO_WIN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
+        # Tiamat win means Any%
+        (6, WinState.TIAMAT, False, False, ChainStatus.UNSTARTED, Label.ANY),
+        (6, WinState.TIAMAT, False, True, ChainStatus.UNSTARTED, Label.ANY),
+        (6, WinState.TIAMAT, False, True, ChainStatus.IN_PROGRESS, Label.ANY),
+        (6, WinState.TIAMAT, False, True, ChainStatus.FAILED, Label.ANY),
+        # ... even if you're on the score screen
+        (1, WinState.TIAMAT, False, False, ChainStatus.UNSTARTED, Label.ANY),
+        # Hundun win means Sunken City%
+        (6, WinState.HUNDUN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
+        (6, WinState.HUNDUN, False, True, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
+        (6, WinState.HUNDUN, False, True, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
+        (6, WinState.HUNDUN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
+        # ... even if you're on the score screen
+        (1, WinState.HUNDUN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
+    ],
+)
+def test_update_terminus_non_co(
+    world, win_state, final_death, had_ankh, chain_status, expected_terminus
+):
+    run_state = RunState()
+    run_state.final_death = final_death
+    run_state.had_ankh = had_ankh
+    run_state.chain_status = chain_status
+
+    theme = Theme.TIDE_POOL
+    run_state.update_terminus(world, theme, win_state)
+
+    assert Label.NO_CO in run_state.run_label._set
+    assert run_state.run_label._terminus == expected_terminus
+
+
+@pytest.mark.parametrize(
+    "world,theme,hou_yis_waddler,final_death,chain_status,expected_terminus",
+    [
+        # No bow here means no CO, regardless of chain
+        (3, Theme.OLMEC, False, False, ChainStatus.UNSTARTED, Label.ANY),
+        (3, Theme.OLMEC, False, False, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
+        (3, Theme.OLMEC, False, False, ChainStatus.FAILED, Label.ANY),
+        # Having the bow here means CO, regardless of chain
+        (3, Theme.OLMEC, True, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
+        (3, Theme.OLMEC, True, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
+        # ... but not if we're dead
+        (3, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
+        # Same cases, checking for SC oddness
+        (7, Theme.OLMEC, True, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
+        (7, Theme.OLMEC, True, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
+        (7, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
+        # Being in CO implies CO, even if we're dead
+        (7, Theme.COSMIC_OCEAN, True, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
+        (7, Theme.COSMIC_OCEAN, True, True, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
+    ],
+)
+def test_update_terminus_score_co(
+    world, theme, hou_yis_waddler, chain_status, final_death, expected_terminus
+):
+    run_state = RunState()
+    run_state.chain_status = chain_status
+    run_state.final_death = final_death
+    run_state.hou_yis_waddler = hou_yis_waddler
+    run_state.hou_yis_bow = True
+    run_state.is_score_run = True
+
+    win_state = WinState.NO_WIN
+    run_state.update_terminus(world, theme, win_state)
+
+    assert run_state.run_label._terminus == expected_terminus
+
+
+@pytest.mark.parametrize(
+    # All of these cases assume we picked up the bow
+    "world,theme,final_death,had_ankh,chain_status,expected_terminus",
+    [
+        # Having the bow here means CO, regardless of chain
+        (3, Theme.OLMEC, False, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
+        (3, Theme.OLMEC, False, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
+        (3, Theme.OLMEC, False, True, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
+        (3, Theme.OLMEC, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
+        # ... but not if we're dead
+        (3, Theme.OLMEC, True, False, ChainStatus.UNSTARTED, Label.DEATH),
+        (3, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
+        # Similar cases, checking for SC oddness
+        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
+        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
+        (
+            7,
+            Theme.SUNKEN_CITY,
+            False,
+            True,
+            ChainStatus.IN_PROGRESS,
+            Label.COSMIC_OCEAN,
+        ),
+        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
+        (7, Theme.SUNKEN_CITY, True, False, ChainStatus.UNSTARTED, Label.DEATH),
+        (7, Theme.SUNKEN_CITY, True, True, ChainStatus.IN_PROGRESS, Label.DEATH),
+        # Being in CO implies CO, even if we're dead
+        (7, Theme.COSMIC_OCEAN, True, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
+        (
+            7,
+            Theme.COSMIC_OCEAN,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            Label.COSMIC_OCEAN,
+        ),
+    ],
+)
+def test_update_terminus_speed_co(
+    world, theme, had_ankh, chain_status, final_death, expected_terminus
+):
+    run_state = RunState()
+    run_state.had_ankh = had_ankh
+    run_state.chain_status = chain_status
+    run_state.final_death = final_death
+    run_state.hou_yis_bow = True
+
+    win_state = WinState.NO_WIN
+    run_state.update_terminus(world, theme, win_state)
+
+    assert run_state.run_label._terminus == expected_terminus
