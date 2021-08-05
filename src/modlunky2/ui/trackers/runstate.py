@@ -579,7 +579,12 @@ class RunState:
         if win_state is WinState.TIAMAT:
             self.fail_chain()
 
-    def update_millionaire(self, game_state: State, inventory: Inventory):
+    def update_millionaire(
+        self,
+        game_state: State,
+        inventory: Inventory,
+        player_item_types: Set[EntityType],
+    ):
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
         shop_and_bonus = game_state.money_shop_total
@@ -592,15 +597,16 @@ class RunState:
         # We drop millionaire if either:
         # * You used to have enough money, but no longer do
         # * You picked up the clone gun, but won without enough money
+        # TODO fix clone gun case
         if self.net_score < 900_000 and (
-            not self.clone_gun_wo_bow or self.win_state is not WinState.NO_WIN
+            not self.clone_gun_wo_bow or game_state.win_state is not WinState.NO_WIN
         ):
             self.run_label.discard(Label.MILLIONAIRE)
 
         if self.clone_gun_wo_bow or self.hou_yis_bow:
             return
         # If the clone gun is picked up, without picking up the bow, we assume this is a millionaire attempt.
-        if EntityType.ITEM_CLONEGUN in self.player_item_types:
+        if EntityType.ITEM_CLONEGUN in player_item_types:
             self.clone_gun_wo_bow = True
             self.run_label.add(Label.MILLIONAIRE)
 
@@ -700,7 +706,7 @@ class RunState:
         self.update_has_chain_powerup(self.chain_status, self.player_item_types)
         self.update_is_chain(self.world, self.level, self.theme, self.win_state)
 
-        self.update_millionaire(game_state, inventory)
+        self.update_millionaire(game_state, inventory, self.player_item_types)
 
         self.update_terminus(self.world, self.theme, self.win_state)
 

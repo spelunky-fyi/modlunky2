@@ -10,7 +10,14 @@ from modlunky2.mem.entities import (
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
 
-from modlunky2.mem.state import HudFlags, PresenceFlags, RunRecapFlags, Theme, WinState
+from modlunky2.mem.state import (
+    HudFlags,
+    PresenceFlags,
+    RunRecapFlags,
+    State,
+    Theme,
+    WinState,
+)
 from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.ui.trackers.runstate import ChainStatus, RunState
 
@@ -1359,3 +1366,70 @@ def test_is_chain_post_world4(
     run_state.update_is_chain(world, level, theme, win_state)
 
     assert run_state.chain_status == expected_chain_status
+
+
+@pytest.mark.parametrize(
+    "item_set,hou_yis_bow,expectd_clone_gun_wo_bow,expected_millionaire",
+    [
+        (set(), False, False, False),
+        (set(), True, False, False),
+        ({EntityType.ITEM_CLONEGUN}, True, False, False),
+        ({EntityType.ITEM_CLONEGUN}, False, True, True),
+    ],
+)
+def test_millionaire_clone_gun_wo_bow(
+    item_set, hou_yis_bow, expectd_clone_gun_wo_bow, expected_millionaire
+):
+    run_state = RunState()
+    run_state.hou_yis_bow = hou_yis_bow
+    run_state.update_millionaire(State(), Inventory(), item_set)
+
+    assert run_state.clone_gun_wo_bow == expectd_clone_gun_wo_bow
+
+    is_millionaire = Label.MILLIONAIRE in run_state.run_label._set
+    assert is_millionaire == expected_millionaire
+
+
+@pytest.mark.parametrize(
+    "money_shop_total,win_state,money,collected_money_total,clone_gun_wo_bow,expected_millionaire",
+    [
+        # Varying amounts of money collected
+        (0, WinState.NO_WIN, 0, 0, False, False),
+        (0, WinState.NO_WIN, 900_000, 0, False, True),
+        (0, WinState.NO_WIN, 899_999, 1, False, True),
+        (0, WinState.NO_WIN, 1, 899_999, False, True),
+        # Bought something
+        (-2_500, WinState.NO_WIN, 0, 0, False, False),
+        (-2_500, WinState.NO_WIN, 900_000, 10, False, False),
+        (-2_500, WinState.NO_WIN, 900_000, 2_500, False, True),
+        # With the clone gun, money amounts don't matter before winning
+        (0, WinState.NO_WIN, 0, 0, True, False),  # bug
+        (0, WinState.NO_WIN, 900_000, 0, True, True),
+        (-5_000, WinState.NO_WIN, 900_000, 0, True, False),  # bug
+        # Before statue drops on score screen we don't have the bonus, and that's OK
+        (0, WinState.TIAMAT, 900_000, 0, False, True),
+        (100_000, WinState.TIAMAT, 900_000, 0, False, True),
+        # Winning make the clone gun irrelevant
+        (0, WinState.TIAMAT, 899_999, 0, True, False),
+        (0, WinState.TIAMAT, 900_000, 0, True, True),
+        (100_000, WinState.TIAMAT, 900_000, 0, True, True),
+    ],
+)
+def test_millionaire_(
+    money_shop_total,
+    win_state,
+    money,
+    collected_money_total,
+    clone_gun_wo_bow,
+    expected_millionaire,
+):
+    run_state = RunState()
+    run_state.clone_gun_wo_bow = clone_gun_wo_bow
+
+    game_state = State(money_shop_total=money_shop_total, win_state=win_state)
+    inventory = Inventory(money=money, collected_money_total=collected_money_total)
+    item_set = set()
+    run_state.update_millionaire(game_state, inventory, item_set)
+
+    is_millionaire = Label.MILLIONAIRE in run_state.run_label._set
+    assert is_millionaire == expected_millionaire
