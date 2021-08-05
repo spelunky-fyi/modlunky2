@@ -1433,3 +1433,56 @@ def test_millionaire_(
 
     is_millionaire = Label.MILLIONAIRE in run_state.run_label._set
     assert is_millionaire == expected_millionaire
+
+
+@pytest.mark.parametrize(
+    "world,theme,ropes,prev_health,expected_level_start_ropes,expected_health",
+    [
+        # Level start ropes
+        (2, Theme.JUNGLE, 4, 4, 4, 4),
+        (2, Theme.VOLCANA, 2, 3, 2, 3),
+        # Duat health adjustment
+        (4, Theme.DUAT, 5, 2, 5, 4),
+        (4, Theme.DUAT, 5, 4, 5, 4),
+        (4, Theme.DUAT, 5, 10, 5, 4),
+    ],
+)
+def test_on_level_start_state(
+    world, theme, ropes, prev_health, expected_level_start_ropes, expected_health
+):
+    run_state = RunState()
+    run_state.level_started = True
+    run_state.health = prev_health
+
+    run_state.update_on_level_start(world, theme, ropes)
+
+    assert run_state.level_start_ropes == expected_level_start_ropes
+    assert run_state.health == expected_health
+
+
+@pytest.mark.parametrize(
+    "world,theme,mc_has_swung_mattock,hou_yis_bow,expected_low",
+    [
+        # Bow isn't needed in world 2
+        (2, Theme.VOLCANA, False, False, True),
+        (2, Theme.VOLCANA, True, False, True),
+        (2, Theme.VOLCANA, True, True, True),
+        # Bow required if mattock was swung in Moon Challenge
+        (3, Theme.OLMEC, False, False, True),
+        (3, Theme.OLMEC, True, False, False),
+        (3, Theme.OLMEC, True, True, True),
+    ],
+)
+def test_on_level_start_low(
+    world, theme, mc_has_swung_mattock, hou_yis_bow, expected_low
+):
+    run_state = RunState()
+    run_state.level_started = True
+    run_state.mc_has_swung_mattock = mc_has_swung_mattock
+    run_state.hou_yis_bow = hou_yis_bow
+
+    ropes = 4
+    run_state.update_on_level_start(world, theme, ropes)
+
+    is_low = Label.LOW in run_state.run_label._set
+    assert is_low == expected_low

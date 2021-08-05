@@ -624,13 +624,13 @@ class RunState:
         self.is_low_percent = False
         self.run_label.discard(Label.LOW)
 
-    def update_on_level_start(self, world: int, theme: Theme):
+    def update_on_level_start(self, world: int, theme: Theme, ropes: int):
         if not self.level_started:
             return
 
         self.update_world_themes(world, theme)
 
-        self.level_start_ropes = self.ropes
+        self.level_start_ropes = ropes
         if theme == Theme.DUAT:
             self.health = 4
 
@@ -661,7 +661,7 @@ class RunState:
         hud_flags = game_state.hud_flags
         presence_flags = game_state.presence_flags
         self.update_global_state(game_state)
-        self.update_on_level_start(self.world, self.theme)
+        self.update_on_level_start(self.world, self.theme, self.ropes)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(state, self.player_item_types)
 
