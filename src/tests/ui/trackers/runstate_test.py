@@ -1064,3 +1064,298 @@ def test_update_terminus_speed_co(
     run_state.update_terminus(world, theme, win_state)
 
     assert run_state.run_label._terminus == expected_terminus
+
+
+@pytest.mark.parametrize(
+    "world,had_udjat_eye,had_world2_chain_headwear,prev_chain_status,expected_chain_status",
+    [
+        # World 1
+        (1, False, False, ChainStatus.UNSTARTED, ChainStatus.UNSTARTED),
+        (1, True, False, ChainStatus.UNSTARTED, ChainStatus.IN_PROGRESS),
+        # World 2, various points
+        (2, False, False, ChainStatus.UNSTARTED, ChainStatus.UNSTARTED),
+        (2, False, True, ChainStatus.UNSTARTED, ChainStatus.IN_PROGRESS),
+        (2, True, False, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+        (2, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+        # Check start of Olmec
+        (3, False, False, ChainStatus.UNSTARTED, ChainStatus.FAILED),
+        (3, False, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+        (3, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (3, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+    ],
+)
+def test_is_chain_pre_world4(
+    world,
+    had_udjat_eye,
+    had_world2_chain_headwear,
+    prev_chain_status,
+    expected_chain_status,
+):
+    run_state = RunState()
+    run_state.had_udjat_eye = had_udjat_eye
+    run_state.had_world2_chain_headwear = had_world2_chain_headwear
+    run_state.chain_status = prev_chain_status
+
+    level = 1  # bogus, but we don't look at it here
+    theme = Theme.DWELLING  # bogus, but we don't look at it here
+    win_state = WinState.NO_WIN
+    run_state.update_is_chain(world, level, theme, win_state)
+
+    assert run_state.chain_status == expected_chain_status
+
+
+@pytest.mark.parametrize(
+    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
+    "theme,level,had_ankh,held_world4_chain_item,prev_chain_status,expected_chain_status",
+    [
+        # Level 1 depends on Ankh
+        (Theme.TIDE_POOL, 1, False, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (
+            Theme.TIDE_POOL,
+            1,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # Level 2 might have collected Excalibur or not
+        (Theme.TIDE_POOL, 2, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (
+            Theme.TIDE_POOL,
+            2,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (
+            Theme.TIDE_POOL,
+            2,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # Level 3 depends on Excalibur
+        (Theme.TIDE_POOL, 3, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (
+            Theme.TIDE_POOL,
+            3,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # Level 4 depends on Abzu
+        (Theme.TIDE_POOL, 4, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (Theme.TIDE_POOL, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (Theme.ABZU, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+    ],
+)
+def test_is_chain_tide_pool(
+    theme,
+    level,
+    had_ankh,
+    held_world4_chain_item,
+    prev_chain_status,
+    expected_chain_status,
+):
+    run_state = RunState()
+    run_state.had_udjat_eye = False
+    run_state.had_world2_chain_headwear = True
+    run_state.had_ankh = had_ankh
+    run_state.held_world4_chain_item = held_world4_chain_item
+    run_state.chain_status = prev_chain_status
+
+    world = 4
+    win_state = WinState.NO_WIN
+    run_state.update_is_chain(world, level, theme, win_state)
+
+    assert run_state.chain_status == expected_chain_status
+
+
+@pytest.mark.parametrize(
+    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
+    "theme,level,had_ankh,held_world4_chain_item,prev_chain_status,expected_chain_status",
+    [
+        # Level 1 depends on Ankh. Might have collected the scepter or not
+        (Theme.TEMPLE, 1, False, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (
+            Theme.TEMPLE,
+            1,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (Theme.TEMPLE, 1, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+        # Level 2 depends on scepter
+        (Theme.TEMPLE, 2, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (Theme.TEMPLE, 2, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (Theme.TEMPLE, 2, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+        # Level 3 depends on CoG
+        (Theme.TEMPLE, 3, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (Theme.TEMPLE, 3, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (
+            Theme.CITY_OF_GOLD,
+            3,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # Level 4 depends on Duat
+        (Theme.TEMPLE, 4, True, True, ChainStatus.FAILED, ChainStatus.FAILED),
+        (Theme.TEMPLE, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
+        (Theme.DUAT, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
+    ],
+)
+def test_is_chain_temple(
+    theme,
+    level,
+    had_ankh,
+    held_world4_chain_item,
+    prev_chain_status,
+    expected_chain_status,
+):
+    run_state = RunState()
+    run_state.had_udjat_eye = False
+    run_state.had_world2_chain_headwear = True
+    run_state.had_ankh = had_ankh
+    run_state.held_world4_chain_item = held_world4_chain_item
+    run_state.chain_status = prev_chain_status
+
+    world = 4
+    win_state = WinState.NO_WIN
+    run_state.update_is_chain(world, level, theme, win_state)
+
+    assert run_state.chain_status == expected_chain_status
+
+
+@pytest.mark.parametrize(
+    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
+    "world,level,win_state,had_tablet_of_destiny,held_ushabti,prev_chain_status,expected_chain_status",
+    [
+        # Ice Caves depends on Tablet
+        (5, 1, WinState.NO_WIN, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (
+            5,
+            1,
+            WinState.NO_WIN,
+            False,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.FAILED,
+        ),
+        (
+            5,
+            1,
+            WinState.NO_WIN,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # 6-1 is steady
+        (6, 1, WinState.NO_WIN, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (
+            6,
+            1,
+            WinState.NO_WIN,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # 6-2 may or may not have collected Ushabti
+        (
+            6,
+            2,
+            WinState.NO_WIN,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (
+            6,
+            2,
+            WinState.NO_WIN,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # 6-3 depends on Ushabti
+        (
+            6,
+            3,
+            WinState.NO_WIN,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.FAILED,
+        ),
+        (
+            6,
+            3,
+            WinState.NO_WIN,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # 6-4 depends on win-state
+        (6, 4, WinState.NO_WIN, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
+        (
+            6,
+            4,
+            WinState.TIAMAT,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.FAILED,
+        ),
+        (
+            6,
+            4,
+            WinState.NO_WIN,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+        # 7-1 onward should be steady-state
+        (
+            7,
+            1,
+            WinState.NO_WIN,
+            True,
+            True,
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+        ),
+    ],
+)
+def test_is_chain_post_world4(
+    world,
+    level,
+    win_state,
+    had_tablet_of_destiny,
+    held_ushabti,
+    prev_chain_status,
+    expected_chain_status,
+):
+    run_state = RunState()
+    run_state.had_udjat_eye = False
+    run_state.had_world2_chain_headwear = True
+    run_state.had_ankh = True
+    run_state.held_world4_chain_item = True
+    run_state.had_tablet_of_destiny = had_tablet_of_destiny
+    run_state.held_ushabti = held_ushabti
+    run_state.chain_status = prev_chain_status
+
+    theme = Theme.ICE_CAVES  # bogus, but we don't look at it
+    run_state.update_is_chain(world, level, theme, win_state)
+
+    assert run_state.chain_status == expected_chain_status

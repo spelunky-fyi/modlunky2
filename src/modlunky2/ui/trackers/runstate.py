@@ -517,7 +517,9 @@ class RunState:
             self.run_label.add(Label.NO_CO)
         self.run_label.set_terminus(terminus)
 
-    def update_is_chain(self):
+    def update_is_chain(
+        self, world: int, level: int, theme: Theme, win_state: WinState
+    ):
         if self.chain_status.failed:
             return
 
@@ -525,33 +527,33 @@ class RunState:
             if any([self.had_udjat_eye, self.had_world2_chain_headwear]):
                 self.start_chain()
 
-        if self.world == 3:
+        if world == 3:
             if not self.had_world2_chain_headwear:
                 self.fail_chain()
 
-        elif self.world == 4:
+        elif world == 4:
             if not all([self.had_world2_chain_headwear, self.had_ankh]):
                 self.fail_chain()
 
-            if self.theme == Theme.TIDE_POOL:
+            if theme == Theme.TIDE_POOL:
                 # Didn't go to Abzu
-                if self.level == 4:
+                if level == 4:
                     self.fail_chain()
 
                 # Didn't pick up excalibur
-                if self.level > 2 and not self.held_world4_chain_item:
+                if level > 2 and not self.held_world4_chain_item:
                     self.fail_chain()
 
-            elif self.theme == Theme.TEMPLE:
+            elif theme == Theme.TEMPLE:
                 # Didn't go to City of Gold or Duat
-                if self.level in (3, 4):
+                if level in (3, 4):
                     self.fail_chain()
 
                 # Didn't pick up scepter
-                if self.level > 1 and not self.held_world4_chain_item:
+                if level > 1 and not self.held_world4_chain_item:
                     self.fail_chain()
 
-        elif self.world == 5:
+        elif world == 5:
             if not all(
                 [
                     self.had_world2_chain_headwear,
@@ -562,7 +564,7 @@ class RunState:
             ):
                 self.fail_chain()
 
-        elif self.world == 6 and self.level > 2:
+        elif world == 6 and level > 2:
             if not all(
                 [
                     self.had_world2_chain_headwear,
@@ -574,7 +576,7 @@ class RunState:
             ):
                 self.fail_chain()
 
-        if self.win_state is WinState.TIAMAT:
+        if win_state is WinState.TIAMAT:
             self.fail_chain()
 
     def update_millionaire(self, game_state: State, inventory: Inventory):
@@ -696,7 +698,7 @@ class RunState:
         # Chain
         self.update_chain(self.player_item_types)
         self.update_has_chain_powerup(self.chain_status, self.player_item_types)
-        self.update_is_chain()
+        self.update_is_chain(self.world, self.level, self.theme, self.win_state)
 
         self.update_millionaire(game_state, inventory)
 
