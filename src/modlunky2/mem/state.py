@@ -16,7 +16,7 @@ from modlunky2.mem.memrauder.dsl import (
     sc_uint8,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
-from modlunky2.mem.memrauder.msvc import UnorderedMap, unordered_map
+from modlunky2.mem.memrauder.msvc import DictUnorderedMap, UnorderedMap, unordered_map
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -138,28 +138,34 @@ class Items:
 
 @dataclass(frozen=True)
 class State:
-    screen_last: int = struct_field(0x08, sc_int32)
-    screen: int = struct_field(0x0C, sc_int32)
-    screen_next: int = struct_field(0x10, sc_int32)
-    quest_flags: QuestFlags = struct_field(0x38, sc_uint32)
+    screen_last: int = struct_field(
+        0x08, sc_int32, default=Screen.LEVEL_TRANSITION.value
+    )
+    screen: int = struct_field(0x0C, sc_int32, default=Screen.LEVEL.value)
+    screen_next: int = struct_field(
+        0x10, sc_int32, default=Screen.LEVEL_TRANSITION.value
+    )
+    quest_flags: QuestFlags = struct_field(0x38, sc_uint32, default=0)
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
-    money_shop_total: int = struct_field(0x58, sc_int32)
-    world_start: int = struct_field(0x5C, sc_uint8)
-    level_start: int = struct_field(0x5D, sc_uint8)
-    theme_start: int = struct_field(0x5E, sc_uint8)
-    time_total: int = struct_field(0x64, sc_uint32)
-    world: int = struct_field(0x68, sc_uint8)
-    world_next: int = struct_field(0x69, sc_uint8)
-    level: int = struct_field(0x6A, sc_uint8)
-    level_next: int = struct_field(0x6B, sc_uint8)
-    theme: Theme = struct_field(0x74, sc_uint8)
-    theme_next: Theme = struct_field(0x75, sc_uint8)
-    win_state: WinState = struct_field(0x76, sc_int8)
-    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32)
-    hud_flags: HudFlags = struct_field(0xA10, sc_uint32)
-    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32)
-    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct))
+    money_shop_total: int = struct_field(0x58, sc_int32, default=0)
+    world_start: int = struct_field(0x5C, sc_uint8, default=1)
+    level_start: int = struct_field(0x5D, sc_uint8, default=1)
+    theme_start: int = struct_field(0x5E, sc_uint8, default=Theme.DWELLING.value)
+    time_total: int = struct_field(0x64, sc_uint32, default=1)
+    world: int = struct_field(0x68, sc_uint8, default=1)
+    world_next: int = struct_field(0x69, sc_uint8, default=1)
+    level: int = struct_field(0x6A, sc_uint8, default=1)
+    level_next: int = struct_field(0x6B, sc_uint8, default=2)
+    theme: Theme = struct_field(0x74, sc_uint8, default=Theme.DWELLING)
+    theme_next: Theme = struct_field(0x75, sc_uint8, default=Theme.DWELLING)
+    win_state: WinState = struct_field(0x76, sc_int8, default=WinState.NO_WIN)
+    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
+    hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
+    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)
+    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct), default=None)
     instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
-        0x1308, unordered_map(sc_uint32, poly_pointer(dc_struct))
+        0x1308,
+        unordered_map(sc_uint32, poly_pointer(dc_struct)),
+        default_factory=DictUnorderedMap,
     )
