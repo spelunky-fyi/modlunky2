@@ -138,22 +138,16 @@ class Items:
 
 @dataclass(frozen=True)
 class State:
-    # TODO try using enum, which implies failing on unexpected values
-    screen_last: int = struct_field(
-        0x08, sc_int32, default=Screen.LEVEL_TRANSITION.value
-    )
-    screen: int = struct_field(0x0C, sc_int32, default=Screen.LEVEL.value)
-    screen_next: int = struct_field(
-        0x10, sc_int32, default=Screen.LEVEL_TRANSITION.value
-    )
+    screen_last: Screen = struct_field(0x08, sc_int32, default=Screen.LEVEL_TRANSITION)
+    screen: Screen = struct_field(0x0C, sc_int32, default=Screen.LEVEL)
+    screen_next: Screen = struct_field(0x10, sc_int32, default=Screen.LEVEL_TRANSITION)
     quest_flags: QuestFlags = struct_field(0x38, sc_uint32, default=0)
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
     money_shop_total: int = struct_field(0x58, sc_int32, default=0)
     world_start: int = struct_field(0x5C, sc_uint8, default=1)
     level_start: int = struct_field(0x5D, sc_uint8, default=1)
-    # TODO try using enum, which implies failing on unexpected values
-    theme_start: int = struct_field(0x5E, sc_uint8, default=Theme.DWELLING.value)
+    theme_start: Theme = struct_field(0x5E, sc_uint8, default=Theme.DWELLING)
     time_total: int = struct_field(0x64, sc_uint32, default=1)
     world: int = struct_field(0x68, sc_uint8, default=1)
     world_next: int = struct_field(0x69, sc_uint8, default=1)

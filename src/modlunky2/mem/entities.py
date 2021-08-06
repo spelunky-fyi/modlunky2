@@ -159,16 +159,7 @@ class CharState(IntEnum):
 class EntityDBEntry:
     _size_as_element_: ClassVar[int] = 256  # Size of EntityDB struct
 
-    id: int = struct_field(0x14, sc_uint32)  # pylint: disable=invalid-name
-
-    # TODO try constructing eagerly
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType(self.id)
-
-    @property
-    def name(self):
-        return self.entity_type.name
+    id: EntityType = struct_field(0x14, sc_uint32)  # pylint: disable=invalid-name
 
 
 # EntityReduced exists only to break the circular dependency via 'overlay'

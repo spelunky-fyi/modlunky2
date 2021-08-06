@@ -64,7 +64,6 @@ class RunState:
         # TODO only copy stuff from mem.State if we need to know the previous value
         self.world = 0
         self.level = 0
-        self.screen = Screen.UNKNOWN
         self.level_started = False
 
         self.player_item_types: Set[EntityType] = set()
@@ -162,7 +161,6 @@ class RunState:
     def update_global_state(self, game_state: State):
         world = game_state.world
         level = game_state.level
-        screen = game_state.screen
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -171,11 +169,6 @@ class RunState:
 
         self.world = world
         self.level = level
-        # Cope with weird screen value during shutdown
-        try:
-            self.screen = Screen(screen)
-        except ValueError:
-            self.screen = Screen.UNKNOWN
 
     def update_final_death(
         self, player_state: CharState, player_item_types: Set[EntityType]
@@ -684,16 +677,16 @@ class RunState:
             if entity_type is None:
                 continue
 
-            item_types.add(entity_type.entity_type)
+            item_types.add(entity_type.id)
 
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types
 
-    def should_show_modifiers(self):
+    def should_show_modifiers(self, screen: Screen):
         if self.always_show_modifiers:
             return True
 
-        if self.screen == Screen.SCORES:
+        if screen == Screen.SCORES:
             return True
 
         if self.world > 1:
@@ -707,5 +700,5 @@ class RunState:
 
         return False
 
-    def get_display(self):
-        return self.run_label.text(not self.should_show_modifiers())
+    def get_display(self, screen: Screen):
+        return self.run_label.text(not self.should_show_modifiers(screen))
