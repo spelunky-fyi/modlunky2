@@ -61,7 +61,6 @@ class RunState:
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
 
-        # TODO only copy stuff from mem.State if we need to know the previous value
         self.world = 0
         self.level = 0
         self.level_started = False
@@ -437,10 +436,6 @@ class RunState:
             self.run_label.add(Label.JUNGLE_TEMPLE)
         else:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
-
-        # TODO delete this code that can't be reached
-        if world is Theme.SUNKEN_CITY:
-            self.run_label.set_terminus(Label.SUNKEN_CITY)
 
     def update_terminus(self, world: int, theme: Theme, win_state: WinState):
         terminus = Label.ANY
