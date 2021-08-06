@@ -142,11 +142,10 @@ class RunState:
         if world < 7:
             return
 
-        for item_type in player_item_types:
-            if item_type == EntityType.ITEM_POWERUP_EGGPLANTCROWN:
-                self.eggplant = True
-                self.run_label.add(Label.EGGPLANT)
-                return
+        if EntityType.ITEM_POWERUP_EGGPLANTCROWN in player_item_types:
+            self.eggplant = True
+            self.run_label.add(Label.EGGPLANT)
+            return
 
     def update_score_items(self, world, player_item_types):
         for item_type in player_item_types:
