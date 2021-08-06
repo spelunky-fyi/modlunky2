@@ -540,7 +540,6 @@ class RunState:
         # We drop millionaire if either:
         # * You used to have enough money, but no longer do
         # * You picked up the clone gun, but won without enough money
-        # TODO fix clone gun case
         if net_score < 900_000 and (
             not self.clone_gun_wo_bow or game_state.win_state is not WinState.NO_WIN
         ):

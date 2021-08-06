@@ -1402,9 +1402,9 @@ def test_millionaire_clone_gun_wo_bow(
         (-2_500, WinState.NO_WIN, 900_000, 10, False, False),
         (-2_500, WinState.NO_WIN, 900_000, 2_500, False, True),
         # With the clone gun, money amounts don't matter before winning
-        (0, WinState.NO_WIN, 0, 0, True, False),  # bug
+        (0, WinState.NO_WIN, 0, 0, True, True),
         (0, WinState.NO_WIN, 900_000, 0, True, True),
-        (-5_000, WinState.NO_WIN, 900_000, 0, True, False),  # bug
+        (-5_000, WinState.NO_WIN, 900_000, 0, True, True),
         # Before statue drops on score screen we don't have the bonus, and that's OK
         (0, WinState.TIAMAT, 900_000, 0, False, True),
         (100_000, WinState.TIAMAT, 900_000, 0, False, True),
@@ -1424,6 +1424,9 @@ def test_millionaire_(
 ):
     run_state = RunState()
     run_state.clone_gun_wo_bow = clone_gun_wo_bow
+    if clone_gun_wo_bow:
+        # This would have been added on a previous update
+        run_state.run_label.add(Label.MILLIONAIRE)
 
     game_state = State(money_shop_total=money_shop_total, win_state=win_state)
     inventory = Inventory(money=money, collected_money_total=collected_money_total)
