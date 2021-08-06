@@ -430,7 +430,7 @@ def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
 
 
 @pytest.mark.parametrize(
-    "layer,theme,presence_flags,chain_status,expected_lc_has_swung_excalibur,expected_low",
+    "layer,theme,presence_flags,chain_status,expected_failed_low_if_not_chain,expected_low",
     [
         # Not OK to swing in Tide Pool, regardless of chain or presence
         (
@@ -522,7 +522,7 @@ def test_attacked_with_excalibur(
     theme,
     presence_flags,
     chain_status,
-    expected_lc_has_swung_excalibur,
+    expected_failed_low_if_not_chain,
     expected_low,
 ):
     prev_state = CharState.PUSHING
@@ -538,8 +538,7 @@ def test_attacked_with_excalibur(
     )
 
     # We only expect these to be set together
-    assert run_state.failed_low_if_not_chain == expected_lc_has_swung_excalibur
-    assert run_state.lc_has_swung_excalibur == expected_lc_has_swung_excalibur
+    assert run_state.failed_low_if_not_chain == expected_failed_low_if_not_chain
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
