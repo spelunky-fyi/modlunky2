@@ -61,6 +61,7 @@ class RunState:
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
 
+        # TODO only copy stuff from mem.State if we need to know the previous value
         self.world = 0
         self.level = 0
         self.theme = 0
@@ -245,6 +246,7 @@ class RunState:
                 self.has_mounted_tame = True
                 self.fail_low()
 
+    # TODO access player.state instead of passing it separately
     def update_starting_resources(
         self, player: Player, player_state: CharState, inventory: Inventory
     ):
