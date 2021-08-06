@@ -207,24 +207,21 @@ class RunState:
             if mount is not None and mount.is_tamed:
                 self.fail_low()
 
-    # TODO access player.state instead of passing it separately
-    def update_starting_resources(
-        self, player: Player, player_state: CharState, inventory: Inventory
-    ):
+    def update_starting_resources(self, player: Player):
         if not self.is_low_percent:
             return
 
         health = player.health
-        if (health > self.health and player_state != CharState.DYING) or health > 4:
+        if (health > self.health and player.state != CharState.DYING) or health > 4:
             self.fail_low()
         self.health = health
 
-        bombs = inventory.bombs
+        bombs = player.inventory.bombs
         if bombs > self.bombs or bombs > 4:
             self.fail_low()
         self.bombs = bombs
 
-        ropes = inventory.ropes
+        ropes = player.inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
             self.fail_low()
         self.ropes = ropes
@@ -597,12 +594,11 @@ class RunState:
         if player is None:
             return
 
-        inventory = player.inventory
         state = player.state
         last_state = player.last_state
         layer = player.layer
 
-        if inventory is None:
+        if player.inventory is None:
             return
 
         run_recap_flags = game_state.run_recap_flags
@@ -626,7 +622,7 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(game_state.theme, overlay)
-        self.update_starting_resources(player, state, inventory)
+        self.update_starting_resources(player)
         self.update_status_effects(state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
@@ -656,7 +652,7 @@ class RunState:
             game_state.world, self.level, game_state.theme, game_state.win_state
         )
 
-        self.update_millionaire(game_state, inventory, self.player_item_types)
+        self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
         self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
 
