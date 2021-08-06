@@ -1,6 +1,6 @@
 from enum import IntEnum
 import logging
-from typing import Optional, Set
+from typing import Set
 
 from modlunky2.mem.entities import (
     BACKPACKS,
@@ -64,15 +64,11 @@ class RunState:
         # TODO only copy stuff from mem.State if we need to know the previous value
         self.world = 0
         self.level = 0
-        self.theme = 0
         self.screen = Screen.UNKNOWN
         self.level_started = False
 
-        self.player_state: Optional[CharState] = None
-        self.player_last_state: Optional[CharState] = None
         self.player_item_types: Set[EntityType] = set()
         self.player_last_item_types: Set[EntityType] = set()
-        self.win_state: WinState = WinState.UNKNOWN
 
         self.final_death = False
 
@@ -188,9 +184,7 @@ class RunState:
     def update_global_state(self, game_state: State):
         world = game_state.world
         level = game_state.level
-        theme = game_state.theme
         screen = game_state.screen
-        win_state = game_state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -199,13 +193,11 @@ class RunState:
 
         self.world = world
         self.level = level
-        self.theme = theme
         # Cope with weird screen value during shutdown
         try:
             self.screen = Screen(screen)
         except ValueError:
             self.screen = Screen.UNKNOWN
-        self.win_state = win_state
 
     def update_final_death(
         self, player_state: CharState, player_item_types: Set[EntityType]
@@ -656,32 +648,29 @@ class RunState:
         if inventory is None:
             return
 
-        self.player_state = state
-        self.player_last_state = last_state
-
         run_recap_flags = game_state.run_recap_flags
         hud_flags = game_state.hud_flags
         presence_flags = game_state.presence_flags
         self.update_global_state(game_state)
-        self.update_on_level_start(self.world, self.theme, self.ropes)
+        self.update_on_level_start(game_state.world, game_state.theme, self.ropes)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(state, self.player_item_types)
 
-        self.update_score_items(self.world, self.player_item_types)
+        self.update_score_items(game_state.world, self.player_item_types)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
         self.update_no_tp(self.player_item_types)
-        self.update_eggplant(self.world, self.player_item_types)
+        self.update_eggplant(game_state.world, self.player_item_types)
 
         # Check Category Criteria
         overlay = player.overlay
 
         # Low%
-        self.update_has_mounted_tame(self.theme, overlay)
-        self.update_starting_resources(player, self.player_state, inventory)
-        self.update_status_effects(self.player_state, self.player_item_types)
+        self.update_has_mounted_tame(game_state.theme, overlay)
+        self.update_starting_resources(player, state, inventory)
+        self.update_status_effects(state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
@@ -690,15 +679,15 @@ class RunState:
             last_state,
             state,
             layer,
-            self.world,
+            game_state.world,
             self.level,
-            self.theme,
+            game_state.theme,
             presence_flags,
             self.player_item_types,
         )
         self.update_attacked_with_throwables(
-            self.player_last_state,
-            self.player_state,
+            last_state,
+            state,
             self.player_last_item_types,
             self.player_item_types,
         )
@@ -706,11 +695,13 @@ class RunState:
         # Chain
         self.update_chain(self.player_item_types)
         self.update_has_chain_powerup(self.chain_status, self.player_item_types)
-        self.update_is_chain(self.world, self.level, self.theme, self.win_state)
+        self.update_is_chain(
+            game_state.world, self.level, game_state.theme, game_state.win_state
+        )
 
         self.update_millionaire(game_state, inventory, self.player_item_types)
 
-        self.update_terminus(self.world, self.theme, self.win_state)
+        self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
 
     def update_player_item_types(
         self,
