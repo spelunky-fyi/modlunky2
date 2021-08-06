@@ -87,26 +87,14 @@ class RunState:
         self.hou_yis_waddler = False
 
         # Run Modifiers
-        self.pacifist = True
-        self.no_gold = True
         self.no_tp = True
         self.eggplant = False
 
         # Low%
         self.is_low_percent = True
-        self.has_mounted_tame = False
-        self.increased_starting_items = False
-        self.cured_status = False
-        self.had_clover = False
-        self.wore_backpack = False
-        self.held_shield = False
-        self.has_non_chain_powerup = False
-        self.attacked_with = False
 
         # Low% if Chain
         self.failed_low_if_not_chain = False
-        self.lc_has_mounted_qilin = False
-        self.lc_has_swung_excalibur = False
 
         # Moon Challenge Mattock is okay if you're going CO
         self.mc_has_swung_mattock = False
@@ -123,26 +111,17 @@ class RunState:
         self.held_ushabti = False
 
         # Millionaire
-        self.net_score = 0
         self.clone_gun_wo_bow = False
 
         self.world2_theme = None
         self.world4_theme = None
 
     def update_pacifist(self, run_recap_flags):
-        if not self.pacifist:
-            return
-
-        self.pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
-        if not self.pacifist:
+        if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
             self.run_label.discard(Label.PACIFIST)
 
     def update_no_gold(self, run_recap_flags):
-        if not self.no_gold:
-            return
-
-        self.no_gold = bool(run_recap_flags & RunRecapFlags.NO_GOLD)
-        if not self.no_gold:
+        if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
             self.run_label.discard(Label.NO_GOLD)
 
     def update_no_tp(self, player_item_types):
@@ -226,7 +205,6 @@ class RunState:
         entity_type: EntityType = player_overlay.value.type.id
         # Allowed to ride tamed qilin in tiamats
         if theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
-            self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
             if not self.chain_status.in_progress:
                 self.fail_low()
@@ -235,7 +213,6 @@ class RunState:
         if entity_type in MOUNTS:
             mount = player_overlay.as_type(Mount)
             if mount is not None and mount.is_tamed:
-                self.has_mounted_tame = True
                 self.fail_low()
 
     # TODO access player.state instead of passing it separately
@@ -247,19 +224,16 @@ class RunState:
 
         health = player.health
         if (health > self.health and player_state != CharState.DYING) or health > 4:
-            self.increased_starting_items = True
             self.fail_low()
         self.health = health
 
         bombs = inventory.bombs
         if bombs > self.bombs or bombs > 4:
-            self.increased_starting_items = True
             self.fail_low()
         self.bombs = bombs
 
         ropes = inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
-            self.increased_starting_items = True
             self.fail_low()
         self.ropes = ropes
 
@@ -287,11 +261,9 @@ class RunState:
                 is_cursed = True
 
         if self.poisoned and not is_poisoned and player_state != CharState.DYING:
-            self.cured_status = True
             self.fail_low()
 
         if self.cursed and not is_cursed and player_state != CharState.DYING:
-            self.cured_status = True
             self.fail_low()
 
         self.poisoned = is_poisoned
@@ -301,8 +273,7 @@ class RunState:
         if not self.is_low_percent:
             return
 
-        self.had_clover = bool(hud_flags & HudFlags.HAVE_CLOVER)
-        if self.had_clover:
+        if bool(hud_flags & HudFlags.HAVE_CLOVER):
             self.fail_low()
 
     def update_wore_backpack(self, player_item_types: Set[EntityType]):
@@ -314,7 +285,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in BACKPACKS:
-                self.wore_backpack = True
                 self.fail_low()
                 return
 
@@ -324,7 +294,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in SHIELDS:
-                self.held_shield = True
                 self.fail_low()
                 return
 
@@ -356,7 +325,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in NON_CHAIN_POWERUP_ENTITIES:
-                self.has_non_chain_powerup = True
                 self.fail_low()
                 return
 
@@ -380,7 +348,6 @@ class RunState:
         for item_type in player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
                 if item_type == EntityType.ITEM_EXCALIBUR and theme == Theme.ABZU:
-                    self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
                     if not self.chain_status.in_progress:
                         self.fail_low()
@@ -412,7 +379,6 @@ class RunState:
                     if (world, level) == (7, 4):
                         continue
 
-                self.attacked_with = True
                 self.fail_low()
                 return
 
@@ -434,7 +400,6 @@ class RunState:
 
         for item_type in player_item_types | player_last_item_types:
             if item_type in LOW_BANNED_THROWABLES:
-                self.attacked_with = True
                 self.fail_low()
                 return
 
@@ -582,17 +547,17 @@ class RunState:
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
         shop_and_bonus = game_state.money_shop_total
-        self.net_score = collected_this_level + collected_prev_levels + shop_and_bonus
+        net_score = collected_this_level + collected_prev_levels + shop_and_bonus
 
         # The category requires completion, which gives at least a $100K bonus.
-        if self.net_score >= 900_000:
+        if net_score >= 900_000:
             self.run_label.add(Label.MILLIONAIRE)
 
         # We drop millionaire if either:
         # * You used to have enough money, but no longer do
         # * You picked up the clone gun, but won without enough money
         # TODO fix clone gun case
-        if self.net_score < 900_000 and (
+        if net_score < 900_000 and (
             not self.clone_gun_wo_bow or game_state.win_state is not WinState.NO_WIN
         ):
             self.run_label.discard(Label.MILLIONAIRE)
