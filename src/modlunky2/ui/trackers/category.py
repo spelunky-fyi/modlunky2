@@ -100,7 +100,7 @@ class CategoryWatcherThread(WatcherThread):
         self.time_total = new_time_total
 
         self.run_state.update(game_state)
-        label = self.run_state.get_display()
+        label = self.run_state.get_display(game_state.screen)
         self.send(Command.LABEL, label)
 
 

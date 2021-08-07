@@ -1,6 +1,6 @@
 from enum import IntEnum
 import logging
-from typing import Optional, Set
+from typing import Set
 
 from modlunky2.mem.entities import (
     BACKPACKS,
@@ -61,18 +61,12 @@ class RunState:
         self.always_show_modifiers = always_show_modifiers
         self.run_label = RunLabel()
 
-        # TODO only copy stuff from mem.State if we need to know the previous value
         self.world = 0
         self.level = 0
-        self.theme = 0
-        self.screen = Screen.UNKNOWN
         self.level_started = False
 
-        self.player_state: Optional[CharState] = None
-        self.player_last_state: Optional[CharState] = None
         self.player_item_types: Set[EntityType] = set()
         self.player_last_item_types: Set[EntityType] = set()
-        self.win_state: WinState = WinState.UNKNOWN
 
         self.final_death = False
 
@@ -91,26 +85,14 @@ class RunState:
         self.hou_yis_waddler = False
 
         # Run Modifiers
-        self.pacifist = True
-        self.no_gold = True
         self.no_tp = True
         self.eggplant = False
 
         # Low%
         self.is_low_percent = True
-        self.has_mounted_tame = False
-        self.increased_starting_items = False
-        self.cured_status = False
-        self.had_clover = False
-        self.wore_backpack = False
-        self.held_shield = False
-        self.has_non_chain_powerup = False
-        self.attacked_with = False
 
         # Low% if Chain
         self.failed_low_if_not_chain = False
-        self.lc_has_mounted_qilin = False
-        self.lc_has_swung_excalibur = False
 
         # Moon Challenge Mattock is okay if you're going CO
         self.mc_has_swung_mattock = False
@@ -127,26 +109,17 @@ class RunState:
         self.held_ushabti = False
 
         # Millionaire
-        self.net_score = 0
         self.clone_gun_wo_bow = False
 
         self.world2_theme = None
         self.world4_theme = None
 
     def update_pacifist(self, run_recap_flags):
-        if not self.pacifist:
-            return
-
-        self.pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
-        if not self.pacifist:
+        if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
             self.run_label.discard(Label.PACIFIST)
 
     def update_no_gold(self, run_recap_flags):
-        if not self.no_gold:
-            return
-
-        self.no_gold = bool(run_recap_flags & RunRecapFlags.NO_GOLD)
-        if not self.no_gold:
+        if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
             self.run_label.discard(Label.NO_GOLD)
 
     def update_no_tp(self, player_item_types):
@@ -167,11 +140,10 @@ class RunState:
         if world < 7:
             return
 
-        for item_type in player_item_types:
-            if item_type == EntityType.ITEM_POWERUP_EGGPLANTCROWN:
-                self.eggplant = True
-                self.run_label.add(Label.EGGPLANT)
-                return
+        if EntityType.ITEM_POWERUP_EGGPLANTCROWN in player_item_types:
+            self.eggplant = True
+            self.run_label.add(Label.EGGPLANT)
+            return
 
     def update_score_items(self, world, player_item_types):
         for item_type in player_item_types:
@@ -188,9 +160,6 @@ class RunState:
     def update_global_state(self, game_state: State):
         world = game_state.world
         level = game_state.level
-        theme = game_state.theme
-        screen = game_state.screen
-        win_state = game_state.win_state
 
         if (world, level) != (self.world, self.level):
             self.level_started = True
@@ -199,13 +168,6 @@ class RunState:
 
         self.world = world
         self.level = level
-        self.theme = theme
-        # Cope with weird screen value during shutdown
-        try:
-            self.screen = Screen(screen)
-        except ValueError:
-            self.screen = Screen.UNKNOWN
-        self.win_state = win_state
 
     def update_final_death(
         self, player_state: CharState, player_item_types: Set[EntityType]
@@ -234,7 +196,6 @@ class RunState:
         entity_type: EntityType = player_overlay.value.type.id
         # Allowed to ride tamed qilin in tiamats
         if theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
-            self.lc_has_mounted_qilin = True
             self.failed_low_if_not_chain = True
             if not self.chain_status.in_progress:
                 self.fail_low()
@@ -243,31 +204,24 @@ class RunState:
         if entity_type in MOUNTS:
             mount = player_overlay.as_type(Mount)
             if mount is not None and mount.is_tamed:
-                self.has_mounted_tame = True
                 self.fail_low()
 
-    # TODO access player.state instead of passing it separately
-    def update_starting_resources(
-        self, player: Player, player_state: CharState, inventory: Inventory
-    ):
+    def update_starting_resources(self, player: Player):
         if not self.is_low_percent:
             return
 
         health = player.health
-        if (health > self.health and player_state != CharState.DYING) or health > 4:
-            self.increased_starting_items = True
+        if (health > self.health and player.state != CharState.DYING) or health > 4:
             self.fail_low()
         self.health = health
 
-        bombs = inventory.bombs
+        bombs = player.inventory.bombs
         if bombs > self.bombs or bombs > 4:
-            self.increased_starting_items = True
             self.fail_low()
         self.bombs = bombs
 
-        ropes = inventory.ropes
+        ropes = player.inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
-            self.increased_starting_items = True
             self.fail_low()
         self.ropes = ropes
 
@@ -295,11 +249,9 @@ class RunState:
                 is_cursed = True
 
         if self.poisoned and not is_poisoned and player_state != CharState.DYING:
-            self.cured_status = True
             self.fail_low()
 
         if self.cursed and not is_cursed and player_state != CharState.DYING:
-            self.cured_status = True
             self.fail_low()
 
         self.poisoned = is_poisoned
@@ -309,8 +261,7 @@ class RunState:
         if not self.is_low_percent:
             return
 
-        self.had_clover = bool(hud_flags & HudFlags.HAVE_CLOVER)
-        if self.had_clover:
+        if bool(hud_flags & HudFlags.HAVE_CLOVER):
             self.fail_low()
 
     def update_wore_backpack(self, player_item_types: Set[EntityType]):
@@ -322,7 +273,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in BACKPACKS:
-                self.wore_backpack = True
                 self.fail_low()
                 return
 
@@ -332,7 +282,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in SHIELDS:
-                self.held_shield = True
                 self.fail_low()
                 return
 
@@ -364,7 +313,6 @@ class RunState:
 
         for item_type in player_item_types:
             if item_type in NON_CHAIN_POWERUP_ENTITIES:
-                self.has_non_chain_powerup = True
                 self.fail_low()
                 return
 
@@ -388,7 +336,6 @@ class RunState:
         for item_type in player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
                 if item_type == EntityType.ITEM_EXCALIBUR and theme == Theme.ABZU:
-                    self.lc_has_swung_excalibur = True
                     self.failed_low_if_not_chain = True
                     if not self.chain_status.in_progress:
                         self.fail_low()
@@ -420,7 +367,6 @@ class RunState:
                     if (world, level) == (7, 4):
                         continue
 
-                self.attacked_with = True
                 self.fail_low()
                 return
 
@@ -442,7 +388,6 @@ class RunState:
 
         for item_type in player_item_types | player_last_item_types:
             if item_type in LOW_BANNED_THROWABLES:
-                self.attacked_with = True
                 self.fail_low()
                 return
 
@@ -491,10 +436,6 @@ class RunState:
             self.run_label.add(Label.JUNGLE_TEMPLE)
         else:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
-
-        # TODO delete this code that can't be reached
-        if world is Theme.SUNKEN_CITY:
-            self.run_label.set_terminus(Label.SUNKEN_CITY)
 
     def update_terminus(self, world: int, theme: Theme, win_state: WinState):
         terminus = Label.ANY
@@ -590,17 +531,16 @@ class RunState:
         collected_this_level = inventory.money
         collected_prev_levels = inventory.collected_money_total
         shop_and_bonus = game_state.money_shop_total
-        self.net_score = collected_this_level + collected_prev_levels + shop_and_bonus
+        net_score = collected_this_level + collected_prev_levels + shop_and_bonus
 
         # The category requires completion, which gives at least a $100K bonus.
-        if self.net_score >= 900_000:
+        if net_score >= 900_000:
             self.run_label.add(Label.MILLIONAIRE)
 
         # We drop millionaire if either:
         # * You used to have enough money, but no longer do
         # * You picked up the clone gun, but won without enough money
-        # TODO fix clone gun case
-        if self.net_score < 900_000 and (
+        if net_score < 900_000 and (
             not self.clone_gun_wo_bow or game_state.win_state is not WinState.NO_WIN
         ):
             self.run_label.discard(Label.MILLIONAIRE)
@@ -647,58 +587,49 @@ class RunState:
         player = game_state.items.players[0]
         if player is None:
             return
-
-        inventory = player.inventory
-        state = player.state
-        last_state = player.last_state
-        layer = player.layer
-
-        if inventory is None:
+        if player.inventory is None:
             return
-
-        self.player_state = state
-        self.player_last_state = last_state
 
         run_recap_flags = game_state.run_recap_flags
         hud_flags = game_state.hud_flags
         presence_flags = game_state.presence_flags
         self.update_global_state(game_state)
-        self.update_on_level_start(self.world, self.theme, self.ropes)
+        self.update_on_level_start(game_state.world, game_state.theme, self.ropes)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
-        self.update_final_death(state, self.player_item_types)
+        self.update_final_death(player.state, self.player_item_types)
 
-        self.update_score_items(self.world, self.player_item_types)
+        self.update_score_items(game_state.world, self.player_item_types)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
         self.update_no_tp(self.player_item_types)
-        self.update_eggplant(self.world, self.player_item_types)
+        self.update_eggplant(game_state.world, self.player_item_types)
 
         # Check Category Criteria
         overlay = player.overlay
 
         # Low%
-        self.update_has_mounted_tame(self.theme, overlay)
-        self.update_starting_resources(player, self.player_state, inventory)
-        self.update_status_effects(self.player_state, self.player_item_types)
+        self.update_has_mounted_tame(game_state.theme, overlay)
+        self.update_starting_resources(player)
+        self.update_status_effects(player.state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup(self.player_item_types)
         self.update_attacked_with(
-            last_state,
-            state,
-            layer,
-            self.world,
+            player.last_state,
+            player.state,
+            player.layer,
+            game_state.world,
             self.level,
-            self.theme,
+            game_state.theme,
             presence_flags,
             self.player_item_types,
         )
         self.update_attacked_with_throwables(
-            self.player_last_state,
-            self.player_state,
+            player.last_state,
+            player.state,
             self.player_last_item_types,
             self.player_item_types,
         )
@@ -706,11 +637,13 @@ class RunState:
         # Chain
         self.update_chain(self.player_item_types)
         self.update_has_chain_powerup(self.chain_status, self.player_item_types)
-        self.update_is_chain(self.world, self.level, self.theme, self.win_state)
+        self.update_is_chain(
+            game_state.world, self.level, game_state.theme, game_state.win_state
+        )
 
-        self.update_millionaire(game_state, inventory, self.player_item_types)
+        self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
-        self.update_terminus(self.world, self.theme, self.win_state)
+        self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
 
     def update_player_item_types(
         self,
@@ -729,16 +662,16 @@ class RunState:
             if entity_type is None:
                 continue
 
-            item_types.add(entity_type.entity_type)
+            item_types.add(entity_type.id)
 
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types
 
-    def should_show_modifiers(self):
+    def should_show_modifiers(self, screen: Screen):
         if self.always_show_modifiers:
             return True
 
-        if self.screen == Screen.SCORES:
+        if screen == Screen.SCORES:
             return True
 
         if self.world > 1:
@@ -752,5 +685,5 @@ class RunState:
 
         return False
 
-    def get_display(self):
-        return self.run_label.text(not self.should_show_modifiers())
+    def get_display(self, screen: Screen):
+        return self.run_label.text(not self.should_show_modifiers(screen))

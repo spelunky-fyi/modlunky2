@@ -170,7 +170,7 @@ def test_starting_resources_health(char_state, prev_health, cur_health, expected
     run_state.health = prev_health
 
     player = Player(state=char_state, health=cur_health)
-    run_state.update_starting_resources(player, char_state, player.inventory)
+    run_state.update_starting_resources(player)
     assert run_state.health == cur_health
 
     is_low = Label.LOW in run_state.run_label._set
@@ -193,7 +193,7 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
 
     inventory = Inventory(bombs=cur_bombs)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player, player.state, inventory)
+    run_state.update_starting_resources(player)
 
     assert run_state.bombs == cur_bombs
 
@@ -221,7 +221,7 @@ def test_starting_resources_ropes(
 
     inventory = Inventory(ropes=cur_ropes)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player, player.state, inventory)
+    run_state.update_starting_resources(player)
 
     assert run_state.ropes == cur_ropes
 
@@ -430,7 +430,7 @@ def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
 
 
 @pytest.mark.parametrize(
-    "layer,theme,presence_flags,chain_status,expected_lc_has_swung_excalibur,expected_low",
+    "layer,theme,presence_flags,chain_status,expected_failed_low_if_not_chain,expected_low",
     [
         # Not OK to swing in Tide Pool, regardless of chain or presence
         (
@@ -522,7 +522,7 @@ def test_attacked_with_excalibur(
     theme,
     presence_flags,
     chain_status,
-    expected_lc_has_swung_excalibur,
+    expected_failed_low_if_not_chain,
     expected_low,
 ):
     prev_state = CharState.PUSHING
@@ -538,8 +538,7 @@ def test_attacked_with_excalibur(
     )
 
     # We only expect these to be set together
-    assert run_state.failed_low_if_not_chain == expected_lc_has_swung_excalibur
-    assert run_state.lc_has_swung_excalibur == expected_lc_has_swung_excalibur
+    assert run_state.failed_low_if_not_chain == expected_failed_low_if_not_chain
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
@@ -1403,9 +1402,9 @@ def test_millionaire_clone_gun_wo_bow(
         (-2_500, WinState.NO_WIN, 900_000, 10, False, False),
         (-2_500, WinState.NO_WIN, 900_000, 2_500, False, True),
         # With the clone gun, money amounts don't matter before winning
-        (0, WinState.NO_WIN, 0, 0, True, False),  # bug
+        (0, WinState.NO_WIN, 0, 0, True, True),
         (0, WinState.NO_WIN, 900_000, 0, True, True),
-        (-5_000, WinState.NO_WIN, 900_000, 0, True, False),  # bug
+        (-5_000, WinState.NO_WIN, 900_000, 0, True, True),
         # Before statue drops on score screen we don't have the bonus, and that's OK
         (0, WinState.TIAMAT, 900_000, 0, False, True),
         (100_000, WinState.TIAMAT, 900_000, 0, False, True),
@@ -1425,6 +1424,9 @@ def test_millionaire_(
 ):
     run_state = RunState()
     run_state.clone_gun_wo_bow = clone_gun_wo_bow
+    if clone_gun_wo_bow:
+        # This would have been added on a previous update
+        run_state.run_label.add(Label.MILLIONAIRE)
 
     game_state = State(money_shop_total=money_shop_total, win_state=win_state)
     inventory = Inventory(money=money, collected_money_total=collected_money_total)
