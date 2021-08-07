@@ -587,11 +587,6 @@ class RunState:
         player = game_state.items.players[0]
         if player is None:
             return
-
-        state = player.state
-        last_state = player.last_state
-        layer = player.layer
-
         if player.inventory is None:
             return
 
@@ -601,7 +596,7 @@ class RunState:
         self.update_global_state(game_state)
         self.update_on_level_start(game_state.world, game_state.theme, self.ropes)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
-        self.update_final_death(state, self.player_item_types)
+        self.update_final_death(player.state, self.player_item_types)
 
         self.update_score_items(game_state.world, self.player_item_types)
 
@@ -617,15 +612,15 @@ class RunState:
         # Low%
         self.update_has_mounted_tame(game_state.theme, overlay)
         self.update_starting_resources(player)
-        self.update_status_effects(state, self.player_item_types)
+        self.update_status_effects(player.state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup(self.player_item_types)
         self.update_attacked_with(
-            last_state,
-            state,
-            layer,
+            player.last_state,
+            player.state,
+            player.layer,
             game_state.world,
             self.level,
             game_state.theme,
@@ -633,8 +628,8 @@ class RunState:
             self.player_item_types,
         )
         self.update_attacked_with_throwables(
-            last_state,
-            state,
+            player.last_state,
+            player.state,
             self.player_last_item_types,
             self.player_item_types,
         )
