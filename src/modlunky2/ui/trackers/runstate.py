@@ -1,4 +1,3 @@
-from enum import IntEnum
 import logging
 from typing import Set
 
@@ -30,30 +29,11 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
+from modlunky2.ui.trackers.chain import AbzuChain, ChainStatus, ChainStepper
 from modlunky2.ui.trackers.label import Label, RunLabel
 
 
 logger = logging.getLogger("modlunky2")
-
-
-# Status of the Abzu/Duat quest chain.
-# The properties are for convenience in 'if' conditions.
-class ChainStatus(IntEnum):
-    UNSTARTED = 0
-    IN_PROGRESS = 1
-    FAILED = 2
-
-    @property
-    def unstarted(self):
-        return self is ChainStatus.UNSTARTED
-
-    @property
-    def in_progress(self):
-        return self is ChainStatus.IN_PROGRESS
-
-    @property
-    def failed(self):
-        return self is ChainStatus.FAILED
 
 
 class RunState:
@@ -113,6 +93,7 @@ class RunState:
 
         self.world2_theme = None
         self.world4_theme = None
+        self.abzu_stepper = ChainStepper(AbzuChain().eye_or_headwear)
 
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
@@ -644,6 +625,7 @@ class RunState:
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
         self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
+        self.abzu_stepper.evaluate(game_state, self.player_item_types)
 
     def update_player_item_types(
         self,
