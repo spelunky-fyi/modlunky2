@@ -24,7 +24,7 @@ from modlunky2.mem.memrauder.model import (
 @dataclass(frozen=True)
 class _VectorMeta:
     array_addr: int = struct_field(0x8, sc_void_p)
-    size: int = struct_field(0x10, sc_uint32)
+    size: int = struct_field(0x14, sc_uint32)
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
