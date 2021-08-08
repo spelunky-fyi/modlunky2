@@ -97,6 +97,7 @@ class Screen(enum.IntEnum):
 
 
 class Theme(enum.IntEnum):
+    BEFORE_FIRST_RUN = 0
     DWELLING = 1
     JUNGLE = 2
     VOLCANA = 3
