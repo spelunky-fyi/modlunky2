@@ -4293,7 +4293,6 @@ class LevelsTree(ttk.Treeview):
 
     def confirm_entry(self, entry1):
         if entry1 != "":
-            # Remove it from the tree
             self.item(self.focus(), text=entry1)
             return True
         else:
