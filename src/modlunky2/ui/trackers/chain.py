@@ -365,12 +365,15 @@ class EggplantChain(ChainMixin):
         return self.in_progress(self.collect_eggplant_child)
 
     def still_have_eggplant_child(self, game_state: State, _: Set[EntityType]):
+        world_level = (game_state.world, game_state.level)
+        if world_level > (7, 1):
+            return self.in_progress(self.eggplant_world)
+
+        if game_state.screen is not Screen.LEVEL_TRANSITION:
+            return self.in_progress(self.still_have_eggplant_child)
+
         # We won't have the child during the 7-1 transition
-        if (game_state.world, game_state.level, game_state.screen) == (
-            7,
-            1,
-            Screen.LEVEL_TRANSITION,
-        ):
+        if world_level == (7, 1):
             return self.in_progress(self.eggplant_world)
 
         if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
