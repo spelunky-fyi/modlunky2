@@ -80,10 +80,35 @@ class ChainStepper:
         return result.status
 
 
-class CommonChain(ABC):
+class ChainMixin:
+    def unstarted(self):
+        return ChainStepResult(ChainStatus.UNSTARTED)
+
+    def in_progress(self, next_step: ChainStepEvaluator):
+        return ChainStepResult(ChainStatus.IN_PROGRESS, next_step)
+
+    def failed(self):
+        return ChainStepResult(ChainStatus.FAILED)
+
+
+class CommonChain(ChainMixin, ABC):
+    @classmethod
+    def make_stepper(cls) -> ChainStepper:
+        return ChainStepper(cls().eye_or_headwear)
+
     @property
     @abstractmethod
-    def world4_step(self):
+    def world4_1_theme(self) -> Theme:
+        pass
+
+    @property
+    @abstractmethod
+    def world4_4_theme(self) -> Theme:
+        pass
+
+    @property
+    @abstractmethod
+    def world4_step(self) -> ChainStepEvaluator:
         pass
 
     def eye_or_headwear(
@@ -93,72 +118,111 @@ class CommonChain(ABC):
             EntityType.ITEM_POWERUP_HEDJET in player_item_types
             or EntityType.ITEM_POWERUP_CROWN in player_item_types
         ):
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.ankh)
+            return self.in_progress(self.ankh)
 
         if EntityType.ITEM_POWERUP_UDJATEYE in player_item_types:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.eye_or_headwear)
+            return self.in_progress(self.eye_or_headwear)
 
         if game_state.world > 2:
-            return ChainStepResult(ChainStatus.FAILED)
+            return self.failed()
 
-        return ChainStepResult(ChainStatus.UNSTARTED)
+        return self.unstarted()
 
     def ankh(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_ANKH in player_item_types:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.world4_step)
+            return self.in_progress(self.world4_1_theme_check)
 
         if game_state.world > 3:
-            return ChainStepResult(ChainStatus.FAILED)
+            return self.failed()
 
-        return ChainStepResult(ChainStatus.IN_PROGRESS, self.ankh)
+        return self.in_progress(self.ankh)
+
+    def world4_1_theme_check(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme == self.world4_1_theme:
+            return self.in_progress(self.world4_step)
+
+        if game_state.world > 3:
+            return self.failed()
+
+        return self.in_progress(self.world4_1_theme_check)
+
+    def world4_4_theme_check(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme == self.world4_4_theme:
+            return self.in_progress(self.tablet_of_destiny)
+
+        if (game_state.world, game_state.level) > (4, 3):
+            return self.failed()
+
+        return self.in_progress(self.world4_4_theme_check)
 
     def tablet_of_destiny(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_TABLETOFDESTINY in player_item_types:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.ushabti)
+            return self.in_progress(self.ushabti)
 
-        if game_state.world > 5:
-            return ChainStepResult(ChainStatus.FAILED)
+        if game_state.world > 4:
+            return self.failed()
 
-        return ChainStepResult(ChainStatus.IN_PROGRESS, self.tablet_of_destiny)
+        return self.in_progress(self.tablet_of_destiny)
 
     def ushabti(self, game_state: State, player_item_types: Set[EntityType]):
-        if (game_state.world, game_state.level) < (
-            6,
-            2,
-        ) or game_state.screen is not Screen.LEVEL_TRANSITION:
-            return ChainStepResult(ChainStatus.IN_PROGRESS)
+        world_level_screen = (game_state.world, game_state.level, game_state.screen)
+        if world_level_screen != (6, 2, Screen.LEVEL_TRANSITION):
+            return self.in_progress(self.ushabti)
 
         if EntityType.ITEM_USHABTI in player_item_types:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.non_tiamat_win)
+            return self.in_progress(self.non_tiamat_win)
 
-        return ChainStepResult(ChainStatus.FAILED)
+        return self.failed()
 
     def non_tiamat_win(self, game_state: State, _: Set[EntityType]):
         if game_state is WinState.TIAMAT:
-            return ChainStepResult(ChainStatus.FAILED)
+            return self.failed()
 
-        return ChainStepResult(ChainStatus.IN_PROGRESS, self.non_tiamat_win)
+        return self.in_progress(self.non_tiamat_win)
 
 
 class AbzuChain(CommonChain):
+    world4_1_theme = Theme.TIDE_POOL
+    world4_4_theme = Theme.ABZU
+
     @property
     def world4_step(self):
         return self.excalibur
 
     def excalibur(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_EXCALIBUR in player_item_types:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.abzu)
+            return self.in_progress(self.world4_4_theme_check)
 
         world_level = (game_state.world, game_state.level)
         if world_level > (4, 2):
-            return ChainStepResult(ChainStatus.FAILED)
+            return self.failed()
 
-    def abzu(self, game_state: State, _: Set[EntityType]):
-        if game_state.world > 4:
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.tablet_of_destiny)
+        return self.in_progress(self.excalibur)
 
-        if (game_state.world, game_state.level) != (4, 4):
-            return ChainStepResult(ChainStatus.IN_PROGRESS, self.abzu)
 
-        if game_state.theme != Theme.ABZU:
-            return ChainStepResult(ChainStatus.FAILED)
+class DuatChain(CommonChain):
+    world4_1_theme = Theme.TEMPLE
+    world4_4_theme = Theme.DUAT
+
+    @property
+    def world4_step(self):
+        return self.scepter
+
+    def scepter(self, game_state: State, player_item_types: Set[EntityType]):
+        world_level_screen = (game_state.world, game_state.level, game_state.screen)
+        if world_level_screen != (4, 1, Screen.LEVEL_TRANSITION):
+            return self.in_progress(self.scepter)
+
+        if EntityType.ITEM_SCEPTER in player_item_types:
+            return self.in_progress(self.city_of_gold)
+
+        return self.failed()
+
+    def city_of_gold(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme is Theme.CITY_OF_GOLD:
+            return self.in_progress(self.world4_4_theme_check)
+
+        if (game_state.world, game_state.level) > (4, 3):
+            return self.failed()
+
+        return self.in_progress(self.city_of_gold)
