@@ -280,7 +280,7 @@ class CosmicOceanChain(ChainMixin):
         if game_state.world > 2:
             return self.failed()
 
-        return self.in_progress(self.pick_up_bow)
+        return self.unstarted()
 
     def still_have_bow(self, game_state: State, player_item_types: Set[EntityType]):
         if game_state.win_state is not WinState.NO_WIN:
