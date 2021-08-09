@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 import logging
-from typing import Any, Callable, Optional, Set
+from typing import Any, Callable, Generator, Optional, Set
 
-from modlunky2.mem.entities import EntityType, Player
+from modlunky2.mem.entities import Entity, EntityType, Player
+from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.state import Screen, State, Theme, WinState
 
 logger = logging.getLogger("modlunky2")
@@ -90,28 +91,35 @@ class ChainMixin:
     def failed(self):
         return ChainStepResult(ChainStatus.FAILED)
 
-    def some_hired_hand_has_item(
-        self, game_state: State, item_type: EntityType
-    ) -> bool:
+    def companions(
+        self, game_state: State
+    ) -> Generator[PolyPointer[Entity], None, None]:
         cur_hand_uid = game_state.items.players[0].linked_companion_child
 
         while cur_hand_uid != 0:
             cur_hand = game_state.instance_id_to_pointer.get(cur_hand_uid)
             if cur_hand is None or not cur_hand.present():
-                return False
+                return
 
-            if cur_hand.value.items is not None:
-                for item_uid in cur_hand.value.items:
-                    item = game_state.instance_id_to_pointer.get(item_uid)
-                    if item is None or not item.present():
-                        continue
-                    if item.value.type.id == item_type:
-                        return True
+            yield cur_hand
 
             cur_hand = cur_hand.as_poly_type(Player)
             if not cur_hand.present():
-                return False
+                return
             cur_hand_uid = cur_hand.value.linked_companion_child
+
+    def some_companion_has_item(self, game_state: State, item_type: EntityType) -> bool:
+        for companion in self.companions(game_state):
+            companion_items = companion.value.items
+            if companion_items is None:
+                continue
+
+            for item_uid in companion_items:
+                item = game_state.instance_id_to_pointer.get(item_uid)
+                if item is None or not item.present():
+                    continue
+                if item.value.type.id is item_type:
+                    return True
 
         return False
 
@@ -196,7 +204,7 @@ class CommonSunkenChain(ChainMixin, ABC):
 
         if (
             EntityType.ITEM_USHABTI in player_item_types
-            or self.some_hired_hand_has_item(game_state, EntityType.ITEM_USHABTI)
+            or self.some_companion_has_item(game_state, EntityType.ITEM_USHABTI)
         ):
             return self.in_progress(self.non_tiamat_win)
 
@@ -244,7 +252,7 @@ class DuatChain(CommonSunkenChain):
 
         if (
             EntityType.ITEM_SCEPTER in player_item_types
-            or self.some_hired_hand_has_item(game_state, EntityType.ITEM_SCEPTER)
+            or self.some_companion_has_item(game_state, EntityType.ITEM_SCEPTER)
         ):
             return self.in_progress(self.city_of_gold)
 
@@ -287,7 +295,7 @@ class CosmicOceanChain(ChainMixin):
 
         if (
             EntityType.ITEM_HOUYIBOW in player_item_types
-        ) or self.some_hired_hand_has_item(game_state, EntityType.ITEM_HOUYIBOW):
+        ) or self.some_companion_has_item(game_state, EntityType.ITEM_HOUYIBOW):
             return self.in_progress(self.still_have_bow)
 
         if world_level < (7, 1) and (
