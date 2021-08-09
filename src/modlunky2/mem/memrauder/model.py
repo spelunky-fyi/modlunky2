@@ -514,7 +514,9 @@ class PolyPointer(Generic[T]):
         return PolyPointer(self.addr, new_value, self.mem_ctx)
 
     @staticmethod
-    def make_empty(mem_ctx: MemContext) -> PolyPointer:
+    def make_empty(mem_ctx: Optional[MemContext] = None) -> PolyPointer:
+        if mem_ctx is None:
+            mem_ctx = MemContext()
         return PolyPointer(None, None, mem_ctx)
 
 

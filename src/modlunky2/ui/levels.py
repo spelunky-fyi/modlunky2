@@ -4266,7 +4266,6 @@ class LevelsTree(ttk.Treeview):
 
         item_name = ""
         item_name = self.item(item_iid)["text"]
-        room_data = self.item(item_iid, option="values")
 
         col1_lbl = ttk.Label(win, text="Name: ")
         col1_ent = ttk.Entry(win)
@@ -4275,7 +4274,7 @@ class LevelsTree(ttk.Treeview):
         col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nswe")
 
         def update_then_destroy():
-            if self.confirm_entry(col1_ent.get(), parent_iid, room_data):
+            if self.confirm_entry(col1_ent.get()):
                 win.destroy()
 
         separator = ttk.Separator(win)
@@ -4292,16 +4291,9 @@ class LevelsTree(ttk.Treeview):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
-    def confirm_entry(self, entry1, parent, room_data):
+    def confirm_entry(self, entry1):
         if entry1 != "":
-            # Grab the current index in the tree
-            current_index = self.index(self.focus())
-
-            # Remove it from the tree
-            self.delete(self.focus())
-
-            # Put it back in with the upated values
-            self.insert(parent, current_index, text=entry1, values=room_data)
+            self.item(self.focus(), text=entry1)
             return True
         else:
             return False

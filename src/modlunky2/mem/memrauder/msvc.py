@@ -2,7 +2,7 @@ import ctypes
 import dataclasses
 from dataclasses import InitVar, dataclass
 import math
-from typing import ClassVar, Generic, Optional, Tuple, TypeVar
+from typing import ClassVar, Dict, Generic, Optional, Tuple, TypeVar
 
 import fnvhash
 
@@ -24,7 +24,7 @@ from modlunky2.mem.memrauder.model import (
 @dataclass(frozen=True)
 class _VectorMeta:
     array_addr: int = struct_field(0x8, sc_void_p)
-    size: int = struct_field(0x10, sc_uint32)
+    size: int = struct_field(0x14, sc_uint32)
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -225,6 +225,17 @@ class UnorderedMap(Generic[K, V]):
     def _hash_key(self, key) -> int:
         bytes_ = self.key_mem_type.to_bytes(key)
         return fnvhash.fnv1a_64(bytes_)
+
+
+@dataclass(frozen=True)
+class DictUnorderedMap((Generic[K, V])):
+    dict: Dict[K, V] = dataclasses.field(default_factory=dict)
+
+    def get(self, key: K) -> Optional[V]:
+        if key not in self.dict:
+            return None
+
+        return self.dict[key]
 
 
 @dataclass(frozen=True)

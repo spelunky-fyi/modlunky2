@@ -159,57 +159,54 @@ class CharState(IntEnum):
 class EntityDBEntry:
     _size_as_element_: ClassVar[int] = 256  # Size of EntityDB struct
 
-    id: int = struct_field(0x14, sc_uint32)  # pylint: disable=invalid-name
-
-    # TODO try constructing eagerly
-    @property
-    def entity_type(self) -> EntityType:
-        return EntityType(self.id)
-
-    @property
-    def name(self):
-        return self.entity_type.name
+    id: EntityType = struct_field(0x14, sc_uint32)  # pylint: disable=invalid-name
 
 
 # EntityReduced exists only to break the circular dependency via 'overlay'
 @dataclass(frozen=True)
 class EntityReduced:
-    type: Optional[EntityDBEntry] = struct_field(0x08, pointer(dc_struct))
-    items: Optional[Tuple[int, ...]] = struct_field(0x18, vector(sc_uint32))
-    layer: int = struct_field(0x98, sc_uint8)
+    type: Optional[EntityDBEntry] = struct_field(0x08, pointer(dc_struct), default=None)
+    items: Optional[Tuple[int, ...]] = struct_field(
+        0x18, vector(sc_uint32), default=None
+    )
+    layer: int = struct_field(0x98, sc_uint8, default=Layer.FRONT)
 
 
 @dataclass(frozen=True)
 class Entity(EntityReduced):
-    overlay: PolyPointer[EntityReduced] = struct_field(0x10, poly_pointer(dc_struct))
+    overlay: PolyPointer[EntityReduced] = struct_field(
+        0x10, poly_pointer(dc_struct), default_factory=PolyPointer.make_empty
+    )
 
 
 @dataclass(frozen=True)
 class Movable(Entity):
-    holding_uid: int = struct_field(0x108, sc_int32)
-    state: CharState = struct_field(0x10C, sc_uint8)
-    last_state: CharState = struct_field(0x10D, sc_uint8)
-    health: int = struct_field(0x10F, sc_int8)
+    holding_uid: int = struct_field(0x108, sc_int32, default=-1)
+    state: CharState = struct_field(0x10C, sc_uint8, default=CharState.STANDING)
+    last_state: CharState = struct_field(0x10D, sc_uint8, default=CharState.STANDING)
+    health: int = struct_field(0x10F, sc_int8, default=4)
 
 
 @dataclass(frozen=True)
 class Mount(Movable):
-    is_tamed: bool = struct_field(0x149, sc_bool)
+    is_tamed: bool = struct_field(0x149, sc_bool, default=False)
 
 
 @dataclass(frozen=True)
 class Inventory:
     # Amount of money collected in the current level
-    money: int = struct_field(0x00, sc_uint32)
-    bombs: int = struct_field(0x04, sc_uint8)
-    ropes: int = struct_field(0x05, sc_uint8)
-    poison_tick_timer: int = struct_field(0x06, sc_int16)
-    cursed: bool = struct_field(0x08, sc_bool)
-    kills_level: int = struct_field(0x1424, sc_uint32)
-    kills_total: int = struct_field(0x1428, sc_uint32)
-    collected_money_total: int = struct_field(0x1520, sc_uint32)
+    money: int = struct_field(0x00, sc_uint32, default=0)
+    bombs: int = struct_field(0x04, sc_uint8, default=4)
+    ropes: int = struct_field(0x05, sc_uint8, default=4)
+    poison_tick_timer: int = struct_field(0x06, sc_int16, default=-1)
+    cursed: bool = struct_field(0x08, sc_bool, default=False)
+    kills_level: int = struct_field(0x1424, sc_uint32, default=0)
+    kills_total: int = struct_field(0x1428, sc_uint32, default=0)
+    collected_money_total: int = struct_field(0x1520, sc_uint32, default=0)
 
 
 @dataclass(frozen=True)
 class Player(Movable):
-    inventory: Optional[Inventory] = struct_field(0x138, pointer(dc_struct))
+    inventory: Optional[Inventory] = struct_field(
+        0x138, pointer(dc_struct), default_factory=Inventory
+    )
