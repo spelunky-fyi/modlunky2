@@ -91,6 +91,8 @@ class ChainMixin:
     def failed(self):
         return ChainStepResult(ChainStatus.FAILED)
 
+    # TODO move companion stuff somewhere more sensible
+
     def companions(
         self, game_state: State
     ) -> Generator[PolyPointer[Entity], None, None]:
@@ -120,6 +122,13 @@ class ChainMixin:
                     continue
                 if item.value.type.id is item_type:
                     return True
+
+        return False
+
+    def some_companion_is(self, game_state: State, companion_type: EntityType) -> bool:
+        for companion in self.companions(game_state):
+            if companion.value.type.id is companion_type:
+                return True
 
         return False
 
@@ -310,3 +319,83 @@ class CosmicOceanChain(ChainMixin):
             return self.in_progress(self.co_win)
 
         return self.failed()
+
+
+class EggplantChain(ChainMixin):
+    @classmethod
+    def make_stepper(cls) -> ChainStepper:
+        return ChainStepper(cls().pick_up_eggplant)
+
+    def pick_up_eggplant(self, game_state: State, player_item_types: Set[EntityType]):
+        if EntityType.ITEM_EGGPLANT in player_item_types:
+            return self.in_progress(self.still_have_eggplant)
+
+        if game_state.world > 4:
+            return self.in_progress(self.collect_eggplant_child)
+
+        # We can get another eggplant
+        return self.unstarted()
+
+    def still_have_eggplant(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ):
+        if game_state.world > 4:
+            return self.in_progress(self.collect_eggplant_child)
+
+        if game_state.screen is not Screen.LEVEL_TRANSITION:
+            return self.in_progress(self.still_have_eggplant)
+
+        if (
+            EntityType.ITEM_EGGPLANT in player_item_types
+            or EntityType.ITEM_EGGPLANT in game_state.waddler_storage
+            or self.some_companion_has_item(game_state, EntityType.ITEM_EGGPLANT)
+        ):
+            return self.in_progress(self.still_have_eggplant)
+
+        # We can get another eggplant
+        return self.unstarted()
+
+    def collect_eggplant_child(self, game_state: State, _: Set[EntityType]):
+        if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
+            return self.in_progress(self.still_have_eggplant_child)
+
+        if game_state.world > 5:
+            return self.failed()
+
+        return self.in_progress(self.collect_eggplant_child)
+
+    def still_have_eggplant_child(self, game_state: State, _: Set[EntityType]):
+        # We won't have the child during the 7-1 transition
+        if (game_state.world, game_state.level, game_state.screen) == (
+            7,
+            1,
+            Screen.LEVEL_TRANSITION,
+        ):
+            return self.in_progress(self.eggplant_world)
+
+        if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
+            return self.in_progress(self.still_have_eggplant_child)
+
+        return self.failed()
+
+    def eggplant_world(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme is Theme.EGGPLANT_WORLD:
+            return self.in_progress(self.eggplant_crown)
+
+        if (game_state.world, game_state.level) > (7, 1):
+            return self.failed()
+
+        return self.in_progress(self.eggplant_world)
+
+    def eggplant_crown(self, game_state: State, player_item_types: Set[EntityType]):
+        if EntityType.ITEM_POWERUP_EGGPLANTCROWN in player_item_types:
+            return self.in_progress(self.success)
+
+        if (game_state.world, game_state.level) > (7, 2):
+            return self.failed()
+
+        return self.in_progress(self.eggplant_crown)
+
+    def success(self, _unused1: State, _unused2: Set[EntityType]):
+        # Eggplant can't fail once you have the crown
+        return self.in_progress(self.success)

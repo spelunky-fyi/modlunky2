@@ -34,6 +34,7 @@ from modlunky2.ui.trackers.chain import (
     ChainStatus,
     CosmicOceanChain,
     DuatChain,
+    EggplantChain,
 )
 from modlunky2.ui.trackers.label import Label, RunLabel
 
@@ -101,6 +102,7 @@ class RunState:
         self.abzu_stepper = AbzuChain.make_stepper()
         self.duat_stepper = DuatChain.make_stepper()
         self.cosmic_stepper = CosmicOceanChain.make_stepper()
+        self.eggplant_stepper = EggplantChain.make_stepper()
 
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
@@ -632,7 +634,12 @@ class RunState:
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
         self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
-        for stepper in (self.abzu_stepper, self.duat_stepper, self.cosmic_stepper):
+        for stepper in (
+            self.abzu_stepper,
+            self.duat_stepper,
+            self.cosmic_stepper,
+            self.eggplant_stepper,
+        ):
             stepper.evaluate(game_state, self.player_item_types)
 
     def update_player_item_types(
