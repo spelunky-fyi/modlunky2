@@ -4,7 +4,7 @@ from enum import IntEnum
 import logging
 from typing import Any, Callable, Optional, Set
 
-from modlunky2.mem.entities import EntityType
+from modlunky2.mem.entities import EntityType, Player
 from modlunky2.mem.state import Screen, State, Theme, WinState
 
 logger = logging.getLogger("modlunky2")
@@ -90,8 +90,33 @@ class ChainMixin:
     def failed(self):
         return ChainStepResult(ChainStatus.FAILED)
 
+    def some_hired_hand_has_item(
+        self, game_state: State, item_type: EntityType
+    ) -> bool:
+        cur_hand_uid = game_state.items.players[0].linked_companion_child
 
-class CommonChain(ChainMixin, ABC):
+        while cur_hand_uid != 0:
+            cur_hand = game_state.instance_id_to_pointer.get(cur_hand_uid)
+            if cur_hand is None or not cur_hand.present():
+                return False
+
+            if cur_hand.value.items is not None:
+                for item_uid in cur_hand.value.items:
+                    item = game_state.instance_id_to_pointer.get(item_uid)
+                    if item is None or not item.present():
+                        continue
+                    if item.value.type.id == item_type:
+                        return True
+
+            cur_hand = cur_hand.as_poly_type(Player)
+            if not cur_hand.present():
+                return False
+            cur_hand_uid = cur_hand.value.linked_companion_child
+
+        return False
+
+
+class CommonSunkenChain(ChainMixin, ABC):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
         return ChainStepper(cls().eye_or_headwear)
@@ -169,7 +194,10 @@ class CommonChain(ChainMixin, ABC):
         if world_level_screen != (6, 2, Screen.LEVEL_TRANSITION):
             return self.in_progress(self.ushabti)
 
-        if EntityType.ITEM_USHABTI in player_item_types:
+        if (
+            EntityType.ITEM_USHABTI in player_item_types
+            or self.some_hired_hand_has_item(game_state, EntityType.ITEM_USHABTI)
+        ):
             return self.in_progress(self.non_tiamat_win)
 
         return self.failed()
@@ -181,7 +209,7 @@ class CommonChain(ChainMixin, ABC):
         return self.in_progress(self.non_tiamat_win)
 
 
-class AbzuChain(CommonChain):
+class AbzuChain(CommonSunkenChain):
     world4_1_theme = Theme.TIDE_POOL
     world4_4_theme = Theme.ABZU
 
@@ -200,7 +228,7 @@ class AbzuChain(CommonChain):
         return self.in_progress(self.excalibur)
 
 
-class DuatChain(CommonChain):
+class DuatChain(CommonSunkenChain):
     world4_1_theme = Theme.TEMPLE
     world4_4_theme = Theme.DUAT
 
@@ -209,11 +237,15 @@ class DuatChain(CommonChain):
         return self.scepter
 
     def scepter(self, game_state: State, player_item_types: Set[EntityType]):
+        # Scepter must be carried into 4, 2
         world_level_screen = (game_state.world, game_state.level, game_state.screen)
         if world_level_screen != (4, 1, Screen.LEVEL_TRANSITION):
             return self.in_progress(self.scepter)
 
-        if EntityType.ITEM_SCEPTER in player_item_types:
+        if (
+            EntityType.ITEM_SCEPTER in player_item_types
+            or self.some_hired_hand_has_item(game_state, EntityType.ITEM_SCEPTER)
+        ):
             return self.in_progress(self.city_of_gold)
 
         return self.failed()
@@ -226,3 +258,47 @@ class DuatChain(CommonChain):
             return self.failed()
 
         return self.in_progress(self.city_of_gold)
+
+
+class CosmicOceanChain(ChainMixin):
+    @classmethod
+    def make_stepper(cls) -> ChainStepper:
+        return ChainStepper(cls().pick_up_bow)
+
+    def pick_up_bow(self, game_state: State, player_item_types: Set[EntityType]):
+        if EntityType.ITEM_HOUYIBOW in player_item_types:
+            return self.in_progress(self.still_have_bow)
+
+        if game_state.world > 2:
+            return self.failed()
+
+        return self.in_progress(self.pick_up_bow)
+
+    def still_have_bow(self, game_state: State, player_item_types: Set[EntityType]):
+        if game_state.win_state is not WinState.NO_WIN:
+            return self.failed()
+
+        world_level = (game_state.world, game_state.level)
+        if world_level > (7, 3):
+            return self.in_progress(self.co_win)
+
+        if game_state.screen is not Screen.LEVEL_TRANSITION:
+            return self.in_progress(self.still_have_bow)
+
+        if (
+            EntityType.ITEM_HOUYIBOW in player_item_types
+        ) or self.some_hired_hand_has_item(game_state, EntityType.ITEM_HOUYIBOW):
+            return self.in_progress(self.still_have_bow)
+
+        if world_level < (7, 1) and (
+            EntityType.ITEM_HOUYIBOW in game_state.waddler_storage
+        ):
+            return self.in_progress(self.still_have_bow)
+
+        return self.failed()
+
+    def co_win(self, game_state: State, _: Set[EntityType]):
+        if game_state.win_state in (WinState.NO_WIN, WinState.COSMIC_OCEAN):
+            return self.in_progress(self.co_win)
+
+        return self.failed()

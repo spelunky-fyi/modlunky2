@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import enum
-from typing import Optional, Tuple
+from typing import FrozenSet, Optional, Tuple
 
-from modlunky2.mem.entities import Entity, Player
+from modlunky2.mem.entities import Entity, EntityType, Player
 
 from modlunky2.mem.memrauder.dsl import (
     array,
@@ -157,6 +157,9 @@ class State:
     theme: Theme = struct_field(0x74, sc_uint8, default=Theme.DWELLING)
     theme_next: Theme = struct_field(0x75, sc_uint8, default=Theme.DWELLING)
     win_state: WinState = struct_field(0x76, sc_int8, default=WinState.NO_WIN)
+    waddler_storage: FrozenSet[EntityType] = struct_field(
+        0x8C, array(sc_uint32, 99), default=frozenset()
+    )
     run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
     hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
     presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)

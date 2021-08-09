@@ -28,6 +28,7 @@ def _make_entity_type_enum():
         enum_values = {
             name[len("ENT_TYPE_") :]: obj["id"] for name, obj in entities_json.items()
         }
+        enum_values["DEFAULT_TYPE_ID"] = 0
 
     return IntEnum("EntityType", enum_values)
 
@@ -210,3 +211,5 @@ class Player(Movable):
     inventory: Optional[Inventory] = struct_field(
         0x138, pointer(dc_struct), default_factory=Inventory
     )
+    linked_companion_child: int = struct_field(0x148, sc_int32, default=0)
+    linked_companion_parent: int = struct_field(0x14C, sc_int32, default=0)
