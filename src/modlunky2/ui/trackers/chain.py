@@ -185,30 +185,30 @@ class CommonSunkenChain(ChainMixin, ABC):
 
     def ankh(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_ANKH in player_item_types:
-            return self.in_progress(self.world4_1_theme_check)
+            return self.in_progress(self.check_world4_1_theme)
 
         if game_state.world > 3:
             return self.failed()
 
         return self.in_progress(self.ankh)
 
-    def world4_1_theme_check(self, game_state: State, _: Set[EntityType]):
+    def check_world4_1_theme(self, game_state: State, _: Set[EntityType]):
         if game_state.theme == self.world4_1_theme:
             return self.in_progress(self.world4_step)
 
         if game_state.world > 3:
             return self.failed()
 
-        return self.in_progress(self.world4_1_theme_check)
+        return self.in_progress(self.check_world4_1_theme)
 
-    def world4_4_theme_check(self, game_state: State, _: Set[EntityType]):
+    def check_world4_4_theme(self, game_state: State, _: Set[EntityType]):
         if game_state.theme == self.world4_4_theme:
             return self.in_progress(self.tablet_of_destiny)
 
         if (game_state.world, game_state.level) > (4, 3):
             return self.failed()
 
-        return self.in_progress(self.world4_4_theme_check)
+        return self.in_progress(self.check_world4_4_theme)
 
     def tablet_of_destiny(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_TABLETOFDESTINY in player_item_types:
@@ -249,7 +249,7 @@ class AbzuChain(CommonSunkenChain):
 
     def excalibur(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_EXCALIBUR in player_item_types:
-            return self.in_progress(self.world4_4_theme_check)
+            return self.in_progress(self.check_world4_4_theme)
 
         world_level = (game_state.world, game_state.level)
         if world_level > (4, 2):
@@ -282,7 +282,7 @@ class DuatChain(CommonSunkenChain):
 
     def city_of_gold(self, game_state: State, _: Set[EntityType]):
         if game_state.theme is Theme.CITY_OF_GOLD:
-            return self.in_progress(self.world4_4_theme_check)
+            return self.in_progress(self.check_world4_4_theme)
 
         if (game_state.world, game_state.level) > (4, 3):
             return self.failed()
