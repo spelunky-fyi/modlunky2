@@ -2,6 +2,7 @@ import ctypes
 import dataclasses
 from dataclasses import InitVar, dataclass
 import math
+from types import MappingProxyType
 from typing import ClassVar, Dict, Generic, Optional, Tuple, TypeVar
 
 import fnvhash
@@ -229,13 +230,21 @@ class UnorderedMap(Generic[K, V]):
 
 @dataclass(frozen=True)
 class DictUnorderedMap((Generic[K, V])):
-    dict: Dict[K, V] = dataclasses.field(default_factory=dict)
+    a_dict: InitVar[Dict[K, V]] = None
+    mapping: MappingProxyType[K, V] = dataclasses.field(init=False)
+
+    def __post_init__(self, a_dict=None):
+        if a_dict is None:
+            a_dict = {}
+
+        mapping = MappingProxyType(dict(a_dict.items()))
+        object.__setattr__(self, "mapping", mapping)
 
     def get(self, key: K) -> Optional[V]:
-        if key not in self.dict:
+        if key not in self.mapping:
             return None
 
-        return self.dict[key]
+        return self.mapping[key]
 
 
 @dataclass(frozen=True)
