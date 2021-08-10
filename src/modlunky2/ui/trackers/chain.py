@@ -40,8 +40,15 @@ class ChainStepResult:
     next_step: Optional[ChainStepEvaluator] = None
 
     def __post_init__(self):
-        if self.status.in_progress and self.next_step is None:
-            raise ValueError(f"status {self.status.name} requires next_step to be set")
+        if self.status.in_progress:
+            if self.next_step is None:
+                raise ValueError(
+                    f"status {self.status.name} requires next_step to be set"
+                )
+            if not callable(self.next_step):
+                raise ValueError(
+                    f"status {self.status.name} requires next_step to be callable"
+                )
 
         if not self.status.in_progress and self.next_step is not None:
             raise ValueError(
@@ -52,32 +59,38 @@ class ChainStepResult:
         if self.next_step is None:
             return f"{self.status.name}"
         step_name = self.next_step.__name__
-        class_name = type(self.next_step.__self__).__name__
-        return f"{self.status.name}, {class_name}.{step_name}"
+        return f"{self.status.name}, {step_name}"
 
 
 class ChainStepper:
-    def __init__(self, initial_step: ChainStepEvaluator):
+    def __init__(self, name: str, initial_step: ChainStepEvaluator):
+        self.name = name
         self.initial_step = initial_step
         self.last_result = ChainStepResult(ChainStatus.UNSTARTED)
 
     def evaluate(
         self, game_state: State, player_item_types: Set[EntityType]
     ) -> ChainStatus:
-        if self.last_result.status.failed:
-            return ChainStatus.FAILED
+        # We continue stepping until the state stabilizes.
+        # This is mostly to simplify testing. In normal usage, we'd progress soon anyway.
+        keep_stepping = True
+        while keep_stepping:
+            if self.last_result.status.failed:
+                return ChainStatus.FAILED
 
-        if self.last_result.status.unstarted:
-            step = self.initial_step
-        else:
-            step = self.last_result.next_step
+            if self.last_result.status.unstarted:
+                step = self.initial_step
+            else:
+                step = self.last_result.next_step
 
-        result: ChainStepResult = step(game_state, player_item_types)
+            result = step(game_state, player_item_types)
 
-        if self.last_result != result:
-            logger.info("chain %s -> %s", self.last_result, result)
+            if self.last_result != result:
+                logger.info("chain %s: %s -> %s", self.name, self.last_result, result)
 
-        self.last_result = result
+            keep_stepping = self.last_result != result
+            self.last_result = result
+
         return result.status
 
 
@@ -136,7 +149,7 @@ class ChainMixin:
 class CommonSunkenChain(ChainMixin, ABC):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls().eye_or_headwear)
+        return ChainStepper(cls.__name__, cls().eye_or_headwear)
 
     @property
     @abstractmethod
@@ -280,7 +293,7 @@ class DuatChain(CommonSunkenChain):
 class CosmicOceanChain(ChainMixin):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls().pick_up_bow)
+        return ChainStepper(cls.__name__, cls().pick_up_bow)
 
     def pick_up_bow(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_HOUYIBOW in player_item_types:
@@ -324,7 +337,7 @@ class CosmicOceanChain(ChainMixin):
 class EggplantChain(ChainMixin):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls().pick_up_eggplant)
+        return ChainStepper(cls.__name__, cls().pick_up_eggplant)
 
     def pick_up_eggplant(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_EGGPLANT in player_item_types:
