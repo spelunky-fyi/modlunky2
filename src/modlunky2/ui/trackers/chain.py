@@ -233,7 +233,7 @@ class CommonSunkenChain(ChainMixin, ABC):
         return self.failed()
 
     def non_tiamat_win(self, game_state: State, _: Set[EntityType]):
-        if game_state is WinState.TIAMAT:
+        if game_state.win_state is WinState.TIAMAT:
             return self.failed()
 
         return self.in_progress(self.non_tiamat_win)
