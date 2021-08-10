@@ -475,6 +475,7 @@ class FyiInstall(ttk.LabelFrame):
 
         self.entry = Entry(frame)
         self.entry.bind("<KeyRelease>", self._on_key)
+        self.entry.bind("<Return>", lambda _: self.install())
 
         self.button_install = ttk.Button(frame, text="Install", command=self.install)
 
