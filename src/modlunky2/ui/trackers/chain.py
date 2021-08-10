@@ -343,10 +343,15 @@ class EggplantChain(ChainMixin):
         if EntityType.ITEM_EGGPLANT in player_item_types:
             return self.in_progress(self.still_have_eggplant)
 
-        if game_state.world > 4:
-            return self.in_progress(self.collect_eggplant_child)
+        # It's possible to collect the child without the eggplant
+        if game_state.world == 5 and self.some_companion_is(
+            game_state, EntityType.CHAR_EGGPLANT_CHILD
+        ):
+            return self.in_progress(self.still_have_eggplant_child)
 
-        # We can get another eggplant
+        if game_state.world > 5:
+            return self.failed()
+
         return self.unstarted()
 
     def still_have_eggplant(
