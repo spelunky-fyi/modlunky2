@@ -12,15 +12,15 @@ from modlunky2.mem.testing import EntityMapBuilder
 
 
 class FakeChain(CommonSunkenChain):
-    world4_1_theme = Theme.TIDE_POOL
-    world4_4_theme = Theme.ABZU
+    world41_theme = Theme.TIDE_POOL
+    world44_theme = Theme.ABZU
 
     @property
     def world4_step(self) -> ChainStepEvaluator:
         return self.fake_world4_step
 
     def fake_world4_step(self, _unused1: State, _unused2: Set[EntityType]):
-        return self.in_progress(self.check_world4_4_theme)
+        return self.in_progress(self.visit_world44_theme)
 
 
 def make_player_with_hh_items(
@@ -40,24 +40,24 @@ def make_player_with_hh_items(
             1,
             {EntityType.ITEM_POWERUP_UDJATEYE},
             ChainStatus.IN_PROGRESS,
-            "eye_or_headwear",
+            "collect_eye_or_headwear",
         ),
         (2, set(), ChainStatus.UNSTARTED, None),
-        (2, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.IN_PROGRESS, "ankh"),
+        (2, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.IN_PROGRESS, "collect_ankh"),
         (
             2,
             {EntityType.ITEM_POWERUP_UDJATEYE, EntityType.ITEM_POWERUP_HEDJET},
             ChainStatus.IN_PROGRESS,
-            "ankh",
+            "collect_ankh",
         ),
         (3, set(), ChainStatus.FAILED, None),
-        (3, {EntityType.ITEM_POWERUP_HEDJET}, ChainStatus.IN_PROGRESS, "ankh"),
+        (3, {EntityType.ITEM_POWERUP_HEDJET}, ChainStatus.IN_PROGRESS, "collect_ankh"),
     ],
 )
-def test_common_eye_or_headwear(world, item_set, expected_status, expected_step_name):
+def test_collect_eye_or_headwear(world, item_set, expected_status, expected_step_name):
     fake_chain = FakeChain()
     game_state = State(world=world)
-    result = fake_chain.eye_or_headwear(game_state, item_set)
+    result = fake_chain.collect_eye_or_headwear(game_state, item_set)
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -67,21 +67,21 @@ def test_common_eye_or_headwear(world, item_set, expected_status, expected_step_
 @pytest.mark.parametrize(
     "world,item_set,expected_status,expected_step_name",
     [
-        (3, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.IN_PROGRESS, "ankh"),
+        (3, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.IN_PROGRESS, "collect_ankh"),
         (
             3,
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_ANKH},
             ChainStatus.IN_PROGRESS,
-            "check_world4_1_theme",
+            "visit_world41_theme",
         ),
         (4, set(), ChainStatus.FAILED, None),
         (4, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.FAILED, None),
     ],
 )
-def test_ankh(world, item_set, expected_status, expected_step_name):
+def test_collect_ankh(world, item_set, expected_status, expected_step_name):
     fake_chain = FakeChain()
     game_state = State(world=world)
-    result = fake_chain.ankh(game_state, item_set)
+    result = fake_chain.collect_ankh(game_state, item_set)
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -91,15 +91,15 @@ def test_ankh(world, item_set, expected_status, expected_step_name):
 @pytest.mark.parametrize(
     "world,theme,expected_status,expected_step_name",
     [
-        (3, Theme.OLMEC, ChainStatus.IN_PROGRESS, "check_world4_1_theme"),
+        (3, Theme.OLMEC, ChainStatus.IN_PROGRESS, "visit_world41_theme"),
         (4, Theme.TEMPLE, ChainStatus.FAILED, None),
         (4, Theme.TIDE_POOL, ChainStatus.IN_PROGRESS, "fake_world4_step"),
     ],
 )
-def test_check_world4_1_theme(world, theme, expected_status, expected_step_name):
+def test_visit_world41_theme(world, theme, expected_status, expected_step_name):
     fake_chain = FakeChain()
     game_state = State(world=world, theme=theme)
-    result = fake_chain.check_world4_1_theme(game_state, set())
+    result = fake_chain.visit_world41_theme(game_state, set())
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -109,16 +109,16 @@ def test_check_world4_1_theme(world, theme, expected_status, expected_step_name)
 @pytest.mark.parametrize(
     "world,level,theme,expected_status,expected_step_name",
     [
-        (4, 2, Theme.TIDE_POOL, ChainStatus.IN_PROGRESS, "check_world4_4_theme"),
-        (4, 3, Theme.TIDE_POOL, ChainStatus.IN_PROGRESS, "check_world4_4_theme"),
+        (4, 2, Theme.TIDE_POOL, ChainStatus.IN_PROGRESS, "visit_world44_theme"),
+        (4, 3, Theme.TIDE_POOL, ChainStatus.IN_PROGRESS, "visit_world44_theme"),
         (4, 4, Theme.TIDE_POOL, ChainStatus.FAILED, None),
-        (4, 4, Theme.ABZU, ChainStatus.IN_PROGRESS, "tablet_of_destiny"),
+        (4, 4, Theme.ABZU, ChainStatus.IN_PROGRESS, "collect_tablet"),
     ],
 )
-def test_world4_4_theme_check(world, level, theme, expected_status, expected_step_name):
+def test_visit_world44_theme(world, level, theme, expected_status, expected_step_name):
     fake_chain = FakeChain()
     game_state = State(world=world, level=level, theme=theme)
-    result = fake_chain.check_world4_4_theme(game_state, set())
+    result = fake_chain.visit_world44_theme(game_state, set())
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -132,21 +132,21 @@ def test_world4_4_theme_check(world, level, theme, expected_status, expected_ste
             4,
             {EntityType.ITEM_POWERUP_CROWN},
             ChainStatus.IN_PROGRESS,
-            "tablet_of_destiny",
+            "collect_tablet",
         ),
         (
             4,
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_TABLETOFDESTINY},
             ChainStatus.IN_PROGRESS,
-            "ushabti",
+            "carry_ushabti_to_63",
         ),
         (5, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.FAILED, None),
     ],
 )
-def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name):
+def test_collect_tablet(world, item_set, expected_status, expected_step_name):
     fake_chain = FakeChain()
     game_state = State(world=world)
-    result = fake_chain.tablet_of_destiny(game_state, item_set)
+    result = fake_chain.collect_tablet(game_state, item_set)
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -163,7 +163,7 @@ def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name)
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_TABLETOFDESTINY},
             set(),
             ChainStatus.IN_PROGRESS,
-            "ushabti",
+            "carry_ushabti_to_63",
         ),
         (
             6,
@@ -172,7 +172,7 @@ def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name)
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_TABLETOFDESTINY},
             set(),
             ChainStatus.IN_PROGRESS,
-            "ushabti",
+            "carry_ushabti_to_63",
         ),
         (
             6,
@@ -181,7 +181,7 @@ def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name)
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_TABLETOFDESTINY},
             set(),
             ChainStatus.IN_PROGRESS,
-            "ushabti",
+            "carry_ushabti_to_63",
         ),
         (
             6,
@@ -203,7 +203,7 @@ def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name)
             },
             set(),
             ChainStatus.IN_PROGRESS,
-            "non_tiamat_win",
+            "win_via_hundun_or_co",
         ),
         (
             6,
@@ -215,11 +215,11 @@ def test_tablet_of_destiny(world, item_set, expected_status, expected_step_name)
             },
             {EntityType.ITEM_USHABTI},
             ChainStatus.IN_PROGRESS,
-            "non_tiamat_win",
+            "win_via_hundun_or_co",
         ),
     ],
 )
-def test_ushabti(
+def test_carry_ushabti_to_63(
     world,
     level,
     screen,
@@ -239,7 +239,7 @@ def test_ushabti(
     )
 
     fake_chain = FakeChain()
-    result = fake_chain.ushabti(game_state, player_item_set)
+    result = fake_chain.carry_ushabti_to_63(game_state, player_item_set)
 
     assert result.status == expected_status
     if expected_status.in_progress:
@@ -249,16 +249,16 @@ def test_ushabti(
 @pytest.mark.parametrize(
     "win_state,expected_status,expected_step_name",
     [
-        (WinState.NO_WIN, ChainStatus.IN_PROGRESS, "non_tiamat_win"),
+        (WinState.NO_WIN, ChainStatus.IN_PROGRESS, "win_via_hundun_or_co"),
         (WinState.TIAMAT, ChainStatus.FAILED, None),
-        (WinState.HUNDUN, ChainStatus.IN_PROGRESS, "non_tiamat_win"),
-        (WinState.COSMIC_OCEAN, ChainStatus.IN_PROGRESS, "non_tiamat_win"),
+        (WinState.HUNDUN, ChainStatus.IN_PROGRESS, "win_via_hundun_or_co"),
+        (WinState.COSMIC_OCEAN, ChainStatus.IN_PROGRESS, "win_via_hundun_or_co"),
     ],
 )
-def test_non_tiamat_win(win_state, expected_status, expected_step_name):
+def test_win_via_hundun_or_co(win_state, expected_status, expected_step_name):
     game_state = State(win_state=win_state)
     fake_chain = FakeChain()
-    result = fake_chain.non_tiamat_win(game_state, set())
+    result = fake_chain.win_via_hundun_or_co(game_state, set())
 
     assert result.status == expected_status
     if expected_status.in_progress:

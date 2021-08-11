@@ -149,16 +149,16 @@ class ChainMixin:
 class CommonSunkenChain(ChainMixin, ABC):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls.__name__, cls().eye_or_headwear)
+        return ChainStepper(cls.__name__, cls().collect_eye_or_headwear)
 
     @property
     @abstractmethod
-    def world4_1_theme(self) -> Theme:
+    def world41_theme(self) -> Theme:
         pass
 
     @property
     @abstractmethod
-    def world4_4_theme(self) -> Theme:
+    def world44_theme(self) -> Theme:
         pass
 
     @property
@@ -166,170 +166,176 @@ class CommonSunkenChain(ChainMixin, ABC):
     def world4_step(self) -> ChainStepEvaluator:
         pass
 
-    def eye_or_headwear(
+    def collect_eye_or_headwear(
         self, game_state: State, player_item_types: Set[EntityType]
     ) -> ChainStepResult:
         if (
             EntityType.ITEM_POWERUP_HEDJET in player_item_types
             or EntityType.ITEM_POWERUP_CROWN in player_item_types
         ):
-            return self.in_progress(self.ankh)
+            return self.in_progress(self.collect_ankh)
 
         if EntityType.ITEM_POWERUP_UDJATEYE in player_item_types:
-            return self.in_progress(self.eye_or_headwear)
+            return self.in_progress(self.collect_eye_or_headwear)
 
         if game_state.world > 2:
             return self.failed()
 
         return self.unstarted()
 
-    def ankh(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_ankh(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_ANKH in player_item_types:
-            return self.in_progress(self.check_world4_1_theme)
+            return self.in_progress(self.visit_world41_theme)
 
         if game_state.world > 3:
             return self.failed()
 
-        return self.in_progress(self.ankh)
+        return self.in_progress(self.collect_ankh)
 
-    def check_world4_1_theme(self, game_state: State, _: Set[EntityType]):
-        if game_state.theme == self.world4_1_theme:
+    def visit_world41_theme(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme == self.world41_theme:
             return self.in_progress(self.world4_step)
 
         if game_state.world > 3:
             return self.failed()
 
-        return self.in_progress(self.check_world4_1_theme)
+        return self.in_progress(self.visit_world41_theme)
 
-    def check_world4_4_theme(self, game_state: State, _: Set[EntityType]):
-        if game_state.theme == self.world4_4_theme:
-            return self.in_progress(self.tablet_of_destiny)
+    def visit_world44_theme(self, game_state: State, _: Set[EntityType]):
+        if game_state.theme == self.world44_theme:
+            return self.in_progress(self.collect_tablet)
 
         if (game_state.world, game_state.level) > (4, 3):
             return self.failed()
 
-        return self.in_progress(self.check_world4_4_theme)
+        return self.in_progress(self.visit_world44_theme)
 
-    def tablet_of_destiny(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_tablet(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_TABLETOFDESTINY in player_item_types:
-            return self.in_progress(self.ushabti)
+            return self.in_progress(self.carry_ushabti_to_63)
 
         if game_state.world > 4:
             return self.failed()
 
-        return self.in_progress(self.tablet_of_destiny)
+        return self.in_progress(self.collect_tablet)
 
-    def ushabti(self, game_state: State, player_item_types: Set[EntityType]):
+    def carry_ushabti_to_63(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ):
         world_level_screen = (game_state.world, game_state.level, game_state.screen)
         if world_level_screen != (6, 2, Screen.LEVEL_TRANSITION):
-            return self.in_progress(self.ushabti)
+            return self.in_progress(self.carry_ushabti_to_63)
 
         if (
             EntityType.ITEM_USHABTI in player_item_types
             or self.some_companion_has_item(game_state, EntityType.ITEM_USHABTI)
         ):
-            return self.in_progress(self.non_tiamat_win)
+            return self.in_progress(self.win_via_hundun_or_co)
 
         return self.failed()
 
-    def non_tiamat_win(self, game_state: State, _: Set[EntityType]):
+    def win_via_hundun_or_co(self, game_state: State, _: Set[EntityType]):
         if game_state.win_state is WinState.TIAMAT:
             return self.failed()
 
-        return self.in_progress(self.non_tiamat_win)
+        return self.in_progress(self.win_via_hundun_or_co)
 
 
 class AbzuChain(CommonSunkenChain):
-    world4_1_theme = Theme.TIDE_POOL
-    world4_4_theme = Theme.ABZU
+    world41_theme = Theme.TIDE_POOL
+    world44_theme = Theme.ABZU
 
     @property
     def world4_step(self):
-        return self.excalibur
+        return self.collect_excalibur
 
-    def excalibur(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_excalibur(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_EXCALIBUR in player_item_types:
-            return self.in_progress(self.check_world4_4_theme)
+            return self.in_progress(self.visit_world44_theme)
 
         world_level = (game_state.world, game_state.level)
         if world_level > (4, 2):
             return self.failed()
 
-        return self.in_progress(self.excalibur)
+        return self.in_progress(self.collect_excalibur)
 
 
 class DuatChain(CommonSunkenChain):
-    world4_1_theme = Theme.TEMPLE
-    world4_4_theme = Theme.DUAT
+    world41_theme = Theme.TEMPLE
+    world44_theme = Theme.DUAT
 
     @property
     def world4_step(self):
-        return self.scepter
+        return self.carry_scepter_to_42
 
-    def scepter(self, game_state: State, player_item_types: Set[EntityType]):
+    def carry_scepter_to_42(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ):
         # Scepter must be carried into 4, 2
         world_level_screen = (game_state.world, game_state.level, game_state.screen)
         if world_level_screen != (4, 1, Screen.LEVEL_TRANSITION):
-            return self.in_progress(self.scepter)
+            return self.in_progress(self.carry_scepter_to_42)
 
         if (
             EntityType.ITEM_SCEPTER in player_item_types
             or self.some_companion_has_item(game_state, EntityType.ITEM_SCEPTER)
         ):
-            return self.in_progress(self.city_of_gold)
+            return self.in_progress(self.visit_city_of_gold)
 
         return self.failed()
 
-    def city_of_gold(self, game_state: State, _: Set[EntityType]):
+    def visit_city_of_gold(self, game_state: State, _: Set[EntityType]):
         if game_state.theme is Theme.CITY_OF_GOLD:
-            return self.in_progress(self.check_world4_4_theme)
+            return self.in_progress(self.visit_world44_theme)
 
         if (game_state.world, game_state.level) > (4, 3):
             return self.failed()
 
-        return self.in_progress(self.city_of_gold)
+        return self.in_progress(self.visit_city_of_gold)
 
 
 class CosmicOceanChain(ChainMixin):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls.__name__, cls().pick_up_bow)
+        return ChainStepper(cls.__name__, cls().collect_bow)
 
-    def pick_up_bow(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_bow(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_HOUYIBOW in player_item_types:
-            return self.in_progress(self.still_have_bow)
+            return self.in_progress(self.carry_bow_to_hundun)
 
         if game_state.world > 2:
             return self.failed()
 
         return self.unstarted()
 
-    def still_have_bow(self, game_state: State, player_item_types: Set[EntityType]):
+    def carry_bow_to_hundun(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ):
         if game_state.win_state is not WinState.NO_WIN:
             return self.failed()
 
         world_level = (game_state.world, game_state.level)
         if world_level > (7, 3):
-            return self.in_progress(self.co_win)
+            return self.in_progress(self.win_via_co)
 
         if game_state.screen is not Screen.LEVEL_TRANSITION:
-            return self.in_progress(self.still_have_bow)
+            return self.in_progress(self.carry_bow_to_hundun)
 
         if (
             EntityType.ITEM_HOUYIBOW in player_item_types
         ) or self.some_companion_has_item(game_state, EntityType.ITEM_HOUYIBOW):
-            return self.in_progress(self.still_have_bow)
+            return self.in_progress(self.carry_bow_to_hundun)
 
         if world_level < (7, 1) and (
             EntityType.ITEM_HOUYIBOW in game_state.waddler_storage
         ):
-            return self.in_progress(self.still_have_bow)
+            return self.in_progress(self.carry_bow_to_hundun)
 
         return self.failed()
 
-    def co_win(self, game_state: State, _: Set[EntityType]):
+    def win_via_co(self, game_state: State, _: Set[EntityType]):
         if game_state.win_state in (WinState.NO_WIN, WinState.COSMIC_OCEAN):
-            return self.in_progress(self.co_win)
+            return self.in_progress(self.win_via_co)
 
         return self.failed()
 
@@ -337,65 +343,65 @@ class CosmicOceanChain(ChainMixin):
 class EggplantChain(ChainMixin):
     @classmethod
     def make_stepper(cls) -> ChainStepper:
-        return ChainStepper(cls.__name__, cls().pick_up_eggplant)
+        return ChainStepper(cls.__name__, cls().collect_eggplant)
 
-    def pick_up_eggplant(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_eggplant(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_EGGPLANT in player_item_types:
-            return self.in_progress(self.still_have_eggplant)
+            return self.in_progress(self.carry_eggplant_to_51)
 
         # It's possible to collect the child without the eggplant
         if game_state.world == 5 and self.some_companion_is(
             game_state, EntityType.CHAR_EGGPLANT_CHILD
         ):
-            return self.in_progress(self.still_have_eggplant_child)
+            return self.in_progress(self.guide_eggplant_child_to_71)
 
         if game_state.world > 5:
             return self.failed()
 
         return self.unstarted()
 
-    def still_have_eggplant(
+    def carry_eggplant_to_51(
         self, game_state: State, player_item_types: Set[EntityType]
     ):
         if game_state.world > 4:
             return self.in_progress(self.collect_eggplant_child)
 
         if game_state.screen is not Screen.LEVEL_TRANSITION:
-            return self.in_progress(self.still_have_eggplant)
+            return self.in_progress(self.carry_eggplant_to_51)
 
         if (
             EntityType.ITEM_EGGPLANT in player_item_types
             or EntityType.ITEM_EGGPLANT in game_state.waddler_storage
             or self.some_companion_has_item(game_state, EntityType.ITEM_EGGPLANT)
         ):
-            return self.in_progress(self.still_have_eggplant)
+            return self.in_progress(self.carry_eggplant_to_51)
 
         # We can get another eggplant
         return self.unstarted()
 
     def collect_eggplant_child(self, game_state: State, _: Set[EntityType]):
         if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
-            return self.in_progress(self.still_have_eggplant_child)
+            return self.in_progress(self.guide_eggplant_child_to_71)
 
         if game_state.world > 5:
             return self.failed()
 
         return self.in_progress(self.collect_eggplant_child)
 
-    def still_have_eggplant_child(self, game_state: State, _: Set[EntityType]):
+    def guide_eggplant_child_to_71(self, game_state: State, _: Set[EntityType]):
         world_level = (game_state.world, game_state.level)
         if world_level > (7, 1):
             return self.in_progress(self.eggplant_world)
 
         if game_state.screen is not Screen.LEVEL_TRANSITION:
-            return self.in_progress(self.still_have_eggplant_child)
+            return self.in_progress(self.guide_eggplant_child_to_71)
 
         # We won't have the child during the 7-1 transition
         if world_level == (7, 1):
             return self.in_progress(self.eggplant_world)
 
         if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
-            return self.in_progress(self.still_have_eggplant_child)
+            return self.in_progress(self.guide_eggplant_child_to_71)
 
         return self.failed()
 
