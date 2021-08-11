@@ -29,24 +29,63 @@ class MinimalCommonChain(SunkenChain):
             1,
             {EntityType.ITEM_POWERUP_UDJATEYE},
             ChainStatus.IN_PROGRESS,
-            "collect_eye_or_headwear",
+            "collect_headwear",
         ),
         (2, set(), ChainStatus.UNSTARTED, None),
         (2, {EntityType.ITEM_POWERUP_CROWN}, ChainStatus.IN_PROGRESS, "collect_ankh"),
         (
             2,
-            {EntityType.ITEM_POWERUP_UDJATEYE, EntityType.ITEM_POWERUP_HEDJET},
+            {EntityType.ITEM_POWERUP_HEDJET},
             ChainStatus.IN_PROGRESS,
             "collect_ankh",
         ),
         (3, set(), ChainStatus.FAILED, None),
-        (3, {EntityType.ITEM_POWERUP_HEDJET}, ChainStatus.IN_PROGRESS, "collect_ankh"),
     ],
 )
 def test_collect_eye_or_headwear(world, item_set, expected_status, expected_step_name):
     fake_chain = MinimalCommonChain()
     game_state = State(world=world)
     result = fake_chain.collect_eye_or_headwear(game_state, item_set)
+
+    assert result.status == expected_status
+    if expected_status.in_progress:
+        assert result.next_step.__name__ == expected_step_name
+
+
+@pytest.mark.parametrize(
+    "world,item_set,expected_status,expected_step_name",
+    [
+        (
+            1,
+            {EntityType.ITEM_POWERUP_UDJATEYE},
+            ChainStatus.IN_PROGRESS,
+            "collect_headwear",
+        ),
+        (
+            2,
+            {EntityType.ITEM_POWERUP_UDJATEYE},
+            ChainStatus.IN_PROGRESS,
+            "collect_headwear",
+        ),
+        (
+            2,
+            {EntityType.ITEM_POWERUP_UDJATEYE, EntityType.ITEM_POWERUP_CROWN},
+            ChainStatus.IN_PROGRESS,
+            "collect_ankh",
+        ),
+        (
+            2,
+            {EntityType.ITEM_POWERUP_UDJATEYE, EntityType.ITEM_POWERUP_HEDJET},
+            ChainStatus.IN_PROGRESS,
+            "collect_ankh",
+        ),
+        (3, {EntityType.ITEM_POWERUP_UDJATEYE}, ChainStatus.FAILED, None),
+    ],
+)
+def test_collect_headwear(world, item_set, expected_status, expected_step_name):
+    fake_chain = MinimalCommonChain()
+    game_state = State(world=world)
+    result = fake_chain.collect_headwear(game_state, item_set)
 
     assert result.status == expected_status
     if expected_status.in_progress:

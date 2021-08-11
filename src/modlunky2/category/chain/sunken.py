@@ -34,19 +34,33 @@ class SunkenChain(ChainMixin, ABC):
     def collect_eye_or_headwear(
         self, game_state: State, player_item_types: Set[EntityType]
     ) -> ChainStepResult:
+        if EntityType.ITEM_POWERUP_UDJATEYE in player_item_types:
+            return self.in_progress(self.collect_headwear)
+
         if (
             EntityType.ITEM_POWERUP_HEDJET in player_item_types
             or EntityType.ITEM_POWERUP_CROWN in player_item_types
         ):
             return self.in_progress(self.collect_ankh)
 
-        if EntityType.ITEM_POWERUP_UDJATEYE in player_item_types:
-            return self.in_progress(self.collect_eye_or_headwear)
-
         if game_state.world > 2:
             return self.failed()
 
         return self.unstarted()
+
+    def collect_headwear(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ) -> ChainStepResult:
+        if (
+            EntityType.ITEM_POWERUP_HEDJET in player_item_types
+            or EntityType.ITEM_POWERUP_CROWN in player_item_types
+        ):
+            return self.in_progress(self.collect_ankh)
+
+        if game_state.world > 2:
+            return self.failed()
+
+        return self.in_progress(self.collect_headwear)
 
     def collect_ankh(self, game_state: State, player_item_types: Set[EntityType]):
         if EntityType.ITEM_POWERUP_ANKH in player_item_types:
