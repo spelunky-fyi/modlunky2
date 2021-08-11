@@ -163,7 +163,7 @@ class CommonSunkenChain(ChainMixin, ABC):
 
     @property
     @abstractmethod
-    def world4_step(self) -> ChainStepEvaluator:
+    def world4_item_step(self) -> ChainStepEvaluator:
         pass
 
     def collect_eye_or_headwear(
@@ -194,7 +194,7 @@ class CommonSunkenChain(ChainMixin, ABC):
 
     def visit_world41_theme(self, game_state: State, _: Set[EntityType]):
         if game_state.theme == self.world41_theme:
-            return self.in_progress(self.world4_step)
+            return self.in_progress(self.world4_item_step)
 
         if game_state.world > 3:
             return self.failed()
@@ -246,7 +246,7 @@ class AbzuChain(CommonSunkenChain):
     world44_theme = Theme.ABZU
 
     @property
-    def world4_step(self):
+    def world4_item_step(self):
         return self.collect_excalibur
 
     def collect_excalibur(self, game_state: State, player_item_types: Set[EntityType]):
@@ -265,12 +265,16 @@ class DuatChain(CommonSunkenChain):
     world44_theme = Theme.DUAT
 
     @property
-    def world4_step(self):
+    def world4_item_step(self):
         return self.carry_scepter_to_42
 
     def carry_scepter_to_42(
         self, game_state: State, player_item_types: Set[EntityType]
     ):
+        # The ankh is required to reach Duat
+        if EntityType.ITEM_POWERUP_ANKH not in player_item_types:
+            return self.failed()
+
         # Scepter must be carried into 4, 2
         world_level_screen = (game_state.world, game_state.level, game_state.screen)
         if world_level_screen != (4, 1, Screen.LEVEL_TRANSITION):
@@ -284,14 +288,33 @@ class DuatChain(CommonSunkenChain):
 
         return self.failed()
 
-    def visit_city_of_gold(self, game_state: State, _: Set[EntityType]):
-        if game_state.theme is Theme.CITY_OF_GOLD:
-            return self.in_progress(self.visit_world44_theme)
+    def visit_city_of_gold(self, game_state: State, player_item_types: Set[EntityType]):
+        # The ankh is required to reach Duat
+        if EntityType.ITEM_POWERUP_ANKH not in player_item_types:
+            return self.failed()
 
-        if (game_state.world, game_state.level) > (4, 3):
+        if game_state.theme is Theme.CITY_OF_GOLD:
+            return self.in_progress(self.keep_ankh)
+
+        if (game_state.world, game_state.level) > (4, 2):
             return self.failed()
 
         return self.in_progress(self.visit_city_of_gold)
+
+    def keep_ankh(self, game_state: State, player_item_types: Set[EntityType]):
+        # We won't have the Ankh on our way to Duat
+        world_level_screen = (game_state.world, game_state.level, game_state.screen)
+        if world_level_screen == (4, 3, Screen.LEVEL_TRANSITION):
+            return self.in_progress(self.visit_world44_theme)
+
+        # The player is destroyed when sacrificed
+        if game_state.items.players[0] is None:
+            return self.in_progress(self.keep_ankh)
+
+        if EntityType.ITEM_POWERUP_ANKH not in player_item_types:
+            return self.failed()
+
+        return self.in_progress(self.keep_ankh)
 
 
 class CosmicOceanChain(ChainMixin):
