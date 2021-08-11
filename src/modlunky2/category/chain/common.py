@@ -63,28 +63,34 @@ class ChainStepResult:
 
 class ChainStepper:
     def __init__(self, name: str, initial_step: ChainStepEvaluator):
-        self.name = name
-        self.initial_step = initial_step
-        self.last_result = ChainStepResult(ChainStatus.UNSTARTED)
+        self._name = name
+        self._initial_step = initial_step
+        self._last_result = ChainStepResult(ChainStatus.UNSTARTED)
 
     def evaluate(
         self, game_state: State, player_item_types: Set[EntityType]
     ) -> ChainStatus:
-        if self.last_result.status.failed:
+        if self._last_result.status.failed:
             return ChainStatus.FAILED
 
-        if self.last_result.status.unstarted:
-            step = self.initial_step
+        if self._last_result.status.unstarted:
+            step = self._initial_step
         else:
-            step = self.last_result.next_step
+            step = self._last_result.next_step
 
         result = step(game_state, player_item_types)
 
-        if self.last_result != result:
-            logger.info("chain %s: %s -> %s", self.name, self.last_result, result)
+        if self._last_result != result:
+            logger.info("chain %s: %s -> %s", self._name, self._last_result, result)
 
-        self.last_result = result
+        self._last_result = result
         return result.status
+
+    # The status of the last call to evaluate().
+    # If it hasn't been calleed yet, this will be UNSTARTED
+    @property
+    def last_status(self) -> ChainStatus:
+        return self._last_result.status
 
 
 class ChainMixin:
