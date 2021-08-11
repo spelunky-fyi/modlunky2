@@ -69,37 +69,39 @@ class EggplantChain(ChainMixin):
     def guide_eggplant_child_to_71(self, game_state: State, _: Set[EntityType]):
         world_level = (game_state.world, game_state.level)
         if world_level > (7, 1):
-            return self.in_progress(self.eggplant_world)
+            return self.in_progress(self.visit_eggplant_world)
 
         if game_state.screen is not Screen.LEVEL_TRANSITION:
             return self.in_progress(self.guide_eggplant_child_to_71)
 
         # We won't have the child during the 7-1 transition
         if world_level == (7, 1):
-            return self.in_progress(self.eggplant_world)
+            return self.in_progress(self.visit_eggplant_world)
 
         if self.some_companion_is(game_state, EntityType.CHAR_EGGPLANT_CHILD):
             return self.in_progress(self.guide_eggplant_child_to_71)
 
         return self.failed()
 
-    def eggplant_world(self, game_state: State, _: Set[EntityType]):
+    def visit_eggplant_world(self, game_state: State, _: Set[EntityType]):
         if game_state.theme is Theme.EGGPLANT_WORLD:
-            return self.in_progress(self.eggplant_crown)
+            return self.in_progress(self.collect_eggplant_crown)
 
         if (game_state.world, game_state.level) > (7, 1):
             return self.failed()
 
-        return self.in_progress(self.eggplant_world)
+        return self.in_progress(self.visit_eggplant_world)
 
-    def eggplant_crown(self, game_state: State, player_item_types: Set[EntityType]):
+    def collect_eggplant_crown(
+        self, game_state: State, player_item_types: Set[EntityType]
+    ):
         if EntityType.ITEM_POWERUP_EGGPLANTCROWN in player_item_types:
             return self.in_progress(self.success)
 
         if (game_state.world, game_state.level) > (7, 2):
             return self.failed()
 
-        return self.in_progress(self.eggplant_crown)
+        return self.in_progress(self.collect_eggplant_crown)
 
     def success(self, _unused1: State, _unused2: Set[EntityType]):
         # Eggplant can't fail once you have the crown
