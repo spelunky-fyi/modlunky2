@@ -81,7 +81,7 @@ class ChainStepper:
         result = step(game_state, player_item_types)
 
         if self._last_result != result:
-            logger.info("chain %s: %s -> %s", self._name, self._last_result, result)
+            logger.debug("chain %s: %s -> %s", self._name, self._last_result, result)
 
         self._last_result = result
         return result.status
