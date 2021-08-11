@@ -29,13 +29,10 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
-from modlunky2.ui.trackers.chain import (
-    AbzuChain,
-    ChainStatus,
-    CosmicOceanChain,
-    DuatChain,
-    EggplantChain,
-)
+from modlunky2.category.chain.common import ChainStatus
+from modlunky2.category.chain.sunken import AbzuChain, DuatChain
+from modlunky2.category.chain.cosmic import CosmicOceanChain
+from modlunky2.category.chain.eggplant import EggplantChain
 from modlunky2.ui.trackers.label import Label, RunLabel
 
 
