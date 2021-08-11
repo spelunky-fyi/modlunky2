@@ -10,7 +10,7 @@ from modlunky2.mem.state import Screen, State, Theme, WinState
 
 logger = logging.getLogger("modlunky2")
 
-# Status of the Abzu/Duat quest chain.
+# Status of the quest chain.
 # The properties are for convenience in 'if' conditions.
 class ChainStatus(IntEnum):
     UNSTARTED = 0
@@ -134,6 +134,9 @@ class ChainMixin:
 
     def some_companion_is(self, game_state: State, companion_type: EntityType) -> bool:
         for companion in self.companions(game_state):
+            if companion.value.type is None:
+                continue
+
             if companion.value.type.id is companion_type:
                 return True
 
@@ -371,6 +374,13 @@ class EggplantChain(ChainMixin):
             game_state, EntityType.CHAR_EGGPLANT_CHILD
         ):
             return self.in_progress(self.guide_eggplant_child_to_71)
+
+        # It's possible a companion collected the eggplant
+        if (
+            game_state.screen is Screen.LEVEL_TRANSITION
+            and self.some_companion_has_item(game_state, EntityType.ITEM_EGGPLANT)
+        ):
+            return self.in_progress(self.carry_eggplant_to_51)
 
         if game_state.world > 5:
             return self.failed()
