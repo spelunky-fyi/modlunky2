@@ -52,7 +52,7 @@ class ChainStepResult:
 
         if not self.status.in_progress and self.next_step is not None:
             raise ValueError(
-                f"status {self.status.name} requires next_step to None, got {self.next_step}"
+                f"status {self.status.name} requires next_step to be None, got {self.next_step}"
             )
 
     def __str__(self) -> str:
@@ -71,26 +71,20 @@ class ChainStepper:
     def evaluate(
         self, game_state: State, player_item_types: Set[EntityType]
     ) -> ChainStatus:
-        # We continue stepping until the state stabilizes.
-        # This is mostly to simplify testing. In normal usage, we'd progress soon anyway.
-        keep_stepping = True
-        while keep_stepping:
-            if self.last_result.status.failed:
-                return ChainStatus.FAILED
+        if self.last_result.status.failed:
+            return ChainStatus.FAILED
 
-            if self.last_result.status.unstarted:
-                step = self.initial_step
-            else:
-                step = self.last_result.next_step
+        if self.last_result.status.unstarted:
+            step = self.initial_step
+        else:
+            step = self.last_result.next_step
 
-            result = step(game_state, player_item_types)
+        result = step(game_state, player_item_types)
 
-            if self.last_result != result:
-                logger.info("chain %s: %s -> %s", self.name, self.last_result, result)
+        if self.last_result != result:
+            logger.info("chain %s: %s -> %s", self.name, self.last_result, result)
 
-            keep_stepping = self.last_result != result
-            self.last_result = result
-
+        self.last_result = result
         return result.status
 
 

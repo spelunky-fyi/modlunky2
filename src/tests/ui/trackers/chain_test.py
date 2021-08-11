@@ -5,24 +5,15 @@ from modlunky2.mem.entities import EntityType, Player
 from modlunky2.mem.state import Items, Screen, State, Theme, WinState
 from modlunky2.ui.trackers.chain import (
     AbzuChain,
+    ChainMixin,
     ChainStatus,
     ChainStepEvaluator,
+    ChainStepResult,
+    ChainStepper,
     CommonSunkenChain,
     DuatChain,
 )
 from modlunky2.mem.testing import EntityMapBuilder
-
-
-class FakeChain(CommonSunkenChain):
-    world41_theme = Theme.TIDE_POOL
-    world44_theme = Theme.ABZU
-
-    @property
-    def world4_item_step(self) -> ChainStepEvaluator:
-        return self.fake_world4_step
-
-    def fake_world4_step(self, _unused1: State, _unused2: Set[EntityType]):
-        return self.in_progress(self.visit_world44_theme)
 
 
 def make_player_with_hh_items(
@@ -32,6 +23,106 @@ def make_player_with_hh_items(
     hh_id = entity_map.add_entity(Player(items=hh_item_ids))
 
     return Player(linked_companion_child=hh_id)
+
+
+def fake_chain_step():
+    pass
+
+
+@pytest.mark.parametrize(
+    "status,next_step,msg_pattern",
+    [
+        (ChainStatus.UNSTARTED, fake_chain_step, "next_step to be None"),
+        (ChainStatus.IN_PROGRESS, None, "next_step to be set"),
+        (ChainStatus.IN_PROGRESS, dict(), "next_step to be callable"),
+        (ChainStatus.FAILED, fake_chain_step, "next_step to be None"),
+    ],
+)
+def test_chain_step_result_validation(status, next_step, msg_pattern):
+    with pytest.raises(ValueError, match=msg_pattern):
+        ChainStepResult(status, next_step)
+
+
+class TestChain(ChainMixin):
+    def still_unstarted(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.unstarted()
+
+    def loopy_in_progress(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.in_progress(self.loopy_in_progress)
+
+    def total_fail(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.failed()
+
+    def step1_to_fail(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.in_progress(self.step2_to_fail)
+
+    def step2_to_fail(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.failed()
+
+    def step1_to_unstarted(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.in_progress(self.step2_to_unstarted)
+
+    def step2_to_unstarted(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.unstarted()
+
+
+@pytest.mark.parametrize(
+    "initial_step_name,expected_status",
+    [
+        ("still_unstarted", ChainStatus.UNSTARTED),
+        ("loopy_in_progress", ChainStatus.IN_PROGRESS),
+        ("total_fail", ChainStatus.FAILED),
+    ],
+)
+def test_chain_stepper_single(initial_step_name, expected_status):
+    test_chain = TestChain()
+    initial_step = getattr(test_chain, initial_step_name)
+    stepper = ChainStepper("test", initial_step)
+
+    status = stepper.evaluate(State(), set())
+    assert status == expected_status
+
+
+def test_chain_stepper_multi_progress():
+    test_chain = TestChain()
+    stepper = ChainStepper("test", test_chain.step1_to_fail)
+
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.IN_PROGRESS
+
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.FAILED
+
+    # Should still be failed
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.FAILED
+
+
+def test_chain_stepper_multi_unstarted():
+    test_chain = TestChain()
+    stepper = ChainStepper("test", test_chain.step1_to_unstarted)
+
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.IN_PROGRESS
+
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.UNSTARTED
+
+    # Should restart
+    status = stepper.evaluate(State(), set())
+    assert status == ChainStatus.IN_PROGRESS
+
+
+class MinimalCommonChain(CommonSunkenChain):
+    world41_theme = Theme.TIDE_POOL
+    world44_theme = Theme.ABZU
+
+    @property
+    def world4_item_step(self) -> ChainStepEvaluator:
+        return self.fake_world4_step
+
+    def fake_world4_step(self, _unused1: State, _unused2: Set[EntityType]):
+        return self.in_progress(self.visit_world44_theme)
 
 
 @pytest.mark.parametrize(
@@ -57,7 +148,7 @@ def make_player_with_hh_items(
     ],
 )
 def test_collect_eye_or_headwear(world, item_set, expected_status, expected_step_name):
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     game_state = State(world=world)
     result = fake_chain.collect_eye_or_headwear(game_state, item_set)
 
@@ -81,7 +172,7 @@ def test_collect_eye_or_headwear(world, item_set, expected_status, expected_step
     ],
 )
 def test_collect_ankh(world, item_set, expected_status, expected_step_name):
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     game_state = State(world=world)
     result = fake_chain.collect_ankh(game_state, item_set)
 
@@ -99,7 +190,7 @@ def test_collect_ankh(world, item_set, expected_status, expected_step_name):
     ],
 )
 def test_visit_world41_theme(world, theme, expected_status, expected_step_name):
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     game_state = State(world=world, theme=theme)
     result = fake_chain.visit_world41_theme(game_state, set())
 
@@ -118,7 +209,7 @@ def test_visit_world41_theme(world, theme, expected_status, expected_step_name):
     ],
 )
 def test_visit_world44_theme(world, level, theme, expected_status, expected_step_name):
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     game_state = State(world=world, level=level, theme=theme)
     result = fake_chain.visit_world44_theme(game_state, set())
 
@@ -146,7 +237,7 @@ def test_visit_world44_theme(world, level, theme, expected_status, expected_step
     ],
 )
 def test_collect_tablet(world, item_set, expected_status, expected_step_name):
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     game_state = State(world=world)
     result = fake_chain.collect_tablet(game_state, item_set)
 
@@ -240,7 +331,7 @@ def test_carry_ushabti_to_63(
         instance_id_to_pointer=entity_map.build(),
     )
 
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     result = fake_chain.carry_ushabti_to_63(game_state, player_item_set)
 
     assert result.status == expected_status
@@ -259,7 +350,7 @@ def test_carry_ushabti_to_63(
 )
 def test_win_via_hundun_or_co(win_state, expected_status, expected_step_name):
     game_state = State(win_state=win_state)
-    fake_chain = FakeChain()
+    fake_chain = MinimalCommonChain()
     result = fake_chain.win_via_hundun_or_co(game_state, set())
 
     assert result.status == expected_status
