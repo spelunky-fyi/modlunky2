@@ -65,7 +65,6 @@ class RunState:
 
         # Run Modifiers
         self.no_tp = True
-        self.eggplant = False
 
         # Low%
         self.is_low_percent = True
@@ -78,6 +77,7 @@ class RunState:
 
         # Chain
         self.had_ankh = False
+        # Combined status of Abzu and Duat
         self.sunken_chain_status = ChainStatus.UNSTARTED
 
         # Millionaire
