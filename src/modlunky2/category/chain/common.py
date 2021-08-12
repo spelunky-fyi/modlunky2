@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import IntEnum
 import logging
-from typing import Any, Callable, Generator, Optional, Set
+from typing import Callable, Generator, Optional, Set
 
 from modlunky2.mem.entities import Entity, EntityType, Player
 from modlunky2.mem.memrauder.model import PolyPointer
@@ -29,7 +29,9 @@ class ChainStatus(IntEnum):
         return self is ChainStatus.FAILED
 
 
-ChainStepEvaluator = Callable[[Any, State, Set[EntityType]], "ChainStepResult"]
+# Evalutes a single 'step' in a chain, based on current game state.
+# See ChainStepper for more details
+ChainStepEvaluator = Callable[[State, Set[EntityType]], "ChainStepResult"]
 
 
 @dataclass(frozen=True)
@@ -61,11 +63,28 @@ class ChainStepResult:
         return f"{self.status.name}, {step_name}"
 
 
+# A simple finite state machine for quest chains.
+# Generally, transitions may occur on each call to evaluate(),
+# which returns the new status.#
+#
+# The first call to evaluate will use the initial_step.
+# Later calls will depend on the previous result:
+# * If it was UNSTARTED, the initial_step will be used
+# * If it was IN_PROGRESS, the returned next_step will be used
+# * If it was FAILED, no step will be evaluated and the result is FAILED
+#
+# Notably:
+# * Chains can be reset by returning UNSTARTED
+# * Returning IN_PROGRESS with the initiial_step is an error
+# * Once a chain has failed, it will remain in that state indefinitely
 class ChainStepper:
     def __init__(self, name: str, initial_step: ChainStepEvaluator):
         self._name = name
         self._initial_step = initial_step
         self._last_result = ChainStepResult(ChainStatus.UNSTARTED)
+
+        if not callable(initial_step):
+            raise ValueError(f"initial_step ({initial_step}) isn't callable")
 
     def evaluate(
         self, game_state: State, player_item_types: Set[EntityType]
@@ -80,6 +99,11 @@ class ChainStepper:
 
         result = step(game_state, player_item_types)
 
+        if result.status.in_progress and result.next_step == self._initial_step:
+            raise ValueError(
+                f"step {step.__name__} returned IN_PROGRESS with the initial step ({self._initial_step.__name__})"
+            )
+
         if self._last_result != result:
             logger.debug("chain %s: %s -> %s", self._name, self._last_result, result)
 
@@ -93,6 +117,7 @@ class ChainStepper:
         return self._last_result.status
 
 
+# Convenience methods for chain steps
 class ChainMixin:
     def unstarted(self):
         return ChainStepResult(ChainStatus.UNSTARTED)

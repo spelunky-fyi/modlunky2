@@ -51,9 +51,6 @@ class TestChain(ChainMixin):
     def still_unstarted(self, _unused1: State, _unused2: Set[EntityType]):
         return self.unstarted()
 
-    def loopy_in_progress(self, _unused1: State, _unused2: Set[EntityType]):
-        return self.in_progress(self.loopy_in_progress)
-
     def total_fail(self, _unused1: State, _unused2: Set[EntityType]):
         return self.failed()
 
@@ -74,7 +71,6 @@ class TestChain(ChainMixin):
     "initial_step_name,expected_status",
     [
         ("still_unstarted", ChainStatus.UNSTARTED),
-        ("loopy_in_progress", ChainStatus.IN_PROGRESS),
         ("total_fail", ChainStatus.FAILED),
     ],
 )
