@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import pytest
+from modlunky2.category.chain.testing import FakeStepper
 from modlunky2.mem.entities import (
     CharState,
     EntityDBEntry,
@@ -899,11 +899,6 @@ def test_world_themes_label(
 
     is_duat = Label.DUAT in run_state.run_label._set
     assert is_duat == expected_duat
-
-
-@dataclass(frozen=True)
-class FakeStepper:
-    last_status: ChainStatus
 
 
 @pytest.mark.parametrize(

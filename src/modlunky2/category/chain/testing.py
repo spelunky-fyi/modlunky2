@@ -1,7 +1,14 @@
+from dataclasses import dataclass
 from typing import Iterable
+from modlunky2.category.chain.common import ChainStatus
 
 from modlunky2.mem.entities import EntityDBEntry, EntityType, Player
 from modlunky2.mem.testing import EntityMapBuilder
+
+
+@dataclass(frozen=True)
+class FakeStepper:
+    last_status: ChainStatus
 
 
 def make_player_with_hh_items(
