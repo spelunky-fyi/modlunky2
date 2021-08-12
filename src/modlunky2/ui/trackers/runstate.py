@@ -61,10 +61,7 @@ class RunState:
         self.cursed = False
 
         # Score
-        # For score runs, we require the bow to be carried to Olmec before it's CO.
-        # This allows moving the bow while mininig the moon challenge.
         self.is_score_run = False
-        self.hou_yis_waddler = False
 
         # Run Modifiers
         self.no_tp = True
@@ -123,7 +120,7 @@ class RunState:
         if self.cosmic_stepper.last_status.failed and self.mc_has_swung_mattock:
             self.fail_low()
 
-    def update_score_items(self, world, player_item_types):
+    def update_score_items(self, player_item_types):
         for item_type in player_item_types:
             if item_type in [
                 EntityType.ITEM_PLASMACANNON,
@@ -131,9 +128,6 @@ class RunState:
             ]:
                 self.is_score_run = True
                 self.run_label.add(Label.SCORE)
-
-            elif item_type == EntityType.ITEM_HOUYIBOW and world >= 3:
-                self.hou_yis_waddler = True
 
     def update_global_state(self, game_state: State):
         world = game_state.world
@@ -501,7 +495,7 @@ class RunState:
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(player.state, self.player_item_types)
 
-        self.update_score_items(game_state.world, self.player_item_types)
+        self.update_score_items(self.player_item_types)
 
         for stepper in (
             self.abzu_stepper,

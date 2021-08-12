@@ -58,25 +58,21 @@ def test_no_tp(item_set, expected_no_tp):
 
 
 @pytest.mark.parametrize(
-    "world,item_set,expected_score,expected_hou_yi",
+    "item_set,expected_score",
     [
-        (7, {EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False, False),
-        (3, {EntityType.ITEM_HOUYIBOW}, False, True),
-        (2, {EntityType.ITEM_HOUYIBOW}, False, False),
-        (1, {EntityType.ITEM_PLASMACANNON}, True, False),
-        (5, {EntityType.ITEM_PLASMACANNON}, True, False),
-        (1, set(), False, False),
-        (6, set(), False, False),
+        ({EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False),
+        ({EntityType.ITEM_PLASMACANNON}, True),
+        ({EntityType.ITEM_PLASMACANNON}, True),
+        (set(), False),
+        (set(), False),
     ],
 )
-def test_score_items(world, item_set, expected_score, expected_hou_yi):
+def test_score_items(item_set, expected_score):
     run_state = RunState()
-    run_state.update_score_items(world, item_set)
+    run_state.update_score_items(item_set)
 
     is_score = Label.SCORE in run_state.run_label._set
     assert is_score == expected_score
-
-    assert run_state.hou_yis_waddler == expected_hou_yi
 
 
 @pytest.mark.parametrize(
@@ -366,7 +362,7 @@ def test_has_chain_powerup(chain_status, item_set, expected_had_ankh, expected_l
         ({EntityType.ITEM_POWERUP_SKELETON_KEY}, False),
         ({EntityType.ITEM_POWERUP_SPIKE_SHOES}, False),
         ({EntityType.ITEM_POWERUP_SPRING_SHOES}, False),
-        # Having more than one isn't OK eithere
+        # Having more than one isn't OK either
         (
             {EntityType.ITEM_POWERUP_PARACHUTE, EntityType.ITEM_POWERUP_SPRING_SHOES},
             False,
