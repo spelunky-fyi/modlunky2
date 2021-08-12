@@ -370,12 +370,8 @@ class RunState:
             self.world2_theme = theme
         elif theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
-            if self.sunken_chain_status.in_progress:
-                self.run_label.add(Label.DUAT)
         elif theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
-            if self.sunken_chain_status.in_progress:
-                self.run_label.add(Label.ABZU)
 
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
             None,
@@ -433,7 +429,7 @@ class RunState:
         if duat_status.in_progress and not abzu_status.in_progress:
             self.run_label.add(Label.DUAT)
 
-        if not abzu_status.failed or not duat_status.failed:
+        if not (abzu_status.failed and duat_status.failed):
             return
 
         # We've failed both Sunken City chains

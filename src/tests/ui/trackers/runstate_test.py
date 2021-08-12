@@ -714,163 +714,68 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
 
 
 @pytest.mark.parametrize(
-    "world,theme,world2_theme,chain_status,starting_labels,expected_jt,expected_abzu,expected_duat",
+    "world,theme,world2_theme,starting_labels,expected_jt,",
     [
         # Volcana has no labels associated with it
-        (
-            2,
-            Theme.VOLCANA,
-            None,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # We eagerly assume J/T regardless of quest chain
-        (2, Theme.JUNGLE, None, ChainStatus.UNSTARTED, {Label.ANY}, True, False, False),
+        (2, Theme.VOLCANA, None, {Label.ANY}, False),
+        # We eagerly assume J/T
+        (2, Theme.JUNGLE, None, {Label.ANY}, True),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.ANY},
             True,
-            False,
-            False,
         ),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.SUNKEN_CITY},
             True,
-            False,
-            False,
         ),
-        # We actually went J/T. Duat depends on quest chain
+        # We actually went J/T
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             True,
-            False,
-            False,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
             True,
-            False,
-            True,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.FAILED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             True,
-            False,
-            False,
         ),
-        # Since we went Volcana, we're only eligible for Duat
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.IN_PROGRESS,
-            {Label.SUNKEN_CITY},
-            False,
-            False,
-            True,
-        ),
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.FAILED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # Since we went Volcana, we're only eligible for Abzu
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.IN_PROGRESS,
-            {Label.SUNKEN_CITY},
-            False,
-            True,
-            False,
-        ),
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.FAILED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # We went Jungle, but J/T is now impossible. Abzu depends on quest chain
+        # We went Jungle, but J/T is now impossible
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             False,
-            False,
-            False,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
             False,
-            True,
-            False,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.FAILED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
-            False,
             False,
         ),
     ],
@@ -879,26 +784,16 @@ def test_world_themes_label(
     world,
     theme,
     world2_theme,
-    chain_status,
     starting_labels,
     expected_jt,
-    expected_abzu,
-    expected_duat,
 ):
     run_state = RunState()
     run_state.run_label = RunLabel(starting=starting_labels)
     run_state.world2_theme = world2_theme
-    run_state.sunken_chain_status = chain_status
     run_state.update_world_themes(world, theme)
 
     is_jt = Label.JUNGLE_TEMPLE in run_state.run_label._set
     assert is_jt == expected_jt
-
-    is_abzu = Label.ABZU in run_state.run_label._set
-    assert is_abzu == expected_abzu
-
-    is_duat = Label.DUAT in run_state.run_label._set
-    assert is_duat == expected_duat
 
 
 @pytest.mark.parametrize(
