@@ -513,12 +513,11 @@ def test_visit_city_of_gold(
 
 
 @pytest.mark.parametrize(
-    "world,level,screen,player,player_item_set,expected_status,expected_step_name",
+    "world,level,player,player_item_set,expected_status,expected_step_name",
     [
         (
             4,
             3,
-            Screen.LEVEL,
             Player(),
             {EntityType.ITEM_POWERUP_CROWN, EntityType.ITEM_POWERUP_ANKH},
             ChainStatus.IN_PROGRESS,
@@ -528,7 +527,6 @@ def test_visit_city_of_gold(
         (
             4,
             3,
-            Screen.LEVEL,
             Player(),
             {EntityType.ITEM_POWERUP_CROWN},
             ChainStatus.FAILED,
@@ -538,16 +536,15 @@ def test_visit_city_of_gold(
         (
             4,
             3,
-            Screen.LEVEL,
             None,
             set(),
             ChainStatus.IN_PROGRESS,
             "keep_ankh",
         ),
+        # Hopefully we're in Duat now
         (
             4,
-            3,
-            Screen.LEVEL_TRANSITION,
+            4,
             Player(),
             {EntityType.ITEM_POWERUP_CROWN},
             ChainStatus.IN_PROGRESS,
@@ -556,12 +553,11 @@ def test_visit_city_of_gold(
     ],
 )
 def test_keep_ankh(
-    world, level, screen, player, player_item_set, expected_status, expected_step_name
+    world, level, player, player_item_set, expected_status, expected_step_name
 ):
     game_state = State(
         world=world,
         level=level,
-        screen=screen,
         items=Items(players=(player,)),
     )
 

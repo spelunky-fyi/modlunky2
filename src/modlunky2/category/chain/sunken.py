@@ -181,9 +181,8 @@ class DuatChain(SunkenChain):
         return self.in_progress(self.visit_city_of_gold)
 
     def keep_ankh(self, game_state: State, player_item_types: Set[EntityType]):
-        # We won't have the Ankh on our way to Duat
-        world_level_screen = (game_state.world, game_state.level, game_state.screen)
-        if world_level_screen == (4, 3, Screen.LEVEL_TRANSITION):
+        # There's no player on our way to Duat, so we won't get to update until we arrive
+        if (game_state.world, game_state.level) > (4, 3):
             return self.in_progress(self.visit_world44_theme)
 
         # The player is destroyed when sacrificed
