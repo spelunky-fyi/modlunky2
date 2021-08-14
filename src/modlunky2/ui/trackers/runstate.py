@@ -196,8 +196,8 @@ class RunState:
                 cur_delta_x - cur_delta_x_pred,
                 cur_delta_y - cur_delta_y_pred,
             ]
-            logger.info("diffs %s", diffs)
-            if all([abs(discrepency) < 0.5 for discrepency in diffs]):
+            logger.info("diffs %s", [f"{x:.3f}" for x in diffs])
+            if all(abs(discrepency) < 0.5 for discrepency in diffs):
                 logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
 
