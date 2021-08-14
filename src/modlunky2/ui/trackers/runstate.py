@@ -14,6 +14,7 @@ from modlunky2.mem.entities import (
     LightEmitter,
     MOUNTS,
     Mount,
+    Movable,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
@@ -123,14 +124,7 @@ class RunState:
             self.cur_tp_search_info = None
 
         self.prev_tp_search_info = self.cur_tp_search_info
-        self.cur_tp_search_info = TpSearchInfo(
-            next_uid=game_state.next_entity_uid,
-            player_x=player.position_x,
-            player_y=player.position_y,
-            player_vx=player.velocity_x,
-            player_vy=player.velocity_y,
-            time_level=game_state.time_level,
-        )
+        self.cur_tp_search_info = self.compute_tp_search_info(game_state, player)
         if self.prev_tp_search_info is None:
             return
 
@@ -200,6 +194,43 @@ class RunState:
             if all(abs(discrepency) < 0.5 for discrepency in diffs):
                 logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
+
+    def compute_tp_search_info(self, game_state: State, player: Player):
+        player_x = player.position_x
+        player_y = player.position_y
+        player_vx = player.velocity_x
+        player_vy = player.velocity_y
+
+        # We use a loop to handle player on a mount on an active floor.
+        overlay_poly = player.overlay
+        while overlay_poly.present():
+            overlay = overlay_poly.as_type(Movable)
+            if overlay is None:
+                break
+            # If the player is on a mount, its position is used for the TP effect.
+            # If a player/mount is on an active floor, their position and velocity
+            # are relative to the active floor's
+            if overlay.type is not None and overlay.type.id in MOUNTS:
+                player_x = overlay.position_x
+                player_y = overlay.position_y
+                player_vx = overlay.velocity_x
+                player_vy = overlay.velocity_y
+            else:
+                player_x += overlay.position_x
+                player_y += overlay.position_y
+                player_vx += overlay.velocity_x
+                player_vy += overlay.velocity_y
+            # We have to go deeper
+            overlay_poly = overlay.overlay
+
+        return TpSearchInfo(
+            next_uid=game_state.next_entity_uid,
+            player_x=player_x,
+            player_y=player_y,
+            player_vx=player_vx,
+            player_vy=player_vy,
+            time_level=game_state.time_level,
+        )
 
     def update_eggplant(self):
         if self.eggplant_stepper.last_status.in_progress:
