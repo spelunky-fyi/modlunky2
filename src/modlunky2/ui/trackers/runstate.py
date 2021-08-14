@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import logging
-from typing import Set
+from typing import List, Optional, Set, Tuple
 
 from modlunky2.mem.entities import (
     BACKPACKS,
@@ -10,12 +11,12 @@ from modlunky2.mem.entities import (
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
     Layer,
+    LightEmitter,
     MOUNTS,
     Mount,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
-    TELEPORT_ENTITIES,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import UnorderedMap
@@ -36,6 +37,16 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 
 
 logger = logging.getLogger("modlunky2")
+
+
+@dataclass(frozen=True)
+class TpSearchInfo:
+    next_uid: int
+    player_x: float
+    player_y: float
+    player_vx: float
+    player_vy: float
+    time_level: int
 
 
 class RunState:
@@ -92,6 +103,9 @@ class RunState:
         self.cosmic_stepper = CosmicOceanChain.make_stepper()
         self.eggplant_stepper = EggplantChain.make_stepper()
 
+        self.prev_tp_search_info: Optional[TpSearchInfo] = None
+        self.cur_tp_search_info: Optional[TpSearchInfo] = None
+
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
             self.run_label.discard(Label.PACIFIST)
@@ -100,15 +114,92 @@ class RunState:
         if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
             self.run_label.discard(Label.NO_GOLD)
 
-    def update_no_tp(self, player_item_types):
-        if not self.no_tp:
+    def update_no_tp(self, game_state: State, player: Player, _: Set[EntityType]):
+        # TODO check if we have something to teleport with. Intentionally removed to help find false positives
+
+        # Reset state between levels
+        if self.level_started:
+            self.prev_tp_search_info = None
+            self.cur_tp_search_info = None
+
+        self.prev_tp_search_info = self.cur_tp_search_info
+        self.cur_tp_search_info = TpSearchInfo(
+            next_uid=game_state.next_entity_uid,
+            player_x=player.position_x,
+            player_y=player.position_y,
+            player_vx=player.velocity_x,
+            player_vy=player.velocity_y,
+            time_level=game_state.time_level,
+        )
+        if self.prev_tp_search_info is None:
             return
 
-        for item_type in player_item_types:
-            if item_type in TELEPORT_ENTITIES:
-                self.no_tp = False
+        found_shadows: List[LightEmitter] = []
+        for shadow_uid in range(
+            self.prev_tp_search_info.next_uid, self.cur_tp_search_info.next_uid
+        ):
+            shadow_poly = game_state.instance_id_to_pointer.get(shadow_uid)
+            if shadow_poly is None or not shadow_poly.present():
+                continue
+            shadow = shadow_poly.value
+            if shadow.type is None:
+                continue
+            if shadow.type.id is not EntityType.FX_TELEPORTSHADOW:
+                continue
+            # Now that we know it's the right type, downcast
+            shadow = shadow_poly.as_type(LightEmitter)
+            if shadow is None:
+                continue
+            if shadow.emitted_light is None:
+                continue
+
+            found_shadows.append(shadow)
+
+        num_shadows = len(found_shadows)
+        # We need pairs to work with
+        if num_shadows < 2:
+            return
+        shadow_pairs: List[Tuple[LightEmitter, LightEmitter]] = []
+        for i in range(0, num_shadows, 2):
+            shadow_pairs.append((found_shadows[i], found_shadows[i + 1]))
+
+        prev_info = self.prev_tp_search_info
+        cur_info = self.cur_tp_search_info
+
+        # We know the lower ID corresponds to prev position
+        for prev_shadow, cur_shadow in shadow_pairs:
+            # The only way this can happen is if we read memory in the middle of creating a pair.
+            # We prefer a false negative here
+            if prev_shadow.idle_counter != cur_shadow.idle_counter:
+                continue
+            # We now know idle_counter is equal
+            tp_to_cur_frames = prev_shadow.idle_counter
+            prev_to_tp_frames = (
+                cur_info.time_level - prev_info.time_level
+            ) - prev_shadow.idle_counter
+
+            # prev player was at or before prev shadow
+            prev_delta_x = prev_shadow.emitted_light.light_pos_x - prev_info.player_x
+            prev_delta_y = prev_shadow.emitted_light.light_pos_y - prev_info.player_y
+            # cur player was at or after cur shadow
+            cur_delta_x = cur_info.player_x - cur_shadow.emitted_light.light_pos_x
+            cur_delta_y = cur_info.player_y - cur_shadow.emitted_light.light_pos_y
+
+            prev_delta_x_pred = prev_info.player_vx * prev_to_tp_frames
+            prev_delta_y_pred = prev_info.player_vy * prev_to_tp_frames
+            cur_delta_x_pred = cur_info.player_vx * tp_to_cur_frames
+            cur_delta_y_pred = cur_info.player_vy * tp_to_cur_frames
+
+            diffs = [
+                prev_delta_x - prev_delta_x_pred,
+                prev_delta_y - prev_delta_y_pred,
+                cur_delta_x - cur_delta_x_pred,
+                cur_delta_y - cur_delta_y_pred,
+            ]
+            logger.info("diffs %s", diffs)
+            if all([abs(discrepency) < 0.5 for discrepency in diffs]):
+                logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
-                return
 
     def update_eggplant(self):
         if self.eggplant_stepper.last_status.in_progress:
@@ -509,7 +600,7 @@ class RunState:
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp(self.player_item_types)
+        self.update_no_tp(game_state, player, self.player_item_types)
         self.update_eggplant()
         self.update_low_cosmic()
 

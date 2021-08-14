@@ -162,7 +162,9 @@ class State:
     )
     run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
     hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
+    time_level: int = struct_field(0xA04, sc_uint32, default=0)
     presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)
+    next_entity_uid: int = struct_field(0x12A0, sc_uint32, default=0)
     items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct), default=None)
     instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
         0x1308,
