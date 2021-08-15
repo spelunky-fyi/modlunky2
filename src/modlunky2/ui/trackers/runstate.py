@@ -41,13 +41,16 @@ logger = logging.getLogger("modlunky2")
 
 
 @dataclass(frozen=True)
-class TpSearchInfo:
-    next_uid: int
-    player_x: float
-    player_y: float
-    player_vx: float
-    player_vy: float
-    time_level: int
+class PlayerMotion:
+    position_x: float
+    position_y: float
+    velocity_x: float
+    velocity_y: float
+
+    def extrapolate(self, num_frames) -> Tuple[float, float]:
+        x = self.position_x + self.velocity_x * num_frames
+        y = self.position_y + self.velocity_y * num_frames
+        return (x, y)
 
 
 class RunState:
@@ -104,8 +107,7 @@ class RunState:
         self.cosmic_stepper = CosmicOceanChain.make_stepper()
         self.eggplant_stepper = EggplantChain.make_stepper()
 
-        self.prev_tp_search_info: Optional[TpSearchInfo] = None
-        self.cur_tp_search_info: Optional[TpSearchInfo] = None
+        self.prev_next_uid: Optional[int] = None
 
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
@@ -117,21 +119,14 @@ class RunState:
 
     def update_no_tp(self, game_state: State, player: Player, _: Set[EntityType]):
         # TODO check if we have something to teleport with. Intentionally removed to help find false positives
-
-        # Reset state between levels
+        prev_next_uid = self.prev_next_uid
+        self.prev_next_uid = game_state.next_entity_uid
+        # prev value was from a different level
         if self.level_started:
-            self.prev_tp_search_info = None
-            self.cur_tp_search_info = None
-
-        self.prev_tp_search_info = self.cur_tp_search_info
-        self.cur_tp_search_info = self.compute_tp_search_info(game_state, player)
-        if self.prev_tp_search_info is None:
             return
 
         found_shadows: List[LightEmitter] = []
-        for shadow_uid in range(
-            self.prev_tp_search_info.next_uid, self.cur_tp_search_info.next_uid
-        ):
+        for shadow_uid in range(prev_next_uid, game_state.next_entity_uid):
             shadow_poly = game_state.instance_id_to_pointer.get(shadow_uid)
             if shadow_poly is None or not shadow_poly.present():
                 continue
@@ -157,8 +152,7 @@ class RunState:
         for i in range(0, num_shadows, 2):
             shadow_pairs.append((found_shadows[i], found_shadows[i + 1]))
 
-        prev_info = self.prev_tp_search_info
-        cur_info = self.cur_tp_search_info
+        motion = self.compute_player_motion(player)
 
         # We know the lower ID corresponds to prev position
         for prev_shadow, cur_shadow in shadow_pairs:
@@ -167,35 +161,20 @@ class RunState:
             if prev_shadow.idle_counter != cur_shadow.idle_counter:
                 continue
             # We now know idle_counter is equal
-            tp_to_cur_frames = prev_shadow.idle_counter
-            prev_to_tp_frames = (
-                cur_info.time_level - prev_info.time_level
-            ) - prev_shadow.idle_counter
+            x, y = motion.extrapolate(  # pylint: disable=invalid-name
+                -cur_shadow.idle_counter
+            )
+            delta_x = x - cur_shadow.emitted_light.light_pos_x
+            delta_y = y - cur_shadow.emitted_light.light_pos_y
+            logger.info("deltas %.3f %.3f", delta_x, delta_y)
 
-            # prev player was at or before prev shadow
-            prev_delta_x = prev_shadow.emitted_light.light_pos_x - prev_info.player_x
-            prev_delta_y = prev_shadow.emitted_light.light_pos_y - prev_info.player_y
-            # cur player was at or after cur shadow
-            cur_delta_x = cur_info.player_x - cur_shadow.emitted_light.light_pos_x
-            cur_delta_y = cur_info.player_y - cur_shadow.emitted_light.light_pos_y
-
-            prev_delta_x_pred = prev_info.player_vx * prev_to_tp_frames
-            prev_delta_y_pred = prev_info.player_vy * prev_to_tp_frames
-            cur_delta_x_pred = cur_info.player_vx * tp_to_cur_frames
-            cur_delta_y_pred = cur_info.player_vy * tp_to_cur_frames
-
-            diffs = [
-                prev_delta_x - prev_delta_x_pred,
-                prev_delta_y - prev_delta_y_pred,
-                cur_delta_x - cur_delta_x_pred,
-                cur_delta_y - cur_delta_y_pred,
-            ]
-            logger.info("diffs %s", [f"{x:.3f}" for x in diffs])
-            if all(abs(discrepency) < 0.5 for discrepency in diffs):
+            x_tol = 0.5
+            y_tol = 0.5
+            if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
                 logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
 
-    def compute_tp_search_info(self, game_state: State, player: Player):
+    def compute_player_motion(self, player: Player):
         player_x = player.position_x
         player_y = player.position_y
         player_vx = player.velocity_x
@@ -223,13 +202,11 @@ class RunState:
             # We have to go deeper
             overlay_poly = overlay.overlay
 
-        return TpSearchInfo(
-            next_uid=game_state.next_entity_uid,
-            player_x=player_x,
-            player_y=player_y,
-            player_vx=player_vx,
-            player_vy=player_vy,
-            time_level=game_state.time_level,
+        return PlayerMotion(
+            position_x=player_x,
+            position_y=player_y,
+            velocity_x=player_vx,
+            velocity_y=player_vy,
         )
 
     def update_eggplant(self):
