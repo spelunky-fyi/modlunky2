@@ -1,10 +1,8 @@
-from enum import IntEnum
 import logging
 from typing import Set
 
 from modlunky2.mem.entities import (
     BACKPACKS,
-    CHAIN_POWERUP_ENTITIES,
     CharState,
     Entity,
     EntityType,
@@ -30,30 +28,14 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
+from modlunky2.category.chain.common import ChainStatus
+from modlunky2.category.chain.sunken import AbzuChain, DuatChain
+from modlunky2.category.chain.cosmic import CosmicOceanChain
+from modlunky2.category.chain.eggplant import EggplantChain
 from modlunky2.ui.trackers.label import Label, RunLabel
 
 
 logger = logging.getLogger("modlunky2")
-
-
-# Status of the Abzu/Duat quest chain.
-# The properties are for convenience in 'if' conditions.
-class ChainStatus(IntEnum):
-    UNSTARTED = 0
-    IN_PROGRESS = 1
-    FAILED = 2
-
-    @property
-    def unstarted(self):
-        return self is ChainStatus.UNSTARTED
-
-    @property
-    def in_progress(self):
-        return self is ChainStatus.IN_PROGRESS
-
-    @property
-    def failed(self):
-        return self is ChainStatus.FAILED
 
 
 class RunState:
@@ -79,14 +61,10 @@ class RunState:
         self.cursed = False
 
         # Score
-        # For score runs, we require the bow to be carried to Olmec before it's CO.
-        # This allows moving the bow while mininig the moon challenge.
         self.is_score_run = False
-        self.hou_yis_waddler = False
 
         # Run Modifiers
         self.no_tp = True
-        self.eggplant = False
 
         # Low%
         self.is_low_percent = True
@@ -98,21 +76,21 @@ class RunState:
         self.mc_has_swung_mattock = False
 
         # Chain
-        self.chain_status = ChainStatus.UNSTARTED
-        self.hou_yis_bow = False
-        self.has_chain_powerup = False
-        self.had_udjat_eye = False
-        self.had_world2_chain_headwear = False
         self.had_ankh = False
-        self.held_world4_chain_item = False
-        self.had_tablet_of_destiny = False
-        self.held_ushabti = False
+        # Combined status of Abzu and Duat
+        self.sunken_chain_status = ChainStatus.UNSTARTED
 
         # Millionaire
-        self.clone_gun_wo_bow = False
+        self.clone_gun_wo_cosmic = False
 
         self.world2_theme = None
         self.world4_theme = None
+
+        # Quest chains
+        self.abzu_stepper = AbzuChain.make_stepper()
+        self.duat_stepper = DuatChain.make_stepper()
+        self.cosmic_stepper = CosmicOceanChain.make_stepper()
+        self.eggplant_stepper = EggplantChain.make_stepper()
 
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
@@ -132,20 +110,17 @@ class RunState:
                 self.run_label.discard(Label.NO_TELEPORTER)
                 return
 
-    def update_eggplant(self, world, player_item_types):
-        if self.eggplant:
-            return
-
-        # TODO: Remove if we ever add a better heuristic
-        if world < 7:
-            return
-
-        if EntityType.ITEM_POWERUP_EGGPLANTCROWN in player_item_types:
-            self.eggplant = True
+    def update_eggplant(self):
+        if self.eggplant_stepper.last_status.in_progress:
             self.run_label.add(Label.EGGPLANT)
-            return
+        else:
+            self.run_label.discard(Label.EGGPLANT)
 
-    def update_score_items(self, world, player_item_types):
+    def update_low_cosmic(self):
+        if self.cosmic_stepper.last_status.failed and self.mc_has_swung_mattock:
+            self.fail_low()
+
+    def update_score_items(self, player_item_types):
         for item_type in player_item_types:
             if item_type in [
                 EntityType.ITEM_PLASMACANNON,
@@ -153,9 +128,6 @@ class RunState:
             ]:
                 self.is_score_run = True
                 self.run_label.add(Label.SCORE)
-
-            elif item_type == EntityType.ITEM_HOUYIBOW and world >= 3:
-                self.hou_yis_waddler = True
 
     def update_global_state(self, game_state: State):
         world = game_state.world
@@ -197,7 +169,7 @@ class RunState:
         # Allowed to ride tamed qilin in tiamats
         if theme == Theme.TIAMAT and entity_type == EntityType.MOUNT_QILIN:
             self.failed_low_if_not_chain = True
-            if not self.chain_status.in_progress:
+            if not self.sunken_chain_status.in_progress:
                 self.fail_low()
             return
 
@@ -285,18 +257,11 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_has_chain_powerup(
-        self, chain_status: ChainStatus, player_item_types: Set[EntityType]
-    ):
-        if self.has_chain_powerup:
-            return
+    def update_has_chain_powerup(self, player_item_types: Set[EntityType]):
+        if EntityType.ITEM_POWERUP_ANKH in player_item_types:
+            self.had_ankh = True
 
-        for item_type in player_item_types:
-            if item_type in CHAIN_POWERUP_ENTITIES:
-                self.has_chain_powerup = True
-                self.failed_low_if_not_chain = True
-
-        if chain_status.in_progress:
+        if self.sunken_chain_status.in_progress:
             return
 
         # Fail low if we've failed the chain and pick up a non-starting powerup
@@ -337,7 +302,7 @@ class RunState:
             if item_type in LOW_BANNED_ATTACKABLES:
                 if item_type == EntityType.ITEM_EXCALIBUR and theme == Theme.ABZU:
                     self.failed_low_if_not_chain = True
-                    if not self.chain_status.in_progress:
+                    if not self.sunken_chain_status.in_progress:
                         self.fail_low()
                     continue
 
@@ -391,29 +356,6 @@ class RunState:
                 self.fail_low()
                 return
 
-    def update_chain(self, player_item_types: Set[EntityType]):
-        if self.chain_status.failed:
-            return
-
-        for item_type in player_item_types:
-            if item_type == EntityType.ITEM_POWERUP_UDJATEYE:
-                self.had_udjat_eye = True
-            elif item_type in [
-                EntityType.ITEM_POWERUP_CROWN,
-                EntityType.ITEM_POWERUP_HEDJET,
-            ]:
-                self.had_world2_chain_headwear = True
-            elif item_type == EntityType.ITEM_POWERUP_ANKH:
-                self.had_ankh = True
-            elif item_type in [EntityType.ITEM_EXCALIBUR, EntityType.ITEM_SCEPTER]:
-                self.held_world4_chain_item = True
-            elif item_type == EntityType.ITEM_POWERUP_TABLETOFDESTINY:
-                self.had_tablet_of_destiny = True
-            elif item_type == EntityType.ITEM_USHABTI:
-                self.held_ushabti = True
-            elif item_type == EntityType.ITEM_HOUYIBOW:
-                self.hou_yis_bow = True
-
     def update_world_themes(self, world: int, theme: Theme):
         if world not in [2, 4]:
             return
@@ -422,12 +364,8 @@ class RunState:
             self.world2_theme = theme
         elif theme in [Theme.TEMPLE, Theme.CITY_OF_GOLD, Theme.DUAT]:
             self.world4_theme = Theme.TEMPLE
-            if self.chain_status.in_progress:
-                self.run_label.add(Label.DUAT)
         elif theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
-            if self.chain_status.in_progress:
-                self.run_label.add(Label.ABZU)
 
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
             None,
@@ -437,22 +375,19 @@ class RunState:
         else:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
 
-    def update_terminus(self, world: int, theme: Theme, win_state: WinState):
-        terminus = Label.ANY
-        if theme is Theme.COSMIC_OCEAN:
+    def update_terminus(self):
+        if self.cosmic_stepper.last_status.in_progress:
             terminus = Label.COSMIC_OCEAN
         elif self.final_death:
             terminus = Label.DEATH
-        elif win_state is WinState.TIAMAT:
+        elif (
+            self.had_ankh
+            or self.sunken_chain_status.in_progress
+            or self.eggplant_stepper.last_status.in_progress
+        ):
+            terminus = Label.SUNKEN_CITY
+        else:
             terminus = Label.ANY
-        elif win_state is WinState.HUNDUN:
-            terminus = Label.SUNKEN_CITY
-        elif self.hou_yis_waddler:
-            terminus = Label.COSMIC_OCEAN
-        elif self.hou_yis_bow and not self.is_score_run:
-            terminus = Label.COSMIC_OCEAN
-        elif self.had_ankh or self.chain_status.in_progress or world == 7:
-            terminus = Label.SUNKEN_CITY
 
         if terminus is Label.COSMIC_OCEAN:
             self.run_label.discard(Label.NO_CO)
@@ -460,67 +395,44 @@ class RunState:
             self.run_label.add(Label.NO_CO)
         self.run_label.set_terminus(terminus)
 
-    def update_is_chain(
-        self, world: int, level: int, theme: Theme, win_state: WinState
-    ):
-        if self.chain_status.failed:
+    def update_is_chain(self):
+        if self.sunken_chain_status.failed:
             return
 
-        if self.chain_status.unstarted:
-            if any([self.had_udjat_eye, self.had_world2_chain_headwear]):
-                self.start_chain()
+        abzu_status = self.abzu_stepper.last_status
+        duat_status = self.duat_stepper.last_status
 
-        if world == 3:
-            if not self.had_world2_chain_headwear:
-                self.fail_chain()
+        if abzu_status.unstarted ^ duat_status.unstarted:
+            raise ValueError(
+                f"Only one of Abzu and Duat is unstarted. Abzu {abzu_status} Duat {duat_status}"
+            )
 
-        elif world == 4:
-            if not all([self.had_world2_chain_headwear, self.had_ankh]):
-                self.fail_chain()
+        if abzu_status.unstarted:
+            self.sunken_chain_status = ChainStatus.UNSTARTED
+            return
 
-            if theme == Theme.TIDE_POOL:
-                # Didn't go to Abzu
-                if level == 4:
-                    self.fail_chain()
+        if abzu_status.in_progress or duat_status.in_progress:
+            self.run_label.add(Label.CHAIN)
+            self.sunken_chain_status = ChainStatus.IN_PROGRESS
+            # The ways to start invalidate plain low%
+            self.failed_low_if_not_chain = True
 
-                # Didn't pick up excalibur
-                if level > 2 and not self.held_world4_chain_item:
-                    self.fail_chain()
+        if abzu_status.in_progress and not duat_status.in_progress:
+            self.run_label.add(Label.ABZU)
 
-            elif theme == Theme.TEMPLE:
-                # Didn't go to City of Gold or Duat
-                if level in (3, 4):
-                    self.fail_chain()
+        if duat_status.in_progress and not abzu_status.in_progress:
+            self.run_label.add(Label.DUAT)
 
-                # Didn't pick up scepter
-                if level > 1 and not self.held_world4_chain_item:
-                    self.fail_chain()
+        if not (abzu_status.failed and duat_status.failed):
+            return
 
-        elif world == 5:
-            if not all(
-                [
-                    self.had_world2_chain_headwear,
-                    self.had_ankh,
-                    self.held_world4_chain_item,
-                    self.had_tablet_of_destiny,
-                ]
-            ):
-                self.fail_chain()
+        # We've failed both Sunken City chains
+        self.sunken_chain_status = ChainStatus.FAILED
+        for label in (Label.CHAIN, Label.ABZU, Label.DUAT):
+            self.run_label.discard(label)
 
-        elif world == 6 and level > 2:
-            if not all(
-                [
-                    self.had_world2_chain_headwear,
-                    self.had_ankh,
-                    self.held_world4_chain_item,
-                    self.had_tablet_of_destiny,
-                    self.held_ushabti,
-                ]
-            ):
-                self.fail_chain()
-
-        if win_state is WinState.TIAMAT:
-            self.fail_chain()
+        if self.failed_low_if_not_chain:
+            self.fail_low()
 
     def update_millionaire(
         self,
@@ -541,26 +453,16 @@ class RunState:
         # * You used to have enough money, but no longer do
         # * You picked up the clone gun, but won without enough money
         if net_score < 900_000 and (
-            not self.clone_gun_wo_bow or game_state.win_state is not WinState.NO_WIN
+            not self.clone_gun_wo_cosmic or game_state.win_state is not WinState.NO_WIN
         ):
             self.run_label.discard(Label.MILLIONAIRE)
 
-        if self.clone_gun_wo_bow or self.hou_yis_bow:
+        if self.clone_gun_wo_cosmic or self.cosmic_stepper.last_status.in_progress:
             return
         # If the clone gun is picked up, without picking up the bow, we assume this is a millionaire attempt.
         if EntityType.ITEM_CLONEGUN in player_item_types:
-            self.clone_gun_wo_bow = True
+            self.clone_gun_wo_cosmic = True
             self.run_label.add(Label.MILLIONAIRE)
-
-    def start_chain(self):
-        self.chain_status = ChainStatus.IN_PROGRESS
-        self.run_label.add(Label.CHAIN)
-
-    def fail_chain(self):
-        self.chain_status = ChainStatus.FAILED
-        self.run_label.discard(Label.CHAIN)
-        if self.failed_low_if_not_chain:
-            self.fail_low()
 
     def fail_low(self):
         self.is_low_percent = False
@@ -575,11 +477,6 @@ class RunState:
         self.level_start_ropes = ropes
         if theme == Theme.DUAT:
             self.health = 4
-
-        if theme == Theme.OLMEC:
-            # TODO fail if we leave the bow behind, or win w/o CO
-            if self.mc_has_swung_mattock and not self.hou_yis_bow:
-                self.fail_low()
 
     def update(self, game_state: State):
         if game_state.items is None:
@@ -598,13 +495,22 @@ class RunState:
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(player.state, self.player_item_types)
 
-        self.update_score_items(game_state.world, self.player_item_types)
+        self.update_score_items(self.player_item_types)
+
+        for stepper in (
+            self.abzu_stepper,
+            self.duat_stepper,
+            self.cosmic_stepper,
+            self.eggplant_stepper,
+        ):
+            stepper.evaluate(game_state, self.player_item_types)
 
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
         self.update_no_tp(self.player_item_types)
-        self.update_eggplant(game_state.world, self.player_item_types)
+        self.update_eggplant()
+        self.update_low_cosmic()
 
         # Check Category Criteria
         overlay = player.overlay
@@ -635,15 +541,12 @@ class RunState:
         )
 
         # Chain
-        self.update_chain(self.player_item_types)
-        self.update_has_chain_powerup(self.chain_status, self.player_item_types)
-        self.update_is_chain(
-            game_state.world, self.level, game_state.theme, game_state.win_state
-        )
+        self.update_has_chain_powerup(self.player_item_types)
+        self.update_is_chain()
 
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
-        self.update_terminus(game_state.world, game_state.theme, game_state.win_state)
+        self.update_terminus()
 
     def update_player_item_types(
         self,
