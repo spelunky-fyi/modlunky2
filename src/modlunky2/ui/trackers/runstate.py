@@ -117,7 +117,11 @@ class RunState:
             self.run_label.discard(Label.NO_GOLD)
 
     def update_no_tp(
-        self, game_state: State, player: Player, player_item_set: Set[EntityType]
+        self,
+        game_state: State,
+        player: Player,
+        player_item_set: Set[EntityType],
+        prev_player_item_set: Set[EntityType],
     ):
         prev_next_uid = self.prev_next_uid
         self.prev_next_uid = game_state.next_entity_uid
@@ -127,7 +131,7 @@ class RunState:
             return
 
         # This is an optimization to skip scanning when the player couldn't have teleported
-        if not self.could_tp(player, player_item_set):
+        if not self.could_tp(player, player_item_set, prev_player_item_set):
             return
 
         found_shadows: List[LightEmitter] = []
@@ -182,8 +186,15 @@ class RunState:
             if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
                 self.run_label.discard(Label.NO_TELEPORTER)
 
-    def could_tp(self, player: Player, player_item_set: Set[EntityType]):
+    def could_tp(
+        self,
+        player: Player,
+        player_item_set: Set[EntityType],
+        prev_player_item_set: Set[EntityType],
+    ):
         if not TELEPORT_ENTITIES.isdisjoint(player_item_set):
+            return True
+        if not TELEPORT_ENTITIES.isdisjoint(prev_player_item_set):
             return True
 
         if not player.overlay.present():
@@ -629,7 +640,9 @@ class RunState:
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp(game_state, player, self.player_item_types)
+        self.update_no_tp(
+            game_state, player, self.player_item_types, self.player_last_item_types
+        )
         self.update_eggplant()
         self.update_low_cosmic()
 

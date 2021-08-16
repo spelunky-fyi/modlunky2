@@ -47,16 +47,18 @@ def test_run_recap(label, recap_flag, method):
 
 
 @pytest.mark.parametrize(
-    "item_set,expected_could_tp",
+    "item_set,prev_item_set,expected_could_tp",
     [
-        ({EntityType.ITEM_TELEPORTER}, True),
-        ({EntityType.ITEM_POWERUP_COMPASS}, False),
-        (set(), False),
+        ({EntityType.ITEM_TELEPORTER}, set(), True),
+        # Telepack may have exploded
+        (set(), {EntityType.ITEM_TELEPORTER_BACKPACK}, True),
+        ({EntityType.ITEM_POWERUP_COMPASS}, set(), False),
+        (set(), set(), False),
     ],
 )
-def test_could_tp_items(item_set, expected_could_tp):
+def test_could_tp_items(item_set, prev_item_set, expected_could_tp):
     run_state = RunState()
-    assert run_state.could_tp(Player(), item_set) == expected_could_tp
+    assert run_state.could_tp(Player(), item_set, prev_item_set) == expected_could_tp
 
 
 @pytest.mark.parametrize(
@@ -72,7 +74,7 @@ def test_could_tp_mount(mount_type, expected_could_tp):
     player = Player(overlay=poly_mount)
 
     run_state = RunState()
-    assert run_state.could_tp(player, set()) == expected_could_tp
+    assert run_state.could_tp(player, set(), set()) == expected_could_tp
 
 
 def test_compute_player_motion_wo_overlay():
@@ -197,10 +199,11 @@ def test_no_tp(
         velocity_y=player_vy,
     )
     item_set = {EntityType.ITEM_TELEPORTER_BACKPACK}
+    prev_item_set = set()
 
     run_state = RunState()
     run_state.prev_next_uid = 0
-    run_state.update_no_tp(game_state, player, item_set)
+    run_state.update_no_tp(game_state, player, item_set, prev_item_set)
 
     is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
     assert is_no_tp == expected_no_tp
