@@ -18,6 +18,7 @@ from modlunky2.mem.entities import (
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
+    TELEPORT_ENTITIES,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import UnorderedMap
@@ -48,6 +49,7 @@ class PlayerMotion:
     velocity_y: float
 
     def extrapolate(self, num_frames) -> Tuple[float, float]:
+        # pylint: disable=invalid-name
         x = self.position_x + self.velocity_x * num_frames
         y = self.position_y + self.velocity_y * num_frames
         return (x, y)
@@ -77,9 +79,6 @@ class RunState:
 
         # Score
         self.is_score_run = False
-
-        # Run Modifiers
-        self.no_tp = True
 
         # Low%
         self.is_low_percent = True
@@ -117,12 +116,16 @@ class RunState:
         if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
             self.run_label.discard(Label.NO_GOLD)
 
-    def update_no_tp(self, game_state: State, player: Player, _: Set[EntityType]):
-        # TODO check if we have something to teleport with. Intentionally removed to help find false positives
+    def update_no_tp(
+        self, game_state: State, player: Player, player_item_set: Set[EntityType]
+    ):
         prev_next_uid = self.prev_next_uid
         self.prev_next_uid = game_state.next_entity_uid
         # prev value was from a different level
         if self.level_started:
+            return
+
+        if not self.could_tp(player, player_item_set):
             return
 
         found_shadows: List[LightEmitter] = []
@@ -173,6 +176,17 @@ class RunState:
             if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
                 logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
+
+    def could_tp(self, player: Player, player_item_set: Set[EntityType]):
+        if not TELEPORT_ENTITIES.isdisjoint(player_item_set):
+            return True
+
+        if not player.overlay.present():
+            return False
+        overlay = player.overlay.value
+        if overlay.type is None:
+            return False
+        return overlay.type.id is EntityType.MOUNT_AXOLOTL
 
     def compute_player_motion(self, player: Player):
         player_x = player.position_x

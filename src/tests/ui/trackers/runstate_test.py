@@ -43,18 +43,32 @@ def test_run_recap(label, recap_flag, method):
 
 
 @pytest.mark.parametrize(
-    "item_set,expected_no_tp",
+    "item_set,expected_could_tp",
     [
-        ({EntityType.ITEM_TELEPORTER}, False),
-        ({EntityType.ITEM_POWERUP_COMPASS}, True),
-        (set(), True),
+        ({EntityType.ITEM_TELEPORTER}, True),
+        ({EntityType.ITEM_POWERUP_COMPASS}, False),
+        (set(), False),
     ],
 )
-def test_no_tp(item_set, expected_no_tp):
+def test_could_tp_items(item_set, expected_could_tp):
     run_state = RunState()
-    run_state.update_no_tp(item_set)
-    is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
-    assert is_no_tp == expected_no_tp
+    assert run_state.could_tp(Player(), item_set) == expected_could_tp
+
+
+@pytest.mark.parametrize(
+    "mount_type,expected_could_tp",
+    [
+        (EntityType.MOUNT_QILIN, False),
+        (EntityType.MOUNT_AXOLOTL, True),
+    ],
+)
+def test_could_tp_mount(mount_type, expected_could_tp):
+    mount = Mount(type=EntityDBEntry(id=mount_type))
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(overlay=poly_mount)
+
+    run_state = RunState()
+    assert run_state.could_tp(player, set()) == expected_could_tp
 
 
 @pytest.mark.parametrize(
