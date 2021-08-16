@@ -10,7 +10,7 @@ from modlunky2.mem.memrauder.msvc import DictUnorderedMap
 @dataclass
 class EntityMapBuilder:
     next_uid: int = 1
-    entity_map: Dict[int, Entity] = dataclasses.field(default_factory=dict)
+    entity_map: Dict[int, PolyPointer[Entity]] = dataclasses.field(default_factory=dict)
     mem_ctx: MemContext = dataclasses.field(default_factory=MemContext)
 
     FAKE_ADDR: ClassVar[int] = 1234567

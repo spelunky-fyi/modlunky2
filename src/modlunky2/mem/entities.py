@@ -223,8 +223,8 @@ class Player(Movable):
 
 @dataclass(frozen=True)
 class Illumination:
-    light_pos_x: float = struct_field(0x48, sc_float)
-    light_pos_y: float = struct_field(0x4C, sc_float)
+    light_pos_x: float = struct_field(0x48, sc_float, default=0.0)
+    light_pos_y: float = struct_field(0x4C, sc_float, default=0.0)
 
 
 @dataclass(frozen=True)

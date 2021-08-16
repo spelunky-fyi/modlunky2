@@ -4,8 +4,10 @@ from modlunky2.mem.entities import (
     CharState,
     EntityDBEntry,
     EntityType,
+    Illumination,
     Inventory,
     Layer,
+    LightEmitter,
     Mount,
     Movable,
     Player,
@@ -20,6 +22,7 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
+from modlunky2.mem.testing import EntityMapBuilder
 from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
 
@@ -146,6 +149,61 @@ def test_compute_player_motion_mount_and_active_floor():
     )
     run_state = RunState()
     assert run_state.compute_player_motion(player) == expected_motion
+
+
+@pytest.mark.parametrize(
+    "player_x,player_y,player_vx,player_vy,idle_counter,shadow_x,shadow_y,expected_no_tp",
+    [
+        (5, 8, 0, 0, 0, 5.1, 8.2, False),
+        (10.5, 1.5, 0.2, 0.3, 1, 10, 1, False),
+        (19.5, 9.5, 0.2, 0.3, 3, 18.5, 8.5, False),
+        (1, 2, 0, 0, 0, 7, 9, True),
+        (11.5, 3.5, 0.2, 0.3, 2, 11, 2, True),
+        (13.5, 3.5, 0.3, 0.2, 2, 13, 4, True),
+        (1, 2, 0, 0, 0, 7, 9, True),
+    ],
+)
+def test_no_tp(
+    player_x,
+    player_y,
+    player_vx,
+    player_vy,
+    idle_counter,
+    shadow_x,
+    shadow_y,
+    expected_no_tp,
+):
+    fx_shadow_type = EntityDBEntry(id=EntityType.FX_TELEPORTSHADOW)
+    entity_map = EntityMapBuilder()
+
+    src_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=Illumination()
+    )
+    entity_map.add_entity(src_shadow)
+
+    dest_illumination = Illumination(light_pos_x=shadow_x, light_pos_y=shadow_y)
+    dest_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=dest_illumination
+    )
+    entity_map.add_entity(dest_shadow)
+
+    game_state = State(
+        next_entity_uid=entity_map.next_uid, instance_id_to_pointer=entity_map.build()
+    )
+    player = Player(
+        position_x=player_x,
+        position_y=player_y,
+        velocity_x=player_vx,
+        velocity_y=player_vy,
+    )
+    item_set = {EntityType.ITEM_TELEPORTER_BACKPACK}
+
+    run_state = RunState()
+    run_state.prev_next_uid = 0
+    run_state.update_no_tp(game_state, player, item_set)
+
+    is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
+    assert is_no_tp == expected_no_tp
 
 
 @pytest.mark.parametrize(

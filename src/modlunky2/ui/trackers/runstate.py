@@ -121,7 +121,8 @@ class RunState:
     ):
         prev_next_uid = self.prev_next_uid
         self.prev_next_uid = game_state.next_entity_uid
-        # prev value was from a different level
+        # At the start of a level, all entities (including floors, treasure, etc.) spawn.
+        # Also, the player doesn't gain control for ~600ms anyway
         if self.level_started:
             return
 
@@ -171,6 +172,9 @@ class RunState:
             delta_y = y - cur_shadow.emitted_light.light_pos_y
             logger.info("deltas %.3f %.3f", delta_x, delta_y)
 
+            # We might want to make these different because:
+            # 1) Uncertainty in Y axis is higher, due to ground/edges
+            # 2) Enemies only TP along X axis (modulo up-by-3 rule)
             x_tol = 0.5
             y_tol = 0.5
             if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
@@ -183,9 +187,11 @@ class RunState:
 
         if not player.overlay.present():
             return False
+
         overlay = player.overlay.value
         if overlay.type is None:
             return False
+
         return overlay.type.id is EntityType.MOUNT_AXOLOTL
 
     def compute_player_motion(self, player: Player):
@@ -194,21 +200,21 @@ class RunState:
         player_vx = player.velocity_x
         player_vy = player.velocity_y
 
-        # We use a loop to handle player on a mount on an active floor.
+        # We use a loop to handle player on a mount on an active floor
         overlay_poly = player.overlay
         while overlay_poly.present():
             overlay = overlay_poly.as_type(Movable)
             if overlay is None:
                 break
-            # If the player is on a mount, its position is used for the TP effect.
-            # If a player/mount is on an active floor, their position and velocity
-            # are relative to the active floor's
             if overlay.type is not None and overlay.type.id in MOUNTS:
+                # If the player is on a mount, its position is used for the TP effect
                 player_x = overlay.position_x
                 player_y = overlay.position_y
                 player_vx = overlay.velocity_x
                 player_vy = overlay.velocity_y
             else:
+                # If a player/mount is on an active floor, their position and velocity
+                # are relative to the active floor's
                 player_x += overlay.position_x
                 player_y += overlay.position_y
                 player_vx += overlay.velocity_x
