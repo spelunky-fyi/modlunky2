@@ -126,6 +126,7 @@ class RunState:
         if self.level_started:
             return
 
+        # This is an optimization to skip scanning when the player couldn't have teleported
         if not self.could_tp(player, player_item_set):
             return
 
@@ -148,10 +149,11 @@ class RunState:
 
             found_shadows.append(shadow)
 
-        num_shadows = len(found_shadows)
         # We need pairs to work with
+        num_shadows = len(found_shadows)
         if num_shadows < 2:
             return
+
         shadow_pairs: List[Tuple[LightEmitter, LightEmitter]] = []
         for i in range(0, num_shadows, 2):
             shadow_pairs.append((found_shadows[i], found_shadows[i + 1]))
@@ -170,7 +172,7 @@ class RunState:
             )
             delta_x = x - cur_shadow.emitted_light.light_pos_x
             delta_y = y - cur_shadow.emitted_light.light_pos_y
-            logger.info("deltas %.3f %.3f", delta_x, delta_y)
+            logger.debug("TP shadow deltas %.3f, %.3f", delta_x, delta_y)
 
             # We might want to make these different because:
             # 1) Uncertainty in Y axis is higher, due to ground/edges
@@ -178,7 +180,6 @@ class RunState:
             x_tol = 0.5
             y_tol = 0.5
             if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
-                logger.info("TP detected!")
                 self.run_label.discard(Label.NO_TELEPORTER)
 
     def could_tp(self, player: Player, player_item_set: Set[EntityType]):
