@@ -7,6 +7,7 @@ from modlunky2.mem.entities import (
     Inventory,
     Layer,
     Mount,
+    Movable,
     Player,
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
@@ -20,7 +21,7 @@ from modlunky2.mem.state import (
     WinState,
 )
 from modlunky2.ui.trackers.label import Label, RunLabel
-from modlunky2.ui.trackers.runstate import ChainStatus, RunState
+from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
 
 # pylint: disable=protected-access,too-many-lines
 
@@ -69,6 +70,82 @@ def test_could_tp_mount(mount_type, expected_could_tp):
 
     run_state = RunState()
     assert run_state.could_tp(player, set()) == expected_could_tp
+
+
+def test_compute_player_motion_wo_overlay():
+    player = Player(position_x=5, position_y=7, velocity_x=-1, velocity_y=-3)
+    expected_motion = PlayerMotion(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount():
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+    )
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18, position_y=13, velocity_x=-2, velocity_y=-7
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_elevator
+    )
+    expected_motion = PlayerMotion(
+        position_x=5.5, position_y=7.7, velocity_x=-1.1, velocity_y=-3.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount_and_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    # Turkey on an elevator
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+        overlay=poly_elevator,
+    )
+    poly_mount = PolyPointer(102, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18.5, position_y=13.7, velocity_x=-2.1, velocity_y=-7.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
 
 
 @pytest.mark.parametrize(
