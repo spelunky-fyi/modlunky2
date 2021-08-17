@@ -135,23 +135,23 @@ class RunState:
             return
 
         found_shadows: List[LightEmitter] = []
-        for shadow_uid in range(prev_next_uid, game_state.next_entity_uid):
-            shadow_poly = game_state.instance_id_to_pointer.get(shadow_uid)
-            if shadow_poly is None or not shadow_poly.present():
+        for entity_uid in range(prev_next_uid, game_state.next_entity_uid):
+            entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
+            if entity_poly is None or not entity_poly.present():
                 continue
-            shadow = shadow_poly.value
-            if shadow.type is None:
+            entity = entity_poly.value
+            if entity.type is None:
                 continue
-            if shadow.type.id is not EntityType.FX_TELEPORTSHADOW:
+            if entity.type.id is not EntityType.FX_TELEPORTSHADOW:
                 continue
             # Now that we know it's the right type, downcast
-            shadow = shadow_poly.as_type(LightEmitter)
-            if shadow is None:
+            entity = entity_poly.as_type(LightEmitter)
+            if entity is None:
                 continue
-            if shadow.emitted_light is None:
+            if entity.emitted_light is None:
                 continue
 
-            found_shadows.append(shadow)
+            found_shadows.append(entity)
 
         # We need pairs to work with
         num_shadows = len(found_shadows)
