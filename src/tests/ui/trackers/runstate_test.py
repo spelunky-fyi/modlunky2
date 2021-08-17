@@ -793,9 +793,10 @@ def test_world_themes_label(
 
 
 @pytest.mark.parametrize(
-    "final_death,had_ankh,sunken_status,eggplant_status,cosmic_status,expected_terminus",
+    "world,final_death,had_ankh,sunken_status,eggplant_status,cosmic_status,expected_terminus",
     [
         (
+            2,
             False,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -804,6 +805,7 @@ def test_world_themes_label(
             Label.ANY,
         ),
         (
+            1,
             True,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -812,6 +814,7 @@ def test_world_themes_label(
             Label.DEATH,
         ),
         (
+            3,
             False,  # final_death
             True,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -820,6 +823,7 @@ def test_world_themes_label(
             Label.SUNKEN_CITY,
         ),
         (
+            2,
             False,  # final_death
             False,  # had_ankh
             ChainStatus.IN_PROGRESS,  # sunken_status
@@ -828,6 +832,7 @@ def test_world_themes_label(
             Label.SUNKEN_CITY,
         ),
         (
+            1,
             False,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -836,6 +841,7 @@ def test_world_themes_label(
             Label.SUNKEN_CITY,
         ),
         (
+            2,
             False,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -843,8 +849,28 @@ def test_world_themes_label(
             ChainStatus.IN_PROGRESS,  # cosmic_status
             Label.COSMIC_OCEAN,
         ),
-        # Cosmic Ocean has priority over Death
+        # We're in Sunken City, so we must be doing Sunken City
         (
+            7,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.FAILED,  # sunken_status
+            ChainStatus.IN_PROGRESS,  # eggplant_status
+            ChainStatus.FAILED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        (
+            7,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.FAILED,  # sunken_status
+            ChainStatus.FAILED,  # eggplant_status
+            ChainStatus.FAILED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        # Cosmic Ocean has priority over Sunken City, even in SC
+        (
+            7,
             True,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -854,6 +880,17 @@ def test_world_themes_label(
         ),
         # Cosmic Ocean has priority over Death
         (
+            2,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # Cosmic Ocean has priority over Death
+        (
+            3,
             False,  # final_death
             False,  # had_ankh
             ChainStatus.IN_PROGRESS,  # sunken_status
@@ -863,6 +900,7 @@ def test_world_themes_label(
         ),
         # Death has priority over Sunken City
         (
+            2,
             True,  # final_death
             False,  # had_ankh
             ChainStatus.IN_PROGRESS,  # sunken_status
@@ -872,6 +910,7 @@ def test_world_themes_label(
         ),
         # Death has priority over Any%
         (
+            2,
             True,  # final_death
             False,  # had_ankh
             ChainStatus.UNSTARTED,  # sunken_status
@@ -882,6 +921,7 @@ def test_world_themes_label(
     ],
 )
 def test_update_terminus(
+    world,
     final_death,
     had_ankh,
     sunken_status,
@@ -896,7 +936,8 @@ def test_update_terminus(
     run_state.eggplant_stepper = FakeStepper(eggplant_status)
     run_state.cosmic_stepper = FakeStepper(cosmic_status)
 
-    run_state.update_terminus()
+    game_state = State(world=world)
+    run_state.update_terminus(game_state)
 
     assert run_state.run_label._terminus == expected_terminus
 
