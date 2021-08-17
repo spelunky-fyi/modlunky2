@@ -375,13 +375,14 @@ class RunState:
         else:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
 
-    def update_terminus(self):
+    def update_terminus(self, game_state: State):
         if self.cosmic_stepper.last_status.in_progress:
             terminus = Label.COSMIC_OCEAN
         elif self.final_death:
             terminus = Label.DEATH
         elif (
-            self.had_ankh
+            game_state.world == 7
+            or self.had_ankh
             or self.sunken_chain_status.in_progress
             or self.eggplant_stepper.last_status.in_progress
         ):
@@ -546,7 +547,7 @@ class RunState:
 
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
-        self.update_terminus()
+        self.update_terminus(game_state)
 
     def update_player_item_types(
         self,
