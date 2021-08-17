@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import logging
-from typing import Set
+from typing import List, Optional, Set, Tuple
 
 from modlunky2.mem.entities import (
     BACKPACKS,
@@ -10,8 +11,10 @@ from modlunky2.mem.entities import (
     LOW_BANNED_ATTACKABLES,
     LOW_BANNED_THROWABLES,
     Layer,
+    LightEmitter,
     MOUNTS,
     Mount,
+    Movable,
     NON_CHAIN_POWERUP_ENTITIES,
     Player,
     SHIELDS,
@@ -36,6 +39,20 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 
 
 logger = logging.getLogger("modlunky2")
+
+
+@dataclass(frozen=True)
+class PlayerMotion:
+    position_x: float
+    position_y: float
+    velocity_x: float
+    velocity_y: float
+
+    def extrapolate(self, num_frames) -> Tuple[float, float]:
+        # pylint: disable=invalid-name
+        x = self.position_x + self.velocity_x * num_frames
+        y = self.position_y + self.velocity_y * num_frames
+        return (x, y)
 
 
 class RunState:
@@ -63,9 +80,6 @@ class RunState:
         # Score
         self.is_score_run = False
 
-        # Run Modifiers
-        self.no_tp = True
-
         # Low%
         self.is_low_percent = True
 
@@ -92,6 +106,8 @@ class RunState:
         self.cosmic_stepper = CosmicOceanChain.make_stepper()
         self.eggplant_stepper = EggplantChain.make_stepper()
 
+        self.prev_next_uid: Optional[int] = None
+
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
             self.run_label.discard(Label.PACIFIST)
@@ -100,15 +116,130 @@ class RunState:
         if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
             self.run_label.discard(Label.NO_GOLD)
 
-    def update_no_tp(self, player_item_types):
-        if not self.no_tp:
+    def update_no_tp(
+        self,
+        game_state: State,
+        player: Player,
+        player_item_set: Set[EntityType],
+        prev_player_item_set: Set[EntityType],
+    ):
+        prev_next_uid = self.prev_next_uid
+        self.prev_next_uid = game_state.next_entity_uid
+        # At the start of a level, all entities (including floors, treasure, etc.) spawn.
+        # Also, the player doesn't gain control for ~600ms anyway
+        if self.level_started:
             return
 
-        for item_type in player_item_types:
-            if item_type in TELEPORT_ENTITIES:
-                self.no_tp = False
+        # This is an optimization to skip scanning when the player couldn't have teleported
+        if not self.could_tp(player, player_item_set, prev_player_item_set):
+            return
+
+        found_shadows: List[LightEmitter] = []
+        for entity_uid in range(prev_next_uid, game_state.next_entity_uid):
+            entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
+            if entity_poly is None or not entity_poly.present():
+                continue
+            entity = entity_poly.value
+            if entity.type is None:
+                continue
+            if entity.type.id is not EntityType.FX_TELEPORTSHADOW:
+                continue
+            # Now that we know it's the right type, downcast
+            entity = entity_poly.as_type(LightEmitter)
+            if entity is None:
+                continue
+            if entity.emitted_light is None:
+                continue
+
+            found_shadows.append(entity)
+
+        # We need pairs to work with
+        num_shadows = len(found_shadows)
+        if num_shadows < 2:
+            return
+
+        shadow_pairs: List[Tuple[LightEmitter, LightEmitter]] = []
+        for i in range(0, num_shadows, 2):
+            shadow_pairs.append((found_shadows[i], found_shadows[i + 1]))
+
+        motion = self.compute_player_motion(player)
+
+        # We know the lower ID corresponds to prev position
+        for prev_shadow, cur_shadow in shadow_pairs:
+            # The only way this can happen is if we read memory in the middle of creating a pair.
+            # We prefer a false negative here
+            if prev_shadow.idle_counter != cur_shadow.idle_counter:
+                continue
+            # We now know idle_counter is equal
+            x, y = motion.extrapolate(  # pylint: disable=invalid-name
+                -cur_shadow.idle_counter
+            )
+            delta_x = x - cur_shadow.emitted_light.light_pos_x
+            delta_y = y - cur_shadow.emitted_light.light_pos_y
+            logger.debug("TP shadow deltas %.3f, %.3f", delta_x, delta_y)
+
+            # We might want to make these different because:
+            # 1) Uncertainty in Y axis is higher, due to ground/edges
+            # 2) Enemies only TP along X axis (modulo up-by-3 rule)
+            x_tol = 0.5
+            y_tol = 0.5
+            if abs(delta_x) < x_tol and abs(delta_y) < y_tol:
                 self.run_label.discard(Label.NO_TELEPORTER)
-                return
+
+    def could_tp(
+        self,
+        player: Player,
+        player_item_set: Set[EntityType],
+        prev_player_item_set: Set[EntityType],
+    ):
+        if not TELEPORT_ENTITIES.isdisjoint(player_item_set):
+            return True
+        if not TELEPORT_ENTITIES.isdisjoint(prev_player_item_set):
+            return True
+
+        if not player.overlay.present():
+            return False
+
+        overlay = player.overlay.value
+        if overlay.type is None:
+            return False
+
+        return overlay.type.id is EntityType.MOUNT_AXOLOTL
+
+    def compute_player_motion(self, player: Player):
+        player_x = player.position_x
+        player_y = player.position_y
+        player_vx = player.velocity_x
+        player_vy = player.velocity_y
+
+        # We use a loop to handle player on a mount on an active floor
+        overlay_poly = player.overlay
+        while overlay_poly.present():
+            overlay = overlay_poly.as_type(Movable)
+            if overlay is None:
+                break
+            if overlay.type is not None and overlay.type.id in MOUNTS:
+                # If the player is on a mount, its position is used for the TP effect
+                player_x = overlay.position_x
+                player_y = overlay.position_y
+                player_vx = overlay.velocity_x
+                player_vy = overlay.velocity_y
+            else:
+                # If a player/mount is on an active floor, their position and velocity
+                # are relative to the active floor's
+                player_x += overlay.position_x
+                player_y += overlay.position_y
+                player_vx += overlay.velocity_x
+                player_vy += overlay.velocity_y
+            # We have to go deeper
+            overlay_poly = overlay.overlay
+
+        return PlayerMotion(
+            position_x=player_x,
+            position_y=player_y,
+            velocity_x=player_vx,
+            velocity_y=player_vy,
+        )
 
     def update_eggplant(self):
         if self.eggplant_stepper.last_status.in_progress:
@@ -509,7 +640,9 @@ class RunState:
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp(self.player_item_types)
+        self.update_no_tp(
+            game_state, player, self.player_item_types, self.player_last_item_types
+        )
         self.update_eggplant()
         self.update_low_cosmic()
 

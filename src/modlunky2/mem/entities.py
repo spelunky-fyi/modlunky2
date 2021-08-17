@@ -16,6 +16,7 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int16,
     sc_int32,
     sc_bool,
+    sc_float,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import vector
@@ -171,6 +172,8 @@ class EntityReduced:
         0x18, vector(sc_uint32), default=None
     )
     layer: int = struct_field(0x98, sc_uint8, default=Layer.FRONT)
+    position_x: float = struct_field(0x40, sc_float, default=0.0)
+    position_y: float = struct_field(0x44, sc_float, default=0.0)
 
 
 @dataclass(frozen=True)
@@ -182,6 +185,9 @@ class Entity(EntityReduced):
 
 @dataclass(frozen=True)
 class Movable(Entity):
+    idle_counter: int = struct_field(0xF8, sc_uint32, default=0)
+    velocity_x: float = struct_field(0x100, sc_float, default=0.0)
+    velocity_y: float = struct_field(0x104, sc_float, default=0.0)
     holding_uid: int = struct_field(0x108, sc_int32, default=-1)
     state: CharState = struct_field(0x10C, sc_uint8, default=CharState.STANDING)
     last_state: CharState = struct_field(0x10D, sc_uint8, default=CharState.STANDING)
@@ -213,3 +219,16 @@ class Player(Movable):
     )
     linked_companion_child: int = struct_field(0x148, sc_int32, default=0)
     linked_companion_parent: int = struct_field(0x14C, sc_int32, default=0)
+
+
+@dataclass(frozen=True)
+class Illumination:
+    light_pos_x: float = struct_field(0x48, sc_float, default=0.0)
+    light_pos_y: float = struct_field(0x4C, sc_float, default=0.0)
+
+
+@dataclass(frozen=True)
+class LightEmitter(Movable):
+    emitted_light: Optional[Illumination] = struct_field(
+        0x128, pointer(dc_struct), default=None
+    )

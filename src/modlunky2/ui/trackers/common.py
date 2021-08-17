@@ -23,7 +23,7 @@ class CommonCommand(Enum):
 
 
 class WatcherThread(threading.Thread):
-    POLL_INTERVAL = 0.1
+    POLL_INTERVAL = 0.05
     ATTACH_INTERVAL = 1.0
 
     def __init__(self, queue):

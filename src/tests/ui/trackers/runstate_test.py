@@ -4,9 +4,12 @@ from modlunky2.mem.entities import (
     CharState,
     EntityDBEntry,
     EntityType,
+    Illumination,
     Inventory,
     Layer,
+    LightEmitter,
     Mount,
+    Movable,
     Player,
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
@@ -19,8 +22,9 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
+from modlunky2.mem.testing import EntityMapBuilder
 from modlunky2.ui.trackers.label import Label, RunLabel
-from modlunky2.ui.trackers.runstate import ChainStatus, RunState
+from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
 
 # pylint: disable=protected-access,too-many-lines
 
@@ -43,16 +47,164 @@ def test_run_recap(label, recap_flag, method):
 
 
 @pytest.mark.parametrize(
-    "item_set,expected_no_tp",
+    "item_set,prev_item_set,expected_could_tp",
     [
-        ({EntityType.ITEM_TELEPORTER}, False),
-        ({EntityType.ITEM_POWERUP_COMPASS}, True),
-        (set(), True),
+        ({EntityType.ITEM_TELEPORTER}, set(), True),
+        # Telepack may have exploded
+        (set(), {EntityType.ITEM_TELEPORTER_BACKPACK}, True),
+        ({EntityType.ITEM_POWERUP_COMPASS}, set(), False),
+        (set(), set(), False),
     ],
 )
-def test_no_tp(item_set, expected_no_tp):
+def test_could_tp_items(item_set, prev_item_set, expected_could_tp):
     run_state = RunState()
-    run_state.update_no_tp(item_set)
+    assert run_state.could_tp(Player(), item_set, prev_item_set) == expected_could_tp
+
+
+@pytest.mark.parametrize(
+    "mount_type,expected_could_tp",
+    [
+        (EntityType.MOUNT_QILIN, False),
+        (EntityType.MOUNT_AXOLOTL, True),
+    ],
+)
+def test_could_tp_mount(mount_type, expected_could_tp):
+    mount = Mount(type=EntityDBEntry(id=mount_type))
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(overlay=poly_mount)
+
+    run_state = RunState()
+    assert run_state.could_tp(player, set(), set()) == expected_could_tp
+
+
+def test_compute_player_motion_wo_overlay():
+    player = Player(position_x=5, position_y=7, velocity_x=-1, velocity_y=-3)
+    expected_motion = PlayerMotion(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount():
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+    )
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18, position_y=13, velocity_x=-2, velocity_y=-7
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_elevator
+    )
+    expected_motion = PlayerMotion(
+        position_x=5.5, position_y=7.7, velocity_x=-1.1, velocity_y=-3.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount_and_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    # Turkey on an elevator
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+        overlay=poly_elevator,
+    )
+    poly_mount = PolyPointer(102, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18.5, position_y=13.7, velocity_x=-2.1, velocity_y=-7.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+@pytest.mark.parametrize(
+    "player_x,player_y,player_vx,player_vy,idle_counter,shadow_x,shadow_y,expected_no_tp",
+    [
+        (5, 8, 0, 0, 0, 5.1, 8.2, False),
+        (10.5, 1.5, 0.2, 0.3, 1, 10, 1, False),
+        (19.5, 9.5, 0.2, 0.3, 3, 18.5, 8.5, False),
+        (1, 2, 0, 0, 0, 7, 9, True),
+        (11.5, 3.5, 0.2, 0.3, 2, 11, 2, True),
+        (13.5, 3.5, 0.3, 0.2, 2, 13, 4, True),
+        (1, 2, 0, 0, 0, 7, 9, True),
+    ],
+)
+def test_no_tp(
+    player_x,
+    player_y,
+    player_vx,
+    player_vy,
+    idle_counter,
+    shadow_x,
+    shadow_y,
+    expected_no_tp,
+):
+    fx_shadow_type = EntityDBEntry(id=EntityType.FX_TELEPORTSHADOW)
+    entity_map = EntityMapBuilder()
+
+    src_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=Illumination()
+    )
+    entity_map.add_entity(src_shadow)
+
+    dest_illumination = Illumination(light_pos_x=shadow_x, light_pos_y=shadow_y)
+    dest_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=dest_illumination
+    )
+    entity_map.add_entity(dest_shadow)
+
+    game_state = State(
+        next_entity_uid=entity_map.next_uid, instance_id_to_pointer=entity_map.build()
+    )
+    player = Player(
+        position_x=player_x,
+        position_y=player_y,
+        velocity_x=player_vx,
+        velocity_y=player_vy,
+    )
+    item_set = {EntityType.ITEM_TELEPORTER_BACKPACK}
+    prev_item_set = set()
+
+    run_state = RunState()
+    run_state.prev_next_uid = 0
+    run_state.update_no_tp(game_state, player, item_set, prev_item_set)
+
     is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
     assert is_no_tp == expected_no_tp
 
