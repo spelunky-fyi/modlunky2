@@ -370,7 +370,6 @@ def test_starting_resources_ropes(
         (CharState.DYING, True, set(), False, True),
         # We should skip checks during weird states
         (CharState.ENTERING, True, set(), True, True),
-        (CharState.EXITING, True, set(), True, True),
         (CharState.LOADING, True, set(), True, True),
     ],
 )
@@ -396,7 +395,6 @@ def test_status_effects_poisoned(
         (CharState.DYING, True, set(), False, True),
         # We should skip checks during weird states
         (CharState.ENTERING, True, set(), True, True),
-        (CharState.EXITING, True, set(), True, True),
         (CharState.LOADING, True, set(), True, True),
     ],
 )
