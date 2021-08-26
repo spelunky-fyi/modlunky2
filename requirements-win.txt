@@ -1,3 +1,2 @@
 winshell==0.6
 pywin32==301
-pyinstaller==4.5.1
