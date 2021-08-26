@@ -24,6 +24,7 @@ from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import UnorderedMap
 from modlunky2.mem.state import (
     HudFlags,
+    LoadingState,
     PresenceFlags,
     RunRecapFlags,
     Screen,
@@ -334,12 +335,10 @@ class RunState:
         if not self.is_low_percent:
             return
 
-        # Logical effects disappear sometimes...
-        if player_state in {
-            CharState.ENTERING,
-            CharState.LOADING,
-            CharState.EXITING,
-        }:
+        # Logical effects are removed when we enter the exit-door of the level or level transition.
+        # They also aren't present while the character is in 'loading' state (once they go through
+        # level-transition exit)
+        if player_state in {CharState.ENTERING, CharState.LOADING}:
             return
 
         is_poisoned = False
@@ -611,8 +610,11 @@ class RunState:
             self.health = 4
 
     def update(self, game_state: State):
+        if game_state.loading is not LoadingState.NOT_LOADING:
+            return
         if game_state.items is None:
             return
+
         player = game_state.items.players[0]
         if player is None:
             return

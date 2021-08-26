@@ -62,6 +62,13 @@ class PresenceFlags(enum.IntFlag):
     SUN_CHALLENGE = 1 << 11 - 1
 
 
+class LoadingState(enum.IntEnum):
+    NOT_LOADING = 0
+    START = 1
+    LOADING = 2
+    END = 3
+
+
 class Screen(enum.IntEnum):
     UNKNOWN = -1
     LOGO = 0
@@ -142,6 +149,9 @@ class State:
     screen_last: Screen = struct_field(0x08, sc_int32, default=Screen.LEVEL_TRANSITION)
     screen: Screen = struct_field(0x0C, sc_int32, default=Screen.LEVEL)
     screen_next: Screen = struct_field(0x10, sc_int32, default=Screen.LEVEL_TRANSITION)
+    loading: LoadingState = struct_field(
+        0x14, sc_int32, default=LoadingState.NOT_LOADING
+    )
     quest_flags: QuestFlags = struct_field(0x38, sc_uint32, default=0)
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
