@@ -73,6 +73,7 @@ class RunLabel:
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
+    _HIDES[Label.PACIFIST] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
     _HIDES[Label.COSMIC_OCEAN] |= {
         Label.NO_TELEPORTER,

@@ -146,11 +146,44 @@ MOSSRANKING_CATEGORIES = [
     ({Label.NO_TELEPORTER, Label.MILLIONAIRE, Label.ANY}, "No TP Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
     # Pacifist tab
-    ({Label.PACIFIST, Label.ANY}, "Pacifist Any%"),
+    ({Label.PACIFIST, Label.ANY}, "Pacifist"),
     ({Label.PACIFIST, Label.SUNKEN_CITY}, "Pacifist Sunken City%"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
     ({Label.PACIFIST, Label.COSMIC_OCEAN}, "Pacifist Cosmic Ocean%"),
+    ({Label.NO_TELEPORTER, Label.PACIFIST, Label.ANY}, "No TP Pacifist"),
+    (
+        {Label.NO_TELEPORTER, Label.PACIFIST, Label.SUNKEN_CITY},
+        "No TP Pacifist Sunken City%",
+    ),
+    ({Label.NO_GOLD, Label.PACIFIST, Label.ANY}, "No Gold Pacifist"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.SUNKEN_CITY},
+        "No Gold Pacifist Sunken City%",
+    ),
+    ({Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.ANY}, "No Gold Pacifist Low%"),
     ({Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY}, "Pacifist Low% Sunken City"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY},
+        "No Gold Pacifist Low% Sunken City",
+    ),
+    (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Sunken City% Abzu",
+    ),
+    (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Sunken City% Duat",
+    ),
     (
         {
             Label.PACIFIST,
@@ -171,23 +204,45 @@ MOSSRANKING_CATEGORIES = [
         },
         "Pacifist Chain Low% Duat",
     ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Abzu",
+    ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Duat",
+    ),
     ({Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY}, "Pacifist Eggplant%"),
+    (
+        {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "Pacifist Low% Eggplant",
+    ),
+    ({Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY}, "Pacifist Eggplant%"),
+    (
+        {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "Pacifist Low% Eggplant",
+    ),
     (
         {Label.NO_GOLD, Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY},
         "No Gold Pacifist Eggplant%",
     ),
-    ({Label.NO_GOLD, Label.PACIFIST, Label.ANY}, "No Gold Pacifist"),
     (
-        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.ANY},
-        "No Gold Pacifist Low%",
-    ),
-    (
-        {Label.NO_GOLD, Label.PACIFIST, Label.SUNKEN_CITY},
-        "No Gold Pacifist Sunken City%",
-    ),
-    (
-        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY},
-        "No Gold Pacifist Low% Sunken City",
+        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "No Gold Pacifist Low% Eggplant",
     ),
 ]
 
