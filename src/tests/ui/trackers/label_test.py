@@ -248,23 +248,23 @@ MOSSRANKING_CATEGORIES = [
 
 
 @dataclass(frozen=True)
-class VisibiltyEdge:
+class VisibilityEdge:
     label: Label
     depends_on: Label
     reason: str
 
 
-def _build_visibility_edges() -> List[VisibiltyEdge]:
+def _build_visibility_edges() -> List[VisibilityEdge]:
     edge_list = []
     for dep, hides_set in RunLabel._HIDES.items():  # pylint: disable=protected-access
         for label in hides_set:
-            edge_list.append(VisibiltyEdge(label, dep, "_HIDES"))
+            edge_list.append(VisibilityEdge(label, dep, "_HIDES"))
     for (
         label,
         with_set,
     ) in RunLabel._ONLY_SHOW_WITH.items():  # pylint: disable=protected-access
         for dep in with_set:
-            edge_list.append(VisibiltyEdge(label, dep, "_ONLY_SHOW_WITH"))
+            edge_list.append(VisibilityEdge(label, dep, "_ONLY_SHOW_WITH"))
 
     return edge_list
 
@@ -280,7 +280,7 @@ def test_visibility_deps_not_mutually_exclusive():
 
 
 def test_visibility_bipartite():
-    # If the visibiltiy dependencies aren't bipartite:
+    # If the visibility dependencies aren't bipartite:
     # * We need to iterate/traverse and detect cycles
     # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
     # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder

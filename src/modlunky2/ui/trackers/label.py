@@ -81,7 +81,7 @@ class RunLabel:
         Label.DUAT,
     }
 
-    # Score hides almost everythinge
+    # Score hides almost everything
     _SCORE_LABELS = {Label.SCORE, Label.NO_CO}
 
     def __init__(self, starting=None) -> None:
