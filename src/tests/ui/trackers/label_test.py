@@ -145,6 +145,22 @@ MOSSRANKING_CATEGORIES = [
     ({Label.MILLIONAIRE, Label.ANY}, "Millionaire"),
     ({Label.NO_TELEPORTER, Label.MILLIONAIRE, Label.ANY}, "No TP Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Ice Caves Shortcut%",
+    ),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
+        "Ice Caves Shortcut Sunken City%",
+    ),
+    (
+        {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Pacifist Ice Caves Shortcut%",
+    ),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.MILLIONAIRE, Label.ANY},
+        "Ice Caves Shortcut% Millionaire",
+    ),
     # Pacifist tab
     ({Label.PACIFIST, Label.ANY}, "Pacifist"),
     ({Label.PACIFIST, Label.SUNKEN_CITY}, "Pacifist Sunken City%"),
@@ -243,6 +259,10 @@ MOSSRANKING_CATEGORIES = [
     (
         {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
         "No Gold Pacifist Low% Eggplant",
+    ),
+    (
+        {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Pacifist Ice Caves Shortcut%",
     ),
 ]
 
