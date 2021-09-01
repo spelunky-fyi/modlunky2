@@ -30,6 +30,7 @@ class Label(Enum):
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
+    ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
     )
@@ -73,6 +74,7 @@ class RunLabel:
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
+    _HIDES[Label.PACIFIST] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
     _HIDES[Label.COSMIC_OCEAN] |= {
         Label.NO_TELEPORTER,
@@ -80,7 +82,7 @@ class RunLabel:
         Label.DUAT,
     }
 
-    # Score hides almost everythinge
+    # Score hides almost everything
     _SCORE_LABELS = {Label.SCORE, Label.NO_CO}
 
     def __init__(self, starting=None) -> None:
@@ -152,6 +154,11 @@ class RunLabel:
         for needle, need in self._ONLY_SHOW_WITH.items():
             if needle in vis and self._set.isdisjoint(need):
                 vis.discard(needle)
+
+        # Handle ICS% hiding Low%. We do this here to avoid multiple passes over _HIDES.
+        # Also, doing this after _HIDES to avoid duplicating _HIDES[Low%]
+        if Label.ICE_CAVES_SHORTCUT in self._set:
+            vis.discard(Label.LOW)
 
         # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
         if not self._set.isdisjoint({Label.ABZU, Label.DUAT}):

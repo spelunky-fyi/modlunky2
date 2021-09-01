@@ -145,12 +145,61 @@ MOSSRANKING_CATEGORIES = [
     ({Label.MILLIONAIRE, Label.ANY}, "Millionaire"),
     ({Label.NO_TELEPORTER, Label.MILLIONAIRE, Label.ANY}, "No TP Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Ice Caves Shortcut%",
+    ),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
+        "Ice Caves Shortcut Sunken City%",
+    ),
+    (
+        {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Pacifist Ice Caves Shortcut%",
+    ),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.MILLIONAIRE, Label.ANY},
+        "Ice Caves Shortcut% Millionaire",
+    ),
     # Pacifist tab
-    ({Label.PACIFIST, Label.ANY}, "Pacifist Any%"),
+    ({Label.PACIFIST, Label.ANY}, "Pacifist"),
     ({Label.PACIFIST, Label.SUNKEN_CITY}, "Pacifist Sunken City%"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
     ({Label.PACIFIST, Label.COSMIC_OCEAN}, "Pacifist Cosmic Ocean%"),
+    ({Label.NO_TELEPORTER, Label.PACIFIST, Label.ANY}, "No TP Pacifist"),
+    (
+        {Label.NO_TELEPORTER, Label.PACIFIST, Label.SUNKEN_CITY},
+        "No TP Pacifist Sunken City%",
+    ),
+    ({Label.NO_GOLD, Label.PACIFIST, Label.ANY}, "No Gold Pacifist"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.SUNKEN_CITY},
+        "No Gold Pacifist Sunken City%",
+    ),
+    ({Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.ANY}, "No Gold Pacifist Low%"),
     ({Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY}, "Pacifist Low% Sunken City"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY},
+        "No Gold Pacifist Low% Sunken City",
+    ),
+    (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Sunken City% Abzu",
+    ),
+    (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Sunken City% Duat",
+    ),
     (
         {
             Label.PACIFIST,
@@ -171,45 +220,71 @@ MOSSRANKING_CATEGORIES = [
         },
         "Pacifist Chain Low% Duat",
     ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Abzu",
+    ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Duat",
+    ),
     ({Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY}, "Pacifist Eggplant%"),
+    (
+        {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "Pacifist Low% Eggplant",
+    ),
+    ({Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY}, "Pacifist Eggplant%"),
+    (
+        {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "Pacifist Low% Eggplant",
+    ),
     (
         {Label.NO_GOLD, Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY},
         "No Gold Pacifist Eggplant%",
     ),
-    ({Label.NO_GOLD, Label.PACIFIST, Label.ANY}, "No Gold Pacifist"),
     (
-        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.ANY},
-        "No Gold Pacifist Low%",
+        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "No Gold Pacifist Low% Eggplant",
     ),
     (
-        {Label.NO_GOLD, Label.PACIFIST, Label.SUNKEN_CITY},
-        "No Gold Pacifist Sunken City%",
-    ),
-    (
-        {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY},
-        "No Gold Pacifist Low% Sunken City",
+        {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
+        "Pacifist Ice Caves Shortcut%",
     ),
 ]
 
 
 @dataclass(frozen=True)
-class VisibiltyEdge:
+class VisibilityEdge:
     label: Label
     depends_on: Label
     reason: str
 
 
-def _build_visibility_edges() -> List[VisibiltyEdge]:
+def _build_visibility_edges() -> List[VisibilityEdge]:
     edge_list = []
     for dep, hides_set in RunLabel._HIDES.items():  # pylint: disable=protected-access
         for label in hides_set:
-            edge_list.append(VisibiltyEdge(label, dep, "_HIDES"))
+            edge_list.append(VisibilityEdge(label, dep, "_HIDES"))
     for (
         label,
         with_set,
     ) in RunLabel._ONLY_SHOW_WITH.items():  # pylint: disable=protected-access
         for dep in with_set:
-            edge_list.append(VisibiltyEdge(label, dep, "_ONLY_SHOW_WITH"))
+            edge_list.append(VisibilityEdge(label, dep, "_ONLY_SHOW_WITH"))
 
     return edge_list
 
@@ -225,7 +300,7 @@ def test_visibility_deps_not_mutually_exclusive():
 
 
 def test_visibility_bipartite():
-    # If the visibiltiy dependencies aren't bipartite:
+    # If the visibility dependencies aren't bipartite:
     # * We need to iterate/traverse and detect cycles
     # * Iteration order of HIDES and ONLY_SHOW_WITH matters, even though it's not defined
     # * The result depends on the order we apply HIDES or ONLY_SHOW_WITH, making reasoning harder

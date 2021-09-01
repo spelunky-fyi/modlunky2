@@ -252,6 +252,16 @@ class RunState:
         if self.cosmic_stepper.last_status.failed and self.mc_has_swung_mattock:
             self.fail_low()
 
+    def update_ice_caves(self, game_state: State):
+        # We only want to add this once
+        if not self.level_started:
+            return
+        if game_state.theme is not Theme.ICE_CAVES:
+            return
+        if (game_state.world_start, game_state.level_start) != (5, 1):
+            return
+        self.run_label.add(Label.ICE_CAVES_SHORTCUT)
+
     def update_score_items(self, player_item_types):
         for item_type in player_item_types:
             if item_type in [
@@ -598,6 +608,7 @@ class RunState:
     def fail_low(self):
         self.is_low_percent = False
         self.run_label.discard(Label.LOW)
+        self.run_label.discard(Label.ICE_CAVES_SHORTCUT)
 
     def update_on_level_start(self, world: int, theme: Theme, ropes: int):
         if not self.level_started:
@@ -630,6 +641,7 @@ class RunState:
         self.update_final_death(player.state, self.player_item_types)
 
         self.update_score_items(self.player_item_types)
+        self.update_ice_caves(game_state)
 
         for stepper in (
             self.abzu_stepper,

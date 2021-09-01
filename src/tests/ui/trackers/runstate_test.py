@@ -228,6 +228,26 @@ def test_score_items(item_set, expected_score):
 
 
 @pytest.mark.parametrize(
+    "level_started,theme,world_start,level_start,expected_ice_caves",
+    [
+        (False, Theme.ICE_CAVES, 5, 1, False),
+        (True, Theme.NEO_BABYLON, 5, 1, False),
+        (True, Theme.ICE_CAVES, 1, 1, False),
+        (True, Theme.ICE_CAVES, 5, 1, True),
+    ],
+)
+def test_ice_caves(level_started, theme, world_start, level_start, expected_ice_caves):
+    game_state = State(theme=theme, world_start=world_start, level_start=level_start)
+
+    run_state = RunState()
+    run_state.level_started = level_started
+    run_state.update_ice_caves(game_state)
+
+    is_ice_caves = Label.ICE_CAVES_SHORTCUT in run_state.run_label._set
+    assert is_ice_caves == expected_ice_caves
+
+
+@pytest.mark.parametrize(
     "player_state,item_set,expected_final_death",
     [
         (CharState.STANDING, set(), False),
