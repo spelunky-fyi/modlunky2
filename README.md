@@ -75,10 +75,17 @@ python -m twine upload .\dist\modlunky2-$VERSION.tar.gz
 
 #### EXE
 
-The default pyinstaller from pip seems prone to false detection from antivirus
-so you need to build your own version per https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html
+##### PyInstaller
+The default pyinstaller from pip seems prone to false detection from antivirus. Instructions on building your own available at https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html
+
+Alternatively you can `pip install pyinstaller`
 
 See: https://stackoverflow.com/a/52054580
+
+##### Audio DLLs
+We need some ogg/vorbis `dll`'s in order to support extracting files from the FSB soundbank. These can be obtained from https://github.com/HearthSim/python-fsb5/releases
+
+Drop the `libogg.dll` and `libvorbis.dll` files from python-fsb5_win64.zip into the `dist` directory
 
 ##### Build
 ```
