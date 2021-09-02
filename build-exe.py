@@ -1,20 +1,28 @@
 import subprocess
 from pathlib import Path
 
-DATA = [
+OPTIONAL_DATA = [
     "dist/libogg.dll;.",
     "dist/libvorbis.dll;.",
+    "dist/s99-client.exe;.",
+]
+DATA = [
     "src/modlunky2/VERSION;.",
     "src/modlunky2/static;static",
-    "dist/s99-client.exe;.",
 ]
 BASE_DIR = Path(__file__).parent.resolve()
 
 
 def run_pyinstaller():
     pyinstaller_args = ["pyinstaller.exe", f"{BASE_DIR / 'pyinstaller-cli.py'}"]
+
     for data in DATA:
         pyinstaller_args.extend(["--add-data", data])
+
+    for data in OPTIONAL_DATA:
+        src, _, _ = data.partition(";")
+        if Path(src).exists():
+            pyinstaller_args.extend(["--add-data", data])
 
     pyinstaller_args.extend(
         [
@@ -27,12 +35,11 @@ def run_pyinstaller():
         ]
     )
 
-    process = subprocess.Popen(pyinstaller_args)
-    process.communicate()
+    subprocess.check_call(pyinstaller_args)
 
 
 def build_launcher():
-    process = subprocess.Popen(
+    subprocess.check_call(
         [
             "cargo",
             "build",
@@ -40,7 +47,6 @@ def build_launcher():
             "--release",
         ]
     )
-    process.communicate()
 
 
 def main():
