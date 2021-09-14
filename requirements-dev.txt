@@ -1,5 +1,5 @@
 pylint==2.10.2
-black==21.8b0
+black==21.9b0
 pytest==6.2.5
 flake8==3.9.2
 twine
