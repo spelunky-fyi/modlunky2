@@ -90,7 +90,7 @@ class ExeAssetBlock:
         data_len, filepath_len = unpack(b"<II", exe_handle.read(8))
 
         if (data_len, filepath_len) == (0, 0):
-            return
+            return None
 
         if data_len <= 0:
             raise RuntimeError(f"Expected data length > 0, found {data_len}")
@@ -182,7 +182,7 @@ class ExeAsset:
 
             except Exception:  # pylint: disable=broad-except
                 logger.exception("Failed compression")
-                return None
+                return
 
         if self.filepath in KNOWN_TEXTURES_V1:
             self.data = rgba_to_png(self.data)

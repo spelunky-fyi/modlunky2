@@ -86,6 +86,7 @@ class BaseSpriteLoader(ABC):
         coords = self._chunk_map.get(name)
         if coords:
             return self._get_block(*coords)
+        return None
 
     def key_map(self) -> Dict[str, Callable]:
         return {k: self.get for k in self._chunk_map}
