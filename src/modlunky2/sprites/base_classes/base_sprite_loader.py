@@ -6,7 +6,7 @@ from threading import Lock
 
 from PIL import Image
 
-from .types import chunk_map_type
+from modlunky2.sprites.base_classes.types import chunk_map_type
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"

@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from ..base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
-from ..monsters.pets import Pets
-from ..journal_mons import JournalMonsterSheet
-from ..menu_basic import MenuBasicSheet, PetHeadsSheet
+from modlunky2.sprites.base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
+from modlunky2.sprites.monsters.pets import Pets
+from modlunky2.sprites.journal_mons import JournalMonsterSheet
+from modlunky2.sprites.menu_basic import MenuBasicSheet, PetHeadsSheet
 
 
 class MontySpriteMerger(BaseJsonSpriteMerger):

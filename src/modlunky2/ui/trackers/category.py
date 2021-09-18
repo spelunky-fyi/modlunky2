@@ -10,8 +10,8 @@ from PIL import Image, ImageTk
 from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 
-from .common import TrackerWindow, WatcherThread, CommonCommand
-from .runstate import RunState
+from modlunky2.ui.trackers.common import TrackerWindow, WatcherThread, CommonCommand
+from modlunky2.ui.trackers.runstate import RunState
 
 logger = logging.getLogger("modlunky2")
 

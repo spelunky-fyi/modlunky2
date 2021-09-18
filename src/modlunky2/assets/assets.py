@@ -21,8 +21,8 @@ from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
 from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
 from modlunky2.constants import BASE_DIR
 
-from .chacha import Key, chacha, hash_filepath
-from .constants import (
+from modlunky2.assets.chacha import Key, chacha, hash_filepath
+from modlunky2.assets.constants import (
     BANK_ALIGNMENT,
     DDS_PNGS,
     DEFAULT_COMPRESSION_LEVEL,
@@ -30,11 +30,11 @@ from .constants import (
     KNOWN_FILEPATHS,
     PNG_NAMES_TO_DDS_NAMES,
 )
-from .soundbank import extract_soundbank
-from .converters import dds_to_png, png_to_dds, rgba_to_png
-from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
-from .string_hashing import StringHashes
-from .hashing import md5sum_path
+from modlunky2.assets.soundbank import extract_soundbank
+from modlunky2.assets.converters import dds_to_png, png_to_dds, rgba_to_png
+from modlunky2.assets.exc import FileConflict, MissingAsset, MultipleMatchingAssets
+from modlunky2.assets.string_hashing import StringHashes
+from modlunky2.assets.hashing import md5sum_path
 
 
 logger = logging.getLogger("modlunky2")

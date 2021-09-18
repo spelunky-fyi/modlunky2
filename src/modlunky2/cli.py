@@ -2,9 +2,9 @@ import argparse
 import logging
 from pathlib import Path
 
-from .ui import ModlunkyUI
-from .config import Config, make_user_dirs
-from .utils import tb_info
+from modlunky2.ui import ModlunkyUI
+from modlunky2.config import Config, make_user_dirs
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
 

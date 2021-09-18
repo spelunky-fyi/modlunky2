@@ -1,4 +1,4 @@
-from .character import (
+from modlunky2.sprites.full_sheets.character import (
     CharacterBlackSpriteMerger,
     CharacterLimeSpriteMerger,
     CharacterMagentaSpriteMerger,
@@ -22,16 +22,20 @@ from .character import (
     CharacterEggChildSpriteMerger,
     CharacterHiredHandSpriteMerger,
 )
-from .mounts import (
+from modlunky2.sprites.full_sheets.mounts import (
     TurkeySpriteMerger,
     RockdogSpriteMerger,
     AxolotlSpriteMerger,
     QilinSpriteMerger,
 )
-from .pets import MontySpriteMerger, PercySpriteMerger, PoochiSpriteMerger
-from .ghost import *
-from .monsters.basic import *
-from .monsters.big import *
+from modlunky2.sprites.full_sheets.pets import (
+    MontySpriteMerger,
+    PercySpriteMerger,
+    PoochiSpriteMerger,
+)
+from modlunky2.sprites.full_sheets.ghost import *
+from modlunky2.sprites.full_sheets.monsters.basic import *
+from modlunky2.sprites.full_sheets.monsters.big import *
 
 __all__ = [
     "CharacterBlackSpriteMerger",

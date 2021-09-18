@@ -11,8 +11,8 @@ import win32api
 import win32con
 import win32process
 
-from .state import State
-from .memrauder.model import (
+from modlunky2.mem.state import State
+from modlunky2.mem.memrauder.model import (
     MemoryReader,
     MemContext,
 )

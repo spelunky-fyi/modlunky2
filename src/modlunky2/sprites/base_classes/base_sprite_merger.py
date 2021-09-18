@@ -4,8 +4,11 @@ from typing import Dict, List, Type, Tuple
 from logging import getLogger
 from PIL import Image, ImageDraw, ImageFont
 
-from .types import image_crop_tuple_whole_number, chunk_map_type
-from .base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.types import (
+    image_crop_tuple_whole_number,
+    chunk_map_type,
+)
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"

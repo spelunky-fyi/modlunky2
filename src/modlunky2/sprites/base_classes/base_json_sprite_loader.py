@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import List
 
-from .base_sprite_loader import BaseSpriteLoader
-from ..util import chunks_from_json
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.util import chunks_from_json
 
 
 class BaseJsonSpriteLoader(BaseSpriteLoader):

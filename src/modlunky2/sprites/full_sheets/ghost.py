@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from ..base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
-from ..util import chunks_from_animation
-from ..monsters.ghost import Ghost
-from ..journal_people import JournalPeopleSheet
-from ..journal_mons_big import JournalBigMonsterSheet
+from modlunky2.sprites.base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
+from modlunky2.sprites.util import chunks_from_animation
+from modlunky2.sprites.monsters.ghost import Ghost
+from modlunky2.sprites.journal_people import JournalPeopleSheet
+from modlunky2.sprites.journal_mons_big import JournalBigMonsterSheet
 
 
 class GhistSpriteMerger(BaseJsonSpriteMerger):

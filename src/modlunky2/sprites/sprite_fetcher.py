@@ -4,7 +4,7 @@ from modlunky2.constants import BASE_DIR
 
 from PIL import Image
 
-from .base_classes import (
+from modlunky2.sprites.base_classes import (
     AbstractBiome,
     BaseSpriteLoader,
     BaseJsonSpriteLoader,
@@ -22,7 +22,7 @@ class SpelunkySpriteFetcher:
         self._biome_map = {k: v.get for k, v in self._biome_dict.items()}
 
     def _init_biomes(self) -> Dict[str, AbstractBiome]:
-        from . import biomes
+        from modlunky2.sprites import biomes
 
         return {
             getattr(biomes, b).biome_name: getattr(biomes, b)(self.base_path)
@@ -30,14 +30,14 @@ class SpelunkySpriteFetcher:
         }
 
     def _make_non_biome_map(self) -> Tuple[List[BaseSpriteLoader], Dict[str, Callable]]:
-        from . import monsters
-        from .items import ItemSheet
-        from .coffins import CoffinSheet
-        from .deco_extra import DecoExtraSheet
-        from .base_eggship2 import EggShip2Sheet
-        from .hud import HudSheet
-        from .floormisc import FloorMiscSheet
-        from .tilecode_extras import TilecodeExtras
+        from modlunky2.sprites import monsters
+        from modlunky2.sprites.items import ItemSheet
+        from modlunky2.sprites.coffins import CoffinSheet
+        from modlunky2.sprites.deco_extra import DecoExtraSheet
+        from modlunky2.sprites.base_eggship2 import EggShip2Sheet
+        from modlunky2.sprites.hud import HudSheet
+        from modlunky2.sprites.floormisc import FloorMiscSheet
+        from modlunky2.sprites.tilecode_extras import TilecodeExtras
 
         # Gather all of the sheets in a list, these are the classes, not instances yet
         _sheets = [getattr(monsters, m) for m in monsters.__all__]

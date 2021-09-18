@@ -7,7 +7,7 @@ from typing import ClassVar, List, Optional, TextIO, Tuple
 
 from modlunky2.levels.utils import split_comment, format_comment
 
-from .utils import DirectivePrefixes
+from modlunky2.levels.utils import DirectivePrefixes
 
 VALID_LEVEL_TEMPLATES = set(
     [

@@ -11,17 +11,17 @@ from modlunky2.ui.widgets import (
 )
 from modlunky2.utils import is_patched
 
-from .constants import (
+from modlunky2.ui.play.constants import (
     PLAYLUNKY_DATA_DIR,
     PLAYLUNKY_EXE,
     PLAYLUNKY_VERSION_FILENAME,
 )
-from .controls import ControlsFrame
-from .filters import FiltersFrame
-from .load_order import LoadOrderFrame
-from .options import OptionsFrame
-from .packs import PacksFrame
-from .releases import VersionFrame, parse_download_url
+from modlunky2.ui.play.controls import ControlsFrame
+from modlunky2.ui.play.filters import FiltersFrame
+from modlunky2.ui.play.load_order import LoadOrderFrame
+from modlunky2.ui.play.options import OptionsFrame
+from modlunky2.ui.play.packs import PacksFrame
+from modlunky2.ui.play.releases import VersionFrame, parse_download_url
 
 logger = logging.getLogger("modlunky2")
 

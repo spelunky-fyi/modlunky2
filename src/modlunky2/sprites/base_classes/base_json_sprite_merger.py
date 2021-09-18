@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import List, Dict, Type
 
-from .base_sprite_loader import BaseSpriteLoader
-from .base_sprite_merger import BaseSpriteMerger
-from ..util import target_chunks_from_json
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.base_sprite_merger import BaseSpriteMerger
+from modlunky2.sprites.util import target_chunks_from_json
 
 
 class BaseJsonSpriteMerger(BaseSpriteMerger):

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .base_classes import BaseSpriteLoader
+from modlunky2.sprites.base_classes import BaseSpriteLoader
 
 
 class EggShip2Sheet(BaseSpriteLoader):

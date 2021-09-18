@@ -4,10 +4,10 @@ import shutil
 import sys
 from pathlib import Path
 
-from .assets import AssetStore
-from .constants import DEFAULT_COMPRESSION_LEVEL, EXTRACTED_DIR
-from .exc import MissingAsset
-from .patcher import Patcher
+from modlunky2.assets.assets import AssetStore
+from modlunky2.assets.constants import DEFAULT_COMPRESSION_LEVEL, EXTRACTED_DIR
+from modlunky2.assets.exc import MissingAsset
+from modlunky2.assets.patcher import Patcher
 
 DEFAULT_MODS_DIR = "Mods"
 
