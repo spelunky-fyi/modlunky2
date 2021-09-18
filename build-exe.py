@@ -2,6 +2,7 @@
 
 import argparse
 import subprocess
+import os
 from pathlib import Path
 
 OPTIONAL_DATA = [
@@ -14,6 +15,10 @@ DATA = [
     "src/modlunky2/static;static",
 ]
 BASE_DIR = Path(__file__).parent.resolve()
+
+DEBUG_DIR = Path("src/launcher/target/debug")
+RELEASE_DIR = Path("src/launcher/target/release")
+EXE_NAME = Path("modlunky2.exe")
 
 
 def run_pyinstaller(debug):
@@ -64,6 +69,13 @@ def main():
     args = parser.parse_args()
     run_pyinstaller(args.debug)
     build_launcher(args.debug)
+
+    artifact_dir = RELEASE_DIR
+    if args.debug:
+        artifact_dir = DEBUG_DIR
+
+    print(f"exe successfully built at {artifact_dir / EXE_NAME}")
+    os.startfile(BASE_DIR / artifact_dir)
 
 
 if __name__ == "__main__":
