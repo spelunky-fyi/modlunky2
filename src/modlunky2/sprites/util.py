@@ -19,7 +19,7 @@ def chunks_from_animation(
             start_chunk[2] + i * chunk_width,
             start_chunk[3],
         )
-        chunks["{}_{}".format(base_name, off + i + 1)] = coords
+        chunks[f"{base_name}_{off + i + 1}"] = coords
 
     return chunks
 
@@ -62,7 +62,7 @@ def chunks_from_json(
                 for i in range(0, animation_data["count"]):
                     chunk_x = (first_chunk + i) % num_chunks_width
                     chunk_y = (first_chunk + i) // num_chunks_width
-                    chunks["{}_{}_{}".format(entity_name, animation_id, i)] = (
+                    chunks[f"{entity_name}_{animation_id}_{i}"] = (
                         offset_width + chunk_x * chunk_width_scaling,
                         offset_height + chunk_y * chunk_height_scaling,
                         offset_width + (chunk_x + 1) * chunk_width_scaling,

@@ -75,13 +75,11 @@ class Patcher:
                 "to be updated for the current game version."
             )
             logger.warning(
-                "(Expected 0x{:02x}, found 0x{:02x})".format(
-                    CHECKSUM_PATCH_END, ops[-1]
-                )
+                f"(Expected 0x{CHECKSUM_PATCH_END:02x}, found 0x{ops[-1]:02x})"
             )
             return False
 
-        logger.info("Found check at 0x{:08x}, replacing with NOPs".format(index))
+        logger.info(f"Found check at 0x{index:08x}, replacing with NOPs")
         self.exe_handle.seek(index)
         self.exe_handle.write(CHECKSUM_PATCH_REPLACE)
 

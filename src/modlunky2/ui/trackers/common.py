@@ -165,7 +165,7 @@ class TrackerWindow(tk.Toplevel):
     def dragwin(self, _event):
         x_coord = self.winfo_pointerx() - self._offsetx
         y_coord = self.winfo_pointery() - self._offsety
-        self.geometry("+{x}+{y}".format(x=x_coord, y=y_coord))
+        self.geometry(f"+{x_coord}+{y_coord}")
 
     def clickwin(self, event):
         self._offsetx = event.x
