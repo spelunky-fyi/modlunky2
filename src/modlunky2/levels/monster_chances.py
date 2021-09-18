@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from typing import ClassVar, Optional, TextIO, Tuple, Union
 
-from .utils import (
+from modlunky2.levels.utils import (
     DirectivePrefixes,
     parse_chance_values,
     split_comment,

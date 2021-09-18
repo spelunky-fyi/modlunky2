@@ -6,7 +6,7 @@ from threading import Lock
 
 from PIL import Image
 
-from .types import chunk_map_type
+from modlunky2.sprites.base_classes.types import chunk_map_type
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
@@ -86,6 +86,7 @@ class BaseSpriteLoader(ABC):
         coords = self._chunk_map.get(name)
         if coords:
             return self._get_block(*coords)
+        return None
 
     def key_map(self) -> Dict[str, Callable]:
         return {k: self.get for k in self._chunk_map}

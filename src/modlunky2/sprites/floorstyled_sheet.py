@@ -1,4 +1,6 @@
-from .base_classes.base_floorstyled_sheet import AbstractFloorStyledSheet
+from modlunky2.sprites.base_classes.base_floorstyled_sheet import (
+    AbstractFloorStyledSheet,
+)
 
 __all__ = [
     "HiveStyledFloorSheet",

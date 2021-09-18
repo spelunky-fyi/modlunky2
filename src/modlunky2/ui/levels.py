@@ -1609,7 +1609,7 @@ class LevelsTab(Tab):
             file_count = len(files)
             logger.debug("This mod has %s backups.", file_count)
             list_of_files = os.listdir(backup_dir)
-            full_path = [backup_dir + "/{0}".format(x) for x in list_of_files]
+            full_path = [backup_dir + f"/{x}" for x in list_of_files]
             if len(list_of_files) >= 50:
                 logger.debug("Deleting oldest backup")
                 oldest_file = min(full_path, key=os.path.getctime)

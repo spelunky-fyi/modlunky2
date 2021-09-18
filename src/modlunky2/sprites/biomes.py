@@ -3,10 +3,10 @@ Biomes bring together the floor sheet, deco sheet, and background sprites for ea
 environment.
 """
 
-from .base_classes import AbstractBiome
-from .deco_sheet import *
-from .floor_sheet import *
-from .floorstyled_sheet import *
+from modlunky2.sprites.base_classes import AbstractBiome
+from modlunky2.sprites.deco_sheet import *
+from modlunky2.sprites.floor_sheet import *
+from modlunky2.sprites.floorstyled_sheet import *
 
 __all__ = [
     "SurfaceBiome",

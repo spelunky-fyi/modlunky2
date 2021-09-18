@@ -2,23 +2,30 @@ from typing import Optional
 
 from modlunky2.constants import BASE_DIR
 
-from .items import ItemSheet
-from .coffins import CoffinSheet
-from .deco_extra import DecoExtraSheet
-from .base_eggship2 import EggShip2Sheet
-from .journal_stickers import StickerSheet
-from .journal_items import JournalItemSheet
-from .journal_people import JournalPeopleSheet
-from .journal_mons import JournalMonsterSheet
-from .journal_mons_big import JournalBigMonsterSheet
-from .journal_place import JournalPlaceSheet
-from .journal_traps import JournalTrapSheet
-from .character import *
-from .monsters.mounts import Mounts
-from .monsters.pets import Pets
-from .monsters.ghost import Ghost
-from .monsters.basic import Basic1, Basic2, Basic3, Monsters1, Monsters2, Monsters3
-from .monsters.big import (
+from modlunky2.sprites.items import ItemSheet
+from modlunky2.sprites.coffins import CoffinSheet
+from modlunky2.sprites.deco_extra import DecoExtraSheet
+from modlunky2.sprites.base_eggship2 import EggShip2Sheet
+from modlunky2.sprites.journal_stickers import StickerSheet
+from modlunky2.sprites.journal_items import JournalItemSheet
+from modlunky2.sprites.journal_people import JournalPeopleSheet
+from modlunky2.sprites.journal_mons import JournalMonsterSheet
+from modlunky2.sprites.journal_mons_big import JournalBigMonsterSheet
+from modlunky2.sprites.journal_place import JournalPlaceSheet
+from modlunky2.sprites.journal_traps import JournalTrapSheet
+from modlunky2.sprites.character import *
+from modlunky2.sprites.monsters.mounts import Mounts
+from modlunky2.sprites.monsters.pets import Pets
+from modlunky2.sprites.monsters.ghost import Ghost
+from modlunky2.sprites.monsters.basic import (
+    Basic1,
+    Basic2,
+    Basic3,
+    Monsters1,
+    Monsters2,
+    Monsters3,
+)
+from modlunky2.sprites.monsters.big import (
     Big1,
     Big2,
     Big3,
@@ -28,9 +35,9 @@ from .monsters.big import (
     OsirisAndAlienQueen,
     OlmecAndMech,
 )
-from .tilecode_extras import TilecodeExtras
-from .menu_leader import MenuLeaderSheet
-from .menu_basic import MenuBasicSheet, PetHeadsSheet
+from modlunky2.sprites.tilecode_extras import TilecodeExtras
+from modlunky2.sprites.menu_leader import MenuLeaderSheet
+from modlunky2.sprites.menu_basic import MenuBasicSheet, PetHeadsSheet
 
 
 def get_all_sprite_loaders(

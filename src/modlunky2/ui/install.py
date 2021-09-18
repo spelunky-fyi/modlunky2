@@ -273,7 +273,7 @@ def download_contents(_call, url):
 
     except Exception:  # pylint: disable=broad-except
         logger.critical("Failed to download %s: %s", url, tb_info())
-        return
+        return None
 
     contents.seek(0)
     return contents

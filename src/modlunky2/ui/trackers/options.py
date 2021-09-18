@@ -6,8 +6,8 @@ from modlunky2.config import Config
 from modlunky2.ui.widgets import PopupWindow
 from modlunky2.utils import open_directory
 
-from .utils import get_text_color
-from .common import TRACKERS_DIR
+from modlunky2.ui.trackers.utils import get_text_color
+from modlunky2.ui.trackers.common import TRACKERS_DIR
 
 logger = logging.getLogger("modlunky2")
 

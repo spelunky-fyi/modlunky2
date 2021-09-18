@@ -1,4 +1,4 @@
-from .full_sheets import *
+from modlunky2.sprites.full_sheets import *
 
 
 def get_all_sprite_mergers(entities_json: dict, textures_json: dict, base_path: str):

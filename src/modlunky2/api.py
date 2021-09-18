@@ -49,7 +49,7 @@ class SpelunkyFYIClient:
     def get_mod_file_from_details(details, mod_file_id=None):
         if not details["mod_files"]:
             logger.critical("Mod `%s` has no files to download.", details["slug"])
-            return
+            return None
 
         mod_files = details["mod_files"]
         if mod_file_id is None:

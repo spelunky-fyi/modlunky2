@@ -4,8 +4,8 @@ from typing import Dict, Optional, Type
 
 from PIL import Image
 
-from .base_deco_sheet import AbstractDecoSheet
-from .base_floor_sheet import AbstractFloorSheet
+from modlunky2.sprites.base_classes.base_deco_sheet import AbstractDecoSheet
+from modlunky2.sprites.base_classes.base_floor_sheet import AbstractFloorSheet
 
 DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
@@ -92,6 +92,6 @@ class AbstractBiome(ABC):
         # early if we don't
         get_func = self._sheet_map.get(name)
         if get_func is None:
-            return
+            return None
         # this will either be the `get` method of the floor or deco sheet object
         return get_func(name)

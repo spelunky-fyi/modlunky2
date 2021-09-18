@@ -12,22 +12,22 @@ from modlunky2.version import current_version, latest_version
 from modlunky2.config import Config, MIN_WIDTH, MIN_HEIGHT
 from modlunky2.utils import is_windows, tb_info, temp_chdir
 
-from .tasks import TaskManager, PING_INTERVAL
-from .settings import SettingsTab
-from .extract import ExtractTab
-from .levels import LevelsTab
-from .play import PlayTab
-from .overlunky import OverlunkyTab
-from .pack import PackTab
-from .widgets import ConsoleWindow
-from .install import InstallTab
-from .logs import QueueHandler, register_queue_handler
-from .error import ErrorTab
-from .websocket import WebSocketThread
-from .s99 import S99Tab
+from modlunky2.ui.tasks import TaskManager, PING_INTERVAL
+from modlunky2.ui.settings import SettingsTab
+from modlunky2.ui.extract import ExtractTab
+from modlunky2.ui.levels import LevelsTab
+from modlunky2.ui.play import PlayTab
+from modlunky2.ui.overlunky import OverlunkyTab
+from modlunky2.ui.pack import PackTab
+from modlunky2.ui.widgets import ConsoleWindow
+from modlunky2.ui.install import InstallTab
+from modlunky2.ui.logs import QueueHandler, register_queue_handler
+from modlunky2.ui.error import ErrorTab
+from modlunky2.ui.websocket import WebSocketThread
+from modlunky2.ui.s99 import S99Tab
 
 if is_windows():
-    from .trackers import TrackersTab
+    from modlunky2.ui.trackers import TrackersTab
 
 
 logger = logging.getLogger("modlunky2")
