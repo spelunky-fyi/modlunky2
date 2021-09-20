@@ -170,14 +170,14 @@ class State:
     waddler_storage: FrozenSet[EntityType] = struct_field(
         0x8C, array(sc_uint32, 99), default=frozenset()
     )
-    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
-    hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
-    time_level: int = struct_field(0xA04, sc_uint32, default=0)
-    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)
-    next_entity_uid: int = struct_field(0x12A0, sc_uint32, default=0)
-    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct), default=None)
+    run_recap_flags: RunRecapFlags = struct_field(0xA34, sc_uint32, default=0)
+    hud_flags: HudFlags = struct_field(0xA50, sc_uint32, default=0)
+    time_level: int = struct_field(0xA44, sc_uint32, default=0)
+    presence_flags: PresenceFlags = struct_field(0xA54, sc_uint32, default=0)
+    next_entity_uid: int = struct_field(0x12E0, sc_uint32, default=0)
+    items: Optional[Items] = struct_field(0x12F0, pointer(dc_struct), default=None)
     instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
-        0x1308,
+        0x1348,
         unordered_map(sc_uint32, poly_pointer(dc_struct)),
         default_factory=DictUnorderedMap,
     )
