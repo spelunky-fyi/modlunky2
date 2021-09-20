@@ -13,6 +13,19 @@ KNOWN_FONTS_V2 = [
     "Data/Fonts/fontrodincattleya.fnb",
 ]
 
+KNOWN_FONTS_V3 = [
+    *KNOWN_FONTS_V2,
+    "Data/Fonts/fontnotosansboldcs.fnb",
+    "Data/Fonts/fontnotosansboldct.fnb",
+    "Data/Fonts/fontnotosansboldko.fnb",
+    "Data/Fonts/fontnotosansboldnicknames.fnb",
+    "Data/Fonts/fontnotosansboldru.fnb",
+    "Data/Fonts/fontnotosansitaliccs.fnb",
+    "Data/Fonts/fontnotosansitalicct.fnb",
+    "Data/Fonts/fontnotosansitalicko.fnb",
+    "Data/Fonts/fontnotosansitalicru.fnb",
+]
+
 KNOWN_LEVELS_V1 = [
     "Data/Levels/abzu.lvl",
     "Data/Levels/Arena/dm1-1.lvl",
@@ -125,6 +138,13 @@ KNOWN_STRINGS_V2 = [
     "strings08.str",
 ]
 
+KNOWN_STRINGS_V3 = [
+    *KNOWN_STRINGS_V2,
+    "strings09.str",
+    "strings10.str",
+    "strings11.str",
+    "strings12.str",
+]
 
 KNOWN_TEXTURES_V1 = [
     "Data/Textures/base_eggship2.png",
@@ -320,11 +340,24 @@ KNOWN_TEXTURES_V2 = [
     str(PurePosixPath(path).with_suffix(".DDS")) for path in KNOWN_TEXTURES_V1
 ]
 
-KNOWN_FILEPATHS = [
-    *KNOWN_FONTS_V2,
-    *KNOWN_LEVELS_V2,
-    *KNOWN_STRINGS_V2,
+KNOWN_TEXTURES_V3 = [
     *KNOWN_TEXTURES_V2,
+    "Data/Textures/fontnotosansboldcs_0.DDS",
+    "Data/Textures/fontnotosansboldct_0.DDS",
+    "Data/Textures/fontnotosansboldko_0.DDS",
+    "Data/Textures/fontnotosansboldnicknames_0.DDS",
+    "Data/Textures/fontnotosansboldru_0.DDS",
+    "Data/Textures/fontnotosansitaliccs_0.DDS",
+    "Data/Textures/fontnotosansitalicct_0.DDS",
+    "Data/Textures/fontnotosansitalicko_0.DDS",
+    "Data/Textures/fontnotosansitalicru_0.DDS",
+]
+
+KNOWN_FILEPATHS = [
+    *KNOWN_FONTS_V3,
+    *KNOWN_LEVELS_V2,
+    *KNOWN_STRINGS_V3,
+    *KNOWN_TEXTURES_V3,
     # Shaders
     "shaders.hlsl",
     # FMOD Audio

@@ -46,6 +46,10 @@ def _cache_fyi_pack_details(
 
         logging.debug("Getting latest details for %s", pack)
         details, code = api_client.get_mod(pack)
+        # Invalid code, don't bother checking for more
+        if code == 401:
+            break
+
         if code == 404:
             skip_file.touch()
             continue

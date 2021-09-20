@@ -18,7 +18,6 @@ from modlunky2.ui.extract import ExtractTab
 from modlunky2.ui.levels import LevelsTab
 from modlunky2.ui.play import PlayTab
 from modlunky2.ui.overlunky import OverlunkyTab
-from modlunky2.ui.pack import PackTab
 from modlunky2.ui.widgets import ConsoleWindow
 from modlunky2.ui.install import InstallTab
 from modlunky2.ui.logs import QueueHandler, register_queue_handler
@@ -176,13 +175,6 @@ class ModlunkyUI:
         self.register_tab(
             "Extract Assets",
             ExtractTab,
-            tab_control=self.tab_control,
-            modlunky_config=modlunky_config,
-            task_manager=self.task_manager,
-        )
-        self.register_tab(
-            "Pack Assets",
-            PackTab,
             tab_control=self.tab_control,
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,

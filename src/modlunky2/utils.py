@@ -7,16 +7,9 @@ import subprocess
 import webbrowser
 import struct
 import zipfile
-from functools import wraps
 
-from modlunky2.assets.patcher import Patcher
 
 logger = logging.getLogger("modlunky2")
-
-
-def is_patched(exe_filename):
-    with exe_filename.open("rb") as exe:
-        return Patcher(exe).is_checksum_patched()
 
 
 def tb_info():

@@ -13,7 +13,7 @@ from modlunky2.assets.constants import (
     FILEPATH_DIRS,
     PACKS_DIR,
 )
-from modlunky2.utils import is_patched, open_directory
+from modlunky2.utils import open_directory
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 
@@ -54,23 +54,12 @@ def extract_assets(
     _call,
     install_dir,
     target,
-    recompress,
     generate_string_hashes,
     create_entity_sheets,
     extract_sound_extensions,
     reuse_extracted,
 ):
     exe_filename = install_dir / target
-
-    if is_patched(exe_filename):
-        logger.critical(
-            (
-                "%s is a patched exe. Can't extract. You should Restore Exe"
-                " or validate game files to get a clean exe before Extracting."
-            ),
-            exe_filename,
-        )
-        return
 
     mods_dir = install_dir / MODS
 
@@ -95,7 +84,6 @@ def extract_assets(
         unextracted = asset_store.extract(
             mods_dir / EXTRACTED_DIR,
             mods_dir / ".compressed" / EXTRACTED_DIR,
-            recompress=recompress,
             generate_string_hashes=generate_string_hashes,
             create_entity_sheets=create_entity_sheets,
             extract_sound_extensions=extract_sound_extensions,
@@ -161,24 +149,6 @@ class ExtractTab(Tab):
 
         self.config_frame = ttk.LabelFrame(self.top_frame, text="Options")
         self.config_frame.grid(row=1, column=1, pady=5, padx=5, sticky="nswe")
-
-        self.recompress = tk.BooleanVar()
-        self.recompress.set(False)
-        self.checkbox_recompress = ttk.Checkbutton(
-            self.config_frame,
-            text="Recompress",
-            variable=self.recompress,
-            onvalue=True,
-            offvalue=False,
-        )
-        self.checkbox_recompress.grid(row=0, sticky="nw")
-        ToolTip(
-            self.checkbox_recompress,
-            (
-                "Recompress assets to speed up futuring packing.\n"
-                "Not necessary if you just want the extracted assets."
-            ),
-        )
 
         self.create_entity = tk.BooleanVar()
         self.create_entity.set(True)
@@ -296,7 +266,6 @@ class ExtractTab(Tab):
             "extract:extract_assets",
             install_dir=self.modlunky_config.install_dir,
             target=selected_exe,
-            recompress=self.recompress.get(),
             generate_string_hashes=self.generate_string_hashes.get(),
             create_entity_sheets=self.create_entity.get(),
             extract_sound_extensions=extract_sound_extensions,

@@ -149,7 +149,7 @@ class ExeAsset:
         compressed_dir: Path,
         key: Key,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
-        recompress=True,
+        recompress=False,
     ):
         if not self.filepath:
             raise RuntimeError("Asset doesn't have filepath.")

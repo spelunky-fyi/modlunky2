@@ -9,7 +9,6 @@ from modlunky2.ui.widgets import (
     ScrollableFrameLegacy,
     Tab,
 )
-from modlunky2.utils import is_patched
 
 from modlunky2.ui.play.constants import (
     PLAYLUNKY_DATA_DIR,
@@ -37,13 +36,6 @@ def launch_playlunky(_call, install_dir, exe_path, use_console):
 
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
-
-    spel2_exe = install_dir / "Spel2.exe"
-    if spel2_exe.exists() and is_patched(spel2_exe):
-        logger.warning(
-            "You're using Playlunky against a patched exe. "
-            "For best results use Playlunky on a vanilla exe."
-        )
 
 
 class PlayTab(Tab):
