@@ -351,6 +351,7 @@ KNOWN_TEXTURES_V3 = [
     "Data/Textures/fontnotosansitalicct_0.DDS",
     "Data/Textures/fontnotosansitalicko_0.DDS",
     "Data/Textures/fontnotosansitalicru_0.DDS",
+    "Data/Textures/journal_trophies.DDS",
 ]
 
 KNOWN_FILEPATHS = [
@@ -374,7 +375,7 @@ FILENAMES_TO_FILEPATHS = {PurePosixPath(path).name: path for path in KNOWN_FILEP
 # This is the list of assets we want to convert to/from png.
 DDS_PNGS = set(
     asset
-    for asset in KNOWN_TEXTURES_V2
+    for asset in KNOWN_TEXTURES_V3
     if asset
     not in [
         "Data/Textures/bayer8.DDS",
@@ -384,6 +385,15 @@ DDS_PNGS = set(
         "Data/Textures/fontnewrodin.DDS",
         "Data/Textures/fontrodincattleya.DDS",
         "Data/Textures/fontyorkten.DDS",
+        "Data/Textures/fontnotosansboldcs_0.DDS",
+        "Data/Textures/fontnotosansboldct_0.DDS",
+        "Data/Textures/fontnotosansboldko_0.DDS",
+        "Data/Textures/fontnotosansboldnicknames_0.DDS",
+        "Data/Textures/fontnotosansboldru_0.DDS",
+        "Data/Textures/fontnotosansitaliccs_0.DDS",
+        "Data/Textures/fontnotosansitalicct_0.DDS",
+        "Data/Textures/fontnotosansitalicko_0.DDS",
+        "Data/Textures/fontnotosansitalicru_0.DDS",
     ]
 )
 

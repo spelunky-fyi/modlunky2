@@ -292,7 +292,7 @@ class AssetStore:
         compressed_dir,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
         max_workers=max(os.cpu_count() - 2, 1),
-        recompress=True,
+        recompress=False,
         generate_string_hashes=True,
         create_entity_sheets=True,
         extract_sound_extensions=None,
