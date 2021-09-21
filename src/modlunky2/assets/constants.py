@@ -404,7 +404,7 @@ PNG_NAMES_TO_DDS_NAMES = {
     str(PurePosixPath(filepath).with_suffix(".png").name): str(
         PurePosixPath(filepath).name
     )
-    for filepath in KNOWN_TEXTURES_V2
+    for filepath in KNOWN_TEXTURES_V3
     if filepath in DDS_PNGS
 }
 

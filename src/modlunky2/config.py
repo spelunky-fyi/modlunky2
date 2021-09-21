@@ -21,6 +21,7 @@ APP_NAME = "modlunky2"
 CONFIG_DIR = Path(user_config_dir(APP_NAME, APP_AUTHOR))
 DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
+SHOW_PACKING_DEFAULT = False
 
 MIN_WIDTH = 1280
 MIN_HEIGHT = 768
@@ -106,6 +107,7 @@ class ConfigFile:
         self.last_install_browse = None
         self.last_tab = None
         self.tracker_color_key = None
+        self.show_packing = SHOW_PACKING_DEFAULT
 
     @classmethod
     def from_path(cls, config_path: Path, exe_dir=None):
@@ -159,6 +161,9 @@ class ConfigFile:
         # Tracker Config
         obj.tracker_color_key = config_data.get("tracker-color-key", DEFAULT_COLOR_KEY)
 
+        # Packing
+        obj.show_packing = config_data.get("show-packing", SHOW_PACKING_DEFAULT)
+
         if needs_save:
             obj.save()
 
@@ -210,6 +215,9 @@ class ConfigFile:
 
         if self.tracker_color_key != DEFAULT_COLOR_KEY:
             out["tracker-color-key"] = self.tracker_color_key
+
+        if self.show_packing != SHOW_PACKING_DEFAULT:
+            out["show-packing"] = self.show_packing
 
         out["theme"] = self.theme
 

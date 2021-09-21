@@ -18,6 +18,7 @@ from modlunky2.ui.extract import ExtractTab
 from modlunky2.ui.levels import LevelsTab
 from modlunky2.ui.play import PlayTab
 from modlunky2.ui.overlunky import OverlunkyTab
+from modlunky2.ui.pack import PackTab
 from modlunky2.ui.widgets import ConsoleWindow
 from modlunky2.ui.install import InstallTab
 from modlunky2.ui.logs import QueueHandler, register_queue_handler
@@ -179,6 +180,14 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
+        if self.modlunky_config.config_file.show_packing:
+            self.register_tab(
+                "Pack Assets (Deprecated)",
+                PackTab,
+                tab_control=self.tab_control,
+                modlunky_config=modlunky_config,
+                task_manager=self.task_manager,
+            )
         self.register_tab(
             "Level Editor",
             LevelsTab,

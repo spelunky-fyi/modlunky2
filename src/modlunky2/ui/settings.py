@@ -4,7 +4,7 @@ from pathlib import Path
 from tkinter import ttk, filedialog
 from urllib.parse import urljoin
 
-from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, guess_install_dir
+from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, Config, guess_install_dir
 from modlunky2.ui.widgets import Entry, Link, PopupWindow, Tab
 from modlunky2.utils import open_directory
 
@@ -198,6 +198,28 @@ class UserDirectories(ttk.LabelFrame):
         ).grid(row=0, column=3, pady=(5, 5), padx=(5, 5), sticky="w")
 
 
+class Flags(ttk.LabelFrame):
+    def __init__(self, parent, modlunky_config: Config):
+        super().__init__(parent, text="Flags")
+        self.modlunky_config = modlunky_config
+
+        self.show_packing = tk.BooleanVar()
+        self.show_packing.set(self.modlunky_config.config_file.show_packing)
+        self.show_packing_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Packing Tab (Deprecated)",
+            variable=self.show_packing,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_packing,
+        )
+        self.show_packing_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="nw")
+
+    def toggle_show_packing(self):
+        self.modlunky_config.config_file.show_packing = self.show_packing.get()
+        self.modlunky_config.config_file.save()
+
+
 class SettingsTab(Tab):
     def __init__(self, tab_control, modlunky_config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
@@ -222,4 +244,8 @@ class SettingsTab(Tab):
 
         UserDirectories(config_frame, modlunky_config).grid(
             row=3, column=0, pady=5, padx=5, sticky="nswe"
+        )
+
+        Flags(config_frame, modlunky_config).grid(
+            row=4, column=0, pady=5, padx=5, sticky="nswe"
         )
