@@ -12,6 +12,7 @@ logger = logging.getLogger("modlunky2")
 
 class ControlsFrame(ttk.Frame):
     def __init__(self, parent, play_tab, modlunky_config, *args, **kwargs):
+        logger.debug("Initializing Playlunky ControlsFrame")
         super().__init__(parent, *args, **kwargs)
         self.parent = parent
         self.modlunky_config = modlunky_config

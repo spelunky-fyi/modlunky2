@@ -1,9 +1,14 @@
+import logging
+
 import tkinter as tk
 from tkinter import ttk
+
+logger = logging.getLogger("modlunky2")
 
 
 class LoadOrderFrame(ttk.LabelFrame):
     def __init__(self, play_tab, *args, **kwargs):
+        logger.debug("Initializing Playlunky LoadOrderFrame")
         super().__init__(play_tab, text="Load Order", *args, **kwargs)
         self.play_tab = play_tab
         self.columnconfigure(0, weight=1)

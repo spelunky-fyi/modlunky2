@@ -1,10 +1,14 @@
+import logging
 import requests
 from packaging import version
 
 from modlunky2.constants import BASE_DIR
 
+logger = logging.getLogger("modlunky2")
+
 
 def latest_version():
+    logger.debug("Fetching latest version of Modlunky")
     try:
         return version.parse(
             requests.get(

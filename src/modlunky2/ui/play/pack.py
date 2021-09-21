@@ -202,12 +202,12 @@ class Pack:
     def disable(self):
         self.var.set(False)
 
-    def set(self, val: bool):
+    def set(self, val: bool, skip_render=False):
         if val:
             self.enable()
         else:
             self.disable()
-        self.on_check()
+        self.on_check(skip_render=skip_render)
 
     def destroy(self):
         self.checkbutton.destroy()
@@ -215,12 +215,14 @@ class Pack:
         self.logo.destroy()
         self.play_tab.load_order.delete(self.folder)
 
-    def on_check(self):
+    def on_check(self, skip_render=False):
         if self.var.get():
             self.play_tab.load_order.insert(self.folder)
         else:
             self.play_tab.load_order.delete(self.folder)
-        self.play_tab.packs_frame.render_packs()
+
+        if not skip_render:
+            self.play_tab.packs_frame.render_packs()
 
     def open_pack_dir(self):
         if self.folder.startswith("/"):

@@ -44,7 +44,7 @@ def _cache_fyi_pack_details(
         if skip_file.exists():
             continue
 
-        logging.debug("Getting latest details for %s", pack)
+        logger.debug("Getting latest details for %s", pack)
         details, code = api_client.get_mod(pack)
         # Invalid code, don't bother checking for more
         if code == 401:
@@ -108,6 +108,8 @@ class PacksFrame(ScrollableLabelFrame):
     CACHE_FYI_INTERVAL = 1000 * 10 * 60
 
     def __init__(self, play_tab, parent, modlunky_config, task_manager):
+        logger.debug("Initializing Playlunky PacksFrame")
+
         super().__init__(parent, text="Select Mods to Play")
         self._loaded = False
 

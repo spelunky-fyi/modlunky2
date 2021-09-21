@@ -10,6 +10,7 @@ logger = logging.getLogger("modlunky2")
 
 class FiltersFrame(ttk.LabelFrame):
     def __init__(self, parent, play_tab):
+        logger.debug("Initializing Playlunky FiltersFrame")
         super().__init__(parent, text="Filters")
         self.parent = parent
         self.play_tab = play_tab

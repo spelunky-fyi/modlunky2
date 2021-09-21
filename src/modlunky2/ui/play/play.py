@@ -123,9 +123,13 @@ class PlayTab(Tab):
 
         self.ini = None
 
+        logger.debug("Initializing Playlunky on_load")
         self.on_load()
+        logger.debug("Initializing Playlunky load_from_ini")
         self.load_from_ini()
+        logger.debug("Initializing Playlunky load_from_load_order")
         self.load_from_load_order()
+        logger.debug("Initalizing Playlunky complete!")
 
     def make_dirs(self):
         if not self.modlunky_config.install_dir:
@@ -186,7 +190,9 @@ class PlayTab(Tab):
                 if pack is None:
                     continue
 
-                pack.set(selected)
+                pack.set(selected, skip_render=True)
+
+        self.packs_frame.render_packs()
 
     def write_load_order(self):
         load_order_path = self.load_order_path

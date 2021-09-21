@@ -33,7 +33,7 @@ def main():
     )
     args = parser.parse_args()
 
-    log_format = "%(asctime)s: %(message)s"
+    log_format = "%(asctime)s.%(msecs)03d: %(message)s"
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
     logger.setLevel(log_level)

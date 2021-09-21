@@ -46,6 +46,7 @@ def update_start(_call, launcher_exe):
 
 class ModlunkyUI:
     def __init__(self, modlunky_config: Config, log_level=logging.INFO):
+        logger.debug("Initializing UI")
         self.modlunky_config = modlunky_config
 
         self.current_version = current_version()
@@ -152,6 +153,7 @@ class ModlunkyUI:
         self.tabs = {}
         self.tab_control = ttk.Notebook(self.top_frame)
 
+        logger.debug("Registering Tabs")
         self.register_tab(
             "Playlunky",
             PlayTab,
@@ -338,6 +340,8 @@ class ModlunkyUI:
         self.console_frame.grid_forget()
 
     def register_tab(self, name, cls, **kwargs):
+        logger.debug("Registering Tab %s", repr(name))
+
         try:
             obj = cls(**kwargs)
         except Exception:  # pylint: disable=broad-except

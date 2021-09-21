@@ -375,7 +375,7 @@ def install_fyi_mod(
     pack_dir = packs_dir / f"fyi.{install_code}"
     if pack_dir.exists():
         if overwrite:
-            logging.debug("Removing previous installation at %s", pack_dir)
+            logger.debug("Removing previous installation at %s", pack_dir)
             shutil.rmtree(pack_dir)
         else:
             call(

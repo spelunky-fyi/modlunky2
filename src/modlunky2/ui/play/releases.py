@@ -240,6 +240,7 @@ class VersionFrame(ttk.LabelFrame):
     CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
     def __init__(self, parent, modlunky_config, task_manager):
+        logger.debug("Initializing Playlunky VersionFrame")
         super().__init__(parent, text="Version")
         self.parent = parent
         self.available_releases = {}
