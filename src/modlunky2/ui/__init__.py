@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 import time
 import tkinter as tk
 import traceback
@@ -31,6 +32,8 @@ if is_windows():
 
 
 logger = logging.getLogger("modlunky2")
+update_lock = threading.Lock()
+
 
 TAB_KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 
@@ -44,21 +47,34 @@ def update_start(_call, launcher_exe):
     self_update(launcher_exe)
 
 
+def check_for_latest(call):
+    logger.debug("Checking for latest Modlunky version")
+    acquired = update_lock.acquire(blocking=False)
+    if not acquired:
+        logger.warning(
+            "Attempted to check for new modlunky while another task is running..."
+        )
+        return
+
+    modlunky_latest_version = None
+    try:
+        modlunky_latest_version = latest_version()
+    finally:
+        update_lock.release()
+
+    call("modlunky2:latest_version", modlunky_latest_version=modlunky_latest_version)
+
+
 class ModlunkyUI:
+    CHECK_LATEST_INTERVAL = 1000 * 30 * 60
+
     def __init__(self, modlunky_config: Config, log_level=logging.INFO):
         logger.debug("Initializing UI")
         self.modlunky_config = modlunky_config
 
         self.current_version = current_version()
-        self.latest_version = latest_version()
-
-        if IS_EXE:
-            if self.latest_version is None or self.current_version is None:
-                self.needs_update = False
-            else:
-                self.needs_update = self.current_version < self.latest_version
-        else:
-            self.needs_update = False
+        self.latest_version = None
+        self.needs_update = False
 
         self._shutdown_handlers = []
         self._shutting_down = False
@@ -75,6 +91,15 @@ class ModlunkyUI:
         )
         self.task_manager.register_handler(
             "modlunky2:update_complete", self.update_complete
+        )
+
+        self.task_manager.register_task(
+            "modlunky2:check_for_latest",
+            check_for_latest,
+            True,
+        )
+        self.task_manager.register_handler(
+            "modlunky2:latest_version", self.handle_modlunky_latest_version
         )
 
         self.root = tk.Tk(className="Modlunky2")
@@ -141,10 +166,6 @@ class ModlunkyUI:
             command=self.update,
             style="Update.TButton",
         )
-
-        if self.needs_update:
-            self.update_frame.grid(row=0, column=0, sticky="nswe")
-            self.update_button.grid(column=0, row=0, sticky="nswe")
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
@@ -239,6 +260,32 @@ class ModlunkyUI:
         self.root.after(100, self.after_task_manager)
         self.root.after(1000, self.after_ws_thread)
         self.root.after(1000, self.after_record_win)
+        self.check_for_updates()
+
+    def check_for_updates(self):
+        if self.needs_update:
+            return
+
+        self.task_manager.call("modlunky2:check_for_latest")
+        self.root.after(self.CHECK_LATEST_INTERVAL, self.check_for_updates)
+
+    def handle_modlunky_latest_version(self, modlunky_latest_version):
+        if not IS_EXE:
+            return
+
+        if modlunky_latest_version is None:
+            self.needs_update = False
+            return
+        self.latest_version = modlunky_latest_version
+
+        if self.current_version is None:
+            self.needs_update = False
+            return
+
+        self.needs_update = self.current_version < self.latest_version
+        if self.needs_update:
+            self.update_frame.grid(row=0, column=0, sticky="nswe")
+            self.update_button.grid(column=0, row=0, sticky="nswe")
 
     def after_ws_thread(self):
         try:
