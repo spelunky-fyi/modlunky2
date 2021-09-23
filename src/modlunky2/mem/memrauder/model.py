@@ -17,7 +17,7 @@ from typing import (
 )
 import typing
 
-# Abstract memory-reader interface, used if pointers are derefrenced.
+# Abstract memory-reader interface, used if pointers are dereferenced.
 class MemoryReader(ABC):
     @abstractmethod
     def read(self, addr: int, size: int) -> Optional[bytes]:
@@ -229,7 +229,7 @@ class StructFieldMeta:
     @classmethod
     def from_field(cls, field: dataclasses.Field) -> StructFieldMeta:
         if cls._METADATA_KEY not in field.metadata:
-            raise ValueError(f"field {field.name} has no stuct_field() metadata")
+            raise ValueError(f"field {field.name} has no struct_field() metadata")
         return field.metadata[cls._METADATA_KEY]
 
 
