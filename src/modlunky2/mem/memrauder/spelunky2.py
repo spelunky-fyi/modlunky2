@@ -96,43 +96,6 @@ class UidEntityMap:
             cur_index = (cur_index + 1) & self.meta.mask
         # The above loop only terminates via return
 
-    def check_lookup(self):
-        checked_count = 0
-        non_empty_count = 0
-        requires_probe_count = 0
-        mismatch_count = 0
-        for index in range(0, self.meta.mask + 1):
-            entry = self._get_table_entry(index)
-            if entry is None:
-                # Reading the bytes for the entry failed.
-                continue
-            checked_count += 1
-
-            if entry.uid_plus1 == 0:
-                continue
-            non_empty_count += 1
-
-            if entry.uid_plus1 == index:
-                # _get_addr() isn't worth exercising
-                continue
-            requires_probe_count += 1
-
-            get_addr_result = self._get_addr(entry.uid_plus1 - 1)
-            if entry.entity_addr == get_addr_result:
-                continue
-            mismatch_count += 1
-            logger.warning("Mismatch for index %d (uid %d). Expected %X, got %X")
-
-        # Make status more prominent if we exercised non-trivial cases
-        if requires_probe_count:
-            logger.info(
-                "Checked uid-entity mapping: Checked %d, Non-empty %d, Requires probe %d, Mismatch %d",
-                checked_count,
-                non_empty_count,
-                requires_probe_count,
-                mismatch_count,
-            )
-
     def get(self, uid: int) -> PolyPointer[Entity]:
         if self.meta.table_ptr == 0:
             return self.empty_poly
