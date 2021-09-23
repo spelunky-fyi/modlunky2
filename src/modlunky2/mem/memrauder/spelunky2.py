@@ -101,7 +101,7 @@ class UidEntityMap:
             entry = self._get_table_entry(index)
             if entry is None:
                 # Reading the bytes for the entry failed.
-                return 0
+                continue
 
             if entry.uid_plus1 == target_uid_plus1:
                 return entry.entity_addr
