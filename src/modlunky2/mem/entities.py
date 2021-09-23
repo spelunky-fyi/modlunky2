@@ -171,9 +171,9 @@ class EntityReduced:
     items: Optional[Tuple[int, ...]] = struct_field(
         0x18, vector(sc_uint32), default=None
     )
-    layer: int = struct_field(0x98, sc_uint8, default=Layer.FRONT)
     position_x: float = struct_field(0x40, sc_float, default=0.0)
     position_y: float = struct_field(0x44, sc_float, default=0.0)
+    layer: int = struct_field(0xA0, sc_uint8, default=Layer.FRONT)
 
 
 @dataclass(frozen=True)
@@ -185,18 +185,18 @@ class Entity(EntityReduced):
 
 @dataclass(frozen=True)
 class Movable(Entity):
-    idle_counter: int = struct_field(0xF8, sc_uint32, default=0)
-    velocity_x: float = struct_field(0x100, sc_float, default=0.0)
-    velocity_y: float = struct_field(0x104, sc_float, default=0.0)
-    holding_uid: int = struct_field(0x108, sc_int32, default=-1)
-    state: CharState = struct_field(0x10C, sc_uint8, default=CharState.STANDING)
-    last_state: CharState = struct_field(0x10D, sc_uint8, default=CharState.STANDING)
-    health: int = struct_field(0x10F, sc_int8, default=4)
+    idle_counter: int = struct_field(0x100, sc_uint32, default=0)
+    velocity_x: float = struct_field(0x108, sc_float, default=0.0)
+    velocity_y: float = struct_field(0x10C, sc_float, default=0.0)
+    holding_uid: int = struct_field(0x110, sc_int32, default=-1)
+    state: CharState = struct_field(0x114, sc_uint8, default=CharState.STANDING)
+    last_state: CharState = struct_field(0x115, sc_uint8, default=CharState.STANDING)
+    health: int = struct_field(0x117, sc_int8, default=4)
 
 
 @dataclass(frozen=True)
 class Mount(Movable):
-    is_tamed: bool = struct_field(0x149, sc_bool, default=False)
+    is_tamed: bool = struct_field(0x151, sc_bool, default=False)
 
 
 @dataclass(frozen=True)
@@ -215,10 +215,10 @@ class Inventory:
 @dataclass(frozen=True)
 class Player(Movable):
     inventory: Optional[Inventory] = struct_field(
-        0x138, pointer(dc_struct), default_factory=Inventory
+        0x140, pointer(dc_struct), default_factory=Inventory
     )
-    linked_companion_child: int = struct_field(0x148, sc_int32, default=0)
-    linked_companion_parent: int = struct_field(0x14C, sc_int32, default=0)
+    linked_companion_child: int = struct_field(0x150, sc_int32, default=0)
+    linked_companion_parent: int = struct_field(0x154, sc_int32, default=0)
 
 
 @dataclass(frozen=True)
@@ -230,5 +230,5 @@ class Illumination:
 @dataclass(frozen=True)
 class LightEmitter(Movable):
     emitted_light: Optional[Illumination] = struct_field(
-        0x128, pointer(dc_struct), default=None
+        0x130, pointer(dc_struct), default=None
     )
