@@ -70,7 +70,7 @@ class UidEntityMap:
                 f"failed to get table index {index} at {entry_addr:x}"
             ) from err
 
-    def _get_addr_fast(self, uid):
+    def _get_addr(self, uid):
         target_uid_plus1 = uid + 1
 
         cur_index = target_uid_plus1 & self.meta.mask
@@ -89,47 +89,63 @@ class UidEntityMap:
 
             mask = self.meta.mask
             if (target_uid_plus1 & mask) > (entry.uid_plus1 & mask):
-                # We've found an entry that, if our entry existed, would be further away than our target
+                # We've found an entry that, if the target existed, would be further away than our target.
+                # The target must not exist.
                 return 0
 
             cur_index = (cur_index + 1) & self.meta.mask
         # The above loop only terminates via return
 
-    def _get_addr_slow(self, uid):
-        target_uid_plus1 = uid + 1
+    def check_lookup(self):
+        checked_count = 0
+        non_empty_count = 0
+        requires_probe_count = 0
+        mismatch_count = 0
         for index in range(0, self.meta.mask + 1):
             entry = self._get_table_entry(index)
             if entry is None:
                 # Reading the bytes for the entry failed.
                 continue
+            checked_count += 1
 
-            if entry.uid_plus1 == target_uid_plus1:
-                return entry.entity_addr
+            if entry.uid_plus1 == 0:
+                continue
+            non_empty_count += 1
 
-        return 0
+            if entry.uid_plus1 == index:
+                # _get_addr() isn't worth exercising
+                continue
+            requires_probe_count += 1
+
+            get_addr_result = self._get_addr(entry.uid_plus1 - 1)
+            if entry.entity_addr == get_addr_result:
+                continue
+            mismatch_count += 1
+            logger.warning("Mismatch for index %d (uid %d). Expected %X, got %X")
+
+        # Make status more prominent if we exercised non-trivial cases
+        if requires_probe_count:
+            logger.info(
+                "Checked uid-entity mapping: Checked %d, Non-empty %d, Requires probe %d, Mismatch %d",
+                checked_count,
+                non_empty_count,
+                requires_probe_count,
+                mismatch_count,
+            )
 
     def get(self, uid: int) -> PolyPointer[Entity]:
         if self.meta.table_ptr == 0:
             return self.empty_poly
 
-        addr_fast = self._get_addr_fast(uid)
-        addr_slow = self._get_addr_slow(uid)
-        if addr_fast != addr_slow:
-            logger.warning(
-                "Entity lookup mismatch! ID %d Fast %x Slow %x",
-                uid,
-                addr_fast,
-                addr_slow,
-            )
-
-        if addr_slow == 0:
+        addr = self._get_addr(uid)
+        if addr == 0:
             return self.empty_poly
 
-        entity = self.mem_ctx.type_at_addr(Entity, addr_slow)
+        entity = self.mem_ctx.type_at_addr(Entity, addr)
         if entity is None:
             return self.empty_poly
 
-        return PolyPointer(addr_slow, entity, self.mem_ctx)
+        return PolyPointer(addr, entity, self.mem_ctx)
 
 
 @dataclass(frozen=True)

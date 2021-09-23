@@ -632,6 +632,10 @@ class RunState:
         if player.inventory is None:
             return
 
+        check_mapping_frames_interval = 120
+        if (game_state.time_total % check_mapping_frames_interval) == 0:
+            game_state.instance_id_to_pointer.check_lookup()
+
         run_recap_flags = game_state.run_recap_flags
         hud_flags = game_state.hud_flags
         presence_flags = game_state.presence_flags
