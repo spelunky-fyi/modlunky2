@@ -171,6 +171,7 @@ class EntityReduced:
     items: Optional[Tuple[int, ...]] = struct_field(
         0x18, vector(sc_uint32), default=None
     )
+    # TODO: Consider using abs_x and abs_y
     position_x: float = struct_field(0x40, sc_float, default=0.0)
     position_y: float = struct_field(0x44, sc_float, default=0.0)
     layer: int = struct_field(0xA0, sc_uint8, default=Layer.FRONT)
