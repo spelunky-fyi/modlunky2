@@ -3,8 +3,7 @@ import dataclasses
 from typing import ClassVar, Dict, Iterable, Tuple
 
 from modlunky2.mem.entities import Entity, EntityDBEntry, EntityType
-from modlunky2.mem.memrauder.model import MemContext, PolyPointer
-from modlunky2.mem.memrauder.msvc import DictUnorderedMap
+from modlunky2.mem.memrauder.model import DictMap, MemContext, PolyPointer
 
 
 @dataclass
@@ -39,4 +38,4 @@ class EntityMapBuilder:
         return item_uid
 
     def build(self):
-        return DictUnorderedMap(self.entity_map)
+        return DictMap(self.entity_map)

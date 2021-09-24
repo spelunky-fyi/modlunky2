@@ -14,7 +14,7 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int8,
     sc_uint8,
 )
-from modlunky2.mem.memrauder.msvc import DictUnorderedMap
+from modlunky2.mem.memrauder.model import DictMap
 from modlunky2.mem.memrauder.spelunky2 import UidEntityMap, uid_entity_map
 
 
@@ -176,5 +176,5 @@ class State:
     next_entity_uid: int = struct_field(0x12E0, sc_uint32, default=0)
     items: Optional[Items] = struct_field(0x12F0, pointer(dc_struct), default=None)
     instance_id_to_pointer: UidEntityMap = struct_field(
-        0x1348, uid_entity_map, default_factory=DictUnorderedMap
+        0x1348, uid_entity_map, default_factory=DictMap
     )

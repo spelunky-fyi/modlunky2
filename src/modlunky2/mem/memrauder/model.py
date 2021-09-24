@@ -3,12 +3,14 @@ from abc import ABC, abstractmethod
 import ctypes
 from dataclasses import InitVar, dataclass
 import dataclasses
+from types import MappingProxyType
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
     Generic,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -563,3 +565,26 @@ class PolyPointerType(MemType[PolyPointer[T]]):
             return PolyPointer.make_empty(mem_ctx)
 
         return PolyPointer[T](addr, value, mem_ctx)
+
+
+K = TypeVar("K")  # pylint: disable=invalid-name
+V = TypeVar("V")  # pylint: disable=invalid-name
+
+
+@dataclass(frozen=True)
+class DictMap((Generic[K, V])):
+    a_dict: InitVar[Dict[K, V]] = None
+    mapping: Mapping[K, V] = dataclasses.field(init=False)
+
+    def __post_init__(self, a_dict=None):
+        if a_dict is None:
+            a_dict = {}
+
+        mapping = MappingProxyType(dict(a_dict.items()))
+        object.__setattr__(self, "mapping", mapping)
+
+    def get(self, key: K) -> Optional[V]:
+        if key not in self.mapping:
+            return None
+
+        return self.mapping[key]
