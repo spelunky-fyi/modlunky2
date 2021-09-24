@@ -2,12 +2,11 @@ from dataclasses import dataclass
 import enum
 from typing import FrozenSet, Optional, Tuple
 
-from modlunky2.mem.entities import Entity, EntityType, Player
+from modlunky2.mem.entities import EntityType, Player
 
 from modlunky2.mem.memrauder.dsl import (
     array,
     pointer,
-    poly_pointer,
     struct_field,
     dc_struct,
     sc_int32,
@@ -15,8 +14,8 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int8,
     sc_uint8,
 )
-from modlunky2.mem.memrauder.model import PolyPointer
-from modlunky2.mem.memrauder.msvc import DictUnorderedMap, UnorderedMap, unordered_map
+from modlunky2.mem.memrauder.model import DictMap
+from modlunky2.mem.memrauder.spelunky2 import UidEntityMap, uid_entity_map
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -170,14 +169,12 @@ class State:
     waddler_storage: FrozenSet[EntityType] = struct_field(
         0x8C, array(sc_uint32, 99), default=frozenset()
     )
-    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
-    hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
-    time_level: int = struct_field(0xA04, sc_uint32, default=0)
-    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)
-    next_entity_uid: int = struct_field(0x12A0, sc_uint32, default=0)
-    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct), default=None)
-    instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
-        0x1308,
-        unordered_map(sc_uint32, poly_pointer(dc_struct)),
-        default_factory=DictUnorderedMap,
+    run_recap_flags: RunRecapFlags = struct_field(0xA34, sc_uint32, default=0)
+    hud_flags: HudFlags = struct_field(0xA50, sc_uint32, default=0)
+    time_level: int = struct_field(0xA44, sc_uint32, default=0)
+    presence_flags: PresenceFlags = struct_field(0xA54, sc_uint32, default=0)
+    next_entity_uid: int = struct_field(0x12E0, sc_uint32, default=0)
+    items: Optional[Items] = struct_field(0x12F0, pointer(dc_struct), default=None)
+    instance_id_to_pointer: UidEntityMap = struct_field(
+        0x1348, uid_entity_map, default_factory=DictMap
     )
