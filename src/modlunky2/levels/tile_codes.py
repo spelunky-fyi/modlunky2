@@ -202,7 +202,7 @@ VALID_TILE_CODES = set(
         "spark_trap",
         "spikes",
         "spring_trap",
-        "stagnant_lava",
+        "coarse_lava",
         "starting_exit",
         "sticky_trap",
         "stone_floor",

@@ -26,7 +26,7 @@ TILENAMES = [
     "timed_powder_keg",
     "chain_ceiling",
     "lava",
-    "stagnant_lava",
+    "coarse_lava",
     "vault_wall",
     "treasure",
     "water",
