@@ -1,5 +1,8 @@
-[![PyPi Version](https://img.shields.io/pypi/v/modlunky2.svg)](https://pypi.python.org/pypi/modlunky2/)
 [![Python Testing](https://github.com/spelunky-fyi/modlunky2/actions/workflows/test.yml/badge.svg)](https://github.com/spelunky-fyi/modlunky2/actions/workflows/test.yml)
+[![Latest Release](https://img.shields.io/github/release/spelunky-fyi/modlunky2.svg?style=flat)](https://github.com/spelunky-fyi/modlunky2/releases/latest)
+![Downloads](https://img.shields.io/github/downloads/spelunky-fyi/modlunky2/total.svg?style=flat)
+[![PyPi Version](https://img.shields.io/pypi/v/modlunky2.svg)](https://pypi.python.org/pypi/modlunky2/)
+
 
 # modlunky2
 
