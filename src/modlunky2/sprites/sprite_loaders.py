@@ -4,8 +4,6 @@ from modlunky2.constants import BASE_DIR
 
 from modlunky2.sprites.items import ItemSheet
 from modlunky2.sprites.coffins import CoffinSheet
-from modlunky2.sprites.deco_extra import DecoExtraSheet
-from modlunky2.sprites.base_eggship2 import EggShip2Sheet
 from modlunky2.sprites.journal_stickers import StickerSheet
 from modlunky2.sprites.journal_items import JournalItemSheet
 from modlunky2.sprites.journal_people import JournalPeopleSheet
@@ -13,7 +11,30 @@ from modlunky2.sprites.journal_mons import JournalMonsterSheet
 from modlunky2.sprites.journal_mons_big import JournalBigMonsterSheet
 from modlunky2.sprites.journal_place import JournalPlaceSheet
 from modlunky2.sprites.journal_traps import JournalTrapSheet
-from modlunky2.sprites.character import *
+from modlunky2.sprites.character import (
+    CharacterBlackSheet,
+    CharacterBlueSheet,
+    CharacterCeruleanSheet,
+    CharacterCinnabarSheet,
+    CharacterCyanSheet,
+    CharacterEggChildSheet,
+    CharacterGoldSheet,
+    CharacterGraySheet,
+    CharacterGreenSheet,
+    CharacterHiredHandSheet,
+    CharacterIrisSheet,
+    CharacterKhakiSheet,
+    CharacterLemonSheet,
+    CharacterLimeSheet,
+    CharacterMagentaSheet,
+    CharacterOliveSheet,
+    CharacterOrangeSheet,
+    CharacterPinkSheet,
+    CharacterRedSheet,
+    CharacterVioletSheet,
+    CharacterWhiteSheet,
+    CharacterYellowSheet,
+)
 from modlunky2.sprites.monsters.mounts import Mounts
 from modlunky2.sprites.monsters.pets import Pets
 from modlunky2.sprites.monsters.ghost import Ghost

@@ -1,10 +1,33 @@
 from pathlib import Path
 
-from ..base_classes.base_sprite_merger import BaseSpriteMerger
-from ..character import *
-from ..journal_people import JournalPeopleSheet
-from ..journal_stickers import StickerSheet
-from ..menu_leader import MenuLeaderSheet
+from modlunky2.sprites.base_classes.base_sprite_merger import BaseSpriteMerger
+from modlunky2.sprites.character import (
+    CharacterBlackSheet,
+    CharacterBlueSheet,
+    CharacterCeruleanSheet,
+    CharacterCinnabarSheet,
+    CharacterCyanSheet,
+    CharacterEggChildSheet,
+    CharacterGoldSheet,
+    CharacterGraySheet,
+    CharacterGreenSheet,
+    CharacterHiredHandSheet,
+    CharacterIrisSheet,
+    CharacterKhakiSheet,
+    CharacterLemonSheet,
+    CharacterLimeSheet,
+    CharacterMagentaSheet,
+    CharacterOliveSheet,
+    CharacterOrangeSheet,
+    CharacterPinkSheet,
+    CharacterRedSheet,
+    CharacterVioletSheet,
+    CharacterWhiteSheet,
+    CharacterYellowSheet,
+)
+from modlunky2.sprites.journal_people import JournalPeopleSheet
+from modlunky2.sprites.journal_stickers import StickerSheet
+from modlunky2.sprites.menu_leader import MenuLeaderSheet
 
 
 def _create_class_for_character(color: str, character_sheet_type: type):

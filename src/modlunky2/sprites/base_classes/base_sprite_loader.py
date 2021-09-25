@@ -16,17 +16,17 @@ _CACHED_NONE_SENTINEL = object()
 _CACHE_LOCK = Lock()
 
 
-def _cache_img_not_class(f):
+def _cache_img_not_class(func):
     """using this because functools.lrucache will keep the class object from getting
     GCed if you are using it on a method"""
 
     # noinspection PyProtectedMember
-    @wraps(f)
+    @wraps(func)
     def cache_img(slf, name: str):
         with _CACHE_LOCK:
             img = slf._cache_dict.get(name)
             if not img:
-                img = f(slf, name) or _CACHED_NONE_SENTINEL
+                img = func(slf, name) or _CACHED_NONE_SENTINEL
                 slf._cache_dict[name] = img
             if img is _CACHED_NONE_SENTINEL:
                 return None
