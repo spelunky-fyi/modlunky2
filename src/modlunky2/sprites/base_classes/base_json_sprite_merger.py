@@ -13,7 +13,6 @@ class BaseJsonSpriteMerger(BaseSpriteMerger):
         """
         Define names of entities that should additionally be added to the _origin_map per loader type
         """
-        pass
 
     def __init__(self, entities_json: dict, textures_json: dict, *args, **kwargs):
         # Extend _origin_map first because BaseSpriteMerger.__init__ needs that information ready

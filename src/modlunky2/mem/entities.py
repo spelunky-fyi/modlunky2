@@ -23,7 +23,9 @@ from modlunky2.mem.memrauder.msvc import vector
 
 
 def _make_entity_type_enum():
-    with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+    with open(
+        BASE_DIR / "static/game_data/entities.json", encoding="utf-8"
+    ) as entities_file:
         entities_json = json.load(entities_file)
 
         enum_values = {

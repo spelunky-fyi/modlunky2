@@ -331,9 +331,13 @@ class AssetStore:
         if create_entity_sheets:
             logger.info("Creating entity sprite sheets...")
 
-            with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+            with open(
+                BASE_DIR / "static/game_data/entities.json", encoding="utf-8"
+            ) as entities_file:
                 entities_json = json.loads(entities_file.read())
-            with open(BASE_DIR / "static/game_data/textures.json") as textures_file:
+            with open(
+                BASE_DIR / "static/game_data/textures.json", encoding="utf-8"
+            ) as textures_file:
                 textures_json = json.loads(textures_file.read())
 
             sprite_loaders = get_all_sprite_loaders(

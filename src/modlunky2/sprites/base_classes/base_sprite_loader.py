@@ -43,7 +43,6 @@ class BaseSpriteLoader(ABC):
         Define the path from a "base path" to the specific png file this is for reading,
         for example for `items.png` it should return Path('Data/Textures/items.png')
         """
-        pass
 
     @property
     @abstractmethod
@@ -51,7 +50,6 @@ class BaseSpriteLoader(ABC):
         """
         define how many pixels wide/tall each piece is expected to be
         """
-        pass
 
     @property
     @abstractmethod
@@ -61,7 +59,6 @@ class BaseSpriteLoader(ABC):
         `"thing_name": (1, 0, 2, 2)`
         The digits will be multiplied by the _chunk_size when the piece is accessed.
         """
-        pass
 
     def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
         self.base_path = base_path
