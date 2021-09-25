@@ -20,5 +20,5 @@ def latest_version():
 
 
 def current_version():
-    with (BASE_DIR / "VERSION").open() as version_file:
+    with (BASE_DIR / "VERSION").open(encoding="utf-8") as version_file:
         return version.parse(version_file.read().strip())
