@@ -1,4 +1,5 @@
 [![PyPi Version](https://img.shields.io/pypi/v/modlunky2.svg)](https://pypi.python.org/pypi/modlunky2/)
+[![Python Testing](https://github.com/spelunky-fyi/modlunky2/actions/workflows/test.yml/badge.svg)](https://github.com/spelunky-fyi/modlunky2/actions/workflows/test.yml)
 
 # modlunky2
 
