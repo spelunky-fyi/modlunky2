@@ -40,3 +40,6 @@ jobs:
     - name: Check formatting
       run: |
         black --check src/
+    - name: Check pylint
+      run: |
+        pylint --disable=R,C src/modlunky2
