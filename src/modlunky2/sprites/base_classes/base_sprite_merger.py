@@ -189,7 +189,9 @@ class BaseSpriteMerger(ABC):
             ]
             if matching_sprite_loaders:
                 sprite_loader = matching_sprite_loaders[0]
-                chunk_size = sprite_loader_type._chunk_size
+                chunk_size = (
+                    sprite_loader_type._chunk_size  # pylint: disable=protected-access
+                )
                 image_sizes = self._origin_sizes[sprite_loader_type]
                 for chunk_map, image_size in zip(chunk_maps, image_sizes):
                     for name, coords in chunk_map.items():

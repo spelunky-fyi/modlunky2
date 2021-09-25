@@ -6,10 +6,10 @@ from typing import List, Optional
 from pathlib import Path
 from struct import unpack, calcsize
 
-import pywintypes
-import win32api
-import win32con
-import win32process
+import pywintypes  # pylint: disable=import-error
+import win32api  # pylint: disable=import-error
+import win32con  # pylint: disable=import-error
+import win32process  # pylint: disable=import-error
 
 from modlunky2.mem.state import State
 from modlunky2.mem.memrauder.model import (

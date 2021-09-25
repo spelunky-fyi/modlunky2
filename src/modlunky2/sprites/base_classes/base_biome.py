@@ -57,8 +57,8 @@ class AbstractBiome(ABC):
         self._deco_sheet = self._deco_sheet_class(base_path)
         try:
             self._bg = Image.open(base_path / f"Data/Textures/bg_{self.floor_name}.png")
-        except Exception:
-            self._bg = Image.open(base_path / f"Data/Textures/bg_cave.png")
+        except IOError:
+            self._bg = Image.open(base_path / "Data/Textures/bg_cave.png")
         self._image_cache = {}
         self._sheet_map = self._make_sheet_map()
 
@@ -69,9 +69,15 @@ class AbstractBiome(ABC):
         so we know already where each key is and which class to ask for a key
         :return:
         """
-        floor_keys = set(self._floor_sheet._chunk_map.keys())
-        styled_keys = set(self._floorstyled_sheet._chunk_map.keys())
-        deco_keys = set(self._deco_sheet._chunk_map.keys())
+        floor_keys = set(
+            self._floor_sheet._chunk_map.keys()  # pylint: disable=protected-access
+        )
+        styled_keys = set(
+            self._floorstyled_sheet._chunk_map.keys()  # pylint: disable=protected-access
+        )
+        deco_keys = set(
+            self._deco_sheet._chunk_map.keys()  # pylint: disable=protected-access
+        )
         same_keys = floor_keys & deco_keys & styled_keys
         # Evals to false if nothing in the set
         if same_keys:
@@ -79,11 +85,16 @@ class AbstractBiome(ABC):
                 f"floor sheet and decoration sheet have colliding names: {same_keys}"
             )
         sheet_map = {
-            k: self._floor_sheet.get for k in self._floor_sheet._chunk_map.keys()
+            k: self._floor_sheet.get
+            for k in self._floor_sheet._chunk_map.keys()  # pylint: disable=protected-access
         }
-        for k in self._deco_sheet._chunk_map.keys():
+        for k in self._deco_sheet._chunk_map.keys():  # pylint: disable=protected-access
             sheet_map[k] = self._deco_sheet.get
-        for k in self._floorstyled_sheet._chunk_map.keys():
+        for (
+            k
+        ) in (
+            self._floorstyled_sheet._chunk_map.keys()  # pylint: disable=protected-access
+        ):
             sheet_map[k] = self._floorstyled_sheet.get
         return sheet_map
 

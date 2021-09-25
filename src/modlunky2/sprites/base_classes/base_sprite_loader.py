@@ -24,10 +24,10 @@ def _cache_img_not_class(func):
     @wraps(func)
     def cache_img(slf, name: str):
         with _CACHE_LOCK:
-            img = slf._cache_dict.get(name)
+            img = slf._cache_dict.get(name)  # pylint: disable=protected-access
             if not img:
                 img = func(slf, name) or _CACHED_NONE_SENTINEL
-                slf._cache_dict[name] = img
+                slf._cache_dict[name] = img  # pylint: disable=protected-access
             if img is _CACHED_NONE_SENTINEL:
                 return None
             return img
