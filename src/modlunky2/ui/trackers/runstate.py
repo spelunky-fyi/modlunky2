@@ -619,6 +619,8 @@ class RunState:
         self.level_start_ropes = ropes
         if theme == Theme.DUAT:
             self.health = 4
+            self.poisoned = False
+            self.cursed = False
 
     def update(self, game_state: State):
         if game_state.loading is not LoadingState.NOT_LOADING:

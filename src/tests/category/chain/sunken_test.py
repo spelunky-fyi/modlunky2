@@ -428,6 +428,19 @@ def test_collect_excalibur(
             ChainStatus.IN_PROGRESS,
             "visit_city_of_gold",
         ),
+        # If we've reached 4-3, the scepter is moot
+        (
+            4,
+            3,
+            Screen.LEVEL,
+            {
+                EntityType.ITEM_POWERUP_CROWN,
+                EntityType.ITEM_POWERUP_ANKH,
+            },
+            {},
+            ChainStatus.IN_PROGRESS,
+            "visit_city_of_gold",
+        ),
     ],
 )
 def test_carry_scepter_to_42(
