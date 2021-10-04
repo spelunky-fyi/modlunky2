@@ -154,6 +154,10 @@ class DuatChain(SunkenChain):
         if EntityType.ITEM_POWERUP_ANKH not in player_item_types:
             return self.failed()
 
+        # If we're in 4-3, we should be in City of Gold
+        if (game_state.world, game_state.level) > (4, 2):
+            return self.in_progress(self.visit_city_of_gold)
+
         # Scepter must be carried into 4, 2
         world_level_screen = (game_state.world, game_state.level, game_state.screen)
         if world_level_screen != (4, 1, Screen.LEVEL_TRANSITION):
