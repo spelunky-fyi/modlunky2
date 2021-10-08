@@ -4111,6 +4111,7 @@ ROOM_TYPES = {
         RoomType("machine_wideroom", 20, 8),
         RoomType("machine_tallroom", 10, 16),
         RoomType("machine_bigroom", 20, 16),
+        RoomType("coffin_frog", 10, 16),
         RoomType("ghistroom", 5, 5),
         RoomType("feeling", 20, 16),
         RoomType("chunk_ground", 5, 3),
