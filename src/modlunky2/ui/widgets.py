@@ -82,7 +82,7 @@ class ToolTip:
     def set_geometry(self, event):
         root = self.widget.winfo_toplevel()
         screen_width = root.winfo_screenwidth()
-        (width, _, _, _) = list(map(int, re.split(r"[x+-]", self.tooltip.geometry())))
+        (width, _, _, _) = list(map(int, re.split(r"[x+]", self.tooltip.geometry())))
 
         x_coord = event.x_root + 15
         if event.x_root > screen_width * 0.70:
