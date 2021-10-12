@@ -378,8 +378,8 @@ class LevelsTab(Tab):
         )
         self.canvas_grids_full["width"] = x_origin
         self.canvas_grids_full["height"] = y_origin
-        self.canvas_grids_full.bind("<Enter>", self._bind_to_mousewheel)
-        self.canvas_grids_full.bind("<Leave>", self._unbind_from_mousewheel)
+        self.canvas_grids_full.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.canvas_grids_full))
+        self.canvas_grids_full.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, self.canvas_grids_full))
         self.scrollable_canvas_frame_full.bind(
             "<Configure>",
             lambda e: self.canvas_grids_full.configure(
@@ -666,8 +666,8 @@ class LevelsTab(Tab):
         self.canvas_grids.create_window(
             (x_origin, y_origin), window=self.scrollable_canvas_frame, anchor="center"
         )
-        self.canvas_grids.bind("<Enter>", self._bind_to_mousewheel)
-        self.canvas_grids.bind("<Leave>", self._unbind_from_mousewheel)
+        self.canvas_grids.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.canvas_grids))
+        self.canvas_grids.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, self.canvas_grids))
         self.scrollable_canvas_frame.bind(
             "<Configure>",
             lambda e: self.canvas_grids.configure(
@@ -1486,19 +1486,19 @@ class LevelsTab(Tab):
 
         self.canvas_grids.xview_scroll(scroll_dir, "units")
 
-    def _bind_to_mousewheel(self, _event):
+    def _bind_to_mousewheel(self, _event, canvas):
         if is_windows():
-            self.canvas_grids.bind_all("<MouseWheel>", self._on_mousewheel)
+            canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         else:
-            self.canvas_grids.bind_all("<Button-4>", self._on_mousewheel)
-            self.canvas_grids.bind_all("<Button-5>", self._on_mousewheel)
+            canvas.bind_all("<Button-4>", self._on_mousewheel)
+            canvas.bind_all("<Button-5>", self._on_mousewheel)
 
-    def _unbind_from_mousewheel(self, _event):
+    def _unbind_from_mousewheel(self, _event, canvas):
         if is_windows():
-            self.canvas_grids.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<MouseWheel>")
         else:
-            self.canvas_grids.unbind_all("<Button-4>")
-            self.canvas_grids.unbind_all("<Button-5>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
 
     def tile_pick(
         self, _event, button_row, button_col
