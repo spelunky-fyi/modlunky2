@@ -967,7 +967,7 @@ class LevelsTab(Tab):
         self.combobox["values"] = sorted(combo_tile_ids, key=str.lower)
         self.combobox_alt["values"] = sorted(combo_tile_ids, key=str.lower)
 
-        def canvas_click(event, canvas):  # when the level editor grid is clicked
+        def canvas_click(event, canvas, tile_label, panel_sel): # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
             row_height = self.mag
@@ -1010,15 +1010,15 @@ class LevelsTab(Tab):
             img = None
             # height, width, channels = img.shape
             for tile_name_ref in self.draw_mode:
-                if self.tile_label["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
+                if tile_label["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
                     logger.debug(
                         "Applying custom anchor for %s",
-                        self.tile_label["text"].split(" ", 4)[2],
+                        tile_label["text"].split(" ", 4)[2],
                     )
                     for tile_ref in self.tile_pallete_ref_in_use:
                         if (
                             str(tile_ref[0].split(" ", 1)[0])
-                            == self.tile_label["text"].split(" ", 4)[2]
+                            == tile_label["text"].split(" ", 4)[2]
                         ):
                             logger.debug("Found %s", tile_ref[0])
                             img = tile_ref[1]
@@ -1034,112 +1034,24 @@ class LevelsTab(Tab):
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     x2_coord * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=self.panel_sel["image"],
+                    image=panel_sel["image"],
                     anchor="nw",
                 )
             else:
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     int(col) * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=self.panel_sel["image"],
+                    image=panel_sel["image"],
                     anchor="nw",
                 )
-            self.tiles_meta[row][col] = self.tile_label["text"].split(" ", 4)[3]
+            self.tiles_meta[row][col] = tile_label["text"].split(" ", 4)[3]
             logger.debug(
                 "%s replaced with %s",
                 self.tiles_meta[row][col],
-                self.tile_label["text"].split(" ", 4)[3],
+                tile_label["text"].split(" ", 4)[3],
             )
             self.remember_changes()  # remember changes made
 
-        def canvas_click_secondary(event, canvas):
-            # when the level editor grid is clicked
-            # Get rectangle diameters
-            col_width = self.mag
-            row_height = self.mag
-            col = 0
-            row = 0
-            if canvas == self.canvas_dual:
-                col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
-                row = event.y // row_height
-
-                if (
-                    col * self.mag < int(self.canvas["width"]) + self.mag
-                    or col * self.mag > int(self.canvas["width"]) * 2 + self.mag
-                ):
-                    logger.debug("col out of bounds")
-                    return
-
-                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
-                    logger.debug("row out of bounds")
-                    return
-            else:
-                # Calculate column and row number
-                col = event.x // col_width
-                row = event.y // row_height
-
-                if col * self.mag < 0 or col * self.mag > int(self.canvas["width"]):
-                    logger.debug("col out of bounds")
-                    return
-
-                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
-                    logger.debug("row out of bounds")
-                    return
-            # If the tile is not filled, create a rectangle
-            if self.dual_mode:
-                if int(col) == int((len(self.tiles[0]) - 1) / 2):
-                    logger.debug("Middle of dual detected; not tile placed")
-                    return
-
-            x_coord_offset = 0
-            y_coord_offset = 0
-            img = None
-            for tile_name_ref in self.draw_mode:
-                if self.tile_label_secondary["text"].split(" ", 4)[2] == str(
-                    tile_name_ref[0]
-                ):
-                    logger.debug(
-                        "Applying custom anchor for %s",
-                        self.tile_label_secondary["text"].split(" ", 4)[2],
-                    )
-                    for tile_ref in self.tile_pallete_ref_in_use:
-                        if (
-                            str(tile_ref[0].split(" ", 1)[0])
-                            == self.tile_label_secondary["text"].split(" ", 4)[2]
-                        ):
-                            logger.debug("Found %s", tile_ref[0])
-                            img = tile_ref[1]
-                            x_coord_offset, y_coord_offset = self.adjust_texture_xy(
-                                img.width(),
-                                img.height(),
-                                int(tile_name_ref[1]),
-                            )
-
-            canvas.delete(self.tiles[int(row)][int(col)])
-            if canvas == self.canvas_dual:
-                x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
-                self.tiles[row][col] = canvas.create_image(
-                    x2_coord * self.mag - x_coord_offset,
-                    int(row) * self.mag - y_coord_offset,
-                    image=self.panel_sel_secondary["image"],
-                    anchor="nw",
-                )
-            else:
-                self.tiles[row][col] = canvas.create_image(
-                    int(col) * self.mag - x_coord_offset,
-                    int(row) * self.mag - y_coord_offset,
-                    image=self.panel_sel_secondary["image"],
-                    anchor="nw",
-                )
-            self.tiles_meta[row][col] = self.tile_label_secondary["text"].split(" ", 4)[
-                3
-            ]
-            logger.debug(
-                "%s replaced with %s",
-                self.tiles_meta[row][col],
-                self.tile_label["text"].split(" ", 4)[3],
-            )
-            self.remember_changes()  # remember changes made
 
         def holding_shift(event, canvas):
             self.canvas.config(cursor="pencil")
@@ -1156,28 +1068,28 @@ class LevelsTab(Tab):
         self.bind_all("<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas))
         self.bind_all("<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas))
      #   self.canvas.bind("<Shift-Button-1>", lambda event: test1(event, self.canvas))
-        self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas))
+        self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel))
         self.canvas.bind(
-            "<B1-Motion>", lambda event: canvas_click(event, self.canvas)
+            "<B1-Motion>", lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel)
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         self.canvas.bind(
-            "<Button-3>", lambda event: canvas_click_secondary(event, self.canvas)
+            "<Button-3>", lambda event: canvas_click(event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary)
         )
         self.canvas.bind(
-            "<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas)
+            "<B3-Motion>", lambda event: canvas_click(event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary)
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         # self.canvas.bind("<Key>", lambda event: )
         self.canvas_dual.bind(
-            "<Button-1>", lambda event: canvas_click(event, self.canvas_dual)
+            "<Button-1>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label, self.panel_sel)
         )
         self.canvas_dual.bind(
-            "<B1-Motion>", lambda event: canvas_click(event, self.canvas_dual)
+            "<B1-Motion>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label, self.panel_sel)
         )
         self.canvas_dual.bind(
-            "<Button-3>", lambda event: canvas_click_secondary(event, self.canvas_dual)
+            "<Button-3>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label_secondary, self.panel_sel_secondary)
         )
         self.canvas_dual.bind(
-            "<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas_dual)
+            "<B3-Motion>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label_secondary, self.panel_sel_secondary)
         )
         self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
 
