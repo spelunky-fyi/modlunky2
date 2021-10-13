@@ -1141,6 +1141,21 @@ class LevelsTab(Tab):
             )
             self.remember_changes()  # remember changes made
 
+        def holding_shift(event, canvas):
+            self.canvas.config(cursor="pencil")
+            self.canvas_dual.config(cursor="pencil")
+            print("holding shift!! ", event.keysym)
+
+        def shift_up(event, canvas):
+            self.canvas.config(cursor="")
+            self.canvas_dual.config(cursor="")
+            print("no longer holding shift!! ", event.keysym)
+
+
+        self.bind_all("<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas))
+        self.bind_all("<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas))
+        self.bind_all("<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas))
+     #   self.canvas.bind("<Shift-Button-1>", lambda event: test1(event, self.canvas))
         self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas))
         self.canvas.bind(
             "<B1-Motion>", lambda event: canvas_click(event, self.canvas)
@@ -1151,6 +1166,7 @@ class LevelsTab(Tab):
         self.canvas.bind(
             "<B3-Motion>", lambda event: canvas_click_secondary(event, self.canvas)
         )  # These second binds are so the user can hold down their mouse button when painting tiles
+        # self.canvas.bind("<Key>", lambda event: )
         self.canvas_dual.bind(
             "<Button-1>", lambda event: canvas_click(event, self.canvas_dual)
         )
@@ -2833,7 +2849,7 @@ class LevelsTab(Tab):
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
-        # sets default level size for levels that might now have a size variable like the challenge levels.
+        # sets default level size for levels that might not have a size variable like the challenge levels.
         # 8x8 is what I went with
         level_height = 8 * 8
         level_width = 8 * 10
