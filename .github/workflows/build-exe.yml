@@ -10,22 +10,21 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
+        # Python 3.8 is the latest version supporting Windows 7
         python-version: 3.8
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
     - name: Install dependencies
       run: |
+        # Install pyinstaller in addition to usual deps
         python -m pip install --upgrade pip
         pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt pyinstaller
     - name: Install package
