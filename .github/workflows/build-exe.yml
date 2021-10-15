@@ -14,12 +14,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
         # Python 3.8 is the latest version supporting Windows 7
         python-version: 3.8
     - uses: actions-rs/toolchain@v1
+    - name: Set up Rust
       with:
         toolchain: stable
     - name: Install dependencies
