@@ -10,7 +10,9 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+dist/**
+!dist/libogg.dll
+!dist/libvorbis.dll
 downloads/
 eggs/
 .eggs/
