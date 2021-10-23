@@ -1405,13 +1405,9 @@ class LevelsTab(Tab):
                 tree.selection_set(self.last_selected_file)
                 return
 
-        print("here")
-        print("tree: ")
-        print(tree)
         item_text = ""
         for item in tree.selection():
             item_text = tree.item(item, "text")
-        print(item_text)
         if item_text == "<<BACK":
             if tree.heading("#0")["text"].endswith("Arena"):
                 tree.heading(
@@ -1452,11 +1448,9 @@ class LevelsTab(Tab):
                 )
         else:
             self.reset()
-            print("now here")
             for item in tree.selection():
                 self.last_selected_file = item
                 item_text = tree.item(item, "text")
-                print("here too")
                 self.read_lvl_file(item_text)
 
         if self.last_selected_tab == "Full Level View":
@@ -3472,7 +3466,6 @@ class LevelsTab(Tab):
         self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, lvl):
-        print("read_lvl_file")
         self.last_selected_room = None
         self.usable_codes_string = (
             r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
