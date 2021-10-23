@@ -29,6 +29,8 @@ from modlunky2.ui.s99 import S99Tab
 
 if is_windows():
     from modlunky2.ui.trackers import TrackersTab
+if not IS_EXE:
+    import pip_api
 
 
 logger = logging.getLogger("modlunky2")
@@ -261,6 +263,7 @@ class ModlunkyUI:
         self.root.after(1000, self.after_ws_thread)
         self.root.after(1000, self.after_record_win)
         self.check_for_updates()
+        self.check_requirements()
 
     def check_for_updates(self):
         if self.needs_update:
@@ -268,6 +271,47 @@ class ModlunkyUI:
 
         self.task_manager.call("modlunky2:check_for_latest")
         self.root.after(self.CHECK_LATEST_INTERVAL, self.check_for_updates)
+
+    @staticmethod
+    def check_requirements():
+        # Only check requirements in dev environments
+        if IS_EXE:
+            return
+
+        req_files = (
+            "requirements.txt",
+            "requirements-dev.txt",
+            "requirements-win.txt",
+        )
+        installed = pip_api.installed_distributions()
+        missing_req_files = set()
+        for req_file_names in req_files:
+            requirements = pip_api.parse_requirements(req_file_names)
+
+            for req in requirements.values():
+                if req.name not in installed:
+                    missing_req_files.add(req_file_names)
+                    logger.warning("Missing required package '%s'", req.name)
+                    continue
+
+                installed_ver = installed[req.name].version
+                if req.specifier.contains(installed_ver):
+                    continue
+                missing_req_files.add(req_file_names)
+                logger.warning(
+                    "Installed version of '%s' is %s, doesen't meet %s",
+                    req.name,
+                    installed_ver,
+                    req.specifier,
+                )
+
+        if not missing_req_files:
+            return
+        r_args = "  ".join([f"-r {r}" for r in missing_req_files])
+        logger.warning(
+            "Some requirements aren't met. Run pip install --upgrade %s",
+            r_args,
+        )
 
     def handle_modlunky_latest_version(self, modlunky_latest_version):
         if not IS_EXE:
