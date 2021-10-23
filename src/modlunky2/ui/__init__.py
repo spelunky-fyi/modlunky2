@@ -278,26 +278,28 @@ class ModlunkyUI:
         if IS_EXE:
             return
 
-        req_files = (
+        all_req_files = [
             "requirements.txt",
             "requirements-dev.txt",
-            "requirements-win.txt",
-        )
+        ]
+        if is_windows():
+            all_req_files.append("requirements-win.txt")
+
         installed = pip_api.installed_distributions()
         missing_req_files = set()
-        for req_file_names in req_files:
-            requirements = pip_api.parse_requirements(req_file_names)
+        for req_file in all_req_files:
+            requirements = pip_api.parse_requirements(req_file)
 
             for req in requirements.values():
                 if req.name not in installed:
-                    missing_req_files.add(req_file_names)
+                    missing_req_files.add(req_file)
                     logger.warning("Missing required package '%s'", req.name)
                     continue
 
                 installed_ver = installed[req.name].version
                 if req.specifier.contains(installed_ver):
                     continue
-                missing_req_files.add(req_file_names)
+                missing_req_files.add(req_file)
                 logger.warning(
                     "Installed version of '%s' is %s, doesen't meet %s",
                     req.name,
