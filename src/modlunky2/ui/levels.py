@@ -125,9 +125,10 @@ class LevelsTab(Tab):
         self.lvl_biome = None
         self.node = None
         self.sister_locations = None
-        self.icons_packs = None
         self.icon_add = None
-        self.icons_lvls = None
+        self.icon_folder = None
+        self.icon_lvl_vanilla = None
+        self.icon_lvl_modded = None
         self.loaded_pack = None
         self.last_selected_tab = None
         self.list_preview_tiles_ref = None
@@ -135,6 +136,10 @@ class LevelsTab(Tab):
         self.tiles_full = None
         self.tiles_full_dual = None
         self.mag_full = None
+        self.editor_tab_control = None
+        self.single_room_editor_tab = None
+        self.full_level_editor_tab = None
+        self.last_selected_editor_tab = None
 
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
@@ -160,6 +165,22 @@ class LevelsTab(Tab):
             self.install_dir / "Mods/Extracted"
         )
 
+    def lvl_icon(self, modded):
+        if modded:
+            if self.icon_lvl_modded == None:
+                self.icon_lvl_modded = ImageTk.PhotoImage(
+                    Image.open(
+                        BASE_DIR / "static/images/lvl_modded.png"
+                    ).resize((20, 20))
+                )
+            return self.icon_lvl_modded
+        else:
+            if self.icon_lvl_vanilla == None:
+                self.icon_lvl_vanilla = ImageTk.PhotoImage(
+                    Image.open(BASE_DIR / "static/images/lvl.png").resize((20, 20))
+                )
+            return self.icon_lvl_vanilla
+
     # Run when start screen option is selected
     def load_editor(self):
         self.show_console = False
@@ -169,18 +190,87 @@ class LevelsTab(Tab):
         self.tiles = None
         self.tiles_meta = None
         self.lvl_editor_start_frame.grid_remove()
-        self.columnconfigure(0, minsize=200)  # Column 0 = Level List
-        self.columnconfigure(0, weight=0)
-        self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
-        self.rowconfigure(0, weight=1)  # Row 0 = List box / Label
+
+        self.icon_add = ImageTk.PhotoImage(
+            Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
+        )
+        self.icon_folder = ImageTk.PhotoImage(
+            Image.open(BASE_DIR / "static/images/folder.png").resize((20, 20))
+        )
+
+        self.editor_tab_control = ttk.Notebook(self)
+        self.editor_tab_control.grid(row=0, column=0, sticky="nw")
+        
+
+        self.single_room_editor_tab = ttk.Frame(self.editor_tab_control)
+        self.full_level_editor_tab = ttk.Frame(self.editor_tab_control)
+        self.last_selected_editor_tab = self.single_room_editor_tab
+
+        self.editor_tab_control.add(self.single_room_editor_tab, text = "Vanilla room editor")
+        self.editor_tab_control.add(self.full_level_editor_tab, text = "Custom level editor")
+
+        self.load_single_room_editor(self.single_room_editor_tab)
+        self.load_full_level_editor(self.full_level_editor_tab)
+
+        def tab_selected(event):
+            if event.widget.select() == self.last_selected_editor_tab:
+                return
+            if (
+                self.save_needed
+                and self.last_selected_file is not None
+            ):
+                msg_box = tk.messagebox.askquestion(
+                    "Continue?",
+                    "You have unsaved changes.\nContinue without saving?",
+                    icon="warning",
+                )
+                if msg_box == "yes":
+                    self.save_needed = False
+                    self.button_save["state"] = tk.DISABLED
+                    logger.debug("Switched tabs without saving.")
+                else:
+                    self.editor_tab_control.select(self.last_selected_editor_tab)
+                    return
+            self.reset()
+            self.last_selected_editor_tab = event.widget.select()
+
+        self.editor_tab_control.bind("<<NotebookTabChanged>>", tab_selected)
+
+    def load_full_level_editor(self, editor_tab):
+        editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
+        editor_tab.columnconfigure(0, weight=0)
+        editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+
+        # Loads lvl files
+        tree_files = ttk.Treeview(
+            editor_tab, selectmode="browse", padding=[-15, 0, 0, 0]
+        ) # This tree shows the lvl files loaded from the chosen dir, excluding vanilla lvl files.
+        tree_files.place(x=30, y=95)
+        vsb_tree_files = ttk.Scrollbar(
+            editor_tab, orient="vertical", command=tree_files.yview
+        )
+        vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
+        tree_files.configure(yscrollcommand=vsb_tree_files.set)
+        tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
+        vsb_tree_files.grid(row=0, column=0, sticky="nse")
+
+        self.load_packs(tree_files)
+
+        tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files))
+
+    def load_single_room_editor(self, editor_tab):
+        editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
+        editor_tab.columnconfigure(0, weight=0)
+        editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+        editor_tab.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
         # Loads lvl Files
         self.tree_files = ttk.Treeview(
-            self, selectmode="browse", padding=[-15, 0, 0, 0]
+            editor_tab, selectmode="browse", padding=[-15, 0, 0, 0]
         )  # This tree shows all the lvl files loaded from the chosen dir
         self.tree_files.place(x=30, y=95)
         self.vsb_tree_files = ttk.Scrollbar(
-            self, orient="vertical", command=self.tree_files.yview
+            editor_tab, orient="vertical", command=self.tree_files.yview
         )
         self.vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
         self.tree_files.configure(yscrollcommand=self.vsb_tree_files.set)
@@ -190,10 +280,10 @@ class LevelsTab(Tab):
 
         # Loads list of all the lvl files in the left farthest treeview
         # paths = Path(self.packs_path).glob('*/') #.glob('**/*.png')
-        self.load_packs()
+        self.load_packs(self.tree_files)
 
         # Seperates Level Rules and Level Editor into two tabs
-        self.tab_control = ttk.Notebook(self)
+        self.tab_control = ttk.Notebook(editor_tab)
         self.tab_control.grid(row=0, column=1, rowspan=3, sticky="nwse")
 
         self.last_selected_tab = None
@@ -215,12 +305,12 @@ class LevelsTab(Tab):
         self.variables_tab = ttk.Frame(self.tab_control)
 
         self.button_back = tk.Button(
-            self, text="Exit Editor", bg="black", fg="white", command=self.go_back
+            editor_tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
         )
         self.button_back.grid(row=1, column=0, sticky="nswe")
 
         self.button_save = tk.Button(
-            self,
+            editor_tab,
             text="Save",
             bg="purple",
             fg="white",
@@ -1091,7 +1181,7 @@ class LevelsTab(Tab):
         self.canvas_dual.bind(
             "<B3-Motion>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label_secondary, self.panel_sel_secondary)
         )
-        self.tree_files.bind("<ButtonRelease-1>", self.tree_filesitemclick)
+        self.tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, self.tree_files))
 
     def reset(self):
         logger.debug("Resetting..")
@@ -1107,37 +1197,28 @@ class LevelsTab(Tab):
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")
 
-    def load_packs(self):
+    def load_packs(self, tree):
         self.reset()
         logger.debug("loading packs")
 
-        for i in self.tree_files.get_children():
-            self.tree_files.delete(i)
-        self.tree_files.heading("#0", text="Select Pack")
-        self.icons_packs = []
+        for i in tree.get_children():
+            tree.delete(i)
+        tree.heading("#0", text="Select Pack")
         i = 0
         for filepath in glob.iglob(str(self.packs_path) + "/*/"):
-            self.icons_packs.append(
-                ImageTk.PhotoImage(
-                    Image.open(BASE_DIR / "static/images/folder.png").resize((20, 20))
-                )
-            )
-            # because path is object not string
+            # Convert the filepath to a string.
             path_in_str = str(filepath)
             pack_name = os.path.basename(os.path.normpath(path_in_str))
-            # Do thing with the path
-            self.tree_files.insert(
-                "", "end", text=str(pack_name), image=self.icons_packs[i]
+            # Add the file to the tree with the folder icon.
+            tree.insert(
+                "", "end", text=str(pack_name), image=self.icon_folder
             )
             i = i + 1
-        self.icon_add = ImageTk.PhotoImage(
-            Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
-        )
-        self.tree_files.insert(
+        tree.insert(
             "", "end", text=str("[Create_New_Pack]"), image=self.icon_add
         )
 
-    def load_pack_lvls(self, lvl_dir):
+    def load_pack_lvls(self, tree, lvl_dir):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
@@ -1149,7 +1230,7 @@ class LevelsTab(Tab):
         self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
             self.tree_files.insert(
-                "", "end", text=str("ARENA"), image=self.icons_packs[0]
+                "", "end", text=str("ARENA"), image=self.icon_folder
             )
         else:
             defaults_path = self.extracts_path / "Arena"
@@ -1160,7 +1241,6 @@ class LevelsTab(Tab):
         root = Path(self.packs_path / loaded_pack)
         pattern = "*.lvl"
 
-        self.icons_lvls = []
         i = 0
         for filepath in glob.iglob(str(defaults_path) + "/***.lvl"):
             lvl_in_use = False
@@ -1174,29 +1254,17 @@ class LevelsTab(Tab):
                             lvl_name
                         ):
                             lvl_in_use = True
-                            self.icons_lvls.append(
-                                ImageTk.PhotoImage(
-                                    Image.open(
-                                        BASE_DIR / "static/images/lvl_modded.png"
-                                    ).resize((20, 20))
-                                )
-                            )
                             self.tree_files.insert(
-                                "", "end", text=str(lvl_name), image=self.icons_lvls[i]
+                                "", "end", text=str(lvl_name), image=self.lvl_icon(True)
                             )
                             i = i + 1
             if not lvl_in_use:
-                self.icons_lvls.append(
-                    ImageTk.PhotoImage(
-                        Image.open(BASE_DIR / "static/images/lvl.png").resize((20, 20))
-                    )
-                )
                 self.tree_files.insert(
-                    "", "end", text=str(lvl_name), image=self.icons_lvls[i]
+                    "", "end", text=str(lvl_name), image=self.lvl_icon(False)
                 )
                 i = i + 1
 
-    def create_pack_dialog(self):
+    def create_pack_dialog(self, tree):
         win = PopupWindow("Create Pack", self.modlunky_config)
 
         col1_lbl = ttk.Label(win, text="Name: ")
@@ -1216,7 +1284,7 @@ class LevelsTab(Tab):
             col1_ent.insert(0, pack_name)
             if not os.path.isdir(self.packs_path / str(col1_ent.get())):
                 os.mkdir(self.packs_path / str(col1_ent.get()))
-                self.load_packs()
+                self.load_packs(tree)
                 win.destroy()
             else:
                 logger.warning("Pack name taken")
@@ -1316,16 +1384,16 @@ class LevelsTab(Tab):
                                 ),
                             )
 
-    def tree_filesitemclick(self, _event):
+    def tree_filesitemclick(self, _event, tree):
         if (
             self.save_needed
             and self.last_selected_file is not None
-            and self.tree_files.heading("#0")["text"] != "Select Pack"
+            and tree.heading("#0")["text"] != "Select Pack"
         ):
             msg_box = tk.messagebox.askquestion(
                 "Continue?",
                 "You have unsaved changes to "
-                + str(self.tree_files.item(self.last_selected_file, option="text"))
+                + str(tree.item(self.last_selected_file, option="text"))
                 + "\nContinue without saving?",
                 icon="warning",
             )
@@ -1334,52 +1402,61 @@ class LevelsTab(Tab):
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Entered new files witout saving")
             else:
-                self.tree_files.selection_set(self.last_selected_file)
+                tree.selection_set(self.last_selected_file)
                 return
 
+        print("here")
+        print("tree: ")
+        print(tree)
         item_text = ""
-        for item in self.tree_files.selection():
-            item_text = self.tree_files.item(item, "text")
+        for item in tree.selection():
+            item_text = tree.item(item, "text")
+        print(item_text)
         if item_text == "<<BACK":
-            if self.tree_files.heading("#0")["text"].endswith("Arena"):
-                self.tree_files.heading(
-                    "#0", text=self.tree_files.heading("#0")["text"].split("/")[0]
+            if tree.heading("#0")["text"].endswith("Arena"):
+                tree.heading(
+                    "#0", text=tree.heading("#0")["text"].split("/")[0]
                 )
-                self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+                self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
+                    tree,
                     Path(self.packs_path / self.loaded_pack / "Data" / "Levels"),
                 )
             else:
-                self.load_packs()
+                self.load_packs(tree)
         elif (
             item_text == "ARENA"
-            and self.tree_files.heading("#0")["text"] != "Select Pack"
+            and tree.heading("#0")["text"] != "Select Pack"
         ):
-            self.tree_files.heading(
-                "#0", text=self.tree_files.heading("#0")["text"] + "/Arena"
+            tree.heading(
+                "#0", text=tree.heading("#0")["text"] + "/Arena"
             )
-            self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+            self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
             self.load_pack_lvls(
+                tree,
                 Path(self.packs_path / self.loaded_pack / "Data" / "Levels" / "Arena")
             )
         elif item_text == "[Create_New_Pack]":
             logger.debug("Creating new pack")
-            self.create_pack_dialog()
+            self.create_pack_dialog(tree)
             # self.tree_files.heading('#0', text='Select Pack', anchor='center')
-        elif self.tree_files.heading("#0")["text"] == "Select Pack":
-            for item in self.tree_files.selection():
+        elif tree.heading("#0")["text"] == "Select Pack":
+            for item in tree.selection():
                 self.last_selected_file = item
-                item_text = self.tree_files.item(item, "text")
-                self.tree_files.heading("#0", text=item_text)
-                self.loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+                item_text = tree.item(item, "text")
+                tree.heading("#0", text=item_text)
+                self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
+                    tree,
                     Path(self.packs_path / self.loaded_pack) / "Data" / "Levels"
                 )
         else:
             self.reset()
-            for item in self.tree_files.selection():
+            print("now here")
+            for item in tree.selection():
                 self.last_selected_file = item
-                item_text = self.tree_files.item(item, "text")
+                item_text = tree.item(item, "text")
+                print("here too")
                 self.read_lvl_file(item_text)
 
         if self.last_selected_tab == "Full Level View":
@@ -1827,7 +1904,7 @@ class LevelsTab(Tab):
                                     )  # adds back replaced code since its now free for use again
                             else:
                                 logger.warning("Not enough unique tilecodes left")
-                                self.tree_filesitemclick(self)
+                                self.tree_filesitemclick(self, self.tree_files)
                                 self.check_dependencies()
                                 return
                         else:
@@ -1900,7 +1977,7 @@ class LevelsTab(Tab):
                         logger.debug("Fixed conflicts in %s", level[1][2].split(" ")[0])
             except Exception:  # pylint: disable=broad-except
                 logger.critical("Error: %s", tb_info())
-        self.tree_filesitemclick(self)
+        self.tree_filesitemclick(self, self.tree_files)
         self.check_dependencies()
 
     def check_dependencies(self):
@@ -2726,26 +2803,27 @@ class LevelsTab(Tab):
             icon="warning",
         )
         if msg_box == "yes":
+            self.editor_tab_control.grid_remove()
             self.lvl_editor_start_frame.grid()
-            self.tab_control.grid_remove()
-            self.tree_files.grid_remove()
-            # Resets widgets
-            self.scale["state"] = tk.DISABLED
-            self.button_replace["state"] = tk.DISABLED
-            self.button_clear["state"] = tk.DISABLED
-            self.combobox["state"] = tk.DISABLED
-            self.combobox_alt["state"] = tk.DISABLED
-            self.button_tilecode_del["state"] = tk.DISABLED
-            self.button_tilecode_del_secondary["state"] = tk.DISABLED
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
-            self.button_back.grid_remove()
-            self.button_save.grid_remove()
-            self.vsb_tree_files.grid_remove()
+            # self.tab_control.grid_remove()
+            # self.tree_files.grid_remove()
+            # # Resets widgets
+            # self.scale["state"] = tk.DISABLED
+            # self.button_replace["state"] = tk.DISABLED
+            # self.button_clear["state"] = tk.DISABLED
+            # self.combobox["state"] = tk.DISABLED
+            # self.combobox_alt["state"] = tk.DISABLED
+            # self.button_tilecode_del["state"] = tk.DISABLED
+            # self.button_tilecode_del_secondary["state"] = tk.DISABLED
+            # self.canvas.delete("all")
+            # self.canvas_dual.delete("all")
+            # self.canvas.grid_remove()
+            # self.canvas_dual.grid_remove()
+            # self.foreground_label.grid_remove()
+            # self.background_label.grid_remove()
+            # self.button_back.grid_remove()
+            # self.button_save.grid_remove()
+            # self.vsb_tree_files.grid_remove()
             # removes any old tiles that might be there from the last file
             for widget in self.tile_pallete.scrollable_frame.winfo_children():
                 widget.destroy()
@@ -3394,6 +3472,7 @@ class LevelsTab(Tab):
         self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, lvl):
+        print("read_lvl_file")
         self.last_selected_room = None
         self.usable_codes_string = (
             r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
