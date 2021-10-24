@@ -1,9 +1,9 @@
-requests==2.26.0
-packaging==21.0
-zstandard==0.16.0
 Pillow==8.4.0
 appdirs==1.4.4
-sfyi-fsb5==1.1
-pyperclip==1.8.2
-websockets==10.0
 fnvhash==0.1.0
+packaging==21.0
+pyperclip==1.8.2
+requests==2.26.0
+sfyi-fsb5==1.1
+websockets==10.0
+zstandard==0.16.0
