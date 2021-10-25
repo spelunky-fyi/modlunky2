@@ -10,6 +10,7 @@ import tempfile
 import tkinter as tk
 import tkinter.messagebox as tkMessageBox
 from dataclasses import dataclass
+from enum import Enum
 from fnmatch import fnmatch
 from pathlib import Path
 from shutil import copyfile
@@ -37,6 +38,10 @@ from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
+
+class EditorType(Enum):
+    VANILLA_ROOMS = "single_room"
+    CUSTOM_LEVELS = "custom_levels"
 
 
 class LevelsTab(Tab):
@@ -240,6 +245,7 @@ class LevelsTab(Tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
         editor_tab.columnconfigure(0, weight=0)
         editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+        editor_tab.rowconfigure(0, weight=1)
 
         # Loads lvl files
         tree_files = ttk.Treeview(
@@ -253,10 +259,11 @@ class LevelsTab(Tab):
         tree_files.configure(yscrollcommand=vsb_tree_files.set)
         tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         vsb_tree_files.grid(row=0, column=0, sticky="nse")
+        # self.tree_files_full = tree_files
 
         self.load_packs(tree_files)
 
-        tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files))
+        tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files, EditorType.CUSTOM_LEVELS))
 
     def load_single_room_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -1181,7 +1188,7 @@ class LevelsTab(Tab):
         self.canvas_dual.bind(
             "<B3-Motion>", lambda event: canvas_click(event, self.canvas_dual, self.tile_label_secondary, self.panel_sel_secondary)
         )
-        self.tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, self.tree_files))
+        self.tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, self.tree_files, EditorType.VANILLA_ROOMS))
 
     def reset(self):
         logger.debug("Resetting..")
@@ -1218,30 +1225,36 @@ class LevelsTab(Tab):
             "", "end", text=str("[Create_New_Pack]"), image=self.icon_add
         )
 
-    def load_pack_lvls(self, tree, lvl_dir):
+    def load_pack_lvls(self, tree, editor_type, lvl_dir):
+        if editor_type == EditorType.VANILLA_ROOMS:
+            self.load_pack_vanilla_lvls(tree, lvl_dir)
+        else:
+            self.load_pack_custom_lvls(tree, lvl_dir)
+
+    def load_pack_vanilla_lvls(self, tree, lvl_dir):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
+        print(lvl_dir)
         logger.debug("lvls_path = %s", lvl_dir)
         defaults_path = self.extracts_path
-        for i in self.tree_files.get_children():
-            self.tree_files.delete(i)
+        for i in tree.get_children():
+            tree.delete(i)
 
-        self.tree_files.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+        tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
-            self.tree_files.insert(
+            tree.insert(
                 "", "end", text=str("ARENA"), image=self.icon_folder
             )
         else:
             defaults_path = self.extracts_path / "Arena"
         # Load lvls frome extracts that selected pack doesn't have
 
-        loaded_pack = self.tree_files.heading("#0")["text"].split("/")[0]
+        loaded_pack = tree.heading("#0")["text"].split("/")[0]
         # self.textures_dir = self.packs_path / loaded_pack / "Data/Textures"
         root = Path(self.packs_path / loaded_pack)
         pattern = "*.lvl"
 
-        i = 0
         for filepath in glob.iglob(str(defaults_path) + "/***.lvl"):
             lvl_in_use = False
             path_in_str = str(filepath)
@@ -1254,15 +1267,49 @@ class LevelsTab(Tab):
                             lvl_name
                         ):
                             lvl_in_use = True
-                            self.tree_files.insert(
+                            tree.insert(
                                 "", "end", text=str(lvl_name), image=self.lvl_icon(True)
                             )
-                            i = i + 1
             if not lvl_in_use:
-                self.tree_files.insert(
+                tree.insert(
                     "", "end", text=str(lvl_name), image=self.lvl_icon(False)
                 )
-                i = i + 1
+
+    def load_pack_custom_lvls(self, tree, lvl_dir):
+        self.reset()
+        self.lvls_path = Path(lvl_dir)
+        self.organize_pack()
+        logger.debug("lvls_path = %s", lvl_dir)
+        logger.debug("lvls_path = %s", lvl_dir)
+        defaults_path = self.extracts_path
+        for i in tree.get_children():
+            tree.delete(i)
+
+        tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+        if not str(lvl_dir).endswith("Arena"):
+            tree.insert(
+                "", "end", text=str("ARENA"), image=self.icon_folder
+            )
+        else:
+            defaults_path = self.extracts_path / "Arena"
+
+
+        for filepath in glob.iglob(str(lvl_dir) + "/***.lvl"):
+            path_in_str = str(filepath)
+            lvl_name = os.path.basename(os.path.normpath(path_in_str))
+            lvl_is_default = False
+            for defaultpath in glob.iglob(str(defaults_path) + "/***.lvl"):
+                default_lvl_name = os.path.basename(os.path.normpath(str(defaultpath)))
+                if lvl_name == default_lvl_name:
+                    lvl_is_default = True
+            
+            if not lvl_is_default:
+                tree.insert(
+                    "", "end", text = str(lvl_name), image=self.lvl_icon(True)
+                )
+            
+        
+        
 
     def create_pack_dialog(self, tree):
         win = PopupWindow("Create Pack", self.modlunky_config)
@@ -1384,7 +1431,7 @@ class LevelsTab(Tab):
                                 ),
                             )
 
-    def tree_filesitemclick(self, _event, tree):
+    def tree_filesitemclick(self, _event, tree, editor_type):
         if (
             self.save_needed
             and self.last_selected_file is not None
@@ -1416,6 +1463,7 @@ class LevelsTab(Tab):
                 self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
                     tree,
+                    editor_type,
                     Path(self.packs_path / self.loaded_pack / "Data" / "Levels"),
                 )
             else:
@@ -1430,6 +1478,7 @@ class LevelsTab(Tab):
             self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
             self.load_pack_lvls(
                 tree,
+                editor_type,
                 Path(self.packs_path / self.loaded_pack / "Data" / "Levels" / "Arena")
             )
         elif item_text == "[Create_New_Pack]":
@@ -1444,6 +1493,7 @@ class LevelsTab(Tab):
                 self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
                     tree,
+                    editor_type,
                     Path(self.packs_path / self.loaded_pack) / "Data" / "Levels"
                 )
         else:
@@ -1898,7 +1948,7 @@ class LevelsTab(Tab):
                                     )  # adds back replaced code since its now free for use again
                             else:
                                 logger.warning("Not enough unique tilecodes left")
-                                self.tree_filesitemclick(self, self.tree_files)
+                                self.tree_filesitemclick(self, self.tree_files, EditorType.VANILLA_ROOMS)
                                 self.check_dependencies()
                                 return
                         else:
@@ -1971,7 +2021,7 @@ class LevelsTab(Tab):
                         logger.debug("Fixed conflicts in %s", level[1][2].split(" ")[0])
             except Exception:  # pylint: disable=broad-except
                 logger.critical("Error: %s", tb_info())
-        self.tree_filesitemclick(self, self.tree_files)
+        self.tree_filesitemclick(self, self.tree_files, EditorType.VANILLA_ROOMS)
         self.check_dependencies()
 
     def check_dependencies(self):
