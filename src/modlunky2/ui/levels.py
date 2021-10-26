@@ -43,6 +43,27 @@ class EditorType(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
 
+class CustomLevelSaveFormat:
+    def __init__(self, name, room_template_format, include_vanilla_setrooms):
+        self.name = name or room_template_format
+        self.room_template_format = room_template_format
+        self.include_vanilla_setrooms = include_vanilla_setrooms
+
+    @classmethod
+    def LevelSequence(cls):
+        return cls("LevelSequence", "setroom{y}_{x}", True)
+    
+    @classmethod
+    def Vanilla(cls):
+        return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
+
+    def toJSON(self):
+        return {"name": self.name, "room_template_format": self.room_template_format, "include_vanilla_setrooms": self.include_vanilla_setrooms}
+
+    @classmethod
+    def fromJSON(cls, json):
+        return cls(json.["name"], json["room_template_format"], json["include_vanilla_setrooms"])
+    
 
 class LevelsTab(Tab):
     def __init__(
@@ -64,7 +85,6 @@ class LevelsTab(Tab):
         self.install_dir = modlunky_config.install_dir
         self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
         self._sprite_fetcher = None
-
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -145,6 +165,22 @@ class LevelsTab(Tab):
         self.single_room_editor_tab = None
         self.full_level_editor_tab = None
         self.last_selected_editor_tab = None
+
+        self.base_save_formats = [CustomLevelSaveFormat.LevelSequence(), CustomLevelSaveFormat.Vanilla()]
+        custom_save_formats = self.modlunky_config.config_file.custom_level_editor_custom_save_formats
+        if custom_save_formats:
+            self.custom_save_formats = map(lambda json: CustomLevelSaveFormat.fromJSON(json), custom_save_formats)
+        else:
+            self.custom_save_formats = []
+
+        default_save_format = self.modlunky_config.config_file.custom_level_editor_default_save_format
+        # Set the format that will be used for saving new level files.
+        if default_save_format:
+            self.default_save_format = CustomLevelSaveFormat.fromJSON(default_save_format)
+        else:
+            self.default_save_format = self.base_save_formats[0]
+        # Save format used in the currently loaded level file.
+        self.current_save_format = None
 
         def load_extracts_lvls():
             if os.path.isdir(self.extracts_path):
@@ -238,8 +274,16 @@ class LevelsTab(Tab):
                     return
             self.reset()
             self.last_selected_editor_tab = event.widget.select()
+            if self.last_selected_editor_tab == self.single_room_editor_tab:
+                self.modlunky_config.config_file.level_editor_tab = 0
+            else:
+                self.modlunky_config.config_file.level_editor_tab = 1
+            self.modlunky_config.config_file.save()
+
 
         self.editor_tab_control.bind("<<NotebookTabChanged>>", tab_selected)
+        if self.modlunky_config.config_file.level_editor_tab == 1:
+            self.editor_tab_control.select(self.full_level_editor_tab)
 
     def load_full_level_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -1235,7 +1279,6 @@ class LevelsTab(Tab):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
-        print(lvl_dir)
         logger.debug("lvls_path = %s", lvl_dir)
         defaults_path = self.extracts_path
         for i in tree.get_children():
@@ -1279,7 +1322,6 @@ class LevelsTab(Tab):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
-        logger.debug("lvls_path = %s", lvl_dir)
         logger.debug("lvls_path = %s", lvl_dir)
         defaults_path = self.extracts_path
         for i in tree.get_children():
