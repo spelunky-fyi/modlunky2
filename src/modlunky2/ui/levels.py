@@ -62,7 +62,7 @@ class CustomLevelSaveFormat:
 
     @classmethod
     def fromJSON(cls, json):
-        return cls(json.["name"], json["room_template_format"], json["include_vanilla_setrooms"])
+        return cls(json["name"], json["room_template_format"], json["include_vanilla_setrooms"])
     
 
 class LevelsTab(Tab):
@@ -142,8 +142,6 @@ class LevelsTab(Tab):
         self.cols = None
         self.tiles = None
         self.tiles_meta = None
-        self.usable_codes_string = None
-        self.usable_codes = None
         self.im_output_dual = None
         self.tile_pallete_ref_in_use = None
         self.lvl = None
@@ -165,11 +163,18 @@ class LevelsTab(Tab):
         self.single_room_editor_tab = None
         self.full_level_editor_tab = None
         self.last_selected_editor_tab = None
+        self.usable_codes = None
+        self.usable_codes_string = (
+            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
+            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
+            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
+            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
+        )
 
         self.base_save_formats = [CustomLevelSaveFormat.LevelSequence(), CustomLevelSaveFormat.Vanilla()]
         custom_save_formats = self.modlunky_config.config_file.custom_level_editor_custom_save_formats
         if custom_save_formats:
-            self.custom_save_formats = map(lambda json: CustomLevelSaveFormat.fromJSON(json), custom_save_formats)
+            self.custom_save_formats = list(map(lambda json: CustomLevelSaveFormat.fromJSON(json), custom_save_formats))
         else:
             self.custom_save_formats = []
 
@@ -254,7 +259,7 @@ class LevelsTab(Tab):
         self.load_full_level_editor(self.full_level_editor_tab)
 
         def tab_selected(event):
-            if event.widget.select() == self.last_selected_editor_tab:
+            if event.widget.select() is self.last_selected_editor_tab:
                 return
             if (
                 self.save_needed
@@ -274,7 +279,8 @@ class LevelsTab(Tab):
                     return
             self.reset()
             self.last_selected_editor_tab = event.widget.select()
-            if self.last_selected_editor_tab == self.single_room_editor_tab:
+            tab = event.widget.tab(self.last_selected_editor_tab, "text")
+            if tab == "Vanilla room editor":
                 self.modlunky_config.config_file.level_editor_tab = 0
             else:
                 self.modlunky_config.config_file.level_editor_tab = 1
@@ -1339,13 +1345,7 @@ class LevelsTab(Tab):
         for filepath in glob.iglob(str(lvl_dir) + "/***.lvl"):
             path_in_str = str(filepath)
             lvl_name = os.path.basename(os.path.normpath(path_in_str))
-            lvl_is_default = False
-            for defaultpath in glob.iglob(str(defaults_path) + "/***.lvl"):
-                default_lvl_name = os.path.basename(os.path.normpath(str(defaultpath)))
-                if lvl_name == default_lvl_name:
-                    lvl_is_default = True
-            
-            if not lvl_is_default:
+            if not (defaults_path / lvl_name).exists():
                 tree.insert(
                     "", "end", text = str(lvl_name), image=self.lvl_icon(True)
                 )
@@ -1543,7 +1543,7 @@ class LevelsTab(Tab):
             for item in tree.selection():
                 self.last_selected_file = item
                 item_text = tree.item(item, "text")
-                self.read_lvl_file(item_text)
+                self.read_lvl_file(editor_type, item_text)
 
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
@@ -1899,14 +1899,8 @@ class LevelsTab(Tab):
                 levelp = LevelFile.from_path(Path(self.extracts_path) / file)
             return levelp
 
-        usable_codes_string = (
-            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
-            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
-            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
-            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
-        )
         usable_codes = []
-        for code in usable_codes_string:
+        for code in self.usable_codes_string:
             usable_codes.append(code)
 
         # finds tilecodes that are taken in all the dependacy files
@@ -3557,14 +3551,14 @@ class LevelsTab(Tab):
             self.background_label.grid_remove()
         self.button_clear["state"] = tk.NORMAL
 
-    def read_lvl_file(self, lvl):
+    def read_lvl_file(self, editor_type, lvl):
+        if editor_type == EditorType.VANILLA_ROOMS:
+            return self.read_vanilla_lvl_file(lvl)
+        else:
+            return self.read_custom_lvl_file(lvl)
+
+    def read_vanilla_lvl_file(self, lvl):
         self.last_selected_room = None
-        self.usable_codes_string = (
-            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
-            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ Ž‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
-            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
-            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
-        )
         self.usable_codes = []
         self.check_dependencies()
         for code in self.usable_codes_string:
@@ -3955,7 +3949,121 @@ class LevelsTab(Tab):
                     entry, "end", values=room_string, text=str(room_name)
                 )
 
-        # lines = file1.readlines()
+    def read_save_format(self, level):
+        valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
+        for save_format in valid_save_formats:
+            for template in level.level_templates.all():
+                if template.name == save_format.room_template_format.format(y=1, x=1):
+                    return save_format
+
+    def read_custom_lvl_file(self, lvl):
+        self.usable_codes = []
+        for code in self.usable_codes_string:
+            self.usable_codes.append(code)
+
+        level = LevelFile.from_path(Path(self.lvls_path) / lvl)
+        self.current_save_format = self.read_save_format(level)
+        if not self.current_save_format:
+            self.show_format_error_dialog(lvl)
+            return
+
+        print(self.current_save_format.__dict__)
+    
+    def show_format_error_dialog(self, lvl):
+            win = PopupWindow("Couldn't find room templates", self.modlunky_config)
+            message = ttk.Label(win, text="Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n")
+            name_label = ttk.Label(win, text="Name: ")
+            name_entry = ttk.Entry(win, foreground = 'gray')
+            format_label = ttk.Label(win, text="Format: ")
+            format_entry = ttk.Entry(win, foreground = 'gray')
+            win.columnconfigure(1, weight=1)
+            message.grid(row=0, column=0, columnspan=2, sticky="nswe")
+            name_label.grid(row=1, column=0, sticky="nse")
+            name_entry.grid(row=1, column=1, sticky="nswe")
+            format_label.grid(row=2, column=0, sticky="nse")
+            format_entry.grid(row=2, column=1, sticky="nswe")
+            name_entry.insert(0, "Optional")
+            format_entry.insert(0, "setroom{y}_{x}")
+            name_entry_changed = False
+            format_entry_changed = False
+            
+            def focus_name(event):
+                nonlocal name_entry_changed
+                print(name_entry_changed)
+                if name_entry_changed:
+                    return
+                name_entry.delete('0', 'end')
+                name_entry.config(foreground = 'black')
+            def focus_format(event):
+                nonlocal format_entry_changed
+                if format_entry_changed:
+                    return
+                format_entry.delete('0', 'end')
+                format_entry.config(foreground = 'black')
+            def defocus_name(event):
+                nonlocal name_entry_changed
+                print("|" + str(name_entry.get()) + "|")
+                if str(name_entry.get()) == "":
+                    name_entry_changed = False
+                    name_entry.insert(0, "Optional")
+                    name_entry.config(foreground = 'gray')
+                else:
+                    name_entry_changed = True
+            def defocus_format(event):
+                nonlocal format_entry_changed
+                if str(format_entry.get()) == "":
+                    format_entry_changed = False
+                    format_entry.insert(0, "setroom{y}_{x}")
+                    format_entry.config(foreground = 'gray')
+                else:
+                    format_entry_changed = True
+
+            name_entry.bind("<FocusIn>", focus_name)
+            name_entry.bind("<FocusOut>", defocus_name)
+            format_entry.bind("<FocusIn>", focus_format)
+            format_entry.bind("<FocusOut>", defocus_format)
+
+            add_vanilla_var = tk.IntVar()
+            add_vanilla_var.set(True)
+            add_vanilla_label = ttk.Label(win, text="Include vanilla setrooms:")
+            add_vanilla_check = ttk.Checkbutton(win, variable=add_vanilla_var)
+            add_vanilla_label.grid(row=3, column=0, sticky="nse")
+            add_vanilla_check.grid(row=3, column=1, sticky="nsw")
+
+            add_vanilla_tip = ttk.Label(win, text="It is recommended to include vanilla setrooms.\nThis setting adds setrooms for some themes which require them.\nThere could be errors if not using this in some themes.")
+            add_vanilla_tip.grid(row=4, column=0, columnspan=2, sticky="nswe")
+
+            win.rowconfigure(5, minsize=20)
+
+            buttons = ttk.Frame(win)
+            buttons.grid(row=6, column=0, columnspan=2, sticky="nswe")
+            buttons.columnconfigure(0, weight=1)
+            buttons.columnconfigure(1, weight=1)
+
+            def continue_open():
+                format = str(format_entry.get())
+                name = str(name_entry.get()) if name_entry_changed else format
+                if format == "" or name == "" or format == "setroom{y}-{x}" or format == "setroom{x}-{y}":
+                    return
+                save_format = CustomLevelSaveFormat(name, format, True)
+                win.destroy()
+                self.add_save_format(save_format)
+                self.read_custom_lvl_file(lvl)
+
+            continue_button = ttk.Button(buttons, text="Continue", command=continue_open)
+            continue_button.grid(row=0, column=0, sticky="nswe")
+
+
+            cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+            cancel_button.grid(row=0, column=1, sticky="nswe")
+
+    def add_save_format(self, save_format):
+        self.custom_save_formats.append(save_format)
+        self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(map(
+            lambda save_format: save_format.toJSON(),
+            self.custom_save_formats
+        ))
+        self.modlunky_config.config_file.save()
 
     @staticmethod
     def adjust_texture_xy(width, height, mode):
