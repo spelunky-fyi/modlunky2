@@ -4045,7 +4045,7 @@ class LevelsTab(Tab):
                 name = str(name_entry.get()) if name_entry_changed else format
                 if format == "" or name == "" or format == "setroom{y}-{x}" or format == "setroom{x}-{y}":
                     return
-                save_format = CustomLevelSaveFormat(name, format, True)
+                save_format = CustomLevelSaveFormat(name, format, bool(add_vanilla_var.get()))
                 win.destroy()
                 self.add_save_format(save_format)
                 self.read_custom_lvl_file(lvl)
