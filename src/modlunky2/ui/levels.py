@@ -5,6 +5,7 @@ import glob
 import logging
 import os
 import os.path
+import re
 import shutil
 import tempfile
 import tkinter as tk
@@ -87,6 +88,7 @@ class LevelsTab(Tab):
         self._sprite_fetcher = None
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
+        self.custom_editor_zoom_level = 30
 
         self.lvl_editor_start_frame = tk.Frame(
             self,
@@ -138,6 +140,7 @@ class LevelsTab(Tab):
         self.lvl_bg_path = None
         self.lvl_bgbg = None
         self.lvl_bgbg_path = None
+        self.lvl_bgs = {}
         self.rows = None
         self.cols = None
         self.tiles = None
@@ -291,19 +294,19 @@ class LevelsTab(Tab):
         if self.modlunky_config.config_file.level_editor_tab == 1:
             self.editor_tab_control.select(self.full_level_editor_tab)
 
-    def load_full_level_editor(self, editor_tab):
-        editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
-        editor_tab.columnconfigure(0, weight=0)
-        editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
-        editor_tab.rowconfigure(0, weight=1)
+    def load_full_level_editor(self, tab):
+        tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
+        tab.columnconfigure(0, weight=0)
+        tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
+        tab.rowconfigure(0, weight=1)
 
         # Loads lvl files
         tree_files = ttk.Treeview(
-            editor_tab, selectmode="browse", padding=[-15, 0, 0, 0]
+            tab, selectmode="browse", padding=[-15, 0, 0, 0]
         ) # This tree shows the lvl files loaded from the chosen dir, excluding vanilla lvl files.
         tree_files.place(x=30, y=95)
         vsb_tree_files = ttk.Scrollbar(
-            editor_tab, orient="vertical", command=tree_files.yview
+            tab, orient="vertical", command=tree_files.yview
         )
         vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
         tree_files.configure(yscrollcommand=vsb_tree_files.set)
@@ -314,6 +317,112 @@ class LevelsTab(Tab):
         self.load_packs(tree_files)
 
         tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files, EditorType.CUSTOM_LEVELS))
+
+        editor_view = tk.Frame(tab)
+        # editor_view.configure(background='red')
+        editor_view.grid(row=0,column=1,sticky="nswe")
+        
+        editor_view.columnconfigure(2, weight=1)
+        editor_view.columnconfigure(3, minsize=16)
+        editor_view.rowconfigure(1, weight=1)
+
+        scrollable_canvas = tk.Canvas(editor_view, bg="#292929")
+        scrollable_canvas.grid(row=0, column=0, columnspan=4, rowspan=2, sticky="nswe")
+        scrollable_canvas.columnconfigure(0, weight=1)
+        scrollable_canvas.rowconfigure(0, weight=1)
+
+        scrollable_frame = tk.Frame(scrollable_canvas, bg="#343434")
+
+        scrollable_frame.columnconfigure(
+            0, minsize=int(int(self.screen_width) / 2)
+        )
+        scrollable_frame.columnconfigure(1, weight=1)
+        scrollable_frame.columnconfigure(2, minsize=50)
+        scrollable_frame.columnconfigure(
+            4, minsize=int(int(self.screen_width) / 2)
+        )
+        scrollable_frame.rowconfigure(
+            0, minsize=int(int(self.screen_height) / 2)
+        )
+        scrollable_frame.rowconfigure(1, weight=1)
+        scrollable_frame.rowconfigure(2, minsize=100)
+        scrollable_frame.rowconfigure(
+            4, minsize=int(int(self.screen_height) / 2)
+        )
+        # scrollable_frame.columnconfigure(0, weight=1)
+        # scrollable_frame.rowconfigure(0, weight=1)
+        scrollable_frame.grid(row=0, column=0, sticky="nswe")
+
+        width = scrollable_canvas.winfo_screenwidth()
+        height = scrollable_canvas.winfo_screenheight()
+        scrollable_canvas.create_window(
+            (width, height),
+            window=scrollable_frame,
+            anchor="center",
+        )
+        scrollable_canvas["width"] = width
+        scrollable_canvas["height"] = height
+
+        hbar = ttk.Scrollbar(editor_view, orient="horizontal", command=scrollable_canvas.xview)
+        hbar.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="swe")
+        vbar = ttk.Scrollbar(editor_view, orient="vertical", command=scrollable_canvas.yview)
+        vbar.grid(row=0, column=0, columnspan=4, rowspan=2, sticky="nse")
+
+        scrollable_canvas.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, hbar, vbar, scrollable_canvas))
+        scrollable_canvas.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, scrollable_canvas))
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: scrollable_canvas.configure(
+                scrollregion=scrollable_canvas.bbox("all")
+            ),
+        )
+
+        scrollable_canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
+
+        canvas_foreground = tk.Canvas(scrollable_frame, bg="#343434")
+        canvas_foreground.grid(row=1, column=1)
+        canvas_background = tk.Canvas(scrollable_frame, bg="#343434")
+        canvas_background.grid(row=1, column=1)
+        canvas_background.grid_remove()
+        self.custom_level_canvas = scrollable_canvas
+        self.custom_level_frame = scrollable_frame
+        self.custom_level_canvas_foreground = canvas_foreground
+        self.custom_level_canvas_background = canvas_background
+
+
+        switch_variable = tk.StringVar()
+        def toggle_layer():
+            nonlocal switch_variable
+            x_coord = switch_variable.get()
+            if x_coord == "0":
+                canvas_foreground.grid()
+                canvas_background.grid_remove()
+            else:
+                canvas_foreground.grid_remove()
+                canvas_background.grid()
+
+        front_view = tk.Radiobutton(
+            editor_view,
+            text="Foreground",
+            variable=switch_variable,
+            indicatoron=False,
+            value="0",
+            width=10,
+            command=toggle_layer,
+        )
+        switch_variable.set("0")
+        front_view.grid(column=0, row=0, sticky="ne")
+        back_view = tk.Radiobutton(
+            editor_view,
+            text="Background",
+            variable=switch_variable,
+            indicatoron=False,
+            value="1",
+            width=10,
+            command=toggle_layer,
+        )
+        back_view.grid(column=1, row=0, sticky="nw")
+
 
     def load_single_room_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -525,7 +634,7 @@ class LevelsTab(Tab):
         )
         self.canvas_grids_full["width"] = x_origin
         self.canvas_grids_full["height"] = y_origin
-        self.canvas_grids_full.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.canvas_grids_full))
+        self.canvas_grids_full.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.hbar_full, self.vbar_full, self.canvas_grids_full))
         self.canvas_grids_full.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, self.canvas_grids_full))
         self.scrollable_canvas_frame_full.bind(
             "<Configure>",
@@ -813,7 +922,7 @@ class LevelsTab(Tab):
         self.canvas_grids.create_window(
             (x_origin, y_origin), window=self.scrollable_canvas_frame, anchor="center"
         )
-        self.canvas_grids.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.canvas_grids))
+        self.canvas_grids.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, self.hbar, self.vbar, self.canvas_grids))
         self.canvas_grids.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, self.canvas_grids))
         self.scrollable_canvas_frame.bind(
             "<Configure>",
@@ -1548,7 +1657,7 @@ class LevelsTab(Tab):
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
 
-    def _on_mousewheel(self, event):
+    def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
         if event.num == 5 or event.delta == -120:
             scroll_dir = 1
@@ -1559,30 +1668,30 @@ class LevelsTab(Tab):
             return
 
         if event.state & (1 << 0):  # Shift / Horizontal Scroll
-            self._scroll_horizontal(scroll_dir)
+            self._scroll_horizontal(scroll_dir, hbar, canvas)
         else:
-            self._scroll_vertical(scroll_dir)
+            self._scroll_vertical(scroll_dir, vbar, canvas)
 
-    def _scroll_vertical(self, scroll_dir):
+    def _scroll_vertical(self, scroll_dir, scrollbar, canvas):
         # If the scrollbar is max size don't bother scrolling
-        if self.vbar.get() == (0.0, 1.0):
+        if scrollbar.get() == (0.0, 1.0):
             return
 
-        self.canvas_grids.yview_scroll(scroll_dir, "units")
+        canvas.yview_scroll(scroll_dir, "units")
 
-    def _scroll_horizontal(self, scroll_dir):
+    def _scroll_horizontal(self, scroll_dir, scrollbar, canvas):
         # If the scrollbar is max size don't bother scrolling
-        if self.hbar.get() == (0.0, 1.0):
+        if scrollbar.get() == (0.0, 1.0):
             return
 
-        self.canvas_grids.xview_scroll(scroll_dir, "units")
+        canvas.xview_scroll(scroll_dir, "units")
 
-    def _bind_to_mousewheel(self, _event, canvas):
+    def _bind_to_mousewheel(self, _event, hbar, vbar, canvas):
         if is_windows():
-            canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+            canvas.bind_all("<MouseWheel>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
         else:
-            canvas.bind_all("<Button-4>", self._on_mousewheel)
-            canvas.bind_all("<Button-5>", self._on_mousewheel)
+            canvas.bind_all("<Button-4>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
+            canvas.bind_all("<Button-5>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
 
     def _unbind_from_mousewheel(self, _event, canvas):
         if is_windows():
@@ -2701,7 +2810,7 @@ class LevelsTab(Tab):
                 new_tile_code += "%" + alt_tile
 
         tile_image = ImageTk.PhotoImage(
-            self.get_texture(new_tile_code, self.lvl_biome, self.lvl)
+            self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self.mag)
         )
 
         # compares tile id to tile ids in pallete list
@@ -3153,6 +3262,47 @@ class LevelsTab(Tab):
                                 )
                             curcol = curcol + 1
 
+                            
+    def _draw_grid_custom(self, cols, rows, theme, canvas):
+        zoom_level = self.custom_editor_zoom_level
+        canvas["width"] = (zoom_level * cols * 10) - 3
+        canvas["height"] = (zoom_level * rows * 8) - 3
+
+        lvl_bg = self.lvl_bgs.get(theme)
+        if not lvl_bg:
+            background = self.background_for_theme(theme)
+            print(background)
+            
+            image = Image.open(background).convert("RGBA")
+            image = image.resize((zoom_level * 10, zoom_level * 8), Image.BILINEAR)
+            enhancer = ImageEnhance.Brightness(image)
+            im_output = enhancer.enhance(1.0)
+            lvl_bg = ImageTk.PhotoImage(im_output)
+            self.lvl_bgs[theme] = lvl_bg
+        for x in range(0, cols):
+            for y in range(0, rows):
+                canvas.create_image(x * zoom_level * 10, y * zoom_level * 8, image=lvl_bg, anchor="nw")
+
+        # finishes by drawing grid on top
+        for i in range(0, cols * 10 + 2):
+            canvas.create_line(
+                i * zoom_level,
+                0,
+                i * zoom_level,
+                rows * 8 * zoom_level,
+                fill="#F0F0F0",
+            )
+        for i in range(0, rows * 8):
+            canvas.create_line(
+                0,
+                i * zoom_level,
+                zoom_level * (cols * 10 + 2),
+                i * zoom_level,
+                fill="#F0F0F0",
+            )
+
+
+
     def _draw_grid_full(self, cols, rows, canvas):
         # resizes canvas for grids
         self.mag_full = int(self.slider_zoom_full.get() / 2)
@@ -3285,6 +3435,7 @@ class LevelsTab(Tab):
             ):
                 factor = 0  # darkens the image for cosmic ocean and duat and others
 
+            print(self.cur_lvl_bg_path)
             image = Image.open(self.cur_lvl_bg_path).convert("RGBA")
             image = image.resize(
                 (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
@@ -3811,7 +3962,7 @@ class LevelsTab(Tab):
                 tilecode_item = []
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
 
-                img = self.get_texture(tilecode.name, self.lvl_biome, lvl)
+                img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self.mag)
 
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 self.panel_sel["image"] = tilecode_item[1]
@@ -3856,7 +4007,7 @@ class LevelsTab(Tab):
                         tilecode_item = []
                         tilecode_item.append(str(need[1]) + " " + str(need[0]))
 
-                        img = self.get_texture(str(need[1]), self.lvl_biome, lvl)
+                        img = self.get_texture(str(need[1]), self.lvl_biome, lvl, self.mag)
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
@@ -3949,13 +4100,6 @@ class LevelsTab(Tab):
                     entry, "end", values=room_string, text=str(room_name)
                 )
 
-    def read_save_format(self, level):
-        valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
-        for save_format in valid_save_formats:
-            for template in level.level_templates.all():
-                if template.name == save_format.room_template_format.format(y=1, x=1):
-                    return save_format
-
     def read_custom_lvl_file(self, lvl):
         self.usable_codes = []
         for code in self.usable_codes_string:
@@ -3968,7 +4112,157 @@ class LevelsTab(Tab):
             return
 
         print(self.current_save_format.__dict__)
+        theme = self.read_theme(level, self.current_save_format)
+        background = self.background_for_theme(theme)
+
+        self.tile_pallete_ref_in_use = []
+        self.tile_pallete_map = {}
+        hard_floor_code = None
+        scale = self.custom_editor_zoom_level / 50
+        for tilecode in level.tile_codes.all():
+            tilecode_item = []
+            tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
+
+            img = self.get_texture(tilecode.name, theme, lvl, self.custom_editor_zoom_level)
+
+            tilecode_item.append(ImageTk.PhotoImage(img))#.resize((int(img.width * scale), int(img.height * scale)), Image.ANTIALIAS).convert("RGBA")))
+            
+            self.usable_codes.remove(tilecode.value)
+            self.tile_pallete_ref_in_use.append(tilecode_item)
+            self.tile_pallete_map[tilecode.value] = tilecode_item
+            if str(tilecode.name) == "floor_hard":
+                hard_floor_code = tilecode.value
+
+        if hard_floor_code is None:
+            if self.usable_codes.count('X') > 0:
+                hard_floor_code = 'X'
+            else:
+                hard_floor_code = self.usable_codes[0]
+            self.usable_codes.remove(hard_floor_code)
+            tilecode_item = ["floor_hard " + str(hard_floor_code), ImageTk.PhotoImage(self.get_texture("floor_hard", theme, lvl, self.custom_editor_zoom_level))]#.resize((int(img.width * scale), int(img.height * scale)), Image.ANTIALIAS).convert("RGBA"))]
+            self.tile_pallete_ref_in_use.append(tilecode_item)
+            self.tile_pallete_map[hard_floor_code] = tilecode_item
+
+        rooms = [[None for _ in range(8)] for _ in range(15)]
+        template_regex = "^" + self.current_save_format.room_template_format.format(y="(?P<y>\d+)", x="(?P<x>\d+)") + "$"
+        print(template_regex)
+        for template in level.level_templates.all():
+            match = re.search(template_regex, template.name)
+            if match is not None:
+                x = int(match.group('x'))
+                y = int(match.group('y'))
+                rooms[y][x] = template
+        filtered_rooms = []
+        for row in rooms:
+            newrow = list(filter(lambda room: room is not None, row))
+            if len(newrow) > 0:
+                filtered_rooms.append(newrow)
+            else:
+                break
+            
+        height = len(filtered_rooms)
+        width = len(filtered_rooms[0] or [])
+
+        self.custom_level_canvas_foreground.delete("all")
+        self.custom_level_canvas_background.delete("all")
+        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
+        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
+
+        foreground_tiles = ["" for _ in range(height * 8)]
+        background_tiles = ["" for _ in range(height * 8)]
+        
+
+        for i, row in enumerate(filtered_rooms):
+            for template in row:
+                room = template.chunks[0]
+                for line_index, line in enumerate(room.foreground):
+                    index = i * 8 + line_index
+                    foreground_tiles[index] = foreground_tiles[index] + "".join(line)
+                    if room.background is not None and len(room.background) > line_index:
+                        background_tiles[index] = background_tiles[index] + "".join(room.background[line_index])
+                    else:
+                        background_tiles[index] = background_tiles[index] + hard_floor_code * 10
+
+
+        def draw_layer(layer, canvas):
+            for row_index, room_row in enumerate(layer):
+                for tile_index, tile in enumerate(str(room_row)):
+                    tilecode = self.tile_pallete_map[tile]
+                    tile_name = tilecode[0].split(" ", 1)[0]
+                    tile_image = tilecode[1]
+                    x_offset = 0
+                    y_offset = 0
+                    for tile_name_ref in self.draw_mode:
+                        if tile_name == str(tile_name_ref[0]):
+                            x_offset, y_offset = self.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile_name_ref[1],
+                                self.custom_editor_zoom_level
+                            )
+                    canvas.create_image(
+                        tile_index * self.custom_editor_zoom_level - x_offset,
+                        row_index * self.custom_editor_zoom_level - y_offset,
+                        image=tile_image,
+                        anchor="nw"
+                    )
+
+        draw_layer(foreground_tiles, self.custom_level_canvas_foreground)
+        draw_layer(background_tiles, self.custom_level_canvas_background)
+
+        # print(background_tiles)
+
+        # Load scrolled to the center.
+        # self.custom_level_canvas.configure(scrollregion=(0, 0, self.custom_editor_zoom_level * 50 - 3, self.custom_editor_zoom_level * 50 - 3))
+        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .3)
+        # self.custom_level_canvas.yview_moveto(.5)
+
+    def read_save_format(self, level):
+        valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
+        for save_format in valid_save_formats:
+            for template in level.level_templates.all():
+                if template.name == save_format.room_template_format.format(y=0, x=0):
+                    return save_format
     
+    def read_theme(self, level, save_format):
+        for template in level.level_templates.all():
+            print(template.comment)
+            if template.name == save_format.room_template_format.format(y=0, x=0):
+                print("here it is!")
+                print(template.comment)
+                return template.comment
+            
+    def background_for_theme(self, theme):
+        def background_file(theme):
+            if theme == "cave":
+                return "bg_cave.png"
+            elif theme == "tidepool":
+                return "bg_tidepool.png"
+            elif theme == "babylon":
+                return "bg_babylon.png"
+            elif theme == "jungle":
+                return "bg_jungle.png"
+            elif theme == "temple":
+                return "bg_temple.png"
+            elif theme == "sunken":
+                return "bg_sunken.png"
+            elif theme == "gold":
+                return "bg_gold.png"
+            elif theme == "duat":
+                return "bg_temple.png"
+            elif theme == "eggplant":
+                return "bg_eggplant.png"
+            elif theme == "ice":
+                return "bg_ice.png"
+            elif theme == "olmec":
+                return "bg_stone.png"
+            elif theme == "volcana":
+                return "bg_volcano.png"
+            return "bg_cave.png"
+
+        return self.textures_dir / background_file(theme)
+        
+
     def show_format_error_dialog(self, lvl):
             win = PopupWindow("Couldn't find room templates", self.modlunky_config)
             message = ttk.Label(win, text="Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n")
@@ -3989,7 +4283,6 @@ class LevelsTab(Tab):
             
             def focus_name(event):
                 nonlocal name_entry_changed
-                print(name_entry_changed)
                 if name_entry_changed:
                     return
                 name_entry.delete('0', 'end')
@@ -4002,7 +4295,6 @@ class LevelsTab(Tab):
                 format_entry.config(foreground = 'black')
             def defocus_name(event):
                 nonlocal name_entry_changed
-                print("|" + str(name_entry.get()) + "|")
                 if str(name_entry.get()) == "":
                     name_entry_changed = False
                     name_entry.insert(0, "Optional")
@@ -4066,7 +4358,7 @@ class LevelsTab(Tab):
         self.modlunky_config.config_file.save()
 
     @staticmethod
-    def adjust_texture_xy(width, height, mode):
+    def adjust_texture_xy(width, height, mode, scale=50):
         # slight adjustments of textures for tile preview
         # 1 = lower half tile
         # 2 = draw from bottom left
@@ -4084,6 +4376,9 @@ class LevelsTab(Tab):
         # 14 = precise bottom left for yama
         x_coord = 0
         y_coord = 0
+        scale_factor = scale / 50
+        print(scale)
+        print(scale_factor)
         if mode == 1:
             y_coord = (height * -1) / 2
         elif mode == 2:
@@ -4094,32 +4389,32 @@ class LevelsTab(Tab):
         elif mode == 4:
             x_coord = (width * -1) / 2
         elif mode == 5:
-            y_coord = height / 2 + 50
+            y_coord = height / 2 + 50 * scale_factor
         elif mode == 6:
-            x_coord = 25
-            y_coord = 22
+            x_coord = 25 * scale_factor
+            y_coord = 22 * scale_factor
         elif mode == 7:
-            y_coord = height / 2 + 25
+            y_coord = height / 2 + 25 * scale_factor
         elif mode == 8:
-            y_coord = (height / 2 + 50) * -1
+            y_coord = (height / 2 + 50 * scale_factor) * -1
         elif mode == 9:
-            y_coord = height / 2 + 50
-            x_coord = 75
+            y_coord = height / 2 + 50 * scale_factor
+            x_coord = 75 * scale_factor
         elif mode == 10:
-            y_coord = height / 2 + 100
+            y_coord = height / 2 + 100 * scale_factor
         elif mode == 11:
-            x_coord = 50
+            x_coord = 50 * scale_factor
         elif mode == 12:
-            y_coord = 50
+            y_coord = 50 * scale_factor
         elif mode == 13:
             y_coord = height / 2
-            x_coord = 25
+            x_coord = 25 * scale_factor
         elif mode == 14:
-            y_coord = height - 50
-            x_coord = 100
-        return x_coord, y_coord
+            y_coord = height - 50 * scale_factor
+            x_coord = 100 * scale_factor
+        return int(x_coord), int(y_coord)
 
-    def get_texture(self, tile, biome, lvl):
+    def get_texture(self, tile, biome, lvl, scale):
         def get_specific_tile(tile):
             img_spec = None
 
@@ -4214,18 +4509,12 @@ class LevelsTab(Tab):
         if img is None:
             img = self._sprite_fetcher.get("lua_tile")
         width, height = img.size
-        resize = True
 
-        # These tile textures are already sized down
-        for tile_ref in TILENAMES:
-            if tile_ref == tile:
-                resize = False
-
-        if resize:
-            width = int(
-                width / 2.65
-            )  # 2.65 is the scale to get the typical 128 tile size down to the needed 50
-            height = int(height / 2.65)
+        scale_factor = 128 / scale
+        width = int(
+            width / scale_factor
+        )  # 2.65 is the scale to get the typical 128 tile size down to the needed 50
+        height = int(height / scale_factor)
 
         _scale = 1
         # for some reason these are sized differently then everything elses typical universal scale
@@ -4235,12 +4524,12 @@ class LevelsTab(Tab):
 
         # since theres rounding involved, this makes sure each tile is size
         # correctly by making up for what was rounded off
-        if width < 50 and height < 50:
+        if width < scale and height < scale:
             difference = 0
             if width > height:
-                difference = 50 - width
+                difference = scale - width
             else:
-                difference = 50 - height
+                difference = scale - height
 
             width = width + difference
             height = height + difference
