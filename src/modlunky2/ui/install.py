@@ -371,6 +371,7 @@ def install_fyi_mod(
     mods_dir = install_dir / "Mods"
     packs_dir = mods_dir / "Packs"
     metadata_dir = mods_dir / ".ml/pack-metadata"
+
     pack_dir = packs_dir / f"fyi.{install_code}"
     tmp_dir = packs_dir / f"temp_fyi.{install_code}"
 
