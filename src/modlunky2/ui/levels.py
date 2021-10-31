@@ -4728,11 +4728,9 @@ class LevelsTab(Tab):
     
     def read_theme(self, level, save_format):
         for template in level.level_templates.all():
-            print(template.comment)
             if template.name == save_format.room_template_format.format(y=0, x=0):
-                print("here it is!")
-                print(template.comment)
-                return template.comment
+                return template.comment or "cave"
+        return "cave"
             
     def background_for_theme(self, theme):
         def background_file(theme):
@@ -4769,7 +4767,7 @@ class LevelsTab(Tab):
              "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
              "floor_hard%50%floor", "push_block", "ladder", "ladder_plat",
              "door", "door2", "door2_secret",
-             "locked_door", "treasure", "chest", "treasure_vaultchest",
+             "locked_door", "treasure", "treasure_chest", "treasure_vaultchest",
         ]
         def theme_tiles(theme):
             beehive_tiles = [
@@ -4869,6 +4867,7 @@ class LevelsTab(Tab):
                     "slidingwall_ceiling", "fountain_head", "fountain_drain", "water",
                     "vine", "growable_vine", "jumpdog", "minister", "yama", "empress_grave",
                 ]
+            return []
         return common_tiles + theme_tiles(theme)
 
     def show_format_error_dialog(self, lvl):
