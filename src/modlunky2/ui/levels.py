@@ -147,7 +147,8 @@ class LevelsTab(Tab):
         self.tiles_meta = None
         self.im_output_dual = None
         self.tile_pallete_ref_in_use = None
-        self.tile_pallete_map = None
+        self.tile_pallete_map = {}
+        self.tile_pallete_suggestions = None
         self.lvl = None
         self.lvl_biome = None
         self.node = None
@@ -172,6 +173,7 @@ class LevelsTab(Tab):
         self.single_room_editor_tab = None
         self.full_level_editor_tab = None
         self.last_selected_editor_tab = None
+        self.current_editor_type = EditorType.VANILLA_ROOMS
         self.usable_codes = None
         self.usable_codes_string = (
             r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
@@ -272,7 +274,7 @@ class LevelsTab(Tab):
         self.load_full_level_editor(self.full_level_editor_tab)
 
         def tab_selected(event):
-            if event.widget.select() is self.last_selected_editor_tab:
+            if event.widget.select() == self.last_selected_editor_tab:
                 return
             if (
                 self.save_needed
@@ -296,8 +298,10 @@ class LevelsTab(Tab):
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
                 self.modlunky_config.config_file.level_editor_tab = 0
+                self.current_editor_type = EditorType.VANILLA_ROOMS
             else:
                 self.modlunky_config.config_file.level_editor_tab = 1
+                self.current_editor_type = EditorType.CUSTOM_LEVELS
             self.modlunky_config.config_file.save()
 
 
@@ -441,14 +445,83 @@ class LevelsTab(Tab):
         )
         back_view.grid(column=1, row=0, sticky="nw")
 
+        self.custom_editor_side_panel = tk.Frame(tab)
+        self.custom_editor_side_panel.grid(column=2, row=0, sticky="nswe")
+        self.custom_editor_side_panel.rowconfigure(2, weight=1)
+
+        self.tile_pallete_custom = ScrollableFrameLegacy(
+            self.custom_editor_side_panel, text="Tile Palette", width=50
+        )
+        self.tile_pallete_custom.grid(row=2, column=0, columnspan=4, sticky="nswe")
+        self.tile_pallete_custom.scrollable_frame["width"] = 50
+
+        self.tile_label_custom = ttk.Label(
+            self.custom_editor_side_panel,
+            text="Primary Tile: empty 0",
+        )
+        self.tile_label_custom.grid(row=0, column=1, sticky="we")
+
+        self.tile_label_secondary_custom = ttk.Label(
+            self.custom_editor_side_panel,
+            text="Secondary Tile: empty 0",
+        )
+        self.tile_label_secondary_custom.grid(row=1, column=1, sticky="we")
+
+        self.img_sel_custom = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
+
+        self.panel_sel_custom = ttk.Label(
+            self.custom_editor_side_panel,
+            image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
+            width=50
+        )
+        self.panel_sel_custom.grid(row=0, column=2)
+
+        self.panel_sel_secondary_custom = ttk.Label(
+            self.custom_editor_side_panel,
+            image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
+            width=50
+        )
+        self.panel_sel_secondary_custom.grid(row=1, column=2)
+        
+        self.button_tilecode_del_custom = tk.Button(
+            self.custom_editor_side_panel,
+            text="Del",
+            bg="red",
+            fg="white",
+            width=10,
+            command=lambda: self.del_tilecode_custom(
+                self.tile_label_custom,
+                [canvas_foreground, canvas_background],
+                [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
+                [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
+            ),
+        )        
+        self.button_tilecode_del_custom.grid(row=0, column=0, sticky="e")
+        self.button_tilecode_del_custom["state"] = tk.DISABLED
+        
+        self.button_tilecode_del_secondary_custom = tk.Button(
+            self.custom_editor_side_panel,
+            text="Del",
+            bg="red",
+            fg="white",
+            width=10,
+            command=lambda: self.del_tilecode_custom(
+                self.tile_label_secondary_custom,
+                [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
+                [self.custom_editor_foreground_tile_codes, custom_editor_background_tile_codes],
+            ),
+        )        
+        self.button_tilecode_del_secondary_custom.grid(row=1, column=0, sticky="e")
+        self.button_tilecode_del_secondary_custom["state"] = tk.DISABLED
+
         canvas_foreground.bind(
             "<Button-1>",
             lambda event: self.canvas_click(
                 event,
                 canvas_foreground,
                 self.custom_editor_zoom_level,
-                self.tile_label,
-                self.panel_sel,
+                self.tile_label_custom,
+                self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes))
         canvas_foreground.bind(
@@ -457,8 +530,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_foreground,
                 self.custom_editor_zoom_level,
-                self.tile_label,
-                self.panel_sel,
+                self.tile_label_custom,
+                self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes))
         canvas_foreground.bind(
@@ -467,8 +540,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_foreground,
                 self.custom_editor_zoom_level,
-                self.tile_label_secondary,
-                self.panel_sel_secondary,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes))
         canvas_foreground.bind(
@@ -477,8 +550,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_foreground,
                 self.custom_editor_zoom_level,
-                self.tile_label_secondary,
-                self.panel_sel_secondary,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes))
 
@@ -488,8 +561,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_background,
                 self.custom_editor_zoom_level,
-                self.tile_label,
-                self.panel_sel,
+                self.tile_label_custom,
+                self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes))
         canvas_background.bind(
@@ -498,8 +571,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_background,
                 self.custom_editor_zoom_level,
-                self.tile_label,
-                self.panel_sel,
+                self.tile_label_custom,
+                self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes))
         canvas_background.bind(
@@ -508,8 +581,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_background,
                 self.custom_editor_zoom_level,
-                self.tile_label_secondary,
-                self.panel_sel_secondary,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes))
         canvas_background.bind(
@@ -518,8 +591,8 @@ class LevelsTab(Tab):
                 event,
                 canvas_background,
                 self.custom_editor_zoom_level,
-                self.tile_label_secondary,
-                self.panel_sel_secondary,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes))
 
@@ -1085,6 +1158,20 @@ class LevelsTab(Tab):
         )
         self.tile_label_secondary.grid(row=1, column=10, columnspan=1, sticky="we")
 
+        self.img_sel = ImageTk.PhotoImage(
+            Image.open(
+                BASE_DIR / "static/images/tilecodetextures.png"
+            )  ########################################### set selected img
+        )
+        self.panel_sel = ttk.Label(
+            self.editor_tab, image=self.img_sel, width=50
+        )  # shows selected tile image
+        self.panel_sel.grid(row=0, column=11)
+        self.panel_sel_secondary = ttk.Label(
+            self.editor_tab, image=self.img_sel, width=50
+        )  # shows selected tile image
+        self.panel_sel_secondary.grid(row=1, column=11)
+        
         self.button_tilecode_del = tk.Button(
             self.editor_tab,
             text="Del",
@@ -1106,20 +1193,6 @@ class LevelsTab(Tab):
         )
         self.button_tilecode_del_secondary.grid(row=1, column=9, sticky="e")
         self.button_tilecode_del_secondary["state"] = tk.DISABLED
-
-        self.img_sel = ImageTk.PhotoImage(
-            Image.open(
-                BASE_DIR / "static/images/tilecodetextures.png"
-            )  ########################################### set selected img
-        )
-        self.panel_sel = ttk.Label(
-            self.editor_tab, image=self.img_sel, width=50
-        )  # shows selected tile image
-        self.panel_sel.grid(row=0, column=11)
-        self.panel_sel_secondary = ttk.Label(
-            self.editor_tab, image=self.img_sel, width=50
-        )  # shows selected tile image
-        self.panel_sel_secondary.grid(row=1, column=11)
 
         self.combobox = ttk.Combobox(self.editor_tab, height=20)
         self.combobox.grid(row=4, column=9, columnspan=1, sticky="nswe")
@@ -1159,6 +1232,12 @@ class LevelsTab(Tab):
                 str(self.combobox.get()),
                 str(int(float(self.scale.get()))),
                 self.combobox_alt.get(),
+                self.tile_pallete,
+                self.tile_label,
+                self.tile_label_secondary,
+                self.panel_sel,
+                self.panel_sel_secondary,
+                self.mag
             ),
         )
         self.button_tilecode_add.grid(
@@ -1484,7 +1563,7 @@ class LevelsTab(Tab):
         tile_image_matrix[row][column] = canvas.create_image(
             column * tile_size - x_offset,
             row * tile_size - y_offset,
-            image=panel_sel["image"],
+            image=self.tile_pallete_map[tile_code][1],
             anchor="nw",
         )
         tile_code_matrix[row][column] = tile_code
@@ -1843,23 +1922,47 @@ class LevelsTab(Tab):
             canvas.unbind_all("<Button-5>")
 
     def tile_pick(
-        self, _event, button_row, button_col
+        self, _event, button_row, button_col, tile_palette, tile_label, panel_sel
     ):  # When a tile is selected from the tile pallete
-        selected_tile = self.tile_pallete.scrollable_frame.grid_slaves(
+        selected_tile = tile_palette.scrollable_frame.grid_slaves(
             button_row, button_col
         )[0]
-        self.panel_sel["image"] = selected_tile["image"]
-        self.tile_label["text"] = "Primary Tile: " + selected_tile["text"]
+        panel_sel["image"] = selected_tile["image"]
+        tile_label["text"] = "Primary Tile: " + selected_tile["text"]
 
     def tile_pick_secondary(
-        self, _event, button_row, button_col
+        self, _event, button_row, button_col, tile_palette, tile_label, panel_sel
     ):  # When a tile is selected from the tile pallete
-        selected_tile = self.tile_pallete.scrollable_frame.grid_slaves(
+        selected_tile = tile_palette.scrollable_frame.grid_slaves(
             button_row, button_col
         )[0]
-        self.panel_sel_secondary["image"] = selected_tile["image"]
-        self.tile_label_secondary["text"] = "Secondary Tile: " + selected_tile["text"]
+        panel_sel["image"] = selected_tile["image"]
+        tile_label["text"] = "Secondary Tile: " + selected_tile["text"]
 
+    def suggested_tile_pick(
+        self, suggested_tile, is_secondary, tile_palette, tile_label,
+        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+    ):
+        tile = self.add_tilecode(
+            suggested_tile, 100, "empty", tile_palette, tile_label, tile_label_secondary,
+            panel_sel, panel_sel_secondary, scale
+        )
+        if not tile:
+            return
+        curr_panel_sel = None
+        curr_tile_label = None
+        prefix = ""
+        if is_secondary:
+            curr_panel_sel = panel_sel_secondary
+            curr_tile_label = tile_label_secondary
+            prefix = "Secondary Tile: "
+        else:
+            curr_panel_sel = panel_sel
+            curr_tile_label = tile_label
+            prefix = "Primary Tile: "
+        curr_panel_sel["image"] = tile[1]
+        curr_tile_label["text"] = prefix + tile[0]
+        
     def get_codes_left(self):
         codes = ""
         for code in self.usable_codes:
@@ -2005,7 +2108,7 @@ class LevelsTab(Tab):
                         level_templates.set_obj(
                             LevelTemplate(
                                 name=self.current_save_format.room_template_format.format(y=room_y, x=room_x),
-                                comment=self.current_theme,
+                                comment=self.lvl_biome,
                                 chunks=template_chunks,
                             )
                         )
@@ -2895,7 +2998,7 @@ class LevelsTab(Tab):
                 if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_id)
-            self.populate_tilecode_pallete()
+            self.populate_tilecode_pallete(self.tile_pallete, self.tile_label, self.tile_label_secondary, self.panel_sel, self.panel_sel_secondary, self.mag)
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label["text"] = (
@@ -2921,7 +3024,7 @@ class LevelsTab(Tab):
         else:
             return
 
-    def del_tilecode_secondary(self):
+    def del_tilecode_secondary(self, tile_pallete, tile_label, tile_label_secondary, panel_sel, panel_sel_secondary):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
@@ -2973,7 +3076,7 @@ class LevelsTab(Tab):
                 if str(tile_id) == str(id_[0].split(" ", 2)[0]):
                     self.tile_pallete_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_id)
-            self.populate_tilecode_pallete()
+            self.populate_tilecode_pallete(self.tile_pallete, self.tile_label, self.tile_label_secondary, self.panel_sel, self.panel_sel_secondary, self.mag)
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
                 self.tile_label["text"] = (
@@ -2999,7 +3102,73 @@ class LevelsTab(Tab):
         else:
             return
 
-    def add_tilecode(self, tile, percent, alt_tile):
+    def del_tilecode_custom(self, tile_label, canvases, tile_image_matrices, tile_code_matrices):
+        msg_box = tk.messagebox.askquestion(
+            "Delete Tilecode?",
+            "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
+            icon="warning",
+        )
+        if msg_box == "yes":
+            tile_id = tile_label["text"].split(" ", 4)[2]
+            tile_code = tile_label["text"].split(" ", 4)[3]
+            if tile_id == r"empty":
+                tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
+                return
+
+            new_tile = self.tile_pallete_map["0"]
+            for matrix_index in range(len(tile_image_matrices)):
+                tile_image_matrix = tile_image_matrices[matrix_index]
+                tile_code_matrix = tile_code_matrices[matrix_index]
+                canvas = canvases[matrix_index]
+                for row in range(len(tile_code_matrix)):
+                    for column in range(len(tile_code_matrix[row])):
+                        if str(tile_code_matrix[row][column]) == str(tile_code):
+                            canvas.delete(tile_image_matrix[row][column])
+                            tile_code_matrix[row][column] = '0'
+                            tile_image_matrix[row][column] = canvas.create_image(
+                                column * self.custom_editor_zoom_level,
+                                row * self.custom_editor_zoom_level,
+                                image=new_tile[1],
+                                anchor="nw"
+                            )
+
+            self.usable_codes.append(str(tile_code))
+            logger.debug("%s is now available for use", tile_code)
+            # adds tilecode back to list to be reused
+            for id_ in self.tile_pallete_ref_in_use:
+                if str(tile_code) == str(id_[0].split(" ", 2)[1]):
+                    self.tile_pallete_ref_in_use.remove(id_)
+                    logger.debug("Deleted %s", tile_id)
+            self.populate_tilecode_pallete(self.tile_pallete_custom, self.tile_label_custom, self.tile_label_secondary_custom, self.panel_sel_custom, self.panel_sel_secondary_custom, self.custom_editor_zoom_level)
+            new_selection = self.tile_pallete_ref_in_use[0]
+            if str(self.tile_label_custom["text"]).split(" ", 3)[2] == tile_id:
+                self.tile_label_custom["text"] = (
+                    "Primary Tile: "
+                    + str(new_selection[0]).split(" ", 2)[0]
+                    + " "
+                    + str(new_selection[0]).split(" ", 2)[1]
+                )
+                self.panel_sel_custom["image"] = new_selection[1]
+            if str(self.tile_label_secondary_custom["text"]).split(" ", 3)[2] == tile_id:
+                self.tile_label_secondary_custom["text"] = (
+                    "Secondary Tile: "
+                    + str(new_selection[0]).split(" ", 2)[0]
+                    + " "
+                    + str(new_selection[0]).split(" ", 2)[1]
+                )
+                self.panel_sel_secondary_custom["image"] = new_selection[1]
+
+            self.get_codes_left()
+            self.save_needed = True
+            self.button_save["state"] = tk.NORMAL
+        else:
+            return
+        
+
+    def add_tilecode(
+        self, tile, percent, alt_tile, tile_palette, tile_label,
+        tile_label_secondary, panel_sel, panel_sel_secondary, scale
+    ):
         usable_code = None
 
         invalid_tilecodes = []
@@ -3029,7 +3198,7 @@ class LevelsTab(Tab):
                 new_tile_code += "%" + alt_tile
 
         tile_image = ImageTk.PhotoImage(
-            self.get_texture(new_tile_code, self.lvl_biome, self.lvl, self.mag)
+            self.get_texture(new_tile_code, self.lvl_biome, self.lvl, scale)
         )
 
         # compares tile id to tile ids in pallete list
@@ -3050,42 +3219,45 @@ class LevelsTab(Tab):
             )
             return
 
-        count_row = 0
-        count_col = 0
-        for _ in self.tile_pallete_ref_in_use:
-            if count_col == 7:
-                count_col = -1
-                count_row = count_row + 1
-            count_col = count_col + 1
+        # count_row = 0
+        # count_col = 0
+        # for _ in self.tile_pallete_ref_in_use:
+        #     if count_col == 7:
+        #         count_col = -1
+        #         count_row = count_row + 1
+        #     count_col = count_col + 1
 
         ref_tile = []
         ref_tile.append(new_tile_code + " " + str(usable_code))
         ref_tile.append(tile_image)
         self.tile_pallete_ref_in_use.append(ref_tile)
-        new_tile = tk.Button(
-            self.tile_pallete.scrollable_frame,
-            text=str(
-                new_tile_code + " " + str(usable_code)
-            ),  # keep seperate by space cause I use that for splitting
-            width=40,
-            height=40,
-            image=tile_image,
-        )
-        new_tile.grid(row=count_row, column=count_col)
-        new_tile.bind(
-            "<Button-1>",
-            lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
-        )
-        new_tile.bind(
-            "<Button-3>",
-            lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
-                event, r, c
-            ),
-        )
+        self.tile_pallete_map[usable_code] = ref_tile
+        # new_tile = tk.Button(
+        #     self.tile_pallete.scrollable_frame,
+        #     text=str(
+        #         new_tile_code + " " + str(usable_code)
+        #     ),  # keep seperate by space cause I use that for splitting
+        #     width=40,
+        #     height=40,
+        #     image=tile_image,
+        # )
+        # new_tile.grid(row=count_row, column=count_col)
+        # new_tile.bind(
+        #     "<Button-1>",
+        #     lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+        # )
+        # new_tile.bind(
+        #     "<Button-3>",
+        #     lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
+        #         event, r, c
+        #     ),
+        # )
+        self.populate_tilecode_pallete(tile_palette, tile_label, tile_label_secondary, panel_sel, panel_sel_secondary, scale)
         self.get_codes_left()
         self.save_needed = True
         self.button_save["state"] = tk.NORMAL
-        self.check_dependencies()
+        # self.check_dependencies()
+        return ref_tile
 
     def on_double_click(self, tree_view):
         # First check if a blank space was selected
@@ -3169,40 +3341,89 @@ class LevelsTab(Tab):
         self.save_needed = True
         self.button_save["state"] = tk.NORMAL
 
-    def populate_tilecode_pallete(self):
+    def populate_tilecode_pallete(
+        self, tile_palette, tile_label, tile_label_secondary,
+        panel_sel, panel_sel_secondary, scale
+    ):
         # resets tile pallete to add them all back without the deleted one
-        for widget in self.tile_pallete.scrollable_frame.winfo_children():
+        for widget in tile_palette.scrollable_frame.winfo_children():
             widget.destroy()
         count_row = 0
         count_col = -1
+        self.tile_images = []
+        used_tile_names = []
         for tile_keep in self.tile_pallete_ref_in_use:
             if count_col == 7:
                 count_col = -1
                 count_row = count_row + 1
             count_col = count_col + 1
-
+            tile_name = tile_keep[0].split(" ", 2)[0]
+            used_tile_names.append(tile_name)
+            tile_image = ImageTk.PhotoImage(self.get_texture(tile_name, self.lvl_biome, self.lvl, 40))
+            self.tile_images.append(tile_image)
             new_tile = tk.Button(
-                self.tile_pallete.scrollable_frame,
-                text=str(tile_keep[0].split(" ", 2)[0])
+                tile_palette.scrollable_frame,
+                text=str(tile_name)
                 + " "
                 + str(
                     tile_keep[0].split(" ", 2)[1]
                 ),  # keep seperate by space cause I use that for splitting
                 width=40,
                 height=40,
-                image=tile_keep[1],
+                image=tile_image,
             )
             new_tile.grid(row=count_row, column=count_col)
             new_tile.bind(
                 "<Button-1>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c, tile_palette, tile_label, panel_sel),
             )
             new_tile.bind(
                 "<Button-3>",
                 lambda event, r=count_row, c=count_col: self.tile_pick_secondary(
-                    event, r, c
+                    event, r, c, tile_palette, tile_label_secondary, panel_sel_secondary
                 ),
             )
+
+
+        if self.tile_pallete_suggestions and len(self.tile_pallete_suggestions):
+            count_col = -1
+            tile_palette.scrollable_frame.rowconfigure(count_row+1, minsize=15)
+            count_row = count_row + 2
+            suggestions_label = ttk.Label(tile_palette.scrollable_frame, text="Suggested Tiles:")
+            suggestions_label.grid(row=count_row, column=0, columnspan=5, sticky="nw")
+            count_row = count_row + 1
+
+            for tile_suggestion in self.tile_pallete_suggestions:
+                if tile_suggestion in used_tile_names:
+                    continue
+                if count_col == 7:
+                    count_col = -1
+                    count_row = count_row + 1
+                count_col = count_col + 1
+                tile_image = ImageTk.PhotoImage(self.get_texture(tile_suggestion, self.lvl_biome, self.lvl, 40))
+                self.tile_images.append(tile_image)
+                new_tile = tk.Button(
+                    tile_palette.scrollable_frame,
+                    text=tile_suggestion,
+                    width=40,
+                    height=40,
+                    image=tile_image
+                )
+                new_tile.grid(row=count_row, column=count_col)
+                new_tile.bind(
+                    "<Button-1>",
+                    lambda event, ts=tile_suggestion: self.suggested_tile_pick(
+                        ts, False, tile_palette, tile_label,
+                        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+                    )
+                )
+                new_tile.bind(
+                    "<Button-3>",
+                    lambda event, ts=tile_suggestion: self.suggested_tile_pick(
+                        ts, True, tile_palette, tile_label,
+                        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+                    )
+                )
 
     def go_back(self):
         msg_box = tk.messagebox.askquestion(
@@ -4230,7 +4451,8 @@ class LevelsTab(Tab):
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
-        self.populate_tilecode_pallete()
+        self.populate_tilecode_pallete(self.tile_pallete, self.tile_label, self.tile_label_secondary, self.panel_sel, self.panel_sel_secondary, self.mag)
+
 
         level_rules = level.level_settings.all()
         self.full_size = None
@@ -4325,6 +4547,7 @@ class LevelsTab(Tab):
             self.usable_codes.append(code)
 
         level = LevelFile.from_path(Path(self.lvls_path) / lvl)
+        self.lvl = lvl
         self.current_level_full = level
         self.current_level_path_full = Path(self.lvls_path) / lvl
         self.current_save_format = self.read_save_format(level)
@@ -4333,8 +4556,11 @@ class LevelsTab(Tab):
             return
 
         print(self.current_save_format.__dict__)
+
+        self.button_tilecode_del_custom["state"] = tk.NORMAL
+        self.button_tilecode_del_secondary_custom["state"] = tk.NORMAL
         theme = self.read_theme(level, self.current_save_format)
-        self.current_theme = theme
+        self.lvl_biome = theme
         background = self.background_for_theme(theme)
 
         self.tile_pallete_ref_in_use = []
@@ -4370,30 +4596,31 @@ class LevelsTab(Tab):
         # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
         if self.tile_pallete_map['1']:
             tile = self.tile_pallete_map['1']
-            self.panel_sel["image"] = tile[1]
-            self.tile_label["text"] = "Primary Tile: " + tile[0]
+            self.panel_sel_custom["image"] = tile[1]
+            self.tile_label_custom["text"] = "Primary Tile: " + tile[0]
         elif len(self.tile_pallete_ref_in_use) > 0:
             tile = self.tile_pallete_ref_in_use[0]
-            self.panel_sel["image"] = tile[1]
-            self.tile_label["text"] = "Primary Tile: " + tile[0]
+            self.panel_sel_custom["image"] = tile[1]
+            self.tile_label_custom["text"] = "Primary Tile: " + tile[0]
             secondary_backup_index = 1
 
 
         # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
         if self.tile_pallete_map['0']:
             tile = self.tile_pallete_map['0']
-            self.panel_sel_secondary["image"] = tile[1]
-            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+            self.panel_sel_secondary_custom["image"] = tile[1]
+            self.tile_label_secondary_custom["text"] = "Secondary Tile: " + tile[0]
         elif len(self.tile_pallete_ref_in_use) > secondary_backup_index:
             tile = self.tile_pallete_ref_in_use[secondary_backup_index]
-            self.panel_sel_secondary["image"] = tile[1]
-            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+            self.panel_sel_secondary_custom["image"] = tile[1]
+            self.tile_label_secondary_custom["text"] = "Secondary Tile: " + tile[0]
         elif len(self.tile_pallete_ref_in_use) > 0:
             tile = self.tile_pallete_ref_in_use[0]
-            self.panel_sel_secondary["image"] = tile[1]
-            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+            self.panel_sel_secondary_custom["image"] = tile[1]
+            self.tile_label_secondary_custom["text"] = "Secondary Tile: " + tile[0]
         
-            
+        self.tile_pallete_suggestions = self.suggested_tiles_for_theme(theme)
+        self.populate_tilecode_pallete(self.tile_pallete_custom, self.tile_label_custom, self.tile_label_secondary_custom, self.panel_sel_custom, self.panel_sel_secondary_custom, self.custom_editor_zoom_level)
 
         rooms = [[None for _ in range(8)] for _ in range(15)]
         template_regex = "^" + self.current_save_format.room_template_format.format(y="(?P<y>\d+)", x="(?P<x>\d+)") + "$"
@@ -4531,12 +4758,35 @@ class LevelsTab(Tab):
                 return "bg_ice.png"
             elif theme == "olmec":
                 return "bg_stone.png"
-            elif theme == "volcana":
+            elif theme == "volcano":
                 return "bg_volcano.png"
             return "bg_cave.png"
 
         return self.textures_dir / background_file(theme)
-        
+
+    def suggested_tiles_for_theme(self, theme):
+        if theme == "cave":
+            return [
+                "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
+                "floor_hard%50%floor", "push_block", "bone_block", "ladder",
+                "ladder_plat", "platform", "door", "door2", "door2_secret",
+                "locked_door", "arrow_trap", "totem_trap", "spikes", "snake",
+                "bat", "skeleton", "caveman", "caveman_asleep", "caveman_asleep%50", "scorpion",
+                "cookfire", "turkey", "yang", "cavemanboss", "autowalltorch",
+                "litwalltorch", "treasure", "ghist_shopkeeper", "ghist_door2",
+            ]
+        elif theme == "volcano":
+            return [
+                "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
+                "floor_hard%50%floor", "push_block", "powder_keg", "timed_powder_keg",
+                "ladder", "ladder_plat", "falling_platform", "chain_ceiling", "chainandblocks_ceiling",
+                "spikeball_trap", "conveyorbelt_left", "conveyorbelt_right", "door",
+                "door2", "locked_door", "factory_generator", "robot", "imp",
+                "caveman_asleep", "lavamander", "bat", "vampire", "vlad", "oldhunter",
+                "lava", "vlad_floor", "nonreplaceable_babylon_floor", "drill",
+                "udjat_socket", "slidingwall_switch", "slidingwall_ceiling", "crown_statue",
+            ]
+        return []
 
     def show_format_error_dialog(self, lvl):
             win = PopupWindow("Couldn't find room templates", self.modlunky_config)
