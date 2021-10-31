@@ -147,6 +147,7 @@ class LevelsTab(Tab):
         self.tiles_meta = None
         self.im_output_dual = None
         self.tile_pallete_ref_in_use = None
+        self.tile_pallete_map = None
         self.lvl = None
         self.lvl_biome = None
         self.node = None
@@ -161,7 +162,12 @@ class LevelsTab(Tab):
         self.full_size = None
         self.tiles_full = None
         self.tiles_full_dual = None
+        self.current_level_full = None
         self.mag_full = None
+        self.custom_editor_foreground_tile_images = None
+        self.custom_editor_background_tile_images = None
+        self.custom_editor_foreground_tile_codes = None
+        self.custom_editor_background_tile_codes = None
         self.editor_tab_control = None
         self.single_room_editor_tab = None
         self.full_level_editor_tab = None
@@ -238,6 +244,10 @@ class LevelsTab(Tab):
         self.last_selected_file = None
         self.tiles = None
         self.tiles_meta = None
+        self.custom_editor_foreground_tile_images = None
+        self.custom_editor_background_tile_images = None
+        self.custom_editor_foreground_tile_codes = None
+        self.custom_editor_background_tile_codes = None
         self.lvl_editor_start_frame.grid_remove()
 
         self.icon_add = ImageTk.PhotoImage(
@@ -276,6 +286,7 @@ class LevelsTab(Tab):
                 if msg_box == "yes":
                     self.save_needed = False
                     self.button_save["state"] = tk.DISABLED
+                    self.button_save_full["state"] = tk.DISABLED
                     logger.debug("Switched tabs without saving.")
                 else:
                     self.editor_tab_control.select(self.last_selected_editor_tab)
@@ -317,6 +328,13 @@ class LevelsTab(Tab):
         self.load_packs(tree_files)
 
         tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files, EditorType.CUSTOM_LEVELS))
+
+        self.button_back_full = tk.Button(tab, text="Exit Editor", bg="black", fg="white", command=self.go_back)
+        self.button_back_full.grid(row=1, column=0, sticky="nswe")
+
+        self.button_save_full = tk.Button(tab, text="Save", bg="Blue", fg="white", command=self.save_changes_full)
+        self.button_save_full.grid(row=2, column=0, sticky="nswe")
+        self.button_save_full["state"] = tk.DISABLED
 
         editor_view = tk.Frame(tab)
         # editor_view.configure(background='red')
@@ -423,6 +441,87 @@ class LevelsTab(Tab):
         )
         back_view.grid(column=1, row=0, sticky="nw")
 
+        canvas_foreground.bind(
+            "<Button-1>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label,
+                self.panel_sel,
+                self.custom_editor_foreground_tile_images,
+                self.custom_editor_foreground_tile_codes))
+        canvas_foreground.bind(
+            "<B1-Motion>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label,
+                self.panel_sel,
+                self.custom_editor_foreground_tile_images,
+                self.custom_editor_foreground_tile_codes))
+        canvas_foreground.bind(
+            "<Button-3>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary,
+                self.panel_sel_secondary,
+                self.custom_editor_foreground_tile_images,
+                self.custom_editor_foreground_tile_codes))
+        canvas_foreground.bind(
+            "<B3-Motion>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary,
+                self.panel_sel_secondary,
+                self.custom_editor_foreground_tile_images,
+                self.custom_editor_foreground_tile_codes))
+
+        canvas_background.bind(
+            "<Button-1>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label,
+                self.panel_sel,
+                self.custom_editor_background_tile_images,
+                self.custom_editor_background_tile_codes))
+        canvas_background.bind(
+            "<B1-Motion>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label,
+                self.panel_sel,
+                self.custom_editor_background_tile_images,
+                self.custom_editor_background_tile_codes))
+        canvas_background.bind(
+            "<Button-3>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary,
+                self.panel_sel_secondary,
+                self.custom_editor_background_tile_images,
+                self.custom_editor_background_tile_codes))
+        canvas_background.bind(
+            "<B3-Motion>",
+            lambda event: self.canvas_click(
+                event,
+                canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary,
+                self.panel_sel_secondary,
+                self.custom_editor_background_tile_images,
+                self.custom_editor_background_tile_codes))
 
     def load_single_room_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -1349,6 +1448,49 @@ class LevelsTab(Tab):
         )
         self.tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, self.tree_files, EditorType.VANILLA_ROOMS))
 
+    # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
+    def offset_for_tile(self, tile_name, tile_code, tile_size):
+        for tile_name_ref in self.draw_mode:
+            if tile_name != str(tile_name_ref[0]):
+                continue
+            logger.debug("Applying custom anchor for %s", tile_name)
+            tile_ref = self.tile_pallete_map[tile_code]
+            if tile_ref:
+                logger.debug("Found %s", tile_ref[0])
+                img = tile_ref[1]
+                return self.adjust_texture_xy(img.width(), img.height(), int(tile_name_ref[1]), tile_size)
+
+        return 0, 0
+
+    # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
+    # the selected tile.
+    def canvas_click(self, event, canvas, tile_size, tile_label, panel_sel, tile_image_matrix, tile_code_matrix):
+        column = int(event.x // tile_size)
+        row = int(event.y // tile_size)
+        if column < 0 or event.x > int(canvas["width"]):
+            logger.debug("Column out of bounds.")
+            print("Column out of bounds: " + str(row) + " " + str(event.x) + "  " + str(canvas["height"]))
+            return
+        if row < 0 or event.y > int(canvas["height"]):
+            logger.debug("Row out of bounds.")
+            print("Row out of bounds: " + str(row) + "  " + str(event.y) + "  " + str(canvas["height"]))
+            return
+
+        tile_name = tile_label["text"].split(" ", 4)[2]
+        tile_code = tile_label["text"].split(" ", 4)[3]
+        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, tile_size)
+        
+        canvas.delete(tile_image_matrix[row][column])
+        tile_image_matrix[row][column] = canvas.create_image(
+            column * tile_size - x_offset,
+            row * tile_size - y_offset,
+            image=panel_sel["image"],
+            anchor="nw",
+        )
+        tile_code_matrix[row][column] = tile_code
+        self.save_needed = True
+        self.button_save_full["state"] = tk.NORMAL
+
     def reset(self):
         logger.debug("Resetting..")
         for i in self.tree_levels.get_children():
@@ -1817,6 +1959,88 @@ class LevelsTab(Tab):
                 os.remove(oldest_file)
         else:
             logger.debug("Backup not needed for what was a default file.")
+
+    def save_changes_full(self):
+        if self.save_needed:
+            try:
+                tile_codes = TileCodes()
+                level_chances = LevelChances()
+                level_settings = LevelSettings()
+                monster_changes = MonsterChances()
+                level_templates = LevelTemplates()
+
+                hard_floor_code = None
+                for tilecode in self.tile_pallete_ref_in_use:
+                    tile_codes.set_obj(
+                        TileCode(
+                            name=tilecode[0].split(" ", 1)[0],
+                            value=tilecode[0].split(" ", 1)[1],
+                            comment="",
+                        )
+                    )
+                    if tilecode[0].split(" ", 1)[0] == "floor_hard":
+                        hard_floor_code = tilecode[0].split(" ", 1)[1]
+
+                for room_y in range(len(self.custom_editor_foreground_tile_codes) // 8):
+                    for room_x in range(len(self.custom_editor_foreground_tile_codes[0]) // 10):
+                        room_foreground = []
+                        room_background = []
+                        for row in range(8):
+                            foreground_row = self.custom_editor_foreground_tile_codes[room_y * 8 + row]
+                            background_row = self.custom_editor_background_tile_codes[room_y * 8 + row]
+                            room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
+                            room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
+                        print(room_foreground)
+                        room_settings = []
+                        dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
+                        if dual:
+                            room_settings.append(TemplateSetting.DUAL)
+                            print("it's dual!")
+                        template_chunks = [Chunk(
+                            comment = None,
+                            settings = room_settings,
+                            foreground = room_foreground,
+                            background = room_background if dual else [],
+                        )]
+                        level_templates.set_obj(
+                            LevelTemplate(
+                                name=self.current_save_format.room_template_format.format(y=room_y, x=room_x),
+                                comment=self.current_theme,
+                                chunks=template_chunks,
+                            )
+                        )
+                old_level_file = self.current_level_full
+                level_file = LevelFile(
+                    old_level_file.comment,
+                    old_level_file.level_settings,
+                    tile_codes,
+                    old_level_file.level_chances,
+                    old_level_file.monster_chances,
+                    level_templates,
+                )
+
+                if not os.path.exists(Path(self.lvls_path)):
+                    os.makedirs(Path(self.lvls_path))
+                save_path = self.current_level_path_full
+                self.make_backup(save_path)
+                logger.debug("Saving to %s", save_path)
+
+                with Path(save_path).open("w", encoding="cp1252") as handle:
+                    level_file.write(handle)
+
+                logger.debug("Saved!")
+
+                self.save_needed = False
+                self.button_save_full["state"] = tk.DISABLED
+                logger.debug("Saved")
+            except Exception:  # pylint: disable=broad-except
+                logger.critical("Failed to save level: %s", tb_info())
+                _msg_box = tk.messagebox.showerror(
+                    "Oops?",
+                    "Error saving..",
+                )
+        else:
+            logger.debug("No changes to save.")
 
     def save_changes(self):
         if self.save_needed:
@@ -4106,6 +4330,8 @@ class LevelsTab(Tab):
             self.usable_codes.append(code)
 
         level = LevelFile.from_path(Path(self.lvls_path) / lvl)
+        self.current_level_full = level
+        self.current_level_path_full = Path(self.lvls_path) / lvl
         self.current_save_format = self.read_save_format(level)
         if not self.current_save_format:
             self.show_format_error_dialog(lvl)
@@ -4113,6 +4339,7 @@ class LevelsTab(Tab):
 
         print(self.current_save_format.__dict__)
         theme = self.read_theme(level, self.current_save_format)
+        self.current_theme = theme
         background = self.background_for_theme(theme)
 
         self.tile_pallete_ref_in_use = []
@@ -4142,6 +4369,36 @@ class LevelsTab(Tab):
             tilecode_item = ["floor_hard " + str(hard_floor_code), ImageTk.PhotoImage(self.get_texture("floor_hard", theme, lvl, self.custom_editor_zoom_level))]#.resize((int(img.width * scale), int(img.height * scale)), Image.ANTIALIAS).convert("RGBA"))]
             self.tile_pallete_ref_in_use.append(tilecode_item)
             self.tile_pallete_map[hard_floor_code] = tilecode_item
+
+        secondary_backup_index = 0
+
+        # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
+        if self.tile_pallete_map['1']:
+            tile = self.tile_pallete_map['1']
+            self.panel_sel["image"] = tile[1]
+            self.tile_label["text"] = "Primary Tile: " + tile[0]
+        elif len(self.tile_pallete_ref_in_use) > 0:
+            tile = self.tile_pallete_ref_in_use[0]
+            self.panel_sel["image"] = tile[1]
+            self.tile_label["text"] = "Primary Tile: " + tile[0]
+            secondary_backup_index = 1
+
+
+        # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
+        if self.tile_pallete_map['0']:
+            tile = self.tile_pallete_map['0']
+            self.panel_sel_secondary["image"] = tile[1]
+            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+        elif len(self.tile_pallete_ref_in_use) > secondary_backup_index:
+            tile = self.tile_pallete_ref_in_use[secondary_backup_index]
+            self.panel_sel_secondary["image"] = tile[1]
+            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+        elif len(self.tile_pallete_ref_in_use) > 0:
+            tile = self.tile_pallete_ref_in_use[0]
+            self.panel_sel_secondary["image"] = tile[1]
+            self.tile_label_secondary["text"] = "Secondary Tile: " + tile[0]
+        
+            
 
         rooms = [[None for _ in range(8)] for _ in range(15)]
         template_regex = "^" + self.current_save_format.room_template_format.format(y="(?P<y>\d+)", x="(?P<x>\d+)") + "$"
@@ -4184,7 +4441,8 @@ class LevelsTab(Tab):
                         background_tiles[index] = background_tiles[index] + hard_floor_code * 10
 
 
-        def draw_layer(layer, canvas):
+
+        def draw_layer(layer, canvas, tile_images, tile_codes):
             for row_index, room_row in enumerate(layer):
                 for tile_index, tile in enumerate(str(room_row)):
                     tilecode = self.tile_pallete_map[tile]
@@ -4200,15 +4458,37 @@ class LevelsTab(Tab):
                                 tile_name_ref[1],
                                 self.custom_editor_zoom_level
                             )
-                    canvas.create_image(
+                    tile_images[row_index][tile_index] = canvas.create_image(
                         tile_index * self.custom_editor_zoom_level - x_offset,
                         row_index * self.custom_editor_zoom_level - y_offset,
                         image=tile_image,
                         anchor="nw"
                     )
+                    tile_codes[row_index][tile_index] = tile
 
-        draw_layer(foreground_tiles, self.custom_level_canvas_foreground)
-        draw_layer(background_tiles, self.custom_level_canvas_background)
+        self.custom_editor_foreground_tile_images = [
+            [None for _ in range(width * 10)] for _ in range(height * 8)
+        ]
+        self.custom_editor_background_tile_images = [
+            [None for _ in range(width * 10)] for _ in range(height * 8)
+        ]
+        self.custom_editor_foreground_tile_codes = [
+            [None for _ in range(width * 10)] for _ in range(height * 8)
+        ]
+        self.custom_editor_background_tile_codes = [
+            [None for _ in range(width * 10)] for _ in range(height * 8)
+        ]
+
+        draw_layer(
+            foreground_tiles,
+            self.custom_level_canvas_foreground,
+            self.custom_editor_foreground_tile_images,
+            self.custom_editor_foreground_tile_codes)
+        draw_layer(
+            background_tiles,
+            self.custom_level_canvas_background,
+            self.custom_editor_background_tile_images,
+            self.custom_editor_background_tile_codes)
 
         # print(background_tiles)
 
