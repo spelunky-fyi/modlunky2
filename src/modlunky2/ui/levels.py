@@ -2194,13 +2194,8 @@ class LevelsTab(Tab):
                     level_file.write(handle)
 
                 logger.debug("Saved!")
-                # This was my attempt at changing the icon purple when a file is saved so the user
-                # knows its now modified
-                # for item in self.tree_levels.selection():
-                #    self.icon_modded = ImageTk.PhotoImage(Image.open(
-                #       BASE_DIR / "modlunky2/static/images/lvl_modded.png"
-                #    ).resize((25,25)))
-                #    item.configure(image=self.icon_modded)
+                for item in self.tree_files.selection():
+                   self.tree_files.item(item, image = self.lvl_icon(True))
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
