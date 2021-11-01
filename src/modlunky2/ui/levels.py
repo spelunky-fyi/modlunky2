@@ -480,7 +480,7 @@ class LevelsTab(Tab):
         tiles_panel = tk.Frame(side_panel_tab_control)
         options_panel = tk.Frame(side_panel_tab_control)
         # tiles_panel.grid(row=0, column=0, sticky="nswe")
-        side_panel_tab_control.add(tile_panel, text="Tiles")
+        side_panel_tab_control.add(tiles_panel, text="Tiles")
         side_panel_tab_control.add(options_panel, text="Settings")
 
         tiles_panel.rowconfigure(2, weight=1)
@@ -556,7 +556,7 @@ class LevelsTab(Tab):
         self.combobox_custom["state"] = tk.DISABLED
         tile_codes = sorted(VALID_TILE_CODES, key=str.lower)
         self.combobox_custom["values"] = tile_codes
-
+        
         self.button_tilecode_add_custom = tk.Button(
             tiles_panel,
             text="Add TileCode",
@@ -576,6 +576,66 @@ class LevelsTab(Tab):
         self.button_tilecode_add_custom.grid(
             row=3, column=2, sticky="nswe"
         )
+
+        theme_label = tk.Label(options_panel, text="Level Theme:")
+        theme_label.grid(row=0, column=0, columnspan=2, sticky="nsw")
+        self.theme_label = theme_label
+
+        self.theme_combobox = ttk.Combobox(options_panel, height=25,)
+        self.theme_combobox.grid(row=1, column=0, sticky="nsw")
+        self.theme_combobox["state"] = tk.DISABLED
+        self.theme_combobox["values"] = [
+            "Dwelling", "Jungle", "Volcana", "Olmec", "Tide Pool", "Temple",
+            "Ice Caves", "Neo Babylon", "Sunken City", "City of Gold", "Duat",
+            "Eggplant World", "Surface",
+        ]
+
+        def update_theme():
+            theme_name = str(self.theme_combobox.get())
+            def theme_for_name(name):
+                if name == "Dwelling":
+                    return "cave"
+                elif name == "Jungle":
+                    return "jungle"
+                elif name == "Volcana":
+                    return "volcano"
+                elif name == "Olmec":
+                    return "olmec"
+                elif name == "Tide Pool":
+                    return "tidepool"
+                elif name == "Temple":
+                    return "temple"
+                elif name == "Ice Caves":
+                    return "ice"
+                elif name == "Neo Babylon":
+                    return "babylon"
+                elif name == "Sunken City":
+                    return "sunken"
+                elif name == "City of Gold":
+                    return "gold"
+                elif name == "Duat":
+                    return "duat"
+                elif name == "Eggplant World":
+                    return "eggplant"
+                elif name == "Surface":
+                    return "surface"
+                return "cave"
+            theme = theme_for_name(theme_name)
+            self.select_theme(theme)
+
+        self.theme_select_button = tk.Button(
+            options_panel,
+            text="Update Theme",
+            bg="yellow",
+            command=update_theme,
+        )
+        self.theme_select_button["state"] = tk.DISABLED
+        self.theme_select_button.grid(row=1, column=1, sticky="nswe")
+
+        def theme_selected(event):
+            self.theme_select_button["state"] = tk.NORMAL
+        self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
+
         canvas_foreground.bind(
             "<Button-1>",
             lambda event: self.canvas_click(
@@ -3767,6 +3827,7 @@ class LevelsTab(Tab):
                             
     def _draw_grid_custom(self, cols, rows, theme, canvas):
         zoom_level = self.custom_editor_zoom_level
+        canvas.delete("all")
         canvas["width"] = (zoom_level * cols * 10) - 3
         canvas["height"] = (zoom_level * rows * 8) - 3
 
@@ -4603,7 +4664,7 @@ class LevelsTab(Tab):
                     entry, "end", values=room_string, text=str(room_name)
                 )
 
-    def read_custom_lvl_file(self, lvl):
+    def read_custom_lvl_file(self, lvl, theme=None):
         self.usable_codes = []
         for code in self.usable_codes_string:
             self.usable_codes.append(code)
@@ -4627,6 +4688,11 @@ class LevelsTab(Tab):
         theme = self.read_theme(level, self.current_save_format)
         self.lvl_biome = theme
         background = self.background_for_theme(theme)
+
+        theme_name = self.name_of_theme(theme)
+        self.theme_combobox.set(theme_name)
+        self.theme_label["text"] = "Level Theme: " + theme_name
+        self.theme_combobox["state"] = "readonly"
 
         self.tile_pallete_ref_in_use = []
         self.tile_pallete_map = {}
@@ -4707,10 +4773,10 @@ class LevelsTab(Tab):
         height = len(filtered_rooms)
         width = len(filtered_rooms[0] or [])
 
-        self.custom_level_canvas_foreground.delete("all")
-        self.custom_level_canvas_background.delete("all")
-        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
-        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
+        # self.custom_level_canvas_foreground.delete("all")
+        # self.custom_level_canvas_background.delete("all")
+        # self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
+        # self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
 
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
@@ -4727,11 +4793,81 @@ class LevelsTab(Tab):
                     else:
                         background_tiles[index] = background_tiles[index] + hard_floor_code * 10
 
+        def map_rooms(layer):
+            return list(
+            map(lambda room_row: list(map(lambda tile: tile, str(room_row))), layer)
+        )
+        self.custom_editor_foreground_tile_codes = map_rooms(foreground_tiles)
+        self.custom_editor_background_tile_codes = map_rooms(background_tiles)
+        # def draw_layer(canvas, tile_codes, tile_images):
+        #     for row_index, room_row in enumerate(tile_codes):
+        #         for tile_index, tile in enumerate(room_row):
+        #             tilecode = self.tile_pallete_map[tile]
+        #             tile_name = tilecode[0].split(" ", 1)[0]
+        #             tile_image = tilecode[1]
+        #             x_offset = 0
+        #             y_offset = 0
+        #             for tile_name_ref in self.draw_mode:
+        #                 if tile_name == str(tile_name_ref[0]):
+        #                     x_offset, y_offset = self.adjust_texture_xy(
+        #                         tile_image.width(),
+        #                         tile_image.height(),
+        #                         tile_name_ref[1],
+        #                         self.custom_editor_zoom_level
+        #                     )
+        #             tile_images[row_index][tile_index] = canvas.create_image(
+        #                 tile_index * self.custom_editor_zoom_level - x_offset,
+        #                 row_index * self.custom_editor_zoom_level - y_offset,
+        #                 image=tile_image,
+        #                 anchor="nw"
+        #             )
+        #             # tile_codes[row_index][tile_index] = tile
+
+        # self.custom_editor_foreground_tile_images = [
+        #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # ]
+        # self.custom_editor_background_tile_images = [
+        #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # ]
+        # # self.custom_editor_foreground_tile_codes = [
+        # #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # # ]
+        # # self.custom_editor_background_tile_codes = [
+        # #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # # ]
+        # draw_layer(self.custom_level_canvas_foreground, self.custom_editor_foreground_tile_codes, self.custom_editor_foreground_tile_images)
+        # draw_layer(self.custom_level_canvas_background, self.custom_editor_background_tile_codes, self.custom_editor_background_tile_images)
+        # # draw_layer(
+        # #     foreground_tiles,
+        # #     self.custom_level_canvas_foreground,
+        # #     self.custom_editor_foreground_tile_images,
+        # #     self.custom_editor_foreground_tile_codes)
+        # # draw_layer(
+        # #     background_tiles,
+        # #     self.custom_level_canvas_background,
+        # #     self.custom_editor_background_tile_images,
+        # #     self.custom_editor_background_tile_codes)
+
+        self.draw_custom_level_canvases(theme)
+        # print(background_tiles)
+
+        # Load scrolled to the center.
+        # self.custom_level_canvas.configure(scrollregion=(0, 0, self.custom_editor_zoom_level * 50 - 3, self.custom_editor_zoom_level * 50 - 3))
+        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .3)
+        # self.custom_level_canvas.yview_moveto(.5)
+
+    def draw_custom_level_canvases(self, theme):
+        width = int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
+        height = int(len(self.custom_editor_foreground_tile_codes) // 8)
+        self.custom_level_canvas_foreground.delete("all")
+        self.custom_level_canvas_background.delete("all")
+        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
+        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
 
 
-        def draw_layer(layer, canvas, tile_images, tile_codes):
-            for row_index, room_row in enumerate(layer):
-                for tile_index, tile in enumerate(str(room_row)):
+        def draw_layer(canvas, tile_codes, tile_images):
+            for row_index, room_row in enumerate(tile_codes):
+                for tile_index, tile in enumerate(room_row):
                     tilecode = self.tile_pallete_map[tile]
                     tile_name = tilecode[0].split(" ", 1)[0]
                     tile_image = tilecode[1]
@@ -4751,7 +4887,7 @@ class LevelsTab(Tab):
                         image=tile_image,
                         anchor="nw"
                     )
-                    tile_codes[row_index][tile_index] = tile
+                    # tile_codes[row_index][tile_index] = tile
 
         self.custom_editor_foreground_tile_images = [
             [None for _ in range(width * 10)] for _ in range(height * 8)
@@ -4759,30 +4895,14 @@ class LevelsTab(Tab):
         self.custom_editor_background_tile_images = [
             [None for _ in range(width * 10)] for _ in range(height * 8)
         ]
-        self.custom_editor_foreground_tile_codes = [
-            [None for _ in range(width * 10)] for _ in range(height * 8)
-        ]
-        self.custom_editor_background_tile_codes = [
-            [None for _ in range(width * 10)] for _ in range(height * 8)
-        ]
-
-        draw_layer(
-            foreground_tiles,
-            self.custom_level_canvas_foreground,
-            self.custom_editor_foreground_tile_images,
-            self.custom_editor_foreground_tile_codes)
-        draw_layer(
-            background_tiles,
-            self.custom_level_canvas_background,
-            self.custom_editor_background_tile_images,
-            self.custom_editor_background_tile_codes)
-
-        # print(background_tiles)
-
-        # Load scrolled to the center.
-        # self.custom_level_canvas.configure(scrollregion=(0, 0, self.custom_editor_zoom_level * 50 - 3, self.custom_editor_zoom_level * 50 - 3))
-        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .3)
-        # self.custom_level_canvas.yview_moveto(.5)
+        # self.custom_editor_foreground_tile_codes = [
+        #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # ]
+        # self.custom_editor_background_tile_codes = [
+        #     [None for _ in range(width * 10)] for _ in range(height * 8)
+        # ]
+        draw_layer(self.custom_level_canvas_foreground, self.custom_editor_foreground_tile_codes, self.custom_editor_foreground_tile_images)
+        draw_layer(self.custom_level_canvas_background, self.custom_editor_background_tile_codes, self.custom_editor_background_tile_images)
 
     def read_save_format(self, level):
         valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
@@ -4796,7 +4916,56 @@ class LevelsTab(Tab):
             if template.name == save_format.room_template_format.format(y=0, x=0):
                 return template.comment or "cave"
         return "cave"
-            
+    
+    def select_theme(self, theme):
+        self.theme_select_button["state"] = tk.DISABLED
+        if theme == self.lvl_biome:
+            return
+        self.lvl_biome = theme
+        self.theme_label["text"] = "Level Theme: " + self.name_of_theme(theme)
+        
+        for tilecode_item in self.tile_pallete_ref_in_use:
+            tile_name = tilecode_item[0].split(" ", 2)[0]
+            img = self.get_texture(tile_name, theme, self.lvl, self.custom_editor_zoom_level)
+            tilecode_item[1] = ImageTk.PhotoImage(img)
+
+        self.tile_pallete_suggestions = self.suggested_tiles_for_theme(theme)
+        self.populate_tilecode_pallete(
+            self.tile_pallete_custom, self.tile_label_custom,
+            self.tile_label_secondary_custom, self.panel_sel_custom,
+            self.panel_sel_secondary_custom, self.custom_editor_zoom_level
+        )
+        self.draw_custom_level_canvases(theme)
+
+    def name_of_theme(self, theme):
+        if theme == "cave":
+            return "Dwelling"
+        elif theme == "tidepool":
+            return "Tide Pool"
+        elif theme == "babylon":
+            return "Neo Babylon"
+        elif theme == "jungle":
+            return "Jungle"
+        elif theme == "temple":
+            return "Temple"
+        elif theme == "sunken":
+            return "Sunken City"
+        elif theme == "gold":
+            return "City of Gold"
+        elif theme == "duat":
+            return "Duat"
+        elif theme == "eggplant":
+            return "Eggplant World"
+        elif theme == "ice":
+            return "Ice Caves"
+        elif theme == "olmec":
+            return "Olmec"
+        elif theme == "volcano":
+            return "Volcana"
+        elif theme == "surface":
+            return "Surface"
+        return "Unknown"
+
     def background_for_theme(self, theme):
         def background_file(theme):
             if theme == "cave":
