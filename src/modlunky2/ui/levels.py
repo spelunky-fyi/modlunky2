@@ -343,12 +343,13 @@ class LevelsTab(Tab):
         # editor_view.configure(background='red')
         editor_view.grid(row=0, column=1, rowspan=3, sticky="nswe")
         
-        editor_view.columnconfigure(2, weight=1)
-        editor_view.columnconfigure(3, minsize=16)
+        editor_view.columnconfigure(3, weight=1)
+        editor_view.columnconfigure(7, minsize=17)
+        editor_view.columnconfigure(6, minsize=50)
         editor_view.rowconfigure(1, weight=1)
 
         scrollable_canvas = tk.Canvas(editor_view, bg="#292929")
-        scrollable_canvas.grid(row=0, column=0, columnspan=4, rowspan=2, sticky="nswe")
+        scrollable_canvas.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nswe")
         scrollable_canvas.columnconfigure(0, weight=1)
         scrollable_canvas.rowconfigure(0, weight=1)
 
@@ -385,9 +386,9 @@ class LevelsTab(Tab):
         scrollable_canvas["height"] = height
 
         hbar = ttk.Scrollbar(editor_view, orient="horizontal", command=scrollable_canvas.xview)
-        hbar.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="swe")
+        hbar.grid(row=0, column=0, columnspan=7, rowspan=2, sticky="swe")
         vbar = ttk.Scrollbar(editor_view, orient="vertical", command=scrollable_canvas.yview)
-        vbar.grid(row=0, column=0, columnspan=4, rowspan=2, sticky="nse")
+        vbar.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nse")
 
         scrollable_canvas.bind("<Enter>", lambda event: self._bind_to_mousewheel(event, hbar, vbar, scrollable_canvas))
         scrollable_canvas.bind("<Leave>", lambda event: self._unbind_from_mousewheel(event, scrollable_canvas))
@@ -449,22 +450,28 @@ class LevelsTab(Tab):
         self.custom_editor_side_panel.rowconfigure(0, weight=1)
         self.custom_editor_side_panel.columnconfigure(0, weight=1)
 
-        side_panel_hidden = tk.IntVar()
+        side_panel_hidden = False
+        side_panel_hide_button = tk.Button(
+            editor_view,
+            text=">>"
+        )
         def toggle_panel_hidden():
             nonlocal side_panel_hidden
-            if side_panel_hidden.get() == True:
+            side_panel_hidden = not side_panel_hidden
+            if side_panel_hidden:
                 self.custom_editor_side_panel.grid_remove()
+                side_panel_hide_button.configure(text="<<")
             else:
                 self.custom_editor_side_panel.grid()
-        self.side_panel_hide_button = tk.Radiobutton(
-            editor_view,
-            tex=">>"
-            variable=side_panel_hidden,
-            indicatoron=False,
-            value=False,
-            width=10,
+                side_panel_hide_button.configure(text=">>")
+            # variable=side_panel_hidden,
+            # indicatoron=False,
+            # value=False,
+            # width=10,
+        side_panel_hide_button.configure(
             command=toggle_panel_hidden,
         )
+        side_panel_hide_button.grid(column=6, row=0, sticky="nwe")
 
         tiles_panel = tk.Frame(self.custom_editor_side_panel)
         tiles_panel.grid(row=0, column=0, sticky="nswe")
