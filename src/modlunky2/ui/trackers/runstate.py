@@ -115,7 +115,7 @@ class RunState:
 
     def update_no_gold(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.NO_GOLD):
-            self.run_label.discard(Label.NO_GOLD)
+            self.run_label.discard(Label.NO_GOLD, Label.NO)
 
     def update_no_tp(
         self,
@@ -327,6 +327,8 @@ class RunState:
         health = player.health
         if (health > self.health and player.state != CharState.DYING) or health > 4:
             self.fail_low()
+        if health < 4:
+            self.run_label.discard(Label.NO)
         self.health = health
 
         bombs = player.inventory.bombs
@@ -607,8 +609,7 @@ class RunState:
 
     def fail_low(self):
         self.is_low_percent = False
-        self.run_label.discard(Label.LOW)
-        self.run_label.discard(Label.ICE_CAVES_SHORTCUT)
+        self.run_label.discard(Label.LOW, Label.NO, Label.ICE_CAVES_SHORTCUT)
 
     def update_on_level_start(self, world: int, theme: Theme, ropes: int):
         if not self.level_started:
