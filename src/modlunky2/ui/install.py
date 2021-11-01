@@ -373,7 +373,15 @@ def install_fyi_mod(
     metadata_dir = mods_dir / ".ml/pack-metadata"
 
     pack_dir = packs_dir / f"fyi.{install_code}"
+    tmp_dir = packs_dir / f"temp_fyi.{install_code}"
+
+    save_path = pack_dir / "save.dat"
+    tmp_save_path = tmp_dir / "save.dat"
     if pack_dir.exists():
+        if save_path.exists():
+            # Store the save file into a temp directory while downloading the new version.
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(save_path, tmp_save_path)
         if overwrite:
             logger.debug("Removing previous installation at %s", pack_dir)
             shutil.rmtree(pack_dir)
@@ -419,6 +427,11 @@ def install_fyi_mod(
         logo_name = download_logo(call, logo_url, pack_metadata_dir)
 
     write_manifest(pack_metadata_dir, mod_details, mod_file, logo_name)
+
+    if tmp_save_path.exists():
+        # If there was a save file, move it into the new pack.
+        shutil.copy(tmp_save_path, save_path)
+        shutil.rmtree(tmp_dir)
 
     logger.info("Finished installing %s to %s", install_code, pack_dir)
     if channel_name is not None:
