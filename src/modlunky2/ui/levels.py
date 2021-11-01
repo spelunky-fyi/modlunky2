@@ -342,7 +342,7 @@ class LevelsTab(Tab):
 
         editor_view = tk.Frame(tab)
         # editor_view.configure(background='red')
-        editor_view.grid(row=0,column=1,sticky="nswe")
+        editor_view.grid(row=0, column=1, rowspan=3, sticky="nswe")
         
         editor_view.columnconfigure(2, weight=1)
         editor_view.columnconfigure(3, minsize=16)
@@ -446,7 +446,7 @@ class LevelsTab(Tab):
         back_view.grid(column=1, row=0, sticky="nw")
 
         self.custom_editor_side_panel = tk.Frame(tab)
-        self.custom_editor_side_panel.grid(column=2, row=0, sticky="nswe")
+        self.custom_editor_side_panel.grid(column=2, row=0, rowspan=3, sticky="nswe")
         self.custom_editor_side_panel.rowconfigure(0, weight=1)
         self.custom_editor_side_panel.columnconfigure(0, weight=1)
 
@@ -524,7 +524,7 @@ class LevelsTab(Tab):
         self.combobox_custom = ttk.Combobox(tiles_panel, height=20)
         self.combobox_custom.grid(row=3, column=0, columnspan=2, sticky="swe")
         self.combobox_custom["state"] = tk.DISABLED
-        tile_codes = sorted(VALID_TILE_CODES)
+        tile_codes = sorted(VALID_TILE_CODES, key=str.lower)
         self.combobox_custom["values"] = tile_codes
 
         self.button_tilecode_add_custom = tk.Button(
@@ -4589,8 +4589,11 @@ class LevelsTab(Tab):
 
         print(self.current_save_format.__dict__)
 
+        self.combobox_custom["state"] = tk.NORMAL
         self.button_tilecode_del_custom["state"] = tk.NORMAL
         self.button_tilecode_del_secondary_custom["state"] = tk.NORMAL
+        self.combobox_custom.set("empty")
+
         theme = self.read_theme(level, self.current_save_format)
         self.lvl_biome = theme
         background = self.background_for_theme(theme)
