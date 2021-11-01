@@ -473,9 +473,16 @@ class LevelsTab(Tab):
         )
         side_panel_hide_button.grid(column=6, row=0, sticky="nwe")
 
-        tiles_panel = tk.Frame(self.custom_editor_side_panel)
-        tiles_panel.grid(row=0, column=0, sticky="nswe")
-        
+        side_panel_tab_control = ttk.Notebook(self.custom_editor_side_panel)
+        side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
+
+
+        tiles_panel = tk.Frame(side_panel_tab_control)
+        options_panel = tk.Frame(side_panel_tab_control)
+        # tiles_panel.grid(row=0, column=0, sticky="nswe")
+        side_panel_tab_control.add(tile_panel, text="Tiles")
+        side_panel_tab_control.add(options_panel, text="Settings")
+
         tiles_panel.rowconfigure(2, weight=1)
         tiles_panel.rowconfigure(3, minsize=50)
 
