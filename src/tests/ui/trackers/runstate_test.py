@@ -34,6 +34,7 @@ from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
     [
         (Label.PACIFIST, RunRecapFlags.PACIFIST, RunState.update_pacifist),
         (Label.NO_GOLD, RunRecapFlags.NO_GOLD, RunState.update_no_gold),
+        (Label.NO, RunRecapFlags.NO_GOLD, RunState.update_no_gold),
     ],
 )
 def test_run_recap(label, recap_flag, method):
@@ -306,18 +307,20 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
 
 
 @pytest.mark.parametrize(
-    "char_state,prev_health,cur_health,expected_low",
+    "char_state,prev_health,cur_health,expected_low,expected_no",
     [
-        (CharState.STANDING, 4, 4, True),
-        (CharState.STANDING, 2, 1, True),
-        (CharState.STANDING, 3, 1, True),
-        (CharState.DYING, 1, 4, True),
-        (CharState.STANDING, 1, 2, False),
-        (CharState.STANDING, 2, 4, False),
-        (CharState.STANDING, 5, 5, False),
+        (CharState.STANDING, 4, 4, True, True),
+        (CharState.STANDING, 2, 1, True, False),
+        (CharState.STANDING, 3, 1, True, False),
+        (CharState.DYING, 1, 4, True, True),
+        (CharState.STANDING, 1, 2, False, False),
+        (CharState.STANDING, 2, 4, False, False),
+        (CharState.STANDING, 5, 5, False, False),
     ],
 )
-def test_starting_resources_health(char_state, prev_health, cur_health, expected_low):
+def test_starting_resources_health_low(
+    char_state, prev_health, cur_health, expected_low, expected_no
+):
     run_state = RunState()
     run_state.health = prev_health
 
@@ -327,6 +330,9 @@ def test_starting_resources_health(char_state, prev_health, cur_health, expected
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
 
 
 @pytest.mark.parametrize(
