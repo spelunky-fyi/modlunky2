@@ -12,6 +12,12 @@ from urllib.parse import urlparse, urlunparse
 
 from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 
+from modlunky2.utils import is_windows
+
+if is_windows():
+    # Import for pyinstaller to detect this module
+    import platformdirs.windows  # pylint: disable=unused-import
+
 PROGRAMS_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
 DEFAULT_PATH = Path("C:/Program Files (x86)/Steam/steamapps/common/Spelunky 2")
 EXE_NAME = "Spel2.exe"
