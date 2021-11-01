@@ -447,22 +447,29 @@ class LevelsTab(Tab):
 
         self.custom_editor_side_panel = tk.Frame(tab)
         self.custom_editor_side_panel.grid(column=2, row=0, sticky="nswe")
-        self.custom_editor_side_panel.rowconfigure(2, weight=1)
+        self.custom_editor_side_panel.rowconfigure(0, weight=1)
+        self.custom_editor_side_panel.columnconfigure(0, weight=1)
+
+        tiles_panel = tk.Frame(self.custom_editor_side_panel)
+        tiles_panel.grid(row=0, column=0, sticky="nswe")
+        
+        tiles_panel.rowconfigure(2, weight=1)
+        tiles_panel.rowconfigure(3, minsize=50)
 
         self.tile_pallete_custom = ScrollableFrameLegacy(
-            self.custom_editor_side_panel, text="Tile Palette", width=50
+            tiles_panel, text="Tile Palette", width=50
         )
         self.tile_pallete_custom.grid(row=2, column=0, columnspan=4, sticky="nswe")
         self.tile_pallete_custom.scrollable_frame["width"] = 50
 
         self.tile_label_custom = ttk.Label(
-            self.custom_editor_side_panel,
+            tiles_panel,
             text="Primary Tile: empty 0",
         )
         self.tile_label_custom.grid(row=0, column=1, sticky="we")
 
         self.tile_label_secondary_custom = ttk.Label(
-            self.custom_editor_side_panel,
+            tiles_panel,
             text="Secondary Tile: empty 0",
         )
         self.tile_label_secondary_custom.grid(row=1, column=1, sticky="we")
@@ -470,21 +477,21 @@ class LevelsTab(Tab):
         self.img_sel_custom = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
 
         self.panel_sel_custom = ttk.Label(
-            self.custom_editor_side_panel,
+            tiles_panel,
             image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
             width=50
         )
         self.panel_sel_custom.grid(row=0, column=2)
 
         self.panel_sel_secondary_custom = ttk.Label(
-            self.custom_editor_side_panel,
+            tiles_panel,
             image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
             width=50
         )
         self.panel_sel_secondary_custom.grid(row=1, column=2)
         
         self.button_tilecode_del_custom = tk.Button(
-            self.custom_editor_side_panel,
+            tiles_panel,
             text="Del",
             bg="red",
             fg="white",
@@ -500,7 +507,7 @@ class LevelsTab(Tab):
         self.button_tilecode_del_custom["state"] = tk.DISABLED
         
         self.button_tilecode_del_secondary_custom = tk.Button(
-            self.custom_editor_side_panel,
+            tiles_panel,
             text="Del",
             bg="red",
             fg="white",
@@ -514,6 +521,31 @@ class LevelsTab(Tab):
         self.button_tilecode_del_secondary_custom.grid(row=1, column=0, sticky="e")
         self.button_tilecode_del_secondary_custom["state"] = tk.DISABLED
 
+        self.combobox_custom = ttk.Combobox(tiles_panel, height=20)
+        self.combobox_custom.grid(row=3, column=0, columnspan=2, sticky="swe")
+        self.combobox_custom["state"] = tk.DISABLED
+        tile_codes = sorted(VALID_TILE_CODES)
+        self.combobox_custom["values"] = tile_codes
+
+        self.button_tilecode_add_custom = tk.Button(
+            tiles_panel,
+            text="Add TileCode",
+            bg="yellow",
+            command=lambda: self.add_tilecode(
+                str(self.combobox_custom.get()),
+                "100",
+                "empty",
+                self.tile_pallete_custom,
+                self.tile_label_custom,
+                self.tile_label_secondary_custom,
+                self.panel_sel_custom,
+                self.panel_sel_secondary_custom,
+                self.custom_editor_zoom_level
+            ),
+        )
+        self.button_tilecode_add_custom.grid(
+            row=3, column=2, sticky="nswe"
+        )
         canvas_foreground.bind(
             "<Button-1>",
             lambda event: self.canvas_click(
