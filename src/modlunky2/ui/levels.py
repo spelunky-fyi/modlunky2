@@ -65,6 +65,20 @@ class CustomLevelSaveFormat:
     def fromJSON(cls, json):
         return cls(json["name"], json["room_template_format"], json["include_vanilla_setrooms"])
     
+    def display(self):
+        if self.include_vanilla_setrooms:
+            return self.room_template_format + " (with required vanilla setrooms)"
+        elif self.room_template_format == "setroom{y}-{x}":
+            return self.room_template_format + " (vanilla setrooms only)"
+        else:
+            return self.room_template_format + " (no vanilla setrooms)"
+    
+    def __eq__(self, other):
+        return (
+            self.name == other.name and
+            self.room_template_format == other.room_template_format and
+            self.include_vanilla_setrooms == other.include_vanilla_setrooms
+        )
 
 class LevelsTab(Tab):
     def __init__(
@@ -375,8 +389,8 @@ class LevelsTab(Tab):
         # scrollable_frame.rowconfigure(0, weight=1)
         scrollable_frame.grid(row=0, column=0, sticky="nswe")
 
-        width = scrollable_canvas.winfo_screenwidth()
-        height = scrollable_canvas.winfo_screenheight()
+        width = self.screen_width # scrollable_canvas.winfo_screenwidth()
+        height = self.screen_height# scrollable_canvas.winfo_screenheight()
         scrollable_canvas.create_window(
             (width, height),
             window=scrollable_frame,
@@ -485,6 +499,8 @@ class LevelsTab(Tab):
 
         tiles_panel.rowconfigure(2, weight=1)
         tiles_panel.rowconfigure(3, minsize=50)
+
+        options_panel.rowconfigure(2, minsize=20)
 
         self.tile_pallete_custom = ScrollableFrameLegacy(
             tiles_panel, text="Tile Palette", width=50
@@ -635,6 +651,48 @@ class LevelsTab(Tab):
         def theme_selected(event):
             self.theme_select_button["state"] = tk.NORMAL
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
+
+
+        option_header = tk.Label(
+            options_panel,
+            text="Save format:"
+        )
+        option_header.grid(column=0, row=3, sticky="nsw")
+
+        save_format_frame = tk.Frame(options_panel)
+        save_format_frame.grid(column=0, row=4, columnspan=2, sticky="nwe")
+
+        save_format_variable = tk.IntVar()
+        save_format_variable.set(0)
+        self.save_format_variable = save_format_variable
+        self.save_format_radios = []
+        self.save_format_frame = save_format_frame
+
+        for save_format in self.base_save_formats + self.custom_save_formats:
+            self.add_save_format_radio(save_format, save_format_frame)
+
+        self.save_format_warning_message = tk.Label(options_panel, text="", wraplength=400, justify=tk.LEFT)
+        self.save_format_warning_message.grid(column=0, row=5, columnspan=2, sticky="nw")
+
+        if self.default_save_format:
+            self.update_save_format_variable(self.default_save_format)
+            self.update_save_format_warning(self.default_save_format)
+
+        def create_template():
+            self.show_setroom_create_dialog(
+                "Create new room template format",
+                "Create a new room template format\n{x} and {y} are the coordinates of the room.",
+                "Create",
+                None,
+            )
+        create_template_button = tk.Button(
+            options_panel,
+            text="New save format",
+            bg="red",
+            fg="white",
+            command=create_template,
+        )
+        create_template_button.grid(row=6, column=0, sticky="nw")
 
         canvas_foreground.bind(
             "<Button-1>",
@@ -4673,11 +4731,12 @@ class LevelsTab(Tab):
         self.lvl = lvl
         self.current_level_full = level
         self.current_level_path_full = Path(self.lvls_path) / lvl
-        self.current_save_format = self.read_save_format(level)
-        if not self.current_save_format:
+        save_format = self.read_save_format(level)
+        if not save_format:
             self.show_format_error_dialog(lvl)
             return
 
+        self.set_current_save_format(save_format)
         print(self.current_save_format.__dict__)
 
         self.combobox_custom["state"] = tk.NORMAL
@@ -4852,13 +4911,16 @@ class LevelsTab(Tab):
         # print(background_tiles)
 
         # Load scrolled to the center.
-        # self.custom_level_canvas.configure(scrollregion=(0, 0, self.custom_editor_zoom_level * 50 - 3, self.custom_editor_zoom_level * 50 - 3))
-        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .3)
-        # self.custom_level_canvas.yview_moveto(.5)
+        self.custom_level_canvas.configure(scrollregion=canvas.bbox("all"))#(0, 0, self.screen_width, self.screen_height))# self.custom_editor_zoom_level * width * 10 - 3, self.custom_editor_zoom_level * height * 8 - 3))
+        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .5)
+        self.custom_level_canvas.yview_moveto(.5)
+        self.custom_level_canvas.xview_moveto(.5)
 
     def draw_custom_level_canvases(self, theme):
         width = int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
         height = int(len(self.custom_editor_foreground_tile_codes) // 8)
+        print(width)
+        print(height)
         self.custom_level_canvas_foreground.delete("all")
         self.custom_level_canvas_background.delete("all")
         self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
@@ -5105,8 +5167,21 @@ class LevelsTab(Tab):
         return common_tiles + theme_tiles(theme)
 
     def show_format_error_dialog(self, lvl):
-            win = PopupWindow("Couldn't find room templates", self.modlunky_config)
-            message = ttk.Label(win, text="Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n")
+        def on_create():
+           self.read_custom_lvl_file(lvl)
+
+        self.show_setroom_create_dialog(
+            "Couldn't find room templates",
+            "Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n",
+            "Continue",
+            on_create,
+        )
+
+    def show_setroom_create_dialog(
+        self, title, message, button_title, button_action
+    ):
+            win = PopupWindow(title, self.modlunky_config)
+            message = ttk.Label(win, text=message)
             name_label = ttk.Label(win, text="Name: ")
             name_entry = ttk.Entry(win, foreground = 'gray')
             format_label = ttk.Label(win, text="Format: ")
@@ -5176,14 +5251,15 @@ class LevelsTab(Tab):
             def continue_open():
                 format = str(format_entry.get())
                 name = str(name_entry.get()) if name_entry_changed else format
-                if format == "" or name == "" or format == "setroom{y}-{x}" or format == "setroom{x}-{y}":
+                if not format_entry_changed or format == "" or name == "" or format == "setroom{y}-{x}" or format == "setroom{x}-{y}":
                     return
                 save_format = CustomLevelSaveFormat(name, format, bool(add_vanilla_var.get()))
                 win.destroy()
                 self.add_save_format(save_format)
-                self.read_custom_lvl_file(lvl)
+                if button_action:
+                    button_action()
 
-            continue_button = ttk.Button(buttons, text="Continue", command=continue_open)
+            continue_button = ttk.Button(buttons, text=button_title, command=continue_open)
             continue_button.grid(row=0, column=0, sticky="nswe")
 
 
@@ -5192,12 +5268,80 @@ class LevelsTab(Tab):
 
     def add_save_format(self, save_format):
         self.custom_save_formats.append(save_format)
+        self.add_save_format_radio(save_format, self.save_format_frame)
         self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(map(
             lambda save_format: save_format.toJSON(),
             self.custom_save_formats
         ))
         self.modlunky_config.config_file.save()
 
+    def update_save_format_variable(self, save_format):
+        if save_format in self.base_save_formats:
+            self.save_format_variable.set(self.base_save_formats.index(save_format))
+        elif save_format in self.custom_save_formats:
+            self.save_format_variable.set(len(self.base_save_formats) + self.custom_save_formats.index(save_format))
+        self.save_format_radios[self.save_format_variable.get()].select()
+
+    def update_save_format_warning(self, save_format):
+        warning_message = ""
+        if save_format == CustomLevelSaveFormat.LevelSequence():
+            warning_message = (
+                "This save format can be used to load saved level files into the "
+                "Custom Levels or Level Sequence packages by JayTheBusinessGoose."
+            )
+        elif save_format == CustomLevelSaveFormat.Vanilla():
+            warning_message = (
+                "WARNING: Files saved using vanilla setrooms will only work when loaded "
+                "into themes that use them. Otherwise, it will crash the game. Also, themes "
+                "that do allow loading vanilla setrooms will only load the required setrooms "
+                "for the default size of the level. It is recommended to use another save "
+                "format and use scripts to load the proper rooms."
+            )
+        elif not save_format.include_vanilla_setrooms:
+            warning_message = (
+                "WARNING: Some themes override the desired level with a vanilla setroom, so it "
+                "is recommended to use a save format that includes the correct vanilla setrooms."
+            )
+        self.save_format_warning_message["text"] = warning_message
+
+    def set_current_save_format(self, save_format):
+        self.current_save_format = save_format
+        self.update_save_format_warning(save_format)
+        self.update_save_format_variable(save_format)
+
+    def select_save_format_radio(self):
+        save_format_index = self.save_format_variable.get()
+        save_format = None
+        if save_format_index < len(self.base_save_formats):
+            save_format = self.base_save_formats[save_format_index]
+        else:
+            save_format = self.custom_save_formats[save_format_index - len(self.base_save_formats)]
+        if not save_format:
+            return
+        self.set_current_save_format(save_format)
+        self.default_save_format = save_format
+        self.modlunky_config.config_file.custom_level_editor_default_save_format = save_format.toJSON()
+        self.modlunky_config.config_file.save()
+
+    def add_save_format_radio(self, save_format, save_format_frame):
+        index = len(self.save_format_radios)
+        radio = tk.Radiobutton(
+            save_format_frame,
+            text=save_format.name,
+            variable=self.save_format_variable,
+            indicatoron=True,
+            value=index,
+            command=self.select_save_format_radio,
+        )
+        radio.grid(column=0, row=index, sticky="nsw")
+        self.save_format_radios.append(radio)
+
+        label = tk.Label(
+            save_format_frame,
+            text=save_format.display()
+        )
+        label.grid(column=1, row=index, sticky="nsw")
+    
     @staticmethod
     def adjust_texture_xy(width, height, mode, scale=50):
         # slight adjustments of textures for tile preview
