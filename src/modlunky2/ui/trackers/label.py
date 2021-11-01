@@ -30,8 +30,8 @@ class Label(Enum):
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
-    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=3)
     ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
+    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=3)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
     )
