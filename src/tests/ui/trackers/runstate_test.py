@@ -318,7 +318,7 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
         (CharState.STANDING, 5, 5, False, False),
     ],
 )
-def test_starting_resources_health_low(
+def test_starting_resources_health(
     char_state, prev_health, cur_health, expected_low, expected_no
 ):
     run_state = RunState()
@@ -336,16 +336,16 @@ def test_starting_resources_health_low(
 
 
 @pytest.mark.parametrize(
-    "prev_bombs,cur_bombs,expected_low",
+    "prev_bombs,cur_bombs,expected_low,expected_no",
     [
-        (4, 4, True),
-        (4, 3, True),
-        (3, 1, True),
-        (7, 7, False),
-        (1, 4, False),
+        (4, 4, True, True),
+        (4, 3, True, False),
+        (3, 1, True, False),
+        (7, 7, False, False),
+        (1, 4, False, False),
     ],
 )
-def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
+def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low, expected_no):
     run_state = RunState()
     run_state.bombs = prev_bombs
 
@@ -358,20 +358,23 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
 
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
+
 
 @pytest.mark.parametrize(
-    "level_start_ropes,prev_ropes,cur_ropes,expected_low",
+    "level_start_ropes,prev_ropes,cur_ropes,expected_low,expected_no",
     [
-        (4, 4, 4, True),
-        (4, 4, 3, True),
-        (3, 3, 1, True),
-        (3, 2, 3, True),
-        (7, 7, 7, False),
-        (1, 1, 4, False),
+        (4, 4, 4, True, True),
+        (4, 4, 3, True, False),
+        (3, 3, 1, True, False),
+        (3, 2, 3, True, False),
+        (7, 7, 7, False, False),
+        (1, 1, 4, False, False),
     ],
 )
 def test_starting_resources_ropes(
-    level_start_ropes, prev_ropes, cur_ropes, expected_low
+    level_start_ropes, prev_ropes, cur_ropes, expected_low, expected_no
 ):
     run_state = RunState()
     run_state.level_start_ropes = level_start_ropes
@@ -385,6 +388,9 @@ def test_starting_resources_ropes(
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
 
 
 @pytest.mark.parametrize(

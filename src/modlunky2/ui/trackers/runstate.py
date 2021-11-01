@@ -334,11 +334,15 @@ class RunState:
         bombs = player.inventory.bombs
         if bombs > self.bombs or bombs > 4:
             self.fail_low()
+        if bombs < 4:
+            self.run_label.discard(Label.NO)
         self.bombs = bombs
 
         ropes = player.inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
             self.fail_low()
+        if ropes < 4:
+            self.run_label.discard(Label.NO)
         self.ropes = ropes
 
     def update_status_effects(
