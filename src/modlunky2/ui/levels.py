@@ -327,7 +327,6 @@ class LevelsTab(Tab):
         tree_files.configure(yscrollcommand=vsb_tree_files.set)
         tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
         vsb_tree_files.grid(row=0, column=0, sticky="nse")
-        # self.tree_files_full = tree_files
 
         self.load_packs(tree_files)
 
@@ -449,6 +448,23 @@ class LevelsTab(Tab):
         self.custom_editor_side_panel.grid(column=2, row=0, rowspan=3, sticky="nswe")
         self.custom_editor_side_panel.rowconfigure(0, weight=1)
         self.custom_editor_side_panel.columnconfigure(0, weight=1)
+
+        side_panel_hidden = tk.IntVar()
+        def toggle_panel_hidden():
+            nonlocal side_panel_hidden
+            if side_panel_hidden.get() == True:
+                self.custom_editor_side_panel.grid_remove()
+            else:
+                self.custom_editor_side_panel.grid()
+        self.side_panel_hide_button = tk.Radiobutton(
+            editor_view,
+            tex=">>"
+            variable=side_panel_hidden,
+            indicatoron=False,
+            value=False,
+            width=10,
+            command=toggle_panel_hidden,
+        )
 
         tiles_panel = tk.Frame(self.custom_editor_side_panel)
         tiles_panel.grid(row=0, column=0, sticky="nswe")
