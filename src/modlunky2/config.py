@@ -10,7 +10,7 @@ from pathlib import Path
 from shutil import copyfile
 from urllib.parse import urlparse, urlunparse
 
-from appdirs import user_config_dir, user_data_dir, user_cache_dir
+from platformdirs import user_config_dir, user_data_dir, user_cache_dir
 
 PROGRAMS_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
 DEFAULT_PATH = Path("C:/Program Files (x86)/Steam/steamapps/common/Spelunky 2")
