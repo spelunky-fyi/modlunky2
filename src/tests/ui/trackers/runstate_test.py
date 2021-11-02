@@ -1254,20 +1254,22 @@ def test_millionaire_(
 
 
 @pytest.mark.parametrize(
-    "new_entity_types,expected_no",
+    "new_entity_types,theme,expected_no",
     [
-        ([], True),
-        ([EntityType.ITEM_ROPE], True),
-        ([EntityType.ITEM_CLIMBABLE_ROPE], False),
+        ([], Theme.DWELLING, True),
+        ([EntityType.ITEM_ROPE], Theme.JUNGLE, True),
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.TEMPLE, False),
+        # Duat is exempt from this check
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.DUAT, True),
     ],
 )
-def test_rope_deployed(new_entity_types, expected_no):
+def test_rope_deployed(new_entity_types, theme, expected_no):
     run_state = RunState()
     run_state.new_entities = [
         poly_pointer_no_mem(Entity(type=EntityDBEntry(id=t))) for t in new_entity_types
     ]
 
-    run_state.update_rope_deployed()
+    run_state.update_rope_deployed(theme)
 
     is_no = Label.NO in run_state.run_label._set
     assert is_no == expected_no

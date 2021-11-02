@@ -600,7 +600,12 @@ class RunState:
             self.clone_gun_wo_cosmic = True
             self.run_label.add(Label.MILLIONAIRE)
 
-    def update_rope_deployed(self):
+    def update_rope_deployed(self, theme: Theme):
+        # Don't check for deployed ropes in Duat. It's possible to reclaim them by bombing
+        # the wall they're attached to, which reverts to ITEM_ROPE.
+        if theme is Theme.DUAT:
+            return
+
         # Ropes are initially ITEM_ROPE when 'fired'.
         # They generate one or more ITEM_CLIMBABLE_ROPE when they attach to the wall/background.
         for entity_poly in self.new_entities:
@@ -720,7 +725,7 @@ class RunState:
         self.update_has_chain_powerup(self.player_item_types)
         self.update_is_chain()
 
-        self.update_rope_deployed()
+        self.update_rope_deployed(game_state.theme)
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
         self.update_terminus(game_state)
