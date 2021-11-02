@@ -1774,12 +1774,8 @@ class LevelsTab(Tab):
         column = int(event.x // tile_size)
         row = int(event.y // tile_size)
         if column < 0 or event.x > int(canvas["width"]):
-            logger.debug("Column out of bounds.")
-            print("Column out of bounds: " + str(row) + " " + str(event.x) + "  " + str(canvas["height"]))
             return
         if row < 0 or event.y > int(canvas["height"]):
-            logger.debug("Row out of bounds.")
-            print("Row out of bounds: " + str(row) + "  " + str(event.y) + "  " + str(canvas["height"]))
             return
 
         tile_name = tile_label["text"].split(" ", 4)[2]
@@ -2294,7 +2290,47 @@ class LevelsTab(Tab):
         else:
             logger.debug("Backup not needed for what was a default file.")
 
+    class VanillaSetroomType(Enum):
+        NONE = "none"
+        FRONT = "front"
+        BACK = "back"
+        DUAL = "dual"
+
+    def vanilla_setroom_type_for(self, theme, x, y):
+        if theme == "ice":
+            if (y in [4, 5, 6, 7] and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.DUAL
+            elif (y in [10, 11, 12, 13] and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.BACK
+        elif theme == "tiamat":
+            if (y == 0 and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.DUAL
+            elif (y in range(2, 10+1) and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.FRONT
+        elif theme == "duat":
+            if (y in [0, 1, 2, 3] and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.FRONT
+        elif theme == "eggplant":
+            if (y in [0, 1] and x in [0, 1, 2, 3]):
+                return LevelsTab.VanillaSetroomType.FRONT
+        elif theme == "olmec":
+            if (y in [0, 1, 6, 7] and x in [0, 1, 2, 3, 4]) or ([y in 2, 3, 4, 5] and x in [1, 2, 3]):
+                return LevelsTab.VanillaSetroomType.DUAL
+            elif (y in [2, 3, 4, 5] and x in [0, 4]) or (y == 7 and x in [0, 1, 2, 3, 4]):
+                return LevelsTab.VanillaSetroomType.FRONT
+        elif theme == "hundun":
+            if (y in [0, 1, 2, 10, 11] and x in [0, 1, 2]):
+                return LevelsTab.VanillaSetroomType.FRONT
+        elif theme == "abzu":
+            if (y in [0, 1, 2, 3] and x in [0, 1, 2, 3]):
+                return LevelsTab.VanillaSetroomType.DUAL
+            elif (y in [4, 5, 6, 7, 8] and x in [0, 1, 2, 3]):
+                return LevelsTab.VanillaSetroomType.FRONT
+
+        return LevelsTab.VanillaSetroomType.NONE
+
     def save_changes_full(self):
+        print(self.current_save_format)
         if self.save_needed:
             try:
                 tile_codes = TileCodes()
@@ -2325,6 +2361,8 @@ class LevelsTab(Tab):
                             room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
                             room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
                         print(room_foreground)
+                        print(self)
+                        print(self.current_save_format.room_template_format)
                         room_settings = []
                         dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
                         if dual:
@@ -2336,13 +2374,49 @@ class LevelsTab(Tab):
                             foreground = room_foreground,
                             background = room_background if dual else [],
                         )]
+                        print(self.current_save_format)
+                        print(self.current_save_format.room_template_format.format(y=room_y, x=room_x))
+                        template_name = self.current_save_format.room_template_format.format(y=room_y, x=room_x)
                         level_templates.set_obj(
                             LevelTemplate(
-                                name=self.current_save_format.room_template_format.format(y=room_y, x=room_x),
+                                name=template_name,
                                 comment=self.lvl_biome,
                                 chunks=template_chunks,
                             )
                         )
+                        vanilla_setroom_type = self.vanilla_setroom_type_for(self.lvl_biome, room_x, room_y) if self.current_save_format.include_vanilla_setrooms else VanillaSetroomType.NONE
+                        vf = []
+                        vb = []
+                        vs = []
+                        vm = ""
+                        if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
+                            vf = room_foreground
+                            vm = "the front layer"
+                        elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
+                            vf = room_background
+                            vm = "the back layer"
+                        elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
+                            vf = room_foreground
+                            vm = "both layers"
+                            if dual:
+                                vb = room_background
+                                vs.append(TemplateSetting.DUAL)
+
+                        if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
+                            print("it has a type!")
+                            template_chunks = [Chunk(
+                                comment=None,
+                                settings = vs,
+                                foreground = vf,
+                                background = vb,
+                            )]
+                            level_templates.set_obj(
+                                LevelTemplate(
+                                    name="setroom{y}-{x}".format(y=room_y, x=room_x),
+                                    comment="Auto-generated template to match {layer} of {template}.".format(layer=vm, template=template_name),
+                                    chunks=template_chunks,
+                                )
+                            )
                 old_level_file = self.current_level_full
                 level_file = LevelFile(
                     old_level_file.comment,
@@ -5366,6 +5440,8 @@ class LevelsTab(Tab):
         self.save_format_warning_message["text"] = warning_message
 
     def set_current_save_format(self, save_format):
+        print("here")
+        print(self)
         self.current_save_format = save_format
         self.update_save_format_warning(save_format)
         self.update_save_format_variable(save_format)
