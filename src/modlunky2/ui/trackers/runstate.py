@@ -320,7 +320,7 @@ class RunState:
             if mount is not None and mount.is_tamed:
                 self.fail_low()
 
-    def update_starting_resources(self, player: Player):
+    def update_starting_resources(self, player: Player, win_state: WinState):
         if not self.is_low_percent:
             return
 
@@ -341,7 +341,9 @@ class RunState:
         ropes = player.inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
             self.fail_low()
-        if ropes < 4:
+        # We usually check ropes at the start of levels.
+        # This checks after the player has won.
+        if win_state is not WinState.NO_WIN and ropes < 4:
             self.run_label.discard(Label.NO)
         self.ropes = ropes
 
@@ -622,6 +624,9 @@ class RunState:
         self.update_world_themes(world, theme)
 
         self.level_start_ropes = ropes
+        if ropes < 4:
+            self.run_label.discard(Label.NO)
+
         if theme == Theme.DUAT:
             self.health = 4
             self.poisoned = False
@@ -672,7 +677,7 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(game_state.theme, overlay)
-        self.update_starting_resources(player)
+        self.update_starting_resources(player, game_state.win_state)
         self.update_status_effects(player.state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
