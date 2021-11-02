@@ -108,6 +108,7 @@ class RunState:
         self.eggplant_stepper = EggplantChain.make_stepper()
 
         self.prev_next_uid: Optional[int] = None
+        self.new_entities: List[PolyPointer[Entity]] = []
 
     def update_pacifist(self, run_recap_flags):
         if not bool(run_recap_flags & RunRecapFlags.PACIFIST):
@@ -119,31 +120,17 @@ class RunState:
 
     def update_no_tp(
         self,
-        game_state: State,
         player: Player,
         player_item_set: Set[EntityType],
         prev_player_item_set: Set[EntityType],
     ):
-        prev_next_uid = self.prev_next_uid
-        self.prev_next_uid = game_state.next_entity_uid
-        # At the start of a level, all entities (including floors, treasure, etc.) spawn.
-        # Also, the player doesn't gain control for ~600ms anyway
-        if self.level_started:
-            return
-
         # This is an optimization to skip scanning when the player couldn't have teleported
         if not self.could_tp(player, player_item_set, prev_player_item_set):
             return
 
         found_shadows: List[LightEmitter] = []
-        for entity_uid in range(prev_next_uid, game_state.next_entity_uid):
-            entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
-            if entity_poly is None or not entity_poly.present():
-                continue
-            entity = entity_poly.value
-            if entity.type is None:
-                continue
-            if entity.type.id is not EntityType.FX_TELEPORTSHADOW:
+        for entity_poly in self.new_entities:
+            if entity_poly.value.type.id is not EntityType.FX_TELEPORTSHADOW:
                 continue
             # Now that we know it's the right type, downcast
             entity = entity_poly.as_type(LightEmitter)
@@ -320,7 +307,7 @@ class RunState:
             if mount is not None and mount.is_tamed:
                 self.fail_low()
 
-    def update_starting_resources(self, player: Player):
+    def update_starting_resources(self, player: Player, win_state: WinState):
         if not self.is_low_percent:
             return
 
@@ -341,7 +328,9 @@ class RunState:
         ropes = player.inventory.ropes
         if ropes > self.level_start_ropes or ropes > 4:
             self.fail_low()
-        if ropes < 4:
+        # We usually check ropes at the start of levels.
+        # This checks after the player has won.
+        if win_state is not WinState.NO_WIN and ropes < 4:
             self.run_label.discard(Label.NO)
         self.ropes = ropes
 
@@ -611,6 +600,41 @@ class RunState:
             self.clone_gun_wo_cosmic = True
             self.run_label.add(Label.MILLIONAIRE)
 
+    def update_rope_deployed(self, theme: Theme):
+        # Don't check for deployed ropes in Duat. It's possible to reclaim them by bombing
+        # the wall they're attached to, which reverts to ITEM_ROPE.
+        if theme is Theme.DUAT:
+            return
+
+        # Ropes are initially ITEM_ROPE when 'fired'.
+        # They generate one or more ITEM_CLIMBABLE_ROPE when they attach to the wall/background.
+        for entity_poly in self.new_entities:
+            if entity_poly.value.type.id == EntityType.ITEM_CLIMBABLE_ROPE:
+                self.run_label.discard(Label.NO)
+
+    def update_new_entities(self, game_state: State):
+        self.new_entities = []
+
+        # Only discover entities within levels
+        if game_state.screen != Screen.LEVEL:
+            return
+
+        # At the start of a level, all entities (including floors, treasure, etc.) spawn.
+        # Also, the player doesn't gain control for ~600ms anyway
+        if self.level_started:
+            self.prev_next_uid = game_state.next_entity_uid
+            return
+
+        for entity_uid in range(self.prev_next_uid, game_state.next_entity_uid):
+            entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
+            if entity_poly is None or not entity_poly.present():
+                continue
+            if entity_poly.value.type is None:
+                continue
+            self.new_entities.append(entity_poly)
+
+        self.prev_next_uid = game_state.next_entity_uid
+
     def fail_low(self):
         self.is_low_percent = False
         self.run_label.discard(Label.LOW, Label.NO, Label.ICE_CAVES_SHORTCUT)
@@ -622,6 +646,9 @@ class RunState:
         self.update_world_themes(world, theme)
 
         self.level_start_ropes = ropes
+        if ropes < 4:
+            self.run_label.discard(Label.NO)
+
         if theme == Theme.DUAT:
             self.health = 4
             self.poisoned = False
@@ -646,6 +673,7 @@ class RunState:
         self.update_on_level_start(game_state.world, game_state.theme, self.ropes)
         self.update_player_item_types(game_state.instance_id_to_pointer, player)
         self.update_final_death(player.state, self.player_item_types)
+        self.update_new_entities(game_state)
 
         self.update_score_items(self.player_item_types)
         self.update_ice_caves(game_state)
@@ -661,9 +689,7 @@ class RunState:
         # Check Modifiers
         self.update_pacifist(run_recap_flags)
         self.update_no_gold(run_recap_flags)
-        self.update_no_tp(
-            game_state, player, self.player_item_types, self.player_last_item_types
-        )
+        self.update_no_tp(player, self.player_item_types, self.player_last_item_types)
         self.update_eggplant()
         self.update_low_cosmic()
 
@@ -672,7 +698,7 @@ class RunState:
 
         # Low%
         self.update_has_mounted_tame(game_state.theme, overlay)
-        self.update_starting_resources(player)
+        self.update_starting_resources(player, game_state.win_state)
         self.update_status_effects(player.state, self.player_item_types)
         self.update_had_clover(hud_flags)
         self.update_wore_backpack(self.player_item_types)
@@ -699,6 +725,7 @@ class RunState:
         self.update_has_chain_powerup(self.player_item_types)
         self.update_is_chain()
 
+        self.update_rope_deployed(game_state.theme)
         self.update_millionaire(game_state, player.inventory, self.player_item_types)
 
         self.update_terminus(game_state)

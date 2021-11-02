@@ -6,6 +6,10 @@ from modlunky2.mem.entities import Entity, EntityDBEntry, EntityType
 from modlunky2.mem.memrauder.model import DictMap, MemContext, PolyPointer
 
 
+def poly_pointer_no_mem(value):
+    return PolyPointer(addr=0xBAD, mem_ctx=MemContext(), value=value)
+
+
 @dataclass
 class EntityMapBuilder:
     next_uid: int = 1

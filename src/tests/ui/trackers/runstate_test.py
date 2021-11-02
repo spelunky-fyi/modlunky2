@@ -2,6 +2,7 @@ import pytest
 from modlunky2.category.chain.testing import FakeStepper
 from modlunky2.mem.entities import (
     CharState,
+    Entity,
     EntityDBEntry,
     EntityType,
     Illumination,
@@ -18,11 +19,12 @@ from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
     RunRecapFlags,
+    Screen,
     State,
     Theme,
     WinState,
 )
-from modlunky2.mem.testing import EntityMapBuilder
+from modlunky2.mem.testing import EntityMapBuilder, poly_pointer_no_mem
 from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
 
@@ -177,22 +179,18 @@ def test_no_tp(
     expected_no_tp,
 ):
     fx_shadow_type = EntityDBEntry(id=EntityType.FX_TELEPORTSHADOW)
-    entity_map = EntityMapBuilder()
-
+    new_entities = []
     src_shadow = LightEmitter(
         type=fx_shadow_type, idle_counter=idle_counter, emitted_light=Illumination()
     )
-    entity_map.add_entity(src_shadow)
+    new_entities.append(poly_pointer_no_mem(src_shadow))
 
     dest_illumination = Illumination(light_pos_x=shadow_x, light_pos_y=shadow_y)
     dest_shadow = LightEmitter(
         type=fx_shadow_type, idle_counter=idle_counter, emitted_light=dest_illumination
     )
-    entity_map.add_entity(dest_shadow)
+    new_entities.append(poly_pointer_no_mem(dest_shadow))
 
-    game_state = State(
-        next_entity_uid=entity_map.next_uid, instance_id_to_pointer=entity_map.build()
-    )
     player = Player(
         position_x=player_x,
         position_y=player_y,
@@ -203,8 +201,8 @@ def test_no_tp(
     prev_item_set = set()
 
     run_state = RunState()
-    run_state.prev_next_uid = 0
-    run_state.update_no_tp(game_state, player, item_set, prev_item_set)
+    run_state.new_entities = new_entities
+    run_state.update_no_tp(player, item_set, prev_item_set)
 
     is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
     assert is_no_tp == expected_no_tp
@@ -325,7 +323,7 @@ def test_starting_resources_health(
     run_state.health = prev_health
 
     player = Player(state=char_state, health=cur_health)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, WinState.NO_WIN)
     assert run_state.health == cur_health
 
     is_low = Label.LOW in run_state.run_label._set
@@ -351,7 +349,7 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low, expected_
 
     inventory = Inventory(bombs=cur_bombs)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, WinState.NO_WIN)
 
     assert run_state.bombs == cur_bombs
 
@@ -363,18 +361,21 @@ def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low, expected_
 
 
 @pytest.mark.parametrize(
-    "level_start_ropes,prev_ropes,cur_ropes,expected_low,expected_no",
+    "level_start_ropes,prev_ropes,cur_ropes,win_state,expected_low,expected_no",
     [
-        (4, 4, 4, True, True),
-        (4, 4, 3, True, False),
-        (3, 3, 1, True, False),
-        (3, 2, 3, True, False),
-        (7, 7, 7, False, False),
-        (1, 1, 4, False, False),
+        (4, 4, 4, WinState.NO_WIN, True, True),
+        # This rope loss might be temporary
+        (4, 4, 3, WinState.NO_WIN, True, True),
+        # This rope loss is permanent
+        (4, 4, 3, WinState.TIAMAT, True, False),
+        (3, 3, 1, WinState.NO_WIN, True, True),
+        (3, 2, 3, WinState.NO_WIN, True, True),
+        (7, 7, 7, WinState.NO_WIN, False, False),
+        (1, 1, 4, WinState.NO_WIN, False, False),
     ],
 )
 def test_starting_resources_ropes(
-    level_start_ropes, prev_ropes, cur_ropes, expected_low, expected_no
+    level_start_ropes, prev_ropes, cur_ropes, win_state, expected_low, expected_no
 ):
     run_state = RunState()
     run_state.level_start_ropes = level_start_ropes
@@ -382,7 +383,7 @@ def test_starting_resources_ropes(
 
     inventory = Inventory(ropes=cur_ropes)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, win_state)
 
     assert run_state.ropes == cur_ropes
 
@@ -1253,19 +1254,91 @@ def test_millionaire_(
 
 
 @pytest.mark.parametrize(
-    "world,theme,ropes,prev_health,expected_level_start_ropes,expected_health",
+    "new_entity_types,theme,expected_no",
+    [
+        ([], Theme.DWELLING, True),
+        ([EntityType.ITEM_ROPE], Theme.JUNGLE, True),
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.TEMPLE, False),
+        # Duat is exempt from this check
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.DUAT, True),
+    ],
+)
+def test_rope_deployed(new_entity_types, theme, expected_no):
+    run_state = RunState()
+    run_state.new_entities = [
+        poly_pointer_no_mem(Entity(type=EntityDBEntry(id=t))) for t in new_entity_types
+    ]
+
+    run_state.update_rope_deployed(theme)
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
+
+
+@pytest.mark.parametrize(
+    "screen,level_started,entity_types,expected_entity_types",
+    [
+        (Screen.LEVEL, False, [EntityType.ITEM_WEBGUN], [EntityType.ITEM_WEBGUN]),
+        (
+            Screen.LEVEL,
+            False,
+            [EntityType.ITEM_JETPACK, EntityType.ITEM_TELEPORTER],
+            [EntityType.ITEM_JETPACK, EntityType.ITEM_TELEPORTER],
+        ),
+        (
+            Screen.LEVEL,
+            False,
+            [EntityType.ITEM_WOODEN_ARROW, EntityType.ITEM_WOODEN_ARROW],
+            [EntityType.ITEM_WOODEN_ARROW, EntityType.ITEM_WOODEN_ARROW],
+        ),
+        (Screen.LEVEL, True, [EntityType.FX_TELEPORTSHADOW], []),
+        (Screen.LEVEL_TRANSITION, False, [EntityType.CHAR_HIREDHAND], []),
+    ],
+)
+def test_new_entities(screen, level_started, entity_types, expected_entity_types):
+    run_state = RunState()
+    run_state.level_started = level_started
+
+    fake_entity_db = {}
+    for entity_type in entity_types:
+        if entity_type not in fake_entity_db:
+            fake_entity_db[entity_type] = EntityDBEntry(id=entity_type)
+
+    entity_map = EntityMapBuilder()
+    run_state.prev_next_uid = entity_map.next_uid
+    entity_map.add_trivial_entities(entity_types)
+
+    game_state = State(
+        screen=screen,
+        next_entity_uid=entity_map.next_uid,
+        instance_id_to_pointer=entity_map.build(),
+    )
+    run_state.update_new_entities(game_state)
+
+    got_types = [e.value.type.id for e in run_state.new_entities]
+    assert got_types == expected_entity_types
+
+
+@pytest.mark.parametrize(
+    "world,theme,ropes,prev_health,expected_level_start_ropes,expected_health,expected_no",
     [
         # Level start ropes
-        (2, Theme.JUNGLE, 4, 4, 4, 4),
-        (2, Theme.VOLCANA, 2, 3, 2, 3),
+        (2, Theme.JUNGLE, 4, 4, 4, 4, True),
+        (2, Theme.VOLCANA, 2, 3, 2, 3, False),
         # Duat health adjustment
-        (4, Theme.DUAT, 5, 2, 5, 4),
-        (4, Theme.DUAT, 5, 4, 5, 4),
-        (4, Theme.DUAT, 5, 10, 5, 4),
+        (4, Theme.DUAT, 5, 2, 5, 4, True),
+        (4, Theme.DUAT, 5, 4, 5, 4, True),
+        (4, Theme.DUAT, 5, 10, 5, 4, True),
     ],
 )
 def test_on_level_start_state(
-    world, theme, ropes, prev_health, expected_level_start_ropes, expected_health
+    world,
+    theme,
+    ropes,
+    prev_health,
+    expected_level_start_ropes,
+    expected_health,
+    expected_no,
 ):
     run_state = RunState()
     run_state.level_started = True
@@ -1275,3 +1348,6 @@ def test_on_level_start_state(
 
     assert run_state.level_start_ropes == expected_level_start_ropes
     assert run_state.health == expected_health
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
