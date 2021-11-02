@@ -65,13 +65,13 @@ class CustomLevelSaveFormat:
     def fromJSON(cls, json):
         return cls(json["name"], json["room_template_format"], json["include_vanilla_setrooms"])
     
-    def display(self):
-        if self.include_vanilla_setrooms:
-            return self.room_template_format + " (with required vanilla setrooms)"
-        elif self.room_template_format == "setroom{y}-{x}":
-            return self.room_template_format + " (vanilla setrooms only)"
-        else:
-            return self.room_template_format + " (no vanilla setrooms)"
+    # def display(self):
+    #     if self.include_vanilla_setrooms:
+    #         return self.room_template_format + " (with required vanilla setrooms)"
+    #     elif self.room_template_format == "setroom{y}-{x}":
+    #         return self.room_template_format + " (vanilla setrooms only)"
+    #     else:
+    #         return self.room_template_format + " (no vanilla setrooms)"
     
     def __eq__(self, other):
         return (
@@ -155,6 +155,8 @@ class LevelsTab(Tab):
         self.lvl_bgbg = None
         self.lvl_bgbg_path = None
         self.lvl_bgs = {}
+        self.lvl_width = None
+        self.lvl_height = None
         self.rows = None
         self.cols = None
         self.tiles = None
@@ -501,6 +503,7 @@ class LevelsTab(Tab):
         tiles_panel.rowconfigure(3, minsize=50)
 
         options_panel.rowconfigure(2, minsize=20)
+        options_panel.rowconfigure(4, minsize=20)
 
         self.tile_pallete_custom = ScrollableFrameLegacy(
             tiles_panel, text="Tile Palette", width=50
@@ -590,7 +593,7 @@ class LevelsTab(Tab):
             ),
         )
         self.button_tilecode_add_custom.grid(
-            row=3, column=2, sticky="nswe"
+            row=3, column=1, sticky="nsw"
         )
 
         theme_label = tk.Label(options_panel, text="Level Theme:")
@@ -646,21 +649,64 @@ class LevelsTab(Tab):
             command=update_theme,
         )
         self.theme_select_button["state"] = tk.DISABLED
-        self.theme_select_button.grid(row=1, column=1, sticky="nswe")
+        self.theme_select_button.grid(row=1, column=1, sticky="nsw")
 
         def theme_selected(event):
             self.theme_select_button["state"] = tk.NORMAL
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
 
+        size_frame = tk.Frame(options_panel)
+        size_frame.grid(column=0, row=3, columnspan=2, sticky="w")
+        size_frame.columnconfigure(2, minsize=10)
+        self.size_label = tk.Label(
+            size_frame, text="Level size:"
+        )
+        self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
+        
+
+        tk.Label(size_frame, text="Width: ").grid(row=1, column=0, sticky="nsw")
+
+        self.width_combobox = ttk.Combobox(size_frame, height=25)
+        self.width_combobox.grid(row=1, column=1, sticky="nswe")
+        self.width_combobox["state"] = tk.DISABLED
+        self.width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
+        
+        tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
+
+        self.height_combobox = ttk.Combobox(size_frame, height=25)
+        self.height_combobox.grid(row=2, column=1, sticky="nswe")
+        self.height_combobox["state"] = tk.DISABLED
+        self.height_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        
+        def update_size():
+            print(self.width_combobox.get())
+            print(self.height_combobox.get())
+            self.update_custom_level_size(int(self.width_combobox.get()), int(self.height_combobox.get()))
+
+        self.height_select_button = tk.Button(
+            size_frame,
+            text="Update Size",
+            bg="yellow",
+            command=update_size,
+        )
+        self.height_select_button["state"] = tk.DISABLED
+        self.height_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
+
+        def size_selected(event):
+            width = self.width_combobox.get()
+            height = self.height_combobox.get()
+            self.height_select_button["state"] = tk.DISABLED if width == self.lvl_width and height == self.level_height else tk.NORMAL
+        self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
+        self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
 
         option_header = tk.Label(
             options_panel,
             text="Save format:"
         )
-        option_header.grid(column=0, row=3, sticky="nsw")
+        option_header.grid(column=0, row=5, sticky="nsw")
 
         save_format_frame = tk.Frame(options_panel)
-        save_format_frame.grid(column=0, row=4, columnspan=2, sticky="nwe")
+        save_format_frame.grid(column=0, row=6, columnspan=2, sticky="nwe")
 
         save_format_variable = tk.IntVar()
         save_format_variable.set(0)
@@ -672,7 +718,7 @@ class LevelsTab(Tab):
             self.add_save_format_radio(save_format, save_format_frame)
 
         self.save_format_warning_message = tk.Label(options_panel, text="", wraplength=400, justify=tk.LEFT)
-        self.save_format_warning_message.grid(column=0, row=5, columnspan=2, sticky="nw")
+        self.save_format_warning_message.grid(column=0, row=7, columnspan=2, sticky="nw")
 
         if self.default_save_format:
             self.update_save_format_variable(self.default_save_format)
@@ -692,7 +738,7 @@ class LevelsTab(Tab):
             fg="white",
             command=create_template,
         )
-        create_template_button.grid(row=6, column=0, sticky="nw")
+        create_template_button.grid(row=8, column=0, sticky="nw")
 
         canvas_foreground.bind(
             "<Button-1>",
@@ -2264,8 +2310,8 @@ class LevelsTab(Tab):
                     if tilecode[0].split(" ", 1)[0] == "floor_hard":
                         hard_floor_code = tilecode[0].split(" ", 1)[1]
 
-                for room_y in range(len(self.custom_editor_foreground_tile_codes) // 8):
-                    for room_x in range(len(self.custom_editor_foreground_tile_codes[0]) // 10):
+                for room_y in range(self.lvl_height):#range(len(self.custom_editor_foreground_tile_codes) // 8):
+                    for room_x in range(self.lvl_width):#range(len(self.custom_editor_foreground_tile_codes[0]) // 10):
                         room_foreground = []
                         room_background = []
                         for row in range(8):
@@ -4752,6 +4798,8 @@ class LevelsTab(Tab):
         self.theme_combobox.set(theme_name)
         self.theme_label["text"] = "Level Theme: " + theme_name
         self.theme_combobox["state"] = "readonly"
+        self.width_combobox["state"] = "readonly"
+        self.height_combobox["state"] = "readonly"
 
         self.tile_pallete_ref_in_use = []
         self.tile_pallete_map = {}
@@ -4830,7 +4878,11 @@ class LevelsTab(Tab):
                 break
             
         height = len(filtered_rooms)
-        width = len(filtered_rooms[0] or [])
+        width = len(filtered_rooms[0])
+        self.lvl_width = width
+        self.lvl_height = height
+        self.width_combobox.set(width)
+        self.height_combobox.set(height)
 
         # self.custom_level_canvas_foreground.delete("all")
         # self.custom_level_canvas_background.delete("all")
@@ -4911,14 +4963,13 @@ class LevelsTab(Tab):
         # print(background_tiles)
 
         # Load scrolled to the center.
-        self.custom_level_canvas.configure(scrollregion=canvas.bbox("all"))#(0, 0, self.screen_width, self.screen_height))# self.custom_editor_zoom_level * width * 10 - 3, self.custom_editor_zoom_level * height * 8 - 3))
-        # self.custom_level_canvas.after(10, self.custom_level_canvas.xview_moveto, .5)
-        self.custom_level_canvas.yview_moveto(.5)
-        self.custom_level_canvas.xview_moveto(.5)
+        self.custom_level_canvas.configure(scrollregion=self.custom_level_canvas.bbox("all"))
+        # self.custom_level_canvas.yview_moveto(.5)
+        # self.custom_level_canvas.xview_moveto(.5)
 
     def draw_custom_level_canvases(self, theme):
-        width = int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
-        height = int(len(self.custom_editor_foreground_tile_codes) // 8)
+        width = self.lvl_width#int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
+        height = self.lvl_height#int(len(self.custom_editor_foreground_tile_codes) // 8)
         print(width)
         print(height)
         self.custom_level_canvas_foreground.delete("all")
@@ -4929,7 +4980,11 @@ class LevelsTab(Tab):
 
         def draw_layer(canvas, tile_codes, tile_images):
             for row_index, room_row in enumerate(tile_codes):
+                if row_index > self.lvl_height * 8:
+                    continue
                 for tile_index, tile in enumerate(room_row):
+                    if tile_index > self.lvl_width * 10:
+                        continue
                     tilecode = self.tile_pallete_map[tile]
                     tile_name = tilecode[0].split(" ", 1)[0]
                     tile_image = tilecode[1]
@@ -5287,7 +5342,8 @@ class LevelsTab(Tab):
         if save_format == CustomLevelSaveFormat.LevelSequence():
             warning_message = (
                 "This save format can be used to load saved level files into the "
-                "Custom Levels or Level Sequence packages by JayTheBusinessGoose."
+                "Custom Levels or Level Sequence packages.\n"
+                "(https://github.com/jaythebusinessgoose/LevelSequence)"
             )
         elif save_format == CustomLevelSaveFormat.Vanilla():
             warning_message = (
@@ -5338,10 +5394,29 @@ class LevelsTab(Tab):
 
         label = tk.Label(
             save_format_frame,
-            text=save_format.display()
+            text=save_format.room_template_format
         )
         label.grid(column=1, row=index, sticky="nsw")
     
+    def update_custom_level_size(self, width, height):
+        self.height_select_button["state"] = tk.DISABLED
+        if width == self.lvl_width and height == self.lvl_height:
+            return
+        
+        def fill_to_size_with_tile(tile_matrix, tile, width, height):
+            fill_rows = list(map(
+                lambda row: row + ([] if (width * 10 <= len(row)) else [tile for _ in range(width * 10 - len(row))]),
+                tile_matrix))
+            return fill_rows + ([] if (height * 8 <= len(fill_rows)) else [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))])
+        
+
+        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(self.custom_editor_foreground_tile_codes, '0', width, height)
+        self.custom_editor_background_tile_codes = fill_to_size_with_tile(self.custom_editor_background_tile_codes, 'X', width, height)
+        self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
+        self.lvl_width = width
+        self.lvl_height = height
+        self.draw_custom_level_canvases(self.lvl_biome)
+
     @staticmethod
     def adjust_texture_xy(width, height, mode, scale=50):
         # slight adjustments of textures for tile preview
