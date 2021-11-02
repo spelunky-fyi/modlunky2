@@ -641,6 +641,7 @@ class LevelsTab(Tab):
                 return "cave"
             theme = theme_for_name(theme_name)
             self.select_theme(theme)
+            self.changes_made()
 
         self.theme_select_button = tk.Button(
             options_panel,
@@ -1793,8 +1794,12 @@ class LevelsTab(Tab):
             anchor="nw",
         )
         tile_code_matrix[row][column] = tile_code
+        self.changes_made()
+
+    def changes_made(self):
         self.save_needed = True
         self.button_save_full["state"] = tk.NORMAL
+        self.button_save["state"] = tk.NORMAL
 
     def reset(self):
         logger.debug("Resetting..")
@@ -5415,6 +5420,7 @@ class LevelsTab(Tab):
         self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
         self.lvl_width = width
         self.lvl_height = height
+        self.changes_made()
         self.draw_custom_level_canvases(self.lvl_biome)
 
     @staticmethod
