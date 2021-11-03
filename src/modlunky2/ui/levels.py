@@ -2023,6 +2023,31 @@ class LevelsTab(Tab):
                 foreground = [['0' for _ in range(width * 10)] for _ in range(height * 8)]
                 background = [['X' for _ in range(width * 10)] for _ in range(height * 8)]
                 level_settings = LevelSettings()
+                for level_setting in [
+                    "altar_room_chance",
+                    "back_room_chance",
+                    "back_room_hidden_door_cache_chance",
+                    "back_room_hidden_door_chance",
+                    "back_room_interconnection_chance",
+                    "background_chance",
+                    "flagged_liquid_rooms",
+                    "floor_bottom_spread_chance",
+                    "floor_side_spread_chance",
+                    "ground_background_chance",
+                    "idol_room_chance",
+                    "machine_bigroom_chance",
+                    "machine_rewardroom_chance",
+                    "machine_tallroom_chance",
+                    "machine_wideroom_chance",
+                    "max_liquid_particles",
+                    "mount_chance"
+                ]:
+                    level_settings.set_obj(
+                        LevelSetting(
+                            name = level_setting,
+                            value = 0
+                        )
+                    )
                 saved = self.save_level(
                     lvl_path, width, height, theme, save_format,
                     "", LevelChances(), level_settings, MonsterChances(), tiles,
