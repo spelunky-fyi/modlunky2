@@ -2045,7 +2045,8 @@ class LevelsTab(Tab):
                     level_settings.set_obj(
                         LevelSetting(
                             name = level_setting,
-                            value = 0
+                            value = 0,
+                            comment = None,
                         )
                     )
                 saved = self.save_level(
