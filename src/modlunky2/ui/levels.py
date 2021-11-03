@@ -2481,7 +2481,7 @@ class LevelsTab(Tab):
             if (y in [0, 1] and x in [0, 1, 2, 3]):
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "olmec":
-            if (y in [0, 1, 6, 7] and x in [0, 1, 2, 3, 4]) or ([y in 2, 3, 4, 5] and x in [1, 2, 3]):
+            if (y in [0, 1, 6, 7] and x in [0, 1, 2, 3, 4]) or (y in [2, 3, 4, 5] and x in [1, 2, 3]):
                 return LevelsTab.VanillaSetroomType.DUAL
             elif (y in [2, 3, 4, 5] and x in [0, 4]) or (y == 7 and x in [0, 1, 2, 3, 4]):
                 return LevelsTab.VanillaSetroomType.FRONT
@@ -5718,9 +5718,43 @@ class LevelsTab(Tab):
                 tile_matrix))
             return fill_rows + ([] if (height * 8 <= len(fill_rows)) else [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))])
         
+        empty = None
+        hard_floor = None
+        for tile_ref in self.tile_pallete_ref_in_use:
+            tile_name = str(tile_ref[0].split(" ", 2)[0])
+            tile_code = str(tile_ref[0].split(" ", 2)[1])
+            if tile_name == "empty":
+                empty = tile_code
+            elif tile_name == "floor_hard":
+                hard_floor = tile_code
+        
+        if not empty:
+            empty = self.add_tilecode(
+                "empty",
+                "100",
+                "empty",
+                self.tile_pallete_custom,
+                self.tile_label_custom,
+                self.tile_label_secondary_custom,
+                self.panel_sel_custom,
+                self.panel_sel_secondary_custom,
+                self.custom_editor_zoom_level
+            )[0].split(" ", 2)[1]
+        if not hard_floor:
+            hard_floor = self.add_tilecode(
+                "hard_floor",
+                "100",
+                "empty",
+                self.tile_pallete_custom,
+                self.tile_label_custom,
+                self.tile_label_secondary_custom,
+                self.panel_sel_custom,
+                self.panel_sel_secondary_custom,
+                self.custom_editor_zoom_level
+            )[0].split(" ", 2)[1]
 
-        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(self.custom_editor_foreground_tile_codes, '0', width, height)
-        self.custom_editor_background_tile_codes = fill_to_size_with_tile(self.custom_editor_background_tile_codes, 'X', width, height)
+        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(self.custom_editor_foreground_tile_codes, empty, width, height)
+        self.custom_editor_background_tile_codes = fill_to_size_with_tile(self.custom_editor_background_tile_codes, hard_floor, width, height)
         self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
         self.lvl_width = width
         self.lvl_height = height
