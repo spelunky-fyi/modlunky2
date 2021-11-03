@@ -5424,7 +5424,7 @@ class LevelsTab(Tab):
         common_tiles = [
              "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
              "floor_hard%50%floor", "push_block", "ladder", "ladder_plat",
-             "door", "door2", "door2_secret",
+             "entrance", "exit", "door", "door2", "door2_secret",
              "locked_door", "treasure", "treasure_chest", "treasure_vaultchest",
         ]
         def theme_tiles(theme):
