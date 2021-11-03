@@ -347,6 +347,7 @@ class LevelsTab(Tab):
         self.load_packs(tree_files)
 
         tree_files.bind("<ButtonRelease-1>", lambda event: self.tree_filesitemclick(event, tree_files, EditorType.CUSTOM_LEVELS))
+        self.tree_files_custom = tree_files
 
         self.button_back_full = tk.Button(tab, text="Exit Editor", bg="black", fg="white", command=self.go_back)
         self.button_back_full.grid(row=1, column=0, sticky="nswe")
@@ -600,7 +601,7 @@ class LevelsTab(Tab):
         theme_label.grid(row=0, column=0, columnspan=2, sticky="nsw")
         self.theme_label = theme_label
 
-        self.theme_combobox = ttk.Combobox(options_panel, height=25,)
+        self.theme_combobox = ttk.Combobox(options_panel, height=25)
         self.theme_combobox.grid(row=1, column=0, sticky="nsw")
         self.theme_combobox["state"] = tk.DISABLED
         self.theme_combobox["values"] = [
@@ -611,35 +612,7 @@ class LevelsTab(Tab):
 
         def update_theme():
             theme_name = str(self.theme_combobox.get())
-            def theme_for_name(name):
-                if name == "Dwelling":
-                    return "cave"
-                elif name == "Jungle":
-                    return "jungle"
-                elif name == "Volcana":
-                    return "volcano"
-                elif name == "Olmec":
-                    return "olmec"
-                elif name == "Tide Pool":
-                    return "tidepool"
-                elif name == "Temple":
-                    return "temple"
-                elif name == "Ice Caves":
-                    return "ice"
-                elif name == "Neo Babylon":
-                    return "babylon"
-                elif name == "Sunken City":
-                    return "sunken"
-                elif name == "City of Gold":
-                    return "gold"
-                elif name == "Duat":
-                    return "duat"
-                elif name == "Eggplant World":
-                    return "eggplant"
-                elif name == "Surface":
-                    return "surface"
-                return "cave"
-            theme = theme_for_name(theme_name)
+            theme = self.theme_for_name(theme_name)
             self.select_theme(theme)
             self.changes_made()
 
@@ -718,7 +691,7 @@ class LevelsTab(Tab):
         for save_format in self.base_save_formats + self.custom_save_formats:
             self.add_save_format_radio(save_format, save_format_frame)
 
-        self.save_format_warning_message = tk.Label(options_panel, text="", wraplength=400, justify=tk.LEFT)
+        self.save_format_warning_message = tk.Label(options_panel, text="", wraplength=350, justify=tk.LEFT)
         self.save_format_warning_message.grid(column=0, row=7, columnspan=2, sticky="nw")
 
         if self.default_save_format:
@@ -1881,7 +1854,7 @@ class LevelsTab(Tab):
                     "", "end", text=str(lvl_name), image=self.lvl_icon(False)
                 )
 
-    def load_pack_custom_lvls(self, tree, lvl_dir):
+    def load_pack_custom_lvls(self, tree, lvl_dir, selected_lvl=None):
         self.reset()
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
@@ -1903,12 +1876,162 @@ class LevelsTab(Tab):
             path_in_str = str(filepath)
             lvl_name = os.path.basename(os.path.normpath(path_in_str))
             if not (defaults_path / lvl_name).exists():
-                tree.insert(
+                item = tree.insert(
                     "", "end", text = str(lvl_name), image=self.lvl_icon(True)
                 )
-            
+                if lvl_name == selected_lvl:
+                    tree.selection_set(item)
         
+        tree.insert(
+            "", "end", text=str("[Create_New_Level]"), image=self.icon_add
+        )
+
+    def create_level_dialog(self, tree):
+        win = PopupWindow("Create Level", self.modlunky_config)
+
+        row = 0
+        values_frame = tk.Frame(win)
+        values_frame.grid(row=row, column=0, sticky="nw")
+        row = row + 1
+
+        values_row = 0
+        name_label = tk.Label(values_frame, text="Name: ")
+        name_label.grid(row=values_row, column=0, sticky="ne", pady=2)
+
+        name_entry = tk.Entry(values_frame)
+        name_entry.grid(row=values_row, column=1, sticky="nwe", pady=2)
+
+        values_row = values_row + 1
         
+        width_label = tk.Label(values_frame, text="Width: ")
+        width_label.grid(row=values_row, column=0, sticky="ne", pady=2)
+
+        width_combobox = ttk.Combobox(values_frame, value=4, height=25)
+        width_combobox.set(4)
+        width_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
+        width_combobox["state"] = "readonly"
+        width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
+        
+        values_row = values_row + 1
+
+        tk.Label(values_frame, text="Height: ").grid(row=values_row, column=0, sticky="ne", pady=2)
+
+        height_combobox = ttk.Combobox(values_frame, value=4, height=25)
+        height_combobox.set(4)
+        height_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
+        height_combobox["state"] = "readonly"
+        height_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+        values_row = values_row + 1
+
+        theme_label = tk.Label(values_frame, text="Theme: ")
+        theme_label.grid(row=values_row, column=0, sticky="nse", pady=2)
+
+        theme_combobox = ttk.Combobox(values_frame, height=25)
+        theme_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
+        theme_combobox["state"] = "readonly"
+        theme_combobox["values"] = [
+            "Dwelling", "Jungle", "Volcana", "Olmec", "Tide Pool", "Temple",
+            "Ice Caves", "Neo Babylon", "Sunken City", "City of Gold", "Duat",
+            "Eggplant World", "Surface",
+        ]
+
+        values_row = values_row + 1
+
+        save_format_label = tk.Label(values_frame, text="Save format: ")
+        save_format_label.grid(row=values_row, column=0, sticky="nse", pady=2)
+
+        save_format_combobox = ttk.Combobox(values_frame, height=25)
+        save_format_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
+        save_format_combobox["state"] = "readonly"
+        save_formats = self.base_save_formats + self.custom_save_formats
+        save_format_combobox["values"] = list(map(lambda format: format.name, save_formats))
+        create_save_format = self.current_save_format or self.default_save_format
+        if not create_save_format:
+            create_save_format = self.base_save_formats[0]
+        if create_save_format:
+            save_format_combobox.set(create_save_format.name)
+
+        warning_label = tk.Label(win, text="", foreground="red", wraplength=200, justify=tk.LEFT)
+        warning_label.grid(row=row, column=0, sticky="nw", pady=(10, 0))
+        warning_label.grid_remove()
+        row = row + 1
+
+        def create_level():
+            print("create level")
+            theme = self.theme_for_name(theme_combobox.get())
+            print(theme)
+            print(name_entry.get())
+            print(width_combobox.get())
+            print(height_combobox.get())
+            print(save_format_combobox.current())
+            name = name_entry.get()
+            width = int(width_combobox.get())
+            height = int(height_combobox.get())
+            save_format_index = save_format_combobox.current()
+            save_format = None
+            if save_format_index is not None:
+                if save_format_index >= 0 and save_format_index < len(save_formats):
+                    save_format = save_formats[save_format_index]
+
+            if not name or name == "":
+                warning_label["text"] = "Enter a valid level file name."
+                warning_label.grid()
+                return
+            elif (re.search(".*\..*", name) and not name.endswith('.lvl')):
+                warning_label["text"] = "File name must not end with an extension other than .lvl"
+                warning_label.grid()
+                return
+            elif not theme or theme == "":
+                warning_label["text"] = "Select a theme."
+                warning_label.grid()
+                return
+            elif not save_format:
+                warning_label["text"] = "Select a save format."
+                warning_label.grid()
+                return
+            else:
+                warning_label["text"] = ""
+                warning_label.grid_remove()
+                lvl_file_name = name if name.endswith('.lvl') else name + '.lvl'
+                lvl_path = Path(self.lvls_path) / lvl_file_name
+                print(self.lvls_path)
+                print(lvl_path)
+                print(lvl_path.exists())
+                if lvl_path.exists():
+                    warning_label["text"] = "Error: Level {level} already exists!".format(level=lvl_file_name)
+                    warning_label.grid()
+                    return
+                tiles = [
+                    ["floor 1"], ["empty 0"], ["floor_hard X"],
+                ]
+                foreground = [['0' for _ in range(width * 10)] for _ in range(height * 8)]
+                background = [['X' for _ in range(width * 10)] for _ in range(height * 8)]
+                level_settings = LevelSettings()
+                saved = self.save_level(
+                    lvl_path, width, height, theme, save_format,
+                    "", LevelChances(), level_settings, MonsterChances(), tiles,
+                    foreground, background)
+                if saved:
+                    print("opening " + lvl_file_name + "!")
+                    self.load_pack_custom_lvls(self.tree_files_custom, self.lvls_path, lvl_file_name)
+                    self.read_custom_lvl_file(lvl_file_name)
+                else:
+                    print("error saving lvl file.")
+                win.destroy()
+                
+        
+        buttons = tk.Frame(win)
+        buttons.grid(row=row, column=0, pady=(10, 0), sticky="nswe")
+        row = row + 1
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        create_button = tk.Button(buttons, text="Create", command=create_level)
+        create_button.grid(row=0, column=0, sticky="nswe", padx=(0, 5))
+
+        cancel_button = tk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, sticky="nswe", padx=(5, 0))
 
     def create_pack_dialog(self, tree):
         win = PopupWindow("Create Pack", self.modlunky_config)
@@ -2084,6 +2207,9 @@ class LevelsTab(Tab):
             logger.debug("Creating new pack")
             self.create_pack_dialog(tree)
             # self.tree_files.heading('#0', text='Select Pack', anchor='center')
+        elif item_text == "[Create_New_Level]":
+            logger.debug("Creating new level")
+            self.create_level_dialog(tree)
         elif tree.heading("#0")["text"] == "Select Pack":
             for item in tree.selection():
                 self.last_selected_file = item
@@ -2330,125 +2456,146 @@ class LevelsTab(Tab):
         return LevelsTab.VanillaSetroomType.NONE
 
     def save_changes_full(self):
-        print(self.current_save_format)
-        if self.save_needed:
-            try:
-                tile_codes = TileCodes()
-                level_chances = LevelChances()
-                level_settings = LevelSettings()
-                monster_changes = MonsterChances()
-                level_templates = LevelTemplates()
+        if not self.save_needed:
+            logger.debug("No changes to save.")
+            return
+        old_level_file = self.current_level_full
+        self.save_level(
+            self.current_level_path_full,
+            self.lvl_width,
+            self.lvl_height,
+            self.lvl_biome,
+            self.current_save_format,
+            old_level_file.comment,
+            old_level_file.level_chances,
+            old_level_file.level_settings,
+            old_level_file.monster_chances,
+            self.tile_pallete_ref_in_use,
+            self.custom_editor_foreground_tile_codes,
+            self.custom_editor_background_tile_codes,
+        )
 
-                hard_floor_code = None
-                for tilecode in self.tile_pallete_ref_in_use:
-                    tile_codes.set_obj(
-                        TileCode(
-                            name=tilecode[0].split(" ", 1)[0],
-                            value=tilecode[0].split(" ", 1)[1],
-                            comment="",
+    def save_level(
+        self, level_path, width, height, theme, save_format, comment,
+        level_chances, level_settings, monster_chances,
+        used_tiles, foreground_tiles, background_tiles,
+    ):
+        print(save_format)
+        try:
+            tile_codes = TileCodes()
+            # level_chances = LevelChances()
+            # level_settings = LevelSettings()
+            # monster_chances = MonsterChances()
+            level_templates = LevelTemplates()
+
+            hard_floor_code = None
+            for tilecode in used_tiles:
+                tile_codes.set_obj(
+                    TileCode(
+                        name=tilecode[0].split(" ", 1)[0],
+                        value=tilecode[0].split(" ", 1)[1],
+                        comment="",
+                    )
+                )
+                if tilecode[0].split(" ", 1)[0] == "floor_hard":
+                    hard_floor_code = tilecode[0].split(" ", 1)[1]
+
+            for room_y in range(height):#range(len(self.custom_editor_foreground_tile_codes) // 8):
+                for room_x in range(width):#range(len(self.custom_editor_foreground_tile_codes[0]) // 10):
+                    room_foreground = []
+                    room_background = []
+                    for row in range(8):
+                        foreground_row = foreground_tiles[room_y * 8 + row]
+                        background_row = background_tiles[room_y * 8 + row]
+                        room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
+                        room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
+                    print(room_foreground)
+                    print(save_format.room_template_format)
+                    room_settings = []
+                    dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
+                    if dual:
+                        room_settings.append(TemplateSetting.DUAL)
+                        print("it's dual!")
+                    template_chunks = [Chunk(
+                        comment = None,
+                        settings = room_settings,
+                        foreground = room_foreground,
+                        background = room_background if dual else [],
+                    )]
+                    print(save_format)
+                    print(save_format.room_template_format.format(y=room_y, x=room_x))
+                    template_name = save_format.room_template_format.format(y=room_y, x=room_x)
+                    level_templates.set_obj(
+                        LevelTemplate(
+                            name=template_name,
+                            comment=theme,
+                            chunks=template_chunks,
                         )
                     )
-                    if tilecode[0].split(" ", 1)[0] == "floor_hard":
-                        hard_floor_code = tilecode[0].split(" ", 1)[1]
-
-                for room_y in range(self.lvl_height):#range(len(self.custom_editor_foreground_tile_codes) // 8):
-                    for room_x in range(self.lvl_width):#range(len(self.custom_editor_foreground_tile_codes[0]) // 10):
-                        room_foreground = []
-                        room_background = []
-                        for row in range(8):
-                            foreground_row = self.custom_editor_foreground_tile_codes[room_y * 8 + row]
-                            background_row = self.custom_editor_background_tile_codes[room_y * 8 + row]
-                            room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
-                            room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
-                        print(room_foreground)
-                        print(self)
-                        print(self.current_save_format.room_template_format)
-                        room_settings = []
-                        dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
+                    vanilla_setroom_type = self.vanilla_setroom_type_for(theme, room_x, room_y) if save_format.include_vanilla_setrooms else LevelsTab.VanillaSetroomType.NONE
+                    vf = []
+                    vb = []
+                    vs = []
+                    vm = ""
+                    if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
+                        vf = room_foreground
+                        vm = "the front layer"
+                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
+                        vf = room_background
+                        vm = "the back layer"
+                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
+                        vf = room_foreground
+                        vm = "both layers"
                         if dual:
-                            room_settings.append(TemplateSetting.DUAL)
-                            print("it's dual!")
+                            vb = room_background
+                            vs.append(TemplateSetting.DUAL)
+
+                    if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
+                        print("it has a type!")
                         template_chunks = [Chunk(
-                            comment = None,
-                            settings = room_settings,
-                            foreground = room_foreground,
-                            background = room_background if dual else [],
+                            comment=None,
+                            settings = vs,
+                            foreground = vf,
+                            background = vb,
                         )]
-                        print(self.current_save_format)
-                        print(self.current_save_format.room_template_format.format(y=room_y, x=room_x))
-                        template_name = self.current_save_format.room_template_format.format(y=room_y, x=room_x)
                         level_templates.set_obj(
                             LevelTemplate(
-                                name=template_name,
-                                comment=self.lvl_biome,
+                                name="setroom{y}-{x}".format(y=room_y, x=room_x),
+                                comment="Auto-generated template to match {layer} of {template}.".format(layer=vm, template=template_name),
                                 chunks=template_chunks,
                             )
                         )
-                        vanilla_setroom_type = self.vanilla_setroom_type_for(self.lvl_biome, room_x, room_y) if self.current_save_format.include_vanilla_setrooms else VanillaSetroomType.NONE
-                        vf = []
-                        vb = []
-                        vs = []
-                        vm = ""
-                        if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
-                            vf = room_foreground
-                            vm = "the front layer"
-                        elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
-                            vf = room_background
-                            vm = "the back layer"
-                        elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
-                            vf = room_foreground
-                            vm = "both layers"
-                            if dual:
-                                vb = room_background
-                                vs.append(TemplateSetting.DUAL)
+            level_file = LevelFile(
+                comment,
+                level_settings,
+                tile_codes,
+                level_chances,
+                monster_chances,
+                level_templates,
+            )
 
-                        if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                            print("it has a type!")
-                            template_chunks = [Chunk(
-                                comment=None,
-                                settings = vs,
-                                foreground = vf,
-                                background = vb,
-                            )]
-                            level_templates.set_obj(
-                                LevelTemplate(
-                                    name="setroom{y}-{x}".format(y=room_y, x=room_x),
-                                    comment="Auto-generated template to match {layer} of {template}.".format(layer=vm, template=template_name),
-                                    chunks=template_chunks,
-                                )
-                            )
-                old_level_file = self.current_level_full
-                level_file = LevelFile(
-                    old_level_file.comment,
-                    old_level_file.level_settings,
-                    tile_codes,
-                    old_level_file.level_chances,
-                    old_level_file.monster_chances,
-                    level_templates,
-                )
+            if not os.path.exists(Path(self.lvls_path)):
+                os.makedirs(Path(self.lvls_path))
+            save_path = level_path
+            self.make_backup(save_path)
+            logger.debug("Saving to %s", save_path)
 
-                if not os.path.exists(Path(self.lvls_path)):
-                    os.makedirs(Path(self.lvls_path))
-                save_path = self.current_level_path_full
-                self.make_backup(save_path)
-                logger.debug("Saving to %s", save_path)
+            with Path(save_path).open("w", encoding="cp1252") as handle:
+                level_file.write(handle)
 
-                with Path(save_path).open("w", encoding="cp1252") as handle:
-                    level_file.write(handle)
+            logger.debug("Saved!")
 
-                logger.debug("Saved!")
-
-                self.save_needed = False
-                self.button_save_full["state"] = tk.DISABLED
-                logger.debug("Saved")
-            except Exception:  # pylint: disable=broad-except
-                logger.critical("Failed to save level: %s", tb_info())
-                _msg_box = tk.messagebox.showerror(
-                    "Oops?",
-                    "Error saving..",
-                )
-        else:
-            logger.debug("No changes to save.")
+            self.save_needed = False
+            self.button_save_full["state"] = tk.DISABLED
+            logger.debug("Saved")
+            return True
+        except Exception:  # pylint: disable=broad-except
+            logger.critical("Failed to save level: %s", tb_info())
+            _msg_box = tk.messagebox.showerror(
+                "Oops?",
+                "Error saving..",
+            )
+            return False
 
     def save_changes(self):
         if self.save_needed:
@@ -5133,7 +5280,38 @@ class LevelsTab(Tab):
         )
         self.draw_custom_level_canvases(theme)
 
-    def name_of_theme(self, theme):
+    @staticmethod
+    def theme_for_name(name):
+        if name == "Dwelling":
+            return "cave"
+        elif name == "Jungle":
+            return "jungle"
+        elif name == "Volcana":
+            return "volcano"
+        elif name == "Olmec":
+            return "olmec"
+        elif name == "Tide Pool":
+            return "tidepool"
+        elif name == "Temple":
+            return "temple"
+        elif name == "Ice Caves":
+            return "ice"
+        elif name == "Neo Babylon":
+            return "babylon"
+        elif name == "Sunken City":
+            return "sunken"
+        elif name == "City of Gold":
+            return "gold"
+        elif name == "Duat":
+            return "duat"
+        elif name == "Eggplant World":
+            return "eggplant"
+        elif name == "Surface":
+            return "surface"
+        return None
+        
+    @staticmethod
+    def name_of_theme(theme):
         if theme == "cave":
             return "Dwelling"
         elif theme == "tidepool":
@@ -5192,7 +5370,8 @@ class LevelsTab(Tab):
 
         return self.textures_dir / background_file(theme)
 
-    def suggested_tiles_for_theme(self, theme):
+    @staticmethod
+    def suggested_tiles_for_theme(theme):
         common_tiles = [
              "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
              "floor_hard%50%floor", "push_block", "ladder", "ladder_plat",
