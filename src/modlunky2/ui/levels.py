@@ -181,6 +181,9 @@ class LevelsTab(Tab):
         self.tiles_full_dual = None
         self.current_level_full = None
         self.mag_full = None
+        self.grid_lines_foreground = []
+        self.grid_lines_background = []
+        self.hide_grid_lines = False
         self.custom_editor_foreground_tile_images = None
         self.custom_editor_background_tile_images = None
         self.custom_editor_foreground_tile_codes = None
@@ -713,6 +716,18 @@ class LevelsTab(Tab):
             command=create_template,
         )
         create_template_button.grid(row=8, column=0, sticky="nw")
+
+        hide_grid_var = tk.IntVar()
+        hide_grid_var.set(self.hide_grid_lines)
+        def toggle_hide_grid():
+            nonlocal hide_grid_var
+            self.hide_grid_lines = hide_grid_var.get()
+            self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
+            self.hide_grid(self.custom_level_canvas_background, self.grid_lines_background)
+        tk.Checkbutton(
+            options_panel, text="Hide grid lines", variable=hide_grid_var,
+            onvalue=True, offvalue=False, command=toggle_hide_grid
+        ).grid(row=9, column=0, sticky="nw")
 
         canvas_foreground.bind(
             "<Button-1>",
@@ -4177,7 +4192,8 @@ class LevelsTab(Tab):
                 canvas.create_image(x * zoom_level * 10, y * zoom_level * 8, image=lvl_bg, anchor="nw")
 
         # finishes by drawing grid on top
-        for i in range(0, cols * 10 + 2):
+        # for i in range(0, cols * 10 + 2):
+        return [
             canvas.create_line(
                 i * zoom_level,
                 0,
@@ -4185,7 +4201,9 @@ class LevelsTab(Tab):
                 rows * 8 * zoom_level,
                 fill="#F0F0F0",
             )
-        for i in range(0, rows * 8):
+            for i in range(0, cols * 10 + 2)
+        ] + [
+        # for i in range(0, rows * 8):
             canvas.create_line(
                 0,
                 i * zoom_level,
@@ -4193,8 +4211,12 @@ class LevelsTab(Tab):
                 i * zoom_level,
                 fill="#F0F0F0",
             )
+            for i in range(0, rows * 8)
+        ]
 
-
+    def hide_grid(self, canvas, grid_lines):
+        for grid_line in grid_lines:
+            canvas.itemconfig(grid_line, state=('hidden' if self.hide_grid_lines else 'normal'))
 
     def _draw_grid_full(self, cols, rows, canvas):
         # resizes canvas for grids
@@ -5200,9 +5222,8 @@ class LevelsTab(Tab):
         print(height)
         self.custom_level_canvas_foreground.delete("all")
         self.custom_level_canvas_background.delete("all")
-        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
-        self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
-
+        self.grid_lines_foreground = self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
+        self.grid_lines_background = self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
 
         def draw_layer(canvas, tile_codes, tile_images):
             for row_index, room_row in enumerate(tile_codes):
@@ -5246,6 +5267,8 @@ class LevelsTab(Tab):
         # ]
         draw_layer(self.custom_level_canvas_foreground, self.custom_editor_foreground_tile_codes, self.custom_editor_foreground_tile_images)
         draw_layer(self.custom_level_canvas_background, self.custom_editor_background_tile_codes, self.custom_editor_background_tile_images)
+        self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
+        self.hide_grid(self.custom_level_canvas_background, self.grid_lines_background)
 
     def read_save_format(self, level):
         valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
