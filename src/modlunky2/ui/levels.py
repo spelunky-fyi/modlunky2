@@ -5157,6 +5157,7 @@ class LevelsTab(Tab):
         self.lvl_height = height
         self.width_combobox.set(width)
         self.height_combobox.set(height)
+        self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
 
         # self.custom_level_canvas_foreground.delete("all")
         # self.custom_level_canvas_background.delete("all")
