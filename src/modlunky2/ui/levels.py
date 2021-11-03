@@ -597,7 +597,7 @@ class LevelsTab(Tab):
             ),
         )
         self.button_tilecode_add_custom.grid(
-            row=3, column=1, sticky="nsw"
+            row=3, column=2, sticky="nsw"
         )
 
         theme_label = tk.Label(options_panel, text="Level Theme:")
