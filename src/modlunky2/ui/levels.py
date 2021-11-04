@@ -729,6 +729,63 @@ class LevelsTab(Tab):
             onvalue=True, offvalue=False, command=toggle_hide_grid
         ).grid(row=9, column=0, sticky="nw")
 
+
+        def holding_shift(event, canvas):
+            canvas_foreground.config(cursor="pencil")
+            canvas_background.config(cursor="pencil")
+
+        def shift_up(event, canvas):
+            canvas_foreground.config(cursor="")
+            canvas_background.config(cursor="")
+
+        scrollable_frame.bind_all("<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas))
+        scrollable_frame.bind_all("<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas))
+        scrollable_frame.bind_all("<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas))
+
+        canvas_foreground.bind(
+            "<Shift-Button-1>",
+            lambda event: self.canvas_shiftclick(
+                event, canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label_custom,
+                self.panel_sel_custom,
+                self.custom_editor_foreground_tile_codes
+            )
+        )
+        canvas_foreground.bind(
+            "<Shift-Button-3>",
+            lambda event: self.canvas_shiftclick(
+                event, canvas_foreground,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
+                self.custom_editor_foreground_tile_codes
+            )
+        )
+        canvas_background.bind(
+            "<Shift-Button-1>",
+            lambda event: self.canvas_shiftclick(
+                event, canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label_custom,
+                self.panel_sel_custom,
+                self.custom_editor_background_tile_codes
+            )
+        )
+        canvas_background.bind(
+            "<Shift-Button-3>",
+            lambda event: self.canvas_shiftclick(
+                event, canvas_background,
+                self.custom_editor_zoom_level,
+                self.tile_label_secondary_custom,
+                self.panel_sel_secondary_custom,
+                self.custom_editor_background_tile_codes
+            )
+        )
+        canvas_foreground.bind("<Shift-B1-Motion>", lambda event: None)
+        canvas_foreground.bind("<Shift-B3-Motion>", lambda event: None)
+        canvas_background.bind("<Shift-B1-Motion>", lambda event: None)
+        canvas_background.bind("<Shift-B3-Motion>", lambda event: None)
         canvas_foreground.bind(
             "<Button-1>",
             lambda event: self.canvas_click(
@@ -1702,21 +1759,6 @@ class LevelsTab(Tab):
             self.remember_changes()  # remember changes made
 
 
-        def holding_shift(event, canvas):
-            self.canvas.config(cursor="pencil")
-            self.canvas_dual.config(cursor="pencil")
-            print("holding shift!! ", event.keysym)
-
-        def shift_up(event, canvas):
-            self.canvas.config(cursor="")
-            self.canvas_dual.config(cursor="")
-            print("no longer holding shift!! ", event.keysym)
-
-
-        self.bind_all("<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas))
-        self.bind_all("<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas))
-        self.bind_all("<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas))
-     #   self.canvas.bind("<Shift-Button-1>", lambda event: test1(event, self.canvas))
         self.canvas.bind("<Button-1>", lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel))
         self.canvas.bind(
             "<B1-Motion>", lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel)
@@ -1779,6 +1821,21 @@ class LevelsTab(Tab):
         )
         tile_code_matrix[row][column] = tile_code
         self.changes_made()
+
+    def canvas_shiftclick(self, event, canvas, tile_size, tile_label, panel_sel, tile_code_matrix):
+        column = int(event.x // tile_size)
+        row = int(event.y // tile_size)
+        if column < 0 or event.x > int(canvas["width"]):
+            return
+        if row < 0 or event.y > int(canvas["height"]):
+            return
+
+        tile_code = tile_code_matrix[row][column]        
+        tile = self.tile_pallete_map[tile_code]
+        
+        airy = tile_label["text"].split(" ", 1)[0]
+        tile_label["text"] = airy + " Tile: " + tile[0]
+        panel_sel["image"] = tile[1]
 
     def changes_made(self):
         self.save_needed = True
