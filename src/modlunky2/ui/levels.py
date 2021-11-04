@@ -1715,28 +1715,10 @@ class LevelsTab(Tab):
                     logger.debug("Middle of dual detected; not tile placed")
                     return
 
-            x_coord_offset = 0
-            y_coord_offset = 0
             img = None
-            # height, width, channels = img.shape
-            for tile_name_ref in self.draw_mode:
-                if tile_label["text"].split(" ", 4)[2] == str(tile_name_ref[0]):
-                    logger.debug(
-                        "Applying custom anchor for %s",
-                        tile_label["text"].split(" ", 4)[2],
-                    )
-                    for tile_ref in self.tile_pallete_ref_in_use:
-                        if (
-                            str(tile_ref[0].split(" ", 1)[0])
-                            == tile_label["text"].split(" ", 4)[2]
-                        ):
-                            logger.debug("Found %s", tile_ref[0])
-                            img = tile_ref[1]
-                            x_coord_offset, y_coord_offset = self.adjust_texture_xy(
-                                img.width(),
-                                img.height(),
-                                int(tile_name_ref[1]),
-                            )
+            tile_name = tile_label["text"].split(" ", 4)[2]
+            tile_code = tile_label["text"].split(" ", 4)[3]
+            x_coord_offset, y_coord_offset = self.offset_for_tile(tile_name, tile_code, self.mag)
 
             canvas.delete(self.tiles[int(row)][int(col)])
             if canvas == self.canvas_dual:
@@ -1744,14 +1726,14 @@ class LevelsTab(Tab):
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     x2_coord * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=panel_sel["image"],
+                    image=self.tile_pallete_map[tile_code][1],
                     anchor="nw",
                 )
             else:
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     int(col) * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=panel_sel["image"],
+                    image=self.tile_pallete_map[tile_code][1],
                     anchor="nw",
                 )
             self.tiles_meta[row][col] = tile_label["text"].split(" ", 4)[3]
@@ -2401,7 +2383,7 @@ class LevelsTab(Tab):
 
     def suggested_tile_pick(
         self, suggested_tile, is_secondary, tile_palette, tile_label,
-        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+        tile_label_secondary, panel_sel, panel_sel_secondary, scale, panel_img
     ):
         tile = self.add_tilecode(
             suggested_tile, 100, "empty", tile_palette, tile_label, tile_label_secondary,
@@ -2420,8 +2402,9 @@ class LevelsTab(Tab):
             curr_panel_sel = panel_sel
             curr_tile_label = tile_label
             prefix = "Primary Tile: "
-        curr_panel_sel["image"] = tile[1]
+        curr_panel_sel["image"] = panel_img
         curr_tile_label["text"] = prefix + tile[0]
+        self.populate_tilecode_pallete(tile_palette, tile_label, tile_label_secondary, panel_sel, panel_sel_secondary, scale)
         
     def get_codes_left(self):
         codes = ""
@@ -3943,6 +3926,11 @@ class LevelsTab(Tab):
                 ),
             )
 
+            if tile_name == tile_label["text"].split(" ", 4)[2]:
+                panel_sel["image"] = tile_image
+            if tile_name == tile_label_secondary["text"].split(" ", 4)[2]:
+                panel_sel_secondary["image"] = tile_image
+
 
         if self.tile_pallete_suggestions and len(self.tile_pallete_suggestions):
             count_col = -1
@@ -3973,14 +3961,16 @@ class LevelsTab(Tab):
                     "<Button-1>",
                     lambda event, ts=tile_suggestion: self.suggested_tile_pick(
                         ts, False, tile_palette, tile_label,
-                        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+                        tile_label_secondary, panel_sel, panel_sel_secondary, scale,
+                        tile_image
                     )
                 )
                 new_tile.bind(
                     "<Button-3>",
                     lambda event, ts=tile_suggestion: self.suggested_tile_pick(
                         ts, True, tile_palette, tile_label,
-                        tile_label_secondary, panel_sel, panel_sel_secondary, scale 
+                        tile_label_secondary, panel_sel, panel_sel_secondary, scale,
+                        tile_image
                     )
                 )
 
@@ -4756,7 +4746,7 @@ class LevelsTab(Tab):
 
         self.tree_levels.bind("<ButtonRelease-1>", self.room_select)
         self.tile_pallete_ref_in_use = []
-
+        self.tile_pallete_map = {}
         self.lvl = lvl
 
         self.lvl_biome = "cave"  # cave by default, depicts what background and sprites will be loaded
@@ -4970,6 +4960,7 @@ class LevelsTab(Tab):
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
 
                 img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self.mag)
+                panel_img = self.get_texture(tilecode.name, self.lvl_biome, lvl, 40)
 
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 self.panel_sel["image"] = tilecode_item[1]
@@ -4987,7 +4978,8 @@ class LevelsTab(Tab):
                     if str(i) == str(tilecode.value):
                         self.usable_codes.remove(i)
 
-                self.tile_pallete_ref_in_use.append(tilecode_item)
+                self.tile_pallete_ref_in_use.append(tilecode_item)            
+                self.tile_pallete_map[tilecode.value] = tilecode_item
 
         if level is None:
             return
@@ -5018,6 +5010,7 @@ class LevelsTab(Tab):
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
+                        self.tile_pallete_map[need[0]] = tilecode_item
         self.populate_tilecode_pallete(self.tile_pallete, self.tile_label, self.tile_label_secondary, self.panel_sel, self.panel_sel_secondary, self.mag)
 
 
