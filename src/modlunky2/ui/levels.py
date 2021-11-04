@@ -749,7 +749,8 @@ class LevelsTab(Tab):
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
                 self.panel_sel_custom,
-                self.custom_editor_foreground_tile_codes
+                self.custom_editor_foreground_tile_codes,
+                self.tile_pallete_custom
             )
         )
         canvas_foreground.bind(
@@ -759,7 +760,8 @@ class LevelsTab(Tab):
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_foreground_tile_codes
+                self.custom_editor_foreground_tile_codes,
+                self.tile_pallete_custom
             )
         )
         canvas_background.bind(
@@ -769,7 +771,8 @@ class LevelsTab(Tab):
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
                 self.panel_sel_custom,
-                self.custom_editor_background_tile_codes
+                self.custom_editor_background_tile_codes,
+                self.tile_pallete_custom
             )
         )
         canvas_background.bind(
@@ -779,7 +782,8 @@ class LevelsTab(Tab):
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_background_tile_codes
+                self.custom_editor_background_tile_codes,
+                self.tile_pallete_custom
             )
         )
         canvas_foreground.bind("<Shift-B1-Motion>", lambda event: None)
@@ -1822,7 +1826,7 @@ class LevelsTab(Tab):
         tile_code_matrix[row][column] = tile_code
         self.changes_made()
 
-    def canvas_shiftclick(self, event, canvas, tile_size, tile_label, panel_sel, tile_code_matrix):
+    def canvas_shiftclick(self, event, canvas, tile_size, tile_label, panel_sel, tile_code_matrix, tile_palette):
         column = int(event.x // tile_size)
         row = int(event.y // tile_size)
         if column < 0 or event.x > int(canvas["width"]):
@@ -1835,7 +1839,12 @@ class LevelsTab(Tab):
         
         airy = tile_label["text"].split(" ", 1)[0]
         tile_label["text"] = airy + " Tile: " + tile[0]
-        panel_sel["image"] = tile[1]
+        tile_image = tile[1]
+        for t in tile_palette.scrollable_frame.grid_slaves():
+            if t["text"] == tile[0]:
+                tile_image = t["image"]
+                break
+        panel_sel["image"] = tile_image
 
     def changes_made(self):
         self.save_needed = True
