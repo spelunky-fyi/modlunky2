@@ -739,17 +739,26 @@ class LevelsTab(Tab):
         tk.Checkbutton(
             options_panel, text="Hide grid lines", variable=hide_grid_var,
             onvalue=True, offvalue=False, command=toggle_hide_grid
-        ).grid(row=9, column=0, sticky="nw")
+        ).grid(row=9, column=0, sticky="nw", pady=5)
 
         # Change the cursor to a pencil while holding shift to let the user know that
         # the tile will be selected instead of replaced when clicking. (Pencil was the
         # closest I could find in the available cursors to something that would
         # represent this action).
+        shift_down = False
         def holding_shift(event, canvas):
+            nonlocal shift_down
+            if shift_down:
+                return
+            shift_down = True
             canvas_foreground.config(cursor="pencil")
             canvas_background.config(cursor="pencil")
 
         def shift_up(event, canvas):
+            nonlocal shift_down
+            if not shift_down:
+                return
+            shift_down = False
             canvas_foreground.config(cursor="")
             canvas_background.config(cursor="")
 
