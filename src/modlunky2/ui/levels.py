@@ -393,12 +393,10 @@ class LevelsTab(Tab):
         scrollable_frame.rowconfigure(
             4, minsize=int(int(self.screen_height) / 2)
         )
-        # scrollable_frame.columnconfigure(0, weight=1)
-        # scrollable_frame.rowconfigure(0, weight=1)
         scrollable_frame.grid(row=0, column=0, sticky="nswe")
 
-        width = self.screen_width # scrollable_canvas.winfo_screenwidth()
-        height = self.screen_height# scrollable_canvas.winfo_screenheight()
+        width = self.screen_width
+        height = self.screen_height
         scrollable_canvas.create_window(
             (width, height),
             window=scrollable_frame,
@@ -5220,11 +5218,6 @@ class LevelsTab(Tab):
         self.height_combobox.set(height)
         self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
 
-        # self.custom_level_canvas_foreground.delete("all")
-        # self.custom_level_canvas_background.delete("all")
-        # self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
-        # self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
-
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
         
@@ -5246,65 +5239,15 @@ class LevelsTab(Tab):
         )
         self.custom_editor_foreground_tile_codes = map_rooms(foreground_tiles)
         self.custom_editor_background_tile_codes = map_rooms(background_tiles)
-        # def draw_layer(canvas, tile_codes, tile_images):
-        #     for row_index, room_row in enumerate(tile_codes):
-        #         for tile_index, tile in enumerate(room_row):
-        #             tilecode = self.tile_pallete_map[tile]
-        #             tile_name = tilecode[0].split(" ", 1)[0]
-        #             tile_image = tilecode[1]
-        #             x_offset = 0
-        #             y_offset = 0
-        #             for tile_name_ref in self.draw_mode:
-        #                 if tile_name == str(tile_name_ref[0]):
-        #                     x_offset, y_offset = self.adjust_texture_xy(
-        #                         tile_image.width(),
-        #                         tile_image.height(),
-        #                         tile_name_ref[1],
-        #                         self.custom_editor_zoom_level
-        #                     )
-        #             tile_images[row_index][tile_index] = canvas.create_image(
-        #                 tile_index * self.custom_editor_zoom_level - x_offset,
-        #                 row_index * self.custom_editor_zoom_level - y_offset,
-        #                 image=tile_image,
-        #                 anchor="nw"
-        #             )
-        #             # tile_codes[row_index][tile_index] = tile
-
-        # self.custom_editor_foreground_tile_images = [
-        #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # ]
-        # self.custom_editor_background_tile_images = [
-        #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # ]
-        # # self.custom_editor_foreground_tile_codes = [
-        # #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # # ]
-        # # self.custom_editor_background_tile_codes = [
-        # #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # # ]
-        # draw_layer(self.custom_level_canvas_foreground, self.custom_editor_foreground_tile_codes, self.custom_editor_foreground_tile_images)
-        # draw_layer(self.custom_level_canvas_background, self.custom_editor_background_tile_codes, self.custom_editor_background_tile_images)
-        # # draw_layer(
-        # #     foreground_tiles,
-        # #     self.custom_level_canvas_foreground,
-        # #     self.custom_editor_foreground_tile_images,
-        # #     self.custom_editor_foreground_tile_codes)
-        # # draw_layer(
-        # #     background_tiles,
-        # #     self.custom_level_canvas_background,
-        # #     self.custom_editor_background_tile_images,
-        # #     self.custom_editor_background_tile_codes)
 
         self.draw_custom_level_canvases(theme)
 
         # Load scrolled to the center.
-        self.custom_level_canvas.configure(scrollregion=self.custom_level_canvas.bbox("all"))
-        # self.custom_level_canvas.yview_moveto(.5)
-        # self.custom_level_canvas.xview_moveto(.5)
+        # self.custom_level_canvas.configure(scrollregion=self.custom_level_canvas.bbox("all"))
 
     def draw_custom_level_canvases(self, theme):
-        width = self.lvl_width#int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
-        height = self.lvl_height#int(len(self.custom_editor_foreground_tile_codes) // 8)
+        width = self.lvl_width
+        height = self.lvl_height
 
         self.custom_level_canvas_foreground.delete("all")
         self.custom_level_canvas_background.delete("all")
@@ -5345,12 +5288,6 @@ class LevelsTab(Tab):
         self.custom_editor_background_tile_images = [
             [None for _ in range(width * 10)] for _ in range(height * 8)
         ]
-        # self.custom_editor_foreground_tile_codes = [
-        #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # ]
-        # self.custom_editor_background_tile_codes = [
-        #     [None for _ in range(width * 10)] for _ in range(height * 8)
-        # ]
         draw_layer(self.custom_level_canvas_foreground, self.custom_editor_foreground_tile_codes, self.custom_editor_foreground_tile_images)
         draw_layer(self.custom_level_canvas_background, self.custom_editor_background_tile_codes, self.custom_editor_background_tile_images)
         self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
