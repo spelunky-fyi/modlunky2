@@ -313,6 +313,8 @@ class LevelsTab(Tab):
                     self.editor_tab_control.select(self.last_selected_editor_tab)
                     return
             self.reset()
+            self.load_packs(self.tree_files)
+            self.load_packs(self.tree_files_custom)
             self.last_selected_editor_tab = event.widget.select()
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
@@ -435,8 +437,8 @@ class LevelsTab(Tab):
         switch_variable = tk.StringVar()
         def toggle_layer():
             nonlocal switch_variable
-            x_coord = switch_variable.get()
-            if x_coord == "0":
+            layer = switch_variable.get()
+            if layer == "0":
                 canvas_foreground.grid()
                 canvas_background.grid_remove()
             else:
@@ -660,19 +662,19 @@ class LevelsTab(Tab):
             print(self.height_combobox.get())
             self.update_custom_level_size(int(self.width_combobox.get()), int(self.height_combobox.get()))
 
-        self.height_select_button = tk.Button(
+        self.size_select_button = tk.Button(
             size_frame,
             text="Update Size",
             bg="yellow",
             command=update_size,
         )
-        self.height_select_button["state"] = tk.DISABLED
-        self.height_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
+        self.size_select_button["state"] = tk.DISABLED
+        self.size_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
 
         def size_selected(event):
             width = self.width_combobox.get()
             height = self.height_combobox.get()
-            self.height_select_button["state"] = tk.DISABLED if width == self.lvl_width and height == self.level_height else tk.NORMAL
+            self.size_select_button["state"] = tk.DISABLED if width == self.lvl_width and height == self.level_height else tk.NORMAL
         self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
         self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
 
@@ -1434,11 +1436,7 @@ class LevelsTab(Tab):
         )
         self.tile_label_secondary.grid(row=1, column=10, columnspan=1, sticky="we")
 
-        self.img_sel = ImageTk.PhotoImage(
-            Image.open(
-                BASE_DIR / "static/images/tilecodetextures.png"
-            )  ########################################### set selected img
-        )
+        self.img_sel = ImageTk.PhotoImage(self._sprite_fetcher.get("empty"))
         self.panel_sel = ttk.Label(
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
@@ -1838,12 +1836,39 @@ class LevelsTab(Tab):
         for i in self.tree_levels.get_children():
             self.tree_levels.delete(i)
         try:
+            for tile_palette in [self.tile_pallete, self.tile_pallete_custom]:
+                for widget in tile_palette.scrollable_frame.winfo_children():
+                    widget.destroy()
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
             self.canvas.grid_remove()
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
+            self.tile_pallete_map = {}
+            self.tile_pallete_ref_in_use = None
+            self.tile_pallete_suggestions = None
+            self.lvl = None
+            self.lvl_biome = None
+            self.custom_level_canvas_foreground.delete("all")
+            self.custom_level_canvas_background.delete("all")
+            self.tile_label["text"] = "Primary Tile: "
+            self.tile_label_custom["text"] = "Primary Tile: "
+            self.tile_label_secondary["text"] = "Secondary Tile: "
+            self.tile_label_secondary_custom["text"] = "Secondary Tile: "
+            self.panel_sel["image"] = self.img_sel
+            self.panel_sel_secondary["image"] = self.img_sel
+            self.panel_sel_custom["image"] = self.img_sel_custom
+            self.panel_sel_secondary_custom["image"] = self.img_sel_custom
+            self.button_tilecode_del["state"] = tk.DISABLED
+            self.button_tilecode_del_secondary["state"] = tk.DISABLED
+            self.button_tilecode_del_custom["state"] = tk.DISABLED
+            self.button_tilecode_del_secondary_custom["state"] = tk.DISABLED
+            self.theme_combobox["state"] = tk.DISABLED
+            self.theme_select_button["state"] = tk.DISABLED
+            self.width_combobox["state"] = tk.DISABLED
+            self.height_combobox["state"] = tk.DISABLED
+            self.size_select_button["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")
 
@@ -1944,6 +1969,7 @@ class LevelsTab(Tab):
                 )
                 if lvl_name == selected_lvl:
                     tree.selection_set(item)
+                    self.last_selected_file = item
         
         tree.insert(
             "", "end", text=str("[Create_New_Level]"), image=self.icon_add
@@ -3983,25 +4009,25 @@ class LevelsTab(Tab):
         if msg_box == "yes":
             self.editor_tab_control.grid_remove()
             self.lvl_editor_start_frame.grid()
-            # self.tab_control.grid_remove()
-            # self.tree_files.grid_remove()
-            # # Resets widgets
-            # self.scale["state"] = tk.DISABLED
-            # self.button_replace["state"] = tk.DISABLED
-            # self.button_clear["state"] = tk.DISABLED
-            # self.combobox["state"] = tk.DISABLED
-            # self.combobox_alt["state"] = tk.DISABLED
-            # self.button_tilecode_del["state"] = tk.DISABLED
-            # self.button_tilecode_del_secondary["state"] = tk.DISABLED
-            # self.canvas.delete("all")
-            # self.canvas_dual.delete("all")
-            # self.canvas.grid_remove()
-            # self.canvas_dual.grid_remove()
-            # self.foreground_label.grid_remove()
-            # self.background_label.grid_remove()
-            # self.button_back.grid_remove()
-            # self.button_save.grid_remove()
-            # self.vsb_tree_files.grid_remove()
+            self.tab_control.grid_remove()
+            self.tree_files.grid_remove()
+            # Resets widgets
+            self.scale["state"] = tk.DISABLED
+            self.button_replace["state"] = tk.DISABLED
+            self.button_clear["state"] = tk.DISABLED
+            self.combobox["state"] = tk.DISABLED
+            self.combobox_alt["state"] = tk.DISABLED
+            self.button_tilecode_del["state"] = tk.DISABLED
+            self.button_tilecode_del_secondary["state"] = tk.DISABLED
+            self.canvas.delete("all")
+            self.canvas_dual.delete("all")
+            self.canvas.grid_remove()
+            self.canvas_dual.grid_remove()
+            self.foreground_label.grid_remove()
+            self.background_label.grid_remove()
+            self.button_back.grid_remove()
+            self.button_save.grid_remove()
+            self.vsb_tree_files.grid_remove()
             # removes any old tiles that might be there from the last file
             for widget in self.tile_pallete.scrollable_frame.winfo_children():
                 widget.destroy()
@@ -5768,7 +5794,7 @@ class LevelsTab(Tab):
         label.grid(column=1, row=index, sticky="nsw")
     
     def update_custom_level_size(self, width, height):
-        self.height_select_button["state"] = tk.DISABLED
+        self.size_select_button["state"] = tk.DISABLED
         if width == self.lvl_width and height == self.lvl_height:
             return
         
