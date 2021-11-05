@@ -658,8 +658,6 @@ class LevelsTab(Tab):
         self.height_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         
         def update_size():
-            print(self.width_combobox.get())
-            print(self.height_combobox.get())
             self.update_custom_level_size(int(self.width_combobox.get()), int(self.height_combobox.get()))
 
         self.size_select_button = tk.Button(
@@ -2047,13 +2045,7 @@ class LevelsTab(Tab):
         row = row + 1
 
         def create_level():
-            print("create level")
             theme = self.theme_for_name(theme_combobox.get())
-            print(theme)
-            print(name_entry.get())
-            print(width_combobox.get())
-            print(height_combobox.get())
-            print(save_format_combobox.current())
             name = name_entry.get()
             width = int(width_combobox.get())
             height = int(height_combobox.get())
@@ -2084,9 +2076,6 @@ class LevelsTab(Tab):
                 warning_label.grid_remove()
                 lvl_file_name = name if name.endswith('.lvl') else name + '.lvl'
                 lvl_path = Path(self.lvls_path) / lvl_file_name
-                print(self.lvls_path)
-                print(lvl_path)
-                print(lvl_path.exists())
                 if lvl_path.exists():
                     warning_label["text"] = "Error: Level {level} already exists!".format(level=lvl_file_name)
                     warning_label.grid()
@@ -2128,11 +2117,10 @@ class LevelsTab(Tab):
                     "", LevelChances(), level_settings, MonsterChances(), tiles,
                     foreground, background)
                 if saved:
-                    print("opening " + lvl_file_name + "!")
                     self.load_pack_custom_lvls(self.tree_files_custom, self.lvls_path, lvl_file_name)
                     self.read_custom_lvl_file(lvl_file_name)
                 else:
-                    print("error saving lvl file.")
+                    logger.debug("error saving lvl file.")
                 win.destroy()
                 
         
@@ -2596,12 +2584,8 @@ class LevelsTab(Tab):
         level_chances, level_settings, monster_chances,
         used_tiles, foreground_tiles, background_tiles,
     ):
-        print(save_format)
         try:
             tile_codes = TileCodes()
-            # level_chances = LevelChances()
-            # level_settings = LevelSettings()
-            # monster_chances = MonsterChances()
             level_templates = LevelTemplates()
 
             hard_floor_code = None
@@ -2625,21 +2609,17 @@ class LevelsTab(Tab):
                         background_row = background_tiles[room_y * 8 + row]
                         room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
                         room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
-                    print(room_foreground)
-                    print(save_format.room_template_format)
+                    
                     room_settings = []
                     dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
                     if dual:
                         room_settings.append(TemplateSetting.DUAL)
-                        print("it's dual!")
                     template_chunks = [Chunk(
                         comment = None,
                         settings = room_settings,
                         foreground = room_foreground,
                         background = room_background if dual else [],
                     )]
-                    print(save_format)
-                    print(save_format.room_template_format.format(y=room_y, x=room_x))
                     template_name = save_format.room_template_format.format(y=room_y, x=room_x)
                     level_templates.set_obj(
                         LevelTemplate(
@@ -2667,7 +2647,6 @@ class LevelsTab(Tab):
                             vs.append(TemplateSetting.DUAL)
 
                     if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                        print("it has a type!")
                         template_chunks = [Chunk(
                             comment=None,
                             settings = vs,
@@ -4287,8 +4266,7 @@ class LevelsTab(Tab):
         lvl_bg = self.lvl_bgs.get(theme)
         if not lvl_bg:
             background = self.background_for_theme(theme)
-            print(background)
-            
+
             image = Image.open(background).convert("RGBA")
             image = image.resize((zoom_level * 10, zoom_level * 8), Image.BILINEAR)
             enhancer = ImageEnhance.Brightness(image)
@@ -4458,7 +4436,6 @@ class LevelsTab(Tab):
             ):
                 factor = 0  # darkens the image for cosmic ocean and duat and others
 
-            print(self.cur_lvl_bg_path)
             image = Image.open(self.cur_lvl_bg_path).convert("RGBA")
             image = image.resize(
                 (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
@@ -5142,7 +5119,6 @@ class LevelsTab(Tab):
             return
 
         self.set_current_save_format(save_format)
-        print(self.current_save_format.__dict__)
 
         self.combobox_custom["state"] = tk.NORMAL
         self.button_tilecode_del_custom["state"] = tk.NORMAL
@@ -5221,7 +5197,7 @@ class LevelsTab(Tab):
 
         rooms = [[None for _ in range(8)] for _ in range(15)]
         template_regex = "^" + self.current_save_format.room_template_format.format(y="(?P<y>\d+)", x="(?P<x>\d+)") + "$"
-        print(template_regex)
+
         for template in level.level_templates.all():
             match = re.search(template_regex, template.name)
             if match is not None:
@@ -5320,7 +5296,6 @@ class LevelsTab(Tab):
         # #     self.custom_editor_background_tile_codes)
 
         self.draw_custom_level_canvases(theme)
-        # print(background_tiles)
 
         # Load scrolled to the center.
         self.custom_level_canvas.configure(scrollregion=self.custom_level_canvas.bbox("all"))
@@ -5330,8 +5305,7 @@ class LevelsTab(Tab):
     def draw_custom_level_canvases(self, theme):
         width = self.lvl_width#int(len(self.custom_editor_foreground_tile_codes[0]) // 10)
         height = self.lvl_height#int(len(self.custom_editor_foreground_tile_codes) // 8)
-        print(width)
-        print(height)
+
         self.custom_level_canvas_foreground.delete("all")
         self.custom_level_canvas_background.delete("all")
         self.grid_lines_foreground = self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
@@ -5754,8 +5728,6 @@ class LevelsTab(Tab):
         self.save_format_warning_message["text"] = warning_message
 
     def set_current_save_format(self, save_format):
-        print("here")
-        print(self)
         self.current_save_format = save_format
         self.update_save_format_warning(save_format)
         self.update_save_format_variable(save_format)
@@ -5867,8 +5839,6 @@ class LevelsTab(Tab):
         x_coord = 0
         y_coord = 0
         scale_factor = scale / 50
-        print(scale)
-        print(scale_factor)
         if mode == 1:
             y_coord = (height * -1) / 2
         elif mode == 2:
