@@ -5098,16 +5098,7 @@ class LevelsTab(Tab):
                 )
 
     def read_custom_lvl_file(self, lvl, theme=None):
-        # Refresh the list of usable tile codes to contain all of the tile codes
-        # that are supported by the level editor.
-        self.usable_codes = []
-        for code in self.usable_codes_string:
-            self.usable_codes.append(code)
-
         level = LevelFile.from_path(Path(self.lvls_path) / lvl)
-        self.lvl = lvl
-        self.current_level_full = level
-        self.current_level_path_full = Path(self.lvls_path) / lvl
 
         # Try to detect what save format the file uses by attempting to read the room
         # at (0, 0) which should always exist in a valid lvl file.
@@ -5118,6 +5109,16 @@ class LevelsTab(Tab):
             # we can then attempt to load the file again.
             self.show_format_error_dialog(lvl)
             return
+
+        # Refresh the list of usable tile codes to contain all of the tile codes
+        # that are supported by the level editor.
+        self.usable_codes = []
+        for code in self.usable_codes_string:
+            self.usable_codes.append(code)
+
+        self.lvl = lvl
+        self.current_level_full = level
+        self.current_level_path_full = Path(self.lvls_path) / lvl
 
         self.set_current_save_format(save_format)
 
