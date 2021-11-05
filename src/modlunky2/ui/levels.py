@@ -64,15 +64,7 @@ class CustomLevelSaveFormat:
     @classmethod
     def fromJSON(cls, json):
         return cls(json["name"], json["room_template_format"], json["include_vanilla_setrooms"])
-    
-    # def display(self):
-    #     if self.include_vanilla_setrooms:
-    #         return self.room_template_format + " (with required vanilla setrooms)"
-    #     elif self.room_template_format == "setroom{y}-{x}":
-    #         return self.room_template_format + " (vanilla setrooms only)"
-    #     else:
-    #         return self.room_template_format + " (no vanilla setrooms)"
-    
+
     def __eq__(self, other):
         return (
             self.name == other.name and
@@ -192,7 +184,6 @@ class LevelsTab(Tab):
         self.single_room_editor_tab = None
         self.full_level_editor_tab = None
         self.last_selected_editor_tab = None
-        self.current_editor_type = EditorType.VANILLA_ROOMS
         self.usable_codes = None
         self.usable_codes_string = (
             r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
@@ -319,10 +310,8 @@ class LevelsTab(Tab):
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
                 self.modlunky_config.config_file.level_editor_tab = 0
-                self.current_editor_type = EditorType.VANILLA_ROOMS
             else:
                 self.modlunky_config.config_file.level_editor_tab = 1
-                self.current_editor_type = EditorType.CUSTOM_LEVELS
             self.modlunky_config.config_file.save()
 
 
