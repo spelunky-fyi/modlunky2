@@ -5256,10 +5256,10 @@ class LevelsTab(Tab):
 
         def draw_layer(canvas, tile_codes, tile_images):
             for row_index, room_row in enumerate(tile_codes):
-                if row_index > self.lvl_height * 8:
+                if row_index >= self.lvl_height * 8:
                     continue
                 for tile_index, tile in enumerate(room_row):
-                    if tile_index > self.lvl_width * 10:
+                    if tile_index >= self.lvl_width * 10:
                         continue
                     tilecode = self.tile_pallete_map[tile]
                     tile_name = tilecode[0].split(" ", 1)[0]
