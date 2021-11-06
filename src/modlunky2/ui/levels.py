@@ -5953,12 +5953,11 @@ class LevelsTab(Tab):
             fill_rows = list(map(
                 lambda row: row + ([] if (width * 10 <= len(row)) else [tile for _ in range(width * 10 - len(row))]),
                 tile_matrix))
-            return fill_rows +
-                (
-                    [] if
-                    (height * 8 <= len(fill_rows)) else
-                    [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))]
-                )
+            return fill_rows + (
+                [] if
+                (height * 8 <= len(fill_rows)) else
+                [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))]
+            )
         
         empty = None
         hard_floor = None
