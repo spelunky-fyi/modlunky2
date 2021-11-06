@@ -511,12 +511,16 @@ class RunState:
             self.run_label.discard(Label.JUNGLE_TEMPLE)
 
     def update_terminus(self, game_state: State):
-        if self.cosmic_stepper.last_status.in_progress:
+        if (
+            self.cosmic_stepper.last_status.in_progress
+            or game_state.win_state == WinState.COSMIC_OCEAN
+        ):
             terminus = Label.COSMIC_OCEAN
         elif self.final_death:
             terminus = Label.DEATH
         elif (
             game_state.world == 7
+            or game_state.win_state == WinState.HUNDUN
             or self.had_ankh
             or self.sunken_chain_status.in_progress
             or self.eggplant_stepper.last_status.in_progress

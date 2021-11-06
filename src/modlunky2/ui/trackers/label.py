@@ -127,6 +127,8 @@ class RunLabel:
     def set_terminus(self, label: Label):
         if not label.value.terminus:
             raise ValueError(f"Attempted to use {label} as a terminus")
+        if self._terminus == label:
+            return
         self._set.remove(self._terminus)
         self._set.add(label)
         self._terminus = label
