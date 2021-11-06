@@ -2039,7 +2039,6 @@ class LevelsTab(Tab):
     def load_pack_custom_lvls(self, tree, lvl_dir, selected_lvl=None):
         self.reset()
         self.lvls_path = Path(lvl_dir)
-        self.organize_pack()
         logger.debug("lvls_path = %s", lvl_dir)
         defaults_path = self.extracts_path
         for i in tree.get_children():
