@@ -4433,7 +4433,7 @@ class LevelsTab(Tab):
                 new_tile.grid(row=count_row, column=count_col)
                 new_tile.bind(
                     "<Button-1>",
-                    lambda event, ts=tile_suggestion: self.suggested_tile_pick(
+                    lambda event, ts=tile_suggestion, ti=tile_image: self.suggested_tile_pick(
                         ts,
                         False,
                         tile_palette,
@@ -4442,12 +4442,12 @@ class LevelsTab(Tab):
                         panel_sel,
                         panel_sel_secondary,
                         scale,
-                        tile_image,
+                        ti,
                     ),
                 )
                 new_tile.bind(
                     "<Button-3>",
-                    lambda event, ts=tile_suggestion: self.suggested_tile_pick(
+                    lambda event, ts=tile_suggestion, ti=tile_image: self.suggested_tile_pick(
                         ts,
                         True,
                         tile_palette,
@@ -4456,7 +4456,7 @@ class LevelsTab(Tab):
                         panel_sel,
                         panel_sel_secondary,
                         scale,
-                        tile_image,
+                        ti,
                     ),
                 )
 
