@@ -317,7 +317,7 @@ class LevelsTab(Tab):
                 if msg_box == "yes":
                     self.save_needed = False
                     self.button_save["state"] = tk.DISABLED
-                    self.button_save_full["state"] = tk.DISABLED
+                    self.button_save_custom["state"] = tk.DISABLED
                     logger.debug("Switched tabs without saving.")
                 else:
                     self.editor_tab_control.select(self.last_selected_editor_tab)
@@ -365,17 +365,17 @@ class LevelsTab(Tab):
         self.tree_files_custom = tree_files
 
         # Button below the file list to exit the editor.
-        self.button_back_full = tk.Button(
+        self.button_back_custom = tk.Button(
             tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
         )
-        self.button_back_full.grid(row=1, column=0, sticky="nswe")
+        self.button_back_custom.grid(row=1, column=0, sticky="nswe")
 
         # Button below the file list to save changes to the current file.
-        self.button_save_full = tk.Button(
+        self.button_save_custom = tk.Button(
             tab, text="Save", bg="Blue", fg="white", command=self.save_changes_full
         )
-        self.button_save_full.grid(row=2, column=0, sticky="nswe")
-        self.button_save_full["state"] = tk.DISABLED
+        self.button_save_custom.grid(row=2, column=0, sticky="nswe")
+        self.button_save_custom["state"] = tk.DISABLED
 
         # View that contains the canvases to edit the level along with some controls.
         editor_view = tk.Frame(tab)
@@ -958,7 +958,6 @@ class LevelsTab(Tab):
                 canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
-                self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes,
             ),
@@ -970,7 +969,6 @@ class LevelsTab(Tab):
                 canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
-                self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes,
             ),
@@ -982,7 +980,6 @@ class LevelsTab(Tab):
                 canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
-                self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes,
             ),
@@ -994,7 +991,6 @@ class LevelsTab(Tab):
                 canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
-                self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
                 self.custom_editor_foreground_tile_codes,
             ),
@@ -1007,7 +1003,6 @@ class LevelsTab(Tab):
                 canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
-                self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes,
             ),
@@ -1019,7 +1014,6 @@ class LevelsTab(Tab):
                 canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
-                self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes,
             ),
@@ -1031,7 +1025,6 @@ class LevelsTab(Tab):
                 canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
-                self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes,
             ),
@@ -1043,7 +1036,6 @@ class LevelsTab(Tab):
                 canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
-                self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
                 self.custom_editor_background_tile_codes,
             ),
@@ -1906,7 +1898,6 @@ class LevelsTab(Tab):
                     logger.debug("Middle of dual detected; not tile placed")
                     return
 
-            img = None
             tile_name = tile_label["text"].split(" ", 4)[2]
             tile_code = tile_label["text"].split(" ", 4)[3]
             x_coord_offset, y_coord_offset = self.offset_for_tile(
@@ -2009,7 +2000,6 @@ class LevelsTab(Tab):
         canvas,
         tile_size,
         tile_label,
-        panel_sel,
         tile_image_matrix,
         tile_code_matrix,
     ):
@@ -2065,7 +2055,7 @@ class LevelsTab(Tab):
 
     def changes_made(self):
         self.save_needed = True
-        self.button_save_full["state"] = tk.NORMAL
+        self.button_save_custom["state"] = tk.NORMAL
         self.button_save["state"] = tk.NORMAL
 
     def reset(self):
@@ -2111,7 +2101,7 @@ class LevelsTab(Tab):
             self.width_combobox["state"] = tk.DISABLED
             self.height_combobox["state"] = tk.DISABLED
             self.size_select_button["state"] = tk.DISABLED
-            self.button_save_full["state"] = tk.DISABLED
+            self.button_save_custom["state"] = tk.DISABLED
             self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")
@@ -2392,7 +2382,7 @@ class LevelsTab(Tab):
                 if saved:
                     # Reload the file list tree so that the new file shows up, and select it.
                     self.load_pack_custom_lvls(
-                        self.tree_files_custom, self.lvls_path, lvl_file_name
+                        tree, self.lvls_path, lvl_file_name
                     )
                     # Load the newly created file into the editor.
                     self.read_custom_lvl_file(lvl_file_name)
@@ -2869,7 +2859,7 @@ class LevelsTab(Tab):
             return
         old_level_file = self.current_level_custom
         self.save_level(
-            self.current_level_path_full,
+            self.current_level_path_custom,
             self.lvl_width,
             self.lvl_height,
             self.lvl_biome,
@@ -3016,7 +3006,7 @@ class LevelsTab(Tab):
             logger.debug("Saved!")
 
             self.save_needed = False
-            self.button_save_full["state"] = tk.DISABLED
+            self.button_save_custom["state"] = tk.DISABLED
             logger.debug("Saved")
             return True
         except Exception:  # pylint: disable=broad-except
@@ -3915,14 +3905,7 @@ class LevelsTab(Tab):
         else:
             return
 
-    def del_tilecode_secondary(
-        self,
-        tile_pallete,
-        tile_label,
-        tile_label_secondary,
-        panel_sel,
-        panel_sel_secondary,
-    ):
+    def del_tilecode_secondary(self):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
@@ -5521,7 +5504,7 @@ class LevelsTab(Tab):
 
         self.lvl = lvl
         self.current_level_custom = level
-        self.current_level_path_full = Path(self.lvls_path) / lvl
+        self.current_level_path_custom = Path(self.lvls_path) / lvl
         self.custom_level_editor_intro.grid_remove()
 
         self.set_current_save_format(save_format)
