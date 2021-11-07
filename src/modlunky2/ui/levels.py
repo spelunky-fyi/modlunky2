@@ -578,8 +578,9 @@ class LevelsTab(Tab):
             width=10,
             command=lambda: self.del_tilecode_custom(
                 self.tile_label_secondary_custom,
+                [canvas_foreground, canvas_background],
                 [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
-                [self.custom_editor_foreground_tile_codes, custom_editor_background_tile_codes],
+                [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
             ),
         )        
         self.button_tilecode_del_secondary_custom.grid(row=1, column=0, sticky="e")
