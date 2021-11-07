@@ -34,7 +34,6 @@ from modlunky2.levels.level_templates import (
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
-from modlunky2.sprites.tilecode_extras import TILENAMES
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
@@ -212,7 +211,7 @@ class LevelsTab(Tab):
         if custom_save_formats:
             self.custom_save_formats = list(
                 map(
-                    lambda json: CustomLevelSaveFormat.fromJSON(json),
+                    CustomLevelSaveFormat.fromJSON,
                     custom_save_formats,
                 )
             )
@@ -690,7 +689,7 @@ class LevelsTab(Tab):
         self.theme_select_button["state"] = tk.DISABLED
         self.theme_select_button.grid(row=1, column=1, sticky="nsw")
 
-        def theme_selected(event):
+        def theme_selected(_):
             self.theme_select_button["state"] = tk.NORMAL
 
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
@@ -749,7 +748,7 @@ class LevelsTab(Tab):
         self.size_select_button["state"] = tk.DISABLED
         self.size_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
 
-        def size_selected(event):
+        def size_selected(_):
             width = int(self.width_combobox.get())
             height = int(self.height_combobox.get())
             self.size_select_button["state"] = (
@@ -851,13 +850,12 @@ class LevelsTab(Tab):
         grid_size_scale.grid(row=1, column=0, sticky="nwe")
 
         # grid_size_scale.set(self.custom_editor_zoom_level)
-        def update_grid_size(event):
+        def update_grid_size(_):
             self.custom_editor_zoom_level = int(grid_size_var.get())
             self.lvl_bgs = {}
             if self.lvl:
                 for tile in self.tile_pallete_ref_in_use:
                     tile_name = tile[0].split(" ", 2)[0]
-                    tile_code = tile[0].split(" ", 2)[1]
                     tile[1] = ImageTk.PhotoImage(
                         self.get_texture(
                             tile_name,
@@ -876,7 +874,7 @@ class LevelsTab(Tab):
         # represent this action).
         shift_down = False
 
-        def holding_shift(event, canvas):
+        def holding_shift(_):
             nonlocal shift_down
             if shift_down:
                 return
@@ -884,7 +882,7 @@ class LevelsTab(Tab):
             canvas_foreground.config(cursor="pencil")
             canvas_background.config(cursor="pencil")
 
-        def shift_up(event, canvas):
+        def shift_up(_):
             nonlocal shift_down
             if not shift_down:
                 return
@@ -892,15 +890,9 @@ class LevelsTab(Tab):
             canvas_foreground.config(cursor="")
             canvas_background.config(cursor="")
 
-        scrollable_frame.bind_all(
-            "<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas)
-        )
-        scrollable_frame.bind_all(
-            "<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas)
-        )
-        scrollable_frame.bind_all(
-            "<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas)
-        )
+        scrollable_frame.bind_all("<KeyPress-Shift_L>", holding_shift)
+        scrollable_frame.bind_all("<KeyPress-Shift_R>", holding_shift)
+        scrollable_frame.bind_all("<KeyRelease-Shift_L>", shift_up)
 
         # Click actions performed when holding shift to select the tile at the cursor's
         # location.
@@ -1875,7 +1867,7 @@ class LevelsTab(Tab):
         self.combobox_alt["values"] = sorted(combo_tile_ids, key=str.lower)
 
         def canvas_click(
-            event, canvas, tile_label, panel_sel
+            event, canvas, tile_label
         ):  # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
@@ -1947,40 +1939,28 @@ class LevelsTab(Tab):
 
         self.canvas.bind(
             "<Button-1>",
-            lambda event: canvas_click(
-                event, self.canvas, self.tile_label, self.panel_sel
-            ),
+            lambda event: canvas_click(event, self.canvas, self.tile_label),
         )
         self.canvas.bind(
             "<B1-Motion>",
-            lambda event: canvas_click(
-                event, self.canvas, self.tile_label, self.panel_sel
-            ),
+            lambda event: canvas_click(event, self.canvas, self.tile_label),
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         self.canvas.bind(
             "<Button-3>",
-            lambda event: canvas_click(
-                event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary
-            ),
+            lambda event: canvas_click(event, self.canvas, self.tile_label_secondary),
         )
         self.canvas.bind(
             "<B3-Motion>",
-            lambda event: canvas_click(
-                event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary
-            ),
+            lambda event: canvas_click(event, self.canvas, self.tile_label_secondary),
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         # self.canvas.bind("<Key>", lambda event: )
         self.canvas_dual.bind(
             "<Button-1>",
-            lambda event: canvas_click(
-                event, self.canvas_dual, self.tile_label, self.panel_sel
-            ),
+            lambda event: canvas_click(event, self.canvas_dual, self.tile_label),
         )
         self.canvas_dual.bind(
             "<B1-Motion>",
-            lambda event: canvas_click(
-                event, self.canvas_dual, self.tile_label, self.panel_sel
-            ),
+            lambda event: canvas_click(event, self.canvas_dual, self.tile_label),
         )
         self.canvas_dual.bind(
             "<Button-3>",
@@ -1988,7 +1968,6 @@ class LevelsTab(Tab):
                 event,
                 self.canvas_dual,
                 self.tile_label_secondary,
-                self.panel_sel_secondary,
             ),
         )
         self.canvas_dual.bind(
@@ -1997,7 +1976,6 @@ class LevelsTab(Tab):
                 event,
                 self.canvas_dual,
                 self.tile_label_secondary,
-                self.panel_sel_secondary,
             ),
         )
         self.tree_files.bind(
@@ -5374,7 +5352,6 @@ class LevelsTab(Tab):
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
 
                 img = self.get_texture(tilecode.name, self.lvl_biome, lvl, self.mag)
-                panel_img = self.get_texture(tilecode.name, self.lvl_biome, lvl, 40)
 
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 self.panel_sel["image"] = tilecode_item[1]
@@ -5558,7 +5535,6 @@ class LevelsTab(Tab):
         # a comment in each room.
         theme = self.read_theme(level, self.current_save_format)
         self.lvl_biome = theme
-        background = self.background_for_theme(theme)
 
         # Get a formatted name for the theme to display to the user.
         theme_name = self.name_of_theme(theme)
@@ -6302,14 +6278,14 @@ class LevelsTab(Tab):
 
         # If displaying a placeholder, delete the placeholder text and update the font color
         # when the field is focused.
-        def focus_name(event):
+        def focus_name(_):
             nonlocal name_entry_changed
             if name_entry_changed:
                 return
             name_entry.delete("0", "end")
             name_entry.config(foreground="black")
 
-        def focus_format(event):
+        def focus_format(_):
             nonlocal format_entry_changed
             if format_entry_changed:
                 return
@@ -6318,7 +6294,7 @@ class LevelsTab(Tab):
 
         # When defocusing the field, if the field is empty, replace the text with the
         # placeholder text and change the font color.
-        def defocus_name(event):
+        def defocus_name(_):
             nonlocal name_entry_changed
             if str(name_entry.get()) == "":
                 name_entry_changed = False
@@ -6327,7 +6303,7 @@ class LevelsTab(Tab):
             else:
                 name_entry_changed = True
 
-        def defocus_format(event):
+        def defocus_format(_):
             nonlocal format_entry_changed
             if str(format_entry.get()) == "":
                 format_entry_changed = False
@@ -6368,18 +6344,18 @@ class LevelsTab(Tab):
         buttons.columnconfigure(1, weight=1)
 
         def continue_open():
-            format = str(format_entry.get())
-            name = str(name_entry.get()) if name_entry_changed else format
+            template_format = str(format_entry.get())
+            name = str(name_entry.get()) if name_entry_changed else template_format
             if (
                 not format_entry_changed
-                or format == ""
+                or template_format == ""
                 or name == ""
-                or format == "setroom{y}-{x}"
-                or format == "setroom{x}-{y}"
+                or template_format == "setroom{y}-{x}"
+                or template_format == "setroom{x}-{y}"
             ):
                 return
             save_format = CustomLevelSaveFormat(
-                name, format, bool(add_vanilla_var.get())
+                name, template_format, bool(add_vanilla_var.get())
             )
             win.destroy()
             self.add_save_format(save_format)
