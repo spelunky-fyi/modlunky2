@@ -398,6 +398,19 @@ class LevelsTab(Tab):
         scrollable_canvas["width"] = width
         scrollable_canvas["height"] = height
 
+        # This intro frame covers the editor while there is no level selected with a hint message.
+        self.custom_level_editor_intro = tk.Frame(editor_view, bg="#343434")
+        self.custom_level_editor_intro.grid(row=0, column=0, rowspan=2, columnspan=8, sticky="nswe")
+        intro_label = tk.Label(
+            self.custom_level_editor_intro,
+            text="Select a level file to begin editing",
+            font=("Arial", 45),
+            bg="#343434",
+            fg="white",
+            wraplength=600
+        )
+        intro_label.place(relx=.5, rely=.5, anchor="center")
+
         # Scroll bars for scrolling the canvases.
         hbar = ttk.Scrollbar(editor_view, orient="horizontal", command=scrollable_canvas.xview)
         hbar.grid(row=0, column=0, columnspan=7, rowspan=2, sticky="swe")
@@ -1972,6 +1985,7 @@ class LevelsTab(Tab):
             for tile_palette in [self.tile_pallete, self.tile_pallete_custom]:
                 for widget in tile_palette.scrollable_frame.winfo_children():
                     widget.destroy()
+            self.custom_level_editor_intro.grid()
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
             self.canvas.grid_remove()
@@ -2006,6 +2020,8 @@ class LevelsTab(Tab):
             self.width_combobox["state"] = tk.DISABLED
             self.height_combobox["state"] = tk.DISABLED
             self.size_select_button["state"] = tk.DISABLED
+            self.button_save_full["state"] = tk.DISABLED
+            self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")
 
@@ -5299,6 +5315,7 @@ class LevelsTab(Tab):
         self.lvl = lvl
         self.current_level_custom = level
         self.current_level_path_full = Path(self.lvls_path) / lvl
+        self.custom_level_editor_intro.grid_remove()
 
         self.set_current_save_format(save_format)
 
