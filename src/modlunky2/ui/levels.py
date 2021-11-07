@@ -735,6 +735,49 @@ class LevelsTab(Tab):
             onvalue=True, offvalue=False, command=toggle_hide_grid
         ).grid(row=9, column=0, sticky="nw", pady=5)
 
+        grid_size_frame = tk.Frame(options_panel)
+        grid_size_frame.grid(row=10, column=0, sticky="nw", pady=5)
+        grid_size_var = tk.StringVar()
+        grid_size_var.set(str(self.custom_editor_zoom_level))
+        grid_size_label_frame = tk.Frame(grid_size_frame)
+        grid_size_label_frame.grid(row=0, column=0, sticky="nw")
+
+        grid_size_header_label = tk.Label(grid_size_label_frame, text="Zoom:")
+        grid_size_header_label.grid(row=0, column=0, sticky="nwe")
+        grid_size_label = tk.Label(grid_size_label_frame, textvariable=grid_size_var)
+        grid_size_label.grid(row=0, column=1, sticky="nw")
+
+        grid_size_scale = tk.Scale(
+            grid_size_frame,
+            from_=10,
+            to=100,
+            orient=tk.HORIZONTAL,
+            variable=grid_size_var,
+            length=200,
+            showvalue=False,
+        )
+        grid_size_scale.grid(row=1, column=0, sticky="nwe")
+
+        # grid_size_scale.set(self.custom_editor_zoom_level)
+        def update_grid_size(event):
+            self.custom_editor_zoom_level = int(grid_size_var.get())
+            self.lvl_bgs = {}
+            if self.lvl:
+                for tile in self.tile_pallete_ref_in_use:
+                    tile_name = tile[0].split(" ", 2)[0]
+                    tile_code = tile[0].split(" ", 2)[1]
+                    tile[1] = ImageTk.PhotoImage(
+                        self.get_texture(
+                            tile_name,
+                            self.lvl_biome,
+                            self.lvl,
+                            self.custom_editor_zoom_level
+                        )
+                    )
+                self.draw_custom_level_canvases(self.lvl_biome)
+        grid_size_scale["command"] = update_grid_size
+
+
         # Change the cursor to a pencil while holding shift to let the user know that
         # the tile will be selected instead of replaced when clicking. (Pencil was the
         # closest I could find in the available cursors to something that would
