@@ -53,7 +53,7 @@ class CustomLevelSaveFormat:
     @classmethod
     def LevelSequence(cls):
         return cls("LevelSequence", "setroom{y}_{x}", True)
-    
+
     @classmethod
     def Vanilla(cls):
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
@@ -355,7 +355,7 @@ class LevelsTab(Tab):
         # View that contains the canvases to edit the level along with some controls.
         editor_view = tk.Frame(tab)
         editor_view.grid(row=0, column=1, rowspan=3, sticky="nswe")
-        
+
         editor_view.columnconfigure(3, weight=1)
         editor_view.columnconfigure(7, minsize=17)
         editor_view.columnconfigure(6, minsize=50)
@@ -553,7 +553,7 @@ class LevelsTab(Tab):
             width=50
         )
         self.panel_sel_secondary_custom.grid(row=1, column=2)
-        
+
         self.button_tilecode_del_custom = tk.Button(
             tiles_panel,
             text="Del",
@@ -566,10 +566,10 @@ class LevelsTab(Tab):
                 [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
                 [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
             ),
-        )        
+        )
         self.button_tilecode_del_custom.grid(row=0, column=0, sticky="e")
         self.button_tilecode_del_custom["state"] = tk.DISABLED
-        
+
         self.button_tilecode_del_secondary_custom = tk.Button(
             tiles_panel,
             text="Del",
@@ -582,7 +582,7 @@ class LevelsTab(Tab):
                 [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
                 [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
             ),
-        )        
+        )
         self.button_tilecode_del_secondary_custom.grid(row=1, column=0, sticky="e")
         self.button_tilecode_del_secondary_custom["state"] = tk.DISABLED
 
@@ -591,7 +591,7 @@ class LevelsTab(Tab):
         self.combobox_custom["state"] = tk.DISABLED
         tile_codes = sorted(VALID_TILE_CODES, key=str.lower)
         self.combobox_custom["values"] = tile_codes
-        
+
         self.button_tilecode_add_custom = tk.Button(
             tiles_panel,
             text="Add TileCode",
@@ -666,14 +666,14 @@ class LevelsTab(Tab):
         self.width_combobox.grid(row=1, column=1, sticky="nswe")
         self.width_combobox["state"] = tk.DISABLED
         self.width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        
+
         tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
 
         self.height_combobox = ttk.Combobox(size_frame, height=25)
         self.height_combobox.grid(row=2, column=1, sticky="nswe")
         self.height_combobox["state"] = tk.DISABLED
         self.height_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        
+
         def update_size():
             self.update_custom_level_size(int(self.width_combobox.get()), int(self.height_combobox.get()))
 
@@ -1174,7 +1174,7 @@ class LevelsTab(Tab):
         self.canvas_grids_full.bind(
             "<Leave>",
             lambda event: self._unbind_from_mousewheel(
-                event, 
+                event,
                 self.canvas_grids_full
             )
         )
@@ -1551,7 +1551,7 @@ class LevelsTab(Tab):
             self.editor_tab, image=self.img_sel, width=50
         )  # shows selected tile image
         self.panel_sel_secondary.grid(row=1, column=11)
-        
+
         self.button_tilecode_del = tk.Button(
             self.editor_tab,
             text="Del",
@@ -1940,7 +1940,7 @@ class LevelsTab(Tab):
         tile_name = tile_label["text"].split(" ", 4)[2]
         tile_code = tile_label["text"].split(" ", 4)[3]
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, tile_size)
-        
+
         canvas.delete(tile_image_matrix[row][column])
         tile_image_matrix[row][column] = canvas.create_image(
             column * tile_size - x_offset,
@@ -1961,9 +1961,9 @@ class LevelsTab(Tab):
         if row < 0 or event.y > int(canvas["height"]):
             return
 
-        tile_code = tile_code_matrix[row][column]        
+        tile_code = tile_code_matrix[row][column]
         tile = self.tile_pallete_map[tile_code]
-        
+
         airy = tile_label["text"].split(" ", 1)[0]
         tile_label["text"] = airy + " Tile: " + tile[0]
         tile_image = tile[1]
@@ -2123,7 +2123,7 @@ class LevelsTab(Tab):
                 if lvl_name == selected_lvl:
                     tree.selection_set(item)
                     self.last_selected_file = item
-        
+
         tree.insert(
             "", "end", text=str("[Create_New_Level]"), image=self.icon_add
         )
@@ -2144,7 +2144,7 @@ class LevelsTab(Tab):
         name_entry.grid(row=values_row, column=1, sticky="nwe", pady=2)
 
         values_row = values_row + 1
-        
+
         width_label = tk.Label(values_frame, text="Width: ")
         width_label.grid(row=values_row, column=0, sticky="ne", pady=2)
 
@@ -2153,7 +2153,7 @@ class LevelsTab(Tab):
         width_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
         width_combobox["state"] = "readonly"
         width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
-        
+
         values_row = values_row + 1
 
         tk.Label(values_frame, text="Height: ").grid(row=values_row, column=0, sticky="ne", pady=2)
@@ -2282,8 +2282,8 @@ class LevelsTab(Tab):
                 else:
                     logger.debug("error saving lvl file.")
                 win.destroy()
-                
-        
+
+
         buttons = tk.Frame(win)
         buttons.grid(row=row, column=0, pady=(10, 0), sticky="nswe")
         row = row + 1
@@ -2586,7 +2586,7 @@ class LevelsTab(Tab):
             panel_sel_secondary,
             scale
         )
-        
+
     def get_codes_left(self):
         codes = ""
         for code in self.usable_codes:
@@ -2776,7 +2776,7 @@ class LevelsTab(Tab):
                         background_row = background_tiles[room_y * 8 + row]
                         room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
                         room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
-                    
+
                     room_settings = []
                     dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
                     if dual:
@@ -3903,7 +3903,7 @@ class LevelsTab(Tab):
             self.button_save["state"] = tk.NORMAL
         else:
             return
-        
+
 
     def add_tilecode(
         self, tile, percent, alt_tile, tile_palette, tile_label,
@@ -4440,7 +4440,7 @@ class LevelsTab(Tab):
                                 )
                             curcol = curcol + 1
 
-                            
+
     def _draw_grid_custom(self, cols, rows, theme, canvas):
         zoom_level = self.custom_editor_zoom_level
         canvas.delete("all")
@@ -5165,7 +5165,7 @@ class LevelsTab(Tab):
                     if str(i) == str(tilecode.value):
                         self.usable_codes.remove(i)
 
-                self.tile_pallete_ref_in_use.append(tilecode_item)            
+                self.tile_pallete_ref_in_use.append(tilecode_item)
                 self.tile_pallete_map[tilecode.value] = tilecode_item
 
         if level is None:
@@ -5350,7 +5350,7 @@ class LevelsTab(Tab):
             img = self.get_texture(tilecode.name, theme, lvl, self.custom_editor_zoom_level)
 
             tilecode_item.append(ImageTk.PhotoImage(img))
-            
+
             self.usable_codes.remove(tilecode.value)
             self.tile_pallete_ref_in_use.append(tilecode_item)
             self.tile_pallete_map[tilecode.value] = tilecode_item
@@ -5448,9 +5448,9 @@ class LevelsTab(Tab):
                 filtered_rooms.append(newrow)
             else:
                 # If the row was empty, do not include it at all and also break out
-                # of the loop to not include any future rows. 
+                # of the loop to not include any future rows.
                 break
-            
+
         height = len(filtered_rooms)
         width = len(filtered_rooms[0])
         self.lvl_width = width
@@ -5461,7 +5461,7 @@ class LevelsTab(Tab):
 
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
-        
+
         # Takes the matrix of rooms and creates an array of strings out of it, where each
         # element in the array is a full row of tiles across the entire level, combining
         # all rooms in the row.
@@ -5548,8 +5548,8 @@ class LevelsTab(Tab):
             self.custom_editor_background_tile_codes,
             self.custom_editor_background_tile_images
         )
-        
-        # If the "hide grid" option is selected, this will hide the grid lines. 
+
+        # If the "hide grid" option is selected, this will hide the grid lines.
         self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
         self.hide_grid(self.custom_level_canvas_background, self.grid_lines_background)
 
@@ -5578,7 +5578,7 @@ class LevelsTab(Tab):
         self.lvl_biome = theme
         self.theme_label["text"] = "Level Theme: " + self.name_of_theme(theme)
 
-        # Retexture all of the tiles in use        
+        # Retexture all of the tiles in use
         for tilecode_item in self.tile_pallete_ref_in_use:
             tile_name = tilecode_item[0].split(" ", 2)[0]
             img = self.get_texture(tile_name, theme, self.lvl, self.custom_editor_zoom_level)
@@ -5833,7 +5833,7 @@ class LevelsTab(Tab):
         format_entry.insert(0, "setroom{y}_{x}")
         name_entry_changed = False
         format_entry_changed = False
-        
+
         # If displaying a placeholder, delete the placeholder text and update the font color
         # when the field is focused.
         def focus_name(event):
@@ -6008,7 +6008,7 @@ class LevelsTab(Tab):
             return
 
         # If the new level size is creater than the current level size, fill in
-        # the level tile matrix with default tiles to fill the new size.        
+        # the level tile matrix with default tiles to fill the new size.
         def fill_to_size_with_tile(tile_matrix, tile, width, height):
             fill_rows = list(map(
                 lambda row: row + ([] if (width * 10 <= len(row)) else [tile for _ in range(width * 10 - len(row))]),
@@ -6018,7 +6018,7 @@ class LevelsTab(Tab):
                 (height * 8 <= len(fill_rows)) else
                 [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))]
             )
-        
+
         empty = None
         hard_floor = None
         # Try to find a tile code for the empty tile and the hard floor to use as the
