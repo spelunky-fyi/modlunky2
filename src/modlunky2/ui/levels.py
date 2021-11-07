@@ -2493,9 +2493,7 @@ class LevelsTab(Tab):
                 )
                 if saved:
                     # Reload the file list tree so that the new file shows up, and select it.
-                    self.load_pack_custom_lvls(
-                        tree, self.lvls_path, lvl_file_name
-                    )
+                    self.load_pack_custom_lvls(tree, self.lvls_path, lvl_file_name)
                     # Load the newly created file into the editor.
                     self.read_custom_lvl_file(lvl_file_name)
                 else:
