@@ -2214,7 +2214,7 @@ class LevelsTab(Tab):
                 warning_label["text"] = "Enter a valid level file name."
                 warning_label.grid()
                 return
-            elif (re.search(".*\..*", name) and not name.endswith('.lvl')):
+            elif (re.search(r".*\..*", name) and not name.endswith('.lvl')):
                 warning_label["text"] = "File name must not end with an extension other than .lvl"
                 warning_label.grid()
                 return
@@ -5428,7 +5428,7 @@ class LevelsTab(Tab):
         rooms = [[None for _ in range(8)] for _ in range(15)]
         # Replaces human-friendly {y} and {x} in the level template format with a regex
         # to find the coordinate of each level template.
-        template_regex = "^" + self.current_save_format.room_template_format.format(y="(?P<y>\d+)", x="(?P<x>\d+)") + "$"
+        template_regex = "^" + self.current_save_format.room_template_format.format(y=r"(?P<y>\d+)", x=r"(?P<x>\d+)") + "$"
 
         for template in level.level_templates.all():
             match = re.search(template_regex, template.name)
