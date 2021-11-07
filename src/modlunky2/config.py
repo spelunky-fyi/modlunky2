@@ -225,9 +225,13 @@ class Config:
 
         # Level Editor
         obj.level_editor_tab = config_data.get("level_editor_tab")
-        
-        obj.custom_level_editor_custom_save_formats = config_data.get("custom_level_editor_custom_save_formats")
-        obj.custom_level_editor_default_save_format = config_data.get("custom_level_editor_default_save_format")
+
+        obj.custom_level_editor_custom_save_formats = config_data.get(
+            "custom_level_editor_custom_save_formats"
+        )
+        obj.custom_level_editor_default_save_format = config_data.get(
+            "custom_level_editor_default_save_format"
+        )
 
         if needs_save:
             obj.save()
@@ -290,9 +294,13 @@ class Config:
         if self.level_editor_tab is not None:
             out["level_editor_tab"] = self.level_editor_tab
         if self.custom_level_editor_custom_save_formats is not None:
-            out["custom_level_editor_custom_save_formats"] = self.custom_level_editor_custom_save_formats
+            out[
+                "custom_level_editor_custom_save_formats"
+            ] = self.custom_level_editor_custom_save_formats
         if self.custom_level_editor_default_save_format is not None:
-            out["custom_level_editor_default_save_format"] = self.custom_level_editor_default_save_format
+            out[
+                "custom_level_editor_default_save_format"
+            ] = self.custom_level_editor_default_save_format
 
         out["theme"] = self.theme
 

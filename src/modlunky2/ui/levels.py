@@ -40,9 +40,11 @@ from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
 
+
 class EditorType(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
+
 
 class CustomLevelSaveFormat:
     def __init__(self, name, room_template_format, include_vanilla_setrooms):
@@ -59,18 +61,25 @@ class CustomLevelSaveFormat:
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
     def toJSON(self):
-        return {"name": self.name, "room_template_format": self.room_template_format, "include_vanilla_setrooms": self.include_vanilla_setrooms}
+        return {
+            "name": self.name,
+            "room_template_format": self.room_template_format,
+            "include_vanilla_setrooms": self.include_vanilla_setrooms,
+        }
 
     @classmethod
     def fromJSON(cls, json):
-        return cls(json["name"], json["room_template_format"], json["include_vanilla_setrooms"])
+        return cls(
+            json["name"], json["room_template_format"], json["include_vanilla_setrooms"]
+        )
 
     def __eq__(self, other):
         return (
-            self.name == other.name and
-            self.room_template_format == other.room_template_format and
-            self.include_vanilla_setrooms == other.include_vanilla_setrooms
+            self.name == other.name
+            and self.room_template_format == other.room_template_format
+            and self.include_vanilla_setrooms == other.include_vanilla_setrooms
         )
+
 
 class LevelsTab(Tab):
     def __init__(
@@ -193,19 +202,31 @@ class LevelsTab(Tab):
             r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
         )
 
-        self.base_save_formats = [CustomLevelSaveFormat.LevelSequence(), CustomLevelSaveFormat.Vanilla()]
-        custom_save_formats = self.modlunky_config.config_file.custom_level_editor_custom_save_formats
+        self.base_save_formats = [
+            CustomLevelSaveFormat.LevelSequence(),
+            CustomLevelSaveFormat.Vanilla(),
+        ]
+        custom_save_formats = (
+            self.modlunky_config.config_file.custom_level_editor_custom_save_formats
+        )
         if custom_save_formats:
             self.custom_save_formats = list(
-                map(lambda json: CustomLevelSaveFormat.fromJSON(json), custom_save_formats)
+                map(
+                    lambda json: CustomLevelSaveFormat.fromJSON(json),
+                    custom_save_formats,
+                )
             )
         else:
             self.custom_save_formats = []
 
-        default_save_format = self.modlunky_config.config_file.custom_level_editor_default_save_format
+        default_save_format = (
+            self.modlunky_config.config_file.custom_level_editor_default_save_format
+        )
         # Set the format that will be used for saving new level files.
         if default_save_format:
-            self.default_save_format = CustomLevelSaveFormat.fromJSON(default_save_format)
+            self.default_save_format = CustomLevelSaveFormat.fromJSON(
+                default_save_format
+            )
         else:
             self.default_save_format = self.base_save_formats[0]
         # Save format used in the currently loaded level file.
@@ -239,9 +260,9 @@ class LevelsTab(Tab):
         if modded:
             if self.icon_lvl_modded == None:
                 self.icon_lvl_modded = ImageTk.PhotoImage(
-                    Image.open(
-                        BASE_DIR / "static/images/lvl_modded.png"
-                    ).resize((20, 20))
+                    Image.open(BASE_DIR / "static/images/lvl_modded.png").resize(
+                        (20, 20)
+                    )
                 )
             return self.icon_lvl_modded
         else:
@@ -275,8 +296,12 @@ class LevelsTab(Tab):
         self.full_level_editor_tab = ttk.Frame(self.editor_tab_control)
         self.last_selected_editor_tab = self.single_room_editor_tab
 
-        self.editor_tab_control.add(self.single_room_editor_tab, text = "Vanilla room editor")
-        self.editor_tab_control.add(self.full_level_editor_tab, text = "Custom level editor")
+        self.editor_tab_control.add(
+            self.single_room_editor_tab, text="Vanilla room editor"
+        )
+        self.editor_tab_control.add(
+            self.full_level_editor_tab, text="Custom level editor"
+        )
 
         self.load_single_room_editor(self.single_room_editor_tab)
         self.load_full_level_editor(self.full_level_editor_tab)
@@ -284,10 +309,7 @@ class LevelsTab(Tab):
         def tab_selected(event):
             if event.widget.select() == self.last_selected_editor_tab:
                 return
-            if (
-                self.save_needed
-                and self.last_selected_file is not None
-            ):
+            if self.save_needed and self.last_selected_file is not None:
                 msg_box = tk.messagebox.askquestion(
                     "Continue?",
                     "You have unsaved changes.\nContinue without saving?",
@@ -325,11 +347,9 @@ class LevelsTab(Tab):
         # Loads lvl files
         tree_files = ttk.Treeview(
             tab, selectmode="browse", padding=[-15, 0, 0, 0]
-        ) # This tree shows the lvl files loaded from the chosen dir, excluding vanilla lvl files.
+        )  # This tree shows the lvl files loaded from the chosen dir, excluding vanilla lvl files.
         tree_files.place(x=30, y=95)
-        vsb_tree_files = ttk.Scrollbar(
-            tab, orient="vertical", command=tree_files.yview
-        )
+        vsb_tree_files = ttk.Scrollbar(tab, orient="vertical", command=tree_files.yview)
         vsb_tree_files.place(x=30 + 200 + 2, y=95, height=200 + 20)
         tree_files.configure(yscrollcommand=vsb_tree_files.set)
         tree_files.grid(row=0, column=0, rowspan=1, sticky="nswe")
@@ -339,16 +359,22 @@ class LevelsTab(Tab):
 
         tree_files.bind(
             "<ButtonRelease-1>",
-            lambda event: self.tree_filesitemclick(event, tree_files, EditorType.CUSTOM_LEVELS)
+            lambda event: self.tree_filesitemclick(
+                event, tree_files, EditorType.CUSTOM_LEVELS
+            ),
         )
         self.tree_files_custom = tree_files
 
         # Button below the file list to exit the editor.
-        self.button_back_full = tk.Button(tab, text="Exit Editor", bg="black", fg="white", command=self.go_back)
+        self.button_back_full = tk.Button(
+            tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
+        )
         self.button_back_full.grid(row=1, column=0, sticky="nswe")
 
         # Button below the file list to save changes to the current file.
-        self.button_save_full = tk.Button(tab, text="Save", bg="Blue", fg="white", command=self.save_changes_full)
+        self.button_save_full = tk.Button(
+            tab, text="Save", bg="Blue", fg="white", command=self.save_changes_full
+        )
         self.button_save_full.grid(row=2, column=0, sticky="nswe")
         self.button_save_full["state"] = tk.DISABLED
 
@@ -370,22 +396,14 @@ class LevelsTab(Tab):
 
         scrollable_frame = tk.Frame(scrollable_canvas, bg="#343434")
 
-        scrollable_frame.columnconfigure(
-            0, minsize=int(int(self.screen_width) / 2)
-        )
+        scrollable_frame.columnconfigure(0, minsize=int(int(self.screen_width) / 2))
         scrollable_frame.columnconfigure(1, weight=1)
         scrollable_frame.columnconfigure(2, minsize=50)
-        scrollable_frame.columnconfigure(
-            4, minsize=int(int(self.screen_width) / 2)
-        )
-        scrollable_frame.rowconfigure(
-            0, minsize=int(int(self.screen_height) / 2)
-        )
+        scrollable_frame.columnconfigure(4, minsize=int(int(self.screen_width) / 2))
+        scrollable_frame.rowconfigure(0, minsize=int(int(self.screen_height) / 2))
         scrollable_frame.rowconfigure(1, weight=1)
         scrollable_frame.rowconfigure(2, minsize=100)
-        scrollable_frame.rowconfigure(
-            4, minsize=int(int(self.screen_height) / 2)
-        )
+        scrollable_frame.rowconfigure(4, minsize=int(int(self.screen_height) / 2))
         scrollable_frame.grid(row=0, column=0, sticky="nswe")
 
         width = self.screen_width
@@ -400,31 +418,39 @@ class LevelsTab(Tab):
 
         # This intro frame covers the editor while there is no level selected with a hint message.
         self.custom_level_editor_intro = tk.Frame(editor_view, bg="#343434")
-        self.custom_level_editor_intro.grid(row=0, column=0, rowspan=2, columnspan=8, sticky="nswe")
+        self.custom_level_editor_intro.grid(
+            row=0, column=0, rowspan=2, columnspan=8, sticky="nswe"
+        )
         intro_label = tk.Label(
             self.custom_level_editor_intro,
             text="Select a level file to begin editing",
             font=("Arial", 45),
             bg="#343434",
             fg="white",
-            wraplength=600
+            wraplength=600,
         )
-        intro_label.place(relx=.5, rely=.5, anchor="center")
+        intro_label.place(relx=0.5, rely=0.5, anchor="center")
 
         # Scroll bars for scrolling the canvases.
-        hbar = ttk.Scrollbar(editor_view, orient="horizontal", command=scrollable_canvas.xview)
+        hbar = ttk.Scrollbar(
+            editor_view, orient="horizontal", command=scrollable_canvas.xview
+        )
         hbar.grid(row=0, column=0, columnspan=7, rowspan=2, sticky="swe")
-        vbar = ttk.Scrollbar(editor_view, orient="vertical", command=scrollable_canvas.yview)
+        vbar = ttk.Scrollbar(
+            editor_view, orient="vertical", command=scrollable_canvas.yview
+        )
         vbar.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nse")
 
         # Bindings to allow scrolling with the mouse.
         scrollable_canvas.bind(
             "<Enter>",
-            lambda event: self._bind_to_mousewheel(event, hbar, vbar, scrollable_canvas)
+            lambda event: self._bind_to_mousewheel(
+                event, hbar, vbar, scrollable_canvas
+            ),
         )
         scrollable_canvas.bind(
             "<Leave>",
-            lambda event: self._unbind_from_mousewheel(event, scrollable_canvas)
+            lambda event: self._unbind_from_mousewheel(event, scrollable_canvas),
         )
         scrollable_frame.bind(
             "<Configure>",
@@ -435,7 +461,7 @@ class LevelsTab(Tab):
 
         scrollable_canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
 
-        #Actual canvases that display the level's layers.
+        # Actual canvases that display the level's layers.
         canvas_foreground = tk.Canvas(scrollable_frame, bg="#343434")
         canvas_foreground.grid(row=1, column=1)
         canvas_background = tk.Canvas(scrollable_frame, bg="#343434")
@@ -446,6 +472,7 @@ class LevelsTab(Tab):
 
         # Buttons to switch the active layer.
         switch_variable = tk.StringVar()
+
         def toggle_layer():
             nonlocal switch_variable
             layer = switch_variable.get()
@@ -486,10 +513,8 @@ class LevelsTab(Tab):
 
         # Allow hiding the side panel so more level can be seen.
         side_panel_hidden = False
-        side_panel_hide_button = tk.Button(
-            editor_view,
-            text=">>"
-        )
+        side_panel_hide_button = tk.Button(editor_view, text=">>")
+
         def toggle_panel_hidden():
             nonlocal side_panel_hidden
             side_panel_hidden = not side_panel_hidden
@@ -499,6 +524,7 @@ class LevelsTab(Tab):
             else:
                 self.custom_editor_side_panel.grid()
                 side_panel_hide_button.configure(text=">>")
+
         side_panel_hide_button.configure(
             command=toggle_panel_hidden,
         )
@@ -543,14 +569,14 @@ class LevelsTab(Tab):
         self.panel_sel_custom = ttk.Label(
             tiles_panel,
             image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
-            width=50
+            width=50,
         )
         self.panel_sel_custom.grid(row=0, column=2)
 
         self.panel_sel_secondary_custom = ttk.Label(
             tiles_panel,
             image=ImageTk.PhotoImage(self._sprite_fetcher.get("empty")),
-            width=50
+            width=50,
         )
         self.panel_sel_secondary_custom.grid(row=1, column=2)
 
@@ -563,8 +589,14 @@ class LevelsTab(Tab):
             command=lambda: self.del_tilecode_custom(
                 self.tile_label_custom,
                 [canvas_foreground, canvas_background],
-                [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
-                [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
+                [
+                    self.custom_editor_foreground_tile_images,
+                    self.custom_editor_background_tile_images,
+                ],
+                [
+                    self.custom_editor_foreground_tile_codes,
+                    self.custom_editor_background_tile_codes,
+                ],
             ),
         )
         self.button_tilecode_del_custom.grid(row=0, column=0, sticky="e")
@@ -579,8 +611,14 @@ class LevelsTab(Tab):
             command=lambda: self.del_tilecode_custom(
                 self.tile_label_secondary_custom,
                 [canvas_foreground, canvas_background],
-                [self.custom_editor_foreground_tile_images, self.custom_editor_background_tile_images],
-                [self.custom_editor_foreground_tile_codes, self.custom_editor_background_tile_codes],
+                [
+                    self.custom_editor_foreground_tile_images,
+                    self.custom_editor_background_tile_images,
+                ],
+                [
+                    self.custom_editor_foreground_tile_codes,
+                    self.custom_editor_background_tile_codes,
+                ],
             ),
         )
         self.button_tilecode_del_secondary_custom.grid(row=1, column=0, sticky="e")
@@ -605,12 +643,10 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_zoom_level
+                self.custom_editor_zoom_level,
             ),
         )
-        self.button_tilecode_add_custom.grid(
-            row=3, column=2, sticky="nsw"
-        )
+        self.button_tilecode_add_custom.grid(row=3, column=2, sticky="nsw")
 
         theme_label = tk.Label(options_panel, text="Level Theme:")
         theme_label.grid(row=0, column=0, columnspan=2, sticky="nsw")
@@ -624,9 +660,19 @@ class LevelsTab(Tab):
         self.theme_combobox.grid(row=1, column=0, sticky="nsw")
         self.theme_combobox["state"] = tk.DISABLED
         self.theme_combobox["values"] = [
-            "Dwelling", "Jungle", "Volcana", "Olmec", "Tide Pool", "Temple",
-            "Ice Caves", "Neo Babylon", "Sunken City", "City of Gold", "Duat",
-            "Eggplant World", "Surface",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "City of Gold",
+            "Duat",
+            "Eggplant World",
+            "Surface",
         ]
 
         def update_theme():
@@ -646,6 +692,7 @@ class LevelsTab(Tab):
 
         def theme_selected(event):
             self.theme_select_button["state"] = tk.NORMAL
+
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
 
         # Comboboxes to change the size of the level. If the size is decreased, the
@@ -655,9 +702,7 @@ class LevelsTab(Tab):
         size_frame = tk.Frame(options_panel)
         size_frame.grid(column=0, row=3, columnspan=2, sticky="w")
         size_frame.columnconfigure(2, minsize=10)
-        self.size_label = tk.Label(
-            size_frame, text="Level size:"
-        )
+        self.size_label = tk.Label(size_frame, text="Level size:")
         self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
 
         tk.Label(size_frame, text="Width: ").grid(row=1, column=0, sticky="nsw")
@@ -672,10 +717,28 @@ class LevelsTab(Tab):
         self.height_combobox = ttk.Combobox(size_frame, height=25)
         self.height_combobox.grid(row=2, column=1, sticky="nswe")
         self.height_combobox["state"] = tk.DISABLED
-        self.height_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        self.height_combobox["values"] = [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+        ]
 
         def update_size():
-            self.update_custom_level_size(int(self.width_combobox.get()), int(self.height_combobox.get()))
+            self.update_custom_level_size(
+                int(self.width_combobox.get()), int(self.height_combobox.get())
+            )
 
         self.size_select_button = tk.Button(
             size_frame,
@@ -690,15 +753,15 @@ class LevelsTab(Tab):
             width = int(self.width_combobox.get())
             height = int(self.height_combobox.get())
             self.size_select_button["state"] = (
-                tk.DISABLED if (width == self.lvl_width and height == self.lvl_height) else tk.NORMAL
+                tk.DISABLED
+                if (width == self.lvl_width and height == self.lvl_height)
+                else tk.NORMAL
             )
+
         self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
         self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
 
-        option_header = tk.Label(
-            options_panel,
-            text="Save format:"
-        )
+        option_header = tk.Label(options_panel, text="Save format:")
         option_header.grid(column=0, row=5, sticky="nsw")
 
         save_format_frame = tk.Frame(options_panel)
@@ -713,8 +776,12 @@ class LevelsTab(Tab):
         for save_format in self.base_save_formats + self.custom_save_formats:
             self.add_save_format_radio(save_format, save_format_frame)
 
-        self.save_format_warning_message = tk.Label(options_panel, text="", wraplength=350, justify=tk.LEFT)
-        self.save_format_warning_message.grid(column=0, row=7, columnspan=2, sticky="nw")
+        self.save_format_warning_message = tk.Label(
+            options_panel, text="", wraplength=350, justify=tk.LEFT
+        )
+        self.save_format_warning_message.grid(
+            column=0, row=7, columnspan=2, sticky="nw"
+        )
 
         if self.default_save_format:
             self.update_save_format_variable(self.default_save_format)
@@ -727,6 +794,7 @@ class LevelsTab(Tab):
                 "Create",
                 None,
             )
+
         create_template_button = tk.Button(
             options_panel,
             text="New save format",
@@ -739,14 +807,24 @@ class LevelsTab(Tab):
         # Checkbox to toggle the visibility of the grid lines.
         hide_grid_var = tk.IntVar()
         hide_grid_var.set(self.hide_grid_lines)
+
         def toggle_hide_grid():
             nonlocal hide_grid_var
             self.hide_grid_lines = hide_grid_var.get()
-            self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
-            self.hide_grid(self.custom_level_canvas_background, self.grid_lines_background)
+            self.hide_grid(
+                self.custom_level_canvas_foreground, self.grid_lines_foreground
+            )
+            self.hide_grid(
+                self.custom_level_canvas_background, self.grid_lines_background
+            )
+
         tk.Checkbutton(
-            options_panel, text="Hide grid lines", variable=hide_grid_var,
-            onvalue=True, offvalue=False, command=toggle_hide_grid
+            options_panel,
+            text="Hide grid lines",
+            variable=hide_grid_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_hide_grid,
         ).grid(row=9, column=0, sticky="nw", pady=5)
 
         grid_size_frame = tk.Frame(options_panel)
@@ -785,18 +863,19 @@ class LevelsTab(Tab):
                             tile_name,
                             self.lvl_biome,
                             self.lvl,
-                            self.custom_editor_zoom_level
+                            self.custom_editor_zoom_level,
                         )
                     )
                 self.draw_custom_level_canvases(self.lvl_biome)
-        grid_size_scale["command"] = update_grid_size
 
+        grid_size_scale["command"] = update_grid_size
 
         # Change the cursor to a pencil while holding shift to let the user know that
         # the tile will be selected instead of replaced when clicking. (Pencil was the
         # closest I could find in the available cursors to something that would
         # represent this action).
         shift_down = False
+
         def holding_shift(event, canvas):
             nonlocal shift_down
             if shift_down:
@@ -813,55 +892,65 @@ class LevelsTab(Tab):
             canvas_foreground.config(cursor="")
             canvas_background.config(cursor="")
 
-        scrollable_frame.bind_all("<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas))
-        scrollable_frame.bind_all("<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas))
-        scrollable_frame.bind_all("<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas))
+        scrollable_frame.bind_all(
+            "<KeyPress-Shift_L>", lambda event: holding_shift(event, self.canvas)
+        )
+        scrollable_frame.bind_all(
+            "<KeyPress-Shift_R>", lambda event: holding_shift(event, self.canvas)
+        )
+        scrollable_frame.bind_all(
+            "<KeyRelease-Shift_L>", lambda event: shift_up(event, self.canvas)
+        )
 
         # Click actions performed when holding shift to select the tile at the cursor's
         # location.
         canvas_foreground.bind(
             "<Shift-Button-1>",
             lambda event: self.canvas_shiftclick(
-                event, canvas_foreground,
+                event,
+                canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_foreground_tile_codes,
-                self.tile_pallete_custom
-            )
+                self.tile_pallete_custom,
+            ),
         )
         canvas_foreground.bind(
             "<Shift-Button-3>",
             lambda event: self.canvas_shiftclick(
-                event, canvas_foreground,
+                event,
+                canvas_foreground,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_codes,
-                self.tile_pallete_custom
-            )
+                self.tile_pallete_custom,
+            ),
         )
         canvas_background.bind(
             "<Shift-Button-1>",
             lambda event: self.canvas_shiftclick(
-                event, canvas_background,
+                event,
+                canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_background_tile_codes,
-                self.tile_pallete_custom
-            )
+                self.tile_pallete_custom,
+            ),
         )
         canvas_background.bind(
             "<Shift-Button-3>",
             lambda event: self.canvas_shiftclick(
-                event, canvas_background,
+                event,
+                canvas_background,
                 self.custom_editor_zoom_level,
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_codes,
-                self.tile_pallete_custom
-            )
+                self.tile_pallete_custom,
+            ),
         )
         canvas_foreground.bind("<Shift-B1-Motion>", lambda event: None)
         canvas_foreground.bind("<Shift-B3-Motion>", lambda event: None)
@@ -879,7 +968,9 @@ class LevelsTab(Tab):
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
-                self.custom_editor_foreground_tile_codes))
+                self.custom_editor_foreground_tile_codes,
+            ),
+        )
         canvas_foreground.bind(
             "<B1-Motion>",
             lambda event: self.canvas_click(
@@ -889,7 +980,9 @@ class LevelsTab(Tab):
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_foreground_tile_images,
-                self.custom_editor_foreground_tile_codes))
+                self.custom_editor_foreground_tile_codes,
+            ),
+        )
         canvas_foreground.bind(
             "<Button-3>",
             lambda event: self.canvas_click(
@@ -899,7 +992,9 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
-                self.custom_editor_foreground_tile_codes))
+                self.custom_editor_foreground_tile_codes,
+            ),
+        )
         canvas_foreground.bind(
             "<B3-Motion>",
             lambda event: self.canvas_click(
@@ -909,7 +1004,9 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_foreground_tile_images,
-                self.custom_editor_foreground_tile_codes))
+                self.custom_editor_foreground_tile_codes,
+            ),
+        )
 
         canvas_background.bind(
             "<Button-1>",
@@ -920,7 +1017,9 @@ class LevelsTab(Tab):
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
-                self.custom_editor_background_tile_codes))
+                self.custom_editor_background_tile_codes,
+            ),
+        )
         canvas_background.bind(
             "<B1-Motion>",
             lambda event: self.canvas_click(
@@ -930,7 +1029,9 @@ class LevelsTab(Tab):
                 self.tile_label_custom,
                 self.panel_sel_custom,
                 self.custom_editor_background_tile_images,
-                self.custom_editor_background_tile_codes))
+                self.custom_editor_background_tile_codes,
+            ),
+        )
         canvas_background.bind(
             "<Button-3>",
             lambda event: self.canvas_click(
@@ -940,7 +1041,9 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
-                self.custom_editor_background_tile_codes))
+                self.custom_editor_background_tile_codes,
+            ),
+        )
         canvas_background.bind(
             "<B3-Motion>",
             lambda event: self.canvas_click(
@@ -950,7 +1053,9 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_secondary_custom,
                 self.custom_editor_background_tile_images,
-                self.custom_editor_background_tile_codes))
+                self.custom_editor_background_tile_codes,
+            ),
+        )
 
     def load_single_room_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -1165,18 +1270,12 @@ class LevelsTab(Tab):
         self.canvas_grids_full.bind(
             "<Enter>",
             lambda event: self._bind_to_mousewheel(
-                event,
-                self.hbar_full,
-                self.vbar_full,
-                self.canvas_grids_full
-            )
+                event, self.hbar_full, self.vbar_full, self.canvas_grids_full
+            ),
         )
         self.canvas_grids_full.bind(
             "<Leave>",
-            lambda event: self._unbind_from_mousewheel(
-                event,
-                self.canvas_grids_full
-            )
+            lambda event: self._unbind_from_mousewheel(event, self.canvas_grids_full),
         )
         self.scrollable_canvas_frame_full.bind(
             "<Configure>",
@@ -1467,18 +1566,12 @@ class LevelsTab(Tab):
         self.canvas_grids.bind(
             "<Enter>",
             lambda event: self._bind_to_mousewheel(
-                event,
-                self.hbar,
-                self.vbar,
-                self.canvas_grids
-            )
+                event, self.hbar, self.vbar, self.canvas_grids
+            ),
         )
         self.canvas_grids.bind(
             "<Leave>",
-            lambda event: self._unbind_from_mousewheel(
-                event,
-                self.canvas_grids
-            )
+            lambda event: self._unbind_from_mousewheel(event, self.canvas_grids),
         )
         self.scrollable_canvas_frame.bind(
             "<Configure>",
@@ -1617,7 +1710,7 @@ class LevelsTab(Tab):
                 self.tile_label_secondary,
                 self.panel_sel,
                 self.panel_sel_secondary,
-                self.mag
+                self.mag,
             ),
         )
         self.button_tilecode_add.grid(
@@ -1781,7 +1874,9 @@ class LevelsTab(Tab):
         self.combobox["values"] = sorted(combo_tile_ids, key=str.lower)
         self.combobox_alt["values"] = sorted(combo_tile_ids, key=str.lower)
 
-        def canvas_click(event, canvas, tile_label, panel_sel): # when the level editor grid is clicked
+        def canvas_click(
+            event, canvas, tile_label, panel_sel
+        ):  # when the level editor grid is clicked
             # Get rectangle diameters
             col_width = self.mag
             row_height = self.mag
@@ -1822,7 +1917,9 @@ class LevelsTab(Tab):
             img = None
             tile_name = tile_label["text"].split(" ", 4)[2]
             tile_code = tile_label["text"].split(" ", 4)[3]
-            x_coord_offset, y_coord_offset = self.offset_for_tile(tile_name, tile_code, self.mag)
+            x_coord_offset, y_coord_offset = self.offset_for_tile(
+                tile_name, tile_code, self.mag
+            )
 
             canvas.delete(self.tiles[int(row)][int(col)])
             if canvas == self.canvas_dual:
@@ -1848,41 +1945,42 @@ class LevelsTab(Tab):
             )
             self.remember_changes()  # remember changes made
 
-
         self.canvas.bind(
             "<Button-1>",
-            lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel)
+            lambda event: canvas_click(
+                event, self.canvas, self.tile_label, self.panel_sel
+            ),
         )
         self.canvas.bind(
             "<B1-Motion>",
-            lambda event: canvas_click(event, self.canvas, self.tile_label, self.panel_sel)
+            lambda event: canvas_click(
+                event, self.canvas, self.tile_label, self.panel_sel
+            ),
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         self.canvas.bind(
             "<Button-3>",
-            lambda event: canvas_click(event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary)
+            lambda event: canvas_click(
+                event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary
+            ),
         )
         self.canvas.bind(
             "<B3-Motion>",
-            lambda event: canvas_click(event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary)
+            lambda event: canvas_click(
+                event, self.canvas, self.tile_label_secondary, self.panel_sel_secondary
+            ),
         )  # These second binds are so the user can hold down their mouse button when painting tiles
         # self.canvas.bind("<Key>", lambda event: )
         self.canvas_dual.bind(
             "<Button-1>",
             lambda event: canvas_click(
-                event,
-                self.canvas_dual,
-                self.tile_label,
-                self.panel_sel
-            )
+                event, self.canvas_dual, self.tile_label, self.panel_sel
+            ),
         )
         self.canvas_dual.bind(
             "<B1-Motion>",
             lambda event: canvas_click(
-                event,
-                self.canvas_dual,
-                self.tile_label,
-                self.panel_sel
-            )
+                event, self.canvas_dual, self.tile_label, self.panel_sel
+            ),
         )
         self.canvas_dual.bind(
             "<Button-3>",
@@ -1890,8 +1988,8 @@ class LevelsTab(Tab):
                 event,
                 self.canvas_dual,
                 self.tile_label_secondary,
-                self.panel_sel_secondary
-            )
+                self.panel_sel_secondary,
+            ),
         )
         self.canvas_dual.bind(
             "<B3-Motion>",
@@ -1899,16 +1997,14 @@ class LevelsTab(Tab):
                 event,
                 self.canvas_dual,
                 self.tile_label_secondary,
-                self.panel_sel_secondary
-            )
+                self.panel_sel_secondary,
+            ),
         )
         self.tree_files.bind(
             "<ButtonRelease-1>",
             lambda event: self.tree_filesitemclick(
-                event,
-                self.tree_files,
-                EditorType.VANILLA_ROOMS
-            )
+                event, self.tree_files, EditorType.VANILLA_ROOMS
+            ),
         )
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
@@ -1921,14 +2017,23 @@ class LevelsTab(Tab):
             if tile_ref:
                 logger.debug("Found %s", tile_ref[0])
                 img = tile_ref[1]
-                return self.adjust_texture_xy(img.width(), img.height(), int(tile_name_ref[1]), tile_size)
+                return self.adjust_texture_xy(
+                    img.width(), img.height(), int(tile_name_ref[1]), tile_size
+                )
 
         return 0, 0
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
     def canvas_click(
-        self, event, canvas, tile_size, tile_label, panel_sel, tile_image_matrix, tile_code_matrix
+        self,
+        event,
+        canvas,
+        tile_size,
+        tile_label,
+        panel_sel,
+        tile_image_matrix,
+        tile_code_matrix,
     ):
         column = int(event.x // tile_size)
         row = int(event.y // tile_size)
@@ -1952,7 +2057,14 @@ class LevelsTab(Tab):
         self.changes_made()
 
     def canvas_shiftclick(
-        self, event, canvas, tile_size, tile_label, panel_sel, tile_code_matrix, tile_palette
+        self,
+        event,
+        canvas,
+        tile_size,
+        tile_label,
+        panel_sel,
+        tile_code_matrix,
+        tile_palette,
     ):
         column = int(event.x // tile_size)
         row = int(event.y // tile_size)
@@ -2039,13 +2151,9 @@ class LevelsTab(Tab):
             path_in_str = str(filepath)
             pack_name = os.path.basename(os.path.normpath(path_in_str))
             # Add the file to the tree with the folder icon.
-            tree.insert(
-                "", "end", text=str(pack_name), image=self.icon_folder
-            )
+            tree.insert("", "end", text=str(pack_name), image=self.icon_folder)
             i = i + 1
-        tree.insert(
-            "", "end", text=str("[Create_New_Pack]"), image=self.icon_add
-        )
+        tree.insert("", "end", text=str("[Create_New_Pack]"), image=self.icon_add)
 
     def load_pack_lvls(self, tree, editor_type, lvl_dir):
         if editor_type == EditorType.VANILLA_ROOMS:
@@ -2064,9 +2172,7 @@ class LevelsTab(Tab):
 
         tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
-            tree.insert(
-                "", "end", text=str("ARENA"), image=self.icon_folder
-            )
+            tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
         # Load lvls frome extracts that selected pack doesn't have
@@ -2092,9 +2198,7 @@ class LevelsTab(Tab):
                                 "", "end", text=str(lvl_name), image=self.lvl_icon(True)
                             )
             if not lvl_in_use:
-                tree.insert(
-                    "", "end", text=str(lvl_name), image=self.lvl_icon(False)
-                )
+                tree.insert("", "end", text=str(lvl_name), image=self.lvl_icon(False))
 
     def load_pack_custom_lvls(self, tree, lvl_dir, selected_lvl=None):
         self.reset()
@@ -2106,27 +2210,22 @@ class LevelsTab(Tab):
 
         tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
         if not str(lvl_dir).endswith("Arena"):
-            tree.insert(
-                "", "end", text=str("ARENA"), image=self.icon_folder
-            )
+            tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
-
 
         for filepath in glob.iglob(str(lvl_dir) + "/***.lvl"):
             path_in_str = str(filepath)
             lvl_name = os.path.basename(os.path.normpath(path_in_str))
             if not (defaults_path / lvl_name).exists():
                 item = tree.insert(
-                    "", "end", text = str(lvl_name), image=self.lvl_icon(True)
+                    "", "end", text=str(lvl_name), image=self.lvl_icon(True)
                 )
                 if lvl_name == selected_lvl:
                     tree.selection_set(item)
                     self.last_selected_file = item
 
-        tree.insert(
-            "", "end", text=str("[Create_New_Level]"), image=self.icon_add
-        )
+        tree.insert("", "end", text=str("[Create_New_Level]"), image=self.icon_add)
 
     def create_level_dialog(self, tree):
         win = PopupWindow("Create Level", self.modlunky_config)
@@ -2156,7 +2255,9 @@ class LevelsTab(Tab):
 
         values_row = values_row + 1
 
-        tk.Label(values_frame, text="Height: ").grid(row=values_row, column=0, sticky="ne", pady=2)
+        tk.Label(values_frame, text="Height: ").grid(
+            row=values_row, column=0, sticky="ne", pady=2
+        )
 
         height_combobox = ttk.Combobox(values_frame, value=4, height=25)
         height_combobox.set(4)
@@ -2173,9 +2274,19 @@ class LevelsTab(Tab):
         theme_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
         theme_combobox["state"] = "readonly"
         theme_combobox["values"] = [
-            "Dwelling", "Jungle", "Volcana", "Olmec", "Tide Pool", "Temple",
-            "Ice Caves", "Neo Babylon", "Sunken City", "City of Gold", "Duat",
-            "Eggplant World", "Surface",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "City of Gold",
+            "Duat",
+            "Eggplant World",
+            "Surface",
         ]
 
         values_row = values_row + 1
@@ -2187,14 +2298,18 @@ class LevelsTab(Tab):
         save_format_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
         save_format_combobox["state"] = "readonly"
         save_formats = self.base_save_formats + self.custom_save_formats
-        save_format_combobox["values"] = list(map(lambda format: format.name, save_formats))
+        save_format_combobox["values"] = list(
+            map(lambda format: format.name, save_formats)
+        )
         create_save_format = self.current_save_format or self.default_save_format
         if not create_save_format:
             create_save_format = self.base_save_formats[0]
         if create_save_format:
             save_format_combobox.set(create_save_format.name)
 
-        warning_label = tk.Label(win, text="", foreground="red", wraplength=200, justify=tk.LEFT)
+        warning_label = tk.Label(
+            win, text="", foreground="red", wraplength=200, justify=tk.LEFT
+        )
         warning_label.grid(row=row, column=0, sticky="nw", pady=(10, 0))
         warning_label.grid_remove()
         row = row + 1
@@ -2214,8 +2329,10 @@ class LevelsTab(Tab):
                 warning_label["text"] = "Enter a valid level file name."
                 warning_label.grid()
                 return
-            elif (re.search(r".*\..*", name) and not name.endswith('.lvl')):
-                warning_label["text"] = "File name must not end with an extension other than .lvl"
+            elif re.search(r".*\..*", name) and not name.endswith(".lvl"):
+                warning_label[
+                    "text"
+                ] = "File name must not end with an extension other than .lvl"
                 warning_label.grid()
                 return
             elif not theme or theme == "":
@@ -2229,18 +2346,28 @@ class LevelsTab(Tab):
             else:
                 warning_label["text"] = ""
                 warning_label.grid_remove()
-                lvl_file_name = name if name.endswith('.lvl') else name + '.lvl'
+                lvl_file_name = name if name.endswith(".lvl") else name + ".lvl"
                 lvl_path = Path(self.lvls_path) / lvl_file_name
                 if lvl_path.exists():
-                    warning_label["text"] = "Error: Level {level} already exists!".format(level=lvl_file_name)
+                    warning_label[
+                        "text"
+                    ] = "Error: Level {level} already exists!".format(
+                        level=lvl_file_name
+                    )
                     warning_label.grid()
                     return
                 tiles = [
-                    ["floor 1"], ["empty 0"], ["floor_hard X"],
+                    ["floor 1"],
+                    ["empty 0"],
+                    ["floor_hard X"],
                 ]
                 # Fill in the level with empty tiles in the foreground and hard floor in the background.
-                foreground = [['0' for _ in range(width * 10)] for _ in range(height * 8)]
-                background = [['X' for _ in range(width * 10)] for _ in range(height * 8)]
+                foreground = [
+                    ["0" for _ in range(width * 10)] for _ in range(height * 8)
+                ]
+                background = [
+                    ["X" for _ in range(width * 10)] for _ in range(height * 8)
+                ]
                 level_settings = LevelSettings()
                 for level_setting in [
                     "altar_room_chance",
@@ -2259,30 +2386,41 @@ class LevelsTab(Tab):
                     "machine_tallroom_chance",
                     "machine_wideroom_chance",
                     "max_liquid_particles",
-                    "mount_chance"
+                    "mount_chance",
                 ]:
                     # Set all of the settings to 0 by default to turn off spawning of things like back
                     # layer areas and special rooms.
                     level_settings.set_obj(
                         LevelSetting(
-                            name = level_setting,
-                            value = 0,
-                            comment = None,
+                            name=level_setting,
+                            value=0,
+                            comment=None,
                         )
                     )
                 saved = self.save_level(
-                    lvl_path, width, height, theme, save_format,
-                    "", LevelChances(), level_settings, MonsterChances(), tiles,
-                    foreground, background)
+                    lvl_path,
+                    width,
+                    height,
+                    theme,
+                    save_format,
+                    "",
+                    LevelChances(),
+                    level_settings,
+                    MonsterChances(),
+                    tiles,
+                    foreground,
+                    background,
+                )
                 if saved:
                     # Reload the file list tree so that the new file shows up, and select it.
-                    self.load_pack_custom_lvls(self.tree_files_custom, self.lvls_path, lvl_file_name)
+                    self.load_pack_custom_lvls(
+                        self.tree_files_custom, self.lvls_path, lvl_file_name
+                    )
                     # Load the newly created file into the editor.
                     self.read_custom_lvl_file(lvl_file_name)
                 else:
                     logger.debug("error saving lvl file.")
                 win.destroy()
-
 
         buttons = tk.Frame(win)
         buttons.grid(row=row, column=0, pady=(10, 0), sticky="nswe")
@@ -2442,9 +2580,7 @@ class LevelsTab(Tab):
             item_text = tree.item(item, "text")
         if item_text == "<<BACK":
             if tree.heading("#0")["text"].endswith("Arena"):
-                tree.heading(
-                    "#0", text=tree.heading("#0")["text"].split("/")[0]
-                )
+                tree.heading("#0", text=tree.heading("#0")["text"].split("/")[0])
                 self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
                 self.load_pack_lvls(
                     tree,
@@ -2453,18 +2589,13 @@ class LevelsTab(Tab):
                 )
             else:
                 self.load_packs(tree)
-        elif (
-            item_text == "ARENA"
-            and tree.heading("#0")["text"] != "Select Pack"
-        ):
-            tree.heading(
-                "#0", text=tree.heading("#0")["text"] + "/Arena"
-            )
+        elif item_text == "ARENA" and tree.heading("#0")["text"] != "Select Pack":
+            tree.heading("#0", text=tree.heading("#0")["text"] + "/Arena")
             self.loaded_pack = tree.heading("#0")["text"].split("/")[0]
             self.load_pack_lvls(
                 tree,
                 editor_type,
-                Path(self.packs_path / self.loaded_pack / "Data" / "Levels" / "Arena")
+                Path(self.packs_path / self.loaded_pack / "Data" / "Levels" / "Arena"),
             )
         elif item_text == "[Create_New_Pack]":
             logger.debug("Creating new pack")
@@ -2482,7 +2613,7 @@ class LevelsTab(Tab):
                 self.load_pack_lvls(
                     tree,
                     editor_type,
-                    Path(self.packs_path / self.loaded_pack) / "Data" / "Levels"
+                    Path(self.packs_path / self.loaded_pack) / "Data" / "Levels",
                 )
         else:
             self.reset()
@@ -2525,10 +2656,19 @@ class LevelsTab(Tab):
 
     def _bind_to_mousewheel(self, _event, hbar, vbar, canvas):
         if is_windows():
-            canvas.bind_all("<MouseWheel>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
+            canvas.bind_all(
+                "<MouseWheel>",
+                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
+            )
         else:
-            canvas.bind_all("<Button-4>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
-            canvas.bind_all("<Button-5>", lambda event: self._on_mousewheel(event, hbar, vbar, canvas))
+            canvas.bind_all(
+                "<Button-4>",
+                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
+            )
+            canvas.bind_all(
+                "<Button-5>",
+                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
+            )
 
     def _unbind_from_mousewheel(self, _event, canvas):
         if is_windows():
@@ -2556,12 +2696,27 @@ class LevelsTab(Tab):
         tile_label["text"] = "Secondary Tile: " + selected_tile["text"]
 
     def suggested_tile_pick(
-        self, suggested_tile, is_secondary, tile_palette, tile_label,
-        tile_label_secondary, panel_sel, panel_sel_secondary, scale, panel_img
+        self,
+        suggested_tile,
+        is_secondary,
+        tile_palette,
+        tile_label,
+        tile_label_secondary,
+        panel_sel,
+        panel_sel_secondary,
+        scale,
+        panel_img,
     ):
         tile = self.add_tilecode(
-            suggested_tile, 100, "empty", tile_palette, tile_label, tile_label_secondary,
-            panel_sel, panel_sel_secondary, scale
+            suggested_tile,
+            100,
+            "empty",
+            tile_palette,
+            tile_label,
+            tile_label_secondary,
+            panel_sel,
+            panel_sel_secondary,
+            scale,
         )
         if not tile:
             return
@@ -2584,7 +2739,7 @@ class LevelsTab(Tab):
             tile_label_secondary,
             panel_sel,
             panel_sel_secondary,
-            scale
+            scale,
         )
 
     def get_codes_left(self):
@@ -2695,33 +2850,37 @@ class LevelsTab(Tab):
 
     def vanilla_setroom_type_for(self, theme, x, y):
         if theme == "ice":
-            if (y in [4, 5, 6, 7] and x in [0, 1, 2]):
+            if y in [4, 5, 6, 7] and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.DUAL
-            elif (y in [10, 11, 12, 13] and x in [0, 1, 2]):
+            elif y in [10, 11, 12, 13] and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.BACK
         elif theme == "tiamat":
-            if (y == 0 and x in [0, 1, 2]):
+            if y == 0 and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.DUAL
-            elif (y in range(2, 10+1) and x in [0, 1, 2]):
+            elif y in range(2, 10 + 1) and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "duat":
-            if (y in [0, 1, 2, 3] and x in [0, 1, 2]):
+            if y in [0, 1, 2, 3] and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "eggplant":
-            if (y in [0, 1] and x in [0, 1, 2, 3]):
+            if y in [0, 1] and x in [0, 1, 2, 3]:
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "olmec":
-            if (y in [0, 1, 6, 7] and x in [0, 1, 2, 3, 4]) or (y in [2, 3, 4, 5] and x in [1, 2, 3]):
+            if (y in [0, 1, 6, 7] and x in [0, 1, 2, 3, 4]) or (
+                y in [2, 3, 4, 5] and x in [1, 2, 3]
+            ):
                 return LevelsTab.VanillaSetroomType.DUAL
-            elif (y in [2, 3, 4, 5] and x in [0, 4]) or (y == 7 and x in [0, 1, 2, 3, 4]):
+            elif (y in [2, 3, 4, 5] and x in [0, 4]) or (
+                y == 7 and x in [0, 1, 2, 3, 4]
+            ):
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "hundun":
-            if (y in [0, 1, 2, 10, 11] and x in [0, 1, 2]):
+            if y in [0, 1, 2, 10, 11] and x in [0, 1, 2]:
                 return LevelsTab.VanillaSetroomType.FRONT
         elif theme == "abzu":
-            if (y in [0, 1, 2, 3] and x in [0, 1, 2, 3]):
+            if y in [0, 1, 2, 3] and x in [0, 1, 2, 3]:
                 return LevelsTab.VanillaSetroomType.DUAL
-            elif (y in [4, 5, 6, 7, 8] and x in [0, 1, 2, 3]):
+            elif y in [4, 5, 6, 7, 8] and x in [0, 1, 2, 3]:
                 return LevelsTab.VanillaSetroomType.FRONT
 
         return LevelsTab.VanillaSetroomType.NONE
@@ -2747,9 +2906,19 @@ class LevelsTab(Tab):
         )
 
     def save_level(
-        self, level_path, width, height, theme, save_format, comment,
-        level_chances, level_settings, monster_chances,
-        used_tiles, foreground_tiles, background_tiles,
+        self,
+        level_path,
+        width,
+        height,
+        theme,
+        save_format,
+        comment,
+        level_chances,
+        level_settings,
+        monster_chances,
+        used_tiles,
+        foreground_tiles,
+        background_tiles,
     ):
         try:
             tile_codes = TileCodes()
@@ -2774,20 +2943,30 @@ class LevelsTab(Tab):
                     for row in range(8):
                         foreground_row = foreground_tiles[room_y * 8 + row]
                         background_row = background_tiles[room_y * 8 + row]
-                        room_foreground.append("".join(foreground_row[room_x * 10:room_x * 10 + 10]))
-                        room_background.append("".join(background_row[room_x * 10:room_x * 10 + 10]))
+                        room_foreground.append(
+                            "".join(foreground_row[room_x * 10 : room_x * 10 + 10])
+                        )
+                        room_background.append(
+                            "".join(background_row[room_x * 10 : room_x * 10 + 10])
+                        )
 
                     room_settings = []
-                    dual = (not hard_floor_code) or room_background != [hard_floor_code * 10 for _ in range(8)]
+                    dual = (not hard_floor_code) or room_background != [
+                        hard_floor_code * 10 for _ in range(8)
+                    ]
                     if dual:
                         room_settings.append(TemplateSetting.DUAL)
-                    template_chunks = [Chunk(
-                        comment = None,
-                        settings = room_settings,
-                        foreground = room_foreground,
-                        background = room_background if dual else [],
-                    )]
-                    template_name = save_format.room_template_format.format(y=room_y, x=room_x)
+                    template_chunks = [
+                        Chunk(
+                            comment=None,
+                            settings=room_settings,
+                            foreground=room_foreground,
+                            background=room_background if dual else [],
+                        )
+                    ]
+                    template_name = save_format.room_template_format.format(
+                        y=room_y, x=room_x
+                    )
                     level_templates.set_obj(
                         LevelTemplate(
                             name=template_name,
@@ -2818,17 +2997,23 @@ class LevelsTab(Tab):
                             vs.append(TemplateSetting.DUAL)
 
                     if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                        template_chunks = [Chunk(
-                            comment=None,
-                            settings = vs,
-                            foreground = vf,
-                            background = vb,
-                        )]
-                        comment_format = "Auto-generated template to match {layer} of {template}."
+                        template_chunks = [
+                            Chunk(
+                                comment=None,
+                                settings=vs,
+                                foreground=vf,
+                                background=vb,
+                            )
+                        ]
+                        comment_format = (
+                            "Auto-generated template to match {layer} of {template}."
+                        )
                         level_templates.set_obj(
                             LevelTemplate(
                                 name="setroom{y}-{x}".format(y=room_y, x=room_x),
-                                comment=comment_format.format(layer=vm, template=template_name),
+                                comment=comment_format.format(
+                                    layer=vm, template=template_name
+                                ),
                                 chunks=template_chunks,
                             )
                         )
@@ -3017,7 +3202,7 @@ class LevelsTab(Tab):
 
                 logger.debug("Saved!")
                 for item in self.tree_files.selection():
-                   self.tree_files.item(item, image = self.lvl_icon(True))
+                    self.tree_files.item(item, image=self.lvl_icon(True))
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
@@ -3134,7 +3319,9 @@ class LevelsTab(Tab):
                                     )  # adds back replaced code since its now free for use again
                             else:
                                 logger.warning("Not enough unique tilecodes left")
-                                self.tree_filesitemclick(self, self.tree_files, EditorType.VANILLA_ROOMS)
+                                self.tree_filesitemclick(
+                                    self, self.tree_files, EditorType.VANILLA_ROOMS
+                                )
                                 self.check_dependencies()
                                 return
                         else:
@@ -3723,7 +3910,7 @@ class LevelsTab(Tab):
                 self.tile_label_secondary,
                 self.panel_sel,
                 self.panel_sel_secondary,
-                self.mag
+                self.mag,
             )
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -3750,7 +3937,14 @@ class LevelsTab(Tab):
         else:
             return
 
-    def del_tilecode_secondary(self, tile_pallete, tile_label, tile_label_secondary, panel_sel, panel_sel_secondary):
+    def del_tilecode_secondary(
+        self,
+        tile_pallete,
+        tile_label,
+        tile_label_secondary,
+        panel_sel,
+        panel_sel_secondary,
+    ):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
@@ -3808,7 +4002,7 @@ class LevelsTab(Tab):
                 self.tile_label_secondary,
                 self.panel_sel,
                 self.panel_sel_secondary,
-                self.mag
+                self.mag,
             )
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label["text"]).split(" ", 3)[2] == tile_id:
@@ -3835,7 +4029,9 @@ class LevelsTab(Tab):
         else:
             return
 
-    def del_tilecode_custom(self, tile_label, canvases, tile_image_matrices, tile_code_matrices):
+    def del_tilecode_custom(
+        self, tile_label, canvases, tile_image_matrices, tile_code_matrices
+    ):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air",
@@ -3857,12 +4053,12 @@ class LevelsTab(Tab):
                     for column in range(len(tile_code_matrix[row])):
                         if str(tile_code_matrix[row][column]) == str(tile_code):
                             canvas.delete(tile_image_matrix[row][column])
-                            tile_code_matrix[row][column] = '0'
+                            tile_code_matrix[row][column] = "0"
                             tile_image_matrix[row][column] = canvas.create_image(
                                 column * self.custom_editor_zoom_level,
                                 row * self.custom_editor_zoom_level,
                                 image=new_tile[1],
-                                anchor="nw"
+                                anchor="nw",
                             )
 
             self.usable_codes.append(str(tile_code))
@@ -3878,7 +4074,7 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_zoom_level
+                self.custom_editor_zoom_level,
             )
             new_selection = self.tile_pallete_ref_in_use[0]
             if str(self.tile_label_custom["text"]).split(" ", 3)[2] == tile_id:
@@ -3889,7 +4085,10 @@ class LevelsTab(Tab):
                     + str(new_selection[0]).split(" ", 2)[1]
                 )
                 self.panel_sel_custom["image"] = new_selection[1]
-            if str(self.tile_label_secondary_custom["text"]).split(" ", 3)[2] == tile_id:
+            if (
+                str(self.tile_label_secondary_custom["text"]).split(" ", 3)[2]
+                == tile_id
+            ):
                 self.tile_label_secondary_custom["text"] = (
                     "Secondary Tile: "
                     + str(new_selection[0]).split(" ", 2)[0]
@@ -3904,10 +4103,17 @@ class LevelsTab(Tab):
         else:
             return
 
-
     def add_tilecode(
-        self, tile, percent, alt_tile, tile_palette, tile_label,
-        tile_label_secondary, panel_sel, panel_sel_secondary, scale
+        self,
+        tile,
+        percent,
+        alt_tile,
+        tile_palette,
+        tile_label,
+        tile_label_secondary,
+        panel_sel,
+        panel_sel_secondary,
+        scale,
     ):
         usable_code = None
 
@@ -3971,7 +4177,7 @@ class LevelsTab(Tab):
             tile_label_secondary,
             panel_sel,
             panel_sel_secondary,
-            scale
+            scale,
         )
         self.get_codes_left()
         self.save_needed = True
@@ -4063,8 +4269,13 @@ class LevelsTab(Tab):
         self.button_save["state"] = tk.NORMAL
 
     def populate_tilecode_pallete(
-        self, tile_palette, tile_label, tile_label_secondary,
-        panel_sel, panel_sel_secondary, scale
+        self,
+        tile_palette,
+        tile_label,
+        tile_label_secondary,
+        panel_sel,
+        panel_sel_secondary,
+        scale,
     ):
         # resets tile pallete to add them all back without the deleted one
         for widget in tile_palette.scrollable_frame.winfo_children():
@@ -4080,7 +4291,9 @@ class LevelsTab(Tab):
             count_col = count_col + 1
             tile_name = tile_keep[0].split(" ", 2)[0]
             used_tile_names.append(tile_name)
-            tile_image = ImageTk.PhotoImage(self.get_texture(tile_name, self.lvl_biome, self.lvl, 40))
+            tile_image = ImageTk.PhotoImage(
+                self.get_texture(tile_name, self.lvl_biome, self.lvl, 40)
+            )
             self.tile_images.append(tile_image)
             new_tile = tk.Button(
                 tile_palette.scrollable_frame,
@@ -4097,12 +4310,7 @@ class LevelsTab(Tab):
             new_tile.bind(
                 "<Button-1>",
                 lambda event, r=count_row, c=count_col: self.tile_pick(
-                    event,
-                    r,
-                    c,
-                    tile_palette,
-                    tile_label,
-                    panel_sel
+                    event, r, c, tile_palette, tile_label, panel_sel
                 ),
             )
             new_tile.bind(
@@ -4122,9 +4330,11 @@ class LevelsTab(Tab):
 
         if self.tile_pallete_suggestions and len(self.tile_pallete_suggestions):
             count_col = -1
-            tile_palette.scrollable_frame.rowconfigure(count_row+1, minsize=15)
+            tile_palette.scrollable_frame.rowconfigure(count_row + 1, minsize=15)
             count_row = count_row + 2
-            suggestions_label = ttk.Label(tile_palette.scrollable_frame, text="Suggested Tiles:")
+            suggestions_label = ttk.Label(
+                tile_palette.scrollable_frame, text="Suggested Tiles:"
+            )
             suggestions_label.grid(row=count_row, column=0, columnspan=5, sticky="nw")
             count_row = count_row + 1
 
@@ -4136,31 +4346,45 @@ class LevelsTab(Tab):
                     count_col = -1
                     count_row = count_row + 1
                 count_col = count_col + 1
-                tile_image = ImageTk.PhotoImage(self.get_texture(tile_suggestion, self.lvl_biome, self.lvl, 40))
+                tile_image = ImageTk.PhotoImage(
+                    self.get_texture(tile_suggestion, self.lvl_biome, self.lvl, 40)
+                )
                 self.tile_images.append(tile_image)
                 new_tile = tk.Button(
                     tile_palette.scrollable_frame,
                     text=tile_suggestion,
                     width=40,
                     height=40,
-                    image=tile_image
+                    image=tile_image,
                 )
                 new_tile.grid(row=count_row, column=count_col)
                 new_tile.bind(
                     "<Button-1>",
                     lambda event, ts=tile_suggestion: self.suggested_tile_pick(
-                        ts, False, tile_palette, tile_label,
-                        tile_label_secondary, panel_sel, panel_sel_secondary, scale,
-                        tile_image
-                    )
+                        ts,
+                        False,
+                        tile_palette,
+                        tile_label,
+                        tile_label_secondary,
+                        panel_sel,
+                        panel_sel_secondary,
+                        scale,
+                        tile_image,
+                    ),
                 )
                 new_tile.bind(
                     "<Button-3>",
                     lambda event, ts=tile_suggestion: self.suggested_tile_pick(
-                        ts, True, tile_palette, tile_label,
-                        tile_label_secondary, panel_sel, panel_sel_secondary, scale,
-                        tile_image
-                    )
+                        ts,
+                        True,
+                        tile_palette,
+                        tile_label,
+                        tile_label_secondary,
+                        panel_sel,
+                        panel_sel_secondary,
+                        scale,
+                        tile_image,
+                    ),
                 )
 
     def go_back(self):
@@ -4440,7 +4664,6 @@ class LevelsTab(Tab):
                                 )
                             curcol = curcol + 1
 
-
     def _draw_grid_custom(self, cols, rows, theme, canvas):
         zoom_level = self.custom_editor_zoom_level
         canvas.delete("all")
@@ -4459,7 +4682,9 @@ class LevelsTab(Tab):
             self.lvl_bgs[theme] = lvl_bg
         for x in range(0, cols):
             for y in range(0, rows):
-                canvas.create_image(x * zoom_level * 10, y * zoom_level * 8, image=lvl_bg, anchor="nw")
+                canvas.create_image(
+                    x * zoom_level * 10, y * zoom_level * 8, image=lvl_bg, anchor="nw"
+                )
 
         # finishes by drawing grid on top
         # for i in range(0, cols * 10 + 2):
@@ -4473,7 +4698,7 @@ class LevelsTab(Tab):
             )
             for i in range(0, cols * 10 + 2)
         ] + [
-        # for i in range(0, rows * 8):
+            # for i in range(0, rows * 8):
             canvas.create_line(
                 0,
                 i * zoom_level,
@@ -4486,7 +4711,9 @@ class LevelsTab(Tab):
 
     def hide_grid(self, canvas, grid_lines):
         for grid_line in grid_lines:
-            canvas.itemconfig(grid_line, state=('hidden' if self.hide_grid_lines else 'normal'))
+            canvas.itemconfig(
+                grid_line, state=("hidden" if self.hide_grid_lines else "normal")
+            )
 
     def _draw_grid_full(self, cols, rows, canvas):
         # resizes canvas for grids
@@ -5193,7 +5420,9 @@ class LevelsTab(Tab):
                         tilecode_item = []
                         tilecode_item.append(str(need[1]) + " " + str(need[0]))
 
-                        img = self.get_texture(str(need[1]), self.lvl_biome, lvl, self.mag)
+                        img = self.get_texture(
+                            str(need[1]), self.lvl_biome, lvl, self.mag
+                        )
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         self.tile_pallete_ref_in_use.append(tilecode_item)
@@ -5204,7 +5433,7 @@ class LevelsTab(Tab):
             self.tile_label_secondary,
             self.panel_sel,
             self.panel_sel_secondary,
-            self.mag
+            self.mag,
         )
 
         level_rules = level.level_settings.all()
@@ -5347,7 +5576,9 @@ class LevelsTab(Tab):
             tilecode_item = []
             tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
 
-            img = self.get_texture(tilecode.name, theme, lvl, self.custom_editor_zoom_level)
+            img = self.get_texture(
+                tilecode.name, theme, lvl, self.custom_editor_zoom_level
+            )
 
             tilecode_item.append(ImageTk.PhotoImage(img))
 
@@ -5364,14 +5595,18 @@ class LevelsTab(Tab):
         if hard_floor_code is None:
             # The preferred tile code for hard floor is X, so use that if it is available.
             # Otherwise, just use the first available code.
-            if self.usable_codes.count('X') > 0:
-                hard_floor_code = 'X'
+            if self.usable_codes.count("X") > 0:
+                hard_floor_code = "X"
             else:
                 hard_floor_code = self.usable_codes[0]
             self.usable_codes.remove(hard_floor_code)
             tilecode_item = [
                 "floor_hard " + str(hard_floor_code),
-                ImageTk.PhotoImage(self.get_texture("floor_hard", theme, lvl, self.custom_editor_zoom_level))
+                ImageTk.PhotoImage(
+                    self.get_texture(
+                        "floor_hard", theme, lvl, self.custom_editor_zoom_level
+                    )
+                ),
             ]
             self.tile_pallete_ref_in_use.append(tilecode_item)
             self.tile_pallete_map[hard_floor_code] = tilecode_item
@@ -5379,9 +5614,9 @@ class LevelsTab(Tab):
         secondary_backup_index = 0
 
         # Populate the default tile code for left clicks.
-        if self.tile_pallete_map['1']:
+        if self.tile_pallete_map["1"]:
             # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
-            tile = self.tile_pallete_map['1']
+            tile = self.tile_pallete_map["1"]
             self.panel_sel_custom["image"] = tile[1]
             self.tile_label_custom["text"] = "Primary Tile: " + tile[0]
         elif len(self.tile_pallete_ref_in_use) > 0:
@@ -5391,11 +5626,10 @@ class LevelsTab(Tab):
             self.tile_label_custom["text"] = "Primary Tile: " + tile[0]
             secondary_backup_index = 1
 
-
         # Populate the default tile code for right clicks.
-        if self.tile_pallete_map['0']:
+        if self.tile_pallete_map["0"]:
             # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
-            tile = self.tile_pallete_map['0']
+            tile = self.tile_pallete_map["0"]
             self.panel_sel_secondary_custom["image"] = tile[1]
             self.tile_label_secondary_custom["text"] = "Secondary Tile: " + tile[0]
         elif len(self.tile_pallete_ref_in_use) > secondary_backup_index:
@@ -5421,21 +5655,27 @@ class LevelsTab(Tab):
             self.tile_label_secondary_custom,
             self.panel_sel_custom,
             self.panel_sel_secondary_custom,
-            self.custom_editor_zoom_level
+            self.custom_editor_zoom_level,
         )
 
         # Creates a matrix of empty elements that rooms from the level file will load into.
         rooms = [[None for _ in range(8)] for _ in range(15)]
         # Replaces human-friendly {y} and {x} in the level template format with a regex
         # to find the coordinate of each level template.
-        template_regex = "^" + self.current_save_format.room_template_format.format(y=r"(?P<y>\d+)", x=r"(?P<x>\d+)") + "$"
+        template_regex = (
+            "^"
+            + self.current_save_format.room_template_format.format(
+                y=r"(?P<y>\d+)", x=r"(?P<x>\d+)"
+            )
+            + "$"
+        )
 
         for template in level.level_templates.all():
             match = re.search(template_regex, template.name)
             if match is not None:
                 # Fill in the room list at the coordinate of this room with the loaded template data.
-                x = int(match.group('x'))
-                y = int(match.group('y'))
+                x = int(match.group("x"))
+                y = int(match.group("y"))
                 rooms[y][x] = template
         # Filtered room matrix which will be populated with the rooms that were not empty.
         # Essentially, we are going to be removing all of the 'None' from the rooms matrix
@@ -5457,7 +5697,9 @@ class LevelsTab(Tab):
         self.lvl_height = height
         self.width_combobox.set(width)
         self.height_combobox.set(height)
-        self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
+        self.size_label["text"] = "Level size: {width} x {height}".format(
+            width=width, height=height
+        )
 
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
@@ -5471,19 +5713,27 @@ class LevelsTab(Tab):
                 for line_index, line in enumerate(room.foreground):
                     index = i * 8 + line_index
                     foreground_tiles[index] = foreground_tiles[index] + "".join(line)
-                    if room.background is not None and len(room.background) > line_index:
-                        background_tiles[index] = background_tiles[index] + "".join(room.background[line_index])
+                    if (
+                        room.background is not None
+                        and len(room.background) > line_index
+                    ):
+                        background_tiles[index] = background_tiles[index] + "".join(
+                            room.background[line_index]
+                        )
                     else:
                         # If there is no back layer for this room, populate the back layer tile codes
                         # with hard floor tile codes.
-                        background_tiles[index] = background_tiles[index] + hard_floor_code * 10
+                        background_tiles[index] = (
+                            background_tiles[index] + hard_floor_code * 10
+                        )
 
         # Map each long string that contains the entire row of tile codes into an
         # array where each element of the array is a single tile code.
         def map_rooms(layer):
             return list(
-            map(lambda room_row: list(map(lambda tile: tile, str(room_row))), layer)
-        )
+                map(lambda room_row: list(map(lambda tile: tile, str(room_row))), layer)
+            )
+
         self.custom_editor_foreground_tile_codes = map_rooms(foreground_tiles)
         self.custom_editor_background_tile_codes = map_rooms(background_tiles)
 
@@ -5499,8 +5749,12 @@ class LevelsTab(Tab):
         self.custom_level_canvas_background.delete("all")
 
         # Draw lines to fill the size of the level.
-        self.grid_lines_foreground = self._draw_grid_custom(width, height, theme, self.custom_level_canvas_foreground)
-        self.grid_lines_background = self._draw_grid_custom(width, height, theme, self.custom_level_canvas_background)
+        self.grid_lines_foreground = self._draw_grid_custom(
+            width, height, theme, self.custom_level_canvas_foreground
+        )
+        self.grid_lines_background = self._draw_grid_custom(
+            width, height, theme, self.custom_level_canvas_background
+        )
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
@@ -5523,13 +5777,13 @@ class LevelsTab(Tab):
                                 tile_image.width(),
                                 tile_image.height(),
                                 tile_name_ref[1],
-                                self.custom_editor_zoom_level
+                                self.custom_editor_zoom_level,
                             )
                     tile_images[row_index][tile_index] = canvas.create_image(
                         tile_index * self.custom_editor_zoom_level - x_offset,
                         row_index * self.custom_editor_zoom_level - y_offset,
                         image=tile_image,
-                        anchor="nw"
+                        anchor="nw",
                     )
 
         self.custom_editor_foreground_tile_images = [
@@ -5541,12 +5795,12 @@ class LevelsTab(Tab):
         draw_layer(
             self.custom_level_canvas_foreground,
             self.custom_editor_foreground_tile_codes,
-            self.custom_editor_foreground_tile_images
+            self.custom_editor_foreground_tile_images,
         )
         draw_layer(
             self.custom_level_canvas_background,
             self.custom_editor_background_tile_codes,
-            self.custom_editor_background_tile_images
+            self.custom_editor_background_tile_images,
         )
 
         # If the "hide grid" option is selected, this will hide the grid lines.
@@ -5556,7 +5810,11 @@ class LevelsTab(Tab):
     # Look through the level templates and try to find one that matches an existing save
     # format.
     def read_save_format(self, level):
-        valid_save_formats = [self.default_save_format] + self.custom_save_formats + self.base_save_formats
+        valid_save_formats = (
+            [self.default_save_format]
+            + self.custom_save_formats
+            + self.base_save_formats
+        )
         for save_format in valid_save_formats:
             for template in level.level_templates.all():
                 if template.name == save_format.room_template_format.format(y=0, x=0):
@@ -5581,16 +5839,21 @@ class LevelsTab(Tab):
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_pallete_ref_in_use:
             tile_name = tilecode_item[0].split(" ", 2)[0]
-            img = self.get_texture(tile_name, theme, self.lvl, self.custom_editor_zoom_level)
+            img = self.get_texture(
+                tile_name, theme, self.lvl, self.custom_editor_zoom_level
+            )
             tilecode_item[1] = ImageTk.PhotoImage(img)
 
         # Load suggested tiles for the new theme.
         self.tile_pallete_suggestions = self.suggested_tiles_for_theme(theme)
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
         self.populate_tilecode_pallete(
-            self.tile_pallete_custom, self.tile_label_custom,
-            self.tile_label_secondary_custom, self.panel_sel_custom,
-            self.panel_sel_secondary_custom, self.custom_editor_zoom_level
+            self.tile_pallete_custom,
+            self.tile_label_custom,
+            self.tile_label_secondary_custom,
+            self.panel_sel_custom,
+            self.panel_sel_secondary_custom,
+            self.custom_editor_zoom_level,
         )
         # Draw the grid now that we have the newly textured tiles.
         self.draw_custom_level_canvases(theme)
@@ -5694,110 +5957,315 @@ class LevelsTab(Tab):
     @staticmethod
     def suggested_tiles_for_theme(theme):
         common_tiles = [
-             "floor", "empty", "floor%50", "minewood_floor", "floor_hard",
-             "floor_hard%50%floor", "push_block", "ladder", "ladder_plat",
-             "entrance", "exit", "door", "door2", "door2_secret",
-             "locked_door", "treasure", "treasure_chest", "treasure_vaultchest",
+            "floor",
+            "empty",
+            "floor%50",
+            "minewood_floor",
+            "floor_hard",
+            "floor_hard%50%floor",
+            "push_block",
+            "ladder",
+            "ladder_plat",
+            "entrance",
+            "exit",
+            "door",
+            "door2",
+            "door2_secret",
+            "locked_door",
+            "treasure",
+            "treasure_chest",
+            "treasure_vaultchest",
         ]
+
         def theme_tiles(theme):
             beehive_tiles = [
-                "beehive_floor", "beehive_floor%50", "honey_upwards", "honey_downwards",
+                "beehive_floor",
+                "beehive_floor%50",
+                "honey_upwards",
+                "honey_downwards",
                 "bee",
             ]
             if theme == "cave":
                 return [
-                    "bone_block", "platform",
-                    "arrow_trap", "totem_trap", "spikes", "snake",
-                    "bat", "skeleton", "caveman", "caveman_asleep", "caveman_asleep%50",
-                    "scorpion", "mole", "lizard", "critter_dungbeetle",
-                    "cookfire", "turkey", "yang", "cavemanboss", "autowalltorch",
-                    "litwalltorch", "ghist_shopkeeper", "ghist_door2",
+                    "bone_block",
+                    "platform",
+                    "arrow_trap",
+                    "totem_trap",
+                    "spikes",
+                    "snake",
+                    "bat",
+                    "skeleton",
+                    "caveman",
+                    "caveman_asleep",
+                    "caveman_asleep%50",
+                    "scorpion",
+                    "mole",
+                    "lizard",
+                    "critter_dungbeetle",
+                    "cookfire",
+                    "turkey",
+                    "yang",
+                    "cavemanboss",
+                    "autowalltorch",
+                    "litwalltorch",
+                    "ghist_shopkeeper",
+                    "ghist_door2",
                 ]
             elif theme == "volcano":
                 return [
-                    "powder_keg", "timed_powder_keg",
-                    "falling_platform", "chain_ceiling", "chainandblocks_ceiling",
-                    "spikeball_trap", "conveyorbelt_left", "conveyorbelt_right",
-                    "factory_generator", "robot", "imp", "firebug", "caveman",
-                    "caveman_asleep", "lavamander", "bat", "vampire", "vlad", "oldhunter", "critter_snail",
-                    "lava", "vlad_floor", "nonreplaceable_babylon_floor", "drill",
-                    "udjat_socket", "slidingwall_switch", "slidingwall_ceiling", "crown_statue",
+                    "powder_keg",
+                    "timed_powder_keg",
+                    "falling_platform",
+                    "chain_ceiling",
+                    "chainandblocks_ceiling",
+                    "spikeball_trap",
+                    "conveyorbelt_left",
+                    "conveyorbelt_right",
+                    "factory_generator",
+                    "robot",
+                    "imp",
+                    "firebug",
+                    "caveman",
+                    "caveman_asleep",
+                    "lavamander",
+                    "bat",
+                    "vampire",
+                    "vlad",
+                    "oldhunter",
+                    "critter_snail",
+                    "lava",
+                    "vlad_floor",
+                    "nonreplaceable_babylon_floor",
+                    "drill",
+                    "udjat_socket",
+                    "slidingwall_switch",
+                    "slidingwall_ceiling",
+                    "crown_statue",
                 ]
             elif theme == "jungle":
                 return [
-                    "stone_floor", "vine", "growable_vine", "spikes", "bush_block",
-                    "thorn_vine", "jungle_spear_trap", "tree_base",
-                    "cookfire", "caveman", "mantrap", "witchdoctor", "tikiman", "mosquito",
-                    "giant_spider", "hangspider", "bat", "monkey", "critter_butterfly", "snap_trap",
+                    "stone_floor",
+                    "vine",
+                    "growable_vine",
+                    "spikes",
+                    "bush_block",
+                    "thorn_vine",
+                    "jungle_spear_trap",
+                    "tree_base",
+                    "cookfire",
+                    "caveman",
+                    "mantrap",
+                    "witchdoctor",
+                    "tikiman",
+                    "mosquito",
+                    "giant_spider",
+                    "hangspider",
+                    "bat",
+                    "monkey",
+                    "critter_butterfly",
+                    "snap_trap",
                 ] + beehive_tiles
             elif theme == "olmec":
                 return [
-                    "stone_floor", "crate_parachute", "storage_guy",
-                    "storage_floor", "autowalltorch", "olmec", "ankh", "pillar",
-                    "critter_crab", "critter_locust",
+                    "stone_floor",
+                    "crate_parachute",
+                    "storage_guy",
+                    "storage_floor",
+                    "autowalltorch",
+                    "olmec",
+                    "ankh",
+                    "pillar",
+                    "critter_crab",
+                    "critter_locust",
                 ]
             elif theme == "tidepool":
                 return [
-                    "pagoda_floor", "pagoda_floor%50%floor", "climbing_pole",
-                    "growable_climbing_pole", "pagoda_platform", "spikes", "bone_block",
-                    "powder_keg", "water", "jiangshi", "assassin", "octopus",
-                    "hermitcrab", "crabman", "flying_fish", "critter_fish", "critter_anchovy",
-                    "critter_crab", "giantclam", "fountain_head", "fountain_drain",
-                    "slidingwall_switch", "slidingwall_ceiling", "minewood_floor", "excalibur",
-                    "excalibur_stone", "haunted_corpse",
+                    "pagoda_floor",
+                    "pagoda_floor%50%floor",
+                    "climbing_pole",
+                    "growable_climbing_pole",
+                    "pagoda_platform",
+                    "spikes",
+                    "bone_block",
+                    "powder_keg",
+                    "water",
+                    "jiangshi",
+                    "assassin",
+                    "octopus",
+                    "hermitcrab",
+                    "crabman",
+                    "flying_fish",
+                    "critter_fish",
+                    "critter_anchovy",
+                    "critter_crab",
+                    "giantclam",
+                    "fountain_head",
+                    "fountain_drain",
+                    "slidingwall_switch",
+                    "slidingwall_ceiling",
+                    "minewood_floor",
+                    "excalibur",
+                    "excalibur_stone",
+                    "haunted_corpse",
                 ]
             elif theme == "temple":
                 return [
-                    "quicksand", "temple_floor", "temple_floor%50", "pot", "crushtrap",
-                    "crushtraplarge", "catmummy", "cobra", "crocman", "anubis", "mummy",
-                    "sorceress", "necromancer", "critter_locust",
+                    "quicksand",
+                    "temple_floor",
+                    "temple_floor%50",
+                    "pot",
+                    "crushtrap",
+                    "crushtraplarge",
+                    "catmummy",
+                    "cobra",
+                    "crocman",
+                    "anubis",
+                    "mummy",
+                    "sorceress",
+                    "necromancer",
+                    "critter_locust",
                 ] + beehive_tiles
             elif theme == "ice":
                 return [
-                    "minewood_floor", "icefloor", "icefloor%50", "spikes", "upsidedown_spikes",
-                    "falling_platform", "thinice", "spring_trap", "forcefield", "timed_forcefield",
-                    "forcefield_top", "litwalltorch", "autowalltorch", "cookfire", "landmine",
-                    "storage_guy", "storage_floor", "eggplant_altar", "moai_statue",
-                    "eggplant_child", "mothership_floor", "plasma_cannon", "alienqueen",
-                    "shopkeeper_vat", "alien_generator", "alien", "ufo", "yeti", "empty_mech",
-                    "critter_penguin", "critter_firefly",
+                    "minewood_floor",
+                    "icefloor",
+                    "icefloor%50",
+                    "spikes",
+                    "upsidedown_spikes",
+                    "falling_platform",
+                    "thinice",
+                    "spring_trap",
+                    "forcefield",
+                    "timed_forcefield",
+                    "forcefield_top",
+                    "litwalltorch",
+                    "autowalltorch",
+                    "cookfire",
+                    "landmine",
+                    "storage_guy",
+                    "storage_floor",
+                    "eggplant_altar",
+                    "moai_statue",
+                    "eggplant_child",
+                    "mothership_floor",
+                    "plasma_cannon",
+                    "alienqueen",
+                    "shopkeeper_vat",
+                    "alien_generator",
+                    "alien",
+                    "ufo",
+                    "yeti",
+                    "empty_mech",
+                    "critter_penguin",
+                    "critter_firefly",
                 ]
             elif theme == "babylon":
                 return [
-                    "babylon_floor", "babylon_floor%50%floor", "laser_trap", "spark_trap",
-                    "forcefield", "timed_forcefield", "forcefield_top", "elevator", "zoo_exhibit",
-                    "litwalltorch", "mushroom_base", "lava", "lava%50%floor", "lamassu", "olmite",
-                    "ufo", "empty_mech", "critter_drone",
-                    "ushabti", "palace_floor", "palace_entrance",
-                    "palace_table", "palace_table_tray", "palace_chandelier", "palace_candle",
-                    "palace_bookcase", "stone_floor", "bone_block", "madametusk", "bodyguard",
+                    "babylon_floor",
+                    "babylon_floor%50%floor",
+                    "laser_trap",
+                    "spark_trap",
+                    "forcefield",
+                    "timed_forcefield",
+                    "forcefield_top",
+                    "elevator",
+                    "zoo_exhibit",
+                    "litwalltorch",
+                    "mushroom_base",
+                    "lava",
+                    "lava%50%floor",
+                    "lamassu",
+                    "olmite",
+                    "ufo",
+                    "empty_mech",
+                    "critter_drone",
+                    "ushabti",
+                    "palace_floor",
+                    "palace_entrance",
+                    "palace_table",
+                    "palace_table_tray",
+                    "palace_chandelier",
+                    "palace_candle",
+                    "palace_bookcase",
+                    "stone_floor",
+                    "bone_block",
+                    "madametusk",
+                    "bodyguard",
                 ]
             elif theme == "sunken":
                 return [
-                    "sunken_floor", "sunken_floor%50", "spikes", "pipe", "regenerating_block",
-                    "bigspear_trap", "bone_block", "sticky_trap", "storage_guy", "storage_floor",
-                    "autowalltorch", "mother_statue", "eggplant_door", "giant_frog", "guts_floor",
-                    "water", "frog", "firefrog", "tadpole", "giantfly", "critter_slime", "skull_drop_trap",
+                    "sunken_floor",
+                    "sunken_floor%50",
+                    "spikes",
+                    "pipe",
+                    "regenerating_block",
+                    "bigspear_trap",
+                    "bone_block",
+                    "sticky_trap",
+                    "storage_guy",
+                    "storage_floor",
+                    "autowalltorch",
+                    "mother_statue",
+                    "eggplant_door",
+                    "giant_frog",
+                    "guts_floor",
+                    "water",
+                    "frog",
+                    "firefrog",
+                    "tadpole",
+                    "giantfly",
+                    "critter_slime",
+                    "skull_drop_trap",
                     "eggsac",
                 ]
             elif theme == "gold":
                 return [
-                    "quicksand", "cog_floor", "cog_floor%50", "crushtrap", "crushtraplarge",
-                    "slidingwall_switch", "slidingwall_ceiling",
-                    "crocman", "leprechaun", "mummy", "cobra", "sorceress", "critter_locust",
+                    "quicksand",
+                    "cog_floor",
+                    "cog_floor%50",
+                    "crushtrap",
+                    "crushtraplarge",
+                    "slidingwall_switch",
+                    "slidingwall_ceiling",
+                    "crocman",
+                    "leprechaun",
+                    "mummy",
+                    "cobra",
+                    "sorceress",
+                    "critter_locust",
                 ]
             elif theme == "duat":
                 return [
-                    "duat_floor", "duat_floor%50", "chain_ceiling", "lava", "ammit%50",
-                    "crocman", "snake", "cobra", "osiris", "anubis2",
+                    "duat_floor",
+                    "duat_floor%50",
+                    "chain_ceiling",
+                    "lava",
+                    "ammit%50",
+                    "crocman",
+                    "snake",
+                    "cobra",
+                    "osiris",
+                    "anubis2",
                 ]
             elif theme == "eggplant":
                 return [
-                    "pagoda_floor", "pagoda_floor%50", "pagoda_platform", "slidingwall_switch",
-                    "slidingwall_ceiling", "fountain_head", "fountain_drain", "water",
-                    "vine", "growable_vine", "jumpdog", "minister", "yama", "empress_grave",
+                    "pagoda_floor",
+                    "pagoda_floor%50",
+                    "pagoda_platform",
+                    "slidingwall_switch",
+                    "slidingwall_ceiling",
+                    "fountain_head",
+                    "fountain_drain",
+                    "water",
+                    "vine",
+                    "growable_vine",
+                    "jumpdog",
+                    "minister",
+                    "yama",
+                    "empress_grave",
                 ]
             return []
+
         return common_tiles + theme_tiles(theme)
 
     # Shows an error dialog when attempting to open a level using an unrecognized template format.
@@ -5814,15 +6282,13 @@ class LevelsTab(Tab):
         )
 
     # Popup dialog with widgets to create a new room template.
-    def show_setroom_create_dialog(
-        self, title, message, button_title, button_action
-    ):
+    def show_setroom_create_dialog(self, title, message, button_title, button_action):
         win = PopupWindow(title, self.modlunky_config)
         message = ttk.Label(win, text=message)
         name_label = ttk.Label(win, text="Name: ")
-        name_entry = ttk.Entry(win, foreground = 'gray')
+        name_entry = ttk.Entry(win, foreground="gray")
         format_label = ttk.Label(win, text="Format: ")
-        format_entry = ttk.Entry(win, foreground = 'gray')
+        format_entry = ttk.Entry(win, foreground="gray")
         win.columnconfigure(1, weight=1)
         message.grid(row=0, column=0, columnspan=2, sticky="nswe")
         name_label.grid(row=1, column=0, sticky="nse")
@@ -5840,14 +6306,15 @@ class LevelsTab(Tab):
             nonlocal name_entry_changed
             if name_entry_changed:
                 return
-            name_entry.delete('0', 'end')
-            name_entry.config(foreground = 'black')
+            name_entry.delete("0", "end")
+            name_entry.config(foreground="black")
+
         def focus_format(event):
             nonlocal format_entry_changed
             if format_entry_changed:
                 return
-            format_entry.delete('0', 'end')
-            format_entry.config(foreground = 'black')
+            format_entry.delete("0", "end")
+            format_entry.config(foreground="black")
 
         # When defocusing the field, if the field is empty, replace the text with the
         # placeholder text and change the font color.
@@ -5856,15 +6323,16 @@ class LevelsTab(Tab):
             if str(name_entry.get()) == "":
                 name_entry_changed = False
                 name_entry.insert(0, "Optional")
-                name_entry.config(foreground = 'gray')
+                name_entry.config(foreground="gray")
             else:
                 name_entry_changed = True
+
         def defocus_format(event):
             nonlocal format_entry_changed
             if str(format_entry.get()) == "":
                 format_entry_changed = False
                 format_entry.insert(0, "setroom{y}_{x}")
-                format_entry.config(foreground = 'gray')
+                format_entry.config(foreground="gray")
             else:
                 format_entry_changed = True
 
@@ -5884,11 +6352,11 @@ class LevelsTab(Tab):
 
         add_vanilla_tip = ttk.Label(
             win,
-            text= (
+            text=(
                 "It is recommended to include vanilla setrooms.\n"
                 "This setting adds setrooms for some themes which require them.\n"
                 "There could be errors if not using this in some themes."
-            )
+            ),
         )
         add_vanilla_tip.grid(row=4, column=0, columnspan=2, sticky="nswe")
 
@@ -5902,9 +6370,17 @@ class LevelsTab(Tab):
         def continue_open():
             format = str(format_entry.get())
             name = str(name_entry.get()) if name_entry_changed else format
-            if not format_entry_changed or format == "" or name == "" or format == "setroom{y}-{x}" or format == "setroom{x}-{y}":
+            if (
+                not format_entry_changed
+                or format == ""
+                or name == ""
+                or format == "setroom{y}-{x}"
+                or format == "setroom{x}-{y}"
+            ):
                 return
-            save_format = CustomLevelSaveFormat(name, format, bool(add_vanilla_var.get()))
+            save_format = CustomLevelSaveFormat(
+                name, format, bool(add_vanilla_var.get())
+            )
             win.destroy()
             self.add_save_format(save_format)
             if button_action:
@@ -5913,7 +6389,6 @@ class LevelsTab(Tab):
         continue_button = ttk.Button(buttons, text=button_title, command=continue_open)
         continue_button.grid(row=0, column=0, sticky="nswe")
 
-
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, sticky="nswe")
 
@@ -5921,10 +6396,9 @@ class LevelsTab(Tab):
     def add_save_format(self, save_format):
         self.custom_save_formats.append(save_format)
         self.add_save_format_radio(save_format, self.save_format_frame)
-        self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(map(
-            lambda save_format: save_format.toJSON(),
-            self.custom_save_formats
-        ))
+        self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(
+            map(lambda save_format: save_format.toJSON(), self.custom_save_formats)
+        )
         self.modlunky_config.config_file.save()
 
     # Updates the current radio button in the save format select options menu to the
@@ -5933,7 +6407,10 @@ class LevelsTab(Tab):
         if save_format in self.base_save_formats:
             self.save_format_variable.set(self.base_save_formats.index(save_format))
         elif save_format in self.custom_save_formats:
-            self.save_format_variable.set(len(self.base_save_formats) + self.custom_save_formats.index(save_format))
+            self.save_format_variable.set(
+                len(self.base_save_formats)
+                + self.custom_save_formats.index(save_format)
+            )
         self.save_format_radios[self.save_format_variable.get()].select()
 
     # Adds a warning message below the save format radio list based on the selected
@@ -5974,12 +6451,16 @@ class LevelsTab(Tab):
         if save_format_index < len(self.base_save_formats):
             save_format = self.base_save_formats[save_format_index]
         else:
-            save_format = self.custom_save_formats[save_format_index - len(self.base_save_formats)]
+            save_format = self.custom_save_formats[
+                save_format_index - len(self.base_save_formats)
+            ]
         if not save_format:
             return
         self.set_current_save_format(save_format)
         self.default_save_format = save_format
-        self.modlunky_config.config_file.custom_level_editor_default_save_format = save_format.toJSON()
+        self.modlunky_config.config_file.custom_level_editor_default_save_format = (
+            save_format.toJSON()
+        )
         self.modlunky_config.config_file.save()
 
     def add_save_format_radio(self, save_format, save_format_frame):
@@ -5995,10 +6476,7 @@ class LevelsTab(Tab):
         radio.grid(column=0, row=index, sticky="nsw")
         self.save_format_radios.append(radio)
 
-        label = tk.Label(
-            save_format_frame,
-            text=save_format.room_template_format
-        )
+        label = tk.Label(save_format_frame, text=save_format.room_template_format)
         label.grid(column=1, row=index, sticky="nsw")
 
     # Updates the level size from the options menu.
@@ -6010,13 +6488,24 @@ class LevelsTab(Tab):
         # If the new level size is creater than the current level size, fill in
         # the level tile matrix with default tiles to fill the new size.
         def fill_to_size_with_tile(tile_matrix, tile, width, height):
-            fill_rows = list(map(
-                lambda row: row + ([] if (width * 10 <= len(row)) else [tile for _ in range(width * 10 - len(row))]),
-                tile_matrix))
+            fill_rows = list(
+                map(
+                    lambda row: row
+                    + (
+                        []
+                        if (width * 10 <= len(row))
+                        else [tile for _ in range(width * 10 - len(row))]
+                    ),
+                    tile_matrix,
+                )
+            )
             return fill_rows + (
-                [] if
-                (height * 8 <= len(fill_rows)) else
-                [[tile for _ in range(width * 10)] for _ in range(height * 8 - len(fill_rows))]
+                []
+                if (height * 8 <= len(fill_rows))
+                else [
+                    [tile for _ in range(width * 10)]
+                    for _ in range(height * 8 - len(fill_rows))
+                ]
             )
 
         empty = None
@@ -6042,7 +6531,7 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_zoom_level
+                self.custom_editor_zoom_level,
             )[0].split(" ", 2)[1]
         # If we did not find a "hard_floor" tile code, create one and use it.
         if not hard_floor:
@@ -6055,12 +6544,18 @@ class LevelsTab(Tab):
                 self.tile_label_secondary_custom,
                 self.panel_sel_custom,
                 self.panel_sel_secondary_custom,
-                self.custom_editor_zoom_level
+                self.custom_editor_zoom_level,
             )[0].split(" ", 2)[1]
 
-        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(self.custom_editor_foreground_tile_codes, empty, width, height)
-        self.custom_editor_background_tile_codes = fill_to_size_with_tile(self.custom_editor_background_tile_codes, hard_floor, width, height)
-        self.size_label["text"] = "Level size: {width} x {height}".format(width=width, height=height)
+        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(
+            self.custom_editor_foreground_tile_codes, empty, width, height
+        )
+        self.custom_editor_background_tile_codes = fill_to_size_with_tile(
+            self.custom_editor_background_tile_codes, hard_floor, width, height
+        )
+        self.size_label["text"] = "Level size: {width} x {height}".format(
+            width=width, height=height
+        )
         self.lvl_width = width
         self.lvl_height = height
         self.changes_made()
