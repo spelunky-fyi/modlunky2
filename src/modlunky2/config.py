@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import dataclasses
+from dataclasses import dataclass
 import logging
-import json
+from typing import Dict, Optional
 
 try:
     import winreg
@@ -11,6 +15,8 @@ from shutil import copyfile
 from urllib.parse import urlparse, urlunparse
 
 from platformdirs import user_config_dir, user_data_dir, user_cache_dir
+from serde import serialize, deserialize
+import serde.json
 
 from modlunky2.utils import is_windows
 
@@ -97,83 +103,57 @@ def guess_install_dir(exe_dir=None):
     return None
 
 
-class ConfigFile:
-    def __init__(self, config_path: Path):
-        self.config_path = config_path
-        self.dirty = False
+def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
+    if metadata is None:
+        metadata = {}
+    if "serde_skip_if" in metadata:
+        raise ValueError(
+            f"metadata already contains 'serde_skip_if' with value {metadata['serde_skip_if']}"
+        )
+    metadata["serde_skip_if"] = lambda v: v == default
+    return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
-        self.install_dir = None
-        self.playlunky_version = None
-        self.playlunky_console = False
-        self.playlunky_shortcut = False
-        self.geometry = None
-        self.spelunky_fyi_root = None
-        self.spelunky_fyi_api_token = None
-        self.theme = None
-        self.last_install_browse = None
-        self.last_tab = None
-        self.tracker_color_key = None
-        self.show_packing = SHOW_PACKING_DEFAULT
+
+@serialize(rename_all="spinalcase")
+@deserialize(rename_all="spinalcase")
+@dataclass
+class ConfigFile:
+    config_path: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+    dirty: bool = dataclasses.field(default=False, metadata={"serde_skip": True})
+
+    # Null is being treated as not present?
+    install_dir: Optional[Path] = None
+    playlunky_version: Optional[str] = skip_default_field(default=None)
+    playlunky_console: bool = skip_default_field(default=False)
+    playlunky_shortcut: bool = skip_default_field(default=False)
+    geometry: str = skip_default_field(default=f"{MIN_WIDTH}x{MIN_HEIGHT}")
+    spelunky_fyi_root: str = skip_default_field(default=SPELUNKY_FYI_ROOT_DEFAULT)
+    spelunky_fyi_api_token: Optional[str] = skip_default_field(default=None)
+    theme: Optional[str] = skip_default_field(default=None)
+    last_install_browse: str = skip_default_field(
+        default=LAST_INSTALL_BROWSE_DEFAULT
+    )  # Try making this a Path
+    last_tab: Optional[str] = skip_default_field(default=None)
+    tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
+    show_packing: bool = skip_default_field(default=False)
 
     @classmethod
     def from_path(cls, config_path: Path, exe_dir=None):
-        obj = cls(config_path=config_path)
-        needs_save = False
-
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as config_file:
-                try:
-                    config_data = json.load(config_file)
-                except Exception as err:  # pylint: disable=broad-except
-                    logger.critical(
-                        "Failed to read config file: %s. Creating new one from defaults.",
-                        err,
-                    )
-                    needs_save = True
-                    config_data = {}
+                config = serde.json.from_json(ConfigFile, config_file.read())
         else:
-            config_data = {}
+            config = ConfigFile()
+            config.install_dir = guess_install_dir(exe_dir)
+            config.dirty = True
 
-        # Initialize install-dir
-        install_dir = config_data.get("install-dir", NOT_PRESENT)
-        if install_dir is NOT_PRESENT:
-            install_dir = guess_install_dir(exe_dir)
-            needs_save = True
-        elif install_dir is not None:
-            install_dir = Path(install_dir)
-        obj.install_dir = install_dir
+        config.config_path = config_path
+        if config.dirty:
+            config.save()
 
-        obj.last_install_browse = config_data.get(
-            "last-install-browse", LAST_INSTALL_BROWSE_DEFAULT
-        )
-
-        # Initialize playlunky config
-        obj.playlunky_version = config_data.get("playlunky-version")
-        obj.playlunky_console = config_data.get("playlunky-console", False)
-        obj.playlunky_shortcut = config_data.get("playlunky-shortcut", False)
-
-        # Initialize geometry
-        obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
-
-        # FYI Config
-        obj.spelunky_fyi_root = config_data.get(
-            "spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT
-        )
-        obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
-
-        obj.theme = config_data.get("theme")
-        obj.last_tab = config_data.get("last-tab")
-
-        # Tracker Config
-        obj.tracker_color_key = config_data.get("tracker-color-key", DEFAULT_COLOR_KEY)
-
-        # Packing
-        obj.show_packing = config_data.get("show-packing", SHOW_PACKING_DEFAULT)
-
-        if needs_save:
-            obj.save()
-
-        return obj
+        return config
 
     @property
     def spelunky_fyi_ws_root(self):
@@ -190,45 +170,6 @@ class ConfigFile:
 
         return urlunparse(parts)
 
-    def to_dict(self):
-        install_dir = None
-        if self.install_dir:
-            install_dir = self.install_dir.as_posix()
-
-        out = {}
-        out["install-dir"] = install_dir
-
-        if self.last_install_browse != LAST_INSTALL_BROWSE_DEFAULT:
-            out["last-install-browse"] = self.last_install_browse
-
-        if self.playlunky_version is not None:
-            out["playlunky-version"] = self.playlunky_version
-        if self.playlunky_console:
-            out["playlunky-console"] = self.playlunky_console
-        if self.playlunky_shortcut:
-            out["playlunky-shortcut"] = self.playlunky_shortcut
-
-        out["geometry"] = self.geometry
-
-        if self.spelunky_fyi_api_token is not None:
-            out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
-
-        if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
-            out["spelunky-fyi-root"] = self.spelunky_fyi_root
-
-        if self.last_tab:
-            out["last-tab"] = self.last_tab
-
-        if self.tracker_color_key != DEFAULT_COLOR_KEY:
-            out["tracker-color-key"] = self.tracker_color_key
-
-        if self.show_packing != SHOW_PACKING_DEFAULT:
-            out["show-packing"] = self.show_packing
-
-        out["theme"] = self.theme
-
-        return out
-
     def _get_tmp_path(self):
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
 
@@ -239,7 +180,8 @@ class ConfigFile:
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
         with tmp_path.open("w", encoding="utf-8") as tmp_file:
-            json.dump(self.to_dict(), tmp_file, indent=4, sort_keys=True)
+            file_content = serde.json.to_json(self, indent=4, sort_keys=True)
+            tmp_file.write(file_content)
 
         copyfile(tmp_path, self.config_path)
         tmp_path.unlink()
