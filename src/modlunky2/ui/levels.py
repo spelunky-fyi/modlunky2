@@ -52,14 +52,14 @@ class CustomLevelSaveFormat:
         self.include_vanilla_setrooms = include_vanilla_setrooms
 
     @classmethod
-    def LevelSequence(cls):
+    def level_sequence(cls):
         return cls("LevelSequence", "setroom{y}_{x}", True)
 
     @classmethod
-    def Vanilla(cls):
+    def vanilla(cls):
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
-    def toJSON(self):
+    def to_json(self):
         return {
             "name": self.name,
             "room_template_format": self.room_template_format,
@@ -67,7 +67,7 @@ class CustomLevelSaveFormat:
         }
 
     @classmethod
-    def fromJSON(cls, json):
+    def from_json(cls, json):
         return cls(
             json["name"], json["room_template_format"], json["include_vanilla_setrooms"]
         )
@@ -314,8 +314,8 @@ class LevelsTab(Tab):
         )
 
         self.base_save_formats = [
-            CustomLevelSaveFormat.LevelSequence(),
-            CustomLevelSaveFormat.Vanilla(),
+            CustomLevelSaveFormat.level_sequence(),
+            CustomLevelSaveFormat.vanilla(),
         ]
         custom_save_formats = (
             self.modlunky_config.config_file.custom_level_editor_custom_save_formats
@@ -323,7 +323,7 @@ class LevelsTab(Tab):
         if custom_save_formats:
             self.custom_save_formats = list(
                 map(
-                    CustomLevelSaveFormat.fromJSON,
+                    CustomLevelSaveFormat.from_json,
                     custom_save_formats,
                 )
             )
@@ -335,7 +335,7 @@ class LevelsTab(Tab):
         )
         # Set the format that will be used for saving new level files.
         if default_save_format:
-            self.default_save_format = CustomLevelSaveFormat.fromJSON(
+            self.default_save_format = CustomLevelSaveFormat.from_json(
                 default_save_format
             )
         else:
@@ -6466,7 +6466,7 @@ class LevelsTab(Tab):
         self.custom_save_formats.append(save_format)
         self.add_save_format_radio(save_format, self.save_format_frame)
         self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(
-            map(lambda save_format: save_format.toJSON(), self.custom_save_formats)
+            map(lambda save_format: save_format.to_json(), self.custom_save_formats)
         )
         self.modlunky_config.config_file.save()
 
@@ -6486,13 +6486,13 @@ class LevelsTab(Tab):
     # save format.
     def update_save_format_warning(self, save_format):
         warning_message = ""
-        if save_format == CustomLevelSaveFormat.LevelSequence():
+        if save_format == CustomLevelSaveFormat.level_sequence():
             warning_message = (
                 "This save format can be used to load saved level files into the "
                 "Custom Levels or Level Sequence packages.\n"
                 "(https://github.com/jaythebusinessgoose/LevelSequence)"
             )
-        elif save_format == CustomLevelSaveFormat.Vanilla():
+        elif save_format == CustomLevelSaveFormat.vanilla():
             warning_message = (
                 "WARNING: Files saved using vanilla setrooms will only work when loaded "
                 "into themes that use them. Otherwise, it will crash the game. Also, themes "
@@ -6528,7 +6528,7 @@ class LevelsTab(Tab):
         self.set_current_save_format(save_format)
         self.default_save_format = save_format
         self.modlunky_config.config_file.custom_level_editor_default_save_format = (
-            save_format.toJSON()
+            save_format.to_json()
         )
         self.modlunky_config.config_file.save()
 

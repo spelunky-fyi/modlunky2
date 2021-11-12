@@ -224,13 +224,13 @@ class Config:
         obj.show_packing = config_data.get("show-packing", SHOW_PACKING_DEFAULT)
 
         # Level Editor
-        obj.level_editor_tab = config_data.get("level_editor_tab")
+        obj.level_editor_tab = config_data.get("level-editor-tab")
 
         obj.custom_level_editor_custom_save_formats = config_data.get(
-            "custom_level_editor_custom_save_formats"
+            "custom-level-editor-custom-save-formats"
         )
         obj.custom_level_editor_default_save_format = config_data.get(
-            "custom_level_editor_default_save_format"
+            "custom-level-editor-default-save-format"
         )
 
         if needs_save:
@@ -292,14 +292,14 @@ class Config:
             out["show-packing"] = self.show_packing
 
         if self.level_editor_tab is not None:
-            out["level_editor_tab"] = self.level_editor_tab
+            out["level-editor-tab"] = self.level_editor_tab
         if self.custom_level_editor_custom_save_formats is not None:
             out[
-                "custom_level_editor_custom_save_formats"
+                "custom-level-editor-custom-save-formats"
             ] = self.custom_level_editor_custom_save_formats
         if self.custom_level_editor_default_save_format is not None:
             out[
-                "custom_level_editor_default_save_format"
+                "custom-level-editor-default-save-format"
             ] = self.custom_level_editor_default_save_format
 
         out["theme"] = self.theme
