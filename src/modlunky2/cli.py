@@ -12,9 +12,6 @@ logger = logging.getLogger("modlunky2")
 def main():
     parser = argparse.ArgumentParser(description="Tool for modding Spelunky 2.")
     parser.add_argument(
-        "--beta", default=False, action="store_true", help="Display beta features."
-    )
-    parser.add_argument(
         "-l",
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -50,9 +47,6 @@ def launch(args, log_level):
         exe_dir = launcher_exe.parent
 
     config = Config.default(launcher_exe=launcher_exe, exe_dir=exe_dir)
-
-    if args.beta:
-        config.beta = True
 
     native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()

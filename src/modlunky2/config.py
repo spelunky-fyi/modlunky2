@@ -196,7 +196,6 @@ class Config:
             self.exe_dir = Path(__file__).resolve().parent
 
         self._install_dir = NOT_PRESENT
-        self.beta = False
 
     @classmethod
     def from_path(cls, config_path: Path, launcher_exe=None, exe_dir=None):
