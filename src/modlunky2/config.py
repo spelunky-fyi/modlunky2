@@ -110,6 +110,15 @@ def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
         raise ValueError(
             f"metadata already contains 'serde_skip_if' with value {metadata['serde_skip_if']}"
         )
+    # Technically, pyserde permits these to be set with 'serde_skip_if', but it seems dubious
+    if "serde_skip" in metadata:
+        raise ValueError(
+            "metadata  contains 'serde_skip' which conflicts with 'serde_skip_if'"
+        )
+    if "serde_skip_if_false" in metadata:
+        raise ValueError(
+            "metadata  contains 'serde_skip_if_false' which conflicts with 'serde_skip_if'"
+        )
     metadata["serde_skip_if"] = lambda v: v == default
     return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
