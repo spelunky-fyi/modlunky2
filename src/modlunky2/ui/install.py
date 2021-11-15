@@ -55,7 +55,7 @@ class SourceChooser(ttk.Frame):
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
-        initial_dir = Path(self.modlunky_config.last_install_browse)
+        initial_dir = self.modlunky_config.last_install_browse
         if not initial_dir.exists():
             initial_dir = Path("/")
 
@@ -68,7 +68,7 @@ class SourceChooser(ttk.Frame):
         self.file_chooser_var.set(filename)
         parent = Path(filename).parent
 
-        self.modlunky_config.last_install_browse = str(parent.as_posix())
+        self.modlunky_config.last_install_browse = parent.as_posix()
         self.modlunky_config.save()
         self.master.master.render()
 
