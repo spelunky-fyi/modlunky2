@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import Optional
 
 from modlunky2.ui import ModlunkyUI
 from modlunky2.config import Config, make_user_dirs
@@ -12,12 +13,10 @@ logger = logging.getLogger("modlunky2")
 def main():
     parser = argparse.ArgumentParser(description="Tool for modding Spelunky 2.")
     parser.add_argument(
-        "--install-dir",
+        "--config-file",
+        type=Path,
         default=None,
-        help="Path to Spelunky 2 installation. (Default: %(default)s",
-    )
-    parser.add_argument(
-        "--beta", default=False, action="store_true", help="Display beta features."
+        help="The modlunky2 config file to use",
     )
     parser.add_argument(
         "-l",
@@ -28,6 +27,7 @@ def main():
     )
     parser.add_argument(
         "--launcher-exe",
+        type=Path,
         default=None,
         help=argparse.SUPPRESS,
     )
@@ -48,19 +48,16 @@ def main():
 def launch(args, log_level):
 
     make_user_dirs()
-    launcher_exe = args.launcher_exe
+    launcher_exe: Optional[Path] = args.launcher_exe
     exe_dir = None
     if launcher_exe:
-        launcher_exe = Path(launcher_exe)
         exe_dir = launcher_exe.parent
 
-    config = Config.default(launcher_exe=launcher_exe, exe_dir=exe_dir)
-
-    if args.install_dir:
-        config.install_dir = Path(args.install_dir)
-
-    if args.beta:
-        config.beta = True
+    config = Config.from_path(
+        config_path=args.config_file,
+        launcher_exe=launcher_exe,
+        exe_dir=exe_dir,
+    )
 
     native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()

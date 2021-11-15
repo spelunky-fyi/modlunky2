@@ -43,7 +43,7 @@ class PacifistButtons(ttk.Frame):
         self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="nw")
 
     def launch(self):
-        color_key = self.ml_config.config_file.tracker_color_key
+        color_key = self.ml_config.tracker_color_key
         self.disable_button()
         PacifistWindow(
             title="Pacifist Tracker",
