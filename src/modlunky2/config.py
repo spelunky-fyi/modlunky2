@@ -171,14 +171,15 @@ class Config:
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as config_file:
                 config = serde.json.from_json(Config, config_file.read())
+                config.config_path = config_path
         else:
             config = Config()
             config.install_dir = guess_install_dir(exe_dir)
+            config.config_path = config_path
             config.save()
 
         config.launcher_exe = launcher_exe
         config.exe_dir = exe_dir
-        config.config_path = config_path
 
         return config
 
