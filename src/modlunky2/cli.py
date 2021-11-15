@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import Optional
 
 from modlunky2.ui import ModlunkyUI
 from modlunky2.config import Config, make_user_dirs
@@ -26,6 +27,7 @@ def main():
     )
     parser.add_argument(
         "--launcher-exe",
+        type=Path,
         default=None,
         help=argparse.SUPPRESS,
     )
@@ -46,10 +48,9 @@ def main():
 def launch(args, log_level):
 
     make_user_dirs()
-    launcher_exe = args.launcher_exe
+    launcher_exe: Optional[Path] = args.launcher_exe
     exe_dir = None
     if launcher_exe:
-        launcher_exe = Path(launcher_exe)
         exe_dir = launcher_exe.parent
 
     config = Config.from_path(
