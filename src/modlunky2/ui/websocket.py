@@ -25,7 +25,7 @@ class WebSocketThread(threading.Thread):
         super().__init__(daemon=True)
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager
-        self.api_token = modlunky_config.config_file.spelunky_fyi_api_token
+        self.api_token = modlunky_config.spelunky_fyi_api_token
         self.backoff = 0.8
         self.max_backoff = 5
         self.retry_num = 0
@@ -49,7 +49,7 @@ class WebSocketThread(threading.Thread):
         )
 
     def token_changed(self):
-        return self.modlunky_config.config_file.spelunky_fyi_api_token != self.api_token
+        return self.modlunky_config.spelunky_fyi_api_token != self.api_token
 
     def get_backoff(self):
         backoff = self.backoff * 2 ** self.retry_num + random.uniform(0, 1)
@@ -59,7 +59,7 @@ class WebSocketThread(threading.Thread):
     @property
     def ws_url(self):
         return urljoin(
-            self.modlunky_config.config_file.spelunky_fyi_ws_root,
+            self.modlunky_config.spelunky_fyi_ws_root,
             "ws/gateway/ml/",
         )
 
@@ -111,7 +111,7 @@ class WebSocketThread(threading.Thread):
 
         kwargs = {
             "install_dir": self.modlunky_config.install_dir,
-            "spelunky_fyi_root": self.modlunky_config.config_file.spelunky_fyi_root,
+            "spelunky_fyi_root": self.modlunky_config.spelunky_fyi_root,
             "api_token": self.api_token,
             "install_code": data["install-code"],
             "mod_file_id": data.get("mod-file-id"),

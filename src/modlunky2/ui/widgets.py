@@ -293,7 +293,7 @@ class PopupWindow(ttk.Frame):
         self.win.title(title)
 
         main_geometry = tuple(
-            map(int, re.split(r"[+x]", self.modlunky_config.config_file.geometry))
+            map(int, re.split(r"[+x]", self.modlunky_config.geometry))
         )
 
         self.win.geometry(f"+{main_geometry[2] + 400}+{main_geometry[3] + 200}")

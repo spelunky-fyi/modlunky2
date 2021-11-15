@@ -335,13 +335,13 @@ class VersionFrame(ttk.LabelFrame):
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
-        if value == self.modlunky_config.config_file.playlunky_version:
+        if value == self.modlunky_config.playlunky_version:
             return
 
-        self.modlunky_config.config_file.playlunky_version = value
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.playlunky_version = value
+        self.modlunky_config.save()
         self.render()
-        if self.modlunky_config.config_file.playlunky_shortcut:
+        if self.modlunky_config.playlunky_shortcut:
             self.parent.options_frame.make_shortcut()
 
     def render(self):
@@ -375,13 +375,13 @@ class VersionFrame(ttk.LabelFrame):
         )
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
-        selected_version = self.modlunky_config.config_file.playlunky_version
+        selected_version = self.modlunky_config.playlunky_version
         if selected_version:
             self.selected_var.set(selected_version)
         else:
             selected_version = available_releases[0]
-            self.modlunky_config.config_file.playlunky_version = selected_version
-            self.modlunky_config.config_file.save()
+            self.modlunky_config.playlunky_version = selected_version
+            self.modlunky_config.save()
             self.selected_var.set(selected_version)
 
         for release in available_releases:

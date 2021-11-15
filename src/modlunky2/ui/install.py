@@ -55,7 +55,7 @@ class SourceChooser(ttk.Frame):
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
-        initial_dir = Path(self.modlunky_config.config_file.last_install_browse)
+        initial_dir = Path(self.modlunky_config.last_install_browse)
         if not initial_dir.exists():
             initial_dir = Path("/")
 
@@ -68,8 +68,8 @@ class SourceChooser(ttk.Frame):
         self.file_chooser_var.set(filename)
         parent = Path(filename).parent
 
-        self.modlunky_config.config_file.last_install_browse = str(parent.as_posix())
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.last_install_browse = str(parent.as_posix())
+        self.modlunky_config.save()
         self.master.master.render()
 
 
@@ -527,8 +527,8 @@ class FyiInstall(ttk.LabelFrame):
         )
 
     def install(self):
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        spelunky_fyi_root = self.modlunky_config.spelunky_fyi_root
+        api_token = self.modlunky_config.spelunky_fyi_api_token
         if not api_token:
             logger.warning(
                 "This feature requires an API token. You can set one on your Settings tab."
@@ -553,7 +553,7 @@ class FyiInstall(ttk.LabelFrame):
         )
 
     def render(self):
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        api_token = self.modlunky_config.spelunky_fyi_api_token
         install_code = self.entry.get().strip()
 
         if api_token:

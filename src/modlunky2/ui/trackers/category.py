@@ -57,7 +57,7 @@ class CategoryButtons(ttk.Frame):
         )
 
     def launch(self):
-        color_key = self.ml_config.config_file.tracker_color_key
+        color_key = self.ml_config.tracker_color_key
         self.disable_button()
         CategoryWindow(
             title="Category Tracker",

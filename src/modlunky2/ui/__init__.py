@@ -111,14 +111,11 @@ class ModlunkyUI:
         valid_themes = self.root.call("ttk::themes")
 
         self.root.title("Modlunky 2")
-        self.root.geometry(modlunky_config.config_file.geometry)
-        self.last_geometry = modlunky_config.config_file.geometry
+        self.root.geometry(modlunky_config.geometry)
+        self.last_geometry = modlunky_config.geometry
         self.root.bind("<Configure>", self.handle_resize)
-        if (
-            modlunky_config.config_file.theme
-            and modlunky_config.config_file.theme in valid_themes
-        ):
-            style.theme_use(modlunky_config.config_file.theme)
+        if modlunky_config.theme and modlunky_config.theme in valid_themes:
+            style.theme_use(modlunky_config.theme)
         self.root.event_add("<<ThemeChange>>", "None")
 
         style.configure(
@@ -205,7 +202,7 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
-        if self.modlunky_config.config_file.show_packing:
+        if self.modlunky_config.show_packing:
             self.register_tab(
                 "Pack Assets (Deprecated)",
                 PackTab,
@@ -335,7 +332,7 @@ class ModlunkyUI:
 
     def after_ws_thread(self):
         try:
-            token = self.modlunky_config.config_file.spelunky_fyi_api_token
+            token = self.modlunky_config.spelunky_fyi_api_token
             if token is None:
                 return
 
@@ -350,13 +347,13 @@ class ModlunkyUI:
 
     def after_record_win(self):
         self.root.after(1000, self.after_record_win)
-        if self.modlunky_config.config_file.geometry != self.last_geometry:
-            self.modlunky_config.config_file.geometry = self.last_geometry
-            self.modlunky_config.config_file.dirty = True
+        if self.modlunky_config.geometry != self.last_geometry:
+            self.modlunky_config.geometry = self.last_geometry
+            self.modlunky_config.dirty = True
 
-        if self.modlunky_config.config_file.dirty:
+        if self.modlunky_config.dirty:
             logger.debug("Saving config")
-            self.modlunky_config.config_file.save()
+            self.modlunky_config.save()
 
     def after_task_manager(self):
         if not self.task_manager.is_alive():
@@ -409,7 +406,7 @@ class ModlunkyUI:
         self.quit()
 
     def select_last_tab(self):
-        last_tab = self.tabs.get(self.modlunky_config.config_file.last_tab)
+        last_tab = self.tabs.get(self.modlunky_config.last_tab)
         if last_tab is None:
             return
         self.tab_control.select(last_tab)
@@ -422,8 +419,8 @@ class ModlunkyUI:
         else:
             self.forget_console()
 
-        self.modlunky_config.config_file.last_tab = tab_name
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.last_tab = tab_name
+        self.modlunky_config.save()
         tab.on_load()
 
     def render_console(self):

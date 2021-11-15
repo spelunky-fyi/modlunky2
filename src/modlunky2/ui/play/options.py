@@ -31,7 +31,7 @@ class OptionsFrame(ttk.Frame):
         self.ini_options = {}
 
         self.enable_console_var = tk.BooleanVar()
-        self.enable_console_var.set(self.modlunky_config.config_file.playlunky_console)
+        self.enable_console_var.set(self.modlunky_config.playlunky_console)
         self.enable_console_checkbox = ttk.Checkbutton(
             self,
             text="Leave Terminal Running",
@@ -41,9 +41,7 @@ class OptionsFrame(ttk.Frame):
         )
 
         self.desktop_shortcut_var = tk.BooleanVar()
-        self.desktop_shortcut_var.set(
-            self.modlunky_config.config_file.playlunky_shortcut
-        )
+        self.desktop_shortcut_var.set(self.modlunky_config.playlunky_shortcut)
         self.desktop_shortcut_checkbox = ttk.Checkbutton(
             self,
             text="Desktop Shortcut",
@@ -91,17 +89,15 @@ class OptionsFrame(ttk.Frame):
         return " ".join(text.title().split("_"))
 
     def handle_console_checkbutton(self):
-        self.modlunky_config.config_file.playlunky_console = (
-            self.enable_console_var.get()
-        )
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.playlunky_console = self.enable_console_var.get()
+        self.modlunky_config.save()
 
     @property
     def shortcut_path(self):
         return Path(winshell.desktop(), "Playlunky.lnk")
 
     def make_shortcut(self):
-        version = self.modlunky_config.config_file.playlunky_version
+        version = self.modlunky_config.playlunky_version
         if not version:
             return
 
@@ -131,9 +127,9 @@ class OptionsFrame(ttk.Frame):
     def handle_desktop_shortcut(self):
 
         shortcut = self.desktop_shortcut_var.get()
-        self.modlunky_config.config_file.playlunky_shortcut = shortcut
+        self.modlunky_config.playlunky_shortcut = shortcut
 
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.save()
 
         if shortcut:
             self.make_shortcut()

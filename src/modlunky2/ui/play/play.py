@@ -218,7 +218,7 @@ class PlayTab(Tab):
         return self.modlunky_config.install_dir / "Mods/Packs/load_order.txt"
 
     def should_install(self):
-        version = self.modlunky_config.config_file.playlunky_version
+        version = self.modlunky_config.playlunky_version
         if version:
             msg = (
                 f"You don't currently have version {version} installed.\n\n"
@@ -239,7 +239,7 @@ class PlayTab(Tab):
         return answer
 
     def needs_update(self):
-        selected_version = self.modlunky_config.config_file.playlunky_version
+        selected_version = self.modlunky_config.playlunky_version
         if selected_version not in ["nightly", "stable"]:
             return False
 
@@ -250,7 +250,7 @@ class PlayTab(Tab):
 
         downloaded_version_path = (
             PLAYLUNKY_DATA_DIR
-            / self.modlunky_config.config_file.playlunky_version
+            / self.modlunky_config.playlunky_version
             / PLAYLUNKY_VERSION_FILENAME
         )
         downloaded_version = None
@@ -269,9 +269,7 @@ class PlayTab(Tab):
 
     def play(self):
         exe_path = (
-            PLAYLUNKY_DATA_DIR
-            / self.modlunky_config.config_file.playlunky_version
-            / PLAYLUNKY_EXE
+            PLAYLUNKY_DATA_DIR / self.modlunky_config.playlunky_version / PLAYLUNKY_EXE
         )
         self.disable_button()
 
@@ -298,7 +296,7 @@ class PlayTab(Tab):
             "play:launch_playlunky",
             install_dir=self.modlunky_config.install_dir,
             exe_path=exe_path,
-            use_console=self.modlunky_config.config_file.playlunky_console,
+            use_console=self.modlunky_config.playlunky_console,
         )
 
     def playlunky_closed(self):

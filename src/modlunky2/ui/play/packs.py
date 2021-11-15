@@ -155,8 +155,8 @@ class PacksFrame(ScrollableLabelFrame):
         return sorted(packs)
 
     def cache_fyi_pack_details(self):
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        spelunky_fyi_root = self.modlunky_config.spelunky_fyi_root
+        api_token = self.modlunky_config.spelunky_fyi_api_token
 
         if not api_token:
             return

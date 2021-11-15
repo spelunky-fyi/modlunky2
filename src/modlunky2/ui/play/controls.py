@@ -81,7 +81,7 @@ class ControlsFrame(ttk.Frame):
         )
 
     def on_load(self):
-        if self.modlunky_config.config_file.spelunky_fyi_api_token:
+        if self.modlunky_config.spelunky_fyi_api_token:
             self.check_fyi_updates_button["state"] = tk.NORMAL
         else:
             self.check_fyi_updates_button["state"] = tk.DISABLED

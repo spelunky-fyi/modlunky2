@@ -146,7 +146,6 @@ class Config:
     show_packing: bool = skip_default_field(default=False)
 
     def __post_init__(self):
-        self.config_file = self  # TODO: remove refs to this
         if self.exe_dir is None:
             self.exe_dir = Path(__file__).resolve().parent
 

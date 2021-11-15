@@ -76,12 +76,12 @@ class ChooseColor(PopupWindow):
             command=self.destroy,
         ).grid(row=0, column=1, padx=1, pady=5, sticky="nsew")
 
-        color_key = self.modlunky_config.config_file.tracker_color_key
+        color_key = self.modlunky_config.tracker_color_key
         self.update_color_label(color_key)
 
     def save_choice(self):
-        self.modlunky_config.config_file.tracker_color_key = self.color_label["text"]
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.tracker_color_key = self.color_label["text"]
+        self.modlunky_config.save()
         self.options_frame.render()
         self.destroy()
 
@@ -123,7 +123,7 @@ class OptionsFrame(ttk.LabelFrame):
         ).grid(row=1, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
 
     def render(self):
-        color_key = self.ml_config.config_file.tracker_color_key
+        color_key = self.ml_config.tracker_color_key
         self.color_label.config(
             text=color_key,
             bg=color_key,

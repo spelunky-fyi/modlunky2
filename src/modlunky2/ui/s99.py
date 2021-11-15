@@ -251,7 +251,7 @@ class S99Tab(Tab):
         Help(self.modlunky_config)
 
     def render_buttons(self):
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        api_token = self.modlunky_config.spelunky_fyi_api_token
 
         if not api_token:
             self.disable_connect_button()
@@ -300,7 +300,7 @@ class S99Tab(Tab):
         self.disable_connect_button()
         self.enable_disconnect_button()
 
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        api_token = self.modlunky_config.spelunky_fyi_api_token
         self.client_thread = S99Client(self.client_path, api_token)
         self.client_thread.start()
 
