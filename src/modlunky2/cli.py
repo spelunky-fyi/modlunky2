@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from modlunky2.ui import ModlunkyUI
-from modlunky2.config import Config, make_user_dirs
+from modlunky2.config import Config, ConfigFile, make_user_dirs
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger("modlunky2")
@@ -46,7 +46,11 @@ def launch(args, log_level):
         launcher_exe = Path(launcher_exe)
         exe_dir = launcher_exe.parent
 
-    config = Config.default(launcher_exe=launcher_exe, exe_dir=exe_dir)
+    config = Config(
+        config_file=ConfigFile.from_path(exe_dir=exe_dir),
+        launcher_exe=launcher_exe,
+        exe_dir=exe_dir,
+    )
 
     native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()

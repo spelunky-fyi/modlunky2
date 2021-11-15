@@ -140,7 +140,9 @@ class ConfigFile:
     show_packing: bool = skip_default_field(default=False)
 
     @classmethod
-    def from_path(cls, config_path: Path, exe_dir=None):
+    def from_path(cls, config_path: Path = None, exe_dir=None):
+        if config_path is None:
+            config_path = CONFIG_DIR / "config.json"
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as config_file:
                 config = serde.json.from_json(ConfigFile, config_file.read())
@@ -194,22 +196,6 @@ class Config:
         self.exe_dir = exe_dir
         if self.exe_dir is None:
             self.exe_dir = Path(__file__).resolve().parent
-
-        self._install_dir = NOT_PRESENT
-
-    @classmethod
-    def from_path(cls, config_path: Path, launcher_exe=None, exe_dir=None):
-        return cls(
-            config_file=ConfigFile.from_path(config_path, exe_dir=exe_dir),
-            launcher_exe=launcher_exe,
-            exe_dir=exe_dir,
-        )
-
-    @classmethod
-    def default(cls, launcher_exe=None, exe_dir=None):
-        return Config.from_path(
-            CONFIG_DIR / "config.json", launcher_exe=launcher_exe, exe_dir=exe_dir
-        )
 
     @property
     def install_dir(self):
