@@ -117,13 +117,19 @@ def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
-class ConfigFile:
+class Config:
     config_path: Optional[Path] = dataclasses.field(
         default=None, metadata={"serde_skip": True}
     )
     dirty: bool = dataclasses.field(default=False, metadata={"serde_skip": True})
 
-    # Null is being treated as not present?
+    launcher_exe: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+    exe_dir: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+
     install_dir: Optional[Path] = None
     playlunky_version: Optional[str] = skip_default_field(default=None)
     playlunky_console: bool = skip_default_field(default=False)
@@ -134,26 +140,39 @@ class ConfigFile:
     theme: Optional[str] = skip_default_field(default=None)
     last_install_browse: str = skip_default_field(
         default=LAST_INSTALL_BROWSE_DEFAULT
-    )  # Try making this a Path
+    )  # TODO: Try making this a Path
     last_tab: Optional[str] = skip_default_field(default=None)
     tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
     show_packing: bool = skip_default_field(default=False)
 
+    def __post_init__(self):
+        self.config_file = self  # TODO: remove refs to this
+        if self.exe_dir is None:
+            self.exe_dir = Path(__file__).resolve().parent
+
     @classmethod
-    def from_path(cls, config_path: Path = None, exe_dir=None):
+    def from_path(
+        cls,
+        config_path: Path = None,  # TODO: add CLI flag
+        exe_dir: Optional[Path] = None,
+        launcher_exe: Optional[Path] = None,
+    ):
         if config_path is None:
             config_path = CONFIG_DIR / "config.json"
+        if exe_dir is None:
+            exe_dir = Path(__file__).resolve().parent
+
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as config_file:
-                config = serde.json.from_json(ConfigFile, config_file.read())
+                config = serde.json.from_json(Config, config_file.read())
         else:
-            config = ConfigFile()
+            config = Config()
             config.install_dir = guess_install_dir(exe_dir)
-            config.dirty = True
-
-        config.config_path = config_path
-        if config.dirty:
             config.save()
+
+        config.launcher_exe = launcher_exe
+        config.exe_dir = exe_dir
+        config.config_path = config_path
 
         return config
 
@@ -187,16 +206,3 @@ class ConfigFile:
 
         copyfile(tmp_path, self.config_path)
         tmp_path.unlink()
-
-
-class Config:
-    def __init__(self, config_file: ConfigFile, launcher_exe, exe_dir):
-        self.config_file: ConfigFile = config_file
-        self.launcher_exe = launcher_exe
-        self.exe_dir = exe_dir
-        if self.exe_dir is None:
-            self.exe_dir = Path(__file__).resolve().parent
-
-    @property
-    def install_dir(self):
-        return self.config_file.install_dir
