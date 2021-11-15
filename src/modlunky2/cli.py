@@ -12,6 +12,12 @@ logger = logging.getLogger("modlunky2")
 def main():
     parser = argparse.ArgumentParser(description="Tool for modding Spelunky 2.")
     parser.add_argument(
+        "--config-file",
+        type=Path,
+        default=None,
+        help="The modlunky2 config file to use",
+    )
+    parser.add_argument(
         "-l",
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -47,6 +53,7 @@ def launch(args, log_level):
         exe_dir = launcher_exe.parent
 
     config = Config.from_path(
+        config_path=args.config_file,
         launcher_exe=launcher_exe,
         exe_dir=exe_dir,
     )

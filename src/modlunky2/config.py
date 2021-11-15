@@ -150,7 +150,7 @@ class Config:
     @classmethod
     def from_path(
         cls,
-        config_path: Path = None,  # TODO: add CLI flag
+        config_path: Path = None,
         exe_dir: Optional[Path] = None,
         launcher_exe: Optional[Path] = None,
     ):
