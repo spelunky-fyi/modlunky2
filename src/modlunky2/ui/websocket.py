@@ -13,7 +13,7 @@ import websockets
 import websockets.exceptions
 from websockets.legacy.client import connect as ws_connect
 
-
+from modlunky2.config import Config
 from modlunky2.utils import tb_info
 
 
@@ -21,7 +21,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class WebSocketThread(threading.Thread):
-    def __init__(self, modlunky_config, task_manager):
+    def __init__(self, modlunky_config: Config, task_manager):
         super().__init__(daemon=True)
         self.modlunky_config = modlunky_config
         self.task_manager = task_manager

@@ -4,6 +4,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
+from modlunky2.config import Config
 from modlunky2.ui.widgets import ToolTip
 from modlunky2.utils import open_directory
 
@@ -11,7 +12,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class ControlsFrame(ttk.Frame):
-    def __init__(self, parent, play_tab, modlunky_config, *args, **kwargs):
+    def __init__(self, parent, play_tab, modlunky_config: Config, *args, **kwargs):
         logger.debug("Initializing Playlunky ControlsFrame")
         super().__init__(parent, *args, **kwargs)
         self.parent = parent

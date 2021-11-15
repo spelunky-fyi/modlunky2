@@ -12,7 +12,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class Theme(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent, text="Theme")
         self.modlunky_config = modlunky_config
 
@@ -56,7 +56,7 @@ class Theme(ttk.LabelFrame):
 
 
 class InstallDir(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent, text="Install Directory")
         self.modlunky_config = modlunky_config
 
@@ -121,7 +121,7 @@ class InstallDir(ttk.LabelFrame):
 
 
 class FYISettings(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent, text="spelunky.fyi Settings")
         self.modlunky_config = modlunky_config
 
@@ -221,7 +221,7 @@ class Flags(ttk.LabelFrame):
 
 
 class SettingsTab(Tab):
-    def __init__(self, tab_control, modlunky_config, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config: Config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

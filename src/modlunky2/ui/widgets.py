@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 import webbrowser
 
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.utils import is_windows
 
@@ -269,7 +270,7 @@ class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
 
 
 class PopupWindow(ttk.Frame):
-    def __init__(self, title, modlunky_config, *args, **kwargs):
+    def __init__(self, title, modlunky_config: Config, *args, **kwargs):
         self.shutting_down = False
         self.win = tk.Toplevel()
         self.win.attributes("-topmost", "true")

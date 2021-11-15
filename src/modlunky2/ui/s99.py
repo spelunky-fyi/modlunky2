@@ -8,6 +8,7 @@ from tkinter import ttk, PhotoImage
 
 from PIL import Image, ImageTk
 
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.ui.widgets import PopupWindow, Tab
 from modlunky2.utils import is_windows, tb_info
@@ -104,7 +105,7 @@ class S99Client(threading.Thread):
 
 
 class Help(PopupWindow):
-    def __init__(self, modlunky_config, *args, **kwargs):
+    def __init__(self, modlunky_config: Config, *args, **kwargs):
         super().__init__("Spelunky 99 Help", modlunky_config, *args, **kwargs)
         self.columnconfigure(0, weight=1)
 
@@ -152,7 +153,7 @@ class Help(PopupWindow):
 
 
 class S99Tab(Tab):
-    def __init__(self, tab_control, modlunky_config, *args, **kwargs):
+    def __init__(self, tab_control, modlunky_config: Config, *args, **kwargs):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

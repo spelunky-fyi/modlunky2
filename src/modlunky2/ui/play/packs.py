@@ -9,6 +9,7 @@ from typing import Dict, List
 from PIL import Image, ImageTk
 
 from modlunky2.api import SpelunkyFYIClient
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import (
     ScrollableLabelFrame,
@@ -107,7 +108,7 @@ class PacksFrame(ScrollableLabelFrame):
 
     CACHE_FYI_INTERVAL = 1000 * 10 * 60
 
-    def __init__(self, play_tab, parent, modlunky_config, task_manager):
+    def __init__(self, play_tab, parent, modlunky_config: Config, task_manager):
         logger.debug("Initializing Playlunky PacksFrame")
 
         super().__init__(parent, text="Select Mods to Play")

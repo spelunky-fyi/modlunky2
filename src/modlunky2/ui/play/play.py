@@ -4,6 +4,7 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.config import Config
 from modlunky2.ui.play.config import SECTIONS, PlaylunkyConfig
 from modlunky2.ui.widgets import (
     ScrollableFrameLegacy,
@@ -39,7 +40,9 @@ def launch_playlunky(_call, install_dir, exe_path, use_console):
 
 
 class PlayTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(
+        self, tab_control, modlunky_config: Config, task_manager, *args, **kwargs
+    ):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

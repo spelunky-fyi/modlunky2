@@ -6,6 +6,7 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
+from modlunky2.config import Config
 from modlunky2.utils import open_directory
 
 
@@ -13,7 +14,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class Pack:
-    def __init__(self, play_tab, parent, modlunky_config, folder):
+    def __init__(self, play_tab, parent, modlunky_config: Config, folder):
         self.play_tab = play_tab
         self.modlunky_config = modlunky_config
         self.folder = folder

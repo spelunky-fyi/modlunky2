@@ -3,6 +3,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from modlunky2.config import Config
 from modlunky2.ui.play.config import SECTIONS
 from modlunky2.utils import is_windows
 
@@ -18,7 +19,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class OptionsFrame(ttk.Frame):
-    def __init__(self, parent, play_tab, modlunky_config):
+    def __init__(self, parent, play_tab, modlunky_config: Config):
         logger.debug("Initializing Playlunky OptionsFrame")
         super().__init__(parent)
         self.parent = parent

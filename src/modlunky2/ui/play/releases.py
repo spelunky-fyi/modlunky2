@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from modlunky2.config import Config
 from modlunky2.utils import tb_info
 
 from .constants import (
@@ -239,7 +240,7 @@ def cache_playlunky_releases(call):
 class VersionFrame(ttk.LabelFrame):
     CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
-    def __init__(self, parent, modlunky_config, task_manager):
+    def __init__(self, parent, modlunky_config: Config, task_manager):
         logger.debug("Initializing Playlunky VersionFrame")
         super().__init__(parent, text="Version")
         self.parent = parent

@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from modlunky2.config import Config
 from modlunky2.ui.widgets import Entry, Tab
 from modlunky2.utils import tb_info, zipinfo_fixup_filename
 from modlunky2.api import SpelunkyFYIClient
@@ -21,7 +22,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class SourceChooser(ttk.Frame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
@@ -73,7 +74,7 @@ class SourceChooser(ttk.Frame):
 
 
 class DestinationChooser(ttk.Frame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
@@ -175,7 +176,7 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
 
 
 class LocalInstall(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, task_manager, *args, **kwargs):
         super().__init__(parent, text="Local Installation", *args, **kwargs)
 
         self.modlunky_config = modlunky_config
@@ -442,7 +443,7 @@ def install_fyi_mod(
 class FyiInstall(ttk.LabelFrame):
     VALID_SLUG = re.compile(r"^[-\w]+$")
 
-    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, task_manager, *args, **kwargs):
         super().__init__(parent, text="spelunky.fyi Installation", *args, **kwargs)
 
         self.modlunky_config = modlunky_config
@@ -578,7 +579,9 @@ class FyiInstall(ttk.LabelFrame):
 
 
 class InstallTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(
+        self, tab_control, modlunky_config: Config, task_manager, *args, **kwargs
+    ):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

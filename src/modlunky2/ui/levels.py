@@ -18,6 +18,7 @@ from tkinter import ttk
 import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_chances import LevelChance, LevelChances
@@ -40,7 +41,7 @@ logger = logging.getLogger("modlunky2")
 
 class LevelsTab(Tab):
     def __init__(
-        self, tab_control, modlunky_ui, modlunky_config, *args, **kwargs
+        self, tab_control, modlunky_ui, modlunky_config: Config, *args, **kwargs
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
         self.modlunky_config = modlunky_config
@@ -4124,7 +4125,7 @@ DEFAULT_ROOM_TYPE = "normal"
 
 
 class LevelsTree(ttk.Treeview):
-    def __init__(self, parent, levels_tab, config, *args, **kwargs):
+    def __init__(self, parent, levels_tab, config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.config = config
 
