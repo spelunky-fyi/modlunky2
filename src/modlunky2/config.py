@@ -214,12 +214,4 @@ class Config:
 
     @property
     def install_dir(self):
-        if self._install_dir is NOT_PRESENT:
-            if self.config_file.install_dir is None:
-                return self.exe_dir
-            return self.config_file.install_dir
-        return self._install_dir
-
-    @install_dir.setter
-    def install_dir(self, value):
-        self._install_dir = value
+        return self.config_file.install_dir

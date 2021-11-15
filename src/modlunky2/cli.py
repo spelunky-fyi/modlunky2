@@ -12,11 +12,6 @@ logger = logging.getLogger("modlunky2")
 def main():
     parser = argparse.ArgumentParser(description="Tool for modding Spelunky 2.")
     parser.add_argument(
-        "--install-dir",
-        default=None,
-        help="Path to Spelunky 2 installation. (Default: %(default)s",
-    )
-    parser.add_argument(
         "--beta", default=False, action="store_true", help="Display beta features."
     )
     parser.add_argument(
@@ -55,9 +50,6 @@ def launch(args, log_level):
         exe_dir = launcher_exe.parent
 
     config = Config.default(launcher_exe=launcher_exe, exe_dir=exe_dir)
-
-    if args.install_dir:
-        config.install_dir = Path(args.install_dir)
 
     if args.beta:
         config.beta = True
