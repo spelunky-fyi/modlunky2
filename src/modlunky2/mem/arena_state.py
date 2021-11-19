@@ -226,7 +226,9 @@ class ArenaLevel(enum.IntEnum):
 
 
 ARENA_STATE_BASE = 0x95C
-ArenaItemsTuple = Tuple[
+# Used for both Arena Config and Arena Levels which both happen to be
+# 40-tuple of bools.
+TupleBool40 = Tuple[
     bool,
     bool,
     bool,
@@ -303,7 +305,7 @@ class ArenaState:
     arena_select: ArenaSelect = struct_field(
         0x98B - ARENA_STATE_BASE, sc_int8, default=ArenaSelect.RANDOM_LEVEL
     )
-    arenas: ArenaItemsTuple = struct_field(
+    arenas: TupleBool40 = struct_field(
         0x98C - ARENA_STATE_BASE,
         array(sc_bool, 40),
         default_factory=lambda: tuple([False] * 40),
@@ -314,12 +316,12 @@ class ArenaState:
     crate_frequency: ArenaCrateFrequency = struct_field(
         0x9B5 - ARENA_STATE_BASE, sc_int8, default=ArenaCrateFrequency.MEDIUM
     )
-    items_enabled: ArenaItemsTuple = struct_field(
+    items_enabled: TupleBool40 = struct_field(
         0x9B6 - ARENA_STATE_BASE,
         array(sc_bool, 40),
         default_factory=lambda: tuple([False] * 40),
     )
-    items_in_crate: ArenaItemsTuple = struct_field(
+    items_in_crate: TupleBool40 = struct_field(
         0x9DE - ARENA_STATE_BASE,
         array(sc_bool, 40),
         default_factory=lambda: tuple([False] * 40),
@@ -330,7 +332,7 @@ class ArenaState:
     equipped_backitem: ArenaItem = struct_field(
         0xA07 - ARENA_STATE_BASE, sc_int8, default=ArenaItem.NOTHING
     )
-    equipped_items: ArenaItemsTuple = struct_field(
+    equipped_items: TupleBool40 = struct_field(
         0xA08 - ARENA_STATE_BASE,
         array(sc_bool, 40),
         default_factory=lambda: tuple([False] * 40),
