@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import enum
 from typing import FrozenSet, Optional, Tuple
+from modlunky2.mem.arena_state import ArenaState
 
 from modlunky2.mem.entities import EntityType, Player
 
@@ -169,6 +170,7 @@ class State:
     waddler_storage: FrozenSet[EntityType] = struct_field(
         0x8C, array(sc_uint32, 99), default=frozenset()
     )
+    arena_state: ArenaState = struct_field(0x95C, dc_struct, default_factory=ArenaState)
     run_recap_flags: RunRecapFlags = struct_field(0xA34, sc_uint32, default=0)
     hud_flags: HudFlags = struct_field(0xA50, sc_uint32, default=0)
     time_level: int = struct_field(0xA44, sc_uint32, default=0)
