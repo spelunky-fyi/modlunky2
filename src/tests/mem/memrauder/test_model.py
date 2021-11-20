@@ -152,14 +152,15 @@ def test_dataclass_struct_scalar_c_error_passthrough():
 
 
 @pytest.mark.parametrize(
-    "py_type,expected", [(Tuple[int, ...], (10, 2)), (FrozenSet[int], {10, 2})]
+    "py_type,expected",
+    [(Tuple[int, ...], (10, 2)), (Tuple[int, int], (10, 2)), (FrozenSet[int], {10, 2})],
 )
 def test_array_uint8(py_type, expected):
     arr = Array(FieldPath, py_type, deferred_uint8, count=2)
     assert arr.from_bytes(b"\x0a\x02", MemContext()) == expected
 
 
-@pytest.mark.parametrize("py_type", (Tuple[int, int], Set[int], int, FrozenSet[float]))
+@pytest.mark.parametrize("py_type", (Tuple[int, str], Set[int], int, FrozenSet[float]))
 def test_array_type_mismatch(py_type):
     def build():
         Array(FieldPath, py_type, deferred_uint8, count=2)

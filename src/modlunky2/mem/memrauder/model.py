@@ -163,6 +163,15 @@ def unwrap_tuple_type(path: FieldPath, py_type: type) -> type:
         )
 
     args_len = len(py_type.__args__)
+    if not args_len:
+        raise ValueError(f"tuple field {path} must have at least 1 type parameter.")
+
+    tuple_types = set(py_type.__args__)
+    # If we only see one type specified but have more than one argument
+    # we have a homogeneous n-tuple and use the first argument as the type.
+    if len(tuple_types) == 1 and args_len > 1:
+        return py_type.__args__[0]
+
     if args_len != 2:
         raise ValueError(
             f"tuple field {path} must have 2 type parameters. Got {args_len}"
