@@ -308,7 +308,7 @@ class ArenaState:
     arenas: TupleBool40 = struct_field(
         0x98C - ARENA_STATE_BASE,
         array(sc_bool, 40),
-        default_factory=lambda: tuple([False] * 40),
+        default_factory=lambda: (False,) * 40,
     )
     dark_level_chance: ArenaDarkLevelChance = struct_field(
         0x9B4 - ARENA_STATE_BASE, sc_int8, default=ArenaDarkLevelChance.PERCENT_10
@@ -319,12 +319,12 @@ class ArenaState:
     items_enabled: TupleBool40 = struct_field(
         0x9B6 - ARENA_STATE_BASE,
         array(sc_bool, 40),
-        default_factory=lambda: tuple([False] * 40),
+        default_factory=lambda: (False,) * 40,
     )
     items_in_crate: TupleBool40 = struct_field(
         0x9DE - ARENA_STATE_BASE,
         array(sc_bool, 40),
-        default_factory=lambda: tuple([False] * 40),
+        default_factory=lambda: (False,) * 40,
     )
     held_item: ArenaItem = struct_field(
         0xA06 - ARENA_STATE_BASE, sc_int8, default=ArenaItem.NOTHING
@@ -335,7 +335,7 @@ class ArenaState:
     equipped_items: TupleBool40 = struct_field(
         0xA08 - ARENA_STATE_BASE,
         array(sc_bool, 40),
-        default_factory=lambda: tuple([False] * 40),
+        default_factory=lambda: (False,) * 40,
     )
     whip_damage: ArenaWhipDamage = struct_field(
         0xA30 - ARENA_STATE_BASE, sc_int8, default=ArenaWhipDamage.HP_1
