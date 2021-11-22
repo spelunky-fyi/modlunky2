@@ -18,9 +18,9 @@ class Command(Enum):
 
 
 class PacifistButtons(ttk.Frame):
-    def __init__(self, parent, ml_config: Config, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.ml_config = ml_config
+        self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
 
@@ -32,18 +32,25 @@ class PacifistButtons(ttk.Frame):
         self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         self.show_kill_count = tk.BooleanVar()
-        self.show_kill_count.set(False)
+        self.show_kill_count.set(self.modlunky_config.trackers.pacifist.show_kill_count)
         self.show_kill_count_checkbox = ttk.Checkbutton(
             self,
             text="Show Kill Count",
             variable=self.show_kill_count,
             onvalue=True,
             offvalue=False,
+            command=self.toggle_show_kill_count,
         )
         self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="nw")
 
+    def toggle_show_kill_count(self):
+        self.modlunky_config.trackers.pacifist.show_kill_count = (
+            self.show_kill_count.get()
+        )
+        self.modlunky_config.save()
+
     def launch(self):
-        color_key = self.ml_config.tracker_color_key
+        color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
         PacifistWindow(
             title="Pacifist Tracker",

@@ -24,9 +24,9 @@ class Command(Enum):
 
 
 class CategoryButtons(ttk.Frame):
-    def __init__(self, parent, ml_config: Config, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.ml_config = ml_config
+        self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
 
@@ -44,20 +44,29 @@ class CategoryButtons(ttk.Frame):
         self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         self.always_show_modifiers = tk.BooleanVar()
-        self.always_show_modifiers.set(False)
+        self.always_show_modifiers.set(
+            modlunky_config.trackers.category.always_show_modifiers
+        )
         self.always_show_modifiers_checkbox = ttk.Checkbutton(
             self,
             text="Always Show Modifiers",
             variable=self.always_show_modifiers,
             onvalue=True,
             offvalue=False,
+            command=self.toggle_always_show_modifiers,
         )
         self.always_show_modifiers_checkbox.grid(
             row=0, column=1, pady=5, padx=5, sticky="nw"
         )
 
+    def toggle_always_show_modifiers(self):
+        self.modlunky_config.trackers.category.always_show_modifiers = (
+            self.always_show_modifiers.get()
+        )
+        self.modlunky_config.save()
+
     def launch(self):
-        color_key = self.ml_config.tracker_color_key
+        color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
         CategoryWindow(
             title="Category Tracker",
