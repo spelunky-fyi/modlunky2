@@ -123,7 +123,6 @@ def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
     return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
 
-<<<<<<< HEAD
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
@@ -153,29 +152,12 @@ class Config:
     tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
     show_packing: bool = skip_default_field(default=False)
     level_editor_tab: Optional[int] = skip_default_field(default=None)
-    custom_level_editor_custom_save_formats: Dict = skip_default_field(default={})
+    custom_level_editor_custom_save_formats: List[Dict] = skip_default_field(default={})
     custom_level_editor_default_save_format: Optional[Dict] = skip_default_field(default=None)
 
     def __post_init__(self):
         if self.exe_dir is None:
             self.exe_dir = Path(__file__).resolve().parent
-=======
-        self.install_dir = None
-        self.playlunky_version = None
-        self.playlunky_console = False
-        self.playlunky_shortcut = False
-        self.geometry = None
-        self.spelunky_fyi_root = None
-        self.spelunky_fyi_api_token = None
-        self.theme = None
-        self.last_install_browse = None
-        self.last_tab = None
-        self.tracker_color_key = None
-        self.show_packing = SHOW_PACKING_DEFAULT
-        self.level_editor_tab = None
-        self.custom_level_editor_custom_save_formats = None
-        self.custom_level_editor_default_save_format = None
->>>>>>> adbf9af (Remove unused config params.)
 
     @classmethod
     def from_path(
@@ -202,42 +184,7 @@ class Config:
         config.launcher_exe = launcher_exe
         config.exe_dir = exe_dir
 
-<<<<<<< HEAD
         return config
-=======
-        # Initialize geometry
-        obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
-
-        # FYI Config
-        obj.spelunky_fyi_root = config_data.get(
-            "spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT
-        )
-        obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
-
-        obj.theme = config_data.get("theme")
-        obj.last_tab = config_data.get("last-tab")
-
-        # Tracker Config
-        obj.tracker_color_key = config_data.get("tracker-color-key", DEFAULT_COLOR_KEY)
-
-        # Packing
-        obj.show_packing = config_data.get("show-packing", SHOW_PACKING_DEFAULT)
-
-        # Level Editor
-        obj.level_editor_tab = config_data.get("level-editor-tab")
-
-        obj.custom_level_editor_custom_save_formats = config_data.get(
-            "custom-level-editor-custom-save-formats"
-        )
-        obj.custom_level_editor_default_save_format = config_data.get(
-            "custom-level-editor-default-save-format"
-        )
-
-        if needs_save:
-            obj.save()
-
-        return obj
->>>>>>> adbf9af (Remove unused config params.)
 
     @property
     def spelunky_fyi_ws_root(self):
@@ -254,59 +201,6 @@ class Config:
 
         return urlunparse(parts)
 
-<<<<<<< HEAD
-=======
-    def to_dict(self):
-        install_dir = None
-        if self.install_dir:
-            install_dir = self.install_dir.as_posix()
-
-        out = {}
-        out["install-dir"] = install_dir
-
-        if self.last_install_browse != LAST_INSTALL_BROWSE_DEFAULT:
-            out["last-install-browse"] = self.last_install_browse
-
-        if self.playlunky_version is not None:
-            out["playlunky-version"] = self.playlunky_version
-        if self.playlunky_console:
-            out["playlunky-console"] = self.playlunky_console
-        if self.playlunky_shortcut:
-            out["playlunky-shortcut"] = self.playlunky_shortcut
-
-        out["geometry"] = self.geometry
-
-        if self.spelunky_fyi_api_token is not None:
-            out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
-
-        if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
-            out["spelunky-fyi-root"] = self.spelunky_fyi_root
-
-        if self.last_tab:
-            out["last-tab"] = self.last_tab
-
-        if self.tracker_color_key != DEFAULT_COLOR_KEY:
-            out["tracker-color-key"] = self.tracker_color_key
-
-        if self.show_packing != SHOW_PACKING_DEFAULT:
-            out["show-packing"] = self.show_packing
-
-        if self.level_editor_tab is not None:
-            out["level-editor-tab"] = self.level_editor_tab
-        if self.custom_level_editor_custom_save_formats is not None:
-            out[
-                "custom-level-editor-custom-save-formats"
-            ] = self.custom_level_editor_custom_save_formats
-        if self.custom_level_editor_default_save_format is not None:
-            out[
-                "custom-level-editor-default-save-format"
-            ] = self.custom_level_editor_default_save_format
-
-        out["theme"] = self.theme
-
-        return out
-
->>>>>>> adbf9af (Remove unused config params.)
     def _get_tmp_path(self):
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
 

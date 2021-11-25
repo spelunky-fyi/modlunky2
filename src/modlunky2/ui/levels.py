@@ -318,7 +318,7 @@ class LevelsTab(Tab):
             CustomLevelSaveFormat.vanilla(),
         ]
         custom_save_formats = (
-            self.modlunky_config.config_file.custom_level_editor_custom_save_formats
+            self.modlunky_config.custom_level_editor_custom_save_formats
         )
         if custom_save_formats:
             self.custom_save_formats = list(
@@ -331,7 +331,7 @@ class LevelsTab(Tab):
             self.custom_save_formats = []
 
         default_save_format = (
-            self.modlunky_config.config_file.custom_level_editor_default_save_format
+            self.modlunky_config.custom_level_editor_default_save_format
         )
         # Set the format that will be used for saving new level files.
         if default_save_format:
@@ -440,13 +440,13 @@ class LevelsTab(Tab):
             self.last_selected_editor_tab = event.widget.select()
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
-                self.modlunky_config.config_file.level_editor_tab = 0
+                self.modlunky_config.level_editor_tab = 0
             else:
-                self.modlunky_config.config_file.level_editor_tab = 1
-            self.modlunky_config.config_file.save()
+                self.modlunky_config.level_editor_tab = 1
+            self.modlunky_config.save()
 
         self.editor_tab_control.bind("<<NotebookTabChanged>>", tab_selected)
-        if self.modlunky_config.config_file.level_editor_tab == 1:
+        if self.modlunky_config.level_editor_tab == 1:
             self.editor_tab_control.select(self.full_level_editor_tab)
 
     def load_full_level_editor(self, tab):
@@ -6465,10 +6465,10 @@ class LevelsTab(Tab):
     def add_save_format(self, save_format):
         self.custom_save_formats.append(save_format)
         self.add_save_format_radio(save_format, self.save_format_frame)
-        self.modlunky_config.config_file.custom_level_editor_custom_save_formats = list(
+        self.modlunky_config.custom_level_editor_custom_save_formats = list(
             map(lambda save_format: save_format.to_json(), self.custom_save_formats)
         )
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.save()
 
     # Updates the current radio button in the save format select options menu to the
     # proper save format.
@@ -6527,10 +6527,10 @@ class LevelsTab(Tab):
             return
         self.set_current_save_format(save_format)
         self.default_save_format = save_format
-        self.modlunky_config.config_file.custom_level_editor_default_save_format = (
+        self.modlunky_config.custom_level_editor_default_save_format = (
             save_format.to_json()
         )
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.save()
 
     def add_save_format_radio(self, save_format, save_format_frame):
         index = len(self.save_format_radios)
