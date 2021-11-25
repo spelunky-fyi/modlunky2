@@ -39,11 +39,9 @@ from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger("modlunky2")
 
-
 class EditorType(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
-
 
 class CustomLevelSaveFormat:
     def __init__(self, name, room_template_format, include_vanilla_setrooms):
