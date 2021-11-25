@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass
 import logging
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 try:
     import winreg
@@ -152,7 +152,7 @@ class Config:
     tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
     show_packing: bool = skip_default_field(default=False)
     level_editor_tab: Optional[int] = skip_default_field(default=None)
-    custom_level_editor_custom_save_formats: Optional[list[Dict]] = skip_default_field(
+    custom_level_editor_custom_save_formats: Optional[List[Dict]] = skip_default_field(
         default=None
     )
     custom_level_editor_default_save_format: Optional[Dict] = skip_default_field(
