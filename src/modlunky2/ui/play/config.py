@@ -81,7 +81,7 @@ class PlaylunkyConfig:
 
     @classmethod
     def from_ini(cls, handle: TextIO) -> "PlaylunkyConfig":
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(inline_comment_prefixes="#")
         config.read_file(handle)
 
         obj = cls()

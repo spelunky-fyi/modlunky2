@@ -13,12 +13,12 @@ def test_legacy_keep_unknown():
         random_character_select=off
         enable_loose_audio_files=on
         some_unknown_field=ABACAB00
-        cache_decoded_audio_files=off
+        cache_decoded_audio_files=off  # test inline-comment
         enable_developer_mode=off
 
         [script_settings]
         enable_developer_console=on
-        console_history_size=50
+        console_history_size=50  # test inline-comment
     """
             )
         )
