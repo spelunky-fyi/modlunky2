@@ -15,6 +15,10 @@ def test_legacy_keep_unknown():
         some_unknown_field=ABACAB00
         cache_decoded_audio_files=off
         enable_developer_mode=off
+
+        [script_settings]
+        enable_developer_console=on
+        console_history_size=50
     """
             )
         )
@@ -31,25 +35,31 @@ def test_legacy_keep_unknown():
             """\
         [settings]
         some_unknown_field=ABACAB00
+        
+        [script_settings]
+        enable_developer_console=on
+        console_history_size=50
+        enable_developer_mode=off
 
         [general_settings]
         enable_loose_file_warning=on
-        speedrun_mode=off
         disable_asset_caching=off
-
-        [script_settings]
-        enable_developer_mode=off
-        enable_developer_console=off
+        block_save_game=off
+        allow_save_game_mods=on
+        speedrun_mode=off
 
         [audio_settings]
         enable_loose_audio_files=on
         cache_decoded_audio_files=off
+        synchronous_update=on
 
         [sprite_settings]
         random_character_select=on
         generate_character_journal_stickers=on
         generate_character_journal_entries=on
         generate_sticker_pixel_art=on
+        enable_sprite_hot_loading=off
+        sprite_hot_load_delay=400
     """
         ).strip()
     )
@@ -65,6 +75,10 @@ def test_legacy_no_unknowns():
         enable_loose_audio_files=on
         cache_decoded_audio_files=off
         enable_developer_mode=off
+
+        [script_settings]
+        enable_developer_console=on
+        console_history_size=50
     """
             )
         )
@@ -79,24 +93,30 @@ def test_legacy_no_unknowns():
         out.getvalue().strip()
         == dedent(
             """\
+        [script_settings]
+        enable_developer_console=on
+        console_history_size=50
+        enable_developer_mode=off
+
         [general_settings]
         enable_loose_file_warning=on
-        speedrun_mode=off
         disable_asset_caching=off
-
-        [script_settings]
-        enable_developer_mode=off
-        enable_developer_console=off
+        block_save_game=off
+        allow_save_game_mods=on
+        speedrun_mode=off
 
         [audio_settings]
         enable_loose_audio_files=on
         cache_decoded_audio_files=off
+        synchronous_update=on
 
         [sprite_settings]
         random_character_select=on
         generate_character_journal_stickers=on
         generate_character_journal_entries=on
         generate_sticker_pixel_art=on
+        enable_sprite_hot_loading=off
+        sprite_hot_load_delay=400
     """
         ).strip()
     )
