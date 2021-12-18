@@ -77,7 +77,7 @@ class PlaylunkyConfig:
     generate_character_journal_entries: bool = True
     generate_sticker_pixel_art: bool = True
     enable_sprite_hot_loading: bool = False
-    sprite_hot_load_delay: int = 100
+    sprite_hot_load_delay: int = 400
 
     @classmethod
     def from_ini(cls, handle: TextIO) -> "PlaylunkyConfig":
