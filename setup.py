@@ -1,5 +1,4 @@
 import pathlib
-from urllib.parse import urlparse, parse_qs
 
 from setuptools import find_packages, setup
 
@@ -10,8 +9,8 @@ VERSION = (HERE / "src/modlunky2/VERSION").read_text(encoding="utf-8").strip()
 
 def get_install_requires():
     install_requires = []
-    with open("requirements.txt") as fp:
-        for line in fp:
+    with open("requirements.txt", encoding="utf-8") as handle:
+        for line in handle:
             line = line.strip()
             install_requires.append(line)
     return install_requires
@@ -75,7 +74,6 @@ setup(
         "console_scripts": [
             "modlunky2=modlunky2.cli:main",
             "modlunky2-asset-extract=modlunky2.assets.extractor:main",
-            "modlunky2-asset-pack=modlunky2.assets.packer:main",
             "modlunky2-soundbank-extract=modlunky2.assets.soundbank:main",
         ],
     },

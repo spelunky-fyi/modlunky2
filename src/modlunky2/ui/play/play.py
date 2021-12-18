@@ -4,24 +4,24 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.config import Config
 from modlunky2.ui.play.config import SECTIONS, PlaylunkyConfig
 from modlunky2.ui.widgets import (
     ScrollableFrameLegacy,
     Tab,
 )
-from modlunky2.utils import is_patched
 
-from .constants import (
+from modlunky2.ui.play.constants import (
     PLAYLUNKY_DATA_DIR,
     PLAYLUNKY_EXE,
     PLAYLUNKY_VERSION_FILENAME,
 )
-from .controls import ControlsFrame
-from .filters import FiltersFrame
-from .load_order import LoadOrderFrame
-from .options import OptionsFrame
-from .packs import PacksFrame
-from .releases import VersionFrame, parse_download_url
+from modlunky2.ui.play.controls import ControlsFrame
+from modlunky2.ui.play.filters import FiltersFrame
+from modlunky2.ui.play.load_order import LoadOrderFrame
+from modlunky2.ui.play.options import OptionsFrame
+from modlunky2.ui.play.packs import PacksFrame
+from modlunky2.ui.play.releases import VersionFrame, parse_download_url
 
 logger = logging.getLogger("modlunky2")
 
@@ -38,16 +38,11 @@ def launch_playlunky(_call, install_dir, exe_path, use_console):
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
 
-    spel2_exe = install_dir / "Spel2.exe"
-    if spel2_exe.exists() and is_patched(spel2_exe):
-        logger.warning(
-            "You're using Playlunky against a patched exe. "
-            "For best results use Playlunky on a vanilla exe."
-        )
-
 
 class PlayTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(
+        self, tab_control, modlunky_config: Config, task_manager, *args, **kwargs
+    ):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config
@@ -131,9 +126,13 @@ class PlayTab(Tab):
 
         self.ini = None
 
+        logger.debug("Initializing Playlunky on_load")
         self.on_load()
+        logger.debug("Initializing Playlunky load_from_ini")
         self.load_from_ini()
+        logger.debug("Initializing Playlunky load_from_load_order")
         self.load_from_load_order()
+        logger.debug("Initalizing Playlunky complete!")
 
     def make_dirs(self):
         if not self.modlunky_config.install_dir:
@@ -194,7 +193,9 @@ class PlayTab(Tab):
                 if pack is None:
                     continue
 
-                pack.set(selected)
+                pack.set(selected, skip_render=True)
+
+        self.packs_frame.render_packs()
 
     def write_load_order(self):
         load_order_path = self.load_order_path
@@ -217,7 +218,7 @@ class PlayTab(Tab):
         return self.modlunky_config.install_dir / "Mods/Packs/load_order.txt"
 
     def should_install(self):
-        version = self.modlunky_config.config_file.playlunky_version
+        version = self.modlunky_config.playlunky_version
         if version:
             msg = (
                 f"You don't currently have version {version} installed.\n\n"
@@ -238,7 +239,7 @@ class PlayTab(Tab):
         return answer
 
     def needs_update(self):
-        selected_version = self.modlunky_config.config_file.playlunky_version
+        selected_version = self.modlunky_config.playlunky_version
         if selected_version not in ["nightly", "stable"]:
             return False
 
@@ -249,7 +250,7 @@ class PlayTab(Tab):
 
         downloaded_version_path = (
             PLAYLUNKY_DATA_DIR
-            / self.modlunky_config.config_file.playlunky_version
+            / self.modlunky_config.playlunky_version
             / PLAYLUNKY_VERSION_FILENAME
         )
         downloaded_version = None
@@ -268,9 +269,7 @@ class PlayTab(Tab):
 
     def play(self):
         exe_path = (
-            PLAYLUNKY_DATA_DIR
-            / self.modlunky_config.config_file.playlunky_version
-            / PLAYLUNKY_EXE
+            PLAYLUNKY_DATA_DIR / self.modlunky_config.playlunky_version / PLAYLUNKY_EXE
         )
         self.disable_button()
 
@@ -297,7 +296,7 @@ class PlayTab(Tab):
             "play:launch_playlunky",
             install_dir=self.modlunky_config.install_dir,
             exe_path=exe_path,
-            use_console=self.modlunky_config.config_file.playlunky_console,
+            use_console=self.modlunky_config.playlunky_console,
         )
 
     def playlunky_closed(self):

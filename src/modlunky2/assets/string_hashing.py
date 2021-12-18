@@ -26,7 +26,7 @@ class StringHashes:
                 if current_comment_section is not None:
                     str_to_hash += current_comment_section
 
-                string_hash = "0x{:08x}".format(zlib.crc32(str_to_hash.encode()))
+                string_hash = f"0x{zlib.crc32(str_to_hash.encode()):08x}"
 
             hashes.append(string_hash)
 

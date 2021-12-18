@@ -1,4 +1,4 @@
-from .base_classes import AbstractFloorSheet
+from modlunky2.sprites.base_classes import AbstractFloorSheet
 
 __all__ = [
     "CaveFloorSheet",

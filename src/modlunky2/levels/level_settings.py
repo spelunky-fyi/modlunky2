@@ -2,7 +2,12 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from typing import ClassVar, Generic, Optional, TextIO, TypeVar
 
-from .utils import DirectivePrefixes, split_comment, to_line, format_comment
+from modlunky2.levels.utils import (
+    DirectivePrefixes,
+    split_comment,
+    to_line,
+    format_comment,
+)
 
 T = TypeVar("T")  # pylint: disable=invalid-name
 

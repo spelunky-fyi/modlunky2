@@ -21,8 +21,8 @@ from modlunky2.sprites.sprite_loaders import get_all_sprite_loaders
 from modlunky2.sprites.sprite_mergers import get_all_sprite_mergers
 from modlunky2.constants import BASE_DIR
 
-from .chacha import Key, chacha, hash_filepath
-from .constants import (
+from modlunky2.assets.chacha import Key, chacha, hash_filepath
+from modlunky2.assets.constants import (
     BANK_ALIGNMENT,
     DDS_PNGS,
     DEFAULT_COMPRESSION_LEVEL,
@@ -30,11 +30,11 @@ from .constants import (
     KNOWN_FILEPATHS,
     PNG_NAMES_TO_DDS_NAMES,
 )
-from .soundbank import extract_soundbank
-from .converters import dds_to_png, png_to_dds, rgba_to_png
-from .exc import FileConflict, MissingAsset, MultipleMatchingAssets
-from .string_hashing import StringHashes
-from .hashing import md5sum_path
+from modlunky2.assets.soundbank import extract_soundbank
+from modlunky2.assets.converters import dds_to_png, png_to_dds, rgba_to_png
+from modlunky2.assets.exc import FileConflict, MissingAsset, MultipleMatchingAssets
+from modlunky2.assets.string_hashing import StringHashes
+from modlunky2.assets.hashing import md5sum_path
 
 
 logger = logging.getLogger("modlunky2")
@@ -90,7 +90,7 @@ class ExeAssetBlock:
         data_len, filepath_len = unpack(b"<II", exe_handle.read(8))
 
         if (data_len, filepath_len) == (0, 0):
-            return
+            return None
 
         if data_len <= 0:
             raise RuntimeError(f"Expected data length > 0, found {data_len}")
@@ -149,7 +149,7 @@ class ExeAsset:
         compressed_dir: Path,
         key: Key,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
-        recompress=True,
+        recompress=False,
     ):
         if not self.filepath:
             raise RuntimeError("Asset doesn't have filepath.")
@@ -182,7 +182,7 @@ class ExeAsset:
 
             except Exception:  # pylint: disable=broad-except
                 logger.exception("Failed compression")
-                return None
+                return
 
         if self.filepath in KNOWN_TEXTURES_V1:
             self.data = rgba_to_png(self.data)
@@ -292,7 +292,7 @@ class AssetStore:
         compressed_dir,
         compression_level=DEFAULT_COMPRESSION_LEVEL,
         max_workers=max(os.cpu_count() - 2, 1),
-        recompress=True,
+        recompress=False,
         generate_string_hashes=True,
         create_entity_sheets=True,
         extract_sound_extensions=None,
@@ -331,9 +331,13 @@ class AssetStore:
         if create_entity_sheets:
             logger.info("Creating entity sprite sheets...")
 
-            with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+            with open(
+                BASE_DIR / "static/game_data/entities.json", encoding="utf-8"
+            ) as entities_file:
                 entities_json = json.loads(entities_file.read())
-            with open(BASE_DIR / "static/game_data/textures.json") as textures_file:
+            with open(
+                BASE_DIR / "static/game_data/textures.json", encoding="utf-8"
+            ) as textures_file:
                 textures_json = json.loads(textures_file.read())
 
             sprite_loaders = get_all_sprite_loaders(

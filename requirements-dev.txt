@@ -1,5 +1,6 @@
-pylint==2.9.6
-black==21.7b0
-pytest==6.2.4
-flake8==3.9.2
+black==21.12b0
+flake8==4.0.1
+pylint==2.12.2
+pytest==6.2.5
+pip-api==0.0.26
 twine

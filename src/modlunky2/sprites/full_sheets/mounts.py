@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from ..base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
-from ..monsters.mounts import Mounts
-from ..journal_mons import JournalMonsterSheet
-from ..journal_items import JournalItemSheet
-from ..items import ItemSheet
-from ..util import chunks_from_animation
+from modlunky2.sprites.base_classes.base_json_sprite_merger import BaseJsonSpriteMerger
+from modlunky2.sprites.monsters.mounts import Mounts
+from modlunky2.sprites.journal_mons import JournalMonsterSheet
+from modlunky2.sprites.journal_items import JournalItemSheet
+from modlunky2.sprites.items import ItemSheet
+from modlunky2.sprites.util import chunks_from_animation
 
 
 class TurkeySpriteMerger(BaseJsonSpriteMerger):

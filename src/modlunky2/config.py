@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import dataclasses
+from dataclasses import dataclass
 import logging
-import json
+from typing import Dict, List, Optional
 
 try:
     import winreg
@@ -10,7 +14,15 @@ from pathlib import Path
 from shutil import copyfile
 from urllib.parse import urlparse, urlunparse
 
-from appdirs import user_config_dir, user_data_dir, user_cache_dir
+from platformdirs import user_config_dir, user_data_dir, user_cache_dir
+from serde import serialize, deserialize
+import serde.json
+
+from modlunky2.utils import is_windows
+
+if is_windows():
+    # Import for pyinstaller to detect this module
+    import platformdirs.windows  # pylint: disable=unused-import
 
 PROGRAMS_KEY = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
 DEFAULT_PATH = Path("C:/Program Files (x86)/Steam/steamapps/common/Spelunky 2")
@@ -21,6 +33,7 @@ APP_NAME = "modlunky2"
 CONFIG_DIR = Path(user_config_dir(APP_NAME, APP_AUTHOR))
 DATA_DIR = Path(user_data_dir(APP_NAME, APP_AUTHOR))
 CACHE_DIR = Path(user_cache_dir(APP_NAME, APP_AUTHOR))
+SHOW_PACKING_DEFAULT = False
 
 MIN_WIDTH = 1280
 MIN_HEIGHT = 768
@@ -90,79 +103,92 @@ def guess_install_dir(exe_dir=None):
     return None
 
 
-class ConfigFile:
-    def __init__(self, config_path: Path):
-        self.config_path = config_path
-        self.dirty = False
+def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
+    if metadata is None:
+        metadata = {}
+    if "serde_skip_if" in metadata:
+        raise ValueError(
+            f"metadata already contains 'serde_skip_if' with value {metadata['serde_skip_if']}"
+        )
+    # Technically, pyserde permits these to be set with 'serde_skip_if', but it seems dubious
+    if "serde_skip" in metadata:
+        raise ValueError(
+            "metadata  contains 'serde_skip' which conflicts with 'serde_skip_if'"
+        )
+    if "serde_skip_if_false" in metadata:
+        raise ValueError(
+            "metadata  contains 'serde_skip_if_false' which conflicts with 'serde_skip_if'"
+        )
+    metadata["serde_skip_if"] = lambda v: v == default
+    return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
-        self.install_dir = None
-        self.playlunky_version = None
-        self.playlunky_console = False
-        self.playlunky_shortcut = False
-        self.geometry = None
-        self.spelunky_fyi_root = None
-        self.spelunky_fyi_api_token = None
-        self.theme = None
-        self.last_install_browse = None
-        self.last_tab = None
-        self.tracker_color_key = None
+
+@serialize(rename_all="spinalcase")
+@deserialize(rename_all="spinalcase")
+@dataclass
+class Config:
+    config_path: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+    dirty: bool = dataclasses.field(default=False, metadata={"serde_skip": True})
+
+    launcher_exe: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+    exe_dir: Optional[Path] = dataclasses.field(
+        default=None, metadata={"serde_skip": True}
+    )
+
+    install_dir: Optional[Path] = None
+    playlunky_version: Optional[str] = skip_default_field(default=None)
+    playlunky_console: bool = skip_default_field(default=False)
+    playlunky_shortcut: bool = skip_default_field(default=False)
+    geometry: str = skip_default_field(default=f"{MIN_WIDTH}x{MIN_HEIGHT}")
+    spelunky_fyi_root: str = skip_default_field(default=SPELUNKY_FYI_ROOT_DEFAULT)
+    spelunky_fyi_api_token: Optional[str] = skip_default_field(default=None)
+    theme: Optional[str] = skip_default_field(default=None)
+    last_install_browse: Path = skip_default_field(default=LAST_INSTALL_BROWSE_DEFAULT)
+    last_tab: Optional[str] = skip_default_field(default=None)
+    tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
+    show_packing: bool = skip_default_field(default=False)
+    level_editor_tab: Optional[int] = skip_default_field(default=None)
+    custom_level_editor_custom_save_formats: Optional[List[Dict]] = skip_default_field(
+        default=None
+    )
+    custom_level_editor_default_save_format: Optional[Dict] = skip_default_field(
+        default=None
+    )
+
+    def __post_init__(self):
+        if self.exe_dir is None:
+            self.exe_dir = Path(__file__).resolve().parent
 
     @classmethod
-    def from_path(cls, config_path: Path, exe_dir=None):
-        obj = cls(config_path=config_path)
-        needs_save = False
+    def from_path(
+        cls,
+        config_path: Path = None,
+        exe_dir: Optional[Path] = None,
+        launcher_exe: Optional[Path] = None,
+    ):
+        if config_path is None:
+            config_path = CONFIG_DIR / "config.json"
+        if exe_dir is None:
+            exe_dir = Path(__file__).resolve().parent
 
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as config_file:
-                try:
-                    config_data = json.load(config_file)
-                except Exception as err:  # pylint: disable=broad-except
-                    logger.critical(
-                        "Failed to read config file: %s. Creating new one from defaults.",
-                        err,
-                    )
-                    needs_save = True
-                    config_data = {}
+                config = serde.json.from_json(Config, config_file.read())
+                config.config_path = config_path
         else:
-            config_data = {}
+            config = Config()
+            config.install_dir = guess_install_dir(exe_dir)
+            config.config_path = config_path
+            config.save()
 
-        # Initialize install-dir
-        install_dir = config_data.get("install-dir", NOT_PRESENT)
-        if install_dir is NOT_PRESENT:
-            install_dir = guess_install_dir(exe_dir)
-            needs_save = True
-        elif install_dir is not None:
-            install_dir = Path(install_dir)
-        obj.install_dir = install_dir
+        config.launcher_exe = launcher_exe
+        config.exe_dir = exe_dir
 
-        obj.last_install_browse = config_data.get(
-            "last-install-browse", LAST_INSTALL_BROWSE_DEFAULT
-        )
-
-        # Initialize playlunky config
-        obj.playlunky_version = config_data.get("playlunky-version")
-        obj.playlunky_console = config_data.get("playlunky-console", False)
-        obj.playlunky_shortcut = config_data.get("playlunky-shortcut", False)
-
-        # Initialize geometry
-        obj.geometry = config_data.get("geometry", f"{MIN_WIDTH}x{MIN_HEIGHT}")
-
-        # FYI Config
-        obj.spelunky_fyi_root = config_data.get(
-            "spelunky-fyi-root", SPELUNKY_FYI_ROOT_DEFAULT
-        )
-        obj.spelunky_fyi_api_token = config_data.get("spelunky-fyi-api-token")
-
-        obj.theme = config_data.get("theme")
-        obj.last_tab = config_data.get("last-tab")
-
-        # Tracker Config
-        obj.tracker_color_key = config_data.get("tracker-color-key", DEFAULT_COLOR_KEY)
-
-        if needs_save:
-            obj.save()
-
-        return obj
+        return config
 
     @property
     def spelunky_fyi_ws_root(self):
@@ -179,42 +205,6 @@ class ConfigFile:
 
         return urlunparse(parts)
 
-    def to_dict(self):
-        install_dir = None
-        if self.install_dir:
-            install_dir = self.install_dir.as_posix()
-
-        out = {}
-        out["install-dir"] = install_dir
-
-        if self.last_install_browse != LAST_INSTALL_BROWSE_DEFAULT:
-            out["last-install-browse"] = self.last_install_browse
-
-        if self.playlunky_version is not None:
-            out["playlunky-version"] = self.playlunky_version
-        if self.playlunky_console:
-            out["playlunky-console"] = self.playlunky_console
-        if self.playlunky_shortcut:
-            out["playlunky-shortcut"] = self.playlunky_shortcut
-
-        out["geometry"] = self.geometry
-
-        if self.spelunky_fyi_api_token is not None:
-            out["spelunky-fyi-api-token"] = self.spelunky_fyi_api_token
-
-        if self.spelunky_fyi_root != SPELUNKY_FYI_ROOT_DEFAULT:
-            out["spelunky-fyi-root"] = self.spelunky_fyi_root
-
-        if self.last_tab:
-            out["last-tab"] = self.last_tab
-
-        if self.tracker_color_key != DEFAULT_COLOR_KEY:
-            out["tracker-color-key"] = self.tracker_color_key
-
-        out["theme"] = self.theme
-
-        return out
-
     def _get_tmp_path(self):
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
 
@@ -225,45 +215,8 @@ class ConfigFile:
         # in case something crashes while writing out the config.
         tmp_path = self._get_tmp_path()
         with tmp_path.open("w", encoding="utf-8") as tmp_file:
-            json.dump(self.to_dict(), tmp_file, indent=4, sort_keys=True)
+            file_content = serde.json.to_json(self, indent=4, sort_keys=True)
+            tmp_file.write(file_content)
 
         copyfile(tmp_path, self.config_path)
         tmp_path.unlink()
-
-
-class Config:
-    def __init__(self, config_file: ConfigFile, launcher_exe, exe_dir):
-        self.config_file: ConfigFile = config_file
-        self.launcher_exe = launcher_exe
-        self.exe_dir = exe_dir
-        if self.exe_dir is None:
-            self.exe_dir = Path(__file__).resolve().parent
-
-        self._install_dir = NOT_PRESENT
-        self.beta = False
-
-    @classmethod
-    def from_path(cls, config_path: Path, launcher_exe=None, exe_dir=None):
-        return cls(
-            config_file=ConfigFile.from_path(config_path, exe_dir=exe_dir),
-            launcher_exe=launcher_exe,
-            exe_dir=exe_dir,
-        )
-
-    @classmethod
-    def default(cls, launcher_exe=None, exe_dir=None):
-        return Config.from_path(
-            CONFIG_DIR / "config.json", launcher_exe=launcher_exe, exe_dir=exe_dir
-        )
-
-    @property
-    def install_dir(self):
-        if self._install_dir is NOT_PRESENT:
-            if self.config_file.install_dir is None:
-                return self.exe_dir
-            return self.config_file.install_dir
-        return self._install_dir
-
-    @install_dir.setter
-    def install_dir(self, value):
-        self._install_dir = value

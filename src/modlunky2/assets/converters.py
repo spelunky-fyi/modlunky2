@@ -15,7 +15,8 @@ def rgba_to_png(data):
 def dds_to_png(data):
     """Takes a .DDS `Image` and returns .png data."""
     img = Image.open(io.BytesIO(data))
-    img.tile[0] = img.tile[0][:-1] + ((img.tile[0][-1][0][::-1], 0, 1),)
+    # Needed in older versions of Pillow before 8.3.x
+    # img.tile[0] = img.tile[0][:-1] + ((img.tile[0][-1][0][::-1], 0, 1),)
     new_data = io.BytesIO()
     img.save(new_data, format="PNG")
     return new_data.getvalue()

@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Optional
 from typing import TextIO
 
-from .level_chances import LevelChances, LevelChance
-from .level_settings import LevelSettings, LevelSetting
-from .level_templates import LevelTemplates, LevelTemplate
-from .monster_chances import MonsterChances, MonsterChance
-from .tile_codes import TileCodes, TileCode
-from .utils import DirectivePrefixes, Peekable, format_comment
+from modlunky2.levels.level_chances import LevelChances, LevelChance
+from modlunky2.levels.level_settings import LevelSettings, LevelSetting
+from modlunky2.levels.level_templates import LevelTemplates, LevelTemplate
+from modlunky2.levels.monster_chances import MonsterChances, MonsterChance
+from modlunky2.levels.tile_codes import TileCodes, TileCode
+from modlunky2.levels.utils import DirectivePrefixes, Peekable, format_comment
 
 SECTION_COMMENT = "// ------------------------------"
 

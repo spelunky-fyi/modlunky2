@@ -6,13 +6,13 @@ from typing import List, Optional
 from pathlib import Path
 from struct import unpack, calcsize
 
-import pywintypes
-import win32api
-import win32con
-import win32process
+import pywintypes  # pylint: disable=import-error
+import win32api  # pylint: disable=import-error
+import win32con  # pylint: disable=import-error
+import win32process  # pylint: disable=import-error
 
-from .state import State
-from .memrauder.model import (
+from modlunky2.mem.state import State
+from modlunky2.mem.memrauder.model import (
     MemoryReader,
     MemContext,
 )
@@ -61,7 +61,7 @@ def process_list():
         ctypes.sizeof(PROCESSENTRY32)
     )
     if Process32First(processes, ctypes.byref(pe32)) == win32con.FALSE:
-        return None
+        return
 
     while True:
         yield pe32
@@ -75,6 +75,7 @@ def find_spelunky2_pid() -> Optional[DWORD]:
     for proc in process_list():
         if proc.szExeFile == b"Spel2.exe":
             return proc.th32ProcessID
+    return None
 
 
 class _MEMORY_BASIC_INFORMATION64(ctypes.Structure):  # pylint: disable=invalid-name
@@ -145,7 +146,7 @@ class Spel2Process:
             win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid
         )
         if not handle:
-            return
+            return None
 
         return cls(handle)
 
@@ -230,6 +231,7 @@ class Spel2Process:
 
             if module_filename.name == "Spel2.exe":
                 return module_handle
+        return None
 
     def get_offset_past_bundle(self):
         exe = self.get_spel2_module()

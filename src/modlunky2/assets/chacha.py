@@ -87,7 +87,7 @@ def mix_in(h, s):
         assert len(partial) <= 0x40
         b = bytearray(h)
         for i, c in enumerate(partial[::-1]):
-            b[i] ^= ord("%c" % c)
+            b[i] ^= ord(f"{c:c}")
         return quad_rounds(bytes(b))
 
     while s != b"":

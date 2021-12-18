@@ -9,6 +9,7 @@ from typing import Dict, List
 from PIL import Image, ImageTk
 
 from modlunky2.api import SpelunkyFYIClient
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import (
     ScrollableLabelFrame,
@@ -44,8 +45,12 @@ def _cache_fyi_pack_details(
         if skip_file.exists():
             continue
 
-        logging.debug("Getting latest details for %s", pack)
+        logger.debug("Getting latest details for %s", pack)
         details, code = api_client.get_mod(pack)
+        # Invalid code, don't bother checking for more
+        if code == 401:
+            break
+
         if code == 404:
             skip_file.touch()
             continue
@@ -103,7 +108,9 @@ class PacksFrame(ScrollableLabelFrame):
 
     CACHE_FYI_INTERVAL = 1000 * 10 * 60
 
-    def __init__(self, play_tab, parent, modlunky_config, task_manager):
+    def __init__(self, play_tab, parent, modlunky_config: Config, task_manager):
+        logger.debug("Initializing Playlunky PacksFrame")
+
         super().__init__(parent, text="Select Mods to Play")
         self._loaded = False
 
@@ -148,8 +155,8 @@ class PacksFrame(ScrollableLabelFrame):
         return sorted(packs)
 
     def cache_fyi_pack_details(self):
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        spelunky_fyi_root = self.modlunky_config.spelunky_fyi_root
+        api_token = self.modlunky_config.spelunky_fyi_api_token
 
         if not api_token:
             return

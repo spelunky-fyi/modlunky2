@@ -3,7 +3,12 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from typing import ClassVar, Optional, TextIO
 
-from .utils import DirectivePrefixes, split_comment, to_line, format_comment
+from modlunky2.levels.utils import (
+    DirectivePrefixes,
+    split_comment,
+    to_line,
+    format_comment,
+)
 
 VALID_TILE_CODES = set(
     [
@@ -197,7 +202,7 @@ VALID_TILE_CODES = set(
         "spark_trap",
         "spikes",
         "spring_trap",
-        "stagnant_lava",
+        "coarse_lava",
         "starting_exit",
         "sticky_trap",
         "stone_floor",

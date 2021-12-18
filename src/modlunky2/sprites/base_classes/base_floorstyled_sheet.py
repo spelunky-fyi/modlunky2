@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pathlib import Path
 
-from .base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
 
 
 class AbstractFloorStyledSheet(BaseSpriteLoader):

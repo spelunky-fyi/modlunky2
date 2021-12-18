@@ -40,13 +40,13 @@ def main():
         ),
     )
     parser.add_argument(
-        "--no-recompress",
+        "--recompress",
         dest="recompress",
-        default=True,
-        action="store_false",
+        default=False,
+        action="store_true",
         help=(
-            "Don't recompress extracted assets. Increases extract time "
-            "but packing will be slower."
+            "Recompress extracted assets. Increases extract time "
+            "but packing will be faster."
         ),
     )
     parser.add_argument(

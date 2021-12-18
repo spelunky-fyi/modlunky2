@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 import enum
-from typing import Optional, Tuple
+from typing import FrozenSet, Optional, Tuple
+from modlunky2.mem.arena_state import ArenaState
 
-from modlunky2.mem.entities import Entity, Player
+from modlunky2.mem.entities import EntityType, Player
 
 from modlunky2.mem.memrauder.dsl import (
     array,
     pointer,
-    poly_pointer,
     struct_field,
     dc_struct,
     sc_int32,
@@ -15,8 +15,8 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int8,
     sc_uint8,
 )
-from modlunky2.mem.memrauder.model import PolyPointer
-from modlunky2.mem.memrauder.msvc import DictUnorderedMap, UnorderedMap, unordered_map
+from modlunky2.mem.memrauder.model import DictMap
+from modlunky2.mem.memrauder.spelunky2 import UidEntityMap, uid_entity_map
 
 
 class RunRecapFlags(enum.IntFlag):
@@ -60,6 +60,13 @@ class PresenceFlags(enum.IntFlag):
     MOON_CHALLENGE = 1 << 9 - 1
     STAR_CHALLENGE = 1 << 10 - 1
     SUN_CHALLENGE = 1 << 11 - 1
+
+
+class LoadingState(enum.IntEnum):
+    NOT_LOADING = 0
+    START = 1
+    LOADING = 2
+    END = 3
 
 
 class Screen(enum.IntEnum):
@@ -142,6 +149,9 @@ class State:
     screen_last: Screen = struct_field(0x08, sc_int32, default=Screen.LEVEL_TRANSITION)
     screen: Screen = struct_field(0x0C, sc_int32, default=Screen.LEVEL)
     screen_next: Screen = struct_field(0x10, sc_int32, default=Screen.LEVEL_TRANSITION)
+    loading: LoadingState = struct_field(
+        0x14, sc_int32, default=LoadingState.NOT_LOADING
+    )
     quest_flags: QuestFlags = struct_field(0x38, sc_uint32, default=0)
     # The total amount spent at shops and stolen by leprechauns. This is non-positive during the run.
     # If the run ends in a victory, the bonus will be added to this during the score screen.
@@ -157,12 +167,16 @@ class State:
     theme: Theme = struct_field(0x74, sc_uint8, default=Theme.DWELLING)
     theme_next: Theme = struct_field(0x75, sc_uint8, default=Theme.DWELLING)
     win_state: WinState = struct_field(0x76, sc_int8, default=WinState.NO_WIN)
-    run_recap_flags: RunRecapFlags = struct_field(0x9F4, sc_uint32, default=0)
-    hud_flags: HudFlags = struct_field(0xA10, sc_uint32, default=0)
-    presence_flags: PresenceFlags = struct_field(0xA14, sc_uint32, default=0)
-    items: Optional[Items] = struct_field(0x12B0, pointer(dc_struct), default=None)
-    instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]] = struct_field(
-        0x1308,
-        unordered_map(sc_uint32, poly_pointer(dc_struct)),
-        default_factory=DictUnorderedMap,
+    waddler_storage: FrozenSet[EntityType] = struct_field(
+        0x8C, array(sc_uint32, 99), default=frozenset()
+    )
+    arena_state: ArenaState = struct_field(0x95C, dc_struct, default_factory=ArenaState)
+    run_recap_flags: RunRecapFlags = struct_field(0xA34, sc_uint32, default=0)
+    hud_flags: HudFlags = struct_field(0xA50, sc_uint32, default=0)
+    time_level: int = struct_field(0xA44, sc_uint32, default=0)
+    presence_flags: PresenceFlags = struct_field(0xA54, sc_uint32, default=0)
+    next_entity_uid: int = struct_field(0x12E0, sc_uint32, default=0)
+    items: Optional[Items] = struct_field(0x12F0, pointer(dc_struct), default=None)
+    instance_id_to_pointer: UidEntityMap = struct_field(
+        0x1348, uid_entity_map, default_factory=DictMap
     )

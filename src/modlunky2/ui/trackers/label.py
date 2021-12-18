@@ -30,6 +30,8 @@ class Label(Enum):
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
+    ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
+    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=3)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
     )
@@ -73,6 +75,7 @@ class RunLabel:
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
+    _HIDES[Label.PACIFIST] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
     _HIDES[Label.COSMIC_OCEAN] |= {
         Label.NO_TELEPORTER,
@@ -80,7 +83,7 @@ class RunLabel:
         Label.DUAT,
     }
 
-    # Score hides almost everythinge
+    # Score hides almost everything
     _SCORE_LABELS = {Label.SCORE, Label.NO_CO}
 
     def __init__(self, starting=None) -> None:
@@ -106,19 +109,26 @@ class RunLabel:
         self._set.add(label)
         self._modified()
 
-    def discard(self, label: Label):
-        if label.value.terminus:
-            raise ValueError(f"Attempted to discard a terminus, {label}")
-
+    def discard(self, *labels: Label):
         # Avoid re-validating if nothing's changed
-        if label not in self._set:
-            return
-        self._set.remove(label)
-        self._modified()
+        modified = False
+        for label in labels:
+            if label.value.terminus:
+                raise ValueError(f"Attempted to discard a terminus, {label}")
+
+            if label not in self._set:
+                continue
+            modified = True
+            self._set.remove(label)
+
+        if modified:
+            self._modified()
 
     def set_terminus(self, label: Label):
         if not label.value.terminus:
             raise ValueError(f"Attempted to use {label} as a terminus")
+        if self._terminus == label:
+            return
         self._set.remove(self._terminus)
         self._set.add(label)
         self._terminus = label
@@ -152,6 +162,15 @@ class RunLabel:
         for needle, need in self._ONLY_SHOW_WITH.items():
             if needle in vis and self._set.isdisjoint(need):
                 vis.discard(needle)
+
+        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES.
+        # Also, doing this after _HIDES to avoid duplicating _HIDES[Low%]
+        if not self._set.isdisjoint({Label.ICE_CAVES_SHORTCUT, Label.NO}):
+            vis.discard(Label.LOW)
+
+        # Handle No% hiding No Gold. We do this here to avoid multiple passes over _HIDES.
+        if Label.NO in self._set:
+            vis.discard(Label.NO_GOLD)
 
         # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
         if not self._set.isdisjoint({Label.ABZU, Label.DUAT}):

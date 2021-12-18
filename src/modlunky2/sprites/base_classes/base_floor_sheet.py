@@ -1,10 +1,14 @@
 from abc import abstractmethod
 from pathlib import Path
 
-from .base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
 
 
 class AbstractFloorSheet(BaseSpriteLoader):
+    """
+    Biome sheets are 12x12 128 pixel squares
+    """
+
     @property
     @abstractmethod
     def biome_name(self) -> str:
@@ -14,9 +18,6 @@ class AbstractFloorSheet(BaseSpriteLoader):
     def _sprite_sheet_path(self) -> Path:
         return Path(f"Data/Textures/floor_{self.biome_name}.png")
 
-    """
-    Biome sheets are 12x12 128 pixel squares
-    """
     _chunk_size = 128
     _chunk_map = {
         "push_block": (7, 0, 8, 1),

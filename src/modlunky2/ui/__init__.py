@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 import time
 import tkinter as tk
 import traceback
@@ -12,25 +13,29 @@ from modlunky2.version import current_version, latest_version
 from modlunky2.config import Config, MIN_WIDTH, MIN_HEIGHT
 from modlunky2.utils import is_windows, tb_info, temp_chdir
 
-from .tasks import TaskManager, PING_INTERVAL
-from .settings import SettingsTab
-from .extract import ExtractTab
-from .levels import LevelsTab
-from .play import PlayTab
-from .overlunky import OverlunkyTab
-from .pack import PackTab
-from .widgets import ConsoleWindow
-from .install import InstallTab
-from .logs import QueueHandler, register_queue_handler
-from .error import ErrorTab
-from .websocket import WebSocketThread
-from .s99 import S99Tab
+from modlunky2.ui.tasks import TaskManager, PING_INTERVAL
+from modlunky2.ui.settings import SettingsTab
+from modlunky2.ui.extract import ExtractTab
+from modlunky2.ui.levels import LevelsTab
+from modlunky2.ui.play import PlayTab
+from modlunky2.ui.overlunky import OverlunkyTab
+from modlunky2.ui.pack import PackTab
+from modlunky2.ui.widgets import ConsoleWindow
+from modlunky2.ui.install import InstallTab
+from modlunky2.ui.logs import QueueHandler, register_queue_handler
+from modlunky2.ui.error import ErrorTab
+from modlunky2.ui.websocket import WebSocketThread
+from modlunky2.ui.s99 import S99Tab
 
 if is_windows():
-    from .trackers import TrackersTab
+    from modlunky2.ui.trackers import TrackersTab
+if not IS_EXE:
+    import pip_api
 
 
 logger = logging.getLogger("modlunky2")
+update_lock = threading.Lock()
+
 
 TAB_KEYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 
@@ -44,20 +49,34 @@ def update_start(_call, launcher_exe):
     self_update(launcher_exe)
 
 
+def check_for_latest(call):
+    logger.debug("Checking for latest Modlunky version")
+    acquired = update_lock.acquire(blocking=False)
+    if not acquired:
+        logger.warning(
+            "Attempted to check for new modlunky while another task is running..."
+        )
+        return
+
+    modlunky_latest_version = None
+    try:
+        modlunky_latest_version = latest_version()
+    finally:
+        update_lock.release()
+
+    call("modlunky2:latest_version", modlunky_latest_version=modlunky_latest_version)
+
+
 class ModlunkyUI:
+    CHECK_LATEST_INTERVAL = 1000 * 30 * 60
+
     def __init__(self, modlunky_config: Config, log_level=logging.INFO):
+        logger.debug("Initializing UI")
         self.modlunky_config = modlunky_config
 
         self.current_version = current_version()
-        self.latest_version = latest_version()
-
-        if IS_EXE:
-            if self.latest_version is None or self.current_version is None:
-                self.needs_update = False
-            else:
-                self.needs_update = self.current_version < self.latest_version
-        else:
-            self.needs_update = False
+        self.latest_version = None
+        self.needs_update = False
 
         self._shutdown_handlers = []
         self._shutting_down = False
@@ -76,6 +95,15 @@ class ModlunkyUI:
             "modlunky2:update_complete", self.update_complete
         )
 
+        self.task_manager.register_task(
+            "modlunky2:check_for_latest",
+            check_for_latest,
+            True,
+        )
+        self.task_manager.register_handler(
+            "modlunky2:latest_version", self.handle_modlunky_latest_version
+        )
+
         self.root = tk.Tk(className="Modlunky2")
         self.load_themes()
         style = ttk.Style(self.root)
@@ -83,14 +111,11 @@ class ModlunkyUI:
         valid_themes = self.root.call("ttk::themes")
 
         self.root.title("Modlunky 2")
-        self.root.geometry(modlunky_config.config_file.geometry)
-        self.last_geometry = modlunky_config.config_file.geometry
+        self.root.geometry(modlunky_config.geometry)
+        self.last_geometry = modlunky_config.geometry
         self.root.bind("<Configure>", self.handle_resize)
-        if (
-            modlunky_config.config_file.theme
-            and modlunky_config.config_file.theme in valid_themes
-        ):
-            style.theme_use(modlunky_config.config_file.theme)
+        if modlunky_config.theme and modlunky_config.theme in valid_themes:
+            style.theme_use(modlunky_config.theme)
         self.root.event_add("<<ThemeChange>>", "None")
 
         style.configure(
@@ -141,10 +166,6 @@ class ModlunkyUI:
             style="Update.TButton",
         )
 
-        if self.needs_update:
-            self.update_frame.grid(row=0, column=0, sticky="nswe")
-            self.update_button.grid(column=0, row=0, sticky="nswe")
-
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
         self.root.bind("<Escape>", self.quit)
@@ -152,6 +173,7 @@ class ModlunkyUI:
         self.tabs = {}
         self.tab_control = ttk.Notebook(self.top_frame)
 
+        logger.debug("Registering Tabs")
         self.register_tab(
             "Playlunky",
             PlayTab,
@@ -180,13 +202,14 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
             task_manager=self.task_manager,
         )
-        self.register_tab(
-            "Pack Assets",
-            PackTab,
-            tab_control=self.tab_control,
-            modlunky_config=modlunky_config,
-            task_manager=self.task_manager,
-        )
+        if self.modlunky_config.show_packing:
+            self.register_tab(
+                "Pack Assets (Deprecated)",
+                PackTab,
+                tab_control=self.tab_control,
+                modlunky_config=modlunky_config,
+                task_manager=self.task_manager,
+            )
         self.register_tab(
             "Level Editor",
             LevelsTab,
@@ -236,10 +259,80 @@ class ModlunkyUI:
         self.root.after(100, self.after_task_manager)
         self.root.after(1000, self.after_ws_thread)
         self.root.after(1000, self.after_record_win)
+        self.check_for_updates()
+        self.check_requirements()
+
+    def check_for_updates(self):
+        if self.needs_update:
+            return
+
+        self.task_manager.call("modlunky2:check_for_latest")
+        self.root.after(self.CHECK_LATEST_INTERVAL, self.check_for_updates)
+
+    @staticmethod
+    def check_requirements():
+        # Only check requirements in dev environments
+        if IS_EXE:
+            return
+
+        all_req_files = [
+            "requirements.txt",
+            "requirements-dev.txt",
+        ]
+        if is_windows():
+            all_req_files.append("requirements-win.txt")
+
+        installed = pip_api.installed_distributions()
+        missing_req_files = set()
+        for req_file in all_req_files:
+            requirements = pip_api.parse_requirements(req_file)
+
+            for req in requirements.values():
+                if req.name not in installed:
+                    missing_req_files.add(req_file)
+                    logger.warning("Missing required package '%s'", req.name)
+                    continue
+
+                installed_ver = installed[req.name].version
+                if req.specifier.contains(installed_ver):
+                    continue
+                missing_req_files.add(req_file)
+                logger.warning(
+                    "Installed version of '%s' is %s, doesen't meet %s",
+                    req.name,
+                    installed_ver,
+                    req.specifier,
+                )
+
+        if not missing_req_files:
+            return
+        r_args = "  ".join([f"-r {r}" for r in missing_req_files])
+        logger.warning(
+            "Some requirements aren't met. Run pip install --upgrade %s",
+            r_args,
+        )
+
+    def handle_modlunky_latest_version(self, modlunky_latest_version):
+        if not IS_EXE:
+            return
+
+        if modlunky_latest_version is None:
+            self.needs_update = False
+            return
+        self.latest_version = modlunky_latest_version
+
+        if self.current_version is None:
+            self.needs_update = False
+            return
+
+        self.needs_update = self.current_version < self.latest_version
+        if self.needs_update:
+            self.update_frame.grid(row=0, column=0, sticky="nswe")
+            self.update_button.grid(column=0, row=0, sticky="nswe")
 
     def after_ws_thread(self):
         try:
-            token = self.modlunky_config.config_file.spelunky_fyi_api_token
+            token = self.modlunky_config.spelunky_fyi_api_token
             if token is None:
                 return
 
@@ -254,13 +347,13 @@ class ModlunkyUI:
 
     def after_record_win(self):
         self.root.after(1000, self.after_record_win)
-        if self.modlunky_config.config_file.geometry != self.last_geometry:
-            self.modlunky_config.config_file.geometry = self.last_geometry
-            self.modlunky_config.config_file.dirty = True
+        if self.modlunky_config.geometry != self.last_geometry:
+            self.modlunky_config.geometry = self.last_geometry
+            self.modlunky_config.dirty = True
 
-        if self.modlunky_config.config_file.dirty:
+        if self.modlunky_config.dirty:
             logger.debug("Saving config")
-            self.modlunky_config.config_file.save()
+            self.modlunky_config.save()
 
     def after_task_manager(self):
         if not self.task_manager.is_alive():
@@ -313,7 +406,7 @@ class ModlunkyUI:
         self.quit()
 
     def select_last_tab(self):
-        last_tab = self.tabs.get(self.modlunky_config.config_file.last_tab)
+        last_tab = self.tabs.get(self.modlunky_config.last_tab)
         if last_tab is None:
             return
         self.tab_control.select(last_tab)
@@ -326,8 +419,8 @@ class ModlunkyUI:
         else:
             self.forget_console()
 
-        self.modlunky_config.config_file.last_tab = tab_name
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.last_tab = tab_name
+        self.modlunky_config.save()
         tab.on_load()
 
     def render_console(self):
@@ -337,6 +430,8 @@ class ModlunkyUI:
         self.console_frame.grid_forget()
 
     def register_tab(self, name, cls, **kwargs):
+        logger.debug("Registering Tab %s", repr(name))
+
         try:
             obj = cls(**kwargs)
         except Exception:  # pylint: disable=broad-except

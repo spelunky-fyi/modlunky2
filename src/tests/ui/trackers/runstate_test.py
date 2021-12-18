@@ -1,11 +1,16 @@
 import pytest
+from modlunky2.category.chain.testing import FakeStepper
 from modlunky2.mem.entities import (
     CharState,
+    Entity,
     EntityDBEntry,
     EntityType,
+    Illumination,
     Inventory,
     Layer,
+    LightEmitter,
     Mount,
+    Movable,
     Player,
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
@@ -14,12 +19,14 @@ from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
     RunRecapFlags,
+    Screen,
     State,
     Theme,
     WinState,
 )
+from modlunky2.mem.testing import EntityMapBuilder, poly_pointer_no_mem
 from modlunky2.ui.trackers.label import Label, RunLabel
-from modlunky2.ui.trackers.runstate import ChainStatus, RunState
+from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
 
 # pylint: disable=protected-access,too-many-lines
 
@@ -29,6 +36,7 @@ from modlunky2.ui.trackers.runstate import ChainStatus, RunState
     [
         (Label.PACIFIST, RunRecapFlags.PACIFIST, RunState.update_pacifist),
         (Label.NO_GOLD, RunRecapFlags.NO_GOLD, RunState.update_no_gold),
+        (Label.NO, RunRecapFlags.NO_GOLD, RunState.update_no_gold),
     ],
 )
 def test_run_recap(label, recap_flag, method):
@@ -42,57 +50,200 @@ def test_run_recap(label, recap_flag, method):
 
 
 @pytest.mark.parametrize(
-    "item_set,expected_no_tp",
+    "item_set,prev_item_set,expected_could_tp",
     [
-        ({EntityType.ITEM_TELEPORTER}, False),
-        ({EntityType.ITEM_POWERUP_COMPASS}, True),
-        (set(), True),
+        ({EntityType.ITEM_TELEPORTER}, set(), True),
+        # Telepack may have exploded
+        (set(), {EntityType.ITEM_TELEPORTER_BACKPACK}, True),
+        ({EntityType.ITEM_POWERUP_COMPASS}, set(), False),
+        (set(), set(), False),
     ],
 )
-def test_no_tp(item_set, expected_no_tp):
+def test_could_tp_items(item_set, prev_item_set, expected_could_tp):
     run_state = RunState()
-    run_state.update_no_tp(item_set)
+    assert run_state.could_tp(Player(), item_set, prev_item_set) == expected_could_tp
+
+
+@pytest.mark.parametrize(
+    "mount_type,expected_could_tp",
+    [
+        (EntityType.MOUNT_QILIN, False),
+        (EntityType.MOUNT_AXOLOTL, True),
+    ],
+)
+def test_could_tp_mount(mount_type, expected_could_tp):
+    mount = Mount(type=EntityDBEntry(id=mount_type))
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(overlay=poly_mount)
+
+    run_state = RunState()
+    assert run_state.could_tp(player, set(), set()) == expected_could_tp
+
+
+def test_compute_player_motion_wo_overlay():
+    player = Player(position_x=5, position_y=7, velocity_x=-1, velocity_y=-3)
+    expected_motion = PlayerMotion(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount():
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+    )
+    poly_mount = PolyPointer(101, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18, position_y=13, velocity_x=-2, velocity_y=-7
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_elevator
+    )
+    expected_motion = PlayerMotion(
+        position_x=5.5, position_y=7.7, velocity_x=-1.1, velocity_y=-3.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+def test_compute_player_motion_mount_and_active_floor():
+    elevator = Movable(
+        type=EntityDBEntry(id=EntityType.ACTIVEFLOOR_ELEVATOR),
+        position_x=0.5,
+        position_y=0.7,
+        velocity_x=-0.1,
+        velocity_y=-0.3,
+    )
+    poly_elevator = PolyPointer(101, elevator, MemContext())
+    # Turkey on an elevator
+    mount = Mount(
+        type=EntityDBEntry(id=EntityType.MOUNT_TURKEY),
+        position_x=18,
+        position_y=13,
+        velocity_x=-2,
+        velocity_y=-7,
+        overlay=poly_elevator,
+    )
+    poly_mount = PolyPointer(102, mount, MemContext())
+    player = Player(
+        position_x=5, position_y=7, velocity_x=-1, velocity_y=-3, overlay=poly_mount
+    )
+    expected_motion = PlayerMotion(
+        position_x=18.5, position_y=13.7, velocity_x=-2.1, velocity_y=-7.3
+    )
+    run_state = RunState()
+    assert run_state.compute_player_motion(player) == expected_motion
+
+
+@pytest.mark.parametrize(
+    "player_x,player_y,player_vx,player_vy,idle_counter,shadow_x,shadow_y,expected_no_tp",
+    [
+        (5, 8, 0, 0, 0, 5.1, 8.2, False),
+        (10.5, 1.5, 0.2, 0.3, 1, 10, 1, False),
+        (19.5, 9.5, 0.2, 0.3, 3, 18.5, 8.5, False),
+        (1, 2, 0, 0, 0, 7, 9, True),
+        (11.5, 3.5, 0.2, 0.3, 2, 11, 2, True),
+        (13.5, 3.5, 0.3, 0.2, 2, 13, 4, True),
+        (1, 2, 0, 0, 0, 7, 9, True),
+    ],
+)
+def test_no_tp(
+    player_x,
+    player_y,
+    player_vx,
+    player_vy,
+    idle_counter,
+    shadow_x,
+    shadow_y,
+    expected_no_tp,
+):
+    fx_shadow_type = EntityDBEntry(id=EntityType.FX_TELEPORTSHADOW)
+    new_entities = []
+    src_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=Illumination()
+    )
+    new_entities.append(poly_pointer_no_mem(src_shadow))
+
+    dest_illumination = Illumination(light_pos_x=shadow_x, light_pos_y=shadow_y)
+    dest_shadow = LightEmitter(
+        type=fx_shadow_type, idle_counter=idle_counter, emitted_light=dest_illumination
+    )
+    new_entities.append(poly_pointer_no_mem(dest_shadow))
+
+    player = Player(
+        position_x=player_x,
+        position_y=player_y,
+        velocity_x=player_vx,
+        velocity_y=player_vy,
+    )
+    item_set = {EntityType.ITEM_TELEPORTER_BACKPACK}
+    prev_item_set = set()
+
+    run_state = RunState()
+    run_state.new_entities = new_entities
+    run_state.update_no_tp(player, item_set, prev_item_set)
+
     is_no_tp = Label.NO_TELEPORTER in run_state.run_label._set
     assert is_no_tp == expected_no_tp
 
 
 @pytest.mark.parametrize(
-    "world,item_set,expected_eggplant",
+    "item_set,expected_score",
     [
-        # Eggplant crown can only be collected in Sunken City
-        (7, {EntityType.ITEM_POWERUP_EGGPLANTCROWN}, True),
-        (6, set(), False),
-        (7, set(), False),
-        (8, set(), False),
+        ({EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False),
+        ({EntityType.ITEM_PLASMACANNON}, True),
+        ({EntityType.ITEM_PLASMACANNON}, True),
+        (set(), False),
+        (set(), False),
     ],
 )
-def test_eggplant(world, item_set, expected_eggplant):
+def test_score_items(item_set, expected_score):
     run_state = RunState()
-    run_state.update_eggplant(world, item_set)
-    is_eggplant = Label.EGGPLANT in run_state.run_label._set
-    assert is_eggplant == expected_eggplant
-
-
-@pytest.mark.parametrize(
-    "world,item_set,expected_score,expected_hou_yi",
-    [
-        (7, {EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False, False),
-        (3, {EntityType.ITEM_HOUYIBOW}, False, True),
-        (2, {EntityType.ITEM_HOUYIBOW}, False, False),
-        (1, {EntityType.ITEM_PLASMACANNON}, True, False),
-        (5, {EntityType.ITEM_PLASMACANNON}, True, False),
-        (1, set(), False, False),
-        (6, set(), False, False),
-    ],
-)
-def test_score_items(world, item_set, expected_score, expected_hou_yi):
-    run_state = RunState()
-    run_state.update_score_items(world, item_set)
+    run_state.update_score_items(item_set)
 
     is_score = Label.SCORE in run_state.run_label._set
     assert is_score == expected_score
 
-    assert run_state.hou_yis_waddler == expected_hou_yi
+
+@pytest.mark.parametrize(
+    "level_started,theme,world_start,level_start,expected_ice_caves",
+    [
+        (False, Theme.ICE_CAVES, 5, 1, False),
+        (True, Theme.NEO_BABYLON, 5, 1, False),
+        (True, Theme.ICE_CAVES, 1, 1, False),
+        (True, Theme.ICE_CAVES, 5, 1, True),
+    ],
+)
+def test_ice_caves(level_started, theme, world_start, level_start, expected_ice_caves):
+    game_state = State(theme=theme, world_start=world_start, level_start=level_start)
+
+    run_state = RunState()
+    run_state.level_started = level_started
+    run_state.update_ice_caves(game_state)
+
+    is_ice_caves = Label.ICE_CAVES_SHORTCUT in run_state.run_label._set
+    assert is_ice_caves == expected_ice_caves
 
 
 @pytest.mark.parametrize(
@@ -146,7 +297,7 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
     poly_mount = PolyPointer(101, mount, MemContext())
 
     run_state = RunState()
-    run_state.chain_status = chain_status
+    run_state.sunken_chain_status = chain_status
     run_state.update_has_mounted_tame(theme, poly_mount)
 
     is_low = Label.LOW in run_state.run_label._set
@@ -154,66 +305,77 @@ def test_has_mounted_tame(chain_status, theme, mount_type, mount_tamed, expected
 
 
 @pytest.mark.parametrize(
-    "char_state,prev_health,cur_health,expected_low",
+    "char_state,prev_health,cur_health,expected_low,expected_no",
     [
-        (CharState.STANDING, 4, 4, True),
-        (CharState.STANDING, 2, 1, True),
-        (CharState.STANDING, 3, 1, True),
-        (CharState.DYING, 1, 4, True),
-        (CharState.STANDING, 1, 2, False),
-        (CharState.STANDING, 2, 4, False),
-        (CharState.STANDING, 5, 5, False),
+        (CharState.STANDING, 4, 4, True, True),
+        (CharState.STANDING, 2, 1, True, False),
+        (CharState.STANDING, 3, 1, True, False),
+        (CharState.DYING, 1, 4, True, True),
+        (CharState.STANDING, 1, 2, False, False),
+        (CharState.STANDING, 2, 4, False, False),
+        (CharState.STANDING, 5, 5, False, False),
     ],
 )
-def test_starting_resources_health(char_state, prev_health, cur_health, expected_low):
+def test_starting_resources_health(
+    char_state, prev_health, cur_health, expected_low, expected_no
+):
     run_state = RunState()
     run_state.health = prev_health
 
     player = Player(state=char_state, health=cur_health)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, WinState.NO_WIN)
     assert run_state.health == cur_health
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
 
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
+
 
 @pytest.mark.parametrize(
-    "prev_bombs,cur_bombs,expected_low",
+    "prev_bombs,cur_bombs,expected_low,expected_no",
     [
-        (4, 4, True),
-        (4, 3, True),
-        (3, 1, True),
-        (7, 7, False),
-        (1, 4, False),
+        (4, 4, True, True),
+        (4, 3, True, False),
+        (3, 1, True, False),
+        (7, 7, False, False),
+        (1, 4, False, False),
     ],
 )
-def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low):
+def test_starting_resources_bombs(prev_bombs, cur_bombs, expected_low, expected_no):
     run_state = RunState()
     run_state.bombs = prev_bombs
 
     inventory = Inventory(bombs=cur_bombs)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, WinState.NO_WIN)
 
     assert run_state.bombs == cur_bombs
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
 
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
+
 
 @pytest.mark.parametrize(
-    "level_start_ropes,prev_ropes,cur_ropes,expected_low",
+    "level_start_ropes,prev_ropes,cur_ropes,win_state,expected_low,expected_no",
     [
-        (4, 4, 4, True),
-        (4, 4, 3, True),
-        (3, 3, 1, True),
-        (3, 2, 3, True),
-        (7, 7, 7, False),
-        (1, 1, 4, False),
+        (4, 4, 4, WinState.NO_WIN, True, True),
+        # This rope loss might be temporary
+        (4, 4, 3, WinState.NO_WIN, True, True),
+        # This rope loss is permanent
+        (4, 4, 3, WinState.TIAMAT, True, False),
+        (3, 3, 1, WinState.NO_WIN, True, True),
+        (3, 2, 3, WinState.NO_WIN, True, True),
+        (7, 7, 7, WinState.NO_WIN, False, False),
+        (1, 1, 4, WinState.NO_WIN, False, False),
     ],
 )
 def test_starting_resources_ropes(
-    level_start_ropes, prev_ropes, cur_ropes, expected_low
+    level_start_ropes, prev_ropes, cur_ropes, win_state, expected_low, expected_no
 ):
     run_state = RunState()
     run_state.level_start_ropes = level_start_ropes
@@ -221,12 +383,15 @@ def test_starting_resources_ropes(
 
     inventory = Inventory(ropes=cur_ropes)
     player = Player(inventory=inventory)
-    run_state.update_starting_resources(player)
+    run_state.update_starting_resources(player, win_state)
 
     assert run_state.ropes == cur_ropes
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
 
 
 @pytest.mark.parametrize(
@@ -238,7 +403,6 @@ def test_starting_resources_ropes(
         (CharState.DYING, True, set(), False, True),
         # We should skip checks during weird states
         (CharState.ENTERING, True, set(), True, True),
-        (CharState.EXITING, True, set(), True, True),
         (CharState.LOADING, True, set(), True, True),
     ],
 )
@@ -264,7 +428,6 @@ def test_status_effects_poisoned(
         (CharState.DYING, True, set(), False, True),
         # We should skip checks during weird states
         (CharState.ENTERING, True, set(), True, True),
-        (CharState.EXITING, True, set(), True, True),
         (CharState.LOADING, True, set(), True, True),
     ],
 )
@@ -340,29 +503,34 @@ def test_held_shield(item_set, expected_low):
 
 
 @pytest.mark.parametrize(
-    "chain_status,item_set,expected_failed_low_if_not_chain,expected_low",
+    "chain_status,item_set,expected_had_ankh,expected_low",
     [
-        # All of  these are fine while the chain is in-progress
-        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_UDJATEYE}, True, True),
-        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_CROWN}, True, True),
-        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_HEDJET}, True, True),
-        # Starting points are OK even if we haven't updated chain status
-        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_UDJATEYE}, True, True),
-        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_CROWN}, True, True),
-        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_HEDJET}, True, True),
-        # If it's not a starting point for the chain, and chain isn't in progress, we should fail immediately
+        # These are fine while chain is in-progress
+        (ChainStatus.IN_PROGRESS, {EntityType.ITEM_POWERUP_ANKH}, True, True),
+        (
+            ChainStatus.IN_PROGRESS,
+            {EntityType.ITEM_POWERUP_TABLETOFDESTINY},
+            False,
+            True,
+        ),
+        # If a chain isn't in progress, we should fail immediately
         (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_ANKH}, True, False),
-        (ChainStatus.UNSTARTED, {EntityType.ITEM_POWERUP_TABLETOFDESTINY}, True, False),
+        (
+            ChainStatus.UNSTARTED,
+            {EntityType.ITEM_POWERUP_TABLETOFDESTINY},
+            False,
+            False,
+        ),
         (ChainStatus.FAILED, {EntityType.ITEM_POWERUP_ANKH}, True, False),
-        (ChainStatus.FAILED, {EntityType.ITEM_POWERUP_TABLETOFDESTINY}, True, False),
+        (ChainStatus.FAILED, {EntityType.ITEM_POWERUP_TABLETOFDESTINY}, False, False),
     ],
 )
-def test_has_chain_powerup(
-    chain_status, item_set, expected_failed_low_if_not_chain, expected_low
-):
+def test_has_chain_powerup(chain_status, item_set, expected_had_ankh, expected_low):
     run_state = RunState()
-    run_state.update_has_chain_powerup(chain_status, item_set)
-    assert run_state.failed_low_if_not_chain == expected_failed_low_if_not_chain
+    run_state.sunken_chain_status = chain_status
+    run_state.update_has_chain_powerup(item_set)
+
+    assert run_state.had_ankh == expected_had_ankh
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
@@ -377,7 +545,7 @@ def test_has_chain_powerup(
         ({EntityType.ITEM_POWERUP_SKELETON_KEY}, False),
         ({EntityType.ITEM_POWERUP_SPIKE_SHOES}, False),
         ({EntityType.ITEM_POWERUP_SPRING_SHOES}, False),
-        # Having more than one isn't OK eithere
+        # Having more than one isn't OK either
         (
             {EntityType.ITEM_POWERUP_PARACHUTE, EntityType.ITEM_POWERUP_SPRING_SHOES},
             False,
@@ -396,23 +564,39 @@ def test_has_non_chain_powerup(item_set, expected_low):
 
 
 @pytest.mark.parametrize(
-    "prev_state,cur_state,item_set,expected_low",
+    "prev_state,cur_state,prev_item_set,item_set,expected_low",
     [
-        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_BOOMERANG}, False),
-        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_BOOMERANG}, False),
+        (
+            CharState.STANDING,
+            CharState.ATTACKING,
+            {EntityType.ITEM_BOOMERANG},
+            {},
+            False,
+        ),
+        (
+            CharState.ATTACKING,
+            CharState.STANDING,
+            {},
+            {EntityType.ITEM_BOOMERANG},
+            False,
+        ),
         # Holding things is OK
-        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_BOOMERANG}, True),
-        # Rocks are OK
-        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_ROCK}, True),
-        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_ROCK}, True),
-        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_ROCK}, True),
+        (
+            CharState.JUMPING,
+            CharState.CLIMBING,
+            {EntityType.ITEM_BOOMERANG},
+            {EntityType.ITEM_BOOMERANG},
+            True,
+        ),
         # Using the whip is OK
-        (CharState.JUMPING, CharState.CLIMBING, set(), True),
-        (CharState.STANDING, CharState.ATTACKING, set(), True),
-        (CharState.ATTACKING, CharState.STANDING, set(), True),
+        (CharState.JUMPING, CharState.CLIMBING, set(), set(), True),
+        (CharState.STANDING, CharState.ATTACKING, set(), set(), True),
+        (CharState.ATTACKING, CharState.STANDING, set(), set(), True),
     ],
 )
-def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
+def test_attacked_with_simple(
+    prev_state, cur_state, item_set, prev_item_set, expected_low
+):
     # These shouldn't be location sensitive
     layer = Layer.FRONT
     world = 2
@@ -420,9 +604,17 @@ def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
     theme = Theme.JUNGLE
     presence_flags = 0
     run_state = RunState()
-    run_state.chain_status = ChainStatus.IN_PROGRESS
+    run_state.sunken_chain_status = ChainStatus.IN_PROGRESS
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        prev_item_set,
     )
 
     is_low = Label.LOW in run_state.run_label._set
@@ -532,9 +724,17 @@ def test_attacked_with_excalibur(
     world = 4
     level = 2
     run_state = RunState()
-    run_state.chain_status = chain_status
+    run_state.sunken_chain_status = chain_status
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     # We only expect these to be set together
@@ -610,7 +810,15 @@ def test_attacked_with_mattock(layer, theme, presence_flags, expected_low):
     level = 2
     run_state = RunState()
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     # We only expect this to be set when we're still low%
@@ -649,7 +857,15 @@ def test_attacked_with_hou_yi(layer, world, level, presence_flags, expected_low)
     theme = Theme.DWELLING
     run_state = RunState()
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     is_low = Label.LOW in run_state.run_label._set
@@ -704,27 +920,6 @@ def test_attacked_with_throwables(
 
 
 @pytest.mark.parametrize(
-    "item_type, property_name",
-    [
-        (EntityType.ITEM_POWERUP_UDJATEYE, "had_udjat_eye"),
-        (EntityType.ITEM_POWERUP_CROWN, "had_world2_chain_headwear"),
-        (EntityType.ITEM_POWERUP_HEDJET, "had_world2_chain_headwear"),
-        (EntityType.ITEM_POWERUP_ANKH, "had_ankh"),
-        (EntityType.ITEM_EXCALIBUR, "held_world4_chain_item"),
-        (EntityType.ITEM_SCEPTER, "held_world4_chain_item"),
-        (EntityType.ITEM_POWERUP_TABLETOFDESTINY, "had_tablet_of_destiny"),
-        (EntityType.ITEM_USHABTI, "held_ushabti"),
-        (EntityType.ITEM_HOUYIBOW, "hou_yis_bow"),
-    ],
-)
-def test_chain(item_type, property_name):
-    run_state = RunState()
-    assert run_state.__getattribute__(property_name) is False
-    run_state.update_chain({item_type})
-    assert run_state.__getattribute__(property_name) is True
-
-
-@pytest.mark.parametrize(
     "world,theme,expected_world2_theme,expected_world4_theme",
     [
         (2, Theme.JUNGLE, Theme.JUNGLE, None),
@@ -746,163 +941,68 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
 
 
 @pytest.mark.parametrize(
-    "world,theme,world2_theme,chain_status,starting_labels,expected_jt,expected_abzu,expected_duat",
+    "world,theme,world2_theme,starting_labels,expected_jt,",
     [
         # Volcana has no labels associated with it
-        (
-            2,
-            Theme.VOLCANA,
-            None,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # We eagerly assume J/T regardless of quest chain
-        (2, Theme.JUNGLE, None, ChainStatus.UNSTARTED, {Label.ANY}, True, False, False),
+        (2, Theme.VOLCANA, None, {Label.ANY}, False),
+        # We eagerly assume J/T
+        (2, Theme.JUNGLE, None, {Label.ANY}, True),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.ANY},
             True,
-            False,
-            False,
         ),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.SUNKEN_CITY},
             True,
-            False,
-            False,
         ),
-        # We actually went J/T. Duat depends on quest chain
+        # We actually went J/T
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             True,
-            False,
-            False,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
             True,
-            False,
-            True,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
-            ChainStatus.FAILED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             True,
-            False,
-            False,
         ),
-        # Since we went Volcana, we're only eligible for Duat
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.IN_PROGRESS,
-            {Label.SUNKEN_CITY},
-            False,
-            False,
-            True,
-        ),
-        (
-            4,
-            Theme.TEMPLE,
-            Theme.VOLCANA,
-            ChainStatus.FAILED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # Since we went Volcana, we're only eligible for Abzu
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.UNSTARTED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.IN_PROGRESS,
-            {Label.SUNKEN_CITY},
-            False,
-            True,
-            False,
-        ),
-        (
-            4,
-            Theme.TIDE_POOL,
-            Theme.VOLCANA,
-            ChainStatus.FAILED,
-            {Label.ANY},
-            False,
-            False,
-            False,
-        ),
-        # We went Jungle, but J/T is now impossible. Abzu depends on quest chain
+        # We went Jungle, but J/T is now impossible
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.UNSTARTED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
             False,
-            False,
-            False,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.IN_PROGRESS,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
             False,
-            True,
-            False,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
-            ChainStatus.FAILED,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
-            False,
             False,
         ),
     ],
@@ -911,20 +1011,250 @@ def test_world_themes_label(
     world,
     theme,
     world2_theme,
-    chain_status,
     starting_labels,
     expected_jt,
-    expected_abzu,
-    expected_duat,
 ):
     run_state = RunState()
     run_state.run_label = RunLabel(starting=starting_labels)
     run_state.world2_theme = world2_theme
-    run_state.chain_status = chain_status
     run_state.update_world_themes(world, theme)
 
     is_jt = Label.JUNGLE_TEMPLE in run_state.run_label._set
     assert is_jt == expected_jt
+
+
+@pytest.mark.parametrize(
+    "world,win_state,final_death,had_ankh,sunken_status,eggplant_status,cosmic_status,expected_terminus",
+    [
+        (
+            2,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.ANY,
+        ),
+        (
+            1,
+            WinState.NO_WIN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.DEATH,
+        ),
+        (
+            3,
+            WinState.NO_WIN,
+            False,  # final_death
+            True,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        (
+            2,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.IN_PROGRESS,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        (
+            1,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.IN_PROGRESS,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        (
+            2,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # We're in Sunken City, so we must be doing Sunken City
+        (
+            7,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.FAILED,  # sunken_status
+            ChainStatus.IN_PROGRESS,  # eggplant_status
+            ChainStatus.FAILED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        (
+            7,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.FAILED,  # sunken_status
+            ChainStatus.FAILED,  # eggplant_status
+            ChainStatus.FAILED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        # We won via Hundun, so this is a SC run.
+        # Note that world is set to 1 on the moon/victory screen
+        (
+            1,
+            WinState.HUNDUN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.FAILED,  # sunken_status
+            ChainStatus.IN_PROGRESS,  # eggplant_status
+            ChainStatus.FAILED,  # cosmic_status
+            Label.SUNKEN_CITY,
+        ),
+        # Cosmic Ocean has priority over Sunken City, even in SC
+        (
+            7,
+            WinState.NO_WIN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # We won via Cosmic Ocean. This must be CO
+        (
+            8,
+            WinState.COSMIC_OCEAN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # Cosmic Ocean has priority over Death
+        (
+            2,
+            WinState.NO_WIN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # Cosmic Ocean has priority over Death
+        (
+            3,
+            WinState.NO_WIN,
+            False,  # final_death
+            False,  # had_ankh
+            ChainStatus.IN_PROGRESS,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.IN_PROGRESS,  # cosmic_status
+            Label.COSMIC_OCEAN,
+        ),
+        # Death has priority over Sunken City
+        (
+            2,
+            WinState.NO_WIN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.IN_PROGRESS,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.DEATH,
+        ),
+        # Death has priority over Any%
+        (
+            2,
+            WinState.NO_WIN,
+            True,  # final_death
+            False,  # had_ankh
+            ChainStatus.UNSTARTED,  # sunken_status
+            ChainStatus.UNSTARTED,  # eggplant_status
+            ChainStatus.UNSTARTED,  # cosmic_status
+            Label.DEATH,
+        ),
+    ],
+)
+def test_update_terminus(
+    world,
+    win_state,
+    final_death,
+    had_ankh,
+    sunken_status,
+    eggplant_status,
+    cosmic_status,
+    expected_terminus,
+):
+    run_state = RunState()
+    run_state.final_death = final_death
+    run_state.had_ankh = had_ankh
+    run_state.sunken_chain_status = sunken_status
+    run_state.eggplant_stepper = FakeStepper(eggplant_status)
+    run_state.cosmic_stepper = FakeStepper(cosmic_status)
+
+    game_state = State(world=world, win_state=win_state)
+    run_state.update_terminus(game_state)
+
+    assert run_state.run_label._terminus == expected_terminus
+
+
+@pytest.mark.parametrize(
+    "abzu_chain_status,duat_chain_status,expected_abzu,expected_duat,expected_sunken_chain_status",
+    [
+        (
+            ChainStatus.UNSTARTED,
+            ChainStatus.UNSTARTED,
+            False,
+            False,
+            ChainStatus.UNSTARTED,
+        ),
+        (
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.IN_PROGRESS,
+            False,
+            False,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (
+            ChainStatus.IN_PROGRESS,
+            ChainStatus.FAILED,
+            True,
+            False,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (
+            ChainStatus.FAILED,
+            ChainStatus.IN_PROGRESS,
+            False,
+            True,
+            ChainStatus.IN_PROGRESS,
+        ),
+        (ChainStatus.FAILED, ChainStatus.FAILED, False, False, ChainStatus.FAILED),
+    ],
+)
+def test_is_chain(
+    abzu_chain_status,
+    duat_chain_status,
+    expected_abzu,
+    expected_duat,
+    expected_sunken_chain_status,
+):
+    run_state = RunState()
+    run_state.abzu_stepper = FakeStepper(abzu_chain_status)
+    run_state.duat_stepper = FakeStepper(duat_chain_status)
+    run_state.update_is_chain()
 
     is_abzu = Label.ABZU in run_state.run_label._set
     assert is_abzu == expected_abzu
@@ -932,458 +1262,29 @@ def test_world_themes_label(
     is_duat = Label.DUAT in run_state.run_label._set
     assert is_duat == expected_duat
 
+    assert run_state.sunken_chain_status == expected_sunken_chain_status
 
-@pytest.mark.parametrize(
-    "world,win_state,final_death,had_ankh,chain_status,expected_terminus",
-    [
-        (1, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.ANY),
-        (1, WinState.NO_WIN, True, False, ChainStatus.UNSTARTED, Label.DEATH),
-        (2, WinState.NO_WIN, False, False, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
-        (4, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.ANY),
-        # If you have the anhk, it means Sunken City%
-        (4, WinState.NO_WIN, False, True, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
-        (4, WinState.NO_WIN, False, True, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
-        (4, WinState.NO_WIN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
-        # Tried for chain, but failed before getting the ankh means falling back to Any%
-        (4, WinState.NO_WIN, False, False, ChainStatus.FAILED, Label.ANY),
-        # Died before Sunken City means Death%
-        (4, WinState.NO_WIN, True, True, ChainStatus.IN_PROGRESS, Label.DEATH),
-        # If you're in Sunken City
-        (7, WinState.NO_WIN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
-        (7, WinState.NO_WIN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
-        # Tiamat win means Any%
-        (6, WinState.TIAMAT, False, False, ChainStatus.UNSTARTED, Label.ANY),
-        (6, WinState.TIAMAT, False, True, ChainStatus.UNSTARTED, Label.ANY),
-        (6, WinState.TIAMAT, False, True, ChainStatus.IN_PROGRESS, Label.ANY),
-        (6, WinState.TIAMAT, False, True, ChainStatus.FAILED, Label.ANY),
-        # ... even if you're on the score screen
-        (1, WinState.TIAMAT, False, False, ChainStatus.UNSTARTED, Label.ANY),
-        # Hundun win means Sunken City%
-        (6, WinState.HUNDUN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
-        (6, WinState.HUNDUN, False, True, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
-        (6, WinState.HUNDUN, False, True, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
-        (6, WinState.HUNDUN, False, True, ChainStatus.FAILED, Label.SUNKEN_CITY),
-        # ... even if you're on the score screen
-        (1, WinState.HUNDUN, False, False, ChainStatus.UNSTARTED, Label.SUNKEN_CITY),
-    ],
-)
-def test_update_terminus_non_co(
-    world, win_state, final_death, had_ankh, chain_status, expected_terminus
-):
-    run_state = RunState()
-    run_state.final_death = final_death
-    run_state.had_ankh = had_ankh
-    run_state.chain_status = chain_status
-
-    theme = Theme.TIDE_POOL
-    run_state.update_terminus(world, theme, win_state)
-
-    assert Label.NO_CO in run_state.run_label._set
-    assert run_state.run_label._terminus == expected_terminus
+    is_chain = Label.CHAIN in run_state.run_label._set
+    assert is_chain == expected_sunken_chain_status.in_progress
 
 
 @pytest.mark.parametrize(
-    "world,theme,hou_yis_waddler,final_death,chain_status,expected_terminus",
+    "item_set,cosmic_status,expected_clone_gun_wo_cosmic,expected_millionaire",
     [
-        # No bow here means no CO, regardless of chain
-        (3, Theme.OLMEC, False, False, ChainStatus.UNSTARTED, Label.ANY),
-        (3, Theme.OLMEC, False, False, ChainStatus.IN_PROGRESS, Label.SUNKEN_CITY),
-        (3, Theme.OLMEC, False, False, ChainStatus.FAILED, Label.ANY),
-        # Having the bow here means CO, regardless of chain
-        (3, Theme.OLMEC, True, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
-        (3, Theme.OLMEC, True, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
-        # ... but not if we're dead
-        (3, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
-        # Same cases, checking for SC oddness
-        (7, Theme.OLMEC, True, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
-        (7, Theme.OLMEC, True, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
-        (7, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
-        # Being in CO implies CO, even if we're dead
-        (7, Theme.COSMIC_OCEAN, True, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
-        (7, Theme.COSMIC_OCEAN, True, True, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
-    ],
-)
-def test_update_terminus_score_co(
-    world, theme, hou_yis_waddler, chain_status, final_death, expected_terminus
-):
-    run_state = RunState()
-    run_state.chain_status = chain_status
-    run_state.final_death = final_death
-    run_state.hou_yis_waddler = hou_yis_waddler
-    run_state.hou_yis_bow = True
-    run_state.is_score_run = True
-
-    win_state = WinState.NO_WIN
-    run_state.update_terminus(world, theme, win_state)
-
-    assert run_state.run_label._terminus == expected_terminus
-
-
-@pytest.mark.parametrize(
-    # All of these cases assume we picked up the bow
-    "world,theme,final_death,had_ankh,chain_status,expected_terminus",
-    [
-        # Having the bow here means CO, regardless of chain
-        (3, Theme.OLMEC, False, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
-        (3, Theme.OLMEC, False, False, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
-        (3, Theme.OLMEC, False, True, ChainStatus.IN_PROGRESS, Label.COSMIC_OCEAN),
-        (3, Theme.OLMEC, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
-        # ... but not if we're dead
-        (3, Theme.OLMEC, True, False, ChainStatus.UNSTARTED, Label.DEATH),
-        (3, Theme.OLMEC, True, True, ChainStatus.FAILED, Label.DEATH),
-        # Similar cases, checking for SC oddness
-        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
-        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
-        (
-            7,
-            Theme.SUNKEN_CITY,
-            False,
-            True,
-            ChainStatus.IN_PROGRESS,
-            Label.COSMIC_OCEAN,
-        ),
-        (7, Theme.SUNKEN_CITY, False, False, ChainStatus.FAILED, Label.COSMIC_OCEAN),
-        (7, Theme.SUNKEN_CITY, True, False, ChainStatus.UNSTARTED, Label.DEATH),
-        (7, Theme.SUNKEN_CITY, True, True, ChainStatus.IN_PROGRESS, Label.DEATH),
-        # Being in CO implies CO, even if we're dead
-        (7, Theme.COSMIC_OCEAN, True, False, ChainStatus.UNSTARTED, Label.COSMIC_OCEAN),
-        (
-            7,
-            Theme.COSMIC_OCEAN,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            Label.COSMIC_OCEAN,
-        ),
-    ],
-)
-def test_update_terminus_speed_co(
-    world, theme, had_ankh, chain_status, final_death, expected_terminus
-):
-    run_state = RunState()
-    run_state.had_ankh = had_ankh
-    run_state.chain_status = chain_status
-    run_state.final_death = final_death
-    run_state.hou_yis_bow = True
-
-    win_state = WinState.NO_WIN
-    run_state.update_terminus(world, theme, win_state)
-
-    assert run_state.run_label._terminus == expected_terminus
-
-
-@pytest.mark.parametrize(
-    "world,had_udjat_eye,had_world2_chain_headwear,prev_chain_status,expected_chain_status",
-    [
-        # World 1
-        (1, False, False, ChainStatus.UNSTARTED, ChainStatus.UNSTARTED),
-        (1, True, False, ChainStatus.UNSTARTED, ChainStatus.IN_PROGRESS),
-        # World 2, various points
-        (2, False, False, ChainStatus.UNSTARTED, ChainStatus.UNSTARTED),
-        (2, False, True, ChainStatus.UNSTARTED, ChainStatus.IN_PROGRESS),
-        (2, True, False, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-        (2, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-        # Check start of Olmec
-        (3, False, False, ChainStatus.UNSTARTED, ChainStatus.FAILED),
-        (3, False, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-        (3, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (3, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-    ],
-)
-def test_is_chain_pre_world4(
-    world,
-    had_udjat_eye,
-    had_world2_chain_headwear,
-    prev_chain_status,
-    expected_chain_status,
-):
-    run_state = RunState()
-    run_state.had_udjat_eye = had_udjat_eye
-    run_state.had_world2_chain_headwear = had_world2_chain_headwear
-    run_state.chain_status = prev_chain_status
-
-    level = 1  # bogus, but we don't look at it here
-    theme = Theme.DWELLING  # bogus, but we don't look at it here
-    win_state = WinState.NO_WIN
-    run_state.update_is_chain(world, level, theme, win_state)
-
-    assert run_state.chain_status == expected_chain_status
-
-
-@pytest.mark.parametrize(
-    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
-    "theme,level,had_ankh,held_world4_chain_item,prev_chain_status,expected_chain_status",
-    [
-        # Level 1 depends on Ankh
-        (Theme.TIDE_POOL, 1, False, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (
-            Theme.TIDE_POOL,
-            1,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # Level 2 might have collected Excalibur or not
-        (Theme.TIDE_POOL, 2, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (
-            Theme.TIDE_POOL,
-            2,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        (
-            Theme.TIDE_POOL,
-            2,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # Level 3 depends on Excalibur
-        (Theme.TIDE_POOL, 3, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (
-            Theme.TIDE_POOL,
-            3,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # Level 4 depends on Abzu
-        (Theme.TIDE_POOL, 4, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (Theme.TIDE_POOL, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (Theme.ABZU, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-    ],
-)
-def test_is_chain_tide_pool(
-    theme,
-    level,
-    had_ankh,
-    held_world4_chain_item,
-    prev_chain_status,
-    expected_chain_status,
-):
-    run_state = RunState()
-    run_state.had_udjat_eye = False
-    run_state.had_world2_chain_headwear = True
-    run_state.had_ankh = had_ankh
-    run_state.held_world4_chain_item = held_world4_chain_item
-    run_state.chain_status = prev_chain_status
-
-    world = 4
-    win_state = WinState.NO_WIN
-    run_state.update_is_chain(world, level, theme, win_state)
-
-    assert run_state.chain_status == expected_chain_status
-
-
-@pytest.mark.parametrize(
-    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
-    "theme,level,had_ankh,held_world4_chain_item,prev_chain_status,expected_chain_status",
-    [
-        # Level 1 depends on Ankh. Might have collected the scepter or not
-        (Theme.TEMPLE, 1, False, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (
-            Theme.TEMPLE,
-            1,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        (Theme.TEMPLE, 1, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-        # Level 2 depends on scepter
-        (Theme.TEMPLE, 2, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (Theme.TEMPLE, 2, True, False, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (Theme.TEMPLE, 2, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-        # Level 3 depends on CoG
-        (Theme.TEMPLE, 3, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (Theme.TEMPLE, 3, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (
-            Theme.CITY_OF_GOLD,
-            3,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # Level 4 depends on Duat
-        (Theme.TEMPLE, 4, True, True, ChainStatus.FAILED, ChainStatus.FAILED),
-        (Theme.TEMPLE, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.FAILED),
-        (Theme.DUAT, 4, True, True, ChainStatus.IN_PROGRESS, ChainStatus.IN_PROGRESS),
-    ],
-)
-def test_is_chain_temple(
-    theme,
-    level,
-    had_ankh,
-    held_world4_chain_item,
-    prev_chain_status,
-    expected_chain_status,
-):
-    run_state = RunState()
-    run_state.had_udjat_eye = False
-    run_state.had_world2_chain_headwear = True
-    run_state.had_ankh = had_ankh
-    run_state.held_world4_chain_item = held_world4_chain_item
-    run_state.chain_status = prev_chain_status
-
-    world = 4
-    win_state = WinState.NO_WIN
-    run_state.update_is_chain(world, level, theme, win_state)
-
-    assert run_state.chain_status == expected_chain_status
-
-
-@pytest.mark.parametrize(
-    # These tests focus on transitions. Once we've established a steady failed state, we stop bothering
-    "world,level,win_state,had_tablet_of_destiny,held_ushabti,prev_chain_status,expected_chain_status",
-    [
-        # Ice Caves depends on Tablet
-        (5, 1, WinState.NO_WIN, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (
-            5,
-            1,
-            WinState.NO_WIN,
-            False,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.FAILED,
-        ),
-        (
-            5,
-            1,
-            WinState.NO_WIN,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # 6-1 is steady
-        (6, 1, WinState.NO_WIN, False, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (
-            6,
-            1,
-            WinState.NO_WIN,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # 6-2 may or may not have collected Ushabti
-        (
-            6,
-            2,
-            WinState.NO_WIN,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        (
-            6,
-            2,
-            WinState.NO_WIN,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # 6-3 depends on Ushabti
-        (
-            6,
-            3,
-            WinState.NO_WIN,
-            True,
-            False,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.FAILED,
-        ),
-        (
-            6,
-            3,
-            WinState.NO_WIN,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # 6-4 depends on win-state
-        (6, 4, WinState.NO_WIN, True, False, ChainStatus.FAILED, ChainStatus.FAILED),
-        (
-            6,
-            4,
-            WinState.TIAMAT,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.FAILED,
-        ),
-        (
-            6,
-            4,
-            WinState.NO_WIN,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-        # 7-1 onward should be steady-state
-        (
-            7,
-            1,
-            WinState.NO_WIN,
-            True,
-            True,
-            ChainStatus.IN_PROGRESS,
-            ChainStatus.IN_PROGRESS,
-        ),
-    ],
-)
-def test_is_chain_post_world4(
-    world,
-    level,
-    win_state,
-    had_tablet_of_destiny,
-    held_ushabti,
-    prev_chain_status,
-    expected_chain_status,
-):
-    run_state = RunState()
-    run_state.had_udjat_eye = False
-    run_state.had_world2_chain_headwear = True
-    run_state.had_ankh = True
-    run_state.held_world4_chain_item = True
-    run_state.had_tablet_of_destiny = had_tablet_of_destiny
-    run_state.held_ushabti = held_ushabti
-    run_state.chain_status = prev_chain_status
-
-    theme = Theme.ICE_CAVES  # bogus, but we don't look at it
-    run_state.update_is_chain(world, level, theme, win_state)
-
-    assert run_state.chain_status == expected_chain_status
-
-
-@pytest.mark.parametrize(
-    "item_set,hou_yis_bow,expectd_clone_gun_wo_bow,expected_millionaire",
-    [
-        (set(), False, False, False),
-        (set(), True, False, False),
-        ({EntityType.ITEM_CLONEGUN}, True, False, False),
-        ({EntityType.ITEM_CLONEGUN}, False, True, True),
+        (set(), ChainStatus.UNSTARTED, False, False),
+        (set(), ChainStatus.IN_PROGRESS, False, False),
+        ({EntityType.ITEM_CLONEGUN}, ChainStatus.IN_PROGRESS, False, False),
+        ({EntityType.ITEM_CLONEGUN}, ChainStatus.FAILED, True, True),
     ],
 )
 def test_millionaire_clone_gun_wo_bow(
-    item_set, hou_yis_bow, expectd_clone_gun_wo_bow, expected_millionaire
+    item_set, cosmic_status, expected_clone_gun_wo_cosmic, expected_millionaire
 ):
     run_state = RunState()
-    run_state.hou_yis_bow = hou_yis_bow
+    run_state.cosmic_stepper = FakeStepper(cosmic_status)
     run_state.update_millionaire(State(), Inventory(), item_set)
 
-    assert run_state.clone_gun_wo_bow == expectd_clone_gun_wo_bow
+    assert run_state.clone_gun_wo_cosmic == expected_clone_gun_wo_cosmic
 
     is_millionaire = Label.MILLIONAIRE in run_state.run_label._set
     assert is_millionaire == expected_millionaire
@@ -1423,7 +1324,7 @@ def test_millionaire_(
     expected_millionaire,
 ):
     run_state = RunState()
-    run_state.clone_gun_wo_bow = clone_gun_wo_bow
+    run_state.clone_gun_wo_cosmic = clone_gun_wo_bow
     if clone_gun_wo_bow:
         # This would have been added on a previous update
         run_state.run_label.add(Label.MILLIONAIRE)
@@ -1438,19 +1339,91 @@ def test_millionaire_(
 
 
 @pytest.mark.parametrize(
-    "world,theme,ropes,prev_health,expected_level_start_ropes,expected_health",
+    "new_entity_types,theme,expected_no",
+    [
+        ([], Theme.DWELLING, True),
+        ([EntityType.ITEM_ROPE], Theme.JUNGLE, True),
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.TEMPLE, False),
+        # Duat is exempt from this check
+        ([EntityType.ITEM_CLIMBABLE_ROPE], Theme.DUAT, True),
+    ],
+)
+def test_rope_deployed(new_entity_types, theme, expected_no):
+    run_state = RunState()
+    run_state.new_entities = [
+        poly_pointer_no_mem(Entity(type=EntityDBEntry(id=t))) for t in new_entity_types
+    ]
+
+    run_state.update_rope_deployed(theme)
+
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no
+
+
+@pytest.mark.parametrize(
+    "screen,level_started,entity_types,expected_entity_types",
+    [
+        (Screen.LEVEL, False, [EntityType.ITEM_WEBGUN], [EntityType.ITEM_WEBGUN]),
+        (
+            Screen.LEVEL,
+            False,
+            [EntityType.ITEM_JETPACK, EntityType.ITEM_TELEPORTER],
+            [EntityType.ITEM_JETPACK, EntityType.ITEM_TELEPORTER],
+        ),
+        (
+            Screen.LEVEL,
+            False,
+            [EntityType.ITEM_WOODEN_ARROW, EntityType.ITEM_WOODEN_ARROW],
+            [EntityType.ITEM_WOODEN_ARROW, EntityType.ITEM_WOODEN_ARROW],
+        ),
+        (Screen.LEVEL, True, [EntityType.FX_TELEPORTSHADOW], []),
+        (Screen.LEVEL_TRANSITION, False, [EntityType.CHAR_HIREDHAND], []),
+    ],
+)
+def test_new_entities(screen, level_started, entity_types, expected_entity_types):
+    run_state = RunState()
+    run_state.level_started = level_started
+
+    fake_entity_db = {}
+    for entity_type in entity_types:
+        if entity_type not in fake_entity_db:
+            fake_entity_db[entity_type] = EntityDBEntry(id=entity_type)
+
+    entity_map = EntityMapBuilder()
+    run_state.prev_next_uid = entity_map.next_uid
+    entity_map.add_trivial_entities(entity_types)
+
+    game_state = State(
+        screen=screen,
+        next_entity_uid=entity_map.next_uid,
+        instance_id_to_pointer=entity_map.build(),
+    )
+    run_state.update_new_entities(game_state)
+
+    got_types = [e.value.type.id for e in run_state.new_entities]
+    assert got_types == expected_entity_types
+
+
+@pytest.mark.parametrize(
+    "world,theme,ropes,prev_health,expected_level_start_ropes,expected_health,expected_no",
     [
         # Level start ropes
-        (2, Theme.JUNGLE, 4, 4, 4, 4),
-        (2, Theme.VOLCANA, 2, 3, 2, 3),
+        (2, Theme.JUNGLE, 4, 4, 4, 4, True),
+        (2, Theme.VOLCANA, 2, 3, 2, 3, False),
         # Duat health adjustment
-        (4, Theme.DUAT, 5, 2, 5, 4),
-        (4, Theme.DUAT, 5, 4, 5, 4),
-        (4, Theme.DUAT, 5, 10, 5, 4),
+        (4, Theme.DUAT, 5, 2, 5, 4, True),
+        (4, Theme.DUAT, 5, 4, 5, 4, True),
+        (4, Theme.DUAT, 5, 10, 5, 4, True),
     ],
 )
 def test_on_level_start_state(
-    world, theme, ropes, prev_health, expected_level_start_ropes, expected_health
+    world,
+    theme,
+    ropes,
+    prev_health,
+    expected_level_start_ropes,
+    expected_health,
+    expected_no,
 ):
     run_state = RunState()
     run_state.level_started = True
@@ -1461,30 +1434,5 @@ def test_on_level_start_state(
     assert run_state.level_start_ropes == expected_level_start_ropes
     assert run_state.health == expected_health
 
-
-@pytest.mark.parametrize(
-    "world,theme,mc_has_swung_mattock,hou_yis_bow,expected_low",
-    [
-        # Bow isn't needed in world 2
-        (2, Theme.VOLCANA, False, False, True),
-        (2, Theme.VOLCANA, True, False, True),
-        (2, Theme.VOLCANA, True, True, True),
-        # Bow required if mattock was swung in Moon Challenge
-        (3, Theme.OLMEC, False, False, True),
-        (3, Theme.OLMEC, True, False, False),
-        (3, Theme.OLMEC, True, True, True),
-    ],
-)
-def test_on_level_start_low(
-    world, theme, mc_has_swung_mattock, hou_yis_bow, expected_low
-):
-    run_state = RunState()
-    run_state.level_started = True
-    run_state.mc_has_swung_mattock = mc_has_swung_mattock
-    run_state.hou_yis_bow = hou_yis_bow
-
-    ropes = 4
-    run_state.update_on_level_start(world, theme, ropes)
-
-    is_low = Label.LOW in run_state.run_label._set
-    assert is_low == expected_low
+    is_no = Label.NO in run_state.run_label._set
+    assert is_no == expected_no

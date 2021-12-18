@@ -1,23 +1,46 @@
 from pathlib import Path
 
-from ..base_classes.base_sprite_merger import BaseSpriteMerger
-from ..character import *
-from ..journal_people import JournalPeopleSheet
-from ..journal_stickers import StickerSheet
-from ..menu_leader import MenuLeaderSheet
+from modlunky2.sprites.base_classes.base_sprite_merger import BaseSpriteMerger
+from modlunky2.sprites.character import (
+    CharacterBlackSheet,
+    CharacterBlueSheet,
+    CharacterCeruleanSheet,
+    CharacterCinnabarSheet,
+    CharacterCyanSheet,
+    CharacterEggChildSheet,
+    CharacterGoldSheet,
+    CharacterGraySheet,
+    CharacterGreenSheet,
+    CharacterHiredHandSheet,
+    CharacterIrisSheet,
+    CharacterKhakiSheet,
+    CharacterLemonSheet,
+    CharacterLimeSheet,
+    CharacterMagentaSheet,
+    CharacterOliveSheet,
+    CharacterOrangeSheet,
+    CharacterPinkSheet,
+    CharacterRedSheet,
+    CharacterVioletSheet,
+    CharacterWhiteSheet,
+    CharacterYellowSheet,
+)
+from modlunky2.sprites.journal_people import JournalPeopleSheet
+from modlunky2.sprites.journal_stickers import StickerSheet
+from modlunky2.sprites.menu_leader import MenuLeaderSheet
 
 
 def _create_class_for_character(color: str, character_sheet_type: type):
     class CharacterSpriteMerger(BaseSpriteMerger):
         _target_sprite_sheet_path = Path(
-            "Data/Textures/Entities/char_{}_full.png".format(color)
+            f"Data/Textures/Entities/char_{color}_full.png"
         )
         _grid_hint_size = 8
         _origin_map = {
             character_sheet_type: character_sheet_type._chunk_map,
-            JournalPeopleSheet: {"journal_char_{}".format(color): (0, 0, 1, 1)},
-            StickerSheet: {"sticker_char_{}".format(color): (0, 0, 1, 1)},
-            MenuLeaderSheet: {"leader_char_{}".format(color): (0, 0, 2, 1)},
+            JournalPeopleSheet: {f"journal_char_{color}": (0, 0, 1, 1)},
+            StickerSheet: {f"sticker_char_{color}": (0, 0, 1, 1)},
+            MenuLeaderSheet: {f"leader_char_{color}": (0, 0, 2, 1)},
         }
 
     return CharacterSpriteMerger

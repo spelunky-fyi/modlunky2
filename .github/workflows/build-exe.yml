@@ -1,0 +1,52 @@
+name: Build exe
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        # Python 3.8 is the latest version supporting Windows 7
+        python-version: 3.8
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Install dependencies
+      run: |
+        # Install pyinstaller in addition to usual deps
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt pyinstaller
+    - name: Install package
+      run: |
+        python setup.py develop
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Test with pytest
+      run: |
+        pytest -v src/
+    - name: Check pylint
+      run: |
+        pylint --disable=R,C src/modlunky2
+    - name: Build exe
+      run: |
+        python build-exe.py
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: modlunky2.exe
+        path: src/launcher/target/release/modlunky2.exe
+        retention-days: 5

@@ -16,18 +16,22 @@ from modlunky2.mem.memrauder.dsl import (
     sc_int16,
     sc_int32,
     sc_bool,
+    sc_float,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.memrauder.msvc import vector
 
 
 def _make_entity_type_enum():
-    with open(BASE_DIR / "static/game_data/entities.json") as entities_file:
+    with open(
+        BASE_DIR / "static/game_data/entities.json", encoding="utf-8"
+    ) as entities_file:
         entities_json = json.load(entities_file)
 
         enum_values = {
             name[len("ENT_TYPE_") :]: obj["id"] for name, obj in entities_json.items()
         }
+        enum_values["DEFAULT_TYPE_ID"] = 0
 
     return IntEnum("EntityType", enum_values)
 
@@ -169,7 +173,9 @@ class EntityReduced:
     items: Optional[Tuple[int, ...]] = struct_field(
         0x18, vector(sc_uint32), default=None
     )
-    layer: int = struct_field(0x98, sc_uint8, default=Layer.FRONT)
+    position_x: float = struct_field(0x40, sc_float, default=0.0)
+    position_y: float = struct_field(0x44, sc_float, default=0.0)
+    layer: int = struct_field(0xA0, sc_uint8, default=Layer.FRONT)
 
 
 @dataclass(frozen=True)
@@ -181,15 +187,18 @@ class Entity(EntityReduced):
 
 @dataclass(frozen=True)
 class Movable(Entity):
-    holding_uid: int = struct_field(0x108, sc_int32, default=-1)
-    state: CharState = struct_field(0x10C, sc_uint8, default=CharState.STANDING)
-    last_state: CharState = struct_field(0x10D, sc_uint8, default=CharState.STANDING)
-    health: int = struct_field(0x10F, sc_int8, default=4)
+    idle_counter: int = struct_field(0x100, sc_uint32, default=0)
+    velocity_x: float = struct_field(0x108, sc_float, default=0.0)
+    velocity_y: float = struct_field(0x10C, sc_float, default=0.0)
+    holding_uid: int = struct_field(0x110, sc_int32, default=-1)
+    state: CharState = struct_field(0x114, sc_uint8, default=CharState.STANDING)
+    last_state: CharState = struct_field(0x115, sc_uint8, default=CharState.STANDING)
+    health: int = struct_field(0x117, sc_int8, default=4)
 
 
 @dataclass(frozen=True)
 class Mount(Movable):
-    is_tamed: bool = struct_field(0x149, sc_bool, default=False)
+    is_tamed: bool = struct_field(0x151, sc_bool, default=False)
 
 
 @dataclass(frozen=True)
@@ -208,5 +217,20 @@ class Inventory:
 @dataclass(frozen=True)
 class Player(Movable):
     inventory: Optional[Inventory] = struct_field(
-        0x138, pointer(dc_struct), default_factory=Inventory
+        0x140, pointer(dc_struct), default_factory=Inventory
+    )
+    linked_companion_child: int = struct_field(0x150, sc_int32, default=0)
+    linked_companion_parent: int = struct_field(0x154, sc_int32, default=0)
+
+
+@dataclass(frozen=True)
+class Illumination:
+    light_pos_x: float = struct_field(0x48, sc_float, default=0.0)
+    light_pos_y: float = struct_field(0x4C, sc_float, default=0.0)
+
+
+@dataclass(frozen=True)
+class LightEmitter(Movable):
+    emitted_light: Optional[Illumination] = struct_field(
+        0x130, pointer(dc_struct), default=None
     )

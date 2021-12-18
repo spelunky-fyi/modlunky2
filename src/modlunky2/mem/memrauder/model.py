@@ -3,12 +3,14 @@ from abc import ABC, abstractmethod
 import ctypes
 from dataclasses import InitVar, dataclass
 import dataclasses
+from types import MappingProxyType
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
     Generic,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -17,7 +19,7 @@ from typing import (
 )
 import typing
 
-# Abstract memory-reader interface, used if pointers are derefrenced.
+# Abstract memory-reader interface, used if pointers are dereferenced.
 class MemoryReader(ABC):
     @abstractmethod
     def read(self, addr: int, size: int) -> Optional[bytes]:
@@ -161,6 +163,15 @@ def unwrap_tuple_type(path: FieldPath, py_type: type) -> type:
         )
 
     args_len = len(py_type.__args__)
+    if not args_len:
+        raise ValueError(f"tuple field {path} must have at least 1 type parameter.")
+
+    tuple_types = set(py_type.__args__)
+    # If we only see one type specified but have more than one argument
+    # we have a homogeneous n-tuple and use the first argument as the type.
+    if len(tuple_types) == 1 and args_len > 1:
+        return py_type.__args__[0]
+
     if args_len != 2:
         raise ValueError(
             f"tuple field {path} must have 2 type parameters. Got {args_len}"
@@ -229,7 +240,7 @@ class StructFieldMeta:
     @classmethod
     def from_field(cls, field: dataclasses.Field) -> StructFieldMeta:
         if cls._METADATA_KEY not in field.metadata:
-            raise ValueError(f"field {field.name} has no stuct_field() metadata")
+            raise ValueError(f"field {field.name} has no struct_field() metadata")
         return field.metadata[cls._METADATA_KEY]
 
 
@@ -563,3 +574,26 @@ class PolyPointerType(MemType[PolyPointer[T]]):
             return PolyPointer.make_empty(mem_ctx)
 
         return PolyPointer[T](addr, value, mem_ctx)
+
+
+K = TypeVar("K")  # pylint: disable=invalid-name
+V = TypeVar("V")  # pylint: disable=invalid-name
+
+
+@dataclass(frozen=True)
+class DictMap((Generic[K, V])):
+    a_dict: InitVar[Dict[K, V]] = None
+    mapping: Mapping[K, V] = dataclasses.field(init=False)
+
+    def __post_init__(self, a_dict=None):
+        if a_dict is None:
+            a_dict = {}
+
+        mapping = MappingProxyType(dict(a_dict.items()))
+        object.__setattr__(self, "mapping", mapping)
+
+    def get(self, key: K) -> Optional[V]:
+        if key not in self.mapping:
+            return None
+
+        return self.mapping[key]

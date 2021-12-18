@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from modlunky2.config import Config
 from modlunky2.ui.widgets import Entry, Tab
 from modlunky2.utils import tb_info, zipinfo_fixup_filename
 from modlunky2.api import SpelunkyFYIClient
@@ -21,7 +22,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class SourceChooser(ttk.Frame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
@@ -54,7 +55,7 @@ class SourceChooser(ttk.Frame):
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
-        initial_dir = Path(self.modlunky_config.config_file.last_install_browse)
+        initial_dir = self.modlunky_config.last_install_browse
         if not initial_dir.exists():
             initial_dir = Path("/")
 
@@ -67,13 +68,13 @@ class SourceChooser(ttk.Frame):
         self.file_chooser_var.set(filename)
         parent = Path(filename).parent
 
-        self.modlunky_config.config_file.last_install_browse = str(parent.as_posix())
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.last_install_browse = parent.as_posix()
+        self.modlunky_config.save()
         self.master.master.render()
 
 
 class DestinationChooser(ttk.Frame):
-    def __init__(self, parent, modlunky_config):
+    def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent)
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
@@ -175,7 +176,7 @@ def install_local_mod(call, install_dir: Path, source: Path, pack: str):
 
 
 class LocalInstall(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, task_manager, *args, **kwargs):
         super().__init__(parent, text="Local Installation", *args, **kwargs)
 
         self.modlunky_config = modlunky_config
@@ -273,7 +274,7 @@ def download_contents(_call, url):
 
     except Exception:  # pylint: disable=broad-except
         logger.critical("Failed to download %s: %s", url, tb_info())
-        return
+        return None
 
     contents.seek(0)
     return contents
@@ -373,9 +374,17 @@ def install_fyi_mod(
     metadata_dir = mods_dir / ".ml/pack-metadata"
 
     pack_dir = packs_dir / f"fyi.{install_code}"
+    tmp_dir = packs_dir / f"temp_fyi.{install_code}"
+
+    save_path = pack_dir / "save.dat"
+    tmp_save_path = tmp_dir / "save.dat"
     if pack_dir.exists():
+        if save_path.exists():
+            # Store the save file into a temp directory while downloading the new version.
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(save_path, tmp_save_path)
         if overwrite:
-            logging.debug("Removing previous installation at %s", pack_dir)
+            logger.debug("Removing previous installation at %s", pack_dir)
             shutil.rmtree(pack_dir)
         else:
             call(
@@ -420,6 +429,11 @@ def install_fyi_mod(
 
     write_manifest(pack_metadata_dir, mod_details, mod_file, logo_name)
 
+    if tmp_save_path.exists():
+        # If there was a save file, move it into the new pack.
+        shutil.copy(tmp_save_path, save_path)
+        shutil.rmtree(tmp_dir)
+
     logger.info("Finished installing %s to %s", install_code, pack_dir)
     if channel_name is not None:
         call("fyi:install-complete", channel_name=channel_name)
@@ -429,7 +443,7 @@ def install_fyi_mod(
 class FyiInstall(ttk.LabelFrame):
     VALID_SLUG = re.compile(r"^[-\w]+$")
 
-    def __init__(self, parent, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, task_manager, *args, **kwargs):
         super().__init__(parent, text="spelunky.fyi Installation", *args, **kwargs)
 
         self.modlunky_config = modlunky_config
@@ -475,6 +489,7 @@ class FyiInstall(ttk.LabelFrame):
 
         self.entry = Entry(frame)
         self.entry.bind("<KeyRelease>", self._on_key)
+        self.entry.bind("<Return>", lambda _: self.install())
 
         self.button_install = ttk.Button(frame, text="Install", command=self.install)
 
@@ -512,8 +527,8 @@ class FyiInstall(ttk.LabelFrame):
         )
 
     def install(self):
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        spelunky_fyi_root = self.modlunky_config.spelunky_fyi_root
+        api_token = self.modlunky_config.spelunky_fyi_api_token
         if not api_token:
             logger.warning(
                 "This feature requires an API token. You can set one on your Settings tab."
@@ -538,7 +553,7 @@ class FyiInstall(ttk.LabelFrame):
         )
 
     def render(self):
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        api_token = self.modlunky_config.spelunky_fyi_api_token
         install_code = self.entry.get().strip()
 
         if api_token:
@@ -564,7 +579,9 @@ class FyiInstall(ttk.LabelFrame):
 
 
 class InstallTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(
+        self, tab_control, modlunky_config: Config, task_manager, *args, **kwargs
+    ):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

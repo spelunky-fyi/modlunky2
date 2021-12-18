@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import List, Dict, Type
 
-from .base_sprite_loader import BaseSpriteLoader
-from .base_sprite_merger import BaseSpriteMerger
-from ..util import target_chunks_from_json
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.base_sprite_merger import BaseSpriteMerger
+from modlunky2.sprites.util import target_chunks_from_json
 
 
 class BaseJsonSpriteMerger(BaseSpriteMerger):
@@ -13,7 +13,6 @@ class BaseJsonSpriteMerger(BaseSpriteMerger):
         """
         Define names of entities that should additionally be added to the _origin_map per loader type
         """
-        pass
 
     def __init__(self, entities_json: dict, textures_json: dict, *args, **kwargs):
         # Extend _origin_map first because BaseSpriteMerger.__init__ needs that information ready

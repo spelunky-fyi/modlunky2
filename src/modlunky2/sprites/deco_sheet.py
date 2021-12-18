@@ -1,4 +1,4 @@
-from .base_classes.base_deco_sheet import AbstractDecoSheet
+from modlunky2.sprites.base_classes.base_deco_sheet import AbstractDecoSheet
 
 __all__ = [
     "CaveDecoSheet",

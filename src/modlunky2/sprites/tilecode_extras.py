@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .base_classes import BaseSpriteLoader
+from modlunky2.sprites.base_classes import BaseSpriteLoader
 
 
 TILENAMES = [
@@ -26,7 +26,7 @@ TILENAMES = [
     "timed_powder_keg",
     "chain_ceiling",
     "lava",
-    "stagnant_lava",
+    "coarse_lava",
     "vault_wall",
     "treasure",
     "water",

@@ -7,7 +7,6 @@ import subprocess
 import webbrowser
 import struct
 import zipfile
-from functools import wraps
 
 from modlunky2.assets.patcher import Patcher
 
@@ -17,17 +16,6 @@ logger = logging.getLogger("modlunky2")
 def is_patched(exe_filename):
     with exe_filename.open("rb") as exe:
         return Patcher(exe).is_checksum_patched()
-
-
-def log_exception(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected failure")
-
-    return wrapper
 
 
 def tb_info():
@@ -68,9 +56,7 @@ def zipinfo_fixup_filename(inf: zipfile.ZipInfo):
     while len(extra) >= 4:
         type_, length = struct.unpack("<HH", extra[:4])
         if length + 4 > len(extra):
-            raise zipfile.BadZipFile(
-                "Corrupt extra field %04x (size=%d)" % (type_, length)
-            )
+            raise zipfile.BadZipFile(f"Corrupt extra field {type_:04x} (size={length})")
 
         if type_ == 0x7075:
             data = extra[4 : length + 4]

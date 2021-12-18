@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import PhotoImage, ttk
 import webbrowser
 
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.utils import is_windows
 
@@ -82,7 +83,7 @@ class ToolTip:
     def set_geometry(self, event):
         root = self.widget.winfo_toplevel()
         screen_width = root.winfo_screenwidth()
-        (width, _, _, _) = list(map(int, re.split(r"[x+-]", self.tooltip.geometry())))
+        (width, _, _, _) = list(map(int, re.split(r"[x+]", self.tooltip.geometry())))
 
         x_coord = event.x_root + 15
         if event.x_root > screen_width * 0.70:
@@ -269,7 +270,7 @@ class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
 
 
 class PopupWindow(ttk.Frame):
-    def __init__(self, title, modlunky_config, *args, **kwargs):
+    def __init__(self, title, modlunky_config: Config, *args, **kwargs):
         self.shutting_down = False
         self.win = tk.Toplevel()
         self.win.attributes("-topmost", "true")
@@ -292,15 +293,10 @@ class PopupWindow(ttk.Frame):
         self.win.title(title)
 
         main_geometry = tuple(
-            map(int, re.split(r"[+x]", self.modlunky_config.config_file.geometry))
+            map(int, re.split(r"[+x]", self.modlunky_config.geometry))
         )
 
-        self.win.geometry(
-            "+{}+{}".format(
-                main_geometry[2] + 400,
-                main_geometry[3] + 200,
-            )
-        )
+        self.win.geometry(f"+{main_geometry[2] + 400}+{main_geometry[3] + 200}")
         self.win.resizable(False, False)
 
         self.columnconfigure(0, weight=1)

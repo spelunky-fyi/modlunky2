@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from modlunky2.config import Config
 from modlunky2.utils import tb_info
 
 from .constants import (
@@ -239,7 +240,8 @@ def cache_playlunky_releases(call):
 class VersionFrame(ttk.LabelFrame):
     CACHE_RELEASES_INTERVAL = 1000 * 30 * 60
 
-    def __init__(self, parent, modlunky_config, task_manager):
+    def __init__(self, parent, modlunky_config: Config, task_manager):
+        logger.debug("Initializing Playlunky VersionFrame")
         super().__init__(parent, text="Version")
         self.parent = parent
         self.available_releases = {}
@@ -333,13 +335,13 @@ class VersionFrame(ttk.LabelFrame):
         self.after(self.CACHE_RELEASES_INTERVAL, self.cache_releases)
 
     def release_selected(self, value):
-        if value == self.modlunky_config.config_file.playlunky_version:
+        if value == self.modlunky_config.playlunky_version:
             return
 
-        self.modlunky_config.config_file.playlunky_version = value
-        self.modlunky_config.config_file.save()
+        self.modlunky_config.playlunky_version = value
+        self.modlunky_config.save()
         self.render()
-        if self.modlunky_config.config_file.playlunky_shortcut:
+        if self.modlunky_config.playlunky_shortcut:
             self.parent.options_frame.make_shortcut()
 
     def render(self):
@@ -373,13 +375,13 @@ class VersionFrame(ttk.LabelFrame):
         )
         self.selected_dropdown.grid(row=3, column=0, pady=0, padx=10, sticky="ew")
 
-        selected_version = self.modlunky_config.config_file.playlunky_version
+        selected_version = self.modlunky_config.playlunky_version
         if selected_version:
             self.selected_var.set(selected_version)
         else:
             selected_version = available_releases[0]
-            self.modlunky_config.config_file.playlunky_version = selected_version
-            self.modlunky_config.config_file.save()
+            self.modlunky_config.playlunky_version = selected_version
+            self.modlunky_config.save()
             self.selected_var.set(selected_version)
 
         for release in available_releases:

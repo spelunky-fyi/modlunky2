@@ -3,7 +3,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from .base_sprite_loader import BaseSpriteLoader
+from modlunky2.sprites.base_classes.base_sprite_loader import BaseSpriteLoader
 
 
 class AbstractDecoSheet(BaseSpriteLoader):

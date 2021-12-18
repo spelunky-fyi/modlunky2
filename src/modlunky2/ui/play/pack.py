@@ -6,6 +6,7 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
+from modlunky2.config import Config
 from modlunky2.utils import open_directory
 
 
@@ -13,7 +14,7 @@ logger = logging.getLogger("modlunky2")
 
 
 class Pack:
-    def __init__(self, play_tab, parent, modlunky_config, folder):
+    def __init__(self, play_tab, parent, modlunky_config: Config, folder):
         self.play_tab = play_tab
         self.modlunky_config = modlunky_config
         self.folder = folder
@@ -91,8 +92,8 @@ class Pack:
         if not answer:
             return
 
-        spelunky_fyi_root = self.modlunky_config.config_file.spelunky_fyi_root
-        api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+        spelunky_fyi_root = self.modlunky_config.spelunky_fyi_root
+        api_token = self.modlunky_config.spelunky_fyi_api_token
 
         self.play_tab.task_manager.call(
             "install:install_fyi_mod",
@@ -184,7 +185,7 @@ class Pack:
             self.buttons.folder_button["state"] = tk.NORMAL
 
         if self.needs_update:
-            api_token = self.modlunky_config.config_file.spelunky_fyi_api_token
+            api_token = self.modlunky_config.spelunky_fyi_api_token
             self.buttons.update_button.grid(row=0, column=0, padx=(1, 0), sticky="e")
             if api_token:
                 self.buttons.update_button["state"] = tk.NORMAL
@@ -202,12 +203,12 @@ class Pack:
     def disable(self):
         self.var.set(False)
 
-    def set(self, val: bool):
+    def set(self, val: bool, skip_render=False):
         if val:
             self.enable()
         else:
             self.disable()
-        self.on_check()
+        self.on_check(skip_render=skip_render)
 
     def destroy(self):
         self.checkbutton.destroy()
@@ -215,12 +216,14 @@ class Pack:
         self.logo.destroy()
         self.play_tab.load_order.delete(self.folder)
 
-    def on_check(self):
+    def on_check(self, skip_render=False):
         if self.var.get():
             self.play_tab.load_order.insert(self.folder)
         else:
             self.play_tab.load_order.delete(self.folder)
-        self.play_tab.packs_frame.render_packs()
+
+        if not skip_render:
+            self.play_tab.packs_frame.render_packs()
 
     def open_pack_dir(self):
         if self.folder.startswith("/"):

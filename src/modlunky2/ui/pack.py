@@ -11,6 +11,7 @@ from modlunky2.assets.assets import AssetStore
 from modlunky2.assets.exc import MissingAsset
 from modlunky2.assets.hashing import md5sum_path
 from modlunky2.assets.patcher import Patcher
+from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
 from modlunky2.utils import is_patched
@@ -89,7 +90,9 @@ class WarningFrame(ttk.Frame):
             self,
             text=(
                 "Packing is deprecated and continues to exist solely for legacy support.\n"
-                "The playlunky tab is the primary supported method for playing mods."
+                "The playlunky tab is the primary supported method for playing mods.\n\n"
+                "Packing is broken after 1.21.0c of Spelunky 2.\n"
+                "This tab continues to exist for support of older versions."
             ),
             font="sans 12 bold",
             justify=tk.CENTER,
@@ -106,7 +109,9 @@ class WarningFrame(ttk.Frame):
 
 
 class PackTab(Tab):
-    def __init__(self, tab_control, modlunky_config, task_manager, *args, **kwargs):
+    def __init__(
+        self, tab_control, modlunky_config: Config, task_manager, *args, **kwargs
+    ):
         super().__init__(tab_control, *args, **kwargs)
         self.tab_control = tab_control
         self.modlunky_config = modlunky_config

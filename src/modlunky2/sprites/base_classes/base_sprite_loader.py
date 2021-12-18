@@ -6,7 +6,7 @@ from threading import Lock
 
 from PIL import Image
 
-from .types import chunk_map_type
+from modlunky2.sprites.base_classes.types import chunk_map_type
 
 _DEFAULT_BASE_PATH = Path(
     r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted"
@@ -16,18 +16,18 @@ _CACHED_NONE_SENTINEL = object()
 _CACHE_LOCK = Lock()
 
 
-def _cache_img_not_class(f):
+def _cache_img_not_class(func):
     """using this because functools.lrucache will keep the class object from getting
     GCed if you are using it on a method"""
 
     # noinspection PyProtectedMember
-    @wraps(f)
+    @wraps(func)
     def cache_img(slf, name: str):
         with _CACHE_LOCK:
-            img = slf._cache_dict.get(name)
+            img = slf._cache_dict.get(name)  # pylint: disable=protected-access
             if not img:
-                img = f(slf, name) or _CACHED_NONE_SENTINEL
-                slf._cache_dict[name] = img
+                img = func(slf, name) or _CACHED_NONE_SENTINEL
+                slf._cache_dict[name] = img  # pylint: disable=protected-access
             if img is _CACHED_NONE_SENTINEL:
                 return None
             return img
@@ -43,7 +43,6 @@ class BaseSpriteLoader(ABC):
         Define the path from a "base path" to the specific png file this is for reading,
         for example for `items.png` it should return Path('Data/Textures/items.png')
         """
-        pass
 
     @property
     @abstractmethod
@@ -51,7 +50,6 @@ class BaseSpriteLoader(ABC):
         """
         define how many pixels wide/tall each piece is expected to be
         """
-        pass
 
     @property
     @abstractmethod
@@ -61,7 +59,6 @@ class BaseSpriteLoader(ABC):
         `"thing_name": (1, 0, 2, 2)`
         The digits will be multiplied by the _chunk_size when the piece is accessed.
         """
-        pass
 
     def __init__(self, base_path: Path = _DEFAULT_BASE_PATH):
         self.base_path = base_path
@@ -86,6 +83,7 @@ class BaseSpriteLoader(ABC):
         coords = self._chunk_map.get(name)
         if coords:
             return self._get_block(*coords)
+        return None
 
     def key_map(self) -> Dict[str, Callable]:
         return {k: self.get for k in self._chunk_map}
