@@ -4,7 +4,7 @@ from pathlib import Path
 from tkinter import ttk
 
 from modlunky2.config import Config
-from modlunky2.ui.play.config import SECTIONS
+from modlunky2.ui.play.config import SECTIONS, OPTION_TYPES
 from modlunky2.utils import is_windows
 
 from .constants import (
@@ -63,15 +63,29 @@ class OptionsFrame(ttk.Frame):
             row_num += 2
 
             for option in options:
-                self.ini_options[option] = tk.BooleanVar()
-                checkbox = ttk.Checkbutton(
-                    self,
-                    text=self.format_text(option),
-                    variable=self.ini_options[option],
-                    compound="left",
-                    command=self.play_tab.write_ini,
-                )
-                checkbox.grid(row=row_num, column=0, padx=3, sticky="w")
+                option_type = OPTION_TYPES[option] if option in OPTION_TYPES else bool
+                if option_type == int:
+                    self.ini_options[option] = tk.IntVar()
+                    field = ttk.Entry(
+                        self,
+                        text=self.format_text(option),
+                        textvariable=self.ini_options[option],
+                        width=4,
+                    )
+                    field.grid(row=row_num, column=0, padx=3, sticky="w")
+                    text = ttk.Label(self, text=option)
+                    text.grid(row=row_num, column=0, padx=36, sticky="w")
+                elif option_type == bool:
+                    self.ini_options[option] = tk.BooleanVar()
+                    checkbox = ttk.Checkbutton(
+                        self,
+                        text=self.format_text(option),
+                        variable=self.ini_options[option],
+                        compound="left",
+                    )
+                    checkbox.grid(row=row_num, column=0, padx=3, sticky="w")
+                else:
+                    logger.error("Can not handle option type %s", str(option_type))
                 row_num += 1
 
             if section == "general_settings":

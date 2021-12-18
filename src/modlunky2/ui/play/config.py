@@ -27,6 +27,10 @@ SECTIONS = {
     ],
 }
 
+# Default to boolean if not in this
+OPTION_TYPES = {
+}
+
 OPTION_TO_SECTION = {
     option: section for section, options in SECTIONS.items() for option in options
 }
@@ -65,9 +69,15 @@ class PlaylunkyConfig:
         obj = cls()
         for section, options in SECTIONS.items():
             for option in options:
-                val = config.getboolean(section, option, fallback=None)
-                if val is None:
-                    val = config.getboolean(LEGACY_INI_SECTION, option, fallback=None)
+                option_type = OPTION_TYPES[option] if option in OPTION_TYPES else bool
+                if option_type == int:
+                    val = config.getint(section, option, fallback=None)
+                elif option_type == bool:
+                    val = config.getboolean(section, option, fallback=None)
+                    if val is None:
+                        val = config.getboolean(
+                            LEGACY_INI_SECTION, option, fallback=None
+                        )
                 if val is None:
                     continue
 
@@ -84,6 +94,10 @@ class PlaylunkyConfig:
             val = "off"
 
         ini.set(OPTION_TO_SECTION[name], name, val)
+
+    @staticmethod
+    def set_integer(ini: configparser.ConfigParser, name: str, val: int):
+        ini.set(OPTION_TO_SECTION[name], name, str(val))
 
     @staticmethod
     def clean_ini(ini):
@@ -113,6 +127,8 @@ class PlaylunkyConfig:
 
             if issubclass(option.type, bool):
                 self.set_boolean(ini, option.name, getattr(self, option.name))
+            elif issubclass(option.type, int):
+                self.set_integer(ini, option.name, getattr(self, option.name))
             else:
                 ini.set(LEGACY_INI_SECTION, option.name, getattr(self, option.name))
 

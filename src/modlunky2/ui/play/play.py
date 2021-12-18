@@ -163,14 +163,27 @@ class PlayTab(Tab):
 
         for options in SECTIONS.values():
             for option in options:
-                self.options_frame.ini_options[option].set(getattr(self.ini, option))
+                option_var = self.options_frame.ini_options[option]
+                option_var.set(getattr(self.ini, option))
+                option_var.trace_add(
+                    "write",
+                    lambda *args: self.write_ini(),
+                )
 
     def write_ini(self):
         path = self.modlunky_config.install_dir / "playlunky.ini"
 
         for options in SECTIONS.values():
             for option in options:
-                setattr(self.ini, option, self.options_frame.ini_options[option].get())
+                try:
+                    setattr(
+                        self.ini, option, self.options_frame.ini_options[option].get()
+                    )
+                except tk.TclError:
+                    logger.info(
+                        "Setting '%s' could not be set, maybe the field is currently empty?",
+                        option,
+                    )
 
         with path.open("w") as handle:
             self.ini.write(handle)
