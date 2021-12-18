@@ -87,7 +87,7 @@ class PlaylunkyConfig:
         obj = cls()
         for section, options in SECTIONS.items():
             for option in options:
-                option_type = OPTION_TYPES[option] if option in OPTION_TYPES else bool
+                option_type = OPTION_TYPES.get(option, bool)
                 if option_type == int:
                     val = config.getint(section, option, fallback=None)
                 elif option_type == bool:

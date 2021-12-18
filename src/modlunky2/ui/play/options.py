@@ -63,18 +63,23 @@ class OptionsFrame(ttk.Frame):
             row_num += 2
 
             for option in options:
-                option_type = OPTION_TYPES[option] if option in OPTION_TYPES else bool
+                option_type = OPTION_TYPES.get(option, bool)
                 if option_type == int:
+
                     self.ini_options[option] = tk.IntVar()
+                    _frame = ttk.Frame(self)
+                    _frame.grid(row=row_num, column=0, sticky="ew")
+                    _frame.columnconfigure(0, minsize=60)
+                    _frame.columnconfigure(1, weight=1)
                     field = ttk.Entry(
-                        self,
+                        _frame,
                         text=self.format_text(option),
                         textvariable=self.ini_options[option],
                         width=4,
                     )
-                    field.grid(row=row_num, column=0, padx=3, sticky="w")
-                    text = ttk.Label(self, text=option)
-                    text.grid(row=row_num, column=0, padx=36, sticky="w")
+                    field.grid(row=0, column=0, padx=3, sticky="ew")
+                    text = ttk.Label(_frame, text=self.format_text(option))
+                    text.grid(row=0, column=1, padx=(1, 0), sticky="ew")
                 elif option_type == bool:
                     self.ini_options[option] = tk.BooleanVar()
                     checkbox = ttk.Checkbutton(
