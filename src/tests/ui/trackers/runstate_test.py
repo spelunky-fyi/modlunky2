@@ -564,23 +564,39 @@ def test_has_non_chain_powerup(item_set, expected_low):
 
 
 @pytest.mark.parametrize(
-    "prev_state,cur_state,item_set,expected_low",
+    "prev_state,cur_state,prev_item_set,item_set,expected_low",
     [
-        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_BOOMERANG}, False),
-        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_BOOMERANG}, False),
+        (
+            CharState.STANDING,
+            CharState.ATTACKING,
+            {EntityType.ITEM_BOOMERANG},
+            {},
+            False,
+        ),
+        (
+            CharState.ATTACKING,
+            CharState.STANDING,
+            {},
+            {EntityType.ITEM_BOOMERANG},
+            False,
+        ),
         # Holding things is OK
-        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_BOOMERANG}, True),
-        # Rocks are OK
-        (CharState.JUMPING, CharState.CLIMBING, {EntityType.ITEM_ROCK}, True),
-        (CharState.STANDING, CharState.ATTACKING, {EntityType.ITEM_ROCK}, True),
-        (CharState.ATTACKING, CharState.STANDING, {EntityType.ITEM_ROCK}, True),
+        (
+            CharState.JUMPING,
+            CharState.CLIMBING,
+            {EntityType.ITEM_BOOMERANG},
+            {EntityType.ITEM_BOOMERANG},
+            True,
+        ),
         # Using the whip is OK
-        (CharState.JUMPING, CharState.CLIMBING, set(), True),
-        (CharState.STANDING, CharState.ATTACKING, set(), True),
-        (CharState.ATTACKING, CharState.STANDING, set(), True),
+        (CharState.JUMPING, CharState.CLIMBING, set(), set(), True),
+        (CharState.STANDING, CharState.ATTACKING, set(), set(), True),
+        (CharState.ATTACKING, CharState.STANDING, set(), set(), True),
     ],
 )
-def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
+def test_attacked_with_simple(
+    prev_state, cur_state, item_set, prev_item_set, expected_low
+):
     # These shouldn't be location sensitive
     layer = Layer.FRONT
     world = 2
@@ -590,7 +606,15 @@ def test_attacked_with_simple(prev_state, cur_state, item_set, expected_low):
     run_state = RunState()
     run_state.sunken_chain_status = ChainStatus.IN_PROGRESS
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        prev_item_set,
     )
 
     is_low = Label.LOW in run_state.run_label._set
@@ -702,7 +726,15 @@ def test_attacked_with_excalibur(
     run_state = RunState()
     run_state.sunken_chain_status = chain_status
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     # We only expect these to be set together
@@ -778,7 +810,15 @@ def test_attacked_with_mattock(layer, theme, presence_flags, expected_low):
     level = 2
     run_state = RunState()
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     # We only expect this to be set when we're still low%
@@ -817,7 +857,15 @@ def test_attacked_with_hou_yi(layer, world, level, presence_flags, expected_low)
     theme = Theme.DWELLING
     run_state = RunState()
     run_state.update_attacked_with(
-        prev_state, cur_state, layer, world, level, theme, presence_flags, item_set
+        prev_state,
+        cur_state,
+        layer,
+        world,
+        level,
+        theme,
+        presence_flags,
+        item_set,
+        item_set,
     )
 
     is_low = Label.LOW in run_state.run_label._set

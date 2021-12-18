@@ -426,12 +426,22 @@ class RunState:
         theme: Theme,
         presence_flags: PresenceFlags,
         player_item_types: Set[EntityType],
+        prev_player_item_types: Set[EntityType],
     ):
         if not self.is_low_percent:
             return
 
         if state != CharState.ATTACKING and last_state != CharState.ATTACKING:
             return
+
+        # When you throw a boomerang the entity leaves your items so check if it was in
+        # your inventory before you transitioned to attacking.
+        if (
+            last_state != CharState.ATTACKING
+            and EntityType.ITEM_BOOMERANG in prev_player_item_types
+            and EntityType.ITEM_BOOMERANG not in player_item_types
+        ):
+            self.fail_low()
 
         for item_type in player_item_types:
             if item_type in LOW_BANNED_ATTACKABLES:
@@ -717,6 +727,7 @@ class RunState:
             game_state.theme,
             presence_flags,
             self.player_item_types,
+            self.player_last_item_types,
         )
         self.update_attacked_with_throwables(
             player.last_state,
