@@ -8,27 +8,37 @@ LEGACY_INI_SECTION = "settings"
 SECTIONS = {
     "general_settings": [
         "enable_loose_file_warning",
+        # We don't want people to change this, but if we ever change our mind it's here
+        # "enable_raw_string_loading",
         "disable_asset_caching",
         "speedrun_mode",
+        "block_save_game",
+        "allow_save_game_mods",
     ],
     "script_settings": [
         "enable_developer_mode",
         "enable_developer_console",
+        "console_history_size",
     ],
     "audio_settings": [
         "enable_loose_audio_files",
         "cache_decoded_audio_files",
+        "synchronous_update",
     ],
     "sprite_settings": [
         "random_character_select",
         "generate_character_journal_stickers",
         "generate_character_journal_entries",
         "generate_sticker_pixel_art",
+        "enable_sprite_hot_loading",
+        "sprite_hot_load_delay",
     ],
 }
 
 # Default to boolean if not in this
 OPTION_TYPES = {
+    "console_history_size": int,
+    "sprite_hot_load_delay": int,
 }
 
 OPTION_TO_SECTION = {
@@ -44,22 +54,30 @@ class PlaylunkyConfig:
 
     # General Settings
     enable_loose_file_warning: bool = True
-    speedrun_mode: bool = False
+    # We don't want people to change this, but if we ever change our mind it's here
+    # enable_raw_string_loading: bool = False
     disable_asset_caching: bool = False
+    block_save_game: bool = False
+    allow_save_game_mods: bool = True
+    speedrun_mode: bool = False
 
     # Script Settings
     enable_developer_mode: bool = False
     enable_developer_console: bool = False
+    console_history_size: int = 20
 
     # Audio Settings
     enable_loose_audio_files: bool = True
     cache_decoded_audio_files: bool = False
+    synchronous_update: bool = True
 
     # Sprite Settings
     random_character_select: bool = False
     generate_character_journal_stickers: bool = True
     generate_character_journal_entries: bool = True
     generate_sticker_pixel_art: bool = True
+    enable_sprite_hot_loading: bool = False
+    sprite_hot_load_delay: int = 100
 
     @classmethod
     def from_ini(cls, handle: TextIO) -> "PlaylunkyConfig":
