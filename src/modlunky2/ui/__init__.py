@@ -224,12 +224,12 @@ class ModlunkyUI:
                 tab_control=self.tab_control,
                 ml_config=modlunky_config,
             )
-        self.register_tab(
-            "Spelunky 99",
-            S99Tab,
-            tab_control=self.tab_control,
-            modlunky_config=modlunky_config,
-        )
+        # self.register_tab(
+        #     "Spelunky 99",
+        #     S99Tab,
+        #     tab_control=self.tab_control,
+        #     modlunky_config=modlunky_config,
+        # )
         self.register_tab(
             "Settings",
             SettingsTab,
