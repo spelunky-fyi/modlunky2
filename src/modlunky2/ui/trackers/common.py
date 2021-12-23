@@ -18,6 +18,7 @@ TRACKERS_DIR = DATA_DIR / "trackers"
 
 
 class CommonCommand(Enum):
+    CONFIG = "config"
     DIE = "die"
     WAIT = "wait"
 
@@ -26,10 +27,11 @@ class WatcherThread(threading.Thread):
     POLL_INTERVAL = 0.016
     ATTACH_INTERVAL = 1.0
 
-    def __init__(self, queue):
+    def __init__(self, recv_queue: Queue, send_queue: Queue):
         super().__init__()
         self.shut_down = False
-        self.queue: Queue = queue
+        self.recv_queue = recv_queue
+        self.send_queue = send_queue
 
         self.proc = None
 
@@ -61,7 +63,7 @@ class WatcherThread(threading.Thread):
         self.shut_down = True
 
     def send(self, command: CommonCommand, data):
-        self.queue.put({"command": command, "data": data})
+        self.send_queue.put({"command": command, "data": data})
 
     def die(self, message):
         self.send(CommonCommand.DIE, message)
@@ -123,7 +125,8 @@ class TrackerWindow(tk.Toplevel):
         super().__init__(*args, **kwargs)
         self.attributes("-topmost", "true")
         self.on_close = on_close
-        self.queue = Queue()
+        self.recv_queue = Queue()
+        self.send_queue = Queue()
         self.color_key = color_key
 
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")

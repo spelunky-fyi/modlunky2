@@ -29,6 +29,7 @@ class CategoryButtons(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
+        self.window = None
 
         self.cat_icon = ImageTk.PhotoImage(
             Image.open(ICON_PATH / "cat2.png").resize((24, 24), Image.ANTIALIAS)
@@ -68,14 +69,15 @@ class CategoryButtons(ttk.Frame):
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
-        CategoryWindow(
+        self.window = CategoryWindow(
             title="Category Tracker",
             color_key=color_key,
-            on_close=self.enable_button,
+            on_close=self.window_closed,
             always_show_modifiers=self.always_show_modifiers.get(),
         )
 
-    def enable_button(self):
+    def window_closed(self):
+        self.window = None
         # If we're in the midst of destroy() the button might not exist
         if self.category_button.winfo_exists():
             self.category_button["state"] = tk.NORMAL
@@ -121,7 +123,8 @@ class CategoryWindow(TrackerWindow):
         super().__init__(file_name="category.txt", *args, **kwargs)
 
         self.watcher_thread = CategoryWatcherThread(
-            self.queue,
+            recv_queue=self.send_queue,
+            send_queue=self.recv_queue,
             always_show_modifiers=always_show_modifiers,
         )
         self.watcher_thread.start()
@@ -136,7 +139,7 @@ class CategoryWindow(TrackerWindow):
                     schedule_again = False
 
                 try:
-                    msg = self.queue.get_nowait()
+                    msg = self.recv_queue.get_nowait()
                 except Empty:
                     break
 

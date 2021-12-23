@@ -23,6 +23,7 @@ class PacifistButtons(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
+        self.window = None
 
         self.pacifist_button = ttk.Button(
             self,
@@ -52,15 +53,18 @@ class PacifistButtons(ttk.Frame):
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
-        PacifistWindow(
+        self.window = PacifistWindow(
             title="Pacifist Tracker",
             show_kill_count=self.show_kill_count.get(),
             color_key=color_key,
-            on_close=self.enable_button,
+            on_close=self.window_closed,
         )
 
-    def enable_button(self):
-        self.pacifist_button["state"] = tk.NORMAL
+    def window_closed(self):
+        self.window = None
+        # If we're in the midst of destroy() the button might not exist
+        if self.pacifist_button.winfo_exists():
+            self.pacifist_button["state"] = tk.NORMAL
 
     def disable_button(self):
         self.pacifist_button["state"] = tk.DISABLED
@@ -96,7 +100,9 @@ class PacifistWindow(TrackerWindow):
         super().__init__(file_name="pacifist.txt", *args, **kwargs)
 
         self.show_kill_count = show_kill_count
-        self.watcher_thread = PacifistWatcherThread(self.queue)
+        self.watcher_thread = PacifistWatcherThread(
+            recv_queue=self.send_queue, send_queue=self.recv_queue
+        )
         self.watcher_thread.start()
         self.after(100, self.after_watcher_thread)
 
@@ -118,7 +124,7 @@ class PacifistWindow(TrackerWindow):
                     schedule_again = False
 
                 try:
-                    msg = self.queue.get_nowait()
+                    msg = self.recv_queue.get_nowait()
                 except Empty:
                     break
 
