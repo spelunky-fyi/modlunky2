@@ -126,6 +126,7 @@ from modlunky2.sprites.full_sheets import (
     YetiQueenSpriteMerger,
     YetiSpriteMerger,
 )
+from modlunky2.sprites.full_sheets.decorations import UdjatWallHeads
 
 _SPRITE_MERGERS = []
 
@@ -271,6 +272,7 @@ def get_all_sprite_mergers(entities_json: dict, textures_json: dict, base_path: 
                 ),
                 GhostSmallAngrySpriteMerger(entities_json, textures_json, base_path),
                 # MegaJellySpriteMerger(entities_json, textures_json, base_path),  # RIP
+                UdjatWallHeads(base_path),
             ]
         )
     return _SPRITE_MERGERS
