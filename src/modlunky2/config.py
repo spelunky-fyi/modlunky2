@@ -142,7 +142,11 @@ class Config:
         default=None, metadata={"serde_skip": True}
     )
 
-    install_dir: Optional[Path] = None
+    install_dir: Optional[Path] = dataclasses.field(
+        default=None,
+        # Use custom deserializer to handle None. Unclear why only this field fails
+        metadata={"serde_deserializer": lambda v: v if v is None else Path(v)},
+    )
     playlunky_version: Optional[str] = skip_default_field(default=None)
     playlunky_console: bool = skip_default_field(default=False)
     playlunky_shortcut: bool = skip_default_field(default=False)
