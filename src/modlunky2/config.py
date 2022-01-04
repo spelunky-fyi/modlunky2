@@ -3,6 +3,8 @@ from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass
 import logging
+import shutil
+import time
 from typing import Dict, List, Optional
 
 try:
@@ -175,11 +177,23 @@ class Config:
         if exe_dir is None:
             exe_dir = Path(__file__).resolve().parent
 
+        make_new = True
         if config_path.exists():
+            make_new = False
             with config_path.open("r", encoding="utf-8") as config_file:
-                config = serde.json.from_json(Config, config_file.read())
-                config.config_path = config_path
-        else:
+                try:
+                    config = serde.json.from_json(Config, config_file.read())
+                    config.config_path = config_path
+                except Exception:
+                    make_new = True
+                    now = int(time.time())
+                    backup_path = config_path.with_suffix(f".{now}.json")
+                    logger.exception(
+                        "Failed to load config. Backing up to %s",
+                    )
+                    shutil.copyfile(config_path, backup_path)
+
+        if make_new:
             config = Config()
             config.install_dir = guess_install_dir(exe_dir)
             config.config_path = config_path
