@@ -398,12 +398,14 @@ def install_fyi_mod(
             )
             return
 
-    pack_dir.mkdir(parents=True, exist_ok=True)
-
     api_client = SpelunkyFYIClient(spelunky_fyi_root, api_token)
     logger.debug("Checking for mod: %s", install_code)
 
     mod_details, code = api_client.get_mod(install_code)
+    if mod_details.get("mod_type") == 5:  # Library
+        logger.warning("Tried to install Library mod. Doesn't make sense...")
+        return
+
     if mod_details is None:
         if code == 404:
             logger.debug("No mod found with install code: %s", install_code)
@@ -416,6 +418,7 @@ def install_fyi_mod(
         )
         return
 
+    pack_dir.mkdir(parents=True, exist_ok=True)
     pack_metadata_dir = metadata_dir / f"fyi.{install_code}"
     if not pack_metadata_dir.exists():
         pack_metadata_dir.mkdir(parents=True, exist_ok=True)
