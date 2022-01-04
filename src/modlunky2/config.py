@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass
+import json
 import logging
 import shutil
 import time
@@ -184,7 +185,7 @@ class Config:
                 try:
                     config = serde.json.from_json(Config, config_file.read())
                     config.config_path = config_path
-                except Exception:
+                except json.decoder.JSONDecodeError:
                     make_new = True
                     now = int(time.time())
                     backup_path = config_path.with_suffix(f".{now}.json")
