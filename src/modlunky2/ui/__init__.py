@@ -25,7 +25,6 @@ from modlunky2.ui.install import InstallTab
 from modlunky2.ui.logs import QueueHandler, register_queue_handler
 from modlunky2.ui.error import ErrorTab
 from modlunky2.ui.websocket import WebSocketThread
-from modlunky2.ui.s99 import S99Tab
 
 if is_windows():
     from modlunky2.ui.trackers import TrackersTab
@@ -224,12 +223,6 @@ class ModlunkyUI:
                 tab_control=self.tab_control,
                 ml_config=modlunky_config,
             )
-        # self.register_tab(
-        #     "Spelunky 99",
-        #     S99Tab,
-        #     tab_control=self.tab_control,
-        #     modlunky_config=modlunky_config,
-        # )
         self.register_tab(
             "Settings",
             SettingsTab,
