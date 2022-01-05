@@ -1,15 +1,16 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
-from modlunky2.constants import BASE_DIR
 
 from PIL import Image
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.sprites.base_classes import (
     AbstractBiome,
     BaseSpriteLoader,
     BaseJsonSpriteLoader,
     DEFAULT_BASE_PATH,
 )
+from modlunky2.sprites.tilecode_extras import TreasureVaultChestSheet
 
 
 class SpelunkySpriteFetcher:
@@ -60,10 +61,11 @@ class SpelunkySpriteFetcher:
             else:
                 sheets.append(sheet(self.base_path))
 
-        # This uses the constant BASE_DIR as the base path as this
+        # These uses the constant BASE_DIR as the base path as this
         # texture is bundled with the source rather than coming
         # from the extracted assets.
         sheets.append(TilecodeExtras(BASE_DIR))
+        sheets.append(TreasureVaultChestSheet(BASE_DIR))
 
         key_map = {}
         for sheet in sheets:
