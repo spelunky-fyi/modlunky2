@@ -154,7 +154,9 @@ class Config:
     spelunky_fyi_root: str = skip_default_field(default=SPELUNKY_FYI_ROOT_DEFAULT)
     spelunky_fyi_api_token: Optional[str] = skip_default_field(default=None)
     theme: Optional[str] = skip_default_field(default=None)
-    last_install_browse: Path = skip_default_field(default=LAST_INSTALL_BROWSE_DEFAULT)
+    last_install_browse: Path = skip_default_field(
+        default=Path(LAST_INSTALL_BROWSE_DEFAULT)
+    )
     last_tab: Optional[str] = skip_default_field(default=None)
     tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
     show_packing: bool = skip_default_field(default=False)
