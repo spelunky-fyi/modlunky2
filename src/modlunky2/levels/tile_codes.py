@@ -252,7 +252,7 @@ VALID_TILE_CODES = set(
         "dustwall",
         "bat",
         "skeleton",
-        "red_skeleton",
+        "redskeleton",
         "lizard",
         "mole",
         "monkey",
@@ -392,6 +392,13 @@ VALID_TILE_CODES = set(
         "olmite_naked",
         "olmite_helmet",
         "olmite_armored",
+        "critter_slime",
+        "skull",
+        "movable_spikes",
+        "punishball_attach_bottom",
+        "punishball_attach_top",
+        "punishball_attach_left",
+        "punishball_attach_right",
     ]
 )
 

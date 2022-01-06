@@ -68,7 +68,7 @@ TILENAMES = [
     "sunken_floor_hard",
     "eggplant_child",
     "dustwall",
-    "red_skeleton",
+    "redskeleton",
     "hundun",
     "leaf",
     "rope",
