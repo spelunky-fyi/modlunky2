@@ -10,7 +10,6 @@ class ItemSheet(BaseSpriteLoader):
     _chunk_map = {
         "chest": (0, 0, 1, 1),
         "treasure_chest": (0, 0, 1, 1),
-        "treasure_vaultchest": (0, 0, 1, 1),
         "chest_open": (1, 0, 2, 1),
         "crate": (2, 0, 3, 1),
         "emerald": (3, 0, 4, 1),

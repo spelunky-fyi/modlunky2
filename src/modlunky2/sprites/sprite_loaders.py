@@ -56,7 +56,7 @@ from modlunky2.sprites.monsters.big import (
     OsirisAndAlienQueen,
     OlmecAndMech,
 )
-from modlunky2.sprites.tilecode_extras import TilecodeExtras
+from modlunky2.sprites.tilecode_extras import TilecodeExtras, TreasureVaultChestSheet
 from modlunky2.sprites.menu_leader import MenuLeaderSheet
 from modlunky2.sprites.menu_basic import MenuBasicSheet, PetHeadsSheet
 from modlunky2.sprites.deco_sheet import CaveDecoSheet
@@ -118,8 +118,9 @@ def get_all_sprite_loaders(
         OlmecAndMech(entities_json, textures_json, base_path),
         Ghost(entities_json, textures_json, base_path),
         CaveDecoSheet(base_path),
-        # This uses the constant BASE_DIR as the base path as this
+        # These uses the constant BASE_DIR as the base path as this
         # texture is bundled with the source rather than coming
         # from the extracted assets.
         TilecodeExtras(BASE_DIR),
+        TreasureVaultChestSheet(BASE_DIR),
     ]

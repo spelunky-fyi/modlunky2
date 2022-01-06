@@ -93,3 +93,11 @@ class TilecodeExtras(BaseSpriteLoader):
     _chunk_map = {
         tilename: (idx, 0, idx + 1, 1) for idx, tilename in enumerate(TILENAMES)
     }
+
+
+class TreasureVaultChestSheet(BaseSpriteLoader):
+    _sprite_sheet_path = Path("static/images/treasure_vaultchest.png")
+    _chunk_size = 50
+    _chunk_map = {
+        "treasure_vaultchest": (0, 0, 1, 1),
+    }
