@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum
 import logging
 import threading
@@ -5,6 +6,7 @@ import time
 import tkinter as tk
 from queue import Queue
 from tkinter import PhotoImage
+from typing import Any, Dict, Optional
 
 from modlunky2.config import DATA_DIR
 from modlunky2.constants import BASE_DIR
@@ -19,19 +21,35 @@ TRACKERS_DIR = DATA_DIR / "trackers"
 
 class CommonCommand(Enum):
     CONFIG = "config"
+    TRACKER_DATA = "tracker-data"
     DIE = "die"
     WAIT = "wait"
+
+
+class WindowKey(Enum):
+    DISPLAY_STRING = "display-string"
+
+
+class Tracker(ABC):
+    @abstractmethod
+    def initialize(self):
+        pass
+
+    @abstractmethod
+    def poll(self, proc: Spel2Process) -> Optional[Dict[str, Any]]:
+        pass
 
 
 class WatcherThread(threading.Thread):
     POLL_INTERVAL = 0.016
     ATTACH_INTERVAL = 1.0
 
-    def __init__(self, recv_queue: Queue, send_queue: Queue):
+    def __init__(self, recv_queue: Queue, send_queue: Queue, tracker: Tracker):
         super().__init__()
         self.shut_down = False
         self.recv_queue = recv_queue
         self.send_queue = send_queue
+        self.tracker = tracker
 
         self.proc = None
 
@@ -41,15 +59,13 @@ class WatcherThread(threading.Thread):
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed in thread: %s", tb_info())
 
-    def initialize(self):
-        raise NotImplementedError()
-
     def poll(self):
-        raise NotImplementedError()
-
-    def _really_poll(self):
         try:
-            self.poll()
+            data = self.tracker.poll(self.proc)
+            if data is None:
+                self.shutdown()
+            else:
+                self.send(CommonCommand.TRACKER_DATA, data)
         except (FeedcodeNotFound, ScalarCValueConstructionError):
             # These exceptions are likely transient
             return
@@ -90,7 +106,7 @@ class WatcherThread(threading.Thread):
             return False
 
         self.proc = proc
-        self.initialize()
+        self.tracker.initialize()
         return True
 
     def _run(self):
@@ -108,7 +124,7 @@ class WatcherThread(threading.Thread):
                 if not self._attach():
                     interval = self.ATTACH_INTERVAL
             elif self.proc.running():
-                self._really_poll()
+                self.poll()
             else:
                 self.wait()
                 interval = self.ATTACH_INTERVAL

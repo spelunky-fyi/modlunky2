@@ -9,18 +9,21 @@ from PIL import Image, ImageTk
 
 from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
+from modlunky2.mem import Spel2Process
 
-from modlunky2.ui.trackers.common import TrackerWindow, WatcherThread, CommonCommand
+from modlunky2.ui.trackers.common import (
+    Tracker,
+    TrackerWindow,
+    WatcherThread,
+    CommonCommand,
+    WindowKey,
+)
 from modlunky2.ui.trackers.runstate import RunState
 
 logger = logging.getLogger("modlunky2")
 
 
 ICON_PATH = BASE_DIR / "static/images"
-
-
-class Command(Enum):
-    LABEL = "label"
 
 
 class CategoryButtons(ttk.Frame):
@@ -86,9 +89,10 @@ class CategoryButtons(ttk.Frame):
         self.category_button["state"] = tk.DISABLED
 
 
-class CategoryWatcherThread(WatcherThread):
+class CategoryTracker(Tracker):
     def __init__(self, *args, always_show_modifiers=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.proc = None
         self.time_total = None
         self.run_state = None
         self.always_show_modifiers = always_show_modifiers
@@ -99,11 +103,11 @@ class CategoryWatcherThread(WatcherThread):
             always_show_modifiers=self.always_show_modifiers,
         )
 
-    def poll(self):
-        game_state = self.proc.get_state()
+    def poll(self, proc: Spel2Process):
+        game_state = proc.get_state()
         if game_state is None:
-            self.shutdown()
-            return
+            return None
+
         # Check if we've reset, if so, reinitialize
         new_time_total = game_state.time_total
         if new_time_total < self.time_total:
@@ -112,7 +116,7 @@ class CategoryWatcherThread(WatcherThread):
 
         self.run_state.update(game_state)
         label = self.run_state.get_display(game_state.screen)
-        self.send(Command.LABEL, label)
+        return {WindowKey.DISPLAY_STRING: label}
 
 
 class CategoryWindow(TrackerWindow):
@@ -122,10 +126,10 @@ class CategoryWindow(TrackerWindow):
     def __init__(self, *args, always_show_modifiers=False, **kwargs):
         super().__init__(file_name="category.txt", *args, **kwargs)
 
-        self.watcher_thread = CategoryWatcherThread(
+        self.watcher_thread = WatcherThread(
             recv_queue=self.send_queue,
             send_queue=self.recv_queue,
-            always_show_modifiers=always_show_modifiers,
+            tracker=CategoryTracker(always_show_modifiers=always_show_modifiers),
         )
         self.watcher_thread.start()
         self.after(self.POLL_INTERVAL, self.after_watcher_thread)
@@ -148,8 +152,8 @@ class CategoryWindow(TrackerWindow):
                     self.shut_down(CRITICAL, msg["data"])
                 elif msg["command"] == CommonCommand.WAIT:
                     self.update_text("Waiting for game...")
-                elif msg["command"] == Command.LABEL:
-                    self.update_text(msg["data"])
+                elif msg["command"] == CommonCommand.TRACKER_DATA:
+                    self.update_text(msg["data"][WindowKey.DISPLAY_STRING])
 
         finally:
             if schedule_again:
