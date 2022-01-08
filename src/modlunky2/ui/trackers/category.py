@@ -14,8 +14,6 @@ from modlunky2.mem import Spel2Process
 from modlunky2.ui.trackers.common import (
     Tracker,
     TrackerWindow,
-    WatcherThread,
-    CommonCommand,
     WindowKey,
 )
 from modlunky2.ui.trackers.runstate import RunState
@@ -72,11 +70,14 @@ class CategoryButtons(ttk.Frame):
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
-        self.window = CategoryWindow(
+        self.window = TrackerWindow(
             title="Category Tracker",
             color_key=color_key,
             on_close=self.window_closed,
-            always_show_modifiers=self.always_show_modifiers.get(),
+            file_name="category.txt",
+            tracker=CategoryTracker(
+                always_show_modifiers=self.always_show_modifiers.get()
+            ),
         )
 
     def window_closed(self):
@@ -117,53 +118,3 @@ class CategoryTracker(Tracker):
         self.run_state.update(game_state)
         label = self.run_state.get_display(game_state.screen)
         return {WindowKey.DISPLAY_STRING: label}
-
-
-class CategoryWindow(TrackerWindow):
-
-    POLL_INTERVAL = 16
-
-    def __init__(self, *args, always_show_modifiers=False, **kwargs):
-        super().__init__(file_name="category.txt", *args, **kwargs)
-
-        self.watcher_thread = WatcherThread(
-            recv_queue=self.send_queue,
-            send_queue=self.recv_queue,
-            tracker=CategoryTracker(always_show_modifiers=always_show_modifiers),
-        )
-        self.watcher_thread.start()
-        self.after(self.POLL_INTERVAL, self.after_watcher_thread)
-
-    def after_watcher_thread(self):
-        schedule_again = True
-        try:
-            while True:
-                if self.watcher_thread and not self.watcher_thread.is_alive():
-                    self.shut_down(WARNING, "Thread went away. Closing window.")
-                    schedule_again = False
-
-                try:
-                    msg = self.recv_queue.get_nowait()
-                except Empty:
-                    break
-
-                if msg["command"] == CommonCommand.DIE:
-                    schedule_again = False
-                    self.shut_down(CRITICAL, msg["data"])
-                elif msg["command"] == CommonCommand.WAIT:
-                    self.update_text("Waiting for game...")
-                elif msg["command"] == CommonCommand.TRACKER_DATA:
-                    self.update_text(msg["data"][WindowKey.DISPLAY_STRING])
-
-        finally:
-            if schedule_again:
-                self.after(self.POLL_INTERVAL, self.after_watcher_thread)
-
-    def destroy(self):
-        if self.watcher_thread and self.watcher_thread.is_alive():
-            self.watcher_thread.shut_down = True
-
-        if self.on_close:
-            self.on_close()
-
-        super().destroy()

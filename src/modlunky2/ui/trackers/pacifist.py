@@ -9,7 +9,11 @@ from modlunky2.config import Config
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.state import RunRecapFlags
 
-from .common import Tracker, TrackerWindow, WatcherThread, CommonCommand
+from modlunky2.ui.trackers.common import (
+    Tracker,
+    TrackerWindow,
+    WindowKey,
+)
 
 logger = logging.getLogger("modlunky2")
 
@@ -54,11 +58,12 @@ class PacifistButtons(ttk.Frame):
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
-        self.window = PacifistWindow(
+        self.window = TrackerWindow(
             title="Pacifist Tracker",
-            show_kill_count=self.show_kill_count.get(),
             color_key=color_key,
             on_close=self.window_closed,
+            file_name="pacifist.txt",
+            tracker=PacifistTracker(show_kill_count=self.show_kill_count.get()),
         )
 
     def window_closed(self):
@@ -72,8 +77,9 @@ class PacifistButtons(ttk.Frame):
 
 
 class PacifistTracker(Tracker):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, show_kill_count, **kwargs):
         super().__init__(*args, **kwargs)
+        self.show_kill_count = show_kill_count
         self.kills_total = 0
 
     def initialize(self):
@@ -93,63 +99,14 @@ class PacifistTracker(Tracker):
             self.kills_total = player.inventory.kills_total
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
-        return {Command.IS_PACIFIST: (is_pacifist, self.kills_total)}
+        label = self.get_text(is_pacifist)
+        return {WindowKey.DISPLAY_STRING: label}
 
-
-class PacifistWindow(TrackerWindow):
-    def __init__(self, *args, show_kill_count=False, **kwargs):
-        super().__init__(file_name="pacifist.txt", *args, **kwargs)
-
-        self.show_kill_count = show_kill_count
-        self.watcher_thread = WatcherThread(
-            recv_queue=self.send_queue,
-            send_queue=self.recv_queue,
-            tracker=PacifistTracker(),
-        )
-        self.watcher_thread.start()
-        self.after(100, self.after_watcher_thread)
-
-    def get_text(self, is_pacifist, kills_total):
+    def get_text(self, is_pacifist):
         if is_pacifist:
             return "Pacifist"
 
         if self.show_kill_count:
-            return f"MURDERED {kills_total}!"
+            return f"MURDERED {self.kills_total}!"
 
         return "MURDERER!"
-
-    def after_watcher_thread(self):
-        schedule_again = True
-        try:
-            while True:
-                if self.watcher_thread and not self.watcher_thread.is_alive():
-                    self.shut_down(WARNING, "Thread went away. Closing window.")
-                    schedule_again = False
-
-                try:
-                    msg = self.recv_queue.get_nowait()
-                except Empty:
-                    break
-
-                if msg["command"] == CommonCommand.DIE:
-                    schedule_again = False
-                    self.shut_down(CRITICAL, msg["data"])
-                elif msg["command"] == CommonCommand.WAIT:
-                    self.update_text("Waiting for game...")
-                elif msg["command"] == CommonCommand.TRACKER_DATA:
-                    (is_pacifist, kills_total) = msg["data"][Command.IS_PACIFIST]
-                    new_text = self.get_text(is_pacifist, kills_total)
-                    self.update_text(new_text)
-
-        finally:
-            if schedule_again:
-                self.after(100, self.after_watcher_thread)
-
-    def destroy(self):
-        if self.watcher_thread and self.watcher_thread.is_alive():
-            self.watcher_thread.shut_down = True
-
-        if self.on_close:
-            self.on_close()
-
-        super().destroy()

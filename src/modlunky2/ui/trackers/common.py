@@ -4,7 +4,7 @@ import logging
 import threading
 import time
 import tkinter as tk
-from queue import Queue
+from queue import Empty, Queue
 from tkinter import PhotoImage
 from typing import Any, Dict, Optional
 
@@ -135,14 +135,28 @@ class WatcherThread(threading.Thread):
 
 
 class TrackerWindow(tk.Toplevel):
+    POLL_INTERVAL = 16
+
     def __init__(
-        self, title, on_close, file_name, *args, color_key="#ff00ff", **kwargs
+        self,
+        title,
+        on_close,
+        file_name: str,
+        tracker: Tracker,
+        *args,
+        color_key="#ff00ff",
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.attributes("-topmost", "true")
         self.on_close = on_close
         self.recv_queue = Queue()
         self.send_queue = Queue()
+        self.watcher_thread = WatcherThread(
+            recv_queue=self.send_queue,
+            send_queue=self.recv_queue,
+            tracker=tracker,
+        )
         self.color_key = color_key
 
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
@@ -181,6 +195,9 @@ class TrackerWindow(tk.Toplevel):
         with self.text_file.open("w") as handle:
             handle.write(self.text)
 
+        self.watcher_thread.start()
+        self.after(self.POLL_INTERVAL, self.after_watcher_thread)
+
     def dragwin(self, _event):
         x_coord = self.winfo_pointerx() - self._offsetx
         y_coord = self.winfo_pointery() - self._offsety
@@ -212,3 +229,37 @@ class TrackerWindow(tk.Toplevel):
         with self.text_file.open("w") as handle:
             handle.write("Not running")
         return super().destroy()
+
+    def after_watcher_thread(self):
+        schedule_again = True
+        try:
+            while True:
+                if self.watcher_thread and not self.watcher_thread.is_alive():
+                    self.shut_down(logging.WARNING, "Thread went away. Closing window.")
+                    schedule_again = False
+
+                try:
+                    msg = self.recv_queue.get_nowait()
+                except Empty:
+                    break
+
+                if msg["command"] == CommonCommand.DIE:
+                    schedule_again = False
+                    self.shut_down(logging.CRITICAL, msg["data"])
+                elif msg["command"] == CommonCommand.WAIT:
+                    self.update_text("Waiting for game...")
+                elif msg["command"] == CommonCommand.TRACKER_DATA:
+                    self.update_text(msg["data"][WindowKey.DISPLAY_STRING])
+
+        finally:
+            if schedule_again:
+                self.after(self.POLL_INTERVAL, self.after_watcher_thread)
+
+    def destroy(self):
+        if self.watcher_thread and self.watcher_thread.is_alive():
+            self.watcher_thread.shut_down = True
+
+        if self.on_close:
+            self.on_close()
+
+        super().destroy()
