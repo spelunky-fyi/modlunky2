@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Set, FrozenSet, Iterable
+from typing import Optional, Set, FrozenSet
 
 
 @dataclass
@@ -153,7 +153,9 @@ class RunLabel:
             if len(inter) > 1:
                 raise Exception(f"Found mutually-exclusive labels {inter}")
 
-    def _visible(self, hide_early: bool, excluded_categories: FrozenSet[Label]) -> Set[Label]:
+    def _visible(
+        self, hide_early: bool, excluded_categories: FrozenSet[Label]
+    ) -> Set[Label]:
         vis = set(self._set)
         vis -= excluded_categories
 
@@ -211,9 +213,17 @@ class RunLabel:
         return found
 
     def text(self, hide_early, excluded_categories=None) -> str:
-        excluded_categories = frozenset([Label[n] for n in excluded_categories]) if excluded_categories is not None else frozenset()
+        excluded_categories = (
+            frozenset([Label[n] for n in excluded_categories])
+            if excluded_categories is not None
+            else frozenset()
+        )
 
-        if self._cached_text is not None and self._cached_text.hide_early == hide_early and self._cached_text.excluded_categories == excluded_categories:
+        if (
+            self._cached_text is not None
+            and self._cached_text.hide_early == hide_early
+            and self._cached_text.excluded_categories == excluded_categories
+        ):
             return self._cached_text.text
 
         vis = self._visible(hide_early, excluded_categories)
@@ -229,5 +239,7 @@ class RunLabel:
                 parts.append(candidate.value.text)
 
         text = " ".join(parts)
-        self._cached_text = _CachedText(hide_early=hide_early, text=text, excluded_categories=excluded_categories)
+        self._cached_text = _CachedText(
+            hide_early=hide_early, text=text, excluded_categories=excluded_categories
+        )
         return text

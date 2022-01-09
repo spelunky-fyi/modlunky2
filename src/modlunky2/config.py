@@ -142,6 +142,7 @@ class CategoryTrackerConfig(CommonTrackerConfig):
     always_show_modifiers: bool = skip_default_field(default=False)
     excluded_categories: Optional[List[str]] = skip_default_field(default=None)
 
+
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
