@@ -64,6 +64,8 @@ class CategoryButtons(ttk.Frame):
             self.always_show_modifiers.get()
         )
         self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.category)
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -74,7 +76,7 @@ class CategoryButtons(ttk.Frame):
             on_close=self.window_closed,
             file_name="category.txt",
             tracker=CategoryTracker(),
-            config=self.modlunky_config.trackers.category.clone(),
+            config=self.modlunky_config.trackers.category,
         )
 
     def window_closed(self):

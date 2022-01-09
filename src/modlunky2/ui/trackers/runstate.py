@@ -785,6 +785,5 @@ class RunState:
         return False
 
     def get_display(self, screen: Screen, always_show_modifiers: bool):
-        return self.run_label.text(
-            not self.should_show_modifiers(screen, always_show_modifiers)
-        )
+        hide_early = not self.should_show_modifiers(screen, always_show_modifiers)
+        return self.run_label.text(hide_early)

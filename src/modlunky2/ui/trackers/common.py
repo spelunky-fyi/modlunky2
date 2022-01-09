@@ -78,7 +78,18 @@ class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed in thread: %s", tb_info())
 
-    def poll(self):
+    def poll_recv(self):
+        try:
+            while True:
+                msg: Message = self.recv_queue.get_nowait()
+                if msg.command == CommonCommand.CONFIG:
+                    self.config = msg.data
+                else:
+                    logger.warning("Received unexpected command type %s", msg.command)
+        except Empty:
+            return
+
+    def poll_tracker(self):
         try:
             data = self.tracker.poll(self.proc, self.config)
             if data is None:
@@ -138,12 +149,14 @@ class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
                 shutting_down = True
                 break
 
+            self.poll_recv()
+
             interval = self.POLL_INTERVAL
             if self.proc is None:
                 if not self._attach():
                     interval = self.ATTACH_INTERVAL
             elif self.proc.running():
-                self.poll()
+                self.poll_tracker()
             else:
                 self.wait()
                 interval = self.ATTACH_INTERVAL
@@ -176,7 +189,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
             recv_queue=self.send_queue,
             send_queue=self.recv_queue,
             tracker=tracker,
-            config=config,
+            config=config.clone(),
         )
         self.color_key = color_key
 
@@ -272,10 +285,15 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
                 elif msg.command == CommonCommand.TRACKER_DATA:
                     data: WindowData = msg.data
                     self.update_text(data.display_string)
+                else:
+                    logger.warning("Received unexpected command type %s", msg.command)
 
         finally:
             if schedule_again:
                 self.after(self.POLL_INTERVAL, self.after_watcher_thread)
+
+    def update_config(self, config: ConfigType) -> None:
+        self.send_queue.put(Message(CommonCommand.CONFIG, config.clone()))
 
     def destroy(self):
         if self.watcher_thread and self.watcher_thread.is_alive():

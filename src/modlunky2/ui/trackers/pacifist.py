@@ -17,10 +17,6 @@ from modlunky2.ui.trackers.common import (
 logger = logging.getLogger("modlunky2")
 
 
-class Command(Enum):
-    IS_PACIFIST = "is_pacifist"
-
-
 class PacifistButtons(ttk.Frame):
     def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -53,6 +49,8 @@ class PacifistButtons(ttk.Frame):
             self.show_kill_count.get()
         )
         self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.pacifist)
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -63,7 +61,7 @@ class PacifistButtons(ttk.Frame):
             on_close=self.window_closed,
             file_name="pacifist.txt",
             tracker=PacifistTracker(),
-            config=self.modlunky_config.trackers.pacifist.clone(),
+            config=self.modlunky_config.trackers.pacifist,
         )
 
     def window_closed(self):
