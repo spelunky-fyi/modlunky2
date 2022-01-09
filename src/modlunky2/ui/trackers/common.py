@@ -7,7 +7,7 @@ import time
 import tkinter as tk
 from queue import Empty, Queue
 from tkinter import PhotoImage
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from modlunky2.config import DATA_DIR, CommonTrackerConfig
 from modlunky2.constants import BASE_DIR
@@ -259,11 +259,6 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         logger.log(level, "%s", message)
         self.destroy()
 
-    def destroy(self) -> None:
-        with self.text_file.open("w") as handle:
-            handle.write("Not running")
-        return super().destroy()
-
     def after_watcher_thread(self):
         schedule_again = True
         try:
@@ -302,4 +297,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         if self.on_close:
             self.on_close()
 
-        super().destroy()
+        with self.text_file.open("w") as handle:
+            handle.write("Not running")
+
+        return super().destroy()

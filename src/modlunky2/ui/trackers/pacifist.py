@@ -1,6 +1,4 @@
-from enum import Enum
 import logging
-from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
 
