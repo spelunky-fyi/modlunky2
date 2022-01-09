@@ -176,8 +176,8 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         file_name: str,
         tracker: Tracker[ConfigType, WindowData],
         config: ConfigType,
+        color_key: str,
         *args,
-        color_key="#ff00ff",
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
