@@ -6,7 +6,7 @@ import json
 import logging
 import shutil
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypeVar
 
 try:
     import winreg
@@ -126,17 +126,26 @@ def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
     return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
 
+T = TypeVar("T")
+
+# Common config for all trackers. Currently a placeholder
+@dataclass
+class CommonTrackerConfig:
+    def clone(self: T) -> T:
+        return dataclasses.replace(self)
+
+
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
-class CategoryTrackerConfig:
+class CategoryTrackerConfig(CommonTrackerConfig):
     always_show_modifiers: bool = skip_default_field(default=False)
 
 
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
-class PacifistTrackerConfig:
+class PacifistTrackerConfig(CommonTrackerConfig):
     show_kill_count: bool = skip_default_field(default=False)
 
 

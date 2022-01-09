@@ -6,9 +6,9 @@ import time
 import tkinter as tk
 from queue import Empty, Queue
 from tkinter import PhotoImage
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Generic, Optional, TypeVar
 
-from modlunky2.config import DATA_DIR
+from modlunky2.config import DATA_DIR, CommonTrackerConfig
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import FeedcodeNotFound, find_spelunky2_pid, Spel2Process
 from modlunky2.mem.memrauder.model import ScalarCValueConstructionError
@@ -30,26 +30,36 @@ class WindowKey(Enum):
     DISPLAY_STRING = "display-string"
 
 
-class Tracker(ABC):
+ConfigType = TypeVar("ConfigType", bound=CommonTrackerConfig)
+
+
+class Tracker(ABC, Generic[ConfigType]):
     @abstractmethod
     def initialize(self):
         pass
 
     @abstractmethod
-    def poll(self, proc: Spel2Process) -> Optional[Dict[str, Any]]:
+    def poll(self, proc: Spel2Process, config: ConfigType) -> Optional[Dict[str, Any]]:
         pass
 
 
-class WatcherThread(threading.Thread):
+class WatcherThread(threading.Thread, Generic[ConfigType]):
     POLL_INTERVAL = 0.016
     ATTACH_INTERVAL = 1.0
 
-    def __init__(self, recv_queue: Queue, send_queue: Queue, tracker: Tracker):
+    def __init__(
+        self,
+        recv_queue: Queue,
+        send_queue: Queue,
+        tracker: Tracker[ConfigType],
+        config: ConfigType,
+    ):
         super().__init__()
         self.shut_down = False
         self.recv_queue = recv_queue
         self.send_queue = send_queue
         self.tracker = tracker
+        self.config = config
 
         self.proc = None
 
@@ -61,7 +71,7 @@ class WatcherThread(threading.Thread):
 
     def poll(self):
         try:
-            data = self.tracker.poll(self.proc)
+            data = self.tracker.poll(self.proc, self.config)
             if data is None:
                 self.shutdown()
             else:
@@ -134,7 +144,7 @@ class WatcherThread(threading.Thread):
         logger.info("Stopped watching process memory")
 
 
-class TrackerWindow(tk.Toplevel):
+class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
     POLL_INTERVAL = 16
 
     def __init__(
@@ -143,6 +153,7 @@ class TrackerWindow(tk.Toplevel):
         on_close,
         file_name: str,
         tracker: Tracker,
+        config: ConfigType,
         *args,
         color_key="#ff00ff",
         **kwargs,
@@ -156,6 +167,7 @@ class TrackerWindow(tk.Toplevel):
             recv_queue=self.send_queue,
             send_queue=self.recv_queue,
             tracker=tracker,
+            config=config,
         )
         self.color_key = color_key
 

@@ -7,7 +7,7 @@ from queue import Empty
 
 from PIL import Image, ImageTk
 
-from modlunky2.config import Config
+from modlunky2.config import CategoryTrackerConfig, Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 
@@ -75,9 +75,8 @@ class CategoryButtons(ttk.Frame):
             color_key=color_key,
             on_close=self.window_closed,
             file_name="category.txt",
-            tracker=CategoryTracker(
-                always_show_modifiers=self.always_show_modifiers.get()
-            ),
+            tracker=CategoryTracker(),
+            config=self.modlunky_config.trackers.category.clone(),
         )
 
     def window_closed(self):
@@ -90,21 +89,18 @@ class CategoryButtons(ttk.Frame):
         self.category_button["state"] = tk.DISABLED
 
 
-class CategoryTracker(Tracker):
-    def __init__(self, *args, always_show_modifiers=False, **kwargs):
+class CategoryTracker(Tracker[CategoryTrackerConfig]):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.proc = None
         self.time_total = None
         self.run_state = None
-        self.always_show_modifiers = always_show_modifiers
 
     def initialize(self):
         self.time_total = 0
-        self.run_state = RunState(
-            always_show_modifiers=self.always_show_modifiers,
-        )
+        self.run_state = RunState()
 
-    def poll(self, proc: Spel2Process):
+    def poll(self, proc: Spel2Process, config: CategoryTrackerConfig):
         game_state = proc.get_state()
         if game_state is None:
             return None
@@ -116,5 +112,7 @@ class CategoryTracker(Tracker):
         self.time_total = new_time_total
 
         self.run_state.update(game_state)
-        label = self.run_state.get_display(game_state.screen)
+        label = self.run_state.get_display(
+            game_state.screen, config.always_show_modifiers
+        )
         return {WindowKey.DISPLAY_STRING: label}
