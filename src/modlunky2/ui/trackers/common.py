@@ -20,7 +20,7 @@ logger = logging.getLogger("modlunky2")
 TRACKERS_DIR = DATA_DIR / "trackers"
 
 
-class CommonCommand(Enum):
+class Command(Enum):
     CONFIG = "config"
     TRACKER_DATA = "tracker-data"
     DIE = "die"
@@ -43,7 +43,7 @@ class Tracker(ABC, Generic[ConfigType, TrackerDataType]):
 
 @dataclass(frozen=True)
 class Message:
-    command: CommonCommand
+    command: Command
     data: Any
 
 
@@ -82,7 +82,7 @@ class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
         try:
             while True:
                 msg: Message = self.recv_queue.get_nowait()
-                if msg.command == CommonCommand.CONFIG:
+                if msg.command == Command.CONFIG:
                     self.config = msg.data
                 else:
                     logger.warning("Received unexpected command type %s", msg.command)
@@ -95,7 +95,7 @@ class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
             if data is None:
                 self.shutdown()
             else:
-                self.send(CommonCommand.TRACKER_DATA, data)
+                self.send(Command.TRACKER_DATA, data)
         except (FeedcodeNotFound, ScalarCValueConstructionError):
             # These exceptions are likely transient
             return
@@ -108,15 +108,15 @@ class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
     def shutdown(self):
         self.shut_down = True
 
-    def send(self, command: CommonCommand, data):
+    def send(self, command: Command, data):
         self.send_queue.put(Message(command, data))
 
     def die(self, message):
-        self.send(CommonCommand.DIE, message)
+        self.send(Command.DIE, message)
 
     def wait(self):
         self.proc = None
-        self.send(CommonCommand.WAIT, None)
+        self.send(Command.WAIT, None)
 
     def _attach(self):
         pid = find_spelunky2_pid()
@@ -272,12 +272,12 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
                 except Empty:
                     break
 
-                if msg.command == CommonCommand.DIE:
+                if msg.command == Command.DIE:
                     schedule_again = False
                     self.shut_down(logging.CRITICAL, msg.data)
-                elif msg.command == CommonCommand.WAIT:
+                elif msg.command == Command.WAIT:
                     self.update_text("Waiting for game...")
-                elif msg.command == CommonCommand.TRACKER_DATA:
+                elif msg.command == Command.TRACKER_DATA:
                     data: WindowData = msg.data
                     self.update_text(data.display_string)
                 else:
@@ -288,7 +288,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
                 self.after(self.POLL_INTERVAL, self.after_watcher_thread)
 
     def update_config(self, config: ConfigType) -> None:
-        self.send_queue.put(Message(CommonCommand.CONFIG, config.clone()))
+        self.send_queue.put(Message(Command.CONFIG, config.clone()))
 
     def destroy(self):
         if self.watcher_thread and self.watcher_thread.is_alive():
