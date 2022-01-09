@@ -1,9 +1,7 @@
-from enum import Enum
 import logging
 from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
-from queue import Empty
 
 from PIL import Image, ImageTk
 
@@ -14,7 +12,7 @@ from modlunky2.mem import Spel2Process
 from modlunky2.ui.trackers.common import (
     Tracker,
     TrackerWindow,
-    WindowKey,
+    WindowData,
 )
 from modlunky2.ui.trackers.runstate import RunState
 
@@ -89,7 +87,7 @@ class CategoryButtons(ttk.Frame):
         self.category_button["state"] = tk.DISABLED
 
 
-class CategoryTracker(Tracker[CategoryTrackerConfig]):
+class CategoryTracker(Tracker[CategoryTrackerConfig, WindowData]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.proc = None
@@ -100,7 +98,7 @@ class CategoryTracker(Tracker[CategoryTrackerConfig]):
         self.time_total = 0
         self.run_state = RunState()
 
-    def poll(self, proc: Spel2Process, config: CategoryTrackerConfig):
+    def poll(self, proc: Spel2Process, config: CategoryTrackerConfig) -> WindowData:
         game_state = proc.get_state()
         if game_state is None:
             return None
@@ -115,4 +113,4 @@ class CategoryTracker(Tracker[CategoryTrackerConfig]):
         label = self.run_state.get_display(
             game_state.screen, config.always_show_modifiers
         )
-        return {WindowKey.DISPLAY_STRING: label}
+        return WindowData(label)

@@ -1,10 +1,8 @@
-import dataclasses
 from enum import Enum
 import logging
 from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
-from queue import Empty
 
 from modlunky2.config import Config, PacifistTrackerConfig
 from modlunky2.mem import Spel2Process
@@ -13,7 +11,7 @@ from modlunky2.mem.state import RunRecapFlags
 from modlunky2.ui.trackers.common import (
     Tracker,
     TrackerWindow,
-    WindowKey,
+    WindowData,
 )
 
 logger = logging.getLogger("modlunky2")
@@ -78,7 +76,7 @@ class PacifistButtons(ttk.Frame):
         self.pacifist_button["state"] = tk.DISABLED
 
 
-class PacifistTracker(Tracker[PacifistTrackerConfig]):
+class PacifistTracker(Tracker[PacifistTrackerConfig, WindowData]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.kills_total = 0
@@ -86,7 +84,7 @@ class PacifistTracker(Tracker[PacifistTrackerConfig]):
     def initialize(self):
         self.kills_total = 0
 
-    def poll(self, proc: Spel2Process, config: PacifistTrackerConfig):
+    def poll(self, proc: Spel2Process, config: PacifistTrackerConfig) -> WindowData:
         game_state = proc.get_state()
         if game_state is None:
             return None
@@ -101,7 +99,7 @@ class PacifistTracker(Tracker[PacifistTrackerConfig]):
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
         label = self.get_text(is_pacifist, config)
-        return {WindowKey.DISPLAY_STRING: label}
+        return WindowData(label)
 
     def get_text(self, is_pacifist: bool, config: PacifistTrackerConfig):
         if is_pacifist:

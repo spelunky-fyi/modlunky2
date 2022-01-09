@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 import logging
 import threading
@@ -26,24 +27,32 @@ class CommonCommand(Enum):
     WAIT = "wait"
 
 
-class WindowKey(Enum):
-    DISPLAY_STRING = "display-string"
-
-
 ConfigType = TypeVar("ConfigType", bound=CommonTrackerConfig)
+TrackerDataType = TypeVar("TrackerDataType")
 
 
-class Tracker(ABC, Generic[ConfigType]):
+class Tracker(ABC, Generic[ConfigType, TrackerDataType]):
     @abstractmethod
     def initialize(self):
         pass
 
     @abstractmethod
-    def poll(self, proc: Spel2Process, config: ConfigType) -> Optional[Dict[str, Any]]:
+    def poll(self, proc: Spel2Process, config: ConfigType) -> Optional[TrackerDataType]:
         pass
 
 
-class WatcherThread(threading.Thread, Generic[ConfigType]):
+@dataclass(frozen=True)
+class Message:
+    command: CommonCommand
+    data: Any
+
+
+@dataclass(frozen=True)
+class WindowData:
+    display_string: str
+
+
+class WatcherThread(threading.Thread, Generic[ConfigType, TrackerDataType]):
     POLL_INTERVAL = 0.016
     ATTACH_INTERVAL = 1.0
 
@@ -51,7 +60,7 @@ class WatcherThread(threading.Thread, Generic[ConfigType]):
         self,
         recv_queue: Queue,
         send_queue: Queue,
-        tracker: Tracker[ConfigType],
+        tracker: Tracker[ConfigType, TrackerDataType],
         config: ConfigType,
     ):
         super().__init__()
@@ -89,7 +98,7 @@ class WatcherThread(threading.Thread, Generic[ConfigType]):
         self.shut_down = True
 
     def send(self, command: CommonCommand, data):
-        self.send_queue.put({"command": command, "data": data})
+        self.send_queue.put(Message(command, data))
 
     def die(self, message):
         self.send(CommonCommand.DIE, message)
@@ -152,7 +161,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         title,
         on_close,
         file_name: str,
-        tracker: Tracker,
+        tracker: Tracker[ConfigType, WindowData],
         config: ConfigType,
         *args,
         color_key="#ff00ff",
@@ -251,17 +260,18 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
                     schedule_again = False
 
                 try:
-                    msg = self.recv_queue.get_nowait()
+                    msg: Message = self.recv_queue.get_nowait()
                 except Empty:
                     break
 
-                if msg["command"] == CommonCommand.DIE:
+                if msg.command == CommonCommand.DIE:
                     schedule_again = False
-                    self.shut_down(logging.CRITICAL, msg["data"])
-                elif msg["command"] == CommonCommand.WAIT:
+                    self.shut_down(logging.CRITICAL, msg.data)
+                elif msg.command == CommonCommand.WAIT:
                     self.update_text("Waiting for game...")
-                elif msg["command"] == CommonCommand.TRACKER_DATA:
-                    self.update_text(msg["data"][WindowKey.DISPLAY_STRING])
+                elif msg.command == CommonCommand.TRACKER_DATA:
+                    data: WindowData = msg.data
+                    self.update_text(data.display_string)
 
         finally:
             if schedule_again:
