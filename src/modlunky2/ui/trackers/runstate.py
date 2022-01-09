@@ -784,6 +784,7 @@ class RunState:
 
         return False
 
-    def get_display(self, screen: Screen, always_show_modifiers: bool):
+    def get_display(self, screen: Screen, always_show_modifiers: bool, excluded_categories=None):
+        excluded_categories = excluded_categories if excluded_categories is not None else []
         hide_early = not self.should_show_modifiers(screen, always_show_modifiers)
-        return self.run_label.text(hide_early)
+        return self.run_label.text(hide_early, excluded_categories)

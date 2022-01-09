@@ -14,6 +14,7 @@ from modlunky2.ui.trackers.common import (
     WindowData,
 )
 from modlunky2.ui.trackers.runstate import RunState
+from modlunky2.ui.trackers.label import Label
 
 logger = logging.getLogger("modlunky2")
 
@@ -46,6 +47,7 @@ class CategoryButtons(ttk.Frame):
         self.always_show_modifiers.set(
             modlunky_config.trackers.category.always_show_modifiers
         )
+        
         self.always_show_modifiers_checkbox = ttk.Checkbutton(
             self,
             text="Always Show Modifiers",
@@ -58,6 +60,43 @@ class CategoryButtons(ttk.Frame):
             row=0, column=1, pady=5, padx=5, sticky="nw"
         )
 
+        # Starting Category Exclusion
+        ## This does not have any effect on the actual tracking logic, rather,
+        ## like always_show_modifiers, it only has an effect on the actual
+        ## text returned.
+        self.category_exclude_label = ttk.Label(
+            self,
+            text="Exclude Starting Categories"
+        )
+        self.category_exclude_label.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
+
+        self.excludable_dict = {}
+
+        # You can exclude any starting category that is non-terminal, i.e., any of them except Any%
+        valid_excludable_categories = [l for l in Label if l.value.start and not l.value.terminus]
+        excluded_loaded = modlunky_config.trackers.category.excluded_categories
+
+        # Sort by '%' then by name descending
+        valid_excludable_categories.sort(key=lambda l: (l.value.percent_priority is not None, l.name), reverse=True)
+
+        row=2
+        for category in valid_excludable_categories:
+            variable = tk.BooleanVar()
+            checkbox = ttk.Checkbutton(
+                self,
+                text=f"{category.value.text}{'%' if category.value.percent_priority is not None else ''}",
+                variable=variable,
+                onvalue=True,
+                offvalue=False,
+                command=self.toggle_excluded_categories,
+            )
+            if category.name in excluded_loaded:
+                variable.set(True)
+            checkbox.grid(row=row, column=0, padx=5, pady=5, sticky="nw")
+            row += 1
+
+            self.excludable_dict[category] = (checkbox, variable)
+
     def toggle_always_show_modifiers(self):
         self.modlunky_config.trackers.category.always_show_modifiers = (
             self.always_show_modifiers.get()
@@ -65,6 +104,15 @@ class CategoryButtons(ttk.Frame):
         self.modlunky_config.save()
         if self.window:
             self.window.update_config(self.modlunky_config.trackers.category)
+
+    def toggle_excluded_categories(self):
+        self.modlunky_config.trackers.category.excluded_categories = [
+            c.name for c, v in self.excludable_dict.items() if v[1].get()
+        ]
+        self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.category)
+
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -112,6 +160,6 @@ class CategoryTracker(Tracker[CategoryTrackerConfig, WindowData]):
 
         self.run_state.update(game_state)
         label = self.run_state.get_display(
-            game_state.screen, config.always_show_modifiers
+            game_state.screen, config.always_show_modifiers, config.excluded_categories
         )
         return WindowData(label)
