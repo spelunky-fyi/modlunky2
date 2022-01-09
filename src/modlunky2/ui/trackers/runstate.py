@@ -57,8 +57,7 @@ class PlayerMotion:
 
 
 class RunState:
-    def __init__(self, always_show_modifiers=False):
-        self.always_show_modifiers = always_show_modifiers
+    def __init__(self):
         self.run_label = RunLabel()
 
         self.world = 0
@@ -767,8 +766,8 @@ class RunState:
         self.player_last_item_types = self.player_item_types
         self.player_item_types = item_types
 
-    def should_show_modifiers(self, screen: Screen):
-        if self.always_show_modifiers:
+    def should_show_modifiers(self, screen: Screen, always_show_modifiers: bool):
+        if always_show_modifiers:
             return True
 
         if screen == Screen.SCORES:
@@ -785,5 +784,6 @@ class RunState:
 
         return False
 
-    def get_display(self, screen: Screen):
-        return self.run_label.text(not self.should_show_modifiers(screen))
+    def get_display(self, screen: Screen, always_show_modifiers: bool):
+        hide_early = not self.should_show_modifiers(screen, always_show_modifiers)
+        return self.run_label.text(hide_early)

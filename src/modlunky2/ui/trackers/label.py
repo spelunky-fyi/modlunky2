@@ -48,6 +48,12 @@ class Label(Enum):
     NO_CO = LabelMetadata("No CO", start=True, hide_early=False, add_ok=True)
 
 
+@dataclass(frozen=True)
+class _CachedText:
+    hide_early: bool
+    text: str
+
+
 class RunLabel:
     _STARTING = frozenset([k for k in Label if k.value.start])
     _HIDE_EARLY = frozenset([k for k in Label if k.value.hide_early])
@@ -95,7 +101,7 @@ class RunLabel:
         if len(termini) != 1:
             raise ValueError(f"Expected exactly 1 terminus, found {termini}")
         self._terminus = termini[0]
-        self._cached_text: Optional[str] = None
+        self._cached_text: Optional[_CachedText] = None
 
     def add(self, label: Label):
         if not label.value.add_ok:
@@ -200,8 +206,8 @@ class RunLabel:
         return found
 
     def text(self, hide_early) -> str:
-        if self._cached_text is not None:
-            return self._cached_text
+        if self._cached_text is not None and self._cached_text.hide_early == hide_early:
+            return self._cached_text.text
 
         vis = self._visible(hide_early)
         perc = self._percent(vis)
@@ -215,5 +221,6 @@ class RunLabel:
             else:
                 parts.append(candidate.value.text)
 
-        self._cached_text = " ".join(parts)
-        return self._cached_text
+        text = " ".join(parts)
+        self._cached_text = _CachedText(hide_early=hide_early, text=text)
+        return text

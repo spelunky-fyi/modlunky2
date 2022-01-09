@@ -1,28 +1,27 @@
-from enum import Enum
 import logging
-from logging import CRITICAL, WARNING
 import tkinter as tk
 from tkinter import ttk
-from queue import Empty
 
-from modlunky2.config import Config
+from modlunky2.config import Config, PacifistTrackerConfig
+from modlunky2.mem import Spel2Process
 from modlunky2.mem.state import RunRecapFlags
 
-from .common import TrackerWindow, WatcherThread, CommonCommand
+from modlunky2.ui.trackers.common import (
+    Tracker,
+    TrackerWindow,
+    WindowData,
+)
 
 logger = logging.getLogger("modlunky2")
 
 
-class Command(Enum):
-    IS_PACIFIST = "is_pacifist"
-
-
 class PacifistButtons(ttk.Frame):
-    def __init__(self, parent, ml_config: Config, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.ml_config = ml_config
+        self.modlunky_config = modlunky_config
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
+        self.window = None
 
         self.pacifist_button = ttk.Button(
             self,
@@ -32,34 +31,48 @@ class PacifistButtons(ttk.Frame):
         self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         self.show_kill_count = tk.BooleanVar()
-        self.show_kill_count.set(False)
+        self.show_kill_count.set(self.modlunky_config.trackers.pacifist.show_kill_count)
         self.show_kill_count_checkbox = ttk.Checkbutton(
             self,
             text="Show Kill Count",
             variable=self.show_kill_count,
             onvalue=True,
             offvalue=False,
+            command=self.toggle_show_kill_count,
         )
         self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="nw")
 
+    def toggle_show_kill_count(self):
+        self.modlunky_config.trackers.pacifist.show_kill_count = (
+            self.show_kill_count.get()
+        )
+        self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.pacifist)
+
     def launch(self):
-        color_key = self.ml_config.tracker_color_key
+        color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
-        PacifistWindow(
+        self.window = TrackerWindow(
             title="Pacifist Tracker",
-            show_kill_count=self.show_kill_count.get(),
             color_key=color_key,
-            on_close=self.enable_button,
+            on_close=self.window_closed,
+            file_name="pacifist.txt",
+            tracker=PacifistTracker(),
+            config=self.modlunky_config.trackers.pacifist,
         )
 
-    def enable_button(self):
-        self.pacifist_button["state"] = tk.NORMAL
+    def window_closed(self):
+        self.window = None
+        # If we're in the midst of destroy() the button might not exist
+        if self.pacifist_button.winfo_exists():
+            self.pacifist_button["state"] = tk.NORMAL
 
     def disable_button(self):
         self.pacifist_button["state"] = tk.DISABLED
 
 
-class PacifistWatcherThread(WatcherThread):
+class PacifistTracker(Tracker[PacifistTrackerConfig, WindowData]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.kills_total = 0
@@ -67,12 +80,12 @@ class PacifistWatcherThread(WatcherThread):
     def initialize(self):
         self.kills_total = 0
 
-    def poll(self):
-        game_state = self.proc.get_state()
+    def poll(self, proc: Spel2Process, config: PacifistTrackerConfig) -> WindowData:
+        game_state = proc.get_state()
+        if game_state is None:
+            return None
+
         run_recap_flags = game_state.run_recap_flags
-        if run_recap_flags is None:
-            self.die("Failed to read expected address...")
-            self.shutdown()
 
         player = None
         if game_state.items is not None:
@@ -81,59 +94,14 @@ class PacifistWatcherThread(WatcherThread):
             self.kills_total = player.inventory.kills_total
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
-        self.send(Command.IS_PACIFIST, (is_pacifist, self.kills_total))
+        label = self.get_text(is_pacifist, config)
+        return WindowData(label)
 
-
-class PacifistWindow(TrackerWindow):
-    def __init__(self, *args, show_kill_count=False, **kwargs):
-        super().__init__(file_name="pacifist.txt", *args, **kwargs)
-
-        self.show_kill_count = show_kill_count
-        self.watcher_thread = PacifistWatcherThread(self.queue)
-        self.watcher_thread.start()
-        self.after(100, self.after_watcher_thread)
-
-    def get_text(self, is_pacifist, kills_total):
+    def get_text(self, is_pacifist: bool, config: PacifistTrackerConfig):
         if is_pacifist:
             return "Pacifist"
 
-        if self.show_kill_count:
-            return f"MURDERED {kills_total}!"
+        if config.show_kill_count:
+            return f"MURDERED {self.kills_total}!"
 
         return "MURDERER!"
-
-    def after_watcher_thread(self):
-        schedule_again = True
-        try:
-            while True:
-                if self.watcher_thread and not self.watcher_thread.is_alive():
-                    self.shut_down(WARNING, "Thread went away. Closing window.")
-                    schedule_again = False
-
-                try:
-                    msg = self.queue.get_nowait()
-                except Empty:
-                    break
-
-                if msg["command"] == CommonCommand.DIE:
-                    schedule_again = False
-                    self.shut_down(CRITICAL, msg["data"])
-                elif msg["command"] == CommonCommand.WAIT:
-                    self.update_text("Waiting for game...")
-                elif msg["command"] == Command.IS_PACIFIST:
-                    (is_pacifist, kills_total) = msg["data"]
-                    new_text = self.get_text(is_pacifist, kills_total)
-                    self.update_text(new_text)
-
-        finally:
-            if schedule_again:
-                self.after(100, self.after_watcher_thread)
-
-    def destroy(self):
-        if self.watcher_thread and self.watcher_thread.is_alive():
-            self.watcher_thread.shut_down = True
-
-        if self.on_close:
-            self.on_close()
-
-        super().destroy()

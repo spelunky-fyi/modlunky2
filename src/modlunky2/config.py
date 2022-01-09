@@ -6,7 +6,7 @@ import json
 import logging
 import shutil
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypeVar
 
 try:
     import winreg
@@ -126,6 +126,41 @@ def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
     return dataclasses.field(default=default, metadata=metadata, **kwargs)
 
 
+T = TypeVar("T")
+
+# Common config for all trackers. Currently a placeholder
+@dataclass
+class CommonTrackerConfig:
+    def clone(self: T) -> T:
+        return dataclasses.replace(self)
+
+
+@serialize(rename_all="spinalcase")
+@deserialize(rename_all="spinalcase")
+@dataclass
+class CategoryTrackerConfig(CommonTrackerConfig):
+    always_show_modifiers: bool = skip_default_field(default=False)
+
+
+@serialize(rename_all="spinalcase")
+@deserialize(rename_all="spinalcase")
+@dataclass
+class PacifistTrackerConfig(CommonTrackerConfig):
+    show_kill_count: bool = skip_default_field(default=False)
+
+
+@serialize(rename_all="spinalcase")
+@deserialize(rename_all="spinalcase")
+@dataclass
+class TrackersConfig:
+    category: CategoryTrackerConfig = dataclasses.field(
+        default_factory=CategoryTrackerConfig
+    )
+    pacifist: PacifistTrackerConfig = dataclasses.field(
+        default_factory=PacifistTrackerConfig
+    )
+
+
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
@@ -159,6 +194,7 @@ class Config:
     )
     last_tab: Optional[str] = skip_default_field(default=None)
     tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
+    trackers: TrackersConfig = dataclasses.field(default_factory=TrackersConfig)
     show_packing: bool = skip_default_field(default=False)
     level_editor_tab: Optional[int] = skip_default_field(default=None)
     custom_level_editor_custom_save_formats: Optional[List[Dict]] = skip_default_field(
