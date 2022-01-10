@@ -89,10 +89,11 @@ def main():
         args.compression_level,
         recompress=args.recompress,
         create_entity_sheets=args.create_entity_sheets,
+        generate_string_hashes=False,
     )
 
     for asset in unextracted:
-        logging.warning("Un-extracted Asset %s", asset)
+        logging.warning("Un-extracted Asset %s", asset.asset_block)
 
 
 if __name__ == "__main__":
