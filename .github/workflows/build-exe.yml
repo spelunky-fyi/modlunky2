@@ -27,7 +27,7 @@ jobs:
       run: |
         # Install pyinstaller in addition to usual deps
         python -m pip install --upgrade pip
-        pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt pyinstaller
+        pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt
     - name: Install package
       run: |
         python setup.py develop
