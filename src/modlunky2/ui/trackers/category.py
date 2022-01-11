@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
-from modlunky2.config import CategoryTrackerConfig, Config
+from modlunky2.config import CategoryTrackerConfig, Config, SaveableCategory
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 
@@ -14,7 +14,6 @@ from modlunky2.ui.trackers.common import (
     WindowData,
 )
 from modlunky2.ui.trackers.runstate import RunState
-from modlunky2.ui.trackers.label import Label
 
 logger = logging.getLogger("modlunky2")
 
@@ -33,16 +32,19 @@ class CategoryModifiers(ttk.LabelFrame):
         self.always_show_modifiers.set(
             modlunky_config.trackers.category.always_show_modifiers
         )
-        self.always_show_modifiers_checkbox = ttk.Checkbutton(
-            self,
-            text="Always Show Modifiers",
-            variable=self.always_show_modifiers,
-            onvalue=True,
-            offvalue=False,
-            command=self.toggle_always_show_modifiers,
-        )
 
-        self.separator = ttk.Separator(self)
+        widgets = []
+        widgets.append(
+            ttk.Checkbutton(
+                self,
+                text="Always Show",
+                variable=self.always_show_modifiers,
+                onvalue=True,
+                offvalue=False,
+                command=self.toggle_always_show_modifiers,
+            )
+        )
+        widgets.append(ttk.Separator(self))
 
         # Starting Category Exclusion
 
@@ -52,48 +54,29 @@ class CategoryModifiers(ttk.LabelFrame):
 
         ## The checkboxes imply *inclusion*, not exclusion, so the
         ## boolean logic here is inverted.
-        valid_excludable_categories = [
-            Label.NO,
-            Label.NO_GOLD,
-            Label.PACIFIST,
-        ]
+        loaded_config = frozenset(modlunky_config.trackers.category.excluded_categories)
 
-        # Sort by '%' then by name descending
-        valid_excludable_categories.sort(
-            key=lambda l: (l.value.percent_priority is not None, l.name), reverse=True
-        )
-
-        loaded_config = modlunky_config.trackers.category.excluded_categories
         if loaded_config is None:
-            loaded_config = []
+            loaded_config = frozenset()
 
-        self.variables_by_label = {}
-        self.checkboxes_by_label = {}
-        for category in valid_excludable_categories:
+        self.variables_by_category = {}
+        for category in SaveableCategory:
             variable = tk.BooleanVar()
             checkbox = ttk.Checkbutton(
                 self,
-                text=f"{category.value.text}{'%' if category.value.percent_priority is not None else ''}",
+                text=category.value,
                 variable=variable,
                 onvalue=True,
                 offvalue=False,
                 command=self.toggle_excluded_categories,
             )
-            if category.name not in loaded_config:
+            if category not in loaded_config:
                 variable.set(True)
 
-            self.variables_by_label[category] = variable
-            self.checkboxes_by_label[category] = checkbox
+            self.variables_by_category[category] = variable
+            widgets.append(checkbox)
 
-        for column, widget in enumerate(
-            [
-                self.always_show_modifiers_checkbox,
-                self.separator,
-                self.checkboxes_by_label[Label.NO],
-                self.checkboxes_by_label[Label.NO_GOLD],
-                self.checkboxes_by_label[Label.PACIFIST],
-            ]
-        ):
+        for column, widget in enumerate(widgets):
             widget.grid(row=0, column=column, pady=5, padx=5, sticky="nw")
 
     def toggle_always_show_modifiers(self):
@@ -104,9 +87,9 @@ class CategoryModifiers(ttk.LabelFrame):
         self.parent.config_update_callback()
 
     def toggle_excluded_categories(self):
-        self.modlunky_config.trackers.category.excluded_categories = [
-            l.name for l, v in self.variables_by_label.items() if not v.get()
-        ]
+        self.modlunky_config.trackers.category.excluded_categories = set(
+            [c for c, v in self.variables_by_category.items() if not v.get()]
+        )
         self.modlunky_config.save()
         self.parent.config_update_callback()
 

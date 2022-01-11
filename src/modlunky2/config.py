@@ -6,7 +6,8 @@ import json
 import logging
 import shutil
 import time
-from typing import Dict, List, Optional, TypeVar
+from enum import Enum
+from typing import Dict, List, Optional, TypeVar, Set
 
 try:
     import winreg
@@ -135,12 +136,20 @@ class CommonTrackerConfig:
         return dataclasses.replace(self)
 
 
+class SaveableCategory(Enum):
+    NO = "No%"
+    NO_GOLD = "No Gold"
+    PACIFIST = "Pacifist"
+
+
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
 class CategoryTrackerConfig(CommonTrackerConfig):
     always_show_modifiers: bool = skip_default_field(default=False)
-    excluded_categories: Optional[List[str]] = skip_default_field(default=None)
+    excluded_categories: Optional[Set[SaveableCategory]] = skip_default_field(
+        default=None
+    )
 
 
 @serialize(rename_all="spinalcase")

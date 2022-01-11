@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Set, FrozenSet
 
+from modlunky2.config import SaveableCategory  # For saving
+
 
 @dataclass
 class LabelMetadata:
@@ -46,6 +48,16 @@ class Label(Enum):
     COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
     SCORE = LabelMetadata("Score")
     NO_CO = LabelMetadata("No CO", start=True, hide_early=False, add_ok=True)
+
+    @classmethod
+    def from_saveable_category(cls, sc):
+        mapping = {
+            SaveableCategory.NO: Label.NO,
+            SaveableCategory.NO_GOLD: Label.NO_GOLD,
+            SaveableCategory.PACIFIST: Label.PACIFIST,
+        }
+
+        return mapping[sc]
 
 
 @dataclass(frozen=True)
@@ -214,7 +226,7 @@ class RunLabel:
 
     def text(self, hide_early, excluded_categories=None) -> str:
         excluded_categories = (
-            frozenset([Label[n] for n in excluded_categories])
+            frozenset([Label.from_saveable_category(sc) for sc in excluded_categories])
             if excluded_categories is not None
             else frozenset()
         )
