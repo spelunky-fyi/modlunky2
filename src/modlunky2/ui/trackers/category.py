@@ -22,36 +22,17 @@ logger = logging.getLogger("modlunky2")
 ICON_PATH = BASE_DIR / "static/images"
 
 
-class CategoryButtons(ttk.Frame):
+class CategoryModifiers(ttk.LabelFrame):
     def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+
         self.modlunky_config = modlunky_config
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, minsize=60)
-        self.window = None
-
-        self.cat_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "cat2.png").resize((24, 24), Image.ANTIALIAS)
-        )
-
-        current_row = 0
-
-        self.category_button = ttk.Button(
-            self,
-            image=self.cat_icon,
-            text="Category",
-            compound="left",
-            command=self.launch,
-        )
-        self.category_button.grid(
-            row=current_row, column=0, pady=5, padx=5, sticky="nswe"
-        )
 
         self.always_show_modifiers = tk.BooleanVar()
         self.always_show_modifiers.set(
             modlunky_config.trackers.category.always_show_modifiers
         )
-
         self.always_show_modifiers_checkbox = ttk.Checkbutton(
             self,
             text="Always Show Modifiers",
@@ -60,38 +41,34 @@ class CategoryButtons(ttk.Frame):
             offvalue=False,
             command=self.toggle_always_show_modifiers,
         )
-        self.always_show_modifiers_checkbox.grid(
-            row=current_row, column=1, pady=5, padx=5, sticky="nw"
-        )
 
-        current_row += 1
+        self.separator = ttk.Separator(self)
 
         # Starting Category Exclusion
+
         ## This does not have any effect on the actual tracking logic, rather,
         ## like always_show_modifiers, it only has an effect on the actual
         ## text returned.
-        self.category_exclude_label = ttk.Label(
-            self, text="Exclude Starting Categories"
-        )
-        self.category_exclude_label.grid(
-            row=current_row, column=0, padx=5, pady=5, sticky="nw"
-        )
 
-        current_row += 1
-
-        self.excludable_dict = {}
-
-        # You can exclude any starting category that is non-terminal, i.e., any of them except Any%
+        ## The checkboxes imply *inclusion*, not exclusion, so the
+        ## boolean logic here is inverted.
         valid_excludable_categories = [
-            l for l in Label if l.value.start and not l.value.terminus
+            Label.NO,
+            Label.NO_GOLD,
+            Label.PACIFIST,
         ]
-        excluded_loaded = modlunky_config.trackers.category.excluded_categories
 
         # Sort by '%' then by name descending
         valid_excludable_categories.sort(
             key=lambda l: (l.value.percent_priority is not None, l.name), reverse=True
         )
 
+        loaded_config = modlunky_config.trackers.category.excluded_categories
+        if loaded_config is None:
+            loaded_config = []
+
+        self.variables_by_label = {}
+        self.checkboxes_by_label = {}
         for category in valid_excludable_categories:
             variable = tk.BooleanVar()
             checkbox = ttk.Checkbutton(
@@ -102,28 +79,62 @@ class CategoryButtons(ttk.Frame):
                 offvalue=False,
                 command=self.toggle_excluded_categories,
             )
-            if category.name in excluded_loaded:
+            if category.name not in loaded_config:
                 variable.set(True)
-            checkbox.grid(row=row, column=0, padx=5, pady=5, sticky="nw")
-            current_row += 1
 
-            self.excludable_dict[category] = (checkbox, variable)
+            self.variables_by_label[category] = variable
+            self.checkboxes_by_label[category] = checkbox
+
+        for column, widget in enumerate(
+            [
+                self.always_show_modifiers_checkbox,
+                self.separator,
+                self.checkboxes_by_label[Label.NO],
+                self.checkboxes_by_label[Label.NO_GOLD],
+                self.checkboxes_by_label[Label.PACIFIST],
+            ]
+        ):
+            widget.grid(row=0, column=column, pady=5, padx=5, sticky="nw")
 
     def toggle_always_show_modifiers(self):
         self.modlunky_config.trackers.category.always_show_modifiers = (
             self.always_show_modifiers.get()
         )
         self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.category)
+        self.parent.config_update_callback()
 
     def toggle_excluded_categories(self):
         self.modlunky_config.trackers.category.excluded_categories = [
-            c.name for c, v in self.excludable_dict.items() if v[1].get()
+            l.name for l, v in self.variables_by_label.items() if not v.get()
         ]
         self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.category)
+        self.parent.config_update_callback()
+
+
+class CategoryButtons(ttk.Frame):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, minsize=60)
+        self.window = None
+
+        self.cat_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "cat2.png").resize((24, 24), Image.ANTIALIAS)
+        )
+
+        self.category_button = ttk.Button(
+            self,
+            image=self.cat_icon,
+            text="Category",
+            compound="left",
+            command=self.launch,
+        )
+        self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.modifiers = CategoryModifiers(self, self.modlunky_config, text="Modifiers")
+        self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -136,6 +147,10 @@ class CategoryButtons(ttk.Frame):
             tracker=CategoryTracker(),
             config=self.modlunky_config.trackers.category,
         )
+
+    def config_update_callback(self):
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.category)
 
     def window_closed(self):
         self.window = None
