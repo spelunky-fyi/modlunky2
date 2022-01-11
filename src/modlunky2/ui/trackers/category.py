@@ -105,7 +105,7 @@ class CategoryButtons(ttk.Frame):
             if category.name in excluded_loaded:
                 variable.set(True)
             checkbox.grid(row=row, column=0, padx=5, pady=5, sticky="nw")
-            row += 1
+            current_row += 1
 
             self.excludable_dict[category] = (checkbox, variable)
 
