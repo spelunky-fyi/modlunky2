@@ -46,7 +46,7 @@ class CategoryModifiers(ttk.LabelFrame):
                 command=self.toggle_always_show_modifiers,
             )
         )
-        widgets.append(ttk.Separator(self))
+        widgets.append(ttk.Separator(self, orient="vertical"))
 
         # Starting Category Exclusion
 
@@ -80,7 +80,7 @@ class CategoryModifiers(ttk.LabelFrame):
             widgets.append(checkbox)
 
         for column, widget in enumerate(widgets):
-            widget.grid(row=0, column=column, pady=5, padx=5, sticky="nw")
+            widget.grid(row=0, column=column, pady=5, padx=5, sticky="nsew")
 
     def toggle_always_show_modifiers(self):
         self.category_tracker_config.always_show_modifiers = (
