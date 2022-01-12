@@ -56,10 +56,11 @@ class CategoryModifiers(ttk.LabelFrame):
 
         ## The checkboxes imply *inclusion*, not exclusion, so the
         ## boolean logic here is inverted.
-        loaded_config = frozenset(self.category_tracker_config.excluded_categories)
 
-        if loaded_config is None:
+        if self.category_tracker_config.excluded_categories is None:
             loaded_config = frozenset()
+        else:
+            loaded_config = frozenset(self.category_tracker_config.excluded_categories)
 
         self.variables_by_category = {}
         for category in SaveableCategory:
