@@ -40,3 +40,4 @@ Special thanks to the following contributors for helping make modlunky possible:
 * `JackHasWifi`
 * `mriswithe`
 * `Malacath`
+* `MauveAlert`
