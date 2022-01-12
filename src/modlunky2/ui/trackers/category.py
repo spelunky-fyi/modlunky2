@@ -22,22 +22,24 @@ ICON_PATH = BASE_DIR / "static/images"
 
 
 class CategoryModifiers(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+    def __init__(
+        self, parent, category_tracker_config: CategoryTrackerConfig, *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
         self.parent = parent
 
-        self.modlunky_config = modlunky_config
+        self.category_tracker_config = category_tracker_config
 
         self.always_show_modifiers = tk.BooleanVar()
         self.always_show_modifiers.set(
-            modlunky_config.trackers.category.always_show_modifiers
+            self.category_tracker_config.always_show_modifiers
         )
 
         widgets = []
         widgets.append(
             ttk.Checkbutton(
                 self,
-                text="Always Show",
+                text="Show all modifiers before 1-3",
                 variable=self.always_show_modifiers,
                 onvalue=True,
                 offvalue=False,
@@ -54,7 +56,7 @@ class CategoryModifiers(ttk.LabelFrame):
 
         ## The checkboxes imply *inclusion*, not exclusion, so the
         ## boolean logic here is inverted.
-        loaded_config = frozenset(modlunky_config.trackers.category.excluded_categories)
+        loaded_config = frozenset(self.category_tracker_config.excluded_categories)
 
         if loaded_config is None:
             loaded_config = frozenset()
@@ -80,17 +82,15 @@ class CategoryModifiers(ttk.LabelFrame):
             widget.grid(row=0, column=column, pady=5, padx=5, sticky="nw")
 
     def toggle_always_show_modifiers(self):
-        self.modlunky_config.trackers.category.always_show_modifiers = (
+        self.category_tracker_config.always_show_modifiers = (
             self.always_show_modifiers.get()
         )
-        self.modlunky_config.save()
         self.parent.config_update_callback()
 
     def toggle_excluded_categories(self):
-        self.modlunky_config.trackers.category.excluded_categories = set(
+        self.category_tracker_config.excluded_categories = set(
             [c for c, v in self.variables_by_category.items() if not v.get()]
         )
-        self.modlunky_config.save()
         self.parent.config_update_callback()
 
 
@@ -116,7 +116,9 @@ class CategoryButtons(ttk.Frame):
         )
         self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        self.modifiers = CategoryModifiers(self, self.modlunky_config, text="Modifiers")
+        self.modifiers = CategoryModifiers(
+            self, self.modlunky_config.trackers.category, text="Modifiers"
+        )
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
@@ -132,6 +134,7 @@ class CategoryButtons(ttk.Frame):
         )
 
     def config_update_callback(self):
+        self.modlunky_config.save()
         if self.window:
             self.window.update_config(self.modlunky_config.trackers.category)
 
@@ -168,7 +171,5 @@ class CategoryTracker(Tracker[CategoryTrackerConfig, WindowData]):
         self.time_total = new_time_total
 
         self.run_state.update(game_state)
-        label = self.run_state.get_display(
-            game_state.screen, config.always_show_modifiers, config.excluded_categories
-        )
+        label = self.run_state.get_display(game_state.screen, config)
         return WindowData(label)

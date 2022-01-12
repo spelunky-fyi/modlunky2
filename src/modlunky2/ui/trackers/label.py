@@ -64,7 +64,7 @@ class Label(Enum):
 class _CachedText:
     hide_early: bool
     text: str
-    excluded_categories: frozenset
+    excluded_categories: FrozenSet[Label]
 
 
 class RunLabel:
@@ -185,11 +185,8 @@ class RunLabel:
             if needle in vis and vis.isdisjoint(need):
                 vis.discard(needle)
 
-        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES.
-        if Label.ICE_CAVES_SHORTCUT in vis:
-            vis.discard(Label.LOW)
-
-        if Label.NO in vis:
+        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
+        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
             vis.discard(Label.LOW)
             vis -= self._HIDES[Label.LOW]
 
@@ -224,13 +221,10 @@ class RunLabel:
 
         return found
 
-    def text(self, hide_early, excluded_categories=None) -> str:
-        excluded_categories = (
-            frozenset([Label.from_saveable_category(sc) for sc in excluded_categories])
-            if excluded_categories is not None
-            else frozenset()
+    def text(self, hide_early: bool, excluded_categories: Set[SaveableCategory]) -> str:
+        excluded_categories = frozenset(
+            [Label.from_saveable_category(sc) for sc in excluded_categories]
         )
-
         if (
             self._cached_text is not None
             and self._cached_text.hide_early == hide_early
