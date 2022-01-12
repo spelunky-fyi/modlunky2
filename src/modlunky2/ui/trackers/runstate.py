@@ -37,6 +37,7 @@ from modlunky2.category.chain.sunken import AbzuChain, DuatChain
 from modlunky2.category.chain.cosmic import CosmicOceanChain
 from modlunky2.category.chain.eggplant import EggplantChain
 from modlunky2.ui.trackers.label import Label, RunLabel
+from modlunky2.config import CategoryTrackerConfig
 
 
 logger = logging.getLogger("modlunky2")
@@ -784,6 +785,13 @@ class RunState:
 
         return False
 
-    def get_display(self, screen: Screen, always_show_modifiers: bool):
-        hide_early = not self.should_show_modifiers(screen, always_show_modifiers)
-        return self.run_label.text(hide_early)
+    def get_display(self, screen: Screen, config: CategoryTrackerConfig) -> str:
+        excluded_categories = (
+            config.excluded_categories
+            if config.excluded_categories is not None
+            else frozenset()
+        )
+        hide_early = not self.should_show_modifiers(
+            screen, config.always_show_modifiers
+        )
+        return self.run_label.text(hide_early, excluded_categories)

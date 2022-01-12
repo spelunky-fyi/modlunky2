@@ -328,7 +328,7 @@ def test_visibility_bipartite():
 @mark.parametrize("labels,expected", MOSSRANKING_CATEGORIES)
 def test_mossranking_alignment(labels, expected):
     run_label = RunLabel(labels)
-    actual = run_label.text(hide_early=False)
+    actual = run_label.text(hide_early=False, excluded_categories=set())
     assert actual == expected
 
 
@@ -376,5 +376,5 @@ ASSORTED_LABELS = [
 @mark.parametrize("labels,expected", ASSORTED_LABELS)
 def test_assorted_labels(labels, expected):
     run_label = RunLabel(labels)
-    actual = run_label.text(hide_early=False)
+    actual = run_label.text(hide_early=False, excluded_categories=set())
     assert actual == expected
