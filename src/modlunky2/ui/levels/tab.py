@@ -82,7 +82,13 @@ class CustomLevelSaveFormat:
 
 class LevelsTab(Tab):
     def __init__(
-        self, tab_control, modlunky_ui, modlunky_config: Config, *args, **kwargs
+        self,
+        tab_control,
+        modlunky_ui,
+        modlunky_config: Config,
+        *args,
+        standalone=False,
+        **kwargs,
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
         self.modlunky_config = modlunky_config
@@ -361,6 +367,10 @@ class LevelsTab(Tab):
         self.btn_lvl_extracts.grid(
             row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(20, 20)
         )
+        self.standalone = standalone
+        if standalone:
+            self.on_load()
+            self.load_editor()
 
     def on_load(self):
         self._sprite_fetcher = SpelunkySpriteFetcher(
@@ -480,7 +490,8 @@ class LevelsTab(Tab):
         self.button_back_custom = tk.Button(
             tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
         )
-        self.button_back_custom.grid(row=1, column=0, sticky="nswe")
+        if not self.standalone:
+            self.button_back_custom.grid(row=1, column=0, sticky="nswe")
 
         # Button below the file list to save changes to the current file.
         self.button_save_custom = tk.Button(
@@ -1202,7 +1213,8 @@ class LevelsTab(Tab):
         self.button_back = tk.Button(
             editor_tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
         )
-        self.button_back.grid(row=1, column=0, sticky="nswe")
+        if not self.standalone:
+            self.button_back.grid(row=1, column=0, sticky="nswe")
 
         self.button_save = tk.Button(
             editor_tab,

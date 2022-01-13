@@ -16,7 +16,7 @@ from modlunky2.utils import is_windows, tb_info, temp_chdir
 from modlunky2.ui.tasks import TaskManager, PING_INTERVAL
 from modlunky2.ui.settings import SettingsTab
 from modlunky2.ui.extract import ExtractTab
-from modlunky2.ui.levels import LevelsTab
+from modlunky2.ui.levels.tab import LevelsTab
 from modlunky2.ui.play import PlayTab
 from modlunky2.ui.overlunky import OverlunkyTab
 from modlunky2.ui.pack import PackTab
