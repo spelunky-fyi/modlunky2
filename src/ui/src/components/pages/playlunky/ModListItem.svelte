@@ -15,28 +15,30 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<li class="flex items-center justify-between group hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition">
+<li class="flex items-center justify-between group">
   <div
     class="flex-1 flex items-center gap-2 p-2 cursor-pointer"
     on:click={() => dispatch("toggle", id)}
   >
-    <div class="bg-zinc-200 dark:bg-zinc-600/50 border border-dashed border-zinc-100/50 dark:border-zinc-600/50 w-8 h-8" />
+    <div
+      class="w-8 h-8 elevation-2"
+    />
     <h3 class="font-semibold">{name}</h3>
   </div>
   <div class="flex p-2 gap-1 opacity-0 group-hover:opacity-80 transition">
     <button
-      class="flex items-center justify-center w-8 h-8 hover:bg-zinc-300 dark:hover:bg-zinc-600/50 rounded transition"
+      class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
       on:click={() => dispatch("opendirectory", id)}
       ><Icon data={faFolder} /></button
     >
     <button
-      class="flex items-center justify-center w-8 h-8 hover:bg-zinc-300 transition dark:hover:bg-zinc-600/50 rounded transition"
+      class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
       on:click={() => dispatch("uninstall", id)}
       ><Icon data={faTrashAlt} /></button
     >
     {#if draggable}
       <div
-        class="flex items-center justify-center w-8 h-8 rounded transition hover:bg-zinc-300 dark:hover:bg-zinc-600/50"
+        class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
         class:cursor-grab={dragging}
         class:cursor-grabbing={!dragging}
         on:mousedown

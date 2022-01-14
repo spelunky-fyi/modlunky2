@@ -34,7 +34,7 @@
     <slot />
   </button>
   {#if open}
-    <div class="absolute origin-top-right right-0 w-48 bg-zinc-50">
+    <div class="absolute origin-top-right right-0 w-48 elevation-2">
       <slot name="content" />
     </div>
   {/if}

@@ -2,7 +2,6 @@
   import { faFolder, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
   import Icon from "svelte-awesome";
   import { searchInput, toggleMod } from "../../../store";
-  import InputText from "../../../components/common/InputText.svelte";
   import EnabledMods from "./EnabledMods.svelte";
   import InstalledMods from "./InstalledMods.svelte";
   import PlaylunkyOptions from "./PlaylunkyOptions.svelte";
@@ -26,8 +25,9 @@
       <div class="flex text-sm gap-2 mb-2">
         <button class="btn-md w-9 rounded"><Icon data={faSyncAlt} /></button>
         <button class="btn-md w-9 rounded"><Icon data={faFolder} /></button>
-        <InputText
-          class="flex-1"
+        <input
+          type="text"
+          class="flex-1 input"
           placeholder="Search mods..."
           bind:value={$searchInput}
         />
@@ -43,7 +43,7 @@
         on:uninstall={handleUninstall}
       />
     </div>
-    <button class="btn-lg rounded">Play</button>
+    <button class="btn-lg">Play</button>
   </div>
   <PlaylunkyOptions />
 </section>

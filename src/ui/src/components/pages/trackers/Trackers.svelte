@@ -1,5 +1,4 @@
 <script lang="ts">
-  import InputText from "../../common/InputText.svelte";
   import OptionBoolean from "../../common/OptionBoolean.svelte";
   import { colorKey } from "../../../store";
   import ColorPicker from "./ColorPicker.svelte";
@@ -22,7 +21,7 @@
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
         <h3 class="text-xs whitespace-nowrap">Color Key</h3>
-        <InputText class="flex-1" bind:value={$colorKey} />
+        <input type="text" class="flex-1 input" bind:value={$colorKey} />
         <div
           class="w-8 h-8 shrink-0 rounded"
           style="background-color: {$colorKey}"
