@@ -11,6 +11,7 @@ specifiers:
   svelte: ^3.44.0
   svelte-awesome: ^2.4.2
   svelte-check: ^2.2.7
+  svelte-dnd-action: ^0.9.14
   svelte-preprocess: ^4.9.8
   tslib: ^2.3.1
   typescript: ^4.4.4
@@ -28,6 +29,7 @@ devDependencies:
   svelte: 3.45.0
   svelte-awesome: 2.4.2_svelte@3.45.0
   svelte-check: 2.2.11_svelte@3.45.0
+  svelte-dnd-action: 0.9.14
   svelte-preprocess: 4.10.1_svelte@3.45.0+typescript@4.5.4
   tslib: 2.3.1
   typescript: 4.5.4
@@ -978,6 +980,10 @@ packages:
       - sass
       - stylus
       - sugarss
+    dev: true
+
+  /svelte-dnd-action/0.9.14:
+    resolution: {integrity: sha512-c3kRK0vb1jrEVgI731BHADiodcqLDZ18wvCDDVnO+gMfIgWC4MlNQsswCNEK3Cw01emYTabC7UtHbAN6AYEZgQ==}
     dev: true
 
   /svelte-hmr/0.14.9_svelte@3.45.0:
