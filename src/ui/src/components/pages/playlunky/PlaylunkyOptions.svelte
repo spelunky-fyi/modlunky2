@@ -5,8 +5,8 @@
   import VersionSelect from "./VersionSelect.svelte";
 </script>
 
-<div class="flex flex-col justify-between w-72">
-  <div class="flex flex-col gap-2">
+<div class="flex flex-col gap-2 justify-between w-72">
+  <div class="flex flex-col gap-2 overflow-y-auto">
     <VersionSelect />
 
     <OptionGroup>
