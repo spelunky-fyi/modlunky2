@@ -1,7 +1,5 @@
 <script lang="ts">
-import InputText from "../../common/InputText.svelte";
-
-import FileSelect from "../../common/FileSelect.svelte";
+  import FileSelect from "../../common/FileSelect.svelte";
 
   let installCode;
   let sourceFiles;
@@ -10,10 +8,16 @@ import FileSelect from "../../common/FileSelect.svelte";
 
 <section class="flex-1">
   <div class="flex">
-    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">spelunky.fyi Installation</h2>
-    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">Local Installation</h2>
+    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">
+      spelunky.fyi Installation
+    </h2>
+    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">
+      Local Installation
+    </h2>
   </div>
-  <div class="h-full grid grid-rows-2 grid-cols-2 gap-4 text-sm place-content-center">
+  <div
+    class="h-full grid grid-rows-2 grid-cols-2 gap-4 text-sm place-content-center"
+  >
     <div class="row-span-2 flex flex-col gap-2">
       <h3 class="font-medium">Install Code</h3>
       <p class="text-xs">
@@ -22,7 +26,7 @@ import FileSelect from "../../common/FileSelect.svelte";
           href="https://spelunky.fyi">spelunky.fyi</a
         >
       </p>
-      <InputText bind:value={installCode} />
+      <input type="text" class="input" bind:value={installCode} />
       <button class="btn-lg rounded">Install</button>
     </div>
     <div class="flex flex-col gap-2">

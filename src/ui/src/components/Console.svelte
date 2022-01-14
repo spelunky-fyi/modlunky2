@@ -4,7 +4,7 @@
   ];
 </script>
 
-<div class="overflow-y-scroll bg-zinc-100 dark:bg-zinc-800/20 h-20 p-1.5 text-xs font-mono">
+<div class="overflow-y-scroll elevation-1 h-20 p-1.5 text-xs font-mono">
   <ul>
     {#each messages as message}
       <li>{message}</li>

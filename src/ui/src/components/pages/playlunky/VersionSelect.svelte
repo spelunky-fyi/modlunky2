@@ -18,11 +18,11 @@
 <OptionGroup>
   <h3 slot="heading">Version Select</h3>
   <div class="flex w-full">
-    <button class="btn-md flex-1 rounded-l">stable</button>
-    <button class="btn-md flex-1">nightly</button>
+    <button class="btn-md flex-1 rounded-l rounded-r-none border-r-0">stable</button>
+    <button class="btn-md flex-1 rounded-none border-x-0">nightly</button>
     <div class="flex w-32">
-      <button class="btn-md flex-1">{$version.revision}</button>
-      <Menu class="rounded-r">
+      <button class="btn-md flex-1 rounded-none border-x-0">{$version.revision}</button>
+      <Menu class="rounded-l-none rounded-r">
         <Icon data={faChevronDown} />
         <div slot="content" class="flex flex-col">
           {#each versions as v, index (v.id)}

@@ -1,6 +1,4 @@
 <script lang="ts">
-import InputText from "../../common/InputText.svelte";
-
   import FileSelect from "../../common/FileSelect.svelte";
   import OptionBoolean from "../../common/OptionBoolean.svelte";
   import OptionGroup from "../../common/OptionGroup.svelte";
@@ -9,7 +7,9 @@ import InputText from "../../common/InputText.svelte";
 <section class="flex-1 flex flex-col gap-4">
   <OptionGroup>
     <h2 slot="heading">Game Install Directory</h2>
-    <InputText
+    <input
+      type="text"
+      class="input"
       value="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2"
     />
     <div class="flex gap-2">
