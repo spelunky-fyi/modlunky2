@@ -22,29 +22,34 @@
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
         <h3 class="text-xs whitespace-nowrap">Color Key</h3>
-        <InputText
-          class="flex-1"
-          bind:value={$colorKey}
+        <InputText class="flex-1" bind:value={$colorKey} />
+        <div
+          class="w-8 h-8 shrink-0 rounded"
+          style="background-color: {$colorKey}"
         />
-        <div class="w-8 h-8 shrink-0 rounded" style="background-color: {$colorKey}" />
       </div>
       <div class="w-full justify-items-stretch flex gap-2 text-xs">
-        <button class="btn-md rounded flex-1" on:click={() => ($colorKey = "#ff00ff")}
-          >Magenta</button
+        <button
+          class="btn-md rounded flex-1"
+          on:click={() => ($colorKey = "#ff00ff")}>Magenta</button
         >
-        <button class="btn-md rounded flex-1" on:click={() => ($colorKey = "#00ff00")}
-          >Green</button
+        <button
+          class="btn-md rounded flex-1"
+          on:click={() => ($colorKey = "#00ff00")}>Green</button
         >
-        <button class="btn-md rounded flex-1" on:click={() => ($colorKey = "#0000ff")}
-          >Blue</button
+        <button
+          class="btn-md rounded flex-1"
+          on:click={() => ($colorKey = "#0000ff")}>Blue</button
         >
         {#if !showPicker}
-          <button class="btn-md rounded flex-1" on:click={() => (showPicker = true)}
-            >Custom</button
+          <button
+            class="btn-md rounded flex-1"
+            on:click={() => (showPicker = true)}>Custom</button
           >
         {:else}
-          <button class="btn-md rounded flex-1" on:click={() => (showPicker = false)}
-            >Close</button
+          <button
+            class="btn-md rounded flex-1"
+            on:click={() => (showPicker = false)}>Close</button
           >
         {/if}
       </div>

@@ -23,7 +23,7 @@ import FileSelect from "../../common/FileSelect.svelte";
         >
       </p>
       <InputText bind:value={installCode} />
-      <button class="btn-lg">Install</button>
+      <button class="btn-lg rounded">Install</button>
     </div>
     <div class="flex flex-col gap-2">
       <h3 class="font-medium">Source</h3>

@@ -29,7 +29,7 @@
             <div
               on:click={() => selectVersion(index)}
               class="px-2 py-1 text-sm flex items-center cursor-pointer gap-2 justify-between"
-              class:bg-gray-800={$version === v}
+              class:bg-zinc-800={$version === v}
               class:text-white={$version === v}
             >
               <span
