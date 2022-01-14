@@ -4,14 +4,12 @@
     filteredEnabledMods,
     mods,
     searchInput,
-toggleMod,
   } from "../../../store";
   import { dndzone } from "svelte-dnd-action";
   import ModListItem from "./ModListItem.svelte";
   import ModListHeader from "./ModListHeader.svelte";
-  import { flip } from "svelte/animate";
 
-  const flipDurationMs = 200;
+  const flipDurationMs = 120;
   let dragDisabled = true;
 
   function handleConsider(event) {
@@ -37,8 +35,7 @@ toggleMod,
 </script>
 
 <ModListHeader count={$enabledMods.length}>Enabled</ModListHeader>
-
-<section
+<ul
   use:dndzone={{
     items: $mods,
     dragDisabled,
@@ -51,17 +48,18 @@ toggleMod,
   class="flex flex-col"
 >
   {#each $filteredEnabledMods as mod (mod.id)}
-    <div animate:flip={{ duration: flipDurationMs }}>
-      <ModListItem
-        name={mod.name}
-        on:click={() => toggleMod(mod.id)}
-        on:mousedown={startDrag}
-        on:touchstart={startDrag}
-        on:mouseup={stopDrag}
-        on:touchend={stopDrag}
-        bind:dragging={dragDisabled}
-        draggable={$searchInput.length === 0}
-      />
-    </div>
+    <ModListItem
+      name={mod.name}
+      id={mod.id}
+      on:toggle
+      on:opendirectory
+      on:uninstall
+      on:mousedown={startDrag}
+      on:touchstart={startDrag}
+      on:mouseup={stopDrag}
+      on:touchend={stopDrag}
+      bind:dragging={dragDisabled}
+      draggable={$searchInput.length === 0}
+    />
   {/each}
-</section>
+</ul>
