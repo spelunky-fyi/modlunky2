@@ -10,13 +10,15 @@ export default defineConfig({
     Unocss({
       extractors: [extractorSvelte],
       shortcuts: {
-        "btn": "flex items-center justify-center bg-gray-200 font-semibold hover:bg-gray-100 transition",
+        "btn": "flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-700 transition",
         "btn-md": "btn px-2 py-1.5",
         "btn-lg": "btn p-4 text-xl",
-        "tab": "px-3 py-1 flex items-center justify-center bg-gray-300 rounded-t-sm transition",
-        "tab-active": "bg-gray-50",
+        "tab": "px-3 py-1 flex items-center justify-center bg-zinc-300 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-t transition",
+        "tab-active": "bg-zinc-50 dark:bg-zinc-600",
       },
-      presets: [presetWind()],
+      presets: [presetWind({
+        dark: "media"
+      })],
     }),
     svelte(),
   ],
