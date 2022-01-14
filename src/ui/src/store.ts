@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { derived, writable } from "svelte/store";
 
 export const activeTabIndex = writable(0);
 
@@ -11,15 +11,48 @@ export const mods = writable([
   },
   {
     name: "Tele-trainer",
-    enabled: false,
+    enabled: true,
     id: id_counter++,
   },
   {
     name: "Randomizer",
-    enabled: true,
+    enabled: false,
     id: id_counter++,
   },
 ]);
+
+export const enabledMods = derived(mods, ($mods) =>
+  $mods.filter((mod) => mod.enabled)
+);
+
+export const installedMods = derived(mods, ($mods) =>
+  $mods.filter((mod) => !mod.enabled)
+);
+
+export function toggleMod(id) {
+  mods.update((arr) =>
+    arr.map((mod) =>
+      mod.id === id ? { ...mod, enabled: !mod.enabled } : mod
+    )
+  );
+}
+
+export const searchInput = writable("");
+
+function search(mod, str) {
+  return mod.name && mod.name.toLowerCase().includes(str.toLowerCase());
+}
+
+export const filteredEnabledMods = derived(
+  [enabledMods, searchInput],
+  ([$enabledMods, $searchInput]) =>
+    $enabledMods.filter((mod) => search(mod, $searchInput))
+);
+export const filteredInstalledMods = derived(
+  [installedMods, searchInput],
+  ([$installedMods, $searchInput]) =>
+    $installedMods.filter((mod) => search(mod, $searchInput))
+);
 
 id_counter = 0;
 export const versions = [
