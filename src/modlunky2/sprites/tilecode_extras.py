@@ -96,6 +96,7 @@ class TilecodeExtras(BaseSpriteLoader):
     _chain_index = TILENAMES.index("chain_ceiling")
     _chunk_map["chainandblocks_ceiling"] = (_chain_index, 0, _chain_index + 1, 1)
 
+
 class TreasureVaultChestSheet(BaseSpriteLoader):
     _sprite_sheet_path = Path("static/images/treasure_vaultchest.png")
     _chunk_size = 50
