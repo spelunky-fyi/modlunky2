@@ -56,7 +56,11 @@ from modlunky2.sprites.monsters.big import (
     OsirisAndAlienQueen,
     OlmecAndMech,
 )
-from modlunky2.sprites.tilecode_extras import TilecodeExtras, TreasureVaultChestSheet
+from modlunky2.sprites.tilecode_extras import (
+    ChainAndBlocksCeilingSheet,
+    TilecodeExtras,
+    TreasureVaultChestSheet,
+)
 from modlunky2.sprites.menu_leader import MenuLeaderSheet
 from modlunky2.sprites.menu_basic import MenuBasicSheet, PetHeadsSheet
 from modlunky2.sprites.deco_sheet import CaveDecoSheet
@@ -123,4 +127,5 @@ def get_all_sprite_loaders(
         # from the extracted assets.
         TilecodeExtras(BASE_DIR),
         TreasureVaultChestSheet(BASE_DIR),
+        ChainAndBlocksCeilingSheet(BASE_DIR),
     ]

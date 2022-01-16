@@ -93,8 +93,6 @@ class TilecodeExtras(BaseSpriteLoader):
     _chunk_map = {
         tilename: (idx, 0, idx + 1, 1) for idx, tilename in enumerate(TILENAMES)
     }
-    _chain_index = TILENAMES.index("chain_ceiling")
-    _chunk_map["chainandblocks_ceiling"] = (_chain_index, 0, _chain_index + 1, 1)
 
 
 class TreasureVaultChestSheet(BaseSpriteLoader):
@@ -102,4 +100,12 @@ class TreasureVaultChestSheet(BaseSpriteLoader):
     _chunk_size = 50
     _chunk_map = {
         "treasure_vaultchest": (0, 0, 1, 1),
+    }
+
+
+class ChainAndBlocksCeilingSheet(BaseSpriteLoader):
+    _sprite_sheet_path = Path("static/images/chainandblocks_ceiling.png")
+    _chunk_size = 50
+    _chunk_map = {
+        "chainandblocks_ceiling": (0, 0, 1, 1),
     }
