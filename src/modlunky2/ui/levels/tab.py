@@ -3107,6 +3107,13 @@ class LevelsTab(Tab):
                                 chunks=template_chunks,
                             )
                         )
+            level_settings.set_obj(
+                LevelSetting(
+                    name="size",
+                    value="{width}, {height}".format(width=width, height=height),
+                    comment=None,
+                )
+            )
             level_file = LevelFile(
                 comment,
                 level_settings,
