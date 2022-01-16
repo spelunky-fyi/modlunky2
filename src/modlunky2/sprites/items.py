@@ -211,7 +211,6 @@ class ItemSheet(BaseSpriteLoader):
         "spikeball_trap": (0, 13, 1, 14),
         "spikeball_no_bounce": (0, 13, 1, 14),
         "spikeball": (0, 13, 1, 14),
-        "chainandblocks_ceiling": (0, 13, 1, 14),
         "key": (1, 13, 2, 14),
         "skeleton_key": (2, 13, 3, 14),
         "bone_key": (2, 13, 3, 14),
