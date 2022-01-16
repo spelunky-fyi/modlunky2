@@ -132,3 +132,4 @@ dmypy.json
 
 .vscode
 modlunky2.spec
+node_modules/
