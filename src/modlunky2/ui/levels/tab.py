@@ -3110,7 +3110,7 @@ class LevelsTab(Tab):
             level_settings.set_obj(
                 LevelSetting(
                     name="size",
-                    value="{width}, {height}".format(width=width, height=height),
+                    value="{width} {height}".format(width=width, height=height),
                     comment=None,
                 )
             )
