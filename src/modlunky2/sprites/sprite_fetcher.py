@@ -10,7 +10,10 @@ from modlunky2.sprites.base_classes import (
     BaseJsonSpriteLoader,
     DEFAULT_BASE_PATH,
 )
-from modlunky2.sprites.tilecode_extras import TreasureVaultChestSheet
+from modlunky2.sprites.tilecode_extras import (
+    TreasureVaultChestSheet,
+    ChainAndBlocksCeilingSheet,
+)
 
 
 class SpelunkySpriteFetcher:
@@ -66,6 +69,7 @@ class SpelunkySpriteFetcher:
         # from the extracted assets.
         sheets.append(TilecodeExtras(BASE_DIR))
         sheets.append(TreasureVaultChestSheet(BASE_DIR))
+        sheets.append(ChainAndBlocksCeilingSheet(BASE_DIR))
 
         key_map = {}
         for sheet in sheets:
