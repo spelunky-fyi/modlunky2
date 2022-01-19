@@ -7,4 +7,4 @@ pyserde==0.6.0
 requests==2.27.1
 sfyi-fsb5==1.1
 websockets==10.1
-zstandard==0.16.0
+zstandard==0.17.0
