@@ -1,4 +1,12 @@
-<section class="mx-auto flex flex-col justify-center gap-2 w-64">
-  <button class="btn-lg rounded">Download latest</button>
-  <button class="btn-lg rounded">Launch</button>
-</section>
+<script lang="ts">
+  import { Button, Panel, Stack } from "../../common";
+</script>
+
+<Stack align="center" justify="center" class="flex-1">
+  <Panel rounded padding="small">
+    <Stack direction="vertical">
+      <Button size="huge">Download Latest</Button>
+      <Button size="huge" color="primary">Launch</Button>
+    </Stack>
+  </Panel>
+</Stack>

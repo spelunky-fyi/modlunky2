@@ -4,6 +4,7 @@ import Overlunky from "./components/pages/overlunky";
 import ExtractAssets from "./components/pages/extractassets";
 import Trackers from "./components/pages/trackers";
 import Settings from "./components/pages/settings";
+import Debug from "./components/pages/debug";
 
 export const tabs = [
   {
@@ -34,5 +35,9 @@ export const tabs = [
   {
     title: "Settings",
     component: Settings,
+  },
+  {
+    title: "Debug",
+    component: Debug,
   },
 ];

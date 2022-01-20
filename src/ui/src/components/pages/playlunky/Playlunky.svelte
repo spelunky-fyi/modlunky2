@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { faFolder, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
-  import Icon from "svelte-awesome";
   import { searchInput, toggleMod } from "../../../store";
+  import Icon from "svelte-awesome";
+  import { faFolder, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
   import EnabledMods from "./EnabledMods.svelte";
   import InstalledMods from "./InstalledMods.svelte";
   import PlaylunkyOptions from "./PlaylunkyOptions.svelte";
+  import { Button, TextInput, Stack } from "../../common";
 
   function handleToggle(event) {
     toggleMod(event.detail);
@@ -17,33 +18,47 @@
   function handleUninstall(event) {
     // TODO
   }
+
+  function handleKeyDown(event) {
+    if (event.key === "Escape") {
+      $searchInput = "";
+    }
+  }
 </script>
 
-<section class="flex flex-1 gap-4">
-  <div class="flex-1 flex flex-col justify-between">
-    <div class="flex flex-col">
-      <div class="flex text-sm gap-2 mb-2">
-        <button class="btn-md w-9 rounded"><Icon data={faSyncAlt} /></button>
-        <button class="btn-md w-9 rounded"><Icon data={faFolder} /></button>
-        <input
-          type="text"
-          class="flex-1 input"
+<Stack class="flex-1 gap-4">
+  <Stack direction="vertical" spacing="none" class="flex-1 justify-between">
+    <Stack direction="vertical" spacing="none">
+      <Stack class="mb-2" spacing="small">
+        <Button size="small">
+          <Icon data={faSyncAlt} />
+        </Button>
+        <Button size="small">
+          <Icon data={faFolder} />
+        </Button>
+        <TextInput
           placeholder="Search mods..."
+          class="flex-1"
           bind:value={$searchInput}
+          on:keydown={handleKeyDown}
         />
-      </div>
+      </Stack>
+
       <EnabledMods
         on:toggle={handleToggle}
         on:opendirectory={handleOpenDirectory}
         on:uninstall={handleUninstall}
       />
+
       <InstalledMods
         on:toggle={handleToggle}
         on:opendirectory={handleOpenDirectory}
         on:uninstall={handleUninstall}
       />
-    </div>
-    <button class="btn-lg">Play</button>
-  </div>
+    </Stack>
+
+    <Button color="primary" size="huge">Play</Button>
+  </Stack>
+
   <PlaylunkyOptions />
-</section>
+</Stack>

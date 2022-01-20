@@ -1,16 +1,21 @@
 <script lang="ts">
-  import OptionBoolean from "../../common/OptionBoolean.svelte";
-  import OptionNumber from "../../common/OptionNumber.svelte";
-  import OptionGroup from "../../common/OptionGroup.svelte";
+  import {
+    Button,
+    Stack,
+    Text,
+    OptionBoolean,
+    OptionGroup,
+    OptionNumber,
+  } from "../../common";
   import VersionSelect from "./VersionSelect.svelte";
 </script>
 
-<div class="flex flex-col gap-2 justify-between w-72">
-  <div class="flex flex-col gap-2 overflow-y-auto">
+<Stack direction="vertical" justify="between" spacing="small" class="w-72">
+  <Stack direction="vertical" spacing="small" class="overflow-y-auto">
     <VersionSelect />
 
     <OptionGroup>
-      <h3 slot="heading">General</h3>
+      <Text level="h3" slot="heading">General</Text>
       <OptionBoolean>Enable loose file warning</OptionBoolean>
       <OptionBoolean>Disable asset caching</OptionBoolean>
       <OptionBoolean>Speedrun mode</OptionBoolean>
@@ -21,21 +26,21 @@
     </OptionGroup>
 
     <OptionGroup>
-      <h3 slot="heading">Scripts</h3>
+      <Text slot="heading">Scripts</Text>
       <OptionBoolean>Enable developer mode</OptionBoolean>
       <OptionBoolean>Enable developer console</OptionBoolean>
       <OptionNumber value={20}>Console history size</OptionNumber>
     </OptionGroup>
 
     <OptionGroup>
-      <h3 slot="heading">Audio</h3>
+      <Text slot="heading">Audio</Text>
       <OptionBoolean>Enable loose audio files</OptionBoolean>
       <OptionBoolean>Cache decoded audio files</OptionBoolean>
       <OptionBoolean>Synchronous Update</OptionBoolean>
     </OptionGroup>
 
     <OptionGroup>
-      <h3 slot="heading">Sprites</h3>
+      <Text slot="heading">Sprites</Text>
       <OptionBoolean>Random character select</OptionBoolean>
       <OptionBoolean>Generate character journal stickers</OptionBoolean>
       <OptionBoolean>Generate character journal entries</OptionBoolean>
@@ -43,12 +48,12 @@
       <OptionBoolean>Enable sprite hot loading</OptionBoolean>
       <OptionNumber value={500}>Sprite hot load delay</OptionNumber>
     </OptionGroup>
-  </div>
+  </Stack>
 
-  <div class="flex flex-col gap-2 text-xs">
-    <button class="btn-md rounded">Open packs directory</button>
-    <button class="btn-md rounded">User guide</button>
-    <button class="btn-md rounded">Check for mod updates</button>
-    <button class="btn-md rounded">Clear cache</button>
-  </div>
-</div>
+  <Stack direction="vertical" spacing="small">
+    <Button>Open packs directory</Button>
+    <Button>User guide</Button>
+    <Button>Check for mod updates</Button>
+    <Button>Clear cache</Button>
+  </Stack>
+</Stack>

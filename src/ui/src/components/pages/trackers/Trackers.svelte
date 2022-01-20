@@ -1,61 +1,58 @@
 <script lang="ts">
-  import OptionBoolean from "../../common/OptionBoolean.svelte";
   import { colorKey } from "../../../store";
+  import { Button, Stack, TextInput, OptionBoolean } from "../../common";
   import ColorPicker from "./ColorPicker.svelte";
 
   let showPicker = false;
 </script>
 
 <section class="flex-1 flex gap-4">
-  <div class="flex-1 flex flex-col gap-2">
-    <div class="flex gap-2">
-      <button class="btn-lg rounded flex-1">Pacifist</button>
+  <Stack direction="vertical" spacing="small" class="flex-1">
+    <Stack spacing="small">
+      <Button size="huge" class="flex-1">Pacifist</Button>
       <OptionBoolean>Show kill count</OptionBoolean>
-    </div>
-    <div class="flex gap-2">
-      <button class="btn-lg rounded flex-1">🐈 Category</button>
+    </Stack>
+    <Stack spacing="small">
+      <Button size="huge" class="flex-1">🐈 Category</Button>
       <OptionBoolean>Always show modifiers</OptionBoolean>
-    </div>
-  </div>
-  <div class="flex flex-col w-72">
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center gap-2">
-        <h3 class="text-xs whitespace-nowrap">Color Key</h3>
-        <input type="text" class="flex-1 input" bind:value={$colorKey} />
+    </Stack>
+  </Stack>
+  <Stack direction="vertical" class="w-72">
+    <Stack direction="vertical" spacing="small">
+      <Stack align="center" spacing="small" class="relative">
+        <TextInput bind:value={$colorKey} label="Color Key" />
         <div
-          class="w-8 h-8 shrink-0 rounded"
+          class="absolute inset-y-2 right-2 w-5 h-5 shrink-0 rounded transition"
           style="background-color: {$colorKey}"
         />
-      </div>
-      <div class="w-full justify-items-stretch flex gap-2 text-xs">
-        <button
-          class="btn-md rounded flex-1"
-          on:click={() => ($colorKey = "#ff00ff")}>Magenta</button
+      </Stack>
+      <Stack spacing="small">
+        <Button
+          size="tiny"
+          class="flex-1"
+          on:click={() => ($colorKey = "#ff00ff")}>Magenta</Button
         >
-        <button
-          class="btn-md rounded flex-1"
-          on:click={() => ($colorKey = "#00ff00")}>Green</button
+        <Button
+          size="tiny"
+          class="flex-1"
+          on:click={() => ($colorKey = "#00ff00")}>Green</Button
         >
-        <button
-          class="btn-md rounded flex-1"
-          on:click={() => ($colorKey = "#0000ff")}>Blue</button
+        <Button
+          size="tiny"
+          class="flex-1"
+          on:click={() => ($colorKey = "#0000ff")}>Blue</Button
         >
-        {#if !showPicker}
-          <button
-            class="btn-md rounded flex-1"
-            on:click={() => (showPicker = true)}>Custom</button
-          >
-        {:else}
-          <button
-            class="btn-md rounded flex-1"
-            on:click={() => (showPicker = false)}>Close</button
-          >
-        {/if}
-      </div>
+        <Button
+          size="tiny"
+          class="flex-1"
+          on:click={() => (showPicker = !showPicker)}
+          >{showPicker ? "Close" : "Custom"}</Button
+        >
+      </Stack>
       {#if showPicker}
         <ColorPicker bind:value={$colorKey} />
       {/if}
-      <button class="btn-md rounded">Tracker Files</button>
-    </div>
-  </div>
+      <Button>Tracker Files</Button>
+    </Stack>
+  </Stack>
 </section>

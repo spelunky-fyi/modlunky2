@@ -1,10 +1,18 @@
 <script lang="ts">
+  import { Stack, Text } from "../../common";
+
   export let count: number = 0;
 </script>
 
-<div class="flex items-center gap-2 py-1 px-2 elevation-1 text-xs uppercase font-bold tracking-widest">
-  <slot />
+<Stack
+  spacing="small"
+  align="center"
+  class="uppercase tracking-widest font-semibold"
+>
+  <Text level="h4">
+    <slot />
+  </Text>
   {#if count > 0}
-    <span class="text-xs opacity-50">{count}</span>
+    <Text level="h4" class="opacity-50">{count}</Text>
   {/if}
-</div>
+</Stack>
