@@ -1974,6 +1974,8 @@ class LevelsTab(Tab):
         self.draw_mode.append(["plasma_cannon", 4])
         self.draw_mode.append(["lockedchest", 4])
         self.draw_mode.append(["shopkeeper_vat", 12])
+        self.draw_mode.append(["totem_trap", 2])
+        self.draw_mode.append(["lion_trap", 2])
 
         combo_tile_ids = []
         for tile_info in VALID_TILE_CODES:
