@@ -2,5 +2,5 @@
     "editor.formatOnSave": true,
     "python.formatting.provider": "black",
     "python.linting.pylintEnabled": true,
-    "python.defaultInterpreterPath": "venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
 }
