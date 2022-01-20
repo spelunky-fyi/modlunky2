@@ -1,17 +1,17 @@
 <script lang="ts">
+  import { Button, Stack, TextInput } from "../common";
+
   let files: FileList;
+  let input: HTMLInputElement;
+  let text: string;
+
+  $: if (files && files.length > 0) {
+    text = files.item(0).name;
+  }
 </script>
 
-<div class="flex gap-1.5">
-  <div class="flex-1 input">
-    {#if files}
-      {#each Array.from(files) as file}
-        <span class="px-2">{file.name}</span>
-      {/each}
-    {/if}
-  </div>
-  <label class="btn-md rounded cursor-pointer">
-    Browse...
-    <input type="file" bind:files hidden={true} />
-  </label>
-</div>
+<Stack spacing="small">
+  <input bind:files bind:this={input} type="file" class="hidden" />
+  <TextInput bind:value={text} class="flex-1" />
+  <Button size="small" on:click={() => input.click()}>Browse</Button>
+</Stack>

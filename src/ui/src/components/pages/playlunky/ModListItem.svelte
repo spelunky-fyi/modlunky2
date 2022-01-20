@@ -6,6 +6,9 @@
     faFolder,
     faTrashAlt,
   } from "@fortawesome/free-solid-svg-icons";
+  import { Stack, Text } from "../../common";
+  import ModLogo from "./ModLogo.svelte";
+  import ModListItemButton from "./ModListItemButton.svelte";
 
   export let name: string = "Mod Name";
   export let draggable: boolean = false;
@@ -15,39 +18,37 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<li class="flex items-center justify-between group">
-  <div
-    class="flex-1 flex items-center gap-2 p-2 cursor-pointer"
+<Stack justify="between" class="group">
+  <Stack
+    align="center"
+    spacing="small"
+    class="flex-1 p-2 cursor-pointer"
     on:click={() => dispatch("toggle", id)}
   >
-    <div
-      class="w-8 h-8 elevation-2"
-    />
-    <h3 class="font-semibold">{name}</h3>
-  </div>
-  <div class="flex p-2 gap-1 opacity-0 group-hover:opacity-80 transition">
-    <button
-      class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
-      on:click={() => dispatch("opendirectory", id)}
-      ><Icon data={faFolder} /></button
-    >
-    <button
-      class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
-      on:click={() => dispatch("uninstall", id)}
-      ><Icon data={faTrashAlt} /></button
-    >
+    <ModLogo />
+    <Text level="h3" class="font-black font-roboto">{name}</Text>
+  </Stack>
+
+  <Stack
+    spacing="small"
+    class="p-2 opacity-0 group-hover:opacity-80 transition"
+  >
+    <ModListItemButton on:click={() => dispatch("opendirectory", id)}>
+      <Icon data={faFolder} />
+    </ModListItemButton>
+    <ModListItemButton on:click={() => dispatch("uninstall", id)}>
+      <Icon data={faTrashAlt} />
+    </ModListItemButton>
     {#if draggable}
-      <div
-        class="btn-md border-0 bg-opacity-0 hover:bg-opacity-100 px-1.5"
-        class:cursor-grab={dragging}
-        class:cursor-grabbing={!dragging}
+      <ModListItemButton
+        class={dragging ? "cursor-grab" : "cursor-grabbing"}
         on:mousedown
         on:mouseup
         on:touchstart
         on:touchend
       >
         <Icon data={faBars} />
-      </div>
+      </ModListItemButton>
     {/if}
-  </div>
-</li>
+  </Stack>
+</Stack>

@@ -1,14 +1,14 @@
 <script lang="ts">
-  import OptionGroup from "../../common/OptionGroup.svelte";
-  import Menu from "../../common/Menu.svelte";
   import Icon from "svelte-awesome";
   import {
     faCheck,
     faChevronDown,
+    faDownload,
     faSyncAlt,
     faTrashAlt,
   } from "@fortawesome/free-solid-svg-icons";
   import { version, versions } from "../../../store";
+  import { Button, Stack, Text, OptionGroup, Menu } from "../../common";
 
   function selectVersion(index) {
     $version = versions[index];
@@ -16,41 +16,44 @@
 </script>
 
 <OptionGroup>
-  <h3 slot="heading">Version Select</h3>
-  <div class="flex w-full">
-    <button class="btn-md flex-1 rounded-l rounded-r-none border-r-0">stable</button>
-    <button class="btn-md flex-1 rounded-none border-x-0">nightly</button>
-    <div class="flex w-32">
-      <button class="btn-md flex-1 rounded-none border-x-0">{$version.revision}</button>
+  <Text level="h3" slot="heading">Version Select</Text>
+  <Stack spacing="none">
+    <Button size="tiny" class="flex-1 rounded-l rounded-r-none border-r-0"
+      >stable</Button
+    >
+    <Button size="tiny" class="flex-1 rounded-none border-x-0">nightly</Button>
+    <Stack class="flex-1" spacing="none">
+      <Button size="tiny" class="flex-1 rounded-none border-x-0"
+        >{$version.revision}</Button
+      >
       <Menu class="rounded-l-none rounded-r">
         <Icon data={faChevronDown} />
-        <div slot="content" class="flex flex-col">
+        <Stack direction="vertical" spacing="none" slot="content">
           {#each versions as v, index (v.id)}
             <div
               on:click={() => selectVersion(index)}
-              class="px-2 py-1 text-sm flex items-center cursor-pointer gap-2 justify-between"
-              class:bg-zinc-800={$version === v}
-              class:text-white={$version === v}
+              class="px-2 py-1 text-sm flex items-center justify-between cursor-pointer gap-2"
             >
-              <span
-                class="flex items-center gap-2"
-                class:font-semibold={v.installed}
-                class:opacity-50={!v.installed}
-                >{#if v.installed}
+              <Stack justify="between">
+                {#if v.installed}
                   <Icon data={faCheck} scale={0.5} />
                 {/if}
-                {v.revision}</span
-              >
+                <Text level="span">{v.revision}</Text>
+              </Stack>
               {#if v.installed}
-                <button class="flex items-center justify-center"><Icon data={faTrashAlt} /></button>
+                <Button color="danger" class="p-1"
+                  ><Icon data={faTrashAlt} /></Button
+                >
+              {:else}
+                <Button color="info"><Icon data={faDownload} /></Button>
               {/if}
             </div>
           {/each}
-        </div>
+        </Stack>
       </Menu>
-    </div>
-    <button class="btn-md ml-1 rounded">
+    </Stack>
+    <Button class="ml-2">
       <Icon data={faSyncAlt} />
-    </button>
-  </div>
+    </Button>
+  </Stack>
 </OptionGroup>

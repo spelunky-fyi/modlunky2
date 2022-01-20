@@ -1,43 +1,48 @@
 <script lang="ts">
-  import FileSelect from "../../common/FileSelect.svelte";
-
-  let installCode;
-  let sourceFiles;
-  let destinationFolder;
+  import {
+    Button,
+    FileSelect,
+    Panel,
+    Stack,
+    Text,
+    TextInput,
+  } from "../../common";
 </script>
 
-<section class="flex-1">
-  <div class="flex">
-    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">
-      spelunky.fyi Installation
-    </h2>
-    <h2 class="flex-1 flex items-center justify-center text-lg font-medium">
-      Local Installation
-    </h2>
-  </div>
-  <div
-    class="h-full grid grid-rows-2 grid-cols-2 gap-4 text-sm place-content-center"
-  >
-    <div class="row-span-2 flex flex-col gap-2">
-      <h3 class="font-medium">Install Code</h3>
-      <p class="text-xs">
-        Enter the 'Install Code' from a mod page on <a
-          class="underline"
-          href="https://spelunky.fyi">spelunky.fyi</a
+<Stack align="center" justify="center" class="flex-1">
+  <Stack justify="center">
+    <Panel rounded padding="large">
+      <Stack
+        direction="vertical"
+        justify="between"
+        spacing="small"
+        class="h-full"
+      >
+        <Text level="h3">spelunky.fyi Installation</Text>
+        <Text level="h2" class="mt-auto">Install Code</Text>
+        <Text level="p"
+          >Enter the 'Install Code' from a mod page on spelunky.fyi</Text
         >
-      </p>
-      <input type="text" class="input" bind:value={installCode} />
-      <button class="btn-lg rounded">Install</button>
-    </div>
-    <div class="flex flex-col gap-2">
-      <h3 class="font-medium">Source</h3>
-      <p class="text-xs">Choose the file you want to install</p>
-      <FileSelect />
-    </div>
-    <div class="flex flex-col gap-2">
-      <h3 class="font-medium">Destination</h3>
-      <p class="text-xs">Choose or create a pack</p>
-      <FileSelect />
-    </div>
-  </div>
-</section>
+        <Stack spacing="small">
+          <TextInput class="flex-1" />
+          <Button color="primary">Install</Button>
+        </Stack>
+      </Stack>
+    </Panel>
+    <Panel rounded padding="large">
+      <Stack direction="vertical" spacing="large">
+        <Text level="h3">Local Installation</Text>
+        <Stack direction="vertical" spacing="small">
+          <Text level="h2">Source</Text>
+          <Text level="p">Choose the file you want to install</Text>
+          <FileSelect />
+        </Stack>
+        <Stack direction="vertical" spacing="small">
+          <Text level="h2">Destination</Text>
+          <Text level="p">Choose or create a pack</Text>
+          <FileSelect />
+        </Stack>
+      </Stack>
+    </Panel>
+  </Stack>
+</Stack>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import Button from "./Button.svelte";
 
   let open: boolean = false;
   let menu: HTMLElement = null;
@@ -29,10 +30,10 @@
   });
 </script>
 
-<div class="relative" bind:this={menu}>
-  <button class="btn-md {$$restProps.class || ''}" on:click={() => (open = !open)}>
+<div class="relative " bind:this={menu}>
+  <Button class={$$restProps.class || ""} on:click={() => (open = !open)}>
     <slot />
-  </button>
+  </Button>
   {#if open}
     <div class="absolute origin-top-right right-0 w-48 elevation-2">
       <slot name="content" />

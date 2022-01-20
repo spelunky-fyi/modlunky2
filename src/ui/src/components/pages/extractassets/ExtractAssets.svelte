@@ -1,30 +1,28 @@
 <script>
-import FileSelect from "../../common/FileSelect.svelte";
-import OptionBoolean from "../../common/OptionBoolean.svelte";
-import OptionGroup from "../../common/OptionGroup.svelte";
-
-let selected;
-
-const executables = [
-  "Spel2.exe",
-  "Overlunky.exe",
-];
+  import {
+    Button,
+    Stack,
+    Text,
+    FileSelect,
+    OptionBoolean,
+    OptionGroup,
+  } from "../../common";
 </script>
 
 <section class="flex-1 flex gap-4">
-  <div class="flex-1 flex flex-col gap-4">
+  <Stack direction="vertical" class="flex-1">
     <FileSelect />
-    <button class="btn-lg">Extract</button>
-  </div>
-  <div class="flex flex-col w-72 gap-2">
-    <button class="btn-md">Open Extract Directory</button>
+    <Button size="large" color="primary">Extract</Button>
+  </Stack>
+  <Stack direction="vertical" spacing="small" class="w-72">
+    <Button>Open Extract Directory</Button>
     <OptionGroup>
-      <h3 slot="heading">Options</h3>
+      <Text level="h3" slot="heading">Options</Text>
       <OptionBoolean>Create entity sprites</OptionBoolean>
       <OptionBoolean>Generate string hashes</OptionBoolean>
       <OptionBoolean>Extract .wav files</OptionBoolean>
       <OptionBoolean>Extract .ogg files</OptionBoolean>
       <OptionBoolean>Reuse extracted assets</OptionBoolean>
     </OptionGroup>
-  </div>
+  </Stack>
 </section>
