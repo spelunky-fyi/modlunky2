@@ -69,8 +69,7 @@ If the command is not found, you may have forgotten to activate the virtualenv.
 
 [VS Code](https://code.visualstudio.com/) is the most common IDE used for Modlunky2 development.
 You'll need the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python).
-Since we require strict formatting, it's helpful to enable `editor.formatOnSave` and
-set `python.formatting.provider` to `black`.
+A settings.json file is included with common settings.
 
 ### Building `modlunky2.exe`
 
