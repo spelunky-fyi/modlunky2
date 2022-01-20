@@ -1,48 +1,73 @@
-# Svelte + TS + Vite
+# Modlunky2 Web Frontend
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+## Environment Setup
+
+We use [pnpm](https://pnpm.io/installation) to manage npm packages.
+
+To install the dependencies and setup your environment run the following from this directory.
+
+```shell
+pnpm install
+```
 
 ## Recommended IDE Setup
 
-[VSCode](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+[VSCode](https://code.visualstudio.com/) w/ the following extensions:
 
-## Need an official Svelte framework?
+- [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode)
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+  With the following settings included.
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+```json
+{
+  "editor.formatOnSave": true,
+  "svelte.plugin.typescript.enable": true,
+  "eslint.validate": ["javascript", "typescript", "svelte"],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
+```
 
-## Technical considerations
+## Development
 
-**Why use this over SvelteKit?**
+### Running Dev Server
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-  `vite dev` and `vite build` wouldn't work in a SvelteKit environment, for example.
+```shell
+npnm dev
+```
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+### Formatting
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+We recommend you setup your editor to format on save but if you need to check/fix formatting you can use the following.
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+**Check Formatting**
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+```shell
+pnpm run format-check
+```
 
-**Why include `.vscode/extensions.json`?**
+**Format Code**
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+```shell
+pnpm run format-write
+```
 
-**Why enable `allowJs` in the TS template?**
+### Linting
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+To ensure we follow best practices we use ESLint. We recommend you use an IDE with an
+ESLint plugin but if you need run the lint manually you can run the following.
 
-**Why is HMR not preserving my local component state?**
+```shell
+pnpm run lint
+```
 
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+### Type Checking
 
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
+We use TypeScript for type checking. We recommend you use an IDE that can provide inline
+type checking but if you need to check manually you can run the following.
 
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+```shell
+pnpm run check
 ```
