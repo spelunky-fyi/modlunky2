@@ -1,11 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import Icon from "svelte-awesome";
-  import {
-    faBars,
-    faFolder,
-    faTrashAlt,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faBars, faFolder, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
   import { Stack, Text } from "../../common";
   import ModLogo from "./ModLogo.svelte";
   import ModListItemButton from "./ModListItemButton.svelte";
@@ -29,10 +25,7 @@
     <Text level="h3" class="font-black font-roboto">{name}</Text>
   </Stack>
 
-  <Stack
-    spacing="small"
-    class="p-2 opacity-0 group-hover:opacity-80 transition"
-  >
+  <Stack spacing="small" class="p-2 opacity-0 group-hover:opacity-80 transition">
     <ModListItemButton on:click={() => dispatch("opendirectory", id)}>
       <Icon data={faFolder} />
     </ModListItemButton>

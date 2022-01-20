@@ -11,16 +11,14 @@
     large: "6",
   };
 
-  const s =
-    typeof spacing === "number" ? `[${spacing}px]` : stackSpacing[spacing];
+  const s = typeof spacing === "number" ? `[${spacing}px]` : stackSpacing[spacing];
 </script>
 
 <div
   {...$$props}
   on:click
-  class="flex items-{align} justify-{justify} {spacing === 'none'
-    ? ''
-    : `gap-${s}`} {direction === 'horizontal'
+  class="flex items-{align} justify-{justify} {spacing === 'none' ? '' : `gap-${s}`} {direction ===
+  'horizontal'
     ? 'flex-row'
     : 'flex-col'} {$$restProps.class || ''}"
 >

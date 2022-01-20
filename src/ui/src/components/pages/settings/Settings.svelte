@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Button,
-    Panel,
-    Stack,
-    Text,
-    TextInput,
-    OptionGroup,
-  } from "../../common";
+  import { Button, Panel, Stack, Text, TextInput, OptionGroup } from "../../common";
 </script>
 
 <Stack align="center" justify="center" class="p-16 flex-1">

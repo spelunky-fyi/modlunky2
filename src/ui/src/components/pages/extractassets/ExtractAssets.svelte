@@ -1,12 +1,5 @@
 <script>
-  import {
-    Button,
-    Stack,
-    Text,
-    FileSelect,
-    OptionBoolean,
-    OptionGroup,
-  } from "../../common";
+  import { Button, Stack, Text, FileSelect, OptionBoolean, OptionGroup } from "../../common";
 </script>
 
 <section class="flex-1 flex gap-4">

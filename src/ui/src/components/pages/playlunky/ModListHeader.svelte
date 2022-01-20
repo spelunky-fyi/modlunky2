@@ -4,11 +4,7 @@
   export let count: number = 0;
 </script>
 
-<Stack
-  spacing="small"
-  align="center"
-  class="uppercase tracking-widest font-semibold"
->
+<Stack spacing="small" align="center" class="uppercase tracking-widest font-semibold">
   <Text level="h4">
     <slot />
   </Text>

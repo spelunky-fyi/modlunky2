@@ -18,14 +18,10 @@
 <OptionGroup>
   <Text level="h3" slot="heading">Version Select</Text>
   <Stack spacing="none">
-    <Button size="tiny" class="flex-1 rounded-l rounded-r-none border-r-0"
-      >stable</Button
-    >
+    <Button size="tiny" class="flex-1 rounded-l rounded-r-none border-r-0">stable</Button>
     <Button size="tiny" class="flex-1 rounded-none border-x-0">nightly</Button>
     <Stack class="flex-1" spacing="none">
-      <Button size="tiny" class="flex-1 rounded-none border-x-0"
-        >{$version.revision}</Button
-      >
+      <Button size="tiny" class="flex-1 rounded-none border-x-0">{$version.revision}</Button>
       <Menu class="rounded-l-none rounded-r">
         <Icon data={faChevronDown} />
         <Stack direction="vertical" spacing="none" slot="content">
@@ -41,9 +37,7 @@
                 <Text level="span">{v.revision}</Text>
               </Stack>
               {#if v.installed}
-                <Button color="danger" class="p-1"
-                  ><Icon data={faTrashAlt} /></Button
-                >
+                <Button color="danger" class="p-1"><Icon data={faTrashAlt} /></Button>
               {:else}
                 <Button color="info"><Icon data={faDownload} /></Button>
               {/if}
