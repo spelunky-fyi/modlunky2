@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Button,
-    Stack,
-    Text,
-    OptionBoolean,
-    OptionGroup,
-    OptionNumber,
-  } from "../../common";
+  import { Button, Stack, Text, OptionBoolean, OptionGroup, OptionNumber } from "../../common";
   import VersionSelect from "./VersionSelect.svelte";
 </script>
 

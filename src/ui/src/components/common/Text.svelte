@@ -9,10 +9,7 @@
 </script>
 
 {#if level === "p"}
-  <p
-    {...$$props}
-    class="{textStyles.base} text-sm leading-relaxed {$$restProps.class || ''}"
-  >
+  <p {...$$props} class="{textStyles.base} text-sm leading-relaxed {$$restProps.class || ''}">
     <slot />
   </p>
 {:else if level === "span"}
@@ -28,10 +25,7 @@
     <slot />
   </h2>
 {:else if level === "h3"}
-  <h3
-    {...$$props}
-    class="{textStyles.base} text-base {$$restProps.class || ''}"
-  >
+  <h3 {...$$props} class="{textStyles.base} text-base {$$restProps.class || ''}">
     <slot />
   </h3>
 {:else if level === "h4"}

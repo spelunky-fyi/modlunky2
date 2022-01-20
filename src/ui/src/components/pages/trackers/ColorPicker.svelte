@@ -3,21 +3,20 @@
   import iro from "@jaames/iro";
 
   let colorPicker;
-  export let value: string = '#ffffff';
-  
+  export let value: string = "#ffffff";
+
   onMount(() => {
-    colorPicker = iro.ColorPicker(colorPicker, {
-    });
+    colorPicker = iro.ColorPicker(colorPicker, {});
 
     function handleColorChange(color) {
       value = color.hexString;
     }
 
-    colorPicker.on('color:change', handleColorChange);
+    colorPicker.on("color:change", handleColorChange);
 
     return () => {
-      colorPicker.off('color:change', handleColorChange);
-    }
+      colorPicker.off("color:change", handleColorChange);
+    };
   });
 </script>
 

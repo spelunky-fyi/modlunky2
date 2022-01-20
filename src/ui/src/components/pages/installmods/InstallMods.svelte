@@ -1,28 +1,14 @@
 <script lang="ts">
-  import {
-    Button,
-    FileSelect,
-    Panel,
-    Stack,
-    Text,
-    TextInput,
-  } from "../../common";
+  import { Button, FileSelect, Panel, Stack, Text, TextInput } from "../../common";
 </script>
 
 <Stack align="center" justify="center" class="flex-1">
   <Stack justify="center">
     <Panel rounded padding="large">
-      <Stack
-        direction="vertical"
-        justify="between"
-        spacing="small"
-        class="h-full"
-      >
+      <Stack direction="vertical" justify="between" spacing="small" class="h-full">
         <Text level="h3">spelunky.fyi Installation</Text>
         <Text level="h2" class="mt-auto">Install Code</Text>
-        <Text level="p"
-          >Enter the 'Install Code' from a mod page on spelunky.fyi</Text
-        >
+        <Text level="p">Enter the 'Install Code' from a mod page on spelunky.fyi</Text>
         <Stack spacing="small">
           <TextInput class="flex-1" />
           <Button color="primary">Install</Button>

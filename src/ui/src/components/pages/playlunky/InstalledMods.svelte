@@ -7,12 +7,6 @@
 <ModListHeader count={$filteredInstalledMods.length}>Installed</ModListHeader>
 <ul>
   {#each $filteredInstalledMods as mod (mod.id)}
-    <ModListItem
-      name={mod.name}
-      id={mod.id}
-      on:toggle
-      on:opendirectory
-      on:uninstall
-    />
+    <ModListItem name={mod.name} id={mod.id} on:toggle on:opendirectory on:uninstall />
   {/each}
 </ul>

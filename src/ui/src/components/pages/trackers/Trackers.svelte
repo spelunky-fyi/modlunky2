@@ -27,25 +27,10 @@
         />
       </Stack>
       <Stack spacing="small">
-        <Button
-          size="tiny"
-          class="flex-1"
-          on:click={() => ($colorKey = "#ff00ff")}>Magenta</Button
-        >
-        <Button
-          size="tiny"
-          class="flex-1"
-          on:click={() => ($colorKey = "#00ff00")}>Green</Button
-        >
-        <Button
-          size="tiny"
-          class="flex-1"
-          on:click={() => ($colorKey = "#0000ff")}>Blue</Button
-        >
-        <Button
-          size="tiny"
-          class="flex-1"
-          on:click={() => (showPicker = !showPicker)}
+        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#ff00ff")}>Magenta</Button>
+        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#00ff00")}>Green</Button>
+        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#0000ff")}>Blue</Button>
+        <Button size="tiny" class="flex-1" on:click={() => (showPicker = !showPicker)}
           >{showPicker ? "Close" : "Custom"}</Button
         >
       </Stack>

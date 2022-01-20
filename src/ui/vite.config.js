@@ -17,9 +17,7 @@ export default defineConfig({
         [
           /^elevation-(.*)$/,
           ([, c]) =>
-            c === "0"
-              ? "bg-zinc-50 dark:bg-zinc-900"
-              : `bg-zinc-${c}00 dark:bg-zinc-${9 - c}00`,
+            c === "0" ? "bg-zinc-50 dark:bg-zinc-900" : `bg-zinc-${c}00 dark:bg-zinc-${9 - c}00`,
         ],
       ],
       presets: [

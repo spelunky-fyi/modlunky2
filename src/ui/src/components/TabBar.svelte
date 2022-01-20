@@ -10,7 +10,7 @@
 <div class="flex px-3 pt-5 elevation-2">
   {#each tabs as tab, index}
     <button
-      on:click={() => (selectTab(index))}
+      on:click={() => selectTab(index)}
       disabled={tab.disabled}
       class="tab text-sm"
       class:opacity-50={tab.disabled}

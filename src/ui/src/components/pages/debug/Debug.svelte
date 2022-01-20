@@ -10,13 +10,7 @@
     "info",
   ];
 
-  const buttonSizes: ButtonSize[] = [
-    "tiny",
-    "small",
-    "default",
-    "large",
-    "huge",
-  ];
+  const buttonSizes: ButtonSize[] = ["tiny", "small", "default", "large", "huge"];
 </script>
 
 <Stack align="center" justify="center" class="flex-1">

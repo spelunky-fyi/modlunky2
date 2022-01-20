@@ -1,10 +1,5 @@
 <script lang="ts">
-  import {
-    enabledMods,
-    filteredEnabledMods,
-    mods,
-    searchInput,
-  } from "../../../store";
+  import { enabledMods, filteredEnabledMods, mods, searchInput } from "../../../store";
   import { dndzone } from "svelte-dnd-action";
   import ModListItem from "./ModListItem.svelte";
   import ModListHeader from "./ModListHeader.svelte";
