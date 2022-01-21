@@ -1,8 +1,7 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import Unocss from "unocss/vite";
-import { extractorSvelte, presetWebFonts } from "unocss";
-import presetWind from "@unocss/preset-wind";
+import { extractorSvelte, presetWebFonts, presetWind } from "unocss";
 
 // https://vitejs.dev/config/
 export default defineConfig({
