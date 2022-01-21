@@ -1980,6 +1980,7 @@ class LevelsTab(Tab):
         self.draw_mode.append(["shopkeeper_vat", 12])
         self.draw_mode.append(["totem_trap", 2])
         self.draw_mode.append(["lion_trap", 2])
+        self.draw_mode.append(["vlad", 4])
 
         combo_tile_ids = []
         for tile_info in VALID_TILE_CODES:

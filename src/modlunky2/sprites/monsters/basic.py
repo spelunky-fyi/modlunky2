@@ -10,9 +10,11 @@ class Basic1(BaseJsonSpriteLoader):
     _chunk_map = {
         "snake": (0, 0, 1, 1),
         "bat": (6, 0, 7, 1),
+        "bat_flying": (6, 1, 7, 2),
         "fly": (12, 0, 13, 1),
         "skeleton": (0, 2, 1, 3),
-        "spider": (0, 3, 1, 4),
+        "spider": (8, 3, 9, 4),
+        "spider_falling": (10, 3, 11, 4),
         "ear": (0, 4, 1, 5),
         "shopkeep": (0, 6, 1, 7),
         "shopkeeper": (0, 6, 1, 7),
@@ -51,7 +53,9 @@ class Basic2(BaseJsonSpriteLoader):
     _chunk_size = 128
     _chunk_map = {
         "vampire": (6, 1, 7, 2),
+        "vampire_flying": (0, 1, 1, 2),
         "vlad": (6, 3, 7, 4),
+        "vlad_flying": (0, 3, 1, 4),
         "caveman": (0, 5, 1, 6),
         "caveman_asleep": (8, 6, 9, 7),
         "bodyguard": (0, 8, 1, 9),
