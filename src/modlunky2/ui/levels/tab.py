@@ -413,6 +413,10 @@ class LevelsTab(Tab):
         self.editor_tab_control = ttk.Notebook(self)
         self.editor_tab_control.grid(row=0, column=0, sticky="nw")
 
+        self.editor_tab_control.bind_all(
+            "<Control-s>", lambda e: self.save_changes_shortcut()
+        )
+
         self.single_room_editor_tab = ttk.Frame(self.editor_tab_control)
         self.full_level_editor_tab = ttk.Frame(self.editor_tab_control)
         self.last_selected_editor_tab = self.single_room_editor_tab
@@ -1974,6 +1978,8 @@ class LevelsTab(Tab):
         self.draw_mode.append(["plasma_cannon", 4])
         self.draw_mode.append(["lockedchest", 4])
         self.draw_mode.append(["shopkeeper_vat", 12])
+        self.draw_mode.append(["totem_trap", 2])
+        self.draw_mode.append(["lion_trap", 2])
 
         combo_tile_ids = []
         for tile_info in VALID_TILE_CODES:
@@ -2974,6 +2980,15 @@ class LevelsTab(Tab):
                 return LevelsTab.VanillaSetroomType.FRONT
 
         return LevelsTab.VanillaSetroomType.NONE
+
+    # Called whenever CTRL+S is pressed, saves depending on editor tab
+    def save_changes_shortcut(self):
+        if self.editor_tab_control.index(self.editor_tab_control.select()) == 0:
+            # Vanilla room editor
+            self.save_changes()
+        elif self.editor_tab_control.index(self.editor_tab_control.select()) == 1:
+            # Custom level editor
+            self.save_changes_full()
 
     def save_changes_full(self):
         if not self.save_needed:

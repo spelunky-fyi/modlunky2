@@ -109,3 +109,18 @@ class ChainAndBlocksCeilingSheet(BaseSpriteLoader):
     _chunk_map = {
         "chainandblocks_ceiling": (0, 0, 1, 1),
     }
+
+
+class StickyTrapSheet(BaseSpriteLoader):
+    _sprite_sheet_path = Path("static/images/sticky_trap.png")
+    _chunk_size = 128
+    _chunk_map = {
+        "sticky_trap": (0, 0, 1, 2),
+    }
+
+
+EXTRA_TILECODE_CLASSES = [
+    ChainAndBlocksCeilingSheet,
+    StickyTrapSheet,
+    TreasureVaultChestSheet,
+]

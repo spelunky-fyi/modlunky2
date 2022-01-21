@@ -30,7 +30,7 @@ class HiveStyledFloorSheet(AbstractFloorStyledSheet):
 class DuatStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "duat"
     _additional_chunks = {
-        "duat_floor": (7, 2, 8, 3),
+        "duat_floor": (1, 3, 2, 4),
         "altar_duat": (8, 1, 10, 2),
         "push_block": (7, 2, 8, 3),
     }
@@ -40,7 +40,7 @@ class GoldStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "gold"
     _additional_chunks = {
         "door2": (8, 6, 10, 8),
-        "cog_floor": (7, 2, 8, 3),
+        "cog_floor": (1, 3, 2, 4),
         "slidingwall_ceiling": (5, 8, 6, 10),
         "slidingwall_switch": (6, 8, 7, 9),
         "gold_crushtraplarge": (6, 0, 8, 2),
@@ -114,7 +114,7 @@ class TempleStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "temple"
     _additional_chunks = {
         "door2": (8, 6, 10, 8),
-        "temple_floor": (7, 2, 8, 3),
+        "temple_floor": (1, 3, 2, 4),
         "push_block": (7, 2, 8, 3),
     }
 

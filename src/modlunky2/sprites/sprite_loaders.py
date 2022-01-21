@@ -57,9 +57,8 @@ from modlunky2.sprites.monsters.big import (
     OlmecAndMech,
 )
 from modlunky2.sprites.tilecode_extras import (
-    ChainAndBlocksCeilingSheet,
+    EXTRA_TILECODE_CLASSES,
     TilecodeExtras,
-    TreasureVaultChestSheet,
 )
 from modlunky2.sprites.menu_leader import MenuLeaderSheet
 from modlunky2.sprites.menu_basic import MenuBasicSheet, PetHeadsSheet
@@ -126,6 +125,4 @@ def get_all_sprite_loaders(
         # texture is bundled with the source rather than coming
         # from the extracted assets.
         TilecodeExtras(BASE_DIR),
-        TreasureVaultChestSheet(BASE_DIR),
-        ChainAndBlocksCeilingSheet(BASE_DIR),
-    ]
+    ] + [class_(BASE_DIR) for class_ in EXTRA_TILECODE_CLASSES]

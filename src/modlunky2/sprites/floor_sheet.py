@@ -1,4 +1,5 @@
 from modlunky2.sprites.base_classes import AbstractFloorSheet
+from pathlib import Path
 
 __all__ = [
     "CaveFloorSheet",
@@ -97,3 +98,9 @@ class EggplantFloorSheet(AbstractFloorSheet):
 class SurfaceFloorSheet(AbstractFloorSheet):
     biome_name = "surface"
     _additional_chunks = {"surface_floor": (0, 0, 1, 1)}
+
+    def __init__(self, base_path: Path):
+        super().__init__(base_path=base_path)
+        new_map = self._chunk_map.copy()
+        new_map.pop("push_block")
+        self._chunk_map = new_map
