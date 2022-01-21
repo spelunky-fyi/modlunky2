@@ -124,6 +124,7 @@ class StickyTrapSheet(BaseSpriteLoader):
     _chunk_size = 128
     _chunk_map = {
         "sticky_trap": (0, 0, 1, 2),
+    }
 
 
 EXTRA_TILECODE_CLASSES = [
