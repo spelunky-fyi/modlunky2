@@ -31,7 +31,7 @@ class _RobinHoodTableMeta:
 
 @dataclass(frozen=True)
 class _RobinHoodTableEntry:
-    uid_plus1: int = struct_field(0x0, sc_uint32)
+    hashed_key: int = struct_field(0x0, sc_uint32)
     # We intentionally don't use PolyPointer, to defer reading the Entity until
     # we know we have the right entry.
     entity_addr: int = struct_field(0x8, sc_void_p)
@@ -95,15 +95,15 @@ class UidEntityMap:
                 # Reading the bytes for the entry failed.
                 return 0
 
-            if entry.uid_plus1 == target_key:
+            if entry.hashed_key == target_key:
                 return entry.entity_addr
 
-            if entry.uid_plus1 == 0:
+            if entry.hashed_key == 0:
                 # We found an 'empty' entry before our target. It must not exist.
                 return 0
 
             mask = self.meta.mask
-            if (target_key & mask) > (entry.uid_plus1 & mask):
+            if (target_key & mask) > (entry.hashed_key & mask):
                 # We've found an entry that, if the target existed, would be further away than our target.
                 # The target must not exist.
                 return 0
@@ -119,9 +119,15 @@ class UidEntityMap:
         if addr == 0:
             return self.empty_poly
 
-        entity = self.mem_ctx.type_at_addr(Entity, addr)
+        entity: Entity = self.mem_ctx.type_at_addr(Entity, addr)
         if entity is None:
             return self.empty_poly
+        if entity.uid != uid:
+            logger.warning(
+                "Entity lookup failed with ID mismatch. Expected %d, got %d",
+                uid,
+                entity.uid,
+            )
 
         return PolyPointer(addr, entity, self.mem_ctx)
 
