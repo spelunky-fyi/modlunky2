@@ -4,7 +4,7 @@
   export let disabled = false;
 
   const buttonStyles = {
-    base: "flex items-center justify-center gap-2.5 border-none rounded transition font-medium font-roboto cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
+    base: "flex items-center justify-center gap-2.5 rounded transition font-medium font-roboto cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg border-none",
 
     size: {
       default: "px-2.5 py-1.5 text-base",
@@ -16,16 +16,16 @@
 
     colors: {
       default:
-        "bg-zinc-500 active:bg-opacity-80 hover:bg-zinc-400 disabled:bg-zinc-500 text-zinc-100",
+        "bg-zinc-200 dark:bg-zinc-800 active:bg-opacity-50 dark:active:bg-opacity-50 hover:bg-zinc-100 hover:bg-opacity-90 disabled:bg-zinc-500 text-zinc-700 dark:text-zinc-100",
       primary:
-        "bg-emerald-500 hover:bg-emerald-400 active:bg-opacity-60 disabled:bg-emerald-500 text-emerald-900",
+        "bg-blue-500 hover:bg-blue-400 active:bg-opacity-60 disabled:bg-blue-500 text-blue-100",
       transparent:
-        "bg-zinc-400 bg-opacity-0 active:bg-zinc-500 hover:bg-opacity-25 text-zinc-600 dark:text-zinc-100",
+        "bg-zinc-400 bg-opacity-0 active:bg-zinc-500 hover:bg-opacity-25 text-zinc-600 dark:text-zinc-100 hover:shadow-none",
       danger:
-        "bg-red-600 bg-opacity-75 active:bg-red-700 hover:bg-red-500 disabled:bg-red-600 text-red-100",
+        "bg-red-600 bg-opacity-70 active:bg-red-700 active:bg-opacity-80 hover:bg-red-500 disabled:bg-red-600 text-red-100",
       warning:
-        "bg-amber-600 hover:bg-amber-500 active:bg-opacity-75 disabled:bg-amber-600 text-amber-100",
-      info: "bg-sky-600 hover:bg-sky-500 active:bg-opacity-75 disabled:bg-sky-600 text-sky-100",
+        "bg-amber-600 hover:bg-amber-500 active:bg-opacity-70 disabled:bg-amber-600 text-amber-100",
+      info: "bg-sky-600 hover:bg-sky-500 active:bg-opacity-70 disabled:bg-sky-600 text-sky-100",
     },
   };
 </script>
