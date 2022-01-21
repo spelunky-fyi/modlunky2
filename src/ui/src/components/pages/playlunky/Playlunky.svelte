@@ -1,7 +1,5 @@
 <script lang="ts">
   import { searchInput, toggleMod } from "../../../store";
-  import Icon from "svelte-awesome";
-  import { faFolder, faSyncAlt } from "@fortawesome/free-solid-svg-icons";
   import EnabledMods from "./EnabledMods.svelte";
   import InstalledMods from "./InstalledMods.svelte";
   import PlaylunkyOptions from "./PlaylunkyOptions.svelte";
@@ -33,10 +31,10 @@
     <Stack direction="vertical" spacing="none">
       <Stack class="mb-2" spacing="small">
         <Button size="small">
-          <Icon data={faSyncAlt} />
+          <div class="i-fa-solid-sync-alt" />
         </Button>
         <Button size="small">
-          <Icon data={faFolder} />
+          <div class="i-fa-solid-folder" />
         </Button>
         <TextInput
           placeholder="Search mods..."

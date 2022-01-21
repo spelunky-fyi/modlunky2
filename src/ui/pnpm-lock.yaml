@@ -2,10 +2,13 @@ lockfileVersion: 5.3
 
 specifiers:
   '@fortawesome/free-solid-svg-icons': ^5.15.4
+  '@iconify-json/fa-solid': ^1.0.3
   '@sveltejs/vite-plugin-svelte': ^1.0.0-next.34
   '@tsconfig/svelte': ^2.0.1
   '@typescript-eslint/eslint-plugin': ^5.10.0
   '@typescript-eslint/parser': ^5.10.0
+  '@unocss/preset-wind': ^0.22.5
+  '@unocss/reset': ^0.22.5
   eslint: ^7.32.0
   eslint-plugin-css: ^0.6.0
   eslint-plugin-import: ^2.25.4
@@ -25,10 +28,13 @@ specifiers:
 
 devDependencies:
   '@fortawesome/free-solid-svg-icons': 5.15.4
+  '@iconify-json/fa-solid': 1.0.3
   '@sveltejs/vite-plugin-svelte': 1.0.0-next.34_svelte@3.46.2+vite@2.7.13
   '@tsconfig/svelte': 2.0.1
   '@typescript-eslint/eslint-plugin': 5.10.0_9c06dad77070e6bdf68ece53702a3834
   '@typescript-eslint/parser': 5.10.0_eslint@7.32.0+typescript@4.5.5
+  '@unocss/preset-wind': 0.22.5
+  '@unocss/reset': 0.22.5
   eslint: 7.32.0
   eslint-plugin-css: 0.6.0_eslint@7.32.0
   eslint-plugin-import: 2.25.4_eslint@7.32.0
@@ -141,6 +147,12 @@ packages:
 
   /@humanwhocodes/object-schema/1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
+    dev: true
+
+  /@iconify-json/fa-solid/1.0.3:
+    resolution: {integrity: sha512-bS9iiMP3yKVApgCbSG7AMrJ13vNq8kOjLxNUxuPonwcT4hEmJAgN1L5VUPfc8+gjlXMubm+x04H9WEU6OWMgwQ==}
+    dependencies:
+      '@iconify/types': 1.0.12
     dev: true
 
   /@iconify/types/1.0.12:

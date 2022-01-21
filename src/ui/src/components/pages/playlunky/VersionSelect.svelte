@@ -1,12 +1,11 @@
 <script lang="ts">
-  import Icon from "svelte-awesome";
-  import {
-    faCheck,
-    faChevronDown,
-    faDownload,
-    faSyncAlt,
-    faTrashAlt,
-  } from "@fortawesome/free-solid-svg-icons";
+  // import {
+  //   faCheck,
+  //   faChevronDown,
+  //   faDownload,
+  //   faSyncAlt,
+  //   faTrashAlt,
+  // } from "@fortawesome/free-solid-svg-icons";
   import { version, versions } from "../../../store";
   import { Button, Stack, Text, OptionGroup, Menu } from "../../common";
 
@@ -23,7 +22,7 @@
     <Stack class="flex-1" spacing="none">
       <Button size="tiny" class="flex-1 rounded-none border-x-0">{$version.revision}</Button>
       <Menu class="rounded-l-none rounded-r">
-        <Icon data={faChevronDown} />
+        <div class="i-fa-solid-chevron-down" />
         <Stack direction="vertical" spacing="none" slot="content">
           {#each versions as v, index (v.id)}
             <div
@@ -32,14 +31,18 @@
             >
               <Stack justify="between">
                 {#if v.installed}
-                  <Icon data={faCheck} scale={0.5} />
+                  <div class="i-fa-solid-check" />
                 {/if}
                 <Text level="span">{v.revision}</Text>
               </Stack>
               {#if v.installed}
-                <Button color="danger" class="p-1"><Icon data={faTrashAlt} /></Button>
+                <Button color="danger" class="p-1">
+                  <div class="i-fa-solid-trash-alt" />
+                </Button>
               {:else}
-                <Button color="info"><Icon data={faDownload} /></Button>
+                <Button color="info">
+                  <div class="i-fa-solid-download" />
+                </Button>
               {/if}
             </div>
           {/each}
@@ -47,7 +50,7 @@
       </Menu>
     </Stack>
     <Button class="ml-2">
-      <Icon data={faSyncAlt} />
+      <div class="i-fa-solid-sync-alt" />
     </Button>
   </Stack>
 </OptionGroup>
