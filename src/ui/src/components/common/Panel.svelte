@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let rounded: boolean = false;
+  export let rounded = false;
   export let padding: PanelPadding = "default";
 
   const paddingSizes = {

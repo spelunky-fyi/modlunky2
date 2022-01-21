@@ -7,11 +7,11 @@
   const flipDurationMs = 120;
   let dragDisabled = true;
 
-  function handleConsider(event) {
+  function handleConsider(event: CustomEvent) {
     $mods = [...event.detail.items];
   }
 
-  function handleFinalize(event) {
+  function handleFinalize(event: CustomEvent) {
     $mods = [...event.detail.items];
     dragDisabled = true;
   }
@@ -23,10 +23,6 @@
   function stopDrag() {
     dragDisabled = true;
   }
-
-  function transformDraggedElement(draggedEl: HTMLElement, data, index) {
-    draggedEl.classList.add("animate-pulse");
-  }
 </script>
 
 <ModListHeader count={$enabledMods.length}>Enabled</ModListHeader>
@@ -35,7 +31,6 @@
     items: $mods,
     dragDisabled,
     flipDurationMs,
-    transformDraggedElement,
     dropTargetStyle: {},
   }}
   on:consider={handleConsider}

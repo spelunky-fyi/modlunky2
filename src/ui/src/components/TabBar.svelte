@@ -2,7 +2,7 @@
   import { tabs } from "../tabs";
   import { activeTabIndex } from "../store";
 
-  function selectTab(index) {
+  function selectTab(index: number) {
     $activeTabIndex = index;
   }
 </script>

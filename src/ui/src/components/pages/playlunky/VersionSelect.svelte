@@ -10,7 +10,7 @@
   import { version, versions } from "../../../store";
   import { Button, Stack, Text, OptionGroup, Menu } from "../../common";
 
-  function selectVersion(index) {
+  function selectVersion(index: number) {
     $version = versions[index];
   }
 </script>

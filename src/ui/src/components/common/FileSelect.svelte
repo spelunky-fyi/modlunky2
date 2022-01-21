@@ -6,7 +6,8 @@
   let text: string;
 
   $: if (files && files.length > 0) {
-    text = files.item(0).name;
+    const file = files.item(0);
+    if (file) text = file.name;
   }
 </script>
 
