@@ -6,8 +6,6 @@ specifiers:
   '@tsconfig/svelte': ^2.0.1
   '@typescript-eslint/eslint-plugin': ^5.10.0
   '@typescript-eslint/parser': ^5.10.0
-  '@unocss/preset-wind': ^0.22.5
-  '@unocss/reset': ^0.22.5
   eslint: ^7.32.0
   eslint-plugin-css: ^0.6.0
   eslint-plugin-import: ^2.25.4
@@ -31,8 +29,6 @@ devDependencies:
   '@tsconfig/svelte': 2.0.1
   '@typescript-eslint/eslint-plugin': 5.10.0_9c06dad77070e6bdf68ece53702a3834
   '@typescript-eslint/parser': 5.10.0_eslint@7.32.0+typescript@4.5.5
-  '@unocss/preset-wind': 0.22.5
-  '@unocss/reset': 0.22.5
   eslint: 7.32.0
   eslint-plugin-css: 0.6.0_eslint@7.32.0
   eslint-plugin-import: 2.25.4_eslint@7.32.0

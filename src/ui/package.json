@@ -17,8 +17,6 @@
     "@tsconfig/svelte": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
-    "@unocss/preset-wind": "^0.22.5",
-    "@unocss/reset": "^0.22.5",
     "eslint": "^7.32.0",
     "eslint-plugin-css": "^0.6.0",
     "eslint-plugin-import": "^2.25.4",
