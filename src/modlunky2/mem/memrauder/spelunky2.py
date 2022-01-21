@@ -39,6 +39,21 @@ class _RobinHoodTableEntry:
     SIZE: ClassVar[int] = 16
 
 
+# This is the hash function used in version 1.25.2 .
+# The name comes from the apparent source https://github.com/skeeto/hash-prospector
+def _lowbias32(x: int):  # pylint: disable=invalid-name
+    # Note: Since python ints can grow arbitrarily large, we use bitwise-and to take only the lowest 32-bits.
+    # Since right-shift can only reduce the magnitude, we only mask after the multiplication operations.
+    x ^= x >> 16
+    x *= 0x7FEB352D
+    x &= 0xFFFFFFFF
+    x ^= x >> 15
+    x *= 0x846CA68B
+    x &= 0xFFFFFFFF
+    x ^= x >> 16
+    return x
+
+
 @dataclass(frozen=True)
 class UidEntityMap:
     meta: _RobinHoodTableMeta
@@ -71,16 +86,16 @@ class UidEntityMap:
             ) from err
 
     def _get_addr(self, uid):
-        target_uid_plus1 = uid + 1
+        target_key = _lowbias32(uid + 1)
 
-        cur_index = target_uid_plus1 & self.meta.mask
+        cur_index = target_key & self.meta.mask
         while True:
             entry = self._get_table_entry(cur_index)
             if entry is None:
                 # Reading the bytes for the entry failed.
                 return 0
 
-            if entry.uid_plus1 == target_uid_plus1:
+            if entry.uid_plus1 == target_key:
                 return entry.entity_addr
 
             if entry.uid_plus1 == 0:
@@ -88,7 +103,7 @@ class UidEntityMap:
                 return 0
 
             mask = self.meta.mask
-            if (target_uid_plus1 & mask) > (entry.uid_plus1 & mask):
+            if (target_key & mask) > (entry.uid_plus1 & mask):
                 # We've found an entry that, if the target existed, would be further away than our target.
                 # The target must not exist.
                 return 0
