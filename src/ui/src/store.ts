@@ -1,6 +1,8 @@
 import type { Writable } from "svelte/store";
 import { derived, writable } from "svelte/store";
 
+export const theme = writable("dark");
+
 export const activeTabIndex = writable(0);
 
 let id_counter = 0;

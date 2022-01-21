@@ -22,7 +22,7 @@ export default defineConfig({
       ],
       presets: [
         presetWind({
-          dark: "media",
+          dark: "class",
         }),
         presetWebFonts({
           provider: "google",
