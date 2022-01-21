@@ -114,7 +114,7 @@ class TempleStyledFloorSheet(AbstractFloorStyledSheet):
     styled_name = "temple"
     _additional_chunks = {
         "door2": (8, 6, 10, 8),
-        "temple_floor": (8, 9, 9, 10),
+        "temple_floor": (1, 3, 2, 4),
         "push_block": (7, 2, 8, 3),
     }
 
