@@ -18,11 +18,14 @@
     ],
     "overrides": [
         {
-            "files": ["*.svelte"],
+            "files": [
+                "*.svelte"
+            ],
             "processor": "svelte3/svelte3"
         }
     ],
     "rules": {
+        "no-undef": "off"
     },
     "settings": {
         "svelte3/typescript": true
