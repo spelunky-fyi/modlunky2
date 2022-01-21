@@ -17,18 +17,6 @@ pnpm install
 - [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode)
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-  With the following settings included.
-
-```json
-{
-  "editor.formatOnSave": true,
-  "svelte.plugin.typescript.enable": true,
-  "eslint.validate": ["javascript", "typescript", "svelte"],
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}
-```
 
 ## Development
 

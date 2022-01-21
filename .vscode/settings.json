@@ -2,4 +2,14 @@
     "editor.formatOnSave": true,
     "python.formatting.provider": "black",
     "python.linting.pylintEnabled": true,
+    "svelte.plugin.typescript.enable": true,
+    "eslint.validate": [
+        "javascript",
+        "typescript",
+        "svelte"
+    ],
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "files.eol": "\n"
 }
