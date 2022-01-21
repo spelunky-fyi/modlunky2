@@ -1,7 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import Icon from "svelte-awesome";
-  import { faBars, faFolder, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
   import { Stack, Text } from "../../common";
   import ModLogo from "./ModLogo.svelte";
   import ModListItemButton from "./ModListItemButton.svelte";
@@ -27,10 +25,10 @@
 
   <Stack spacing="small" class="p-2 opacity-0 group-hover:opacity-80 transition">
     <ModListItemButton on:click={() => dispatch("opendirectory", id)}>
-      <Icon data={faFolder} />
+      <div class="i-fa-solid-folder" />
     </ModListItemButton>
     <ModListItemButton on:click={() => dispatch("uninstall", id)}>
-      <Icon data={faTrashAlt} />
+      <div class="i-fa-solid-trash-alt" />
     </ModListItemButton>
     {#if draggable}
       <ModListItemButton
@@ -40,7 +38,7 @@
         on:touchstart
         on:touchend
       >
-        <Icon data={faBars} />
+        <div class="i-fa-solid-bars" />
       </ModListItemButton>
     {/if}
   </Stack>
