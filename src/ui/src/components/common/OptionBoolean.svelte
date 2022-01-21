@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let value: boolean = false;
+  export let value = false;
 </script>
 
 <label class="flex items-center gap-1.5 text-xs">

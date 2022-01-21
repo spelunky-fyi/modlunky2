@@ -1,8 +1,8 @@
 <script lang="ts">
   import Text from "./Text.svelte";
 
-  export let label: string = "";
-  export let value: string = "";
+  export let label = "";
+  export let value = "";
 
   const baseStyle =
     "w-full px-2 py-1 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-700 dark:focus:bg-opacity-90 focus:shadow-sm focus:outline-none transition";

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Stack, Text } from "../../common";
 
-  export let count: number = 0;
+  export let count = 0;
 </script>
 
 <Stack spacing="small" align="center" class="uppercase tracking-widest font-semibold">

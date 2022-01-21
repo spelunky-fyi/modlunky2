@@ -2,17 +2,17 @@
   import { onMount } from "svelte";
   import Button from "./Button.svelte";
 
-  let open: boolean = false;
-  let menu: HTMLElement = null;
+  let open = false;
+  let menu: HTMLElement;
 
   onMount(() => {
-    const handleOutsideClick = (event) => {
-      if (open && !menu.contains(event.target)) {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (open && !menu.contains(event.target as Node)) {
         open = false;
       }
     };
 
-    const handleEscape = (event) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (open && event.key === "Escape") {
         open = false;
       }

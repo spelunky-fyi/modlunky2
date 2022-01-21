@@ -6,9 +6,9 @@
   import ModLogo from "./ModLogo.svelte";
   import ModListItemButton from "./ModListItemButton.svelte";
 
-  export let name: string = "Mod Name";
-  export let draggable: boolean = false;
-  export let dragging: boolean = false;
+  export let name = "Mod Name";
+  export let draggable = false;
+  export let dragging = false;
   export let id: number;
 
   const dispatch = createEventDispatcher();

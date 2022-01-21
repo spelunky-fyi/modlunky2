@@ -7,19 +7,21 @@
   import PlaylunkyOptions from "./PlaylunkyOptions.svelte";
   import { Button, TextInput, Stack } from "../../common";
 
-  function handleToggle(event) {
+  function handleToggle(event: CustomEvent) {
     toggleMod(event.detail);
   }
 
-  function handleOpenDirectory(event) {
+  function handleOpenDirectory(event: CustomEvent) {
     // TODO
+    console.log(event);
   }
 
-  function handleUninstall(event) {
+  function handleUninstall(event: CustomEvent) {
     // TODO
+    console.log(event);
   }
 
-  function handleKeyDown(event) {
+  function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Escape") {
       $searchInput = "";
     }

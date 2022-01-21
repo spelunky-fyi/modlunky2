@@ -3,6 +3,7 @@ export { default as Panel } from "./Panel.svelte";
 export { default as Stack } from "./Stack.svelte";
 export { default as Text } from "./Text.svelte";
 export { default as TextInput } from "./TextInput.svelte";
+export { default as ColorInput } from "./ColorInput.svelte";
 export { default as FileSelect } from "./FileSelect.svelte";
 export { default as OptionBoolean } from "./OptionBoolean.svelte";
 export { default as OptionGroup } from "./OptionGroup.svelte";

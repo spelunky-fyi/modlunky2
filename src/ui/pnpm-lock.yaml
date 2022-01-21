@@ -2,7 +2,6 @@ lockfileVersion: 5.3
 
 specifiers:
   '@fortawesome/free-solid-svg-icons': ^5.15.4
-  '@jaames/iro': ^5.5.2
   '@sveltejs/vite-plugin-svelte': ^1.0.0-next.30
   '@tsconfig/svelte': ^2.0.1
   '@typescript-eslint/eslint-plugin': ^5.10.0
@@ -29,7 +28,6 @@ specifiers:
 
 devDependencies:
   '@fortawesome/free-solid-svg-icons': 5.15.4
-  '@jaames/iro': 5.5.2
   '@sveltejs/vite-plugin-svelte': 1.0.0-next.34_svelte@3.45.0+vite@2.7.10
   '@tsconfig/svelte': 2.0.1
   '@typescript-eslint/eslint-plugin': 5.10.0_a21c83c428c27db268953928902857c9
@@ -152,17 +150,6 @@ packages:
     resolution: {integrity: sha512-J5IriR8KeANs8vIEFKWzOlOvNgZHkwqkmqaIwvqtuDbBeFHtXGfM/LYMDmjtRJ0AAa7f254qw6TK7gAibYfHUA==}
     dependencies:
       '@iconify/types': 1.0.12
-    dev: true
-
-  /@irojs/iro-core/1.2.1:
-    resolution: {integrity: sha512-p2OvsBSSmidsDsTSkID6jEyXDF7lcyxPrkh3qBzasBZFpjkYd6kZ3yMWai3MlAaQ3F7li/Et7rSJVV09Fpei+A==}
-    dev: true
-
-  /@jaames/iro/5.5.2:
-    resolution: {integrity: sha512-Fbi5U4Vdkw6UsF+R3oMlPONqkvUDMkwzh+mX718gQsDFt3+1r1jvGsrfCbedmXAAy0WsjDHOrefK0BkDk99TQg==}
-    dependencies:
-      '@irojs/iro-core': 1.2.1
-      preact: 10.6.4
     dev: true
 
   /@nodelib/fs.scandir/2.1.5:
@@ -1857,10 +1844,6 @@ packages:
       nanoid: 3.1.30
       picocolors: 1.0.0
       source-map-js: 1.0.1
-    dev: true
-
-  /preact/10.6.4:
-    resolution: {integrity: sha512-WyosM7pxGcndU8hY0OQlLd54tOU+qmG45QXj2dAYrL11HoyU/EzOSTlpJsirbBr1QW7lICxSsVJJmcmUglovHQ==}
     dev: true
 
   /prelude-ls/1.2.1:
