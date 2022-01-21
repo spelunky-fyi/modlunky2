@@ -4,7 +4,7 @@
   export let disabled = false;
 
   const buttonStyles = {
-    base: "flex items-center justify-center gap-2.5 relative border-none rounded transition font-medium font-roboto cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
+    base: "flex items-center justify-center gap-2.5 border-none rounded transition font-medium font-roboto cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
 
     size: {
       default: "px-2.5 py-1.5 text-base",
