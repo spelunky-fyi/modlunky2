@@ -109,3 +109,9 @@ class ChainAndBlocksCeilingSheet(BaseSpriteLoader):
     _chunk_map = {
         "chainandblocks_ceiling": (0, 0, 1, 1),
     }
+
+
+EXTRA_TILECODE_CLASSES = [
+    TreasureVaultChestSheet,
+    ChainAndBlocksCeilingSheet,
+]
