@@ -11,5 +11,8 @@
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "python.linting.pylintArgs": [
+        "--disable=R,C"
+    ]
 }
