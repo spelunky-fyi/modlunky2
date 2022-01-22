@@ -119,7 +119,7 @@ class UidEntityMap:
         if addr == 0:
             return self.empty_poly
 
-        entity: Entity = self.mem_ctx.type_at_addr(Entity, addr)
+        entity: Optional[Entity] = self.mem_ctx.type_at_addr(Entity, addr)
         if entity is None:
             return self.empty_poly
         if entity.uid != uid:
