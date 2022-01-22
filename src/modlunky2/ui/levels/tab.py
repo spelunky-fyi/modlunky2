@@ -3042,6 +3042,54 @@ class LevelsTab(Tab):
                 if tilecode[0].split(" ", 1)[0] == "floor_hard":
                     hard_floor_code = tilecode[0].split(" ", 1)[1]
 
+            def write_vanilla_room(x, y, foreground, background):
+                vanilla_setroom_type = (
+                    self.vanilla_setroom_type_for(theme, x, y)
+                    if save_format.include_vanilla_setrooms
+                    else LevelsTab.VanillaSetroomType.NONE
+                )
+                vf = []
+                vb = []
+                vs = []
+                vm = ""
+                dual = (not hard_floor_code) or background != [
+                    hard_floor_code * 10 for _ in range(8)
+                ]
+                if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
+                    vf = foreground
+                    vm = "the front layer"
+                elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
+                    vf = background
+                    vm = "the back layer"
+                elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
+                    vf = foreground
+                    vm = "both layers"
+                    if dual:
+                        vb = background
+                        vs.append(TemplateSetting.DUAL)
+
+                if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
+                    template_chunks = [
+                        Chunk(
+                            comment=None,
+                            settings=vs,
+                            foreground=vf,
+                            background=vb,
+                        )
+                    ]
+                    comment_format = (
+                        "Auto-generated template to match {layer} of {template}."
+                    )
+                    level_templates.set_obj(
+                        LevelTemplate(
+                            name="setroom{y}-{x}".format(y=room_y, x=room_x),
+                            comment=comment_format.format(
+                                layer=vm, template=template_name
+                            ),
+                            chunks=template_chunks,
+                        )
+                    )
+
             for room_y in range(height):
                 for room_x in range(width):
                     room_foreground = []
@@ -3080,49 +3128,19 @@ class LevelsTab(Tab):
                             chunks=template_chunks,
                         )
                     )
-                    vanilla_setroom_type = (
-                        self.vanilla_setroom_type_for(theme, room_x, room_y)
-                        if save_format.include_vanilla_setrooms
-                        else LevelsTab.VanillaSetroomType.NONE
-                    )
-                    vf = []
-                    vb = []
-                    vs = []
-                    vm = ""
-                    if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
-                        vf = room_foreground
-                        vm = "the front layer"
-                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
-                        vf = room_background
-                        vm = "the back layer"
-                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
-                        vf = room_foreground
-                        vm = "both layers"
-                        if dual:
-                            vb = room_background
-                            vs.append(TemplateSetting.DUAL)
+                    write_vanilla_room(room_x, room_y, room_foreground, room_background)
 
-                    if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                        template_chunks = [
-                            Chunk(
-                                comment=None,
-                                settings=vs,
-                                foreground=vf,
-                                background=vb,
-                            )
-                        ]
-                        comment_format = (
-                            "Auto-generated template to match {layer} of {template}."
-                        )
-                        level_templates.set_obj(
-                            LevelTemplate(
-                                name="setroom{y}-{x}".format(y=room_y, x=room_x),
-                                comment=comment_format.format(
-                                    layer=vm, template=template_name
-                                ),
-                                chunks=template_chunks,
-                            )
-                        )
+            for room_y in range(15):
+                for room_x in range(8):
+                    if room_y < height and room_x < width:
+                        continue
+                    room_foreground = []
+                    room_background = []
+                    for row in range(8):
+                        room_foreground.append("0000000000")
+                        room_background.append("XXXXXXXXXX")
+                    write_vanilla_room(room_x, room_y, room_foreground, room_background)
+
             level_settings.set_obj(
                 LevelSetting(
                     name="size",
