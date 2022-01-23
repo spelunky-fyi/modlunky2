@@ -7,7 +7,7 @@ from hypercorn.asyncio import serve
 from hypercorn.config import Config as HypercornConfig
 from hypercorn.typing import ASGI3Framework
 from starlette.applications import Starlette
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 
 import modlunky2.web.demo as demo
 
@@ -25,12 +25,15 @@ def launch_in_thread() -> Callable[[], None]:
 
 
 def _async_worker(shutting_down: threading.Event):
-    routes = [Route("/", demo.hello_world)]
+    routes = [
+        Route("/", demo.hello_world),
+        Mount("/echo", routes=[demo.multiplexer.starlette_route]),
+    ]
     app = Starlette(debug=True, routes=routes)
 
     hypercorn_conf = HypercornConfig()
     hypercorn_conf.bind = "127.0.0.1:9526"
-    hypercorn_conf.debug = True
+    hypercorn_conf.websocket_ping_interval = 30.0
 
     async def shutdown_trigger():
         await anyio.to_thread.run_sync(shutting_down.wait)
