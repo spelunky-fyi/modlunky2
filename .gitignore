@@ -130,7 +130,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# We check in some VS Code configs
 .vscode/*
+!/.vscode/extensions.json
 !/.vscode/settings.json
+
 modlunky2.spec
 node_modules/
