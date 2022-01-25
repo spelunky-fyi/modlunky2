@@ -87,7 +87,7 @@ class UidEntityMap:
 
     def _get_addr(self, uid):
         target_key = _lowbias32(uid + 1)
-
+        mask = self.meta.mask
         cur_index = target_key & self.meta.mask
         while True:
             entry = self._get_table_entry(cur_index)
@@ -102,13 +102,18 @@ class UidEntityMap:
                 # We found an 'empty' entry before our target. It must not exist.
                 return 0
 
-            mask = self.meta.mask
-            if (target_key & mask) > (entry.hashed_key & mask):
-                # We've found an entry that, if the target existed, would be further away than our target.
+            # Although Python supports ints of arbitrary magnitude, it still uses two's complement
+            # for binary operations. So, the mask makes this work the same as it would fixed-size 32-bit ints.
+            #
+            # "psl" stands for "probe sequence length"
+            target_psl = (cur_index - target_key) & mask
+            entry_psl = (cur_index - entry.hashed_key) & mask
+            if target_psl > entry_psl:
+                # We've found an entry that the target would have swapped with, if the target existed.
                 # The target must not exist.
                 return 0
 
-            cur_index = (cur_index + 1) & self.meta.mask
+            cur_index = (cur_index + 1) & mask
         # The above loop only terminates via return
 
     def get(self, uid: int) -> PolyPointer[Entity]:
