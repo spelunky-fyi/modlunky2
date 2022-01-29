@@ -16,9 +16,14 @@ from typing import (
 from modlunky2.web.api.framework.serde_tag import (
     TagException,
     TagDeserializer,
+    TaggedMessage,
     to_tagged_dict,
 )
-from modlunky2.web.api.framework.session import SessionException, SessionManager
+from modlunky2.web.api.framework.session import (
+    SessionException,
+    SessionId,
+    SessionManager,
+)
 
 logger = logging.getLogger("modlunky2")
 
@@ -28,12 +33,12 @@ Sender = Callable[[SendType], Awaitable[None]]
 
 
 class SendConnection:
-    def __init__(self, websocket: WebSocket, session_id: str) -> None:
+    def __init__(self, websocket: WebSocket, session_id: SessionId) -> None:
         self._websocket = websocket
         self._session_id = session_id
 
     @property
-    def session_id(self) -> str:
+    def session_id(self) -> SessionId:
         return self._session_id
 
     async def send(self, obj: Any) -> None:
@@ -76,8 +81,8 @@ class WSMultiplexer:
         except SessionException as ex:
             await websocket.close(reason=str(ex))
 
-    async def _dispatch_one(self, websocket: WebSocket, session_id: str) -> None:
-        data: Dict[str, Any] = await websocket.receive_json()
+    async def _dispatch_one(self, websocket: WebSocket, session_id: SessionId) -> None:
+        data: TaggedMessage = await websocket.receive_json()
         try:
             obj = self._param_deserializer.from_tagged_dict(data)
         except (TagException, TypeError) as ex:

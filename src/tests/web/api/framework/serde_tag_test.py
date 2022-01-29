@@ -1,12 +1,12 @@
 from __future__ import annotations  # PEP 563
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from typing import Any, Dict
 import pytest
-
 from serde import serde
+from typing import Any
 
 from modlunky2.web.api.framework.serde_tag import (
+    TaggedMessage,
     TagException,
     TagDeserializer,
     to_tagged_dict,
@@ -16,21 +16,18 @@ from modlunky2.web.api.framework.serde_tag import (
 @serde
 @dataclass
 class A:
-    kind: str
     a_num: int
 
 
 @serde
 @dataclass
 class B:
-    kind: str
     a_str: str
 
 
 @serde
 @dataclass
 class Rogue:
-    kind: str
     a_float: float
 
 
@@ -40,7 +37,7 @@ class NotSerde:
 
 @pytest.mark.parametrize(
     "obj",
-    [A("A", 3), B("B", "woah")],
+    [A(3), B("woah")],
 )
 def test_round_trip(obj: Any):
     de = TagDeserializer([A, B])
@@ -50,11 +47,11 @@ def test_round_trip(obj: Any):
 @pytest.mark.parametrize(
     "data,obj",
     [
-        ({"A": {"kind": "hi", "a_num": 23}}, A("hi", 23)),
-        ({"B": {"kind": "bye", "a_str": "what"}}, B("bye", "what")),
+        ({"A": {"a_num": 23}}, A(23)),
+        ({"B": {"a_str": "what"}}, B("what")),
     ],
 )
-def test_ok_dict(data: Dict[str, Any], obj: Any):
+def test_ok_dict(data: TaggedMessage, obj: Any):
     de = TagDeserializer([A, B])
     assert de.from_tagged_dict(data) == obj
     assert to_tagged_dict(obj) == data
@@ -68,12 +65,12 @@ def test_ok_dict(data: Dict[str, Any], obj: Any):
             pytest.raises(TagException, match=r"isn't a known type"),
         ),
         (
-            {"A": {"kind": "thing", "a_num": 99}, "more": 3},
+            {"A": {"a_num": 99}, "more": 3},
             pytest.raises(TagException, match=r"expected 1"),
         ),
     ],
 )
-def test_bad_dict(data: Dict[str, Any], expectation: AbstractContextManager[None]):
+def test_bad_dict(data: TaggedMessage, expectation: AbstractContextManager[None]):
     de = TagDeserializer([A, B])
     with expectation:
         de.from_tagged_dict(data)

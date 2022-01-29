@@ -2,20 +2,22 @@ from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, Type
+from typing import Any, Dict, Iterable, NewType, Type
 
 from serde.de import from_dict, is_deserializable
 from serde.se import to_dict
+
+TaggedMessage = NewType("TaggedMessage", Dict[str, Any])
 
 
 class TagException(Exception):
     pass
 
 
-def to_tagged_dict(obj: Any) -> Dict[str, Dict[str, Any]]:
+def to_tagged_dict(obj: Any) -> TaggedMessage:
     data = to_dict(obj)
     tag = type(obj).__name__
-    return {tag: data}
+    return TaggedMessage({tag: data})
 
 
 @dataclass(frozen=True)
@@ -33,7 +35,7 @@ class TagDeserializer:
             type_map[typ.__name__] = typ
         object.__setattr__(self, "_type_map", MappingProxyType(type_map))
 
-    def from_tagged_dict(self, data: Dict[str, Any]) -> Any:
+    def from_tagged_dict(self, data: TaggedMessage) -> Any:
         if len(data) != 1:
             raise TagException(f"Data has {len(data)} keys, expected 1")
         tag = next(iter(data.keys()))
