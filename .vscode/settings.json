@@ -1,18 +1,25 @@
 {
-    "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.linting.pylintEnabled": true,
-    "svelte.plugin.typescript.enable": true,
-    "eslint.validate": [
-        "javascript",
-        "typescript",
-        "svelte"
-    ],
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "files.eol": "\n",
-    "python.linting.pylintArgs": [
-        "--disable=R,C"
-    ]
+  // General
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  // UI
+  "svelte.plugin.typescript.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "svelte"],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Python
+  "python.formatting.provider": "black",
+  "python.linting.pylintEnabled": true,
+  "python.linting.pylintArgs": [
+    "--disable=R,C"
+  ],
+  "python.testing.pytestArgs": [
+    "src/"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
