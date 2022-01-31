@@ -28,8 +28,6 @@ from modlunky2.web.api.framework.session import (
 logger = logging.getLogger("modlunky2")
 
 ParamType = TypeVar("ParamType")
-SendType = TypeVar("SendType")
-Sender = Callable[[SendType], Awaitable[None]]
 
 
 class SendConnection:
@@ -89,7 +87,7 @@ class WSMultiplexer:
             logger.warning("Deserializing request failed %s", ex)
             return
 
-        info = self._param_to_endpoint[type(obj)]
+        endpoint = self._param_to_endpoint[type(obj)]
         sender = SendConnection(websocket, session_id)
 
-        await info.endpoint(sender, obj)
+        await endpoint(sender, obj)
