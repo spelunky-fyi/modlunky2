@@ -3046,7 +3046,13 @@ class LevelsTab(Tab):
                     air_code = tilecode[0].split(" ", 1)[1]
 
             def write_vanilla_room(
-                x, y, foreground, background, save_format, level_templates
+                x,
+                y,
+                foreground,
+                background,
+                save_format,
+                level_templates,
+                hard_floor_code,
             ):
                 if not save_format.include_vanilla_setrooms:
                     return
@@ -3136,6 +3142,7 @@ class LevelsTab(Tab):
                         room_background,
                         save_format,
                         level_templates,
+                        hard_floor_code,
                     )
 
             # Write vanilla setrooms for any room that the game expects a setroom for, but does not
@@ -3154,6 +3161,7 @@ class LevelsTab(Tab):
                         room_background,
                         save_format,
                         level_templates,
+                        hard_floor_code,
                     )
 
             level_settings.set_obj(
