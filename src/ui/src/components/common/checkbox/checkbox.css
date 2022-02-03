@@ -1,0 +1,41 @@
+.checkbox {
+  --checkbox-bg: rgb(var(--palette-base-800));
+  --checkbox-color: rgb(var(--palette-accent));
+  --checkbox-outline: rgb(var(--palette-base-600) / 0.5);
+  --checkbox-outline-focused: rgb(var(--palette-accent) / 0.5);
+
+  @apply flex gap-3 items-center;
+
+  & input[type="checkbox"] {
+    @apply border-0 ring-1 transition;
+
+    background-color: var(--checkbox-bg);
+    color: var(--checkbox-color);
+    --tw-ring-color: var(--checkbox-outline);
+
+    &:checked {
+      background-color: var(--checkbox-color);
+    }
+
+    &:hover {
+      @apply brightness-150;
+    }
+
+    &:focus {
+      @apply outline-none ring-2 ring-offset-0;
+      --tw-ring-color: var(--checkbox-outline-focused);
+    }
+  }
+
+  &.sm {
+    @apply gap-1;
+  }
+
+  &.md {
+    @apply gap-1.5;
+  }
+
+  &.lg {
+    @apply gap-2;
+  }
+}

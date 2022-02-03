@@ -1,52 +1,63 @@
 <script lang="ts">
-  import { Button, Stack, Text, OptionBoolean, OptionGroup, OptionNumber } from "../../common";
+  import { Button, Checkbox, Stack, Text, Panel, InputNumber } from "../../common";
   import VersionSelect from "./VersionSelect.svelte";
 </script>
 
-<Stack direction="vertical" justify="between" spacing="small" class="w-72">
-  <Stack direction="vertical" spacing="small" class="overflow-y-auto">
-    <VersionSelect />
+<Stack vertical justify="between" spacing="sm" class="min-h-0 w-72">
+  <div class="flex flex-1 overflow-auto pt-4 pr-2">
+    <Stack vertical spacing="sm" class="scrollbar flex-1 overflow-y-auto text-xs">
+      <VersionSelect />
 
-    <OptionGroup>
-      <Text level="h3" slot="heading">General</Text>
-      <OptionBoolean>Enable loose file warning</OptionBoolean>
-      <OptionBoolean>Disable asset caching</OptionBoolean>
-      <OptionBoolean>Speedrun mode</OptionBoolean>
-      <OptionBoolean>Block save game</OptionBoolean>
-      <OptionBoolean>Allow save game mods</OptionBoolean>
-      <OptionBoolean>Leave terminal running</OptionBoolean>
-      <OptionBoolean>Desktop Shortcut</OptionBoolean>
-    </OptionGroup>
+      <Panel padding="sm">
+        <Stack vertical spacing="sm">
+          <Text level="h4" class="-mt-1 text-center leading-none opacity-50">General</Text>
+          <Checkbox size="sm">Enable loose file warning</Checkbox>
+          <Checkbox size="sm">Enable loose file warning</Checkbox>
+          <Checkbox size="sm">Disable asset caching</Checkbox>
+          <Checkbox size="sm">Speedrun mode</Checkbox>
+          <Checkbox size="sm">Block save game</Checkbox>
+          <Checkbox size="sm">Allow save game mods</Checkbox>
+          <Checkbox size="sm">Leave terminal running</Checkbox>
+          <Checkbox size="sm">Desktop Shortcut</Checkbox>
+        </Stack>
+      </Panel>
 
-    <OptionGroup>
-      <Text slot="heading">Scripts</Text>
-      <OptionBoolean>Enable developer mode</OptionBoolean>
-      <OptionBoolean>Enable developer console</OptionBoolean>
-      <OptionNumber value={20}>Console history size</OptionNumber>
-    </OptionGroup>
+      <Panel padding="sm">
+        <Stack vertical spacing="sm">
+          <Text level="h4" class="-mt-1 text-center leading-none opacity-50">Scripts</Text>
+          <Checkbox size="sm">Enable developer mode</Checkbox>
+          <Checkbox size="sm">Enable developer console</Checkbox>
+          <InputNumber size="sm" value={20}>Console history size</InputNumber>
+        </Stack>
+      </Panel>
 
-    <OptionGroup>
-      <Text slot="heading">Audio</Text>
-      <OptionBoolean>Enable loose audio files</OptionBoolean>
-      <OptionBoolean>Cache decoded audio files</OptionBoolean>
-      <OptionBoolean>Synchronous Update</OptionBoolean>
-    </OptionGroup>
+      <Panel padding="sm">
+        <Stack vertical spacing="sm">
+          <Text level="h4" class="-mt-1 text-center leading-none opacity-50">Audio</Text>
+          <Checkbox size="sm">Enable loose audio files</Checkbox>
+          <Checkbox size="sm">Cache decoded audio files</Checkbox>
+          <Checkbox size="sm">Synchronous Update</Checkbox>
+        </Stack>
+      </Panel>
 
-    <OptionGroup>
-      <Text slot="heading">Sprites</Text>
-      <OptionBoolean>Random character select</OptionBoolean>
-      <OptionBoolean>Generate character journal stickers</OptionBoolean>
-      <OptionBoolean>Generate character journal entries</OptionBoolean>
-      <OptionBoolean>Generate sticker pixel art</OptionBoolean>
-      <OptionBoolean>Enable sprite hot loading</OptionBoolean>
-      <OptionNumber value={500}>Sprite hot load delay</OptionNumber>
-    </OptionGroup>
-  </Stack>
+      <Panel padding="sm">
+        <Stack vertical spacing="sm">
+          <Text level="h4" class="-mt-1 text-center leading-none opacity-50">Sprites</Text>
+          <Checkbox size="sm">Random character select</Checkbox>
+          <Checkbox size="sm">Generate character journal stickers</Checkbox>
+          <Checkbox size="sm">Generate character journal entries</Checkbox>
+          <Checkbox size="sm">Generate sticker pixel art</Checkbox>
+          <Checkbox size="sm">Enable sprite hot loading</Checkbox>
+          <InputNumber size="sm" value={500}>Sprite hot load delay</InputNumber>
+        </Stack>
+      </Panel>
+    </Stack>
+  </div>
 
-  <Stack direction="vertical" spacing="small">
-    <Button>Open packs directory</Button>
-    <Button>User guide</Button>
-    <Button>Check for mod updates</Button>
-    <Button>Clear cache</Button>
+  <Stack vertical spacing="sm" class="shrink-0 p-4">
+    <Button size="sm">Open packs directory</Button>
+    <Button size="sm">User guide</Button>
+    <Button size="sm">Check for mod updates</Button>
+    <Button size="sm">Clear cache</Button>
   </Stack>
 </Stack>

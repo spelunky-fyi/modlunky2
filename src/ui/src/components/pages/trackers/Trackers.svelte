@@ -1,34 +1,37 @@
 <script lang="ts">
   import { colorKey } from "../../../store";
-  import { Button, ColorInput, Stack, OptionBoolean, TextInput } from "../../common";
+  import { Button, Checkbox, InputColor, Stack, Panel, InputText } from "../../common";
 </script>
 
-<section class="flex-1 flex gap-4">
-  <Stack direction="vertical" spacing="small" class="flex-1">
-    <Stack spacing="small">
-      <Button size="huge" class="flex-1">Pacifist</Button>
-      <OptionBoolean>Show kill count</OptionBoolean>
-    </Stack>
-    <Stack spacing="small">
-      <Button size="huge" class="flex-1">🐈 Category</Button>
-      <OptionBoolean>Always show modifiers</OptionBoolean>
-    </Stack>
-  </Stack>
-  <Stack direction="vertical" class="w-72">
-    <Stack direction="vertical" spacing="small">
-      <Stack align="center" spacing="small" class="relative">
-        <ColorInput
-          bind:value={$colorKey}
-          class="absolute inset-y-2 right-2 shrink-0 cursor-pointer"
-        />
-        <TextInput bind:value={$colorKey} label="Color Key" />
+<div class="center h-full">
+  <Panel padding="lg">
+    <Stack>
+      <Stack vertical spacing="sm" class="flex-2">
+        <Stack spacing="sm">
+          <Button size="lg" class="flex-1">Pacifist</Button>
+          <Checkbox>Show kill count</Checkbox>
+        </Stack>
+        <Stack spacing="sm">
+          <Button size="lg" class="flex-1">🐈 Category</Button>
+          <Checkbox>Always show modifiers</Checkbox>
+        </Stack>
       </Stack>
-      <Stack spacing="small">
-        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#ff00ff")}>Magenta</Button>
-        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#00ff00")}>Green</Button>
-        <Button size="tiny" class="flex-1" on:click={() => ($colorKey = "#0000ff")}>Blue</Button>
+      <Stack vertical class="w-72">
+        <Stack vertical>
+          <div class="relative flex items-center gap-1">
+            <InputColor bind:value={$colorKey} class="absolute inset-y-1 right-1 h-6 w-6" />
+            <InputText bind:value={$colorKey} label="Color Key" />
+          </div>
+          <Stack spacing="sm">
+            <Button size="sm" class="flex-1" on:click={() => ($colorKey = "#ff00ff")}
+              >Magenta</Button
+            >
+            <Button size="sm" class="flex-1" on:click={() => ($colorKey = "#00ff00")}>Green</Button>
+            <Button size="sm" class="flex-1" on:click={() => ($colorKey = "#0000ff")}>Blue</Button>
+          </Stack>
+          <Button>Tracker Files</Button>
+        </Stack>
       </Stack>
-      <Button>Tracker Files</Button>
     </Stack>
-  </Stack>
-</section>
+  </Panel>
+</div>

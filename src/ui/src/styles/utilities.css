@@ -1,0 +1,23 @@
+@layer utilities {
+  .striped div:nth-child(even) {
+    @apply bg-theme-800;
+  }
+
+  .center {
+    @apply flex items-center justify-center;
+  }
+
+  .scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--palette-base-500));
+    border: 3px solid rgb(var(--palette-base-900));
+    border-radius: 5px;
+  }
+}

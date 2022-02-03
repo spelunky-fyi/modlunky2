@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
   import { onMount } from "svelte";
-  import Icon from "svelte-awesome";
+  import IconLightMode from "~icons/ic/baseline-light-mode";
+  import IconDarkMode from "~icons/ic/baseline-dark-mode";
   import { Button } from "./common";
+  import classes from "../util/classes";
 
   const storageKey = "theme-preference";
 
@@ -26,11 +27,11 @@
 
   function reflectColorPreference() {
     if (theme.value === "dark") {
-      document.body.classList.remove("light");
-      document.body.classList.add("dark");
+      document.body.classList.remove("theme-light");
+      document.body.classList.add("theme-dark");
     } else {
-      document.body.classList.remove("dark");
-      document.body.classList.add("light");
+      document.body.classList.remove("theme-dark");
+      document.body.classList.add("theme-light");
     }
   }
 
@@ -50,8 +51,15 @@
         setColorPreference();
       });
   });
+
+  let _class = "";
+  export { _class as class };
 </script>
 
-<Button color="transparent" on:click={handleClick} class="w-9 h-9 {$$restProps.class || ''}">
-  <Icon data={theme.value === "dark" ? faSun : faMoon} />
+<Button transparent rounded={false} on:click={handleClick} class={classes(_class)}>
+  {#if theme.value === "light"}
+    <IconDarkMode />
+  {:else}
+    <IconLightMode />
+  {/if}
 </Button>

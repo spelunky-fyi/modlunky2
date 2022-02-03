@@ -7,7 +7,8 @@
   "eslint.validate": [
     "javascript",
     "typescript",
-    "svelte"],
+    "svelte"
+  ],
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },

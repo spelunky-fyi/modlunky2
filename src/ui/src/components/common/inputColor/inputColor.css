@@ -1,0 +1,7 @@
+.input-color {
+  @apply aspect-square rounded cursor-pointer overflow-hidden scale-100 transition;
+
+  &:hover {
+    @apply scale-110;
+  }
+}

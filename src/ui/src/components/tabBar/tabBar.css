@@ -1,0 +1,15 @@
+.tabbar {
+  @apply my-1 rounded-md px-3 py-1.5 text-sm font-semibold text-theme-400 transition;
+
+  &:hover {
+    @apply bg-theme-900/50;
+  }
+
+  &-selected {
+    @apply bg-theme-primary/25 text-theme-primary;
+
+    &:hover {
+      @apply bg-theme-primary/10 text-theme-primary;
+    }
+  }
+}

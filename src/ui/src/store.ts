@@ -48,33 +48,43 @@ export const filteredInstalledMods = derived(
 );
 
 id_counter = 0;
-export const versions = [
+export const versions: Version[] = [
   {
+    id: id_counter++,
+    revision: "stable",
+    installed: true,
+  },
+  {
+    id: id_counter++,
+    revision: "nightly",
+    installed: true,
+  },
+  {
+    id: id_counter++,
     revision: "v0.12.0",
     installed: true,
-    id: id_counter++,
   },
   {
+    id: id_counter++,
     revision: "v0.11.1",
     installed: true,
-    id: id_counter++,
   },
   {
+    id: id_counter++,
     revision: "v0.11.0",
     installed: true,
-    id: id_counter++,
   },
   {
+    id: id_counter++,
     revision: "v0.10.1",
     installed: false,
-    id: id_counter++,
   },
   {
+    id: id_counter++,
     revision: "v0.10.0",
     installed: false,
-    id: id_counter++,
   },
 ];
-export const version = writable(versions[0]);
+export const version: Writable<Version> = writable(versions[0]);
 
 export const colorKey = writable("#ff00ff");

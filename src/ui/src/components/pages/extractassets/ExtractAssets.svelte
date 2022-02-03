@@ -1,21 +1,21 @@
 <script>
-  import { Button, Stack, Text, FileSelect, OptionBoolean, OptionGroup } from "../../common";
+  import { Button, Stack, Text, InputFile, Checkbox, Panel } from "../../common";
 </script>
 
-<section class="flex-1 flex gap-4">
-  <Stack direction="vertical" class="flex-1">
-    <FileSelect />
-    <Button size="large" color="primary">Extract</Button>
-  </Stack>
-  <Stack direction="vertical" spacing="small" class="w-72">
-    <Button>Open Extract Directory</Button>
-    <OptionGroup>
-      <Text level="h3" slot="heading">Options</Text>
-      <OptionBoolean>Create entity sprites</OptionBoolean>
-      <OptionBoolean>Generate string hashes</OptionBoolean>
-      <OptionBoolean>Extract .wav files</OptionBoolean>
-      <OptionBoolean>Extract .ogg files</OptionBoolean>
-      <OptionBoolean>Reuse extracted assets</OptionBoolean>
-    </OptionGroup>
-  </Stack>
-</section>
+<div class="center h-full">
+  <Panel>
+    <Stack vertical class="w-96" spacing="lg">
+      <InputFile />
+      <Button size="lg" primary>Extract</Button>
+      <Button>Open Extract Directory</Button>
+      <Stack vertical spacing="sm">
+        <Text level="h4">Options</Text>
+        <Checkbox size="sm">Create entity sprites</Checkbox>
+        <Checkbox size="sm">Generate string hashes</Checkbox>
+        <Checkbox size="sm">Extract .wav files</Checkbox>
+        <Checkbox size="sm">Extract .ogg files</Checkbox>
+        <Checkbox size="sm">Reuse extracted assets</Checkbox>
+      </Stack>
+    </Stack>
+  </Panel>
+</div>

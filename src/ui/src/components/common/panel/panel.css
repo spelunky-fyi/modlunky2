@@ -1,0 +1,5 @@
+.panel {
+  --panel-bg: rgb(var(--palette-base-700) / 0.5);
+
+  background-color: var(--panel-bg);
+}

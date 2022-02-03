@@ -1,0 +1,18 @@
+.theme-dark {
+  --palette-base-50: 250 250 250;
+  --palette-base-100: 243 244 246;
+  --palette-base-200: 228 228 231;
+  --palette-base-300: 212 212 216;
+  --palette-base-400: 161 161 170;
+  --palette-base-500: 113 113 122;
+  --palette-base-600: 82 82 91;
+  --palette-base-700: 63 63 70;
+  --palette-base-800: 39 39 42;
+  --palette-base-900: 24 24 27;
+
+  --palette-accent: 249 115 22;
+
+  --theme-primary: var(--palette-accent);
+  --theme-secondary: var(--palette-base-600);
+  --theme-secondary-text: var(--palette-base-200);
+}

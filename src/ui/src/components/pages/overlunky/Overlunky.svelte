@@ -2,11 +2,11 @@
   import { Button, Panel, Stack } from "../../common";
 </script>
 
-<Stack align="center" justify="center" class="flex-1">
-  <Panel rounded padding="small">
-    <Stack direction="vertical">
-      <Button size="huge">Download Latest</Button>
-      <Button size="huge" color="primary">Launch</Button>
+<div class="center h-full">
+  <Panel>
+    <Stack vertical>
+      <Button size="lg">Download Latest</Button>
+      <Button size="lg" primary>Launch</Button>
     </Stack>
   </Panel>
-</Stack>
+</div>

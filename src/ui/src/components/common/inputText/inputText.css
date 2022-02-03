@@ -1,0 +1,30 @@
+.input-text {
+  --inputtext-bg: rgb(var(--palette-base-900) / 0.6);
+  --inputtext-bg-focused: rgb(var(--palette-base-900));
+  --inputtext-text: rgb(var(--palette-base-300));
+  --inputtext-outline: rgb(var(--palette-base-600) / 0.5);
+  --inputtext-outline-focused: rgb(var(--palette-accent));
+
+  @apply w-full flex items-center rounded-sm gap-2 ring-1 border-0 transition;
+
+  background-color: var(--inputtext-bg);
+  color: var(--inputtext-text);
+  --tw-ring-color: var(--inputtext-outline);
+
+  &:focus {
+    background-color: var(--inputtext-bg-focused);
+    --tw-ring-color: var(--inputtext-outline-focused);
+  }
+
+  &.sm {
+    @apply px-2 py-0 text-xs;
+  }
+
+  &.md {
+    @apply px-3 py-1 text-base;
+  }
+
+  &.lg {
+    @apply px-3 py-2 text-lg;
+  }
+}

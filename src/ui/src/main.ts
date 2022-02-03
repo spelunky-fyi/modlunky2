@@ -1,7 +1,5 @@
-import "@unocss/reset/tailwind.css";
-import "uno.css";
-import "./index.css";
 import App from "./App.svelte";
+import "./styles/index.css";
 
 const app = new App({
   target: document.getElementById("app") as Element,

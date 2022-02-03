@@ -1,0 +1,85 @@
+.btn {
+  --btn-default-bg: rgb(var(--theme-secondary));
+  --btn-default-text: rgb(var(--theme-secondary-text));
+  --btn-default-bg-hover: rgb(var(--theme-secondary) / 0.5);
+  --btn-default-bg-active: rgb(var(--theme-secondary) / 0.3);
+  --btn-primary-bg: rgb(var(--theme-primary));
+  --btn-primary-bg-hover: rgb(var(--theme-primary) / 0.8);
+  --btn-primary-bg-active: rgb(var(--theme-primary) / 0.4);
+  --btn-primary-text: theme("colors.white");
+
+  @apply center transition;
+
+  background-color: var(--btn-default-bg);
+  color: var(--btn-default-text);
+
+  &:active {
+    @apply brightness-90;
+    background-color: var(--btn-default-bg-active);
+  }
+
+  &:hover {
+    background-color: var(--btn-default-bg-hover);
+  }
+
+  &.sm,
+  &.md,
+  &.lg {
+    &:active {
+      @apply shadow-none;
+    }
+  }
+
+  &.md,
+  &.lg {
+    @apply font-semibold;
+  }
+
+  &.sm {
+    @apply px-2 py-1 text-sm font-semibold;
+  }
+
+  &.md {
+    @apply px-4 py-2 text-base;
+  }
+
+  &.lg {
+    @apply px-8 py-3 text-lg;
+
+    &:hover {
+      @apply shadow-xl;
+    }
+  }
+
+  &-primary {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+
+    &:hover {
+      background-color: var(--btn-primary-bg-hover);
+    }
+
+    &:active {
+      background-color: var(--btn-primary-bg-active);
+    }
+  }
+
+  &-transparent {
+    @apply bg-transparent text-inherit;
+
+    &:hover {
+      @apply bg-theme-700/50;
+    }
+    &.sm {
+      @apply shadow-none;
+    }
+  }
+
+  &-outline {
+    @apply bg-theme-800 ring-1 ring-theme-600 text-inherit;
+
+    &:hover {
+      @apply bg-opacity-75 ring-2 ring-theme-primary/50;
+    }
+  }
+}
