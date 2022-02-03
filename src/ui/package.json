@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "tauri:dev": "concurrently \"pnpm dev\" \"cargo tauri dev\"",
+    "tauri:dev": "concurrently \"pnpm dev\" \"tauri dev\"",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint \"src/**/*.{svelte,ts,js}\"",
     "format-check": "prettier -c --plugin-search-dir=. \"src/**/*.{svelte,ts,js}\"",
