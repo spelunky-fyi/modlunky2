@@ -15,7 +15,11 @@
   {...$$props}
   class="{paddingSizes[
     padding
+<<<<<<< HEAD
   ]} bg-zinc-100 dark:bg-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-500 border border-zinc-200 dark:border-none {rounded
+=======
+  ]} bg-zinc-100 dark:bg-zinc-600 divide-y divide-zinc-200 dark:divide-zinc-500 border border-zinc-200 dark:border-zinc-500 {rounded
+>>>>>>> origin/main
     ? 'rounded-md'
     : ''} {$$restProps.class || ''}"
 >

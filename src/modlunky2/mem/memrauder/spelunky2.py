@@ -31,12 +31,27 @@ class _RobinHoodTableMeta:
 
 @dataclass(frozen=True)
 class _RobinHoodTableEntry:
-    uid_plus1: int = struct_field(0x0, sc_uint32)
+    hashed_key: int = struct_field(0x0, sc_uint32)
     # We intentionally don't use PolyPointer, to defer reading the Entity until
     # we know we have the right entry.
     entity_addr: int = struct_field(0x8, sc_void_p)
 
     SIZE: ClassVar[int] = 16
+
+
+# This is the hash function used in version 1.25.2 .
+# The name comes from the apparent source https://github.com/skeeto/hash-prospector
+def _lowbias32(x: int):  # pylint: disable=invalid-name
+    # Note: Since python ints can grow arbitrarily large, we use bitwise-and to take only the lowest 32-bits.
+    # Since right-shift can only reduce the magnitude, we only mask after the multiplication operations.
+    x ^= x >> 16
+    x *= 0x7FEB352D
+    x &= 0xFFFFFFFF
+    x ^= x >> 15
+    x *= 0x846CA68B
+    x &= 0xFFFFFFFF
+    x ^= x >> 16
+    return x
 
 
 @dataclass(frozen=True)
@@ -71,29 +86,34 @@ class UidEntityMap:
             ) from err
 
     def _get_addr(self, uid):
-        target_uid_plus1 = uid + 1
-
-        cur_index = target_uid_plus1 & self.meta.mask
+        target_key = _lowbias32(uid + 1)
+        mask = self.meta.mask
+        cur_index = target_key & self.meta.mask
         while True:
             entry = self._get_table_entry(cur_index)
             if entry is None:
                 # Reading the bytes for the entry failed.
                 return 0
 
-            if entry.uid_plus1 == target_uid_plus1:
+            if entry.hashed_key == target_key:
                 return entry.entity_addr
 
-            if entry.uid_plus1 == 0:
+            if entry.hashed_key == 0:
                 # We found an 'empty' entry before our target. It must not exist.
                 return 0
 
-            mask = self.meta.mask
-            if (target_uid_plus1 & mask) > (entry.uid_plus1 & mask):
-                # We've found an entry that, if the target existed, would be further away than our target.
+            # Although Python supports ints of arbitrary magnitude, it still uses two's complement
+            # for binary operations. So, the mask makes this work the same as it would fixed-size 32-bit ints.
+            #
+            # "psl" stands for "probe sequence length"
+            target_psl = (cur_index - target_key) & mask
+            entry_psl = (cur_index - entry.hashed_key) & mask
+            if target_psl > entry_psl:
+                # We've found an entry that the target would have swapped with, if the target existed.
                 # The target must not exist.
                 return 0
 
-            cur_index = (cur_index + 1) & self.meta.mask
+            cur_index = (cur_index + 1) & mask
         # The above loop only terminates via return
 
     def get(self, uid: int) -> PolyPointer[Entity]:
@@ -104,9 +124,15 @@ class UidEntityMap:
         if addr == 0:
             return self.empty_poly
 
-        entity = self.mem_ctx.type_at_addr(Entity, addr)
+        entity: Optional[Entity] = self.mem_ctx.type_at_addr(Entity, addr)
         if entity is None:
             return self.empty_poly
+        if entity.uid != uid:
+            logger.warning(
+                "Entity lookup failed with ID mismatch. Expected %d, got %d",
+                uid,
+                entity.uid,
+            )
 
         return PolyPointer(addr, entity, self.mem_ctx)
 

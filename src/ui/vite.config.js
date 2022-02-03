@@ -56,8 +56,11 @@ export default defineConfig({
         "items-start",
         "items-end",
 
+<<<<<<< HEAD
         "bg-opacity-90",
 
+=======
+>>>>>>> origin/main
         // text input
         "bg-zinc-600",
         "bg-zinc-700",
@@ -70,10 +73,17 @@ export default defineConfig({
         "bg-zinc-500",
 
         // primary
+<<<<<<< HEAD
         "text-blue-100",
         "bg-blue-400",
         "bg-blue-500",
         "bg-blue-600",
+=======
+        "text-emerald-900",
+        "bg-emerald-400",
+        "bg-emerald-500",
+        "bg-emerald-600",
+>>>>>>> origin/main
 
         // transparent
         "bg-transparent",
