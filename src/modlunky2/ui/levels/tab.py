@@ -3031,6 +3031,7 @@ class LevelsTab(Tab):
             level_templates = LevelTemplates()
 
             hard_floor_code = None
+            air_code = "0"
             for tilecode in used_tiles:
                 tile_codes.set_obj(
                     TileCode(
@@ -3041,13 +3042,17 @@ class LevelsTab(Tab):
                 )
                 if tilecode[0].split(" ", 1)[0] == "floor_hard":
                     hard_floor_code = tilecode[0].split(" ", 1)[1]
+                elif tilecode[0].split(" ", 1)[0] == "empty":
+                    air_code = tilecode[0].split(" ", 1)[1]
 
-            def write_vanilla_room(x, y, foreground, background):
-                vanilla_setroom_type = (
-                    self.vanilla_setroom_type_for(theme, x, y)
-                    if save_format.include_vanilla_setrooms
-                    else LevelsTab.VanillaSetroomType.NONE
-                )
+            def write_vanilla_room(
+                x, y, foreground, background, save_format, level_templates
+            ):
+                if not save_format.include_vanilla_setrooms:
+                    return
+                vanilla_setroom_type = self.vanilla_setroom_type_for(theme, x, y)
+                if vanilla_setroom_type == LevelsTab.VanillaSetroomType.NONE:
+                    return
                 vf = []
                 vb = []
                 vs = []
@@ -3068,27 +3073,23 @@ class LevelsTab(Tab):
                         vb = background
                         vs.append(TemplateSetting.DUAL)
 
-                if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                    template_chunks = [
-                        Chunk(
-                            comment=None,
-                            settings=vs,
-                            foreground=vf,
-                            background=vb,
-                        )
-                    ]
-                    comment_format = (
-                        "Auto-generated template to match {layer} of {template}."
+                template_chunks = [
+                    Chunk(
+                        comment=None,
+                        settings=vs,
+                        foreground=vf,
+                        background=vb,
                     )
-                    level_templates.set_obj(
-                        LevelTemplate(
-                            name="setroom{y}-{x}".format(y=room_y, x=room_x),
-                            comment=comment_format.format(
-                                layer=vm, template=template_name
-                            ),
-                            chunks=template_chunks,
-                        )
+                ]
+                template_name = save_format.room_template_format.format(y=y, x=x)
+                comment = f"Auto-generated template to match {vm} of {template_name}."
+                level_templates.set_obj(
+                    LevelTemplate(
+                        name=f"setroom{room_y}-{room_x}",
+                        comment=comment,
+                        chunks=template_chunks,
                     )
+                )
 
             for room_y in range(height):
                 for room_x in range(width):
@@ -3128,18 +3129,32 @@ class LevelsTab(Tab):
                             chunks=template_chunks,
                         )
                     )
-                    write_vanilla_room(room_x, room_y, room_foreground, room_background)
+                    write_vanilla_room(
+                        room_x,
+                        room_y,
+                        room_foreground,
+                        room_background,
+                        save_format,
+                        level_templates,
+                    )
 
+            # Write vanilla setrooms for any room that the game expects a setroom for, but does not
+            # exist in the current size of the level.
             for room_y in range(15):
                 for room_x in range(8):
+                    # If the room has already been handled, just continue to the next room.
                     if room_y < height and room_x < width:
                         continue
-                    room_foreground = []
-                    room_background = []
-                    for row in range(8):
-                        room_foreground.append("0000000000")
-                        room_background.append("XXXXXXXXXX")
-                    write_vanilla_room(room_x, room_y, room_foreground, room_background)
+                    room_foreground = [air_code * 10] * 8
+                    room_background = [(hard_floor_code or "X") * 10] * 8
+                    write_vanilla_room(
+                        room_x,
+                        room_y,
+                        room_foreground,
+                        room_background,
+                        save_format,
+                        level_templates,
+                    )
 
             level_settings.set_obj(
                 LevelSetting(
