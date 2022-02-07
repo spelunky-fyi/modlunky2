@@ -58,6 +58,21 @@ def test_duplicate_session(client: TestClient):
             connection2.receive_json()
 
 
+def test_two_connections(client: TestClient):
+    connection1: WebSocketTestSession = client.websocket_connect("/123")
+    connection2: WebSocketTestSession = client.websocket_connect("/456")
+    with connection1, connection2:
+        connection1.send_json({"Person": {"name": "Roffy"}})
+        assert connection1.receive_json() == {
+            "Greeting": {"phrase": "hi Roffy from 123"}
+        }
+
+        connection2.send_json({"Person": {"name": "Colin"}})
+        assert connection2.receive_json() == {
+            "Greeting": {"phrase": "hi Colin from 456"}
+        }
+
+
 def test_skip_unrecognized(client: TestClient):
     connection: WebSocketTestSession = client.websocket_connect("/789")
     with connection:
