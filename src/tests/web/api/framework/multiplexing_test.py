@@ -52,11 +52,10 @@ def test_requests(client: TestClient):
 
 def test_duplicate_session(client: TestClient):
     connection1: WebSocketTestSession = client.websocket_connect("/456")
-    with connection1:
-        connection2: WebSocketTestSession = client.websocket_connect("/456")
-        with connection2:
-            with pytest.raises(WebSocketDisconnect, match=r"ID 456"):
-                connection2.receive_json()
+    connection2: WebSocketTestSession = client.websocket_connect("/456")
+    with connection1, connection2:
+        with pytest.raises(WebSocketDisconnect, match=r"ID 456"):
+            connection2.receive_json()
 
 
 def test_skip_unrecognized(client: TestClient):

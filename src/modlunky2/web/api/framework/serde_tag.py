@@ -15,7 +15,7 @@ class TagException(Exception):
 
 
 def to_tagged_dict(obj: Any) -> TaggedMessage:
-    data = to_dict(obj)
+    data = to_dict(obj, convert_sets=True)
     tag = type(obj).__name__
     return TaggedMessage({tag: data})
 

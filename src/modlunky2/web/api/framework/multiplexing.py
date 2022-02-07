@@ -1,7 +1,9 @@
+from anyio import create_task_group
+from anyio.abc import TaskGroup
 from dataclasses import dataclass
 import logging
 from starlette.routing import WebSocketRoute
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket
 from typing import (
     Any,
     Awaitable,
@@ -31,13 +33,20 @@ ParamType = TypeVar("ParamType")
 
 
 class SendConnection:
-    def __init__(self, websocket: WebSocket, session_id: SessionId) -> None:
+    def __init__(
+        self, websocket: WebSocket, session_id: SessionId, task_group: TaskGroup
+    ) -> None:
         self._websocket = websocket
         self._session_id = session_id
+        self._task_group = task_group
 
     @property
     def session_id(self) -> SessionId:
         return self._session_id
+
+    @property
+    def task_group(self) -> TaskGroup:
+        return self._task_group
 
     async def send(self, obj: Any) -> None:
         data = to_tagged_dict(obj)
@@ -71,15 +80,15 @@ class WSMultiplexer:
         await websocket.accept()
         try:
             with self._sid_manager.session_for(websocket) as session_id:
-                try:
+                async with create_task_group() as tg:
                     while True:
-                        await self._dispatch_one(websocket, session_id)
-                except WebSocketDisconnect:
-                    pass
+                        await self._dispatch_one(websocket, session_id, tg)
         except SessionException as ex:
             await websocket.close(reason=str(ex))
 
-    async def _dispatch_one(self, websocket: WebSocket, session_id: SessionId) -> None:
+    async def _dispatch_one(
+        self, websocket: WebSocket, session_id: SessionId, task_group: TaskGroup
+    ) -> None:
         data: TaggedMessage = await websocket.receive_json()
         try:
             obj = self._param_deserializer.from_tagged_dict(data)
@@ -88,6 +97,6 @@ class WSMultiplexer:
             return
 
         endpoint = self._param_to_endpoint[type(obj)]
-        sender = SendConnection(websocket, session_id)
+        sender = SendConnection(websocket, session_id, task_group)
 
         await endpoint(sender, obj)
