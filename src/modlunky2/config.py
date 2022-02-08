@@ -213,6 +213,7 @@ class Config:
     custom_level_editor_default_save_format: Optional[Dict] = skip_default_field(
         default=None
     )
+    command_prefix: Optional[List[str]] = skip_default_field(default=None)
 
     def __post_init__(self):
         if self.exe_dir is None:

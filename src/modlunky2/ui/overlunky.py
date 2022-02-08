@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import tkinter as tk
+from typing import List, Optional
 import zipfile
 from io import BytesIO
 from tkinter import ttk
@@ -96,10 +97,12 @@ class DownloadFrame(ttk.Frame):
             self.button["state"] = tk.NORMAL
 
 
-def launch_overlunky(_call, exe_path):
+def launch_overlunky(_call, exe_path, command_prefix: Optional[List[str]]):
     logger.info("Executing Overlunky Launcher with %s", exe_path)
     working_dir = exe_path.parent
-    cmd = [f"{exe_path}"]
+    cmd = ["/usr/bin/wine", f"{exe_path}"]
+    if command_prefix:
+        cmd = command_prefix + cmd
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
 
@@ -183,6 +186,7 @@ class OverlunkyTab(Tab):
         self.task_manager.call(
             "overlunky:launch_overlunky",
             exe_path=exe_path,
+            command_prefix=self.modlunky_config.command_prefix,
         )
 
     def overlunky_closed(self):
