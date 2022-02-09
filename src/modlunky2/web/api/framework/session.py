@@ -36,6 +36,7 @@ class SessionManager:
             )
         self.sid_to_addr[sid] = addr
 
-        yield sid
-
-        del self.sid_to_addr[sid]
+        try:
+            yield sid
+        finally:
+            del self.sid_to_addr[sid]

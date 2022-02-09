@@ -3,7 +3,7 @@ from anyio.abc import TaskGroup
 from dataclasses import dataclass
 import logging
 from starlette.routing import WebSocketRoute
-from starlette.websockets import WebSocket
+from starlette.websockets import WebSocket, WebSocketDisconnect
 from typing import (
     Any,
     Awaitable,
@@ -85,6 +85,10 @@ class WSMultiplexer:
                         await self._dispatch_one(websocket, session_id, tg)
         except SessionException as ex:
             await websocket.close(reason=str(ex))
+        except WebSocketDisconnect:
+            # We swallow disconnect since it's OK for clients to close the connection.
+            # We don't swallow close since we don't (currently) expect handlers to close the connection.
+            pass
 
     async def _dispatch_one(
         self, websocket: WebSocket, session_id: SessionId, task_group: TaskGroup
