@@ -146,7 +146,7 @@ def keyed_hashing(filepath, key):
 
 
 class Key:
-    def __init__(self, key=0, mask=2 ** 64 - 1):
+    def __init__(self, key=0, mask=2**64 - 1):
         self.key = key
         self.mask = mask
 

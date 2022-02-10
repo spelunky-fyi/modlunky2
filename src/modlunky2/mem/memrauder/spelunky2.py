@@ -120,6 +120,10 @@ class UidEntityMap:
         if self.meta.table_ptr == 0:
             return self.empty_poly
 
+        # -1 is used as a null-like value
+        if uid == -1:
+            return self.empty_poly
+
         addr = self._get_addr(uid)
         if addr == 0:
             return self.empty_poly

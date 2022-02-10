@@ -52,7 +52,7 @@ class WebSocketThread(threading.Thread):
         return self.modlunky_config.spelunky_fyi_api_token != self.api_token
 
     def get_backoff(self):
-        backoff = self.backoff * 2 ** self.retry_num + random.uniform(0, 1)
+        backoff = self.backoff * 2**self.retry_num + random.uniform(0, 1)
         self.retry_num += 1
         return min(backoff, self.max_backoff)
 

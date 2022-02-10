@@ -3031,6 +3031,7 @@ class LevelsTab(Tab):
             level_templates = LevelTemplates()
 
             hard_floor_code = None
+            air_code = "0"
             for tilecode in used_tiles:
                 tile_codes.set_obj(
                     TileCode(
@@ -3041,6 +3042,60 @@ class LevelsTab(Tab):
                 )
                 if tilecode[0].split(" ", 1)[0] == "floor_hard":
                     hard_floor_code = tilecode[0].split(" ", 1)[1]
+                elif tilecode[0].split(" ", 1)[0] == "empty":
+                    air_code = tilecode[0].split(" ", 1)[1]
+
+            def write_vanilla_room(
+                x,
+                y,
+                foreground,
+                background,
+                save_format,
+                level_templates,
+                hard_floor_code,
+            ):
+                if not save_format.include_vanilla_setrooms:
+                    return
+                vanilla_setroom_type = self.vanilla_setroom_type_for(theme, x, y)
+                if vanilla_setroom_type == LevelsTab.VanillaSetroomType.NONE:
+                    return
+                vf = []
+                vb = []
+                vs = []
+                vm = ""
+                dual = (not hard_floor_code) or background != [
+                    hard_floor_code * 10 for _ in range(8)
+                ]
+                if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
+                    vf = foreground
+                    vm = "the front layer"
+                elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
+                    vf = background
+                    vm = "the back layer"
+                elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
+                    vf = foreground
+                    vm = "both layers"
+                    if dual:
+                        vb = background
+                        vs.append(TemplateSetting.DUAL)
+
+                template_chunks = [
+                    Chunk(
+                        comment=None,
+                        settings=vs,
+                        foreground=vf,
+                        background=vb,
+                    )
+                ]
+                template_name = save_format.room_template_format.format(y=y, x=x)
+                comment = f"Auto-generated template to match {vm} of {template_name}."
+                level_templates.set_obj(
+                    LevelTemplate(
+                        name=f"setroom{room_y}-{room_x}",
+                        comment=comment,
+                        chunks=template_chunks,
+                    )
+                )
 
             for room_y in range(height):
                 for room_x in range(width):
@@ -3080,49 +3135,35 @@ class LevelsTab(Tab):
                             chunks=template_chunks,
                         )
                     )
-                    vanilla_setroom_type = (
-                        self.vanilla_setroom_type_for(theme, room_x, room_y)
-                        if save_format.include_vanilla_setrooms
-                        else LevelsTab.VanillaSetroomType.NONE
+                    write_vanilla_room(
+                        room_x,
+                        room_y,
+                        room_foreground,
+                        room_background,
+                        save_format,
+                        level_templates,
+                        hard_floor_code,
                     )
-                    vf = []
-                    vb = []
-                    vs = []
-                    vm = ""
-                    if vanilla_setroom_type == LevelsTab.VanillaSetroomType.FRONT:
-                        vf = room_foreground
-                        vm = "the front layer"
-                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.BACK:
-                        vf = room_background
-                        vm = "the back layer"
-                    elif vanilla_setroom_type == LevelsTab.VanillaSetroomType.DUAL:
-                        vf = room_foreground
-                        vm = "both layers"
-                        if dual:
-                            vb = room_background
-                            vs.append(TemplateSetting.DUAL)
 
-                    if vanilla_setroom_type != LevelsTab.VanillaSetroomType.NONE:
-                        template_chunks = [
-                            Chunk(
-                                comment=None,
-                                settings=vs,
-                                foreground=vf,
-                                background=vb,
-                            )
-                        ]
-                        comment_format = (
-                            "Auto-generated template to match {layer} of {template}."
-                        )
-                        level_templates.set_obj(
-                            LevelTemplate(
-                                name="setroom{y}-{x}".format(y=room_y, x=room_x),
-                                comment=comment_format.format(
-                                    layer=vm, template=template_name
-                                ),
-                                chunks=template_chunks,
-                            )
-                        )
+            # Write vanilla setrooms for any room that the game expects a setroom for, but does not
+            # exist in the current size of the level.
+            for room_y in range(15):
+                for room_x in range(8):
+                    # If the room has already been handled, just continue to the next room.
+                    if room_y < height and room_x < width:
+                        continue
+                    room_foreground = [air_code * 10] * 8
+                    room_background = [(hard_floor_code or "X") * 10] * 8
+                    write_vanilla_room(
+                        room_x,
+                        room_y,
+                        room_foreground,
+                        room_background,
+                        save_format,
+                        level_templates,
+                        hard_floor_code,
+                    )
+
             level_settings.set_obj(
                 LevelSetting(
                     name="size",

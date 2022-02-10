@@ -3,6 +3,7 @@ import logging
 import subprocess
 import tkinter as tk
 from tkinter import ttk
+from typing import List, Optional
 
 from modlunky2.config import Config
 from modlunky2.ui.play.config import SECTIONS, PlaylunkyConfig
@@ -26,12 +27,18 @@ from modlunky2.ui.play.releases import VersionFrame, parse_download_url
 logger = logging.getLogger("modlunky2")
 
 
-def launch_playlunky(_call, install_dir, exe_path, use_console):
+def launch_playlunky(
+    _call, install_dir, exe_path, use_console, command_prefix: Optional[List[str]]
+):
     logger.info(
         "Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR)
     )
     working_dir = exe_path.parent
     cmd = [f"{exe_path}", f"--exe_dir={install_dir}"]
+
+    if command_prefix:
+        cmd = command_prefix + cmd
+
     if use_console:
         cmd.append("--console")
 
@@ -310,6 +317,7 @@ class PlayTab(Tab):
             install_dir=self.modlunky_config.install_dir,
             exe_path=exe_path,
             use_console=self.modlunky_config.playlunky_console,
+            command_prefix=self.modlunky_config.command_prefix,
         )
 
     def playlunky_closed(self):
