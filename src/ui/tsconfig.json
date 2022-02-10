@@ -24,6 +24,11 @@
      */
     "allowJs": true,
     "checkJs": true,
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"

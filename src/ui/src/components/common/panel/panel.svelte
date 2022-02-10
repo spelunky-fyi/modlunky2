@@ -1,5 +1,5 @@
 <script lang="ts">
-  import classes from "../../../util/classes";
+  import classes from "@/util/classes";
 
   export let padding: PanelPadding = "md";
   export let rounded = true;

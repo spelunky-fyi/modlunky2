@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { colorKey } from "../../../store";
-  import { Button, Checkbox, InputColor, Stack, Panel, InputText } from "../../common";
+  import { colorKey } from "@/store";
+  import { Button, Checkbox, InputColor, Stack, Panel, InputText } from "@/components/common";
 </script>
 
 <div class="center h-full">

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import classes from "../../../../util/classes";
-  import { Button } from "../../../common";
+  import classes from "@/util/classes";
+  import { Button } from "@/components/common";
 
   let _class = "";
   export { _class as class };

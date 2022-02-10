@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Checkbox, Stack, Text, Panel, InputNumber } from "../../common";
+  import { Button, Checkbox, Stack, Text, Panel, InputNumber } from "@/components/common";
   import VersionSelect from "./VersionSelect.svelte";
 </script>
 

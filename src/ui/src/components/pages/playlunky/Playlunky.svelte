@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { Button, Panel, Stack } from "@/components/common";
+  import Console from "@/components/Console.svelte";
   import PlaylunkyOptions from "./PlaylunkyOptions.svelte";
-  import { Button, Panel, Stack } from "../../common";
-  import Console from "../../Console.svelte";
   import ModList from "./modList/ModList.svelte";
 </script>
 

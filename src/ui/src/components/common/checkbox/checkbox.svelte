@@ -1,5 +1,5 @@
 <script lang="ts">
-  import classes from "../../../util/classes";
+  import classes from "@/util/classes";
   import Text from "../text/text.svelte";
 
   export let checked = false;

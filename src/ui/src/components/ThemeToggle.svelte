@@ -3,7 +3,7 @@
   import IconLightMode from "~icons/ic/baseline-light-mode";
   import IconDarkMode from "~icons/ic/baseline-dark-mode";
   import { Button } from "./common";
-  import classes from "../util/classes";
+  import classes from "@/util/classes";
 
   const storageKey = "theme-preference";
 

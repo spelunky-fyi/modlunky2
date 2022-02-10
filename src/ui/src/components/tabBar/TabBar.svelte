@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { tabs } from "../../tabs";
-  import { activeTabIndex } from "../../store";
+  import { activeTabIndex } from "@/store";
+  import { tabs } from "@/tabs";
 
   function selectTab(index: number) {
     $activeTabIndex = index;

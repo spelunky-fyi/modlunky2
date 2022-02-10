@@ -1,5 +1,5 @@
 <script>
-  import { Button, Stack, Text, InputFile, Checkbox, Panel } from "../../common";
+  import { Button, Stack, Text, InputFile, Checkbox, Panel } from "@/components/common";
 </script>
 
 <div class="center h-full">

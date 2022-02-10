@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { filteredInstalledMods } from "../../../../store";
+  import { filteredInstalledMods } from "@/store";
   import ModListHeader from "./ModListHeader.svelte";
   import ModListItem from "./ModListItem.svelte";
 </script>

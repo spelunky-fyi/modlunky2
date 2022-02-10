@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Stack, Text } from "../../../common";
+  import { Stack, Text } from "@/components/common";
 
   export let count = 0;
 </script>

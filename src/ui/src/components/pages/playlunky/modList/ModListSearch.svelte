@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Button, Stack, InputText } from "../../../common";
-  import { searchInput } from "../../../../store";
   import IconRefresh from "~icons/ic/baseline-refresh";
   import IconFolder from "~icons/ic/baseline-folder-open";
+  import { Button, Stack, InputText } from "@/components/common";
+  import { searchInput } from "@/store";
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Escape") {

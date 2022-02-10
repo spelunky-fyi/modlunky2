@@ -1,9 +1,9 @@
-import Playlunky from "./components/pages/playlunky";
-import InstallMods from "./components/pages/installmods";
-import Overlunky from "./components/pages/overlunky";
-import ExtractAssets from "./components/pages/extractassets";
-import Trackers from "./components/pages/trackers";
-import Settings from "./components/pages/settings";
+import Playlunky from "@/components/pages/playlunky";
+import InstallMods from "@/components/pages/installmods";
+import Overlunky from "@/components/pages/overlunky";
+import ExtractAssets from "@/components/pages/extractassets";
+import Trackers from "@/components/pages/trackers";
+import Settings from "@/components/pages/settings";
 
 export const tabs = [
   {

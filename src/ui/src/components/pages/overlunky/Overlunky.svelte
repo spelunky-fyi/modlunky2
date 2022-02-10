@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Panel, Stack } from "../../common";
+  import { Button, Panel, Stack } from "@/components/common";
 </script>
 
 <div class="center h-full">

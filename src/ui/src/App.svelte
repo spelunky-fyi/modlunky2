@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { activeTabIndex } from "./store";
-  import { tabs } from "./tabs";
+  import { activeTabIndex } from "@/store";
+  import { tabs } from "@/tabs";
   import Console from "./components/Console.svelte";
   import TabBar from "./components/tabBar/TabBar.svelte";
   import Titlebar from "./components/Titlebar.svelte";

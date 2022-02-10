@@ -3,7 +3,7 @@
   import IconFolder from "~icons/tabler/folder";
   import IconTrash from "~icons/tabler/trash";
   import IconGripHorizontal from "~icons/tabler/grip-horizontal";
-  import { Stack, Text } from "../../../common";
+  import { Stack, Text } from "@/components/common";
   import ModListItemButton from "./ModListItemButton.svelte";
 
   export let name = "Mod Name";

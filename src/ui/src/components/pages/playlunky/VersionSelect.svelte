@@ -1,9 +1,9 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { version, versions } from "../../../store";
-  import { Button } from "../../common";
-  import { clickOutside } from "../../../actions/clickOutside";
   import IconChevronDown from "~icons/fa-solid/chevron-down";
+  import { version, versions } from "@/store";
+  import { clickOutside } from "@/actions/clickOutside";
+  import { Button } from "@/components/common";
 
   const menuVersions = versions.slice(2);
   let lastSelected = menuVersions[0];
