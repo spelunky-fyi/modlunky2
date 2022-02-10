@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 from typing import Generator
 import pytest
 from serde import serde
@@ -11,6 +12,8 @@ from modlunky2.web.api.framework.multiplexing import (
     WSMultiplexer,
     WSMultiplexerRoute,
 )
+
+logger = logging.getLogger("modlunky2")
 
 
 @serde
@@ -25,13 +28,32 @@ class Greeting:
     phrase: str
 
 
+@serde
+@dataclass
+class Oops:
+    content: str
+
+
+class OopsException(Exception):
+    """Testing exception"""
+
+
 async def hello(connection: SendConnection, person: Person):
     await connection.send(Greeting(f"hi {person.name} from {connection.session_id}"))
 
 
+async def whoops(_connection: SendConnection, oops: Oops):
+    raise OopsException(f"Got {oops.content}")
+
+
 @pytest.fixture(name="client")
 def make_client() -> Generator[TestClient, None, None]:
-    multiplexer = WSMultiplexer([WSMultiplexerRoute[Person](Person, hello)])
+    multiplexer = WSMultiplexer(
+        [
+            WSMultiplexerRoute[Person](Person, hello),
+            WSMultiplexerRoute[Oops](Oops, whoops),
+        ]
+    )
     app = Starlette(routes=[multiplexer.starlette_route])
     test_client = TestClient(app=app)
     with test_client:
@@ -79,3 +101,20 @@ def test_skip_unrecognized(client: TestClient):
         connection.send_json({"Mysterious": {}})
         connection.send_json({"Person": {"name": "Tina"}})
         assert connection.receive_json() == {"Greeting": {"phrase": "hi Tina from 789"}}
+
+
+def test_exception_handling():
+    multiplexer = WSMultiplexer(
+        [
+            WSMultiplexerRoute[Person](Person, hello),
+            WSMultiplexerRoute[Oops](Oops, whoops),
+        ]
+    )
+    app = Starlette(routes=[multiplexer.starlette_route])
+    test_client = TestClient(app=app, backend_options={"debug": True})
+    with test_client:
+        connection: WebSocketTestSession = test_client.websocket_connect("/257")
+        with pytest.raises(OopsException), connection:
+            connection.send_json({"Oops": {"content": "uh"}})
+            # This ensures we wait for the exception
+            connection.receive_json()

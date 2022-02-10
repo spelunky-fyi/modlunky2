@@ -3,7 +3,13 @@ import dataclasses
 from enum import Enum, auto
 import logging
 import math
-from anyio import create_memory_object_stream, create_task_group
+from anyio import (
+    TASK_STATUS_IGNORED,
+    WouldBlock,
+    create_memory_object_stream,
+    create_task_group,
+)
+from anyio.abc import TaskStatus
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from dataclasses import InitVar, dataclass
 from serde import serde
@@ -88,21 +94,31 @@ class _SessionCopier:
         elif level is ServiceLevel.MUST_DELIVER:
             stream = self._must_deliver.send
         else:
-            raise ValueError(f"Unknown service level {level}")
+            raise ValueError(f"Unknown service level {level}")  # pragma: no cover
 
-        stream.send_nowait(pub)
-
-    async def run(self) -> None:
-        """Send messages until the client disconnects"""
         try:
-            async with create_task_group() as tg:  # , self._may_drop.recv as _, self._must_deliver.recv as _:
-                tg.start_soon(self._run_one, self._may_drop.recv)
-                tg.start_soon(self._run_one, self._must_deliver.recv)
-        finally:
-            self._may_drop.recv.close()
-            self._must_deliver.recv.close()
+            stream.send_nowait(pub)
+        except WouldBlock:
+            pass
 
-    async def _run_one(self, recv: MemoryObjectReceiveStream[Published]) -> None:
+    async def run(
+        self,
+        *,
+        task_status: TaskStatus = TASK_STATUS_IGNORED,
+    ) -> None:
+        """Send messages until the client disconnects"""
+        async with self._may_drop.recv, self._must_deliver.recv, create_task_group() as tg:
+            await tg.start(self._run_one, self._may_drop.recv)
+            await tg.start(self._run_one, self._must_deliver.recv)
+            task_status.started()
+
+    async def _run_one(
+        self,
+        recv: MemoryObjectReceiveStream[Published],
+        *,
+        task_status: TaskStatus = TASK_STATUS_IGNORED,
+    ) -> None:
+        task_status.started()
         async for pub in recv:
             await self.connection.send(pub)
 
@@ -157,7 +173,6 @@ class PubSubManager:
         for t in raw_topics:
             if t not in self._topic_info:
                 unknown_topics.add(t)
-
         if unknown_topics:
             raise ValueError(f"Request contains unknown topics {unknown_topics!r}")
 
