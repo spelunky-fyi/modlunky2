@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Stack } from "@/components/common";
   import { toggleMod } from "@/store";
+  import { Stack } from "@/components/common";
   import ModListSearch from "./ModListSearch.svelte";
   import EnabledMods from "./EnabledMods.svelte";
   import InstalledMods from "./InstalledMods.svelte";
