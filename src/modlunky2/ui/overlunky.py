@@ -100,7 +100,7 @@ class DownloadFrame(ttk.Frame):
 def launch_overlunky(_call, exe_path, command_prefix: Optional[List[str]]):
     logger.info("Executing Overlunky Launcher with %s", exe_path)
     working_dir = exe_path.parent
-    cmd = ["/usr/bin/wine", f"{exe_path}"]
+    cmd = [f"{exe_path}"]
     if command_prefix:
         cmd = command_prefix + cmd
     proc = subprocess.Popen(cmd, cwd=working_dir)

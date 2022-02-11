@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-from PIL import Image
+from colorhash import ColorHash
+from PIL import Image, ImageDraw, ImageFont
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.sprites.base_classes import (
@@ -21,6 +22,7 @@ class SpelunkySpriteFetcher:
         # Now biome specific pieces
         self._biome_dict = self._init_biomes()
         self._biome_map = {k: v.get for k, v in self._biome_dict.items()}
+        self._dyn_cache = {}
 
     def _init_biomes(self) -> Dict[str, AbstractBiome]:
         from modlunky2.sprites import biomes
@@ -89,3 +91,54 @@ class SpelunkySpriteFetcher:
                 if img:
                     break
         return img
+
+    def get_dyn(self, name: str) -> Image.Image:
+        if name in self._dyn_cache:
+            return self._dyn_cache[name]
+
+        color = ColorHash(name)
+        text_color = get_text_color(color.rgb)
+        imgtxt = "\n".join(name.split("_"))
+
+        w, h = 128, 128
+        padding = 5
+        img = Image.new("RGB", (w, h))
+        imgdraw = ImageDraw.Draw(img)
+        imgdraw.rectangle([(0, 0), (w, h)], fill=color.hex, outline=text_color)
+
+        font_size = 1
+        font = ImageFont.truetype(
+            str(BASE_DIR / "static/fonts/FiraSans-SemiBold.ttf"), size=font_size
+        )
+        while True:
+            font_size += 1
+            new_font = ImageFont.truetype(
+                str(BASE_DIR / "static/fonts/FiraSans-SemiBold.ttf"), size=font_size
+            )
+            dimensions = imgdraw.textsize(imgtxt, new_font)
+            if dimensions[0] > (w - (padding * 2)) or dimensions[1] > (
+                h - (padding * 2) - padding
+            ):
+                break
+            font = new_font
+
+        txt_dimensions = imgdraw.textsize(imgtxt, font)
+        x_padding = (w - txt_dimensions[0]) / 2
+        y_padding = (h - txt_dimensions[1]) / 2
+
+        imgdraw.multiline_text(
+            (x_padding, y_padding),
+            imgtxt,
+            font=font,
+            align="center",
+            fill=text_color,
+        )
+
+        self._dyn_cache[name] = img
+        return img
+
+
+def get_text_color(rgb):
+    if (rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114) > 160:
+        return (0, 0, 0, 255)
+    return (255, 255, 255, 255)

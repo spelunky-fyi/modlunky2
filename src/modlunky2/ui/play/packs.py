@@ -224,7 +224,9 @@ class PacksFrame(ScrollableLabelFrame):
             pack.forget()
             pack.render_buttons()
 
-            if query and query not in pack_name.lower():
+            if query and (
+                query not in pack_name.lower() and query not in pack.name.lower()
+            ):
                 display = False
 
             if filter_selected == "Selected" and not pack.selected():
