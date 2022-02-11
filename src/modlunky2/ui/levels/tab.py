@@ -6854,7 +6854,7 @@ class LevelsTab(Tab):
             )
 
         if img is None:
-            img = self._sprite_fetcher.get("lua_tile")
+            img = self._sprite_fetcher.get_dyn(str(tile))
         width, height = img.size
 
         scale_factor = 128 / scale
