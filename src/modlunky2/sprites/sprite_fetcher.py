@@ -2,8 +2,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 from colorhash import ColorHash
-from PIL import Image, ImageDraw
-from ttf_opensans import opensans
+from PIL import Image, ImageDraw, ImageFont
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.sprites.base_classes import (
@@ -108,10 +107,14 @@ class SpelunkySpriteFetcher:
         imgdraw.rectangle([(0, 0), (w, h)], fill=color.hex, outline=text_color)
 
         font_size = 1
-        font = opensans(font_weight=600).imagefont(size=font_size)
+        font = ImageFont.truetype(
+            str(BASE_DIR / "static/fonts/FiraSans-SemiBold.ttf"), size=font_size
+        )
         while True:
             font_size += 1
-            new_font = opensans(font_weight=600).imagefont(size=font_size)
+            new_font = ImageFont.truetype(
+                str(BASE_DIR / "static/fonts/FiraSans-SemiBold.ttf"), size=font_size
+            )
             dimensions = imgdraw.textsize(imgtxt, new_font)
             if dimensions[0] > (w - (padding * 2)) or dimensions[1] > (
                 h - (padding * 2) - padding
