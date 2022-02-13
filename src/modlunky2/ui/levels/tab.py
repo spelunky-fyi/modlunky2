@@ -190,7 +190,10 @@ class LevelsTab(Tab):
         self.mag_full = None
         self.grid_lines_foreground = []
         self.grid_lines_background = []
+        self.grid_rooms_foreground = []
+        self.grid_rooms_background = []
         self.hide_grid_lines = False
+        self.hide_grid_rooms = False
         self.custom_editor_foreground_tile_images = None
         self.custom_editor_background_tile_images = None
         self.custom_editor_foreground_tile_codes = None
@@ -774,16 +777,19 @@ class LevelsTab(Tab):
         )
         self.button_tilecode_add_custom.grid(row=3, column=2, sticky="nsw")
 
+        settings_row = 0
+
         theme_label = tk.Label(options_panel, text="Level Theme:")
-        theme_label.grid(row=0, column=0, columnspan=2, sticky="nsw")
+        theme_label.grid(row=settings_row, column=0, columnspan=2, sticky="nsw")
         self.theme_label = theme_label
 
+        settings_row += 1
         # Combobox for selecting the level theme. The theme affects the texture used to
         # display many tiles and the level background; the suggested tiles in the tile
         # palette; and the additional vanilla setrooms that are saved into the level
         # file.
         self.theme_combobox = ttk.Combobox(options_panel, height=25)
-        self.theme_combobox.grid(row=1, column=0, sticky="nsw")
+        self.theme_combobox.grid(row=settings_row, column=0, sticky="nsw")
         self.theme_combobox["state"] = tk.DISABLED
         self.theme_combobox["values"] = [
             "Dwelling",
@@ -814,19 +820,21 @@ class LevelsTab(Tab):
             command=update_theme,
         )
         self.theme_select_button["state"] = tk.DISABLED
-        self.theme_select_button.grid(row=1, column=1, sticky="nsw")
+        self.theme_select_button.grid(row=settings_row, column=1, sticky="nsw")
 
         def theme_selected(_):
             self.theme_select_button["state"] = tk.NORMAL
 
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
 
+        settings_row += 1
+        settings_row += 1
         # Comboboxes to change the size of the level. If the size is decreased, the
         # tiles in the missing space are still cached and restored if the size is
         # increased again. This cache is cleared if another level is loaded or the
         # level editor is closed.
         size_frame = tk.Frame(options_panel)
-        size_frame.grid(column=0, row=3, columnspan=2, sticky="w")
+        size_frame.grid(column=0, row=settings_row, columnspan=2, sticky="w")
         size_frame.columnconfigure(2, minsize=10)
         self.size_label = tk.Label(size_frame, text="Level size:")
         self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
@@ -887,11 +895,15 @@ class LevelsTab(Tab):
         self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
         self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
 
-        option_header = tk.Label(options_panel, text="Save format:")
-        option_header.grid(column=0, row=5, sticky="nsw")
+        settings_row += 1
+        settings_row += 1
 
+        option_header = tk.Label(options_panel, text="Save format:")
+        option_header.grid(column=0, row=settings_row, sticky="nsw")
+
+        settings_row += 1
         save_format_frame = tk.Frame(options_panel)
-        save_format_frame.grid(column=0, row=6, columnspan=2, sticky="nwe")
+        save_format_frame.grid(column=0, row=settings_row, columnspan=2, sticky="nwe")
 
         save_format_variable = tk.IntVar()
         save_format_variable.set(0)
@@ -902,16 +914,19 @@ class LevelsTab(Tab):
         for save_format in self.base_save_formats + self.custom_save_formats:
             self.add_save_format_radio(save_format, save_format_frame)
 
+        settings_row += 1
         self.save_format_warning_message = tk.Label(
             options_panel, text="", wraplength=350, justify=tk.LEFT
         )
         self.save_format_warning_message.grid(
-            column=0, row=7, columnspan=2, sticky="nw"
+            column=0, row=settings_row, columnspan=2, sticky="nw"
         )
 
         if self.default_save_format:
             self.update_save_format_variable(self.default_save_format)
             self.update_save_format_warning(self.default_save_format)
+
+        settings_row += 1
 
         def create_template():
             self.show_setroom_create_dialog(
@@ -928,7 +943,7 @@ class LevelsTab(Tab):
             fg="white",
             command=create_template,
         )
-        create_template_button.grid(row=8, column=0, sticky="nw")
+        create_template_button.grid(row=settings_row, column=0, sticky="nw")
 
         # Checkbox to toggle the visibility of the grid lines.
         hide_grid_var = tk.IntVar()
@@ -944,6 +959,7 @@ class LevelsTab(Tab):
                 self.custom_level_canvas_background, self.grid_lines_background
             )
 
+        settings_row += 1
         tk.Checkbutton(
             options_panel,
             text="Hide grid lines",
@@ -951,10 +967,36 @@ class LevelsTab(Tab):
             onvalue=True,
             offvalue=False,
             command=toggle_hide_grid,
-        ).grid(row=9, column=0, sticky="nw", pady=5)
+        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
 
+        # Checkbox to toggle the visibility of the grid lines on room boundaries.
+        hide_room_grid_var = tk.IntVar()
+        hide_room_grid_var.set(self.hide_grid_rooms)
+
+        def toggle_hide_room_grid():
+            nonlocal hide_room_grid_var
+            self.hide_grid_rooms = hide_room_grid_var.get()
+
+            self.hide_room_grid(
+                self.custom_level_canvas_foreground, self.grid_rooms_foreground
+            )
+            self.hide_room_grid(
+                self.custom_level_canvas_background, self.grid_rooms_background
+            )
+
+        settings_row += 1
+        tk.Checkbutton(
+            options_panel,
+            text="Hide room lines",
+            variable=hide_room_grid_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_hide_room_grid,
+        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
+
+        settings_row += 1
         grid_size_frame = tk.Frame(options_panel)
-        grid_size_frame.grid(row=10, column=0, sticky="nw", pady=5)
+        grid_size_frame.grid(row=settings_row, column=0, sticky="nw", pady=5)
         grid_size_var = tk.StringVar()
         grid_size_var.set(str(self.custom_editor_zoom_level))
         grid_size_label_frame = tk.Frame(grid_size_frame)
@@ -4856,10 +4898,39 @@ class LevelsTab(Tab):
             for i in range(0, rows * 8)
         ]
 
+    def _draw_room_grid_custom(self, cols, rows, canvas):
+        zoom_level = self.custom_editor_zoom_level
+        return [
+            canvas.create_line(
+                i * 10 * zoom_level,
+                0,
+                i * 10 * zoom_level,
+                rows * 8 * zoom_level,
+                fill="#30F030",
+            )
+            for i in range(0, cols)
+        ] + [
+            # for i in range(0, rows * 8):
+            canvas.create_line(
+                0,
+                i * 8 * zoom_level,
+                zoom_level * (cols * 10),
+                i * 8 * zoom_level,
+                fill="#30F030",
+            )
+            for i in range(0, rows)
+        ]
+
     def hide_grid(self, canvas, grid_lines):
         for grid_line in grid_lines:
             canvas.itemconfig(
                 grid_line, state=("hidden" if self.hide_grid_lines else "normal")
+            )
+
+    def hide_room_grid(self, canvas, grid_lines):
+        for grid_line in grid_lines:
+            canvas.itemconfig(
+                grid_line, state=("hidden" if self.hide_grid_rooms else "normal")
             )
 
     def _draw_grid_full(self, cols, rows, canvas):
@@ -5900,6 +5971,12 @@ class LevelsTab(Tab):
         self.grid_lines_background = self._draw_grid_custom(
             width, height, theme, self.custom_level_canvas_background
         )
+        self.grid_rooms_foreground = self._draw_room_grid_custom(
+            width, height, self.custom_level_canvas_foreground
+        )
+        self.grid_rooms_background = self._draw_room_grid_custom(
+            width, height, self.custom_level_canvas_background
+        )
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
@@ -5951,6 +6028,12 @@ class LevelsTab(Tab):
         # If the "hide grid" option is selected, this will hide the grid lines.
         self.hide_grid(self.custom_level_canvas_foreground, self.grid_lines_foreground)
         self.hide_grid(self.custom_level_canvas_background, self.grid_lines_background)
+        self.hide_room_grid(
+            self.custom_level_canvas_foreground, self.grid_rooms_foreground
+        )
+        self.hide_room_grid(
+            self.custom_level_canvas_background, self.grid_rooms_background
+        )
 
     # Look through the level templates and try to find one that matches an existing save
     # format.
