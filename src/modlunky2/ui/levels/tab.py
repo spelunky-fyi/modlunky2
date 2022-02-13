@@ -1973,17 +1973,21 @@ class LevelsTab(Tab):
         # 5 = draw bottom left + raise 1 tile
         # 6 = position doors
         # 7 = draw bottom left + raise half tile
-        # 8 = draw bottom left + lowere 1 tile
-        # 9 = draw bottom left + raise 1 tile + move left 1 tile
-        # 10 = draw bottom left + raise 1 tile + move left 1 tile
+        # 8 = draw bottom left + lower 1 tile.
+        # 9 = draw bottom left + raise 1 tile + move left 1.5 tiles
+        # 10 = draw bottom left + raise 2 tiles
         # 11 = move left 1 tile
         # 12 = raise 1 tile
         # 13 = draw from bottom left + move left half tile
         # 14 = precise bottom left for yama
-        self.draw_mode.append(["anubis", 2])
-        self.draw_mode.append(["olmec", 5])
+        # 15 = draw bottom left + raise 1 tile + move left 1 tile.
+        # 16 = move left half a tile.
+        # 17 = center + move down half a tile.
+        # 18 = draw bottom left + lower 1.5 tiles + move left 1.5 tiles.
+        self.draw_mode.append(["anubis", 7])
+        self.draw_mode.append(["olmec", 15])
         self.draw_mode.append(["alienqueen", 7])
-        self.draw_mode.append(["kingu", 2])
+        self.draw_mode.append(["kingu", 18])
         self.draw_mode.append(["coffin", 2])
         self.draw_mode.append(["dog_sign", 2])
         self.draw_mode.append(["bunkbed", 2])
@@ -2001,7 +2005,7 @@ class LevelsTab(Tab):
         self.draw_mode.append(["crown_statue", 7])
         self.draw_mode.append(["lamassu", 2])
         self.draw_mode.append(["madametusk", 2])
-        self.draw_mode.append(["giant_frog", 3])
+        self.draw_mode.append(["giant_frog", 17])
         self.draw_mode.append(["door", 13])
         self.draw_mode.append(["starting_exit", 13])
         self.draw_mode.append(["eggplant_door", 13])
@@ -2023,6 +2027,12 @@ class LevelsTab(Tab):
         self.draw_mode.append(["totem_trap", 2])
         self.draw_mode.append(["lion_trap", 2])
         self.draw_mode.append(["vlad", 4])
+        self.draw_mode.append(["yeti_queen", 2])
+        self.draw_mode.append(["yeti_king", 2])
+        self.draw_mode.append(["crabman", 2])
+        self.draw_mode.append(["giant_fly", 2])
+        self.draw_mode.append(["ammit", 16])
+        self.draw_mode.append(["humphead", 13])
 
         combo_tile_ids = []
         for tile_info in VALID_TILE_CODES:
@@ -6799,13 +6809,17 @@ class LevelsTab(Tab):
         # 5 = draw bottom left + raise 1 tile
         # 6 = position doors
         # 7 = draw bottom left + raise half tile
-        # 8 = draw bottom left + lowere 1 tile
-        # 9 = draw bottom left + raise 1 tile + move left 1 tile
-        # 10 = draw bottom left + raise 1 tile + move left 1 tile
+        # 8 = draw bottom left + lower 1 tile.
+        # 9 = draw bottom left + raise 1 tile + move left 1.5 tiles.
+        # 10 = draw bottom left + raise 2 tile.
         # 11 = move left 1 tile
         # 12 = raise 1 tile
         # 13 = draw from bottom left + move left half tile
         # 14 = precise bottom left for yama
+        # 15 = draw bottom left + raise 1 tile + move left 1 tile.
+        # 16 = move left half a tile.
+        # 17 = center + move down half a tile.
+        # 18 = draw bottom left + lower 1.5 tiles + move left 1.5 tiles.
         x_coord = 0
         y_coord = 0
         scale_factor = scale / 50
@@ -6826,7 +6840,7 @@ class LevelsTab(Tab):
         elif mode == 7:
             y_coord = height / 2 + 25 * scale_factor
         elif mode == 8:
-            y_coord = (height / 2 + 50 * scale_factor) * -1
+            y_coord = height / 2 - 50 * scale_factor
         elif mode == 9:
             y_coord = height / 2 + 50 * scale_factor
             x_coord = 75 * scale_factor
@@ -6842,6 +6856,17 @@ class LevelsTab(Tab):
         elif mode == 14:
             y_coord = height - 50 * scale_factor
             x_coord = 100 * scale_factor
+        elif mode == 15:
+            y_coord = height / 2 + 50 * scale_factor
+            x_coord = 50 * scale_factor
+        elif mode == 16:
+            x_coord = 25 * scale_factor
+        elif mode == 17:
+            x_coord = width / 3.2
+            y_coord = height / 2 - 25 * scale_factor
+        elif mode == 18:
+            y_coord = height / 2 - 75 * scale_factor
+            x_coord = 75 * scale_factor
         return int(x_coord), int(y_coord)
 
     def get_texture(self, tile, biome, lvl, scale):
