@@ -5759,7 +5759,7 @@ class LevelsTab(Tab):
         secondary_backup_index = 0
 
         # Populate the default tile code for left clicks.
-        if self.tile_pallete_map["1"]:
+        if "1" in self.tile_pallete_map:
             # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
             tile = self.tile_pallete_map["1"]
             self.panel_sel_custom["image"] = tile[1]
@@ -5772,7 +5772,7 @@ class LevelsTab(Tab):
             secondary_backup_index = 1
 
         # Populate the default tile code for right clicks.
-        if self.tile_pallete_map["0"]:
+        if "0" in self.tile_pallete_map:
             # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
             tile = self.tile_pallete_map["0"]
             self.panel_sel_secondary_custom["image"] = tile[1]
