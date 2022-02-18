@@ -7,7 +7,7 @@ import logging
 import shutil
 import time
 from enum import Enum
-from typing import Dict, List, Optional, TypeVar, Set
+from typing import Any, Dict, List, Optional, TypeVar, Set
 
 try:
     import winreg
@@ -181,10 +181,10 @@ class Config:
     trackers: TrackersConfig = field(default_factory=TrackersConfig)
     show_packing: bool = field(default=False, skip_if_default=True)
     level_editor_tab: Optional[int] = field(default=None, skip_if_default=True)
-    custom_level_editor_custom_save_formats: Optional[List[Dict]] = field(
+    custom_level_editor_custom_save_formats: Optional[List[Dict[str, Any]]] = field(
         default=None, skip_if_default=True
     )
-    custom_level_editor_default_save_format: Optional[Dict] = field(
+    custom_level_editor_default_save_format: Optional[Dict[str, Any]] = field(
         default=None, skip_if_default=True
     )
     command_prefix: Optional[List[str]] = field(default=None, skip_if_default=True)
@@ -205,15 +205,13 @@ class Config:
         if exe_dir is None:
             exe_dir = Path(__file__).resolve().parent
 
-        make_new = True
+        config = None
         if config_path.exists():
-            make_new = False
             with config_path.open("r", encoding="utf-8") as config_file:
                 try:
                     config = serde.json.from_json(Config, config_file.read())
                     config.config_path = config_path
                 except json.decoder.JSONDecodeError:
-                    make_new = True
                     now = int(time.time())
                     backup_path = config_path.with_suffix(f".{now}.json")
                     logger.exception(
@@ -221,7 +219,7 @@ class Config:
                     )
                     shutil.copyfile(config_path, backup_path)
 
-        if make_new:
+        if config is None:
             config = Config()
             config.install_dir = guess_install_dir(exe_dir)
             config.config_path = config_path
@@ -248,9 +246,13 @@ class Config:
         return urlunparse(parts)
 
     def _get_tmp_path(self):
+        if self.config_path is None:
+            raise TypeError("config_path shouldn't be None")
         return self.config_path.with_suffix(f"{self.config_path.suffix}.tmp")
 
     def save(self):
+        if self.config_path is None:
+            raise TypeError("config_path shouldn't be None")
         self.dirty = False
 
         # Make a temporary file so we can do an atomic replace
