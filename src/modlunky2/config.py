@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import dataclasses
+from copy import deepcopy
 from dataclasses import dataclass
 import json
 import logging
@@ -115,7 +115,7 @@ T = TypeVar("T")
 @dataclass
 class CommonTrackerConfig:
     def clone(self: T) -> T:
-        return dataclasses.replace(self)
+        return deepcopy(self)
 
 
 class SaveableCategory(Enum):
