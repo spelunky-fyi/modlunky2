@@ -60,7 +60,7 @@ def launch(args, log_level):
         exe_dir=exe_dir,
     )
 
-    shutdown_callback = web_service.launch_in_thread()
+    shutdown_callback = web_service.launch_in_thread(config)
     native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()
     shutdown_callback()

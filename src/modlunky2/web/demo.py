@@ -58,7 +58,7 @@ async def app_lifespan(pub_manager: PubSubManager, _app: Starlette):
         tg.cancel_scope.cancel()
 
 
-def make_app() -> Starlette:
+def make_asgi_app() -> Starlette:
     topics = [PubSubTopic(TimeTick, ServiceLevel.MAY_DROP)]
     pub_manager = PubSubManager(topics)
     multiplexer = WSMultiplexer(
