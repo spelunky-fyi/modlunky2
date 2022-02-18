@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import dataclasses
 import datetime
 import glob
 import logging
@@ -16,9 +17,14 @@ from fnmatch import fnmatch
 from pathlib import Path
 from shutil import copyfile
 from tkinter import ttk
+from typing import Optional
+from typing_extensions import Self
 
 import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
+from serde.de import deserialize
+import serde.json
+from serde.se import serialize
 
 from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
@@ -45,11 +51,13 @@ class EditorType(Enum):
     CUSTOM_LEVELS = "custom_levels"
 
 
+@serialize
+@deserialize
+@dataclass
 class CustomLevelSaveFormat:
-    def __init__(self, name, room_template_format, include_vanilla_setrooms):
-        self.name = name or room_template_format
-        self.room_template_format = room_template_format
-        self.include_vanilla_setrooms = include_vanilla_setrooms
+    name: str
+    room_template_format: str
+    include_vanilla_setrooms: bool
 
     @classmethod
     def level_sequence(cls):
@@ -59,25 +67,12 @@ class CustomLevelSaveFormat:
     def vanilla(cls):
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
-    def to_json(self):
-        return {
-            "name": self.name,
-            "room_template_format": self.room_template_format,
-            "include_vanilla_setrooms": self.include_vanilla_setrooms,
-        }
+    def to_json(self) -> str:
+        return serde.json.to_json(self)
 
     @classmethod
-    def from_json(cls, json):
-        return cls(
-            json["name"], json["room_template_format"], json["include_vanilla_setrooms"]
-        )
-
-    def __eq__(self, other):
-        return (
-            self.name == other.name
-            and self.room_template_format == other.room_template_format
-            and self.include_vanilla_setrooms == other.include_vanilla_setrooms
-        )
+    def from_json(cls, json: str) -> Self:
+        return serde.json.from_json(cls, json)
 
 
 class LevelsTab(Tab):
