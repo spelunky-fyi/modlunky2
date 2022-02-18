@@ -19,7 +19,9 @@ from shutil import copyfile
 from urllib.parse import urlparse, urlunparse
 
 from platformdirs import user_config_dir, user_data_dir, user_cache_dir
-from serde import serialize, deserialize
+from serde.core import field
+from serde.de import deserialize
+from serde.se import serialize
 import serde.json
 
 from modlunky2.utils import is_windows
@@ -107,26 +109,6 @@ def guess_install_dir(exe_dir=None):
     return None
 
 
-def skip_default_field(default, metadata: Optional[Dict] = None, **kwargs):
-    if metadata is None:
-        metadata = {}
-    if "serde_skip_if" in metadata:
-        raise ValueError(
-            f"metadata already contains 'serde_skip_if' with value {metadata['serde_skip_if']}"
-        )
-    # Technically, pyserde permits these to be set with 'serde_skip_if', but it seems dubious
-    if "serde_skip" in metadata:
-        raise ValueError(
-            "metadata  contains 'serde_skip' which conflicts with 'serde_skip_if'"
-        )
-    if "serde_skip_if_false" in metadata:
-        raise ValueError(
-            "metadata  contains 'serde_skip_if_false' which conflicts with 'serde_skip_if'"
-        )
-    metadata["serde_skip_if"] = lambda v: v == default
-    return dataclasses.field(default=default, metadata=metadata, **kwargs)
-
-
 T = TypeVar("T")
 
 # Common config for all trackers. Currently a placeholder
@@ -146,9 +128,9 @@ class SaveableCategory(Enum):
 @deserialize(rename_all="spinalcase")
 @dataclass
 class CategoryTrackerConfig(CommonTrackerConfig):
-    always_show_modifiers: bool = skip_default_field(default=False)
-    excluded_categories: Optional[Set[SaveableCategory]] = skip_default_field(
-        default=None
+    always_show_modifiers: bool = field(default=False, skip_if_default=True)
+    excluded_categories: Optional[Set[SaveableCategory]] = field(
+        default=None, skip_if_default=True
     )
 
 
@@ -156,64 +138,56 @@ class CategoryTrackerConfig(CommonTrackerConfig):
 @deserialize(rename_all="spinalcase")
 @dataclass
 class PacifistTrackerConfig(CommonTrackerConfig):
-    show_kill_count: bool = skip_default_field(default=False)
+    show_kill_count: bool = field(default=False, skip_if_default=True)
 
 
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
 class TrackersConfig:
-    category: CategoryTrackerConfig = dataclasses.field(
-        default_factory=CategoryTrackerConfig
-    )
-    pacifist: PacifistTrackerConfig = dataclasses.field(
-        default_factory=PacifistTrackerConfig
-    )
+    category: CategoryTrackerConfig = field(default_factory=CategoryTrackerConfig)
+    pacifist: PacifistTrackerConfig = field(default_factory=PacifistTrackerConfig)
 
 
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
 class Config:
-    config_path: Optional[Path] = dataclasses.field(
-        default=None, metadata={"serde_skip": True}
-    )
-    dirty: bool = dataclasses.field(default=False, metadata={"serde_skip": True})
+    config_path: Optional[Path] = field(default=None, metadata={"serde_skip": True})
+    dirty: bool = field(default=False, metadata={"serde_skip": True})
 
-    launcher_exe: Optional[Path] = dataclasses.field(
-        default=None, metadata={"serde_skip": True}
-    )
-    exe_dir: Optional[Path] = dataclasses.field(
-        default=None, metadata={"serde_skip": True}
-    )
+    launcher_exe: Optional[Path] = field(default=None, metadata={"serde_skip": True})
+    exe_dir: Optional[Path] = field(default=None, metadata={"serde_skip": True})
 
-    install_dir: Optional[Path] = dataclasses.field(
+    install_dir: Optional[Path] = field(
         default=None,
         # Use custom deserializer to handle None. Unclear why only this field fails
         metadata={"serde_deserializer": lambda v: v if v is None else Path(v)},
     )
-    playlunky_version: Optional[str] = skip_default_field(default=None)
-    playlunky_console: bool = skip_default_field(default=False)
-    playlunky_shortcut: bool = skip_default_field(default=False)
-    geometry: str = skip_default_field(default=f"{MIN_WIDTH}x{MIN_HEIGHT}")
-    spelunky_fyi_root: str = skip_default_field(default=SPELUNKY_FYI_ROOT_DEFAULT)
-    spelunky_fyi_api_token: Optional[str] = skip_default_field(default=None)
-    theme: Optional[str] = skip_default_field(default=None)
-    last_install_browse: Path = skip_default_field(
-        default=Path(LAST_INSTALL_BROWSE_DEFAULT)
+    playlunky_version: Optional[str] = field(default=None, skip_if_default=True)
+    playlunky_console: bool = field(default=False, skip_if_default=True)
+    playlunky_shortcut: bool = field(default=False, skip_if_default=True)
+    geometry: str = field(default=f"{MIN_WIDTH}x{MIN_HEIGHT}", skip_if_default=True)
+    spelunky_fyi_root: str = field(
+        default=SPELUNKY_FYI_ROOT_DEFAULT, skip_if_default=True
     )
-    last_tab: Optional[str] = skip_default_field(default=None)
-    tracker_color_key: str = skip_default_field(default=DEFAULT_COLOR_KEY)
-    trackers: TrackersConfig = dataclasses.field(default_factory=TrackersConfig)
-    show_packing: bool = skip_default_field(default=False)
-    level_editor_tab: Optional[int] = skip_default_field(default=None)
-    custom_level_editor_custom_save_formats: Optional[List[Dict]] = skip_default_field(
-        default=None
+    spelunky_fyi_api_token: Optional[str] = field(default=None, skip_if_default=True)
+    theme: Optional[str] = field(default=None, skip_if_default=True)
+    last_install_browse: Path = field(
+        default=Path(LAST_INSTALL_BROWSE_DEFAULT), skip_if_default=True
     )
-    custom_level_editor_default_save_format: Optional[Dict] = skip_default_field(
-        default=None
+    last_tab: Optional[str] = field(default=None, skip_if_default=True)
+    tracker_color_key: str = field(default=DEFAULT_COLOR_KEY, skip_if_default=True)
+    trackers: TrackersConfig = field(default_factory=TrackersConfig)
+    show_packing: bool = field(default=False, skip_if_default=True)
+    level_editor_tab: Optional[int] = field(default=None, skip_if_default=True)
+    custom_level_editor_custom_save_formats: Optional[List[Dict]] = field(
+        default=None, skip_if_default=True
     )
-    command_prefix: Optional[List[str]] = skip_default_field(default=None)
+    custom_level_editor_default_save_format: Optional[Dict] = field(
+        default=None, skip_if_default=True
+    )
+    command_prefix: Optional[List[str]] = field(default=None, skip_if_default=True)
 
     def __post_init__(self):
         if self.exe_dir is None:
