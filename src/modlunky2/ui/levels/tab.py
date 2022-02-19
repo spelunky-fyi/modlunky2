@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+from copy import deepcopy
 import dataclasses
 import datetime
 import glob
@@ -26,7 +27,7 @@ from serde.de import deserialize
 import serde.json
 from serde.se import serialize
 
-from modlunky2.config import Config
+from modlunky2.config import Config, CustomLevelSaveFormat
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_chances import LevelChance, LevelChances
@@ -49,30 +50,6 @@ logger = logging.getLogger("modlunky2")
 class EditorType(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
-
-
-@serialize
-@deserialize
-@dataclass
-class CustomLevelSaveFormat:
-    name: str
-    room_template_format: str
-    include_vanilla_setrooms: bool
-
-    @classmethod
-    def level_sequence(cls):
-        return cls("LevelSequence", "setroom{y}_{x}", True)
-
-    @classmethod
-    def vanilla(cls):
-        return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
-
-    def to_json(self) -> str:
-        return serde.json.to_json(self)
-
-    @classmethod
-    def from_json(cls, json: str) -> Self:
-        return serde.json.from_json(cls, json)
 
 
 class LevelsTab(Tab):
@@ -321,29 +298,11 @@ class LevelsTab(Tab):
             CustomLevelSaveFormat.level_sequence(),
             CustomLevelSaveFormat.vanilla(),
         ]
-        custom_save_formats = (
-            self.modlunky_config.custom_level_editor_custom_save_formats
-        )
-        if custom_save_formats:
-            self.custom_save_formats = list(
-                map(
-                    CustomLevelSaveFormat.from_json,
-                    custom_save_formats,
-                )
-            )
-        else:
-            self.custom_save_formats = []
-
-        default_save_format = (
-            self.modlunky_config.custom_level_editor_default_save_format
-        )
         # Set the format that will be used for saving new level files.
-        if default_save_format:
-            self.default_save_format = CustomLevelSaveFormat.from_json(
-                default_save_format
+        if not self.modlunky_config.custom_level_editor_default_save_format:
+            self.modlunky_config.custom_level_editor_default_save_format = (
+                self.base_save_formats[0]
             )
-        else:
-            self.default_save_format = self.base_save_formats[0]
         # Save format used in the currently loaded level file.
         self.current_save_format = None
 
@@ -906,7 +865,10 @@ class LevelsTab(Tab):
         self.save_format_radios = []
         self.save_format_frame = save_format_frame
 
-        for save_format in self.base_save_formats + self.custom_save_formats:
+        for save_format in (
+            self.base_save_formats
+            + self.modlunky_config.custom_level_editor_custom_save_formats
+        ):
             self.add_save_format_radio(save_format, save_format_frame)
 
         settings_row += 1
@@ -917,9 +879,13 @@ class LevelsTab(Tab):
             column=0, row=settings_row, columnspan=2, sticky="nw"
         )
 
-        if self.default_save_format:
-            self.update_save_format_variable(self.default_save_format)
-            self.update_save_format_warning(self.default_save_format)
+        if self.modlunky_config.custom_level_editor_default_save_format:
+            self.update_save_format_variable(
+                self.modlunky_config.custom_level_editor_default_save_format
+            )
+            self.update_save_format_warning(
+                self.modlunky_config.custom_level_editor_default_save_format
+            )
 
         settings_row += 1
 
@@ -2443,11 +2409,17 @@ class LevelsTab(Tab):
         save_format_combobox = ttk.Combobox(values_frame, height=25)
         save_format_combobox.grid(row=values_row, column=1, sticky="nswe", pady=2)
         save_format_combobox["state"] = "readonly"
-        save_formats = self.base_save_formats + self.custom_save_formats
+        save_formats = (
+            self.base_save_formats
+            + self.modlunky_config.custom_level_editor_custom_save_formats
+        )
         save_format_combobox["values"] = list(
             map(lambda format: format.name, save_formats)
         )
-        create_save_format = self.current_save_format or self.default_save_format
+        create_save_format = (
+            self.current_save_format
+            or self.modlunky_config.custom_level_editor_default_save_format
+        )
         if not create_save_format:
             create_save_format = self.base_save_formats[0]
         if create_save_format:
@@ -6043,9 +6015,12 @@ class LevelsTab(Tab):
     # Look through the level templates and try to find one that matches an existing save
     # format.
     def read_save_format(self, level):
+        if self.modlunky_config.custom_level_editor_default_save_format is None:
+            raise TypeError("custom_level_editor_default_save_format shouldn't be None")
+
         valid_save_formats = (
-            [self.default_save_format]
-            + self.custom_save_formats
+            [self.modlunky_config.custom_level_editor_default_save_format]
+            + self.modlunky_config.custom_level_editor_custom_save_formats
             + self.base_save_formats
         )
         for save_format in valid_save_formats:
@@ -6627,11 +6602,8 @@ class LevelsTab(Tab):
 
     # Create a new save format and save it to the config file to be loaded on future launches.
     def add_save_format(self, save_format):
-        self.custom_save_formats.append(save_format)
+        self.modlunky_config.custom_level_editor_custom_save_formats.append(save_format)
         self.add_save_format_radio(save_format, self.save_format_frame)
-        self.modlunky_config.custom_level_editor_custom_save_formats = list(
-            map(lambda save_format: save_format.to_json(), self.custom_save_formats)
-        )
         self.modlunky_config.save()
 
     # Updates the current radio button in the save format select options menu to the
@@ -6639,10 +6611,14 @@ class LevelsTab(Tab):
     def update_save_format_variable(self, save_format):
         if save_format in self.base_save_formats:
             self.save_format_variable.set(self.base_save_formats.index(save_format))
-        elif save_format in self.custom_save_formats:
+        elif (
+            save_format in self.modlunky_config.custom_level_editor_custom_save_formats
+        ):
             self.save_format_variable.set(
                 len(self.base_save_formats)
-                + self.custom_save_formats.index(save_format)
+                + self.modlunky_config.custom_level_editor_custom_save_formats.index(
+                    save_format
+                )
             )
         self.save_format_radios[self.save_format_variable.get()].select()
 
@@ -6684,16 +6660,13 @@ class LevelsTab(Tab):
         if save_format_index < len(self.base_save_formats):
             save_format = self.base_save_formats[save_format_index]
         else:
-            save_format = self.custom_save_formats[
+            save_format = self.modlunky_config.custom_level_editor_custom_save_formats[
                 save_format_index - len(self.base_save_formats)
             ]
         if not save_format:
             return
         self.set_current_save_format(save_format)
-        self.default_save_format = save_format
-        self.modlunky_config.custom_level_editor_default_save_format = (
-            save_format.to_json()
-        )
+        self.modlunky_config.custom_level_editor_default_save_format = save_format
         self.modlunky_config.save()
 
     def add_save_format_radio(self, save_format, save_format_frame):

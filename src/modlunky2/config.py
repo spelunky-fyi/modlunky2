@@ -7,7 +7,7 @@ import logging
 import shutil
 import time
 from enum import Enum
-from typing import Any, Dict, List, Optional, TypeVar, Set
+from typing import List, Optional, TypeVar, Set
 
 try:
     import winreg
@@ -149,6 +149,23 @@ class TrackersConfig:
     pacifist: PacifistTrackerConfig = field(default_factory=PacifistTrackerConfig)
 
 
+@serialize  # Note: these fields aren't renamed for historical reasons
+@deserialize
+@dataclass
+class CustomLevelSaveFormat:
+    name: str
+    room_template_format: str
+    include_vanilla_setrooms: bool
+
+    @classmethod
+    def level_sequence(cls):
+        return cls("LevelSequence", "setroom{y}_{x}", True)
+
+    @classmethod
+    def vanilla(cls):
+        return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
+
+
 @serialize(rename_all="spinalcase")
 @deserialize(rename_all="spinalcase")
 @dataclass
@@ -181,10 +198,10 @@ class Config:
     trackers: TrackersConfig = field(default_factory=TrackersConfig)
     show_packing: bool = field(default=False, skip_if_default=True)
     level_editor_tab: Optional[int] = field(default=None, skip_if_default=True)
-    custom_level_editor_custom_save_formats: Optional[List[Dict[str, Any]]] = field(
-        default=None, skip_if_default=True
+    custom_level_editor_custom_save_formats: List[CustomLevelSaveFormat] = field(
+        default_factory=list
     )
-    custom_level_editor_default_save_format: Optional[Dict[str, Any]] = field(
+    custom_level_editor_default_save_format: Optional[CustomLevelSaveFormat] = field(
         default=None, skip_if_default=True
     )
     command_prefix: Optional[List[str]] = field(default=None, skip_if_default=True)
