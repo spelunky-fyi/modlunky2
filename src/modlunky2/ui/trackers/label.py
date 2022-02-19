@@ -224,17 +224,17 @@ class RunLabel:
         return found
 
     def text(self, hide_early: bool, excluded_categories: Set[SaveableCategory]) -> str:
-        excluded_categories = frozenset(
+        excluded = frozenset(
             [Label.from_saveable_category(sc) for sc in excluded_categories]
         )
         if (
             self._cached_text is not None
             and self._cached_text.hide_early == hide_early
-            and self._cached_text.excluded_categories == excluded_categories
+            and self._cached_text.excluded == excluded
         ):
             return self._cached_text.text
 
-        vis = self._visible(hide_early, excluded_categories)
+        vis = self._visible(hide_early, excluded)
         perc = self._percent(vis)
         parts = []
 
@@ -248,6 +248,6 @@ class RunLabel:
 
         text = " ".join(parts)
         self._cached_text = _CachedText(
-            hide_early=hide_early, text=text, excluded_categories=excluded_categories
+            hide_early=hide_early, text=text, excluded=excluded
         )
         return text
