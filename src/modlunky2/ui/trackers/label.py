@@ -41,6 +41,7 @@ class Label(Enum):
     EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
     DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
     JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
+    VOLCANA_TEMPLE = LabelMetadata("Volcana/Temple")
     DUAT = LabelMetadata("Duat")
     ABZU = LabelMetadata("Abzu")
     MILLIONAIRE = LabelMetadata("Millionaire")
@@ -64,7 +65,7 @@ class Label(Enum):
 class _CachedText:
     hide_early: bool
     text: str
-    excluded_categories: FrozenSet[Label]
+    excluded: FrozenSet[Label]
 
 
 class RunLabel:
@@ -93,6 +94,7 @@ class RunLabel:
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
+    _HIDES[Label.CHAIN] |= {Label.JUNGLE_TEMPLE, Label.VOLCANA_TEMPLE}
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.PACIFIST] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
