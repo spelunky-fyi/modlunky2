@@ -225,10 +225,11 @@ LOWEST_BYTES_READER = BytesReader(b"\x00\x01\x02\x03")
     [(Supreme, Supreme(1)), (Middle, Middle(1, 2)), (Lowest, Lowest(1, 2, 3))],
 )
 def test_poly_pointer_castless(cls, expected_val):
-    pp_type = PolyPointerType(FieldPath(), PolyPointer[cls], DataclassStruct)
+    pp_type = PolyPointerType(FieldPath(), Optional[PolyPointer[cls]], DataclassStruct)
     pp_supreme = pp_type.from_bytes(
         SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
     )
+    assert pp_supreme is not None
     assert pp_supreme.addr == SUPREME_POINTER_ADDR
     assert pp_supreme.value == expected_val
 
@@ -238,15 +239,19 @@ def test_poly_pointer_castless(cls, expected_val):
     [(Supreme, Supreme(1)), (Middle, Middle(1, 2)), (Lowest, Lowest(1, 2, 3))],
 )
 def test_poly_pointer_cast_down(cls, expected_val):
-    pp_type = PolyPointerType(FieldPath(), PolyPointer[Supreme], DataclassStruct)
+    pp_type = PolyPointerType(
+        FieldPath(), Optional[PolyPointer[Supreme]], DataclassStruct
+    )
     pp_supreme = pp_type.from_bytes(
         SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
     )
+    assert pp_supreme is not None
 
     cast_val = pp_supreme.as_type(cls)
     assert cast_val == expected_val
 
     pp_poly = pp_supreme.as_poly_type(cls)
+    assert pp_poly is not None
 
     assert pp_poly.addr == SUPREME_POINTER_ADDR
     assert pp_poly.value == expected_val
@@ -257,16 +262,20 @@ def test_poly_pointer_cast_down(cls, expected_val):
     [(Supreme), (Middle), (Lowest)],
 )
 def test_poly_pointer_cast_up(cls):
-    pp_type = PolyPointerType(FieldPath(), PolyPointer[Lowest], DataclassStruct)
+    pp_type = PolyPointerType(
+        FieldPath(), Optional[PolyPointer[Lowest]], DataclassStruct
+    )
     pp_lowest = pp_type.from_bytes(
         SUPREME_POINTER_BYTES, MemContext(LOWEST_BYTES_READER)
     )
-    expected_val = Lowest(1, 2, 3)
+    assert pp_lowest is not None
 
+    expected_val = Lowest(1, 2, 3)
     cast_val = pp_lowest.as_type(cls)
     assert cast_val == expected_val
 
     pp_poly = pp_lowest.as_poly_type(cls)
+    assert pp_poly is not None
 
     assert pp_poly.addr == SUPREME_POINTER_ADDR
     assert pp_poly.value == expected_val

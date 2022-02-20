@@ -21,7 +21,7 @@ from modlunky2.mem.entities import (
     TELEPORT_ENTITIES,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
-from modlunky2.mem.memrauder.msvc import UnorderedMap
+from modlunky2.mem.memrauder.spelunky2 import UidEntityMap
 from modlunky2.mem.state import (
     HudFlags,
     LoadingState,
@@ -185,7 +185,7 @@ class RunState:
         if not TELEPORT_ENTITIES.isdisjoint(prev_player_item_set):
             return True
 
-        if not player.overlay.present():
+        if player.overlay is None:
             return False
 
         overlay = player.overlay.value
@@ -202,7 +202,7 @@ class RunState:
 
         # We use a loop to handle player on a mount on an active floor
         overlay_poly = player.overlay
-        while overlay_poly.present():
+        while overlay_poly is not None:
             overlay = overlay_poly.as_type(Movable)
             if overlay is None:
                 break
@@ -286,12 +286,12 @@ class RunState:
     def update_has_mounted_tame(
         self,
         theme: Theme,
-        player_overlay: PolyPointer[Entity],
+        player_overlay: Optional[PolyPointer[Entity]],
     ):
         if not self.is_low_percent:
             return
 
-        if not player_overlay.present():
+        if player_overlay is None:
             return
 
         entity_type: EntityType = player_overlay.value.type.id
@@ -641,7 +641,7 @@ class RunState:
 
         for entity_uid in range(self.prev_next_uid, game_state.next_entity_uid):
             entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
-            if entity_poly is None or not entity_poly.present():
+            if entity_poly is None:
                 continue
             if entity_poly.value.type is None:
                 continue
@@ -747,7 +747,7 @@ class RunState:
 
     def update_player_item_types(
         self,
-        instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]],
+        instance_id_to_pointer: UidEntityMap,
         player: Player,
     ):
         item_types = set()
@@ -755,7 +755,7 @@ class RunState:
             return
         for item in player.items:
             entity_poly = instance_id_to_pointer.get(item)
-            if entity_poly is None or not entity_poly.present():
+            if entity_poly is None:
                 continue
 
             entity_type = entity_poly.value.type

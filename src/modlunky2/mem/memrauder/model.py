@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 import typing
+from typing_extensions import get_args, get_origin
 
 # Abstract memory-reader interface, used if pointers are dereferenced.
 class MemoryReader(ABC):
@@ -490,8 +491,8 @@ C = TypeVar("C")  # pylint: disable=invalid-name
 # This facilitates casting between classes.
 @dataclass(frozen=True)
 class PolyPointer(Generic[T]):
-    addr: Optional[int]
-    value: Optional[T]
+    addr: int
+    value: T
     mem_ctx: MemContext
 
     def __post_init__(self):
@@ -500,15 +501,9 @@ class PolyPointer(Generic[T]):
                 "addr and value must either both be None, or both non-None"
             )
 
-    def present(self):
-        return self.addr is not None
-
-    def as_type(self, cls: C) -> Optional[C]:
+    def as_type(self, cls: Type[C]) -> Optional[C]:
         if not dataclasses.is_dataclass(cls):
             raise ValueError("Target class ({cls}) must be a dataclass")
-
-        if not self.present():
-            return None
 
         # This is an up-cast
         if isinstance(self.value, cls):
@@ -520,28 +515,25 @@ class PolyPointer(Generic[T]):
 
         return self.mem_ctx.type_at_addr(cls, self.addr)
 
-    def as_poly_type(self, cls: C) -> PolyPointer[C]:
+    def as_poly_type(self, cls: Type[C]) -> Optional[PolyPointer[C]]:
         new_value = self.as_type(cls)
-        return PolyPointer(self.addr, new_value, self.mem_ctx)
-
-    @staticmethod
-    def make_empty(mem_ctx: Optional[MemContext] = None) -> PolyPointer:
-        if mem_ctx is None:
-            mem_ctx = MemContext()
-        return PolyPointer(None, None, mem_ctx)
+        if new_value is None:
+            return None
+        return PolyPointer[C](self.addr, new_value, self.mem_ctx)
 
 
 @dataclass(frozen=True)
 class PolyPointerType(MemType[PolyPointer[T]]):
     path: InitVar[FieldPath]
-    py_type: InitVar[type]
+    py_type: InitVar[Any]
     deferred_mem_type: InitVar[DeferredMemType]
 
     mem_type: MemType[T] = dataclasses.field(init=False)
     read_size: int = dataclasses.field(init=False)
 
     def __post_init__(self, path, py_type, deferred_mem_type):
-        pointed_py_type = self._unwrap_poly_pointer(path, py_type)
+        poly_py_type = unwrap_optional_type(path, py_type)
+        pointed_py_type = self._unwrap_poly_pointer(path, poly_py_type)
         mem_type = deferred_mem_type(path, pointed_py_type)
 
         object.__setattr__(self, "mem_type", mem_type)
@@ -549,29 +541,29 @@ class PolyPointerType(MemType[PolyPointer[T]]):
 
     def _unwrap_poly_pointer(self, path, py_type) -> type:
         try:
-            if py_type.__origin__ is not PolyPointer:
+            if get_origin(py_type) is not PolyPointer:
                 raise ValueError(f"field {path} must be PolyPointer, got {py_type}")
         except AttributeError as err:
             raise ValueError(
                 f"field {path} must be PolyPointer, got {py_type}"
             ) from err
-        return py_type.__args__[0]
+        return get_args(py_type)[0]
 
     def field_size(self) -> int:
         return ctypes.sizeof(ctypes.c_void_p)
 
-    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> PolyPointer[T]:
+    def from_bytes(self, buf: bytes, mem_ctx: MemContext) -> Optional[PolyPointer[T]]:
         addr = ctypes.c_void_p.from_buffer_copy(buf).value
         if addr is None:
-            return PolyPointer.make_empty(mem_ctx)
+            return None
 
-        buf = mem_ctx.mem_reader.read(addr, self.read_size)
-        if buf is None:
-            return PolyPointer.make_empty(mem_ctx)
+        p_buf = mem_ctx.mem_reader.read(addr, self.read_size)
+        if p_buf is None:
+            return None
 
-        value = self.mem_type.from_bytes(buf, mem_ctx)
+        value = self.mem_type.from_bytes(p_buf, mem_ctx)
         if value is None:
-            return PolyPointer.make_empty(mem_ctx)
+            return None
 
         return PolyPointer[T](addr, value, mem_ctx)
 
