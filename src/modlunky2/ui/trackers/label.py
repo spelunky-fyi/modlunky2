@@ -187,11 +187,6 @@ class RunLabel:
             if needle in vis and vis.isdisjoint(need):
                 vis.discard(needle)
 
-        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
-        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
-            vis.discard(Label.LOW)
-            vis -= self._HIDES[Label.LOW]
-
         # Handle No% hiding No Gold. We do this here to avoid multiple passes over _HIDES.
         if Label.NO in vis:
             vis.discard(Label.NO_GOLD)
@@ -202,6 +197,11 @@ class RunLabel:
                 vis.discard(Label.SUNKEN_CITY)
             else:
                 vis.discard(Label.CHAIN)
+
+        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
+        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
+            vis.discard(Label.LOW)
+            vis -= self._HIDES[Label.LOW]
 
         return vis
 
