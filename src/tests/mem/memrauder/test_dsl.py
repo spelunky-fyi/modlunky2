@@ -33,7 +33,9 @@ class State:
     bool_tuple: Tuple[bool, ...] = struct_field(0x2, array(sc_bool, 3))
     player_set: FrozenSet[Player] = struct_field(0x5, array(dc_struct, 2))
     pointed_int: Optional[int] = struct_field(0xB, pointer(sc_uint16))
-    poly_player: PolyPointer[Player] = struct_field(0x13, poly_pointer(dc_struct))
+    poly_player: Optional[PolyPointer[Player]] = struct_field(
+        0x13, poly_pointer(dc_struct)
+    )
 
 
 def test_player():

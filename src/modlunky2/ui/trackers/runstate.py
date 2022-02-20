@@ -21,7 +21,7 @@ from modlunky2.mem.entities import (
     TELEPORT_ENTITIES,
 )
 from modlunky2.mem.memrauder.model import PolyPointer
-from modlunky2.mem.memrauder.msvc import UnorderedMap
+from modlunky2.mem.memrauder.spelunky2 import UidEntityMap
 from modlunky2.mem.state import (
     HudFlags,
     LoadingState,
@@ -55,6 +55,12 @@ class PlayerMotion:
         x = self.position_x + self.velocity_x * num_frames
         y = self.position_y + self.velocity_y * num_frames
         return (x, y)
+
+
+def time_to_frames(minutes: int, seconds: int):
+    t = seconds * 60
+    t += minutes * 60 * 60
+    return t
 
 
 class RunState:
@@ -185,7 +191,7 @@ class RunState:
         if not TELEPORT_ENTITIES.isdisjoint(prev_player_item_set):
             return True
 
-        if not player.overlay.present():
+        if player.overlay is None:
             return False
 
         overlay = player.overlay.value
@@ -202,7 +208,7 @@ class RunState:
 
         # We use a loop to handle player on a mount on an active floor
         overlay_poly = player.overlay
-        while overlay_poly.present():
+        while overlay_poly is not None:
             overlay = overlay_poly.as_type(Movable)
             if overlay is None:
                 break
@@ -286,12 +292,12 @@ class RunState:
     def update_has_mounted_tame(
         self,
         theme: Theme,
-        player_overlay: PolyPointer[Entity],
+        player_overlay: Optional[PolyPointer[Entity]],
     ):
         if not self.is_low_percent:
             return
 
-        if not player_overlay.present():
+        if player_overlay is None:
             return
 
         entity_type: EntityType = player_overlay.value.type.id
@@ -364,11 +370,22 @@ class RunState:
         self.poisoned = is_poisoned
         self.cursed = is_cursed
 
-    def update_had_clover(self, hud_flags: HudFlags):
+    def update_had_clover(self, time_level: int, hud_flags: HudFlags):
         if not self.is_low_percent:
             return
 
-        if bool(hud_flags & HudFlags.HAVE_CLOVER):
+        # When the ghost spawns, the clover is removed. So, we need to check a bit earlier
+        frame_margin = 5
+        normal_time = time_to_frames(3, 0) - frame_margin
+        cursed_time = time_to_frames(2, 30) - frame_margin
+
+        if not bool(hud_flags & HudFlags.HAVE_CLOVER):
+            return
+
+        if self.cursed and time_level >= cursed_time:
+            self.fail_low()
+
+        if time_level >= normal_time:
             self.fail_low()
 
     def update_wore_backpack(self, player_item_types: Set[EntityType]):
@@ -512,6 +529,9 @@ class RunState:
         elif theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
 
+        if self.world2_theme is Theme.VOLCANA and self.world4_theme is Theme.TEMPLE:
+            self.run_label.add(Label.VOLCANA_TEMPLE)
+
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
             None,
             Theme.TEMPLE,
@@ -641,7 +661,7 @@ class RunState:
 
         for entity_uid in range(self.prev_next_uid, game_state.next_entity_uid):
             entity_poly = game_state.instance_id_to_pointer.get(entity_uid)
-            if entity_poly is None or not entity_poly.present():
+            if entity_poly is None:
                 continue
             if entity_poly.value.type is None:
                 continue
@@ -714,7 +734,7 @@ class RunState:
         self.update_has_mounted_tame(game_state.theme, overlay)
         self.update_starting_resources(player, game_state.win_state)
         self.update_status_effects(player.state, self.player_item_types)
-        self.update_had_clover(hud_flags)
+        self.update_had_clover(game_state.time_level, hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup(self.player_item_types)
@@ -747,7 +767,7 @@ class RunState:
 
     def update_player_item_types(
         self,
-        instance_id_to_pointer: UnorderedMap[int, PolyPointer[Entity]],
+        instance_id_to_pointer: UidEntityMap,
         player: Player,
     ):
         item_types = set()
@@ -755,7 +775,7 @@ class RunState:
             return
         for item in player.items:
             entity_poly = instance_id_to_pointer.get(item)
-            if entity_poly is None or not entity_poly.present():
+            if entity_poly is None:
                 continue
 
             entity_type = entity_poly.value.type

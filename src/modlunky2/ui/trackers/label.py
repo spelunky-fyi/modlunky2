@@ -41,6 +41,7 @@ class Label(Enum):
     EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
     DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
     JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
+    VOLCANA_TEMPLE = LabelMetadata("Volcana/Temple")
     DUAT = LabelMetadata("Duat")
     ABZU = LabelMetadata("Abzu")
     MILLIONAIRE = LabelMetadata("Millionaire")
@@ -64,7 +65,7 @@ class Label(Enum):
 class _CachedText:
     hide_early: bool
     text: str
-    excluded_categories: FrozenSet[Label]
+    excluded: FrozenSet[Label]
 
 
 class RunLabel:
@@ -93,6 +94,7 @@ class RunLabel:
     _HIDES = defaultdict(set)
     _HIDES[Label.EGGPLANT] |= {Label.SUNKEN_CITY}
     _HIDES[Label.LOW] |= {Label.NO_TELEPORTER, Label.NO_JETPACK, Label.ANY}
+    _HIDES[Label.CHAIN] |= {Label.JUNGLE_TEMPLE, Label.VOLCANA_TEMPLE}
     _HIDES[Label.NO_GOLD] |= {Label.ANY}
     _HIDES[Label.PACIFIST] |= {Label.ANY}
     _HIDES[Label.MILLIONAIRE] |= {Label.ANY}
@@ -185,11 +187,6 @@ class RunLabel:
             if needle in vis and vis.isdisjoint(need):
                 vis.discard(needle)
 
-        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
-        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
-            vis.discard(Label.LOW)
-            vis -= self._HIDES[Label.LOW]
-
         # Handle No% hiding No Gold. We do this here to avoid multiple passes over _HIDES.
         if Label.NO in vis:
             vis.discard(Label.NO_GOLD)
@@ -200,6 +197,11 @@ class RunLabel:
                 vis.discard(Label.SUNKEN_CITY)
             else:
                 vis.discard(Label.CHAIN)
+
+        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
+        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
+            vis.discard(Label.LOW)
+            vis -= self._HIDES[Label.LOW]
 
         return vis
 
@@ -222,17 +224,17 @@ class RunLabel:
         return found
 
     def text(self, hide_early: bool, excluded_categories: Set[SaveableCategory]) -> str:
-        excluded_categories = frozenset(
+        excluded = frozenset(
             [Label.from_saveable_category(sc) for sc in excluded_categories]
         )
         if (
             self._cached_text is not None
             and self._cached_text.hide_early == hide_early
-            and self._cached_text.excluded_categories == excluded_categories
+            and self._cached_text.excluded == excluded
         ):
             return self._cached_text.text
 
-        vis = self._visible(hide_early, excluded_categories)
+        vis = self._visible(hide_early, excluded)
         perc = self._percent(vis)
         parts = []
 
@@ -246,6 +248,6 @@ class RunLabel:
 
         text = " ".join(parts)
         self._cached_text = _CachedText(
-            hide_early=hide_early, text=text, excluded_categories=excluded_categories
+            hide_early=hide_early, text=text, excluded=excluded
         )
         return text

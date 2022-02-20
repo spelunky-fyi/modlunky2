@@ -26,7 +26,12 @@ from modlunky2.mem.state import (
 )
 from modlunky2.mem.testing import EntityMapBuilder, poly_pointer_no_mem
 from modlunky2.ui.trackers.label import Label, RunLabel
-from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
+from modlunky2.ui.trackers.runstate import (
+    ChainStatus,
+    PlayerMotion,
+    RunState,
+    time_to_frames,
+)
 
 # pylint: disable=protected-access,too-many-lines
 
@@ -445,16 +450,24 @@ def test_status_effects_cursed(
 
 
 @pytest.mark.parametrize(
-    "hud_flags,expected_low",
+    "hud_flags,time_level,cursed,expected_low",
     [
-        (HudFlags.HAVE_CLOVER, False),
-        (0, True),
-        (~HudFlags.HAVE_CLOVER, True),
+        # No clover
+        (0, time_to_frames(1, 0), False, True),
+        (0, time_to_frames(4, 0), False, True),
+        (~HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, True),
+        # Not cursed
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), False, True),
+        (HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, False),
+        # Cursed
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 15), True, True),
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), True, False),
     ],
 )
-def test_had_clover(hud_flags, expected_low):
+def test_had_clover(hud_flags, time_level, cursed, expected_low):
     run_state = RunState()
-    run_state.update_had_clover(hud_flags)
+    run_state.cursed = cursed
+    run_state.update_had_clover(time_level, hud_flags)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
@@ -941,25 +954,27 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
 
 
 @pytest.mark.parametrize(
-    "world,theme,world2_theme,starting_labels,expected_jt,",
+    "world,theme,world2_theme,starting_labels,expected_label,",
     [
-        # Volcana has no labels associated with it
-        (2, Theme.VOLCANA, None, {Label.ANY}, False),
+        # Volcana "plain" and V/T
+        (2, Theme.VOLCANA, None, {Label.ANY}, None),
+        (2, Theme.TIDE_POOL, Theme.VOLCANA, {Label.ANY}, None),
+        (2, Theme.TEMPLE, Theme.VOLCANA, {Label.ANY}, Label.VOLCANA_TEMPLE),
         # We eagerly assume J/T
-        (2, Theme.JUNGLE, None, {Label.ANY}, True),
+        (2, Theme.JUNGLE, None, {Label.ANY}, Label.JUNGLE_TEMPLE),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
             {Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
             {Label.SUNKEN_CITY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         # We actually went J/T
         (
@@ -967,21 +982,21 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         # We went Jungle, but J/T is now impossible
         (
@@ -989,21 +1004,21 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
+            None,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
-            False,
+            None,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
+            None,
         ),
     ],
 )
@@ -1012,15 +1027,20 @@ def test_world_themes_label(
     theme,
     world2_theme,
     starting_labels,
-    expected_jt,
+    expected_label,
 ):
     run_state = RunState()
     run_state.run_label = RunLabel(starting=starting_labels)
     run_state.world2_theme = world2_theme
     run_state.update_world_themes(world, theme)
 
-    is_jt = Label.JUNGLE_TEMPLE in run_state.run_label._set
-    assert is_jt == expected_jt
+    if expected_label is Label.JUNGLE_TEMPLE:
+        assert Label.JUNGLE_TEMPLE in run_state.run_label._set
+    if expected_label is Label.VOLCANA_TEMPLE:
+        assert Label.VOLCANA_TEMPLE in run_state.run_label._set
+    if expected_label is None:
+        assert Label.JUNGLE_TEMPLE not in run_state.run_label._set
+        assert Label.VOLCANA_TEMPLE not in run_state.run_label._set
 
 
 @pytest.mark.parametrize(

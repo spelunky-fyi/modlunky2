@@ -146,13 +146,13 @@ class ChainMixin:
 
         while cur_hand_uid != 0:
             cur_hand = game_state.instance_id_to_pointer.get(cur_hand_uid)
-            if cur_hand is None or not cur_hand.present():
+            if cur_hand is None:
                 return
 
             yield cur_hand
 
             cur_hand = cur_hand.as_poly_type(Player)
-            if not cur_hand.present():
+            if cur_hand is None:
                 return
             cur_hand_uid = cur_hand.value.linked_companion_child
 
@@ -167,7 +167,7 @@ class ChainMixin:
 
             for item_uid in companion_items:
                 item = game_state.instance_id_to_pointer.get(item_uid)
-                if item is None or not item.present():
+                if item is None:
                     continue
                 if item.value.type.id is item_type:
                     return True

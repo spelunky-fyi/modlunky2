@@ -181,8 +181,8 @@ class EntityReduced:
 
 @dataclass(frozen=True)
 class Entity(EntityReduced):
-    overlay: PolyPointer[EntityReduced] = struct_field(
-        0x10, poly_pointer(dc_struct), default_factory=PolyPointer.make_empty
+    overlay: Optional[PolyPointer[EntityReduced]] = struct_field(
+        0x10, poly_pointer(dc_struct), default=None
     )
 
 

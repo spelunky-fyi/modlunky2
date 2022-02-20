@@ -60,15 +60,9 @@ class UidEntityMap:
     table_entry_mem_type: MemType[_RobinHoodTableEntry]
     mem_ctx: MemContext
 
-    empty_poly: PolyPointer[Entity] = dataclasses.field(init=False)
-
     def __post_init__(self):
         if self.meta.mask < 1:
             raise ValueError(f"invalid mask value {self.meta.mask}")
-
-        empty_poly = PolyPointer.make_empty(self.mem_ctx)
-
-        object.__setattr__(self, "empty_poly", empty_poly)
 
     def _get_table_entry(self, index: int) -> Optional[_RobinHoodTableEntry]:
         entry_size = _RobinHoodTableEntry.SIZE
@@ -116,29 +110,30 @@ class UidEntityMap:
             cur_index = (cur_index + 1) & mask
         # The above loop only terminates via return
 
-    def get(self, uid: int) -> PolyPointer[Entity]:
+    def get(self, uid: int) -> Optional[PolyPointer[Entity]]:
         if self.meta.table_ptr == 0:
-            return self.empty_poly
+            return None
 
         # -1 is used as a null-like value
         if uid == -1:
-            return self.empty_poly
+            return None
 
         addr = self._get_addr(uid)
         if addr == 0:
-            return self.empty_poly
+            return None
 
         entity: Optional[Entity] = self.mem_ctx.type_at_addr(Entity, addr)
         if entity is None:
-            return self.empty_poly
+            return None
         if entity.uid != uid:
             logger.warning(
                 "Entity lookup failed with ID mismatch. Expected %d, got %d",
                 uid,
                 entity.uid,
             )
+            return None
 
-        return PolyPointer(addr, entity, self.mem_ctx)
+        return PolyPointer[Entity](addr, entity, self.mem_ctx)
 
 
 @dataclass(frozen=True)
@@ -154,7 +149,9 @@ class UidEntityMapType(MemType[UidEntityMap]):
             raise ValueError(f"field {path} must be UnorderedMap, got {py_type}")
 
         meta_mem_type = DataclassStruct(path, _RobinHoodTableMeta)
-        poly_entity_mem_type = PolyPointerType(path, PolyPointer[Entity], dc_struct)
+        poly_entity_mem_type = PolyPointerType(
+            path, Optional[PolyPointer[Entity]], dc_struct
+        )
         table_entry_mem_type = DataclassStruct(path, _RobinHoodTableEntry)
 
         object.__setattr__(self, "meta_mem_type", meta_mem_type)
