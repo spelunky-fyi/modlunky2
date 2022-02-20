@@ -26,7 +26,12 @@ from modlunky2.mem.state import (
 )
 from modlunky2.mem.testing import EntityMapBuilder, poly_pointer_no_mem
 from modlunky2.ui.trackers.label import Label, RunLabel
-from modlunky2.ui.trackers.runstate import ChainStatus, PlayerMotion, RunState
+from modlunky2.ui.trackers.runstate import (
+    ChainStatus,
+    PlayerMotion,
+    RunState,
+    time_to_frames,
+)
 
 # pylint: disable=protected-access,too-many-lines
 
@@ -445,16 +450,24 @@ def test_status_effects_cursed(
 
 
 @pytest.mark.parametrize(
-    "hud_flags,expected_low",
+    "hud_flags,time_level,cursed,expected_low",
     [
-        (HudFlags.HAVE_CLOVER, False),
-        (0, True),
-        (~HudFlags.HAVE_CLOVER, True),
+        # No clover
+        (0, time_to_frames(1, 0), False, True),
+        (0, time_to_frames(4, 0), False, True),
+        (~HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, True),
+        # Not cursed
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), False, True),
+        (HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, False),
+        # Cursed
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 15), True, True),
+        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), True, False),
     ],
 )
-def test_had_clover(hud_flags, expected_low):
+def test_had_clover(hud_flags, time_level, cursed, expected_low):
     run_state = RunState()
-    run_state.update_had_clover(hud_flags)
+    run_state.cursed = cursed
+    run_state.update_had_clover(time_level, hud_flags)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low

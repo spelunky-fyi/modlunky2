@@ -57,6 +57,12 @@ class PlayerMotion:
         return (x, y)
 
 
+def time_to_frames(minutes: int, seconds: int):
+    t = seconds * 60
+    t += minutes * 60 * 60
+    return t
+
+
 class RunState:
     def __init__(self):
         self.run_label = RunLabel()
@@ -364,11 +370,22 @@ class RunState:
         self.poisoned = is_poisoned
         self.cursed = is_cursed
 
-    def update_had_clover(self, hud_flags: HudFlags):
+    def update_had_clover(self, time_level: int, hud_flags: HudFlags):
         if not self.is_low_percent:
             return
 
-        if bool(hud_flags & HudFlags.HAVE_CLOVER):
+        # When the ghost spawns, the clover is removed. So, we need to check a bit earlier
+        frame_margin = 5
+        normal_time = time_to_frames(3, 0) - frame_margin
+        cursed_time = time_to_frames(2, 30) - frame_margin
+
+        if not bool(hud_flags & HudFlags.HAVE_CLOVER):
+            return
+
+        if self.cursed and time_level >= cursed_time:
+            self.fail_low()
+
+        if time_level >= normal_time:
             self.fail_low()
 
     def update_wore_backpack(self, player_item_types: Set[EntityType]):
@@ -717,7 +734,7 @@ class RunState:
         self.update_has_mounted_tame(game_state.theme, overlay)
         self.update_starting_resources(player, game_state.win_state)
         self.update_status_effects(player.state, self.player_item_types)
-        self.update_had_clover(hud_flags)
+        self.update_had_clover(game_state.time_level, hud_flags)
         self.update_wore_backpack(self.player_item_types)
         self.update_held_shield(self.player_item_types)
         self.update_has_non_chain_powerup(self.player_item_types)
