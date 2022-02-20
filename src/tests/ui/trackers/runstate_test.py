@@ -941,25 +941,27 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
 
 
 @pytest.mark.parametrize(
-    "world,theme,world2_theme,starting_labels,expected_jt,",
+    "world,theme,world2_theme,starting_labels,expected_label,",
     [
-        # Volcana has no labels associated with it
-        (2, Theme.VOLCANA, None, {Label.ANY}, False),
+        # Volcana "plain" and V/T
+        (2, Theme.VOLCANA, None, {Label.ANY}, None),
+        (2, Theme.TIDE_POOL, Theme.VOLCANA, {Label.ANY}, None),
+        (2, Theme.TEMPLE, Theme.VOLCANA, {Label.ANY}, Label.VOLCANA_TEMPLE),
         # We eagerly assume J/T
-        (2, Theme.JUNGLE, None, {Label.ANY}, True),
+        (2, Theme.JUNGLE, None, {Label.ANY}, Label.JUNGLE_TEMPLE),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
             {Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             2,
             Theme.JUNGLE,
             Theme.JUNGLE,
             {Label.SUNKEN_CITY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         # We actually went J/T
         (
@@ -967,21 +969,21 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         (
             4,
             Theme.TEMPLE,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            True,
+            Label.JUNGLE_TEMPLE,
         ),
         # We went Jungle, but J/T is now impossible
         (
@@ -989,21 +991,21 @@ def test_world_themes_state(world, theme, expected_world2_theme, expected_world4
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
+            None,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.SUNKEN_CITY},
-            False,
+            None,
         ),
         (
             4,
             Theme.TIDE_POOL,
             Theme.JUNGLE,
             {Label.JUNGLE_TEMPLE, Label.ANY},
-            False,
+            None,
         ),
     ],
 )
@@ -1012,15 +1014,20 @@ def test_world_themes_label(
     theme,
     world2_theme,
     starting_labels,
-    expected_jt,
+    expected_label,
 ):
     run_state = RunState()
     run_state.run_label = RunLabel(starting=starting_labels)
     run_state.world2_theme = world2_theme
     run_state.update_world_themes(world, theme)
 
-    is_jt = Label.JUNGLE_TEMPLE in run_state.run_label._set
-    assert is_jt == expected_jt
+    if expected_label is Label.JUNGLE_TEMPLE:
+        assert Label.JUNGLE_TEMPLE in run_state.run_label._set
+    if expected_label is Label.VOLCANA_TEMPLE:
+        assert Label.VOLCANA_TEMPLE in run_state.run_label._set
+    if expected_label is None:
+        assert Label.JUNGLE_TEMPLE not in run_state.run_label._set
+        assert Label.VOLCANA_TEMPLE not in run_state.run_label._set
 
 
 @pytest.mark.parametrize(

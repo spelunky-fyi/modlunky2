@@ -512,6 +512,9 @@ class RunState:
         elif theme in [Theme.TIDE_POOL, Theme.ABZU]:
             self.world4_theme = Theme.TIDE_POOL
 
+        if self.world2_theme is Theme.VOLCANA and self.world4_theme is Theme.TEMPLE:
+            self.run_label.add(Label.VOLCANA_TEMPLE)
+
         if self.world2_theme is Theme.JUNGLE and self.world4_theme in {
             None,
             Theme.TEMPLE,
