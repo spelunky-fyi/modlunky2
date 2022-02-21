@@ -88,6 +88,7 @@ class RunState:
         self.is_score_run = False
 
         # Low%
+        self.ghost_spawned = False
         self.is_low_percent = True
 
         # Low% if Chain
@@ -374,13 +375,20 @@ class RunState:
         if not self.is_low_percent:
             return
 
+        if self.level_started:
+            self.ghost_spawned = False
+        if self.ghost_spawned:
+            return
+        for e in self.new_entities:
+            if e.value.type.id is EntityType.MONS_GHOST:
+                self.ghost_spawned = True
+
+        if not bool(hud_flags & HudFlags.HAVE_CLOVER):
+            return
         # When the ghost spawns, the clover is removed. So, we need to check a bit earlier
         frame_margin = 5
         normal_time = time_to_frames(3, 0) - frame_margin
         cursed_time = time_to_frames(2, 30) - frame_margin
-
-        if not bool(hud_flags & HudFlags.HAVE_CLOVER):
-            return
 
         if self.cursed and time_level >= cursed_time:
             self.fail_low()

@@ -1,3 +1,4 @@
+from operator import ne
 import pytest
 from modlunky2.category.chain.testing import FakeStepper
 from modlunky2.mem.entities import (
@@ -14,7 +15,6 @@ from modlunky2.mem.entities import (
     Player,
 )
 from modlunky2.mem.memrauder.model import MemContext, PolyPointer
-
 from modlunky2.mem.state import (
     HudFlags,
     PresenceFlags,
@@ -24,7 +24,11 @@ from modlunky2.mem.state import (
     Theme,
     WinState,
 )
-from modlunky2.mem.testing import EntityMapBuilder, poly_pointer_no_mem
+from modlunky2.mem.testing import (
+    EntityMapBuilder,
+    poly_pointer_no_mem,
+    trivial_poly_entities,
+)
 from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.ui.trackers.runstate import (
     ChainStatus,
@@ -450,27 +454,70 @@ def test_status_effects_cursed(
 
 
 @pytest.mark.parametrize(
-    "hud_flags,time_level,cursed,expected_low",
+    "time_level,hud_flags,ghost_spawned,cursed,expected_low",
     [
         # No clover
-        (0, time_to_frames(1, 0), False, True),
-        (0, time_to_frames(4, 0), False, True),
-        (~HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, True),
+        (time_to_frames(1, 0), 0, False, False, True),
+        (time_to_frames(4, 0), 0, False, False, True),
+        (time_to_frames(4, 0), ~HudFlags.HAVE_CLOVER, False, False, True),
         # Not cursed
-        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), False, True),
-        (HudFlags.HAVE_CLOVER, time_to_frames(4, 0), False, False),
+        (time_to_frames(2, 45), HudFlags.HAVE_CLOVER, False, False, True),
+        (time_to_frames(4, 0), HudFlags.HAVE_CLOVER, False, False, False),
         # Cursed
-        (HudFlags.HAVE_CLOVER, time_to_frames(2, 15), True, True),
-        (HudFlags.HAVE_CLOVER, time_to_frames(2, 45), True, False),
+        (time_to_frames(2, 15), HudFlags.HAVE_CLOVER, False, True, True),
+        (time_to_frames(2, 45), HudFlags.HAVE_CLOVER, False, True, False),
+        # Ghost already spawned
+        (time_to_frames(4, 0), HudFlags.HAVE_CLOVER, True, False, True),
+        (time_to_frames(4, 0), HudFlags.HAVE_CLOVER, True, True, True),
     ],
 )
-def test_had_clover(hud_flags, time_level, cursed, expected_low):
+def test_had_clover_time(time_level, hud_flags, ghost_spawned, cursed, expected_low):
     run_state = RunState()
+    run_state.ghost_spawned = ghost_spawned
     run_state.cursed = cursed
     run_state.update_had_clover(time_level, hud_flags)
 
     is_low = Label.LOW in run_state.run_label._set
     assert is_low == expected_low
+
+
+@pytest.mark.parametrize(
+    "level_started,ghost_spawned,new_entities,expected_ghost_spawned",
+    [
+        # Nothing changed
+        (False, False, [], False),
+        (False, True, [], True),
+        # Reset at start of level
+        (True, True, [], False),
+        (True, False, [], False),
+        # If we see a ghost, it's spawned
+        (False, False, [EntityType.MONS_GHOST], True),
+        (False, True, [EntityType.MONS_GHOST], True),
+        (True, False, [EntityType.MONS_GHOST], True),
+        (True, True, [EntityType.MONS_GHOST], True),
+    ],
+)
+@pytest.mark.parametrize(
+    "time_level", [time_to_frames(0, 0), time_to_frames(1, 0), time_to_frames(5, 0)]
+)
+@pytest.mark.parametrize("hud_flags", [0, HudFlags.HAVE_CLOVER])
+def test_had_clover_ghost_spawned(
+    time_level,
+    hud_flags,
+    level_started,
+    ghost_spawned,
+    new_entities,
+    expected_ghost_spawned,
+):
+    time_level = time_to_frames(0, 0)
+    hud_flags = 0
+    run_state = RunState()
+    run_state.level_started = level_started
+    run_state.ghost_spawned = ghost_spawned
+    run_state.new_entities = trivial_poly_entities(new_entities)
+    run_state.update_had_clover(time_level, hud_flags)
+
+    assert run_state.ghost_spawned == expected_ghost_spawned
 
 
 @pytest.mark.parametrize(
@@ -1370,9 +1417,7 @@ def test_millionaire_(
 )
 def test_rope_deployed(new_entity_types, theme, expected_no):
     run_state = RunState()
-    run_state.new_entities = [
-        poly_pointer_no_mem(Entity(type=EntityDBEntry(id=t))) for t in new_entity_types
-    ]
+    run_state.new_entities = trivial_poly_entities(new_entity_types)
 
     run_state.update_rope_deployed(theme)
 

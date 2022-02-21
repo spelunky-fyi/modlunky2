@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import dataclasses
-from typing import ClassVar, Dict, Iterable, Tuple
+from typing import ClassVar, Dict, Iterable, List, Tuple
 
 from modlunky2.mem.entities import Entity, EntityDBEntry, EntityType
 from modlunky2.mem.memrauder.model import DictMap, MemContext, PolyPointer
@@ -8,6 +8,10 @@ from modlunky2.mem.memrauder.model import DictMap, MemContext, PolyPointer
 
 def poly_pointer_no_mem(value):
     return PolyPointer(addr=0xBAD, mem_ctx=MemContext(), value=value)
+
+
+def trivial_poly_entities(type_ids: Iterable[EntityType]) -> List[PolyPointer[Entity]]:
+    return [poly_pointer_no_mem(Entity(type=EntityDBEntry(id=t))) for t in type_ids]
 
 
 @dataclass
