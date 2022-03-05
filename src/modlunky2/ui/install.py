@@ -107,6 +107,9 @@ class DestinationChooser(ttk.Frame):
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def browse(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         initial_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if not initial_dir.exists():
             logger.critical("Expected Packs dir not found.")

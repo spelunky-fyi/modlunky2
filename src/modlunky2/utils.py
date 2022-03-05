@@ -1,9 +1,11 @@
 import contextlib
 import logging
+from pathlib import Path
 import sys
 import traceback
 import os
 import subprocess
+from typing import Optional
 import webbrowser
 import struct
 import zipfile
@@ -26,7 +28,9 @@ def is_windows():
     return "nt" in os.name
 
 
-def open_directory(directory):
+def open_directory(directory: Optional[Path]):
+    if not directory:
+        return
     if not directory.exists():
         return
 

@@ -158,15 +158,17 @@ class PlayTab(Tab):
         self.button_play["state"] = tk.DISABLED
 
     def load_from_ini(self):
-        path = self.modlunky_config.install_dir / "playlunky.ini"
-        if path.exists():
-            with path.open() as ini_file:
-                try:
-                    self.ini = PlaylunkyConfig.from_ini(ini_file)
-                except configparser.Error:
-                    self.ini = PlaylunkyConfig()
-        else:
-            self.ini = PlaylunkyConfig()
+        self.ini = PlaylunkyConfig()
+        if self.modlunky_config.install_dir:
+            path = self.modlunky_config.install_dir / "playlunky.ini"
+            if path.exists():
+                with path.open() as ini_file:
+                    try:
+                        self.ini = PlaylunkyConfig.from_ini(ini_file)
+                    except configparser.Error:
+                        logger.warning(
+                            "Failed to parse playlunky config %s", path, exc_info=True
+                        )
 
         for options in SECTIONS.values():
             for option in options:
@@ -178,6 +180,9 @@ class PlayTab(Tab):
                 )
 
     def write_ini(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         path = self.modlunky_config.install_dir / "playlunky.ini"
 
         for options in SECTIONS.values():
@@ -229,6 +234,9 @@ class PlayTab(Tab):
                 load_order_file.write(f"--{pack}\n")
 
     def write_steam_appid(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         path = self.modlunky_config.install_dir / "steam_appid.txt"
         with path.open("w") as handle:
             handle.write("418530")

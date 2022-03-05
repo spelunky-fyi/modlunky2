@@ -190,6 +190,9 @@ class PacksFrame(ScrollableLabelFrame):
 
     def get_packs(self):
         packs = []
+        if not self.modlunky_config.install_dir:
+            return packs
+
         packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if not packs_dir.exists():
             return packs
