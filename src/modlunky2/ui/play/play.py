@@ -1,6 +1,5 @@
 import configparser
 import logging
-from re import A
 import subprocess
 import tkinter as tk
 from tkinter import ttk
