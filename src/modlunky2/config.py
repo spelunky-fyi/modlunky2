@@ -87,7 +87,7 @@ def check_registry_for_spel2():
     return None
 
 
-def guess_install_dir(exe_dir=None):
+def guess_install_dir(exe_dir: Optional[Path] = None):
     if exe_dir:
         logger.info("Checking if Spelunky 2 is installed in %s", exe_dir)
         if (exe_dir / EXE_NAME).exists():
