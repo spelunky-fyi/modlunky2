@@ -108,7 +108,7 @@ class InstallDir(ttk.LabelFrame):
     def feeling_lucky(self):
         install_dir = guess_install_dir(self.modlunky_config.exe_dir)
         if install_dir:
-            self.install_dir_var.set(install_dir)
+            self.install_dir_var.set(str(install_dir))
             self.modlunky_config.install_dir = install_dir
             self.modlunky_config.save()
 

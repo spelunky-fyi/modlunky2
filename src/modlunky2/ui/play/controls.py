@@ -90,6 +90,9 @@ class ControlsFrame(ttk.Frame):
         self.play_tab.on_load()
 
     def open_packs(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         packs_dir = self.modlunky_config.install_dir / "Mods/Packs"
         if not packs_dir.exists():
             logger.info("Couldn't find Packs directory. Looked in %s", packs_dir)
@@ -107,6 +110,9 @@ class ControlsFrame(ttk.Frame):
         self.play_tab.packs_frame.cache_fyi_pack_details()
 
     def clear_cache(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         cache_dir = self.modlunky_config.install_dir / "Mods/Packs/.db"
         if not cache_dir.exists():
             logger.info("No cache directory found to remove. Looked in %s", cache_dir)

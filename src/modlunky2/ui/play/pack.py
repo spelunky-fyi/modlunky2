@@ -15,6 +15,9 @@ logger = logging.getLogger("modlunky2")
 
 class Pack:
     def __init__(self, play_tab, parent, modlunky_config: Config, folder):
+        if not modlunky_config.install_dir:
+            raise ValueError("Config must have install-dir set")
+
         self.play_tab = play_tab
         self.modlunky_config = modlunky_config
         self.folder = folder
@@ -179,7 +182,7 @@ class Pack:
         self.buttons.grid(row=row, column=2, pady=0, padx=(5, 25), sticky="e")
 
     def render_buttons(self):
-        if not (self.modlunky_config.install_dir / "Mods/Packs" / self.folder).exists():
+        if (self.modlunky_config.install_dir / "Mods/Packs" / self.folder).exists():
             self.buttons.folder_button["state"] = tk.DISABLED
         else:
             self.buttons.folder_button["state"] = tk.NORMAL

@@ -243,6 +243,9 @@ class ExtractTab(Tab):
         ToolTip(self.button_extract, ("Extract assets from EXE."))
 
     def open_extract_dir(self):
+        if not self.modlunky_config.install_dir:
+            return
+
         extract_dir = self.modlunky_config.install_dir / MODS / EXTRACTED_DIR
         open_directory(extract_dir)
 
@@ -277,6 +280,9 @@ class ExtractTab(Tab):
 
     def get_exes(self):
         exes = []
+        if not self.modlunky_config.install_dir:
+            return exes
+
         # Don't recurse forever. 3 levels should be enough
         exes.extend(self.modlunky_config.install_dir.glob("*.exe"))
         exes.extend(self.modlunky_config.install_dir.glob("*/*.exe"))
