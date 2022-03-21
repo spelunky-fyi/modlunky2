@@ -205,6 +205,7 @@ class Config:
         default=None, skip_if_default=True
     )
     command_prefix: Optional[List[str]] = field(default=None, skip_if_default=True)
+    api_port: int = field(default=9526)
 
     def __post_init__(self):
         if self.exe_dir is None:

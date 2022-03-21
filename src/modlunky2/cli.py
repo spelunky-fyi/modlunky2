@@ -6,6 +6,7 @@ from typing import Optional
 from modlunky2.ui import ModlunkyUI
 from modlunky2.config import Config, make_user_dirs
 from modlunky2.utils import tb_info
+import modlunky2.web.service as web_service
 
 logger = logging.getLogger("modlunky2")
 
@@ -59,5 +60,7 @@ def launch(args, log_level):
         exe_dir=exe_dir,
     )
 
+    shutdown_callback = web_service.launch_in_thread(config)
     native_ui = ModlunkyUI(config, log_level)
     native_ui.mainloop()
+    shutdown_callback()

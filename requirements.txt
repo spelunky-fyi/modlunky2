@@ -1,12 +1,15 @@
 Pillow==9.0.1
-platformdirs==2.5.1
+anyio==3.5.0
+colorhash==1.0.4
 fnvhash==0.1.0
+hypercorn==0.13.2
 packaging==21.3
+platformdirs==2.5.1
 pyperclip==1.8.2
 pyserde==0.7.1
 requests==2.27.1
 sfyi-fsb5==1.1
+starlette==0.18.0
 typing_extensions==4.1.1
 websockets==10.2
 zstandard==0.17.0
-colorhash==1.0.4
