@@ -4,7 +4,7 @@ import pytest
 from modlunky2.category.chain.common import ChainStatus, ChainStepEvaluator
 from modlunky2.category.chain.sunken import AbzuChain, DuatChain, SunkenChain
 from modlunky2.category.chain.testing import make_player_with_hh_items
-from modlunky2.mem.entities import EntityType, Player
+from modlunky2.mem.entities import CharState, EntityType, Player
 from modlunky2.mem.state import Items, Screen, State, Theme, WinState
 from modlunky2.mem.testing import EntityMapBuilder
 
@@ -536,7 +536,7 @@ def test_visit_city_of_gold(
             ChainStatus.IN_PROGRESS,
             "keep_ankh",
         ),
-        # No Ankh, no Duat
+        # Can't reach Duat if Ankh was used early
         (
             4,
             3,
@@ -544,6 +544,15 @@ def test_visit_city_of_gold(
             {EntityType.ITEM_POWERUP_CROWN},
             ChainStatus.FAILED,
             None,
+        ),
+        # Missing Ankh, but stunned and potentially on altar
+        (
+            4,
+            3,
+            Player(state=CharState.STUNNED),
+            {EntityType.ITEM_POWERUP_CROWN},
+            ChainStatus.IN_PROGRESS,
+            "keep_ankh",
         ),
         # No player, we assume this is due to sacrifice
         (

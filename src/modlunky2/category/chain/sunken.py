@@ -7,7 +7,7 @@ from modlunky2.category.chain.common import (
     ChainStepEvaluator,
     ChainStepResult,
 )
-from modlunky2.mem.entities import EntityType
+from modlunky2.mem.entities import CharState, EntityType
 from modlunky2.mem.state import Screen, State, Theme, WinState
 
 
@@ -190,10 +190,15 @@ class DuatChain(SunkenChain):
             return self.in_progress(self.visit_world44_theme)
 
         # The player is destroyed when sacrificed
-        if game_state.items.players[0] is None:
+        player = game_state.items.players[0]
+        if player is None:
             return self.in_progress(self.keep_ankh)
 
-        if EntityType.ITEM_POWERUP_ANKH not in player_item_types:
+        # There are frames where the player is stunned on the altar and no longer has the Ankh.
+        # So, we only check for the Ankh in CoG while they're not stunned.
+        if (player.state is not CharState.STUNNED) and (
+            EntityType.ITEM_POWERUP_ANKH not in player_item_types
+        ):
             return self.failed()
 
         return self.in_progress(self.keep_ankh)
