@@ -183,9 +183,9 @@ class Pack:
 
     def render_buttons(self):
         if (self.modlunky_config.install_dir / "Mods/Packs" / self.folder).exists():
-            self.buttons.folder_button["state"] = tk.DISABLED
-        else:
             self.buttons.folder_button["state"] = tk.NORMAL
+        else:
+            self.buttons.folder_button["state"] = tk.DISABLED
 
         if self.needs_update:
             api_token = self.modlunky_config.spelunky_fyi_api_token
