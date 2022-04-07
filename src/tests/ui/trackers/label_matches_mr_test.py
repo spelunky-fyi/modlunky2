@@ -6,21 +6,26 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 # and the computed RunLabel string. Most tests are in label_test.py
 
 # Sets of labels and their expected text for each MossRanking category.
-MOSSRANKING_CATEGORIES = [
-    # Main tab
+MAIN_SPEED_CATEGORIES = [
     ({Label.ANY}, "Any%"),
     ({Label.SUNKEN_CITY}, "Sunken City%"),
     ({Label.COSMIC_OCEAN}, "Cosmic Ocean%"),
     ({Label.LOW, Label.ANY}, "Low%"),
+    # -------------------------------------------
     ({Label.LOW, Label.JUNGLE_TEMPLE, Label.ANY}, "Low% Jungle/Temple"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
+    # -------------------------------------------
     ({Label.NO_TELEPORTER, Label.ANY}, "No TP Any%"),
     ({Label.NO_TELEPORTER, Label.SUNKEN_CITY}, "No TP Sunken City%"),
     ({Label.NO_TELEPORTER, Label.SUNKEN_CITY, Label.EGGPLANT}, "No TP Eggplant%"),
+    # -------------------------------------------
     ({Label.NO_GOLD, Label.ANY}, "No Gold"),
     ({Label.NO_GOLD, Label.LOW, Label.ANY}, "No Gold Low%"),
+    # Chain
+    # -------------------------------------------
     ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Abzu%"),
     ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Duat%"),
+    # -------------------------------------------
     (
         {Label.NO_TELEPORTER, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
         "No TP Abzu%",
@@ -29,12 +34,17 @@ MOSSRANKING_CATEGORIES = [
         {Label.NO_TELEPORTER, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
         "No TP Duat%",
     ),
+    # -------------------------------------------
     ({Label.CHAIN, Label.LOW, Label.ABZU, Label.SUNKEN_CITY}, "Chain Low% Abzu"),
     ({Label.CHAIN, Label.LOW, Label.DUAT, Label.SUNKEN_CITY}, "Chain Low% Duat"),
-    # Score tab
+]
+
+MAIN_SCORE_CATEGORIES = [
     ({Label.SCORE, Label.ANY}, "Score"),
     ({Label.SCORE, Label.NO_CO, Label.ANY}, "Score No CO"),
-    # Misc tab
+]
+
+MISC_CATEGORIES = [
     ({Label.EGGPLANT, Label.COSMIC_OCEAN}, "Eggplant Cosmic Ocean%"),
     ({Label.TRUE_CROWN, Label.COSMIC_OCEAN}, "True Crown Cosmic Ocean%"),
     (
@@ -48,20 +58,24 @@ MOSSRANKING_CATEGORIES = [
         {Label.NO_GOLD, Label.PACIFIST, Label.COSMIC_OCEAN},
         "No Gold Pacifist Cosmic Ocean%",
     ),
+    # -------------------------------------------
     ({Label.LOW, Label.COSMIC_OCEAN}, "Low% Cosmic Ocean"),
     (
         {Label.CHAIN, Label.LOW, Label.ABZU, Label.COSMIC_OCEAN},
         "Chain Low% Cosmic Ocean",
     ),
+    # -------------------------------------------
     ({Label.LOW, Label.VOLCANA_TEMPLE, Label.ANY}, "Low% Volcana/Temple"),
     ({Label.LOW, Label.SUNKEN_CITY}, "Low% Sunken City"),
     ({Label.NO_GOLD, Label.LOW, Label.SUNKEN_CITY}, "No Gold Low% Sunken City"),
+    # -------------------------------------------
     ({Label.NO_TELEPORTER, Label.NO_GOLD, Label.ANY}, "No TP No Gold"),
     ({Label.NO_GOLD, Label.SUNKEN_CITY}, "No Gold Sunken City%"),
     (
         {Label.NO_TELEPORTER, Label.NO_GOLD, Label.SUNKEN_CITY},
         "No TP No Gold Sunken City%",
     ),
+    # -------------------------------------------
     (
         {Label.NO_GOLD, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
         "No Gold Abzu%",
@@ -90,6 +104,7 @@ MOSSRANKING_CATEGORIES = [
         },
         "No Gold Chain Low% Duat",
     ),
+    # -------------------------------------------
     ({Label.EGGPLANT, Label.SUNKEN_CITY}, "Eggplant%"),
     ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
     ({Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY}, "No Gold Eggplant%"),
@@ -97,6 +112,7 @@ MOSSRANKING_CATEGORIES = [
         {Label.NO_GOLD, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
         "No Gold Low% Eggplant",
     ),
+    # -------------------------------------------
     (
         {Label.EGGPLANT, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
         "Eggplant% Abzu",
@@ -147,11 +163,14 @@ MOSSRANKING_CATEGORIES = [
         },
         "No Gold Chain Low% Eggplant Duat",
     ),
+    # -------------------------------------------
     ({Label.MILLIONAIRE, Label.ANY}, "Millionaire"),
     ({Label.NO_TELEPORTER, Label.MILLIONAIRE, Label.ANY}, "No TP Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
+    # -------------------------------------------
     ({Label.NO, Label.NO_GOLD, Label.LOW, Label.ANY}, "No%"),
     ({Label.NO, Label.NO_GOLD, Label.LOW, Label.SUNKEN_CITY}, "No% Sunken City"),
+    # -------------------------------------------
     (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
         "Ice Caves Shortcut%",
@@ -168,7 +187,9 @@ MOSSRANKING_CATEGORIES = [
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
         "Ice Caves Shortcut Sunken City%",
     ),
-    # Pacifist tab
+]
+
+PACIFIST_CATEGORIES = [
     ({Label.PACIFIST, Label.ANY}, "Pacifist"),
     ({Label.PACIFIST, Label.SUNKEN_CITY}, "Pacifist Sunken City%"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
@@ -333,6 +354,13 @@ MOSSRANKING_CATEGORIES = [
         "Pacifist Ice Caves Shortcut Sunken City%",
     ),
 ]
+
+MOSSRANKING_CATEGORIES = (
+    MAIN_SPEED_CATEGORIES
+    + MAIN_SCORE_CATEGORIES
+    + MISC_CATEGORIES
+    + PACIFIST_CATEGORIES
+)
 
 
 @mark.parametrize("labels,expected", MOSSRANKING_CATEGORIES)
