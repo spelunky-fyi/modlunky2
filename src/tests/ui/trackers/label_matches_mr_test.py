@@ -10,14 +10,17 @@ MOSSRANKING_CATEGORIES = [
     # Main tab
     ({Label.ANY}, "Any%"),
     ({Label.SUNKEN_CITY}, "Sunken City%"),
+    ({Label.COSMIC_OCEAN}, "Cosmic Ocean%"),
     ({Label.LOW, Label.ANY}, "Low%"),
     ({Label.LOW, Label.JUNGLE_TEMPLE, Label.ANY}, "Low% Jungle/Temple"),
     ({Label.PACIFIST, Label.LOW, Label.ANY}, "Pacifist Low%"),
-    ({Label.CHAIN, Label.LOW, Label.ABZU, Label.SUNKEN_CITY}, "Chain Low% Abzu"),
-    ({Label.CHAIN, Label.LOW, Label.DUAT, Label.SUNKEN_CITY}, "Chain Low% Duat"),
-    ({Label.COSMIC_OCEAN}, "Cosmic Ocean%"),
     ({Label.NO_TELEPORTER, Label.ANY}, "No TP Any%"),
     ({Label.NO_TELEPORTER, Label.SUNKEN_CITY}, "No TP Sunken City%"),
+    ({Label.NO_TELEPORTER, Label.SUNKEN_CITY, Label.EGGPLANT}, "No TP Eggplant%"),
+    ({Label.NO_GOLD, Label.ANY}, "No Gold"),
+    ({Label.NO_GOLD, Label.LOW, Label.ANY}, "No Gold Low%"),
+    ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Abzu%"),
+    ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Duat%"),
     (
         {Label.NO_TELEPORTER, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
         "No TP Abzu%",
@@ -26,10 +29,8 @@ MOSSRANKING_CATEGORIES = [
         {Label.NO_TELEPORTER, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
         "No TP Duat%",
     ),
-    ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Abzu%"),
-    ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Duat%"),
-    ({Label.NO_GOLD, Label.ANY}, "No Gold"),
-    ({Label.NO_GOLD, Label.LOW, Label.ANY}, "No Gold Low%"),
+    ({Label.CHAIN, Label.LOW, Label.ABZU, Label.SUNKEN_CITY}, "Chain Low% Abzu"),
+    ({Label.CHAIN, Label.LOW, Label.DUAT, Label.SUNKEN_CITY}, "Chain Low% Duat"),
     # Score tab
     ({Label.SCORE, Label.ANY}, "Score"),
     ({Label.SCORE, Label.NO_CO, Label.ANY}, "Score No CO"),
@@ -41,12 +42,18 @@ MOSSRANKING_CATEGORIES = [
         "Eggplant True Crown Cosmic Ocean%",
     ),
     ({Label.NO_JETPACK, Label.COSMIC_OCEAN}, "No Jetpack Cosmic Ocean%"),
+    ({Label.PACIFIST, Label.COSMIC_OCEAN}, "Pacifist Cosmic Ocean%"),
     ({Label.NO_GOLD, Label.COSMIC_OCEAN}, "No Gold Cosmic Ocean%"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.COSMIC_OCEAN},
+        "No Gold Pacifist Cosmic Ocean%",
+    ),
     ({Label.LOW, Label.COSMIC_OCEAN}, "Low% Cosmic Ocean"),
     (
         {Label.CHAIN, Label.LOW, Label.ABZU, Label.COSMIC_OCEAN},
         "Chain Low% Cosmic Ocean",
     ),
+    ({Label.LOW, Label.VOLCANA_TEMPLE, Label.ANY}, "Low% Volcana/Temple"),
     ({Label.LOW, Label.SUNKEN_CITY}, "Low% Sunken City"),
     ({Label.NO_GOLD, Label.LOW, Label.SUNKEN_CITY}, "No Gold Low% Sunken City"),
     ({Label.NO_TELEPORTER, Label.NO_GOLD, Label.ANY}, "No TP No Gold"),
@@ -84,7 +91,6 @@ MOSSRANKING_CATEGORIES = [
         "No Gold Chain Low% Duat",
     ),
     ({Label.EGGPLANT, Label.SUNKEN_CITY}, "Eggplant%"),
-    ({Label.NO_TELEPORTER, Label.EGGPLANT, Label.SUNKEN_CITY}, "No TP Eggplant%"),
     ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
     ({Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY}, "No Gold Eggplant%"),
     (
@@ -144,13 +150,11 @@ MOSSRANKING_CATEGORIES = [
     ({Label.MILLIONAIRE, Label.ANY}, "Millionaire"),
     ({Label.NO_TELEPORTER, Label.MILLIONAIRE, Label.ANY}, "No TP Millionaire"),
     ({Label.LOW, Label.MILLIONAIRE, Label.ANY}, "Low% Millionaire"),
+    ({Label.NO, Label.NO_GOLD, Label.LOW, Label.ANY}, "No%"),
+    ({Label.NO, Label.NO_GOLD, Label.LOW, Label.SUNKEN_CITY}, "No% Sunken City"),
     (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
         "Ice Caves Shortcut%",
-    ),
-    (
-        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
-        "Ice Caves Shortcut Sunken City%",
     ),
     (
         {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
@@ -159,6 +163,10 @@ MOSSRANKING_CATEGORIES = [
     (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.MILLIONAIRE, Label.ANY},
         "Ice Caves Shortcut% Millionaire",
+    ),
+    (
+        {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
+        "Ice Caves Shortcut Sunken City%",
     ),
     # Pacifist tab
     ({Label.PACIFIST, Label.ANY}, "Pacifist"),
@@ -176,6 +184,10 @@ MOSSRANKING_CATEGORIES = [
         "No Gold Pacifist Sunken City%",
     ),
     ({Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.ANY}, "No Gold Pacifist Low%"),
+    (
+        {Label.NO_GOLD, Label.PACIFIST, Label.COSMIC_OCEAN},
+        "No Gold Pacifist Cosmic Ocean%",
+    ),
     ({Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY}, "Pacifist Low% Sunken City"),
     (
         {Label.NO_GOLD, Label.PACIFIST, Label.LOW, Label.SUNKEN_CITY},
@@ -246,7 +258,6 @@ MOSSRANKING_CATEGORIES = [
         {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
         "Pacifist Low% Eggplant",
     ),
-    ({Label.PACIFIST, Label.EGGPLANT, Label.SUNKEN_CITY}, "Pacifist Eggplant%"),
     (
         {Label.PACIFIST, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
         "Pacifist Low% Eggplant",
@@ -260,8 +271,66 @@ MOSSRANKING_CATEGORIES = [
         "No Gold Pacifist Low% Eggplant",
     ),
     (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.EGGPLANT,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Chain Low% Eggplant Abzu",
+    ),
+    (
+        {
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.EGGPLANT,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "Pacifist Chain Low% Eggplant Duat",
+    ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.EGGPLANT,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Eggplant Abzu",
+    ),
+    (
+        {
+            Label.NO_GOLD,
+            Label.PACIFIST,
+            Label.CHAIN,
+            Label.LOW,
+            Label.EGGPLANT,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "No Gold Pacifist Chain Low% Eggplant Duat",
+    ),
+    (
+        {Label.PACIFIST, Label.NO, Label.LOW, Label.ANY},
+        "Pacifist No%",
+    ),
+    (
+        {Label.PACIFIST, Label.NO, Label.LOW, Label.SUNKEN_CITY},
+        "Pacifist No% Sunken City",
+    ),
+    (
         {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
         "Pacifist Ice Caves Shortcut%",
+    ),
+    (
+        {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
+        "Pacifist Ice Caves Shortcut Sunken City%",
     ),
 ]
 
