@@ -31,22 +31,22 @@ class Label(Enum):
     NO_GOLD = LabelMetadata("No Gold", start=True)
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
-    LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=3)
+    LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=4)
     ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
-    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=3)
+    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=4)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=2, terminus=True
     )
-    SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=2, terminus=True)
-    EGGPLANT = LabelMetadata("Eggplant", percent_priority=1)
+    SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=3, terminus=True)
+    EGGPLANT = LabelMetadata("Eggplant", percent_priority=2)
     DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
     JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
     VOLCANA_TEMPLE = LabelMetadata("Volcana/Temple")
-    DUAT = LabelMetadata("Duat")
-    ABZU = LabelMetadata("Abzu")
+    DUAT = LabelMetadata("Duat", percent_priority=1)
+    ABZU = LabelMetadata("Abzu", percent_priority=1)
     MILLIONAIRE = LabelMetadata("Millionaire")
     TRUE_CROWN = LabelMetadata("True Crown")
-    COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=2, terminus=True)
+    COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=3, terminus=True)
     SCORE = LabelMetadata("Score")
     NO_CO = LabelMetadata("No CO", start=True, hide_early=False, add_ok=True)
 
@@ -193,9 +193,8 @@ class RunLabel:
 
         # Handle "Chain Low% Abzu" vs "Sunken City% Abzu"
         if not self._set.isdisjoint({Label.ABZU, Label.DUAT}):
-            if Label.LOW in vis:
-                vis.discard(Label.SUNKEN_CITY)
-            else:
+            vis.discard(Label.SUNKEN_CITY)
+            if Label.LOW not in vis:
                 vis.discard(Label.CHAIN)
 
         # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]

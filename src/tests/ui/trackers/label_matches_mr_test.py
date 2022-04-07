@@ -20,14 +20,14 @@ MOSSRANKING_CATEGORIES = [
     ({Label.NO_TELEPORTER, Label.SUNKEN_CITY}, "No TP Sunken City%"),
     (
         {Label.NO_TELEPORTER, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
-        "No TP Sunken City% Abzu",
+        "No TP Abzu%",
     ),
     (
         {Label.NO_TELEPORTER, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
-        "No TP Sunken City% Duat",
+        "No TP Duat%",
     ),
-    ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Sunken City% Abzu"),
-    ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Sunken City% Duat"),
+    ({Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY}, "Abzu%"),
+    ({Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY}, "Duat%"),
     ({Label.NO_GOLD, Label.ANY}, "No Gold"),
     ({Label.NO_GOLD, Label.LOW, Label.ANY}, "No Gold Low%"),
     # Score tab
@@ -57,11 +57,11 @@ MOSSRANKING_CATEGORIES = [
     ),
     (
         {Label.NO_GOLD, Label.CHAIN, Label.ABZU, Label.SUNKEN_CITY},
-        "No Gold Sunken City% Abzu",
+        "No Gold Abzu%",
     ),
     (
         {Label.NO_GOLD, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
-        "No Gold Sunken City% Duat",
+        "No Gold Duat%",
     ),
     (
         {
@@ -188,7 +188,7 @@ MOSSRANKING_CATEGORIES = [
             Label.ABZU,
             Label.SUNKEN_CITY,
         },
-        "Pacifist Sunken City% Abzu",
+        "Pacifist Abzu%",
     ),
     (
         {
@@ -197,7 +197,7 @@ MOSSRANKING_CATEGORIES = [
             Label.DUAT,
             Label.SUNKEN_CITY,
         },
-        "Pacifist Sunken City% Duat",
+        "Pacifist Duat%",
     ),
     (
         {
