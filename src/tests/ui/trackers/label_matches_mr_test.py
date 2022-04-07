@@ -107,6 +107,10 @@ MISC_CATEGORIES = [
     # -------------------------------------------
     ({Label.EGGPLANT, Label.SUNKEN_CITY}, "Eggplant%"),
     ({Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY}, "Low% Eggplant"),
+    (
+        {Label.NO_TELEPORTER, Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY},
+        "No TP No Gold Eggplant%",
+    ),
     ({Label.NO_GOLD, Label.EGGPLANT, Label.SUNKEN_CITY}, "No Gold Eggplant%"),
     (
         {Label.NO_GOLD, Label.LOW, Label.EGGPLANT, Label.SUNKEN_CITY},
@@ -120,6 +124,26 @@ MISC_CATEGORIES = [
     (
         {Label.EGGPLANT, Label.CHAIN, Label.DUAT, Label.SUNKEN_CITY},
         "Eggplant% Duat",
+    ),
+    (
+        {
+            Label.NO_TELEPORTER,
+            Label.EGGPLANT,
+            Label.CHAIN,
+            Label.ABZU,
+            Label.SUNKEN_CITY,
+        },
+        "No TP Eggplant% Abzu",
+    ),
+    (
+        {
+            Label.NO_TELEPORTER,
+            Label.EGGPLANT,
+            Label.CHAIN,
+            Label.DUAT,
+            Label.SUNKEN_CITY,
+        },
+        "No TP Eggplant% Duat",
     ),
     (
         {
