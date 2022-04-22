@@ -1,6 +1,6 @@
 black==22.3.0
 flake8==4.0.1
-pylint==2.13.5
+pylint==2.13.7
 pytest==7.1.1
 pip-api==0.0.29
 pyinstaller==5.0
