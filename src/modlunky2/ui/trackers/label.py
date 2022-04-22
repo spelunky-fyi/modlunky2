@@ -31,14 +31,14 @@ class Label(Enum):
     NO_GOLD = LabelMetadata("No Gold", start=True)
     PACIFIST = LabelMetadata("Pacifist", start=True)
     CHAIN = LabelMetadata("Chain")
-    LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=4)
+    LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=5)
     ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
-    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=4)
+    NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=5)
     ANY = LabelMetadata(
-        "Any", start=True, hide_early=False, percent_priority=2, terminus=True
+        "Any", start=True, hide_early=False, percent_priority=4, terminus=True
     )
-    SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=3, terminus=True)
-    EGGPLANT = LabelMetadata("Eggplant", percent_priority=2)
+    SUNKEN_CITY = LabelMetadata("Sunken City", percent_priority=4, terminus=True)
+    EGGPLANT = LabelMetadata("Eggplant", percent_priority=3)
     DEATH = LabelMetadata("Death", percent_priority=2, terminus=True)
     JUNGLE_TEMPLE = LabelMetadata("Jungle/Temple")
     VOLCANA_TEMPLE = LabelMetadata("Volcana/Temple")
@@ -46,7 +46,7 @@ class Label(Enum):
     ABZU = LabelMetadata("Abzu", percent_priority=1)
     MILLIONAIRE = LabelMetadata("Millionaire")
     TRUE_CROWN = LabelMetadata("True Crown")
-    COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=3, terminus=True)
+    COSMIC_OCEAN = LabelMetadata("Cosmic Ocean", percent_priority=4, terminus=True)
     SCORE = LabelMetadata("Score")
     NO_CO = LabelMetadata("No CO", start=True, hide_early=False, add_ok=True)
 

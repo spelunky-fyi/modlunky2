@@ -87,6 +87,10 @@ ASSORTED_LABELS = [
         {Label.CHAIN, Label.LOW, Label.ABZU, Label.DEATH},
         "Chain Low% Death Abzu",
     ),
+    (
+        {Label.EGGPLANT, Label.DEATH},
+        "Eggplant% Death",
+    ),
     # Chain CO
     (
         {Label.NO_JETPACK, Label.CHAIN, Label.LOW, Label.ABZU, Label.COSMIC_OCEAN},
