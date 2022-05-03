@@ -1,2 +1,2 @@
-pywin32==303
+pywin32==304
 winshell==0.6
