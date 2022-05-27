@@ -5784,7 +5784,21 @@ class LevelsTab(Tab):
         # Attempt to read the theme from the level file. The theme will be saved in
         # a comment in each room.
         theme = self.read_theme(level, self.current_save_format)
-        self.lvl_biome = theme
+        if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
+            themes = [
+                "cave",
+                "jungle",
+                "volcano",
+                "tidepool",
+                "temple",
+                "ice",
+                "babylon",
+                "sunken",
+            ]
+            for x, themeselect in enumerate(themes):
+                if lvl.startswith("dm" + str(x + 1)):
+                    theme = themeselect
+        self.lvl_biome = theme or "cave"
 
         # Get a formatted name for the theme to display to the user.
         theme_name = self.name_of_theme(theme)
@@ -6065,8 +6079,8 @@ class LevelsTab(Tab):
     def read_theme(self, level, save_format):
         for template in level.level_templates.all():
             if template.name == save_format.room_template_format.format(y=0, x=0):
-                return template.comment or "cave"
-        return "cave"
+                return template.comment
+        return None
 
     # Selects a new theme, updating the grid to theme tiles and backgrounds for the
     # new theme.
