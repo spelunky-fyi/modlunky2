@@ -2321,19 +2321,39 @@ class LevelsTab(Tab):
             tree.delete(i)
 
         tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+
+        level_files = [
+            os.path.basename(os.path.normpath(i))
+            for i in glob.iglob(str(lvl_dir) + "/***.lvl")
+        ]
+        mod_files = level_files
+        is_arenas = False
         if not str(lvl_dir).endswith("Arena"):
             tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
+            extracts_files = [
+                os.path.basename(os.path.normpath(i))
+                for i in glob.iglob(str(defaults_path) + "/***.lvl")
+            ]
+            level_files = sorted(list(set(level_files).union(set(extracts_files))))
+            is_arenas = True
 
-        for filepath in glob.iglob(str(lvl_dir) + "/***.lvl"):
-            path_in_str = str(filepath)
-            lvl_name = os.path.basename(os.path.normpath(path_in_str))
-            if not (defaults_path / lvl_name).exists():
-                item = tree.insert(
-                    "", "end", text=str(lvl_name), image=self.lvl_icon(True)
-                )
-                if lvl_name == selected_lvl:
+        for lvl_name in level_files:
+            if is_arenas or not (defaults_path / lvl_name).exists():
+                item = None
+                lvl_in_use = False
+                for name in mod_files:
+                    if name == lvl_name:
+                        lvl_in_use = True
+                        item = tree.insert(
+                            "", "end", text=str(lvl_name), image=self.lvl_icon(True)
+                        )
+                if not lvl_in_use:
+                    item = tree.insert(
+                        "", "end", text=str(lvl_name), image=self.lvl_icon(False)
+                    )
+                if item != None and lvl_name == selected_lvl:
                     tree.selection_set(item)
                     self.last_selected_file = item
 
@@ -3213,6 +3233,8 @@ class LevelsTab(Tab):
             self.save_needed = False
             self.button_save_custom["state"] = tk.DISABLED
             logger.debug("Saved")
+            for item in self.tree_files_custom.selection():
+                self.tree_files_custom.item(item, image=self.lvl_icon(True))
             return True
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed to save level: %s", tb_info())
@@ -5718,7 +5740,18 @@ class LevelsTab(Tab):
                 )
 
     def read_custom_lvl_file(self, lvl, theme=None):
-        level = LevelFile.from_path(Path(self.lvls_path) / lvl)
+        if Path(self.lvls_path / lvl).exists():
+            logger.debug("Found this lvl in pack; loading it")
+            lvl_path = Path(self.lvls_path) / lvl
+        else:
+            logger.debug(
+                "Did not find this lvl in pack; loading it from extracts instead"
+            )
+            if self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
+                lvl_path = self.extracts_path / "Arena" / lvl
+            else:
+                lvl_path = self.extracts_path / lvl
+        level = LevelFile.from_path(lvl_path)
 
         # Try to detect what save format the file uses by attempting to read the room
         # at (0, 0) which should always exist in a valid lvl file.
