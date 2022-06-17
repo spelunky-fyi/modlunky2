@@ -87,6 +87,7 @@ class RunLabel:
     _ONLY_SHOW_WITH = defaultdict(set)
     _ONLY_SHOW_WITH[Label.NO_JETPACK] |= {Label.COSMIC_OCEAN}
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
+    _ONLY_SHOW_WITH[Label.VOLCANA_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
 
     # Some labels hide others, e.g. we want "Low%" not "Low% Any".
