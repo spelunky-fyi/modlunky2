@@ -12,4 +12,4 @@ sfyi-fsb5==1.1
 starlette==0.20.3
 typing_extensions==4.2.0
 websockets==10.3
-zstandard==0.17.0
+zstandard==0.18.0
