@@ -272,8 +272,8 @@ TupleBool40 = Tuple[
 ]
 
 
-@serialize(rename_all="spinalcase")
-@deserialize(rename_all="spinalcase")
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
 @dataclass(frozen=True)
 class ArenaState:
     format: ArenaFormat = struct_field(

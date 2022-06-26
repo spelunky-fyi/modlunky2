@@ -124,8 +124,8 @@ class SaveableCategory(Enum):
     PACIFIST = "Pacifist"
 
 
-@serialize(rename_all="spinalcase")
-@deserialize(rename_all="spinalcase")
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
 @dataclass
 class CategoryTrackerConfig(CommonTrackerConfig):
     always_show_modifiers: bool = field(default=False, skip_if_default=True)
@@ -134,15 +134,15 @@ class CategoryTrackerConfig(CommonTrackerConfig):
     )
 
 
-@serialize(rename_all="spinalcase")
-@deserialize(rename_all="spinalcase")
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
 @dataclass
 class PacifistTrackerConfig(CommonTrackerConfig):
     show_kill_count: bool = field(default=False, skip_if_default=True)
 
 
-@serialize(rename_all="spinalcase")
-@deserialize(rename_all="spinalcase")
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
 @dataclass
 class TrackersConfig:
     category: CategoryTrackerConfig = field(default_factory=CategoryTrackerConfig)
@@ -166,8 +166,8 @@ class CustomLevelSaveFormat:
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
 
-@serialize(rename_all="spinalcase")
-@deserialize(rename_all="spinalcase")
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
 @dataclass
 class Config:
     config_path: Optional[Path] = field(default=None, metadata={"serde_skip": True})
