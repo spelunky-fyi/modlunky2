@@ -8,7 +8,7 @@ from modlunky2.category.chain.common import (
 from modlunky2.mem.entities import EntityType
 from modlunky2.mem.state import Screen, State, Theme
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class EggplantChain(ChainMixin):

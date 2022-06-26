@@ -15,7 +15,7 @@ from .constants import (
 if is_windows():
     import winshell  # type: ignore
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class OptionsFrame(ttk.Frame):

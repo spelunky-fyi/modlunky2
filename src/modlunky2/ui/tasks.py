@@ -10,7 +10,7 @@ from modlunky2.utils import tb_info
 
 from .logs import register_queue_handler, QueueHandler
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 PING_INTERVAL = 1

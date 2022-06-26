@@ -24,7 +24,7 @@ from .constants import (
     PLAYLUNKY_VERSION_FILENAME,
 )
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 cache_releases_lock = threading.Lock()
 
 

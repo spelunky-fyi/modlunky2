@@ -12,7 +12,7 @@ from modlunky2.config import Config
 from modlunky2.ui.widgets import Tab
 from modlunky2.utils import tb_info
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 OVERLUNKY_RELEASE_URL = "https://github.com/spelunky-fyi/overlunky/releases/download/whip/Overlunky_WHIP.zip"
 OVERLUNKY_EXE = "Overlunky/Overlunky.exe"

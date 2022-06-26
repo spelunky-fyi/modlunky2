@@ -5,7 +5,7 @@ from subprocess import Popen
 from .constants import IS_EXE
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 LATEST_EXE = (
     "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe"

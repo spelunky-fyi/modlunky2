@@ -12,7 +12,7 @@ import zipfile
 
 from modlunky2.assets.patcher import Patcher
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 def is_patched(exe_filename):

@@ -20,7 +20,7 @@ from modlunky2.mem.memrauder.dsl import (
     sc_uint64,
 )
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)

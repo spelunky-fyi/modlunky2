@@ -16,7 +16,7 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.ui.widgets import ScrollableLabelFrame, Tab, ToolTip
 from modlunky2.utils import is_patched
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 MODS = Path("Mods")
 

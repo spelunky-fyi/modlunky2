@@ -18,7 +18,7 @@ from modlunky2.ui.widgets import Entry, Tab
 from modlunky2.utils import tb_info, zipinfo_fixup_filename
 from modlunky2.api import SpelunkyFYIClient
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class SourceChooser(ttk.Frame):

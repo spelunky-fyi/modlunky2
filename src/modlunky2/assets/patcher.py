@@ -22,7 +22,7 @@ RELEASE_AOB_PRODUCTION = b"\x00\x50\x72\x6F\x64\x75\x63\x74\x69\x6F\x6E\x00"
 RELEASE_AOB_REPLACE = b"\x00\x4D\x6F\x64\x6C\x75\x6E\x6B\x79\x32\x00\x00"
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class Patcher:

@@ -37,7 +37,7 @@ from modlunky2.assets.string_hashing import StringHashes
 from modlunky2.assets.hashing import md5sum_path
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 @dataclass

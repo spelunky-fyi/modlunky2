@@ -17,7 +17,7 @@ from modlunky2.web.api.framework.pubsub import PubSubManager, PubSubTopic, Servi
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 async def hello_world(_request: Request):

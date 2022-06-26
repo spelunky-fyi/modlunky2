@@ -4,7 +4,7 @@ from packaging import version
 
 from modlunky2.constants import BASE_DIR
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 def latest_version():

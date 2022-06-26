@@ -27,7 +27,7 @@ from modlunky2.web.api.framework.session import (
     SessionManager,
 )
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 ParamType = TypeVar("ParamType")
 

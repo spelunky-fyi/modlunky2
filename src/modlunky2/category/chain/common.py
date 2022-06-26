@@ -7,7 +7,7 @@ from modlunky2.mem.entities import Entity, EntityType, Player
 from modlunky2.mem.memrauder.model import PolyPointer
 from modlunky2.mem.state import State
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 # Status of the quest chain.
 # The properties are for convenience in 'if' condition

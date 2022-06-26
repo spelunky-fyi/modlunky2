@@ -9,7 +9,7 @@ from modlunky2.utils import open_directory
 from modlunky2.ui.trackers.utils import get_text_color
 from modlunky2.ui.trackers.common import TRACKERS_DIR
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 COLOR_GREEN = "#00ff00"
