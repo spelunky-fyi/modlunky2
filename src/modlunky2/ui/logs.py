@@ -21,4 +21,4 @@ def register_queue_handler(queue_handler, log_level=logging.INFO):
     queue_handler.setFormatter(formatter)
 
     root_logger.addHandler(queue_handler)
-    logging.getLogger("modlunky2").setLevel(log_level)
+    root_logger.setLevel(log_level)
