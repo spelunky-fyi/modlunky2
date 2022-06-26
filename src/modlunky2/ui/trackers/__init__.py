@@ -8,7 +8,7 @@ from modlunky2.ui.widgets import Tab
 from .options import OptionsFrame
 from .pacifist import PacifistButtons
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class TrackersFrame(ttk.LabelFrame):

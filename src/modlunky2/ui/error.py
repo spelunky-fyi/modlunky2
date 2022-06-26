@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from modlunky2.ui.widgets import Tab
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class ErrorTab(Tab):

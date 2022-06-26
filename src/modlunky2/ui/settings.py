@@ -8,7 +8,7 @@ from modlunky2.config import CACHE_DIR, CONFIG_DIR, DATA_DIR, Config, guess_inst
 from modlunky2.ui.widgets import Entry, Link, PopupWindow, Tab
 from modlunky2.utils import open_directory
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class Theme(ttk.LabelFrame):

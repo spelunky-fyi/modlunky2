@@ -15,7 +15,7 @@ from modlunky2.ui.trackers.common import (
 )
 from modlunky2.ui.trackers.runstate import RunState
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 ICON_PATH = BASE_DIR / "static/images"

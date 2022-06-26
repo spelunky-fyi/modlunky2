@@ -32,7 +32,7 @@ if not IS_EXE:
     import pip_api
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 update_lock = threading.Lock()
 
 

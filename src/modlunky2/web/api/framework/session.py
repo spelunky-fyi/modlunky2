@@ -5,7 +5,7 @@ from starlette.datastructures import Address
 from starlette.websockets import WebSocket
 from typing import Dict, Generator, NewType
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 SessionId = NewType("SessionId", str)
 

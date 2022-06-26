@@ -17,7 +17,7 @@ from modlunky2.ui.widgets import (
 
 from .pack import Pack
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 ICON_PATH = BASE_DIR / "static/images"
 

@@ -24,7 +24,7 @@ from modlunky2.ui.play.options import OptionsFrame
 from modlunky2.ui.play.packs import PacksFrame
 from modlunky2.ui.play.releases import VersionFrame, parse_download_url
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 def launch_playlunky(

@@ -17,7 +17,7 @@ from modlunky2.config import Config
 from modlunky2.utils import tb_info
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class WebSocketThread(threading.Thread):

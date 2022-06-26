@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 import requests
 from requests import HTTPError
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class SpelunkyFYIClient:

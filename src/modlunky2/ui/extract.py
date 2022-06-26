@@ -18,7 +18,7 @@ from modlunky2.utils import open_directory
 from modlunky2.ui.widgets import Tab, ToolTip
 from modlunky2.assets.soundbank import Extension as SoundExtension
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 MODS = Path("Mods")

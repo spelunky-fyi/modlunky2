@@ -15,7 +15,7 @@ from modlunky2.mem import FeedcodeNotFound, find_spelunky2_pid, Spel2Process
 from modlunky2.mem.memrauder.model import ScalarCValueConstructionError
 from modlunky2.utils import tb_info
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 TRACKERS_DIR = DATA_DIR / "trackers"
 

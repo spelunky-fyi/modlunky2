@@ -10,7 +10,7 @@ from modlunky2.config import Config
 from modlunky2.utils import open_directory
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class Pack:

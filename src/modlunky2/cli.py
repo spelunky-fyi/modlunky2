@@ -8,7 +8,8 @@ from modlunky2.config import Config, make_user_dirs
 from modlunky2.utils import tb_info
 import modlunky2.web.service as web_service
 
-logger = logging.getLogger("modlunky2")
+# Explicit name since this module can be __main__
+logger = logging.getLogger("modlunky2.cli")
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
     log_format = "%(asctime)s.%(msecs)03d: %(message)s"
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
-    logger.setLevel(log_level)
+    logging.getLogger("modlunky2").setLevel(log_level)
 
     try:
         launch(args, log_level)

@@ -3,7 +3,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class LoadOrderFrame(ttk.LabelFrame):

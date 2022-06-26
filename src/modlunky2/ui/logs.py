@@ -1,7 +1,5 @@
 import logging
 
-logger = logging.getLogger("modlunky2")
-
 
 class QueueHandler(logging.Handler):
     def __init__(self, log_queue):
@@ -13,12 +11,14 @@ class QueueHandler(logging.Handler):
 
 
 def register_queue_handler(queue_handler, log_level=logging.INFO):
+    root_logger = logging.getLogger()
     # On linux this handler exists in a subprocess but not on windows.
-    for handler in logger.handlers:
+    for handler in root_logger.handlers:
         if isinstance(handler, QueueHandler):
             return
 
     formatter = logging.Formatter("%(asctime)s: %(message)s")
     queue_handler.setFormatter(formatter)
-    logger.addHandler(queue_handler)
-    logger.setLevel(log_level)
+
+    root_logger.addHandler(queue_handler)
+    logging.getLogger("modlunky2").setLevel(log_level)

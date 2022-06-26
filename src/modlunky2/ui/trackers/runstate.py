@@ -40,7 +40,7 @@ from modlunky2.ui.trackers.label import Label, RunLabel
 from modlunky2.config import CategoryTrackerConfig
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)

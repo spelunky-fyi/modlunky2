@@ -12,7 +12,7 @@ from modlunky2.ui.trackers.common import (
     WindowData,
 )
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class PacifistButtons(ttk.Frame):

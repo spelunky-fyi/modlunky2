@@ -53,7 +53,7 @@ LAST_INSTALL_BROWSE_DEFAULT = "/"
 
 DEFAULT_COLOR_KEY = "#ff00ff"
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 def make_user_dirs():

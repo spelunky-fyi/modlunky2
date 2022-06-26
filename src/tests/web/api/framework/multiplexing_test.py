@@ -13,7 +13,7 @@ from modlunky2.web.api.framework.multiplexing import (
     WSMultiplexerRoute,
 )
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 @serde

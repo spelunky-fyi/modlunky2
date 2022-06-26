@@ -12,7 +12,8 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.ui.levels.tab import LevelsTab
 from modlunky2.utils import tb_info, temp_chdir
 
-logger = logging.getLogger("modlunky2")
+# Explicit name since this module can be __main__
+logger = logging.getLogger("modlunky2.ui.levels.cli")
 
 
 def exception_logger(type_, value, traceb):
@@ -168,7 +169,7 @@ def main():
     log_format = "%(asctime)s.%(msecs)03d: %(message)s"
     log_level = logging.getLevelName(args.log_level)
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
-    logger.setLevel(log_level)
+    logging.getLogger("modlunky2").setLevel(log_level)
 
     try:
         launch(args)

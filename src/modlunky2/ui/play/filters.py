@@ -5,7 +5,7 @@ from tkinter import ttk
 from modlunky2.ui.widgets import DebounceEntry
 
 
-logger = logging.getLogger("modlunky2")
+logger = logging.getLogger(__name__)
 
 
 class FiltersFrame(ttk.LabelFrame):
