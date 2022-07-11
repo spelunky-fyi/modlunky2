@@ -84,6 +84,7 @@ class WSMultiplexer:
                     while True:
                         await self._dispatch_one(websocket, session_id, tg)
         except SessionException as ex:
+            logger.warning("Rejected websocket session", exc_info=ex)
             await websocket.close(reason=str(ex))
         except WebSocketDisconnect:
             # We swallow disconnect since it's OK for clients to close the connection.
