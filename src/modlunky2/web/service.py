@@ -27,7 +27,7 @@ def launch_in_thread(config: Config) -> Callable[[], None]:
 def _async_worker(config: Config, shutting_down: threading.Event):
     app = make_asgi_app()
     hypercorn_conf = HypercornConfig()
-    hypercorn_conf.bind = f"127.0.0.1:{config.api_port}"
+    hypercorn_conf.bind = f"localhost:{config.api_port}"
     hypercorn_conf.websocket_ping_interval = 30.0
 
     async def shutdown_trigger():
