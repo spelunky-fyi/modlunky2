@@ -16,8 +16,8 @@ DATA = [
 ]
 BASE_DIR = Path(__file__).parent.resolve()
 
-DEBUG_DIR = Path("src/launcher/target/debug")
-RELEASE_DIR = Path("src/launcher/target/release")
+DEBUG_DIR = Path("target/debug")
+RELEASE_DIR = Path("target/release")
 EXE_NAME = Path("modlunky2.exe")
 
 
@@ -52,7 +52,8 @@ def build_launcher(debug):
     args = [
         "cargo",
         "build",
-        f"--manifest-path={BASE_DIR / 'src/launcher/Cargo.toml'}",
+        "-p",
+        "launcher",
     ]
 
     if not debug:
