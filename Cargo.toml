@@ -2,4 +2,5 @@
 
 members = [
     "src/launcher",
+    "src/libs/ml2_mods",
 ]
