@@ -1,0 +1,11 @@
+{
+    "name": "Remote Control",
+    "slug": "remote-control",
+    "description": "A fake mod for tests",
+    "logo": "mod_logo.png",
+    "mod_file": {
+        "id": "QBRJYOGMYDCZ2VC269B6MKMHTQ",
+        "created_at": "2017-08-09T01:23:45.678901Z",
+        "download_url": "https://example.com/mods/m/remote-control/download/QBRJYOGMYDCZ2VC269B6MKMHTQ/" 
+    }
+}
