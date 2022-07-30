@@ -49,7 +49,7 @@ where
             let digest = Sha256::digest(&buffer);
             buffer.clear();
             hashes.insert(name.to_str().unwrap().into(), format!("{:x}", digest));
-        } else if name.as_os_str().len() != 0 {
+        } else if !name.as_os_str().is_empty() {
             // Only if not root! Avoids path spec / warning
             // and mapname conversion failed error on unzip
             println!("adding dir {:?} as {:?} ...", path, name);
@@ -95,17 +95,14 @@ fn main() -> io::Result<()> {
     let dest_path = Path::new(&out_dir).join("hashes.rs");
     let mut out_file = File::create(&dest_path).unwrap();
 
-    write!(
-        out_file,
-        "static KNOWN_FILES: &'static [&'static str] = &[\n"
-    )?;
-    for (key, _value) in &hashes {
-        write!(out_file, "    r\"{}\",\n", key)?;
+    writeln!(out_file, "static KNOWN_FILES: &[&str] = &[")?;
+    for key in hashes.keys() {
+        writeln!(out_file, "    r\"{}\",", key)?;
     }
     write!(out_file, "];\n\n")?;
 
-    write!(out_file, "fn get_hash(filename: &str) -> Option<&str> {{\n")?;
-    write!(out_file, "    match filename {{\n")?;
+    writeln!(out_file, "fn get_hash(filename: &str) -> Option<&str> {{")?;
+    writeln!(out_file, "    match filename {{")?;
 
     for (key, value) in &hashes {
         let path = Path::new(key);
@@ -118,12 +115,12 @@ fn main() -> io::Result<()> {
             continue;
         }
 
-        write!(out_file, "        r\"{}\" => Some(r\"{}\"),\n", key, value)?;
+        writeln!(out_file, "        r\"{}\" => Some(r\"{}\"),", key, value)?;
     }
 
-    write!(out_file, "        _ => None,\n")?;
-    write!(out_file, "    }}\n")?;
-    write!(out_file, "}}\n")?;
+    writeln!(out_file, "        _ => None,")?;
+    writeln!(out_file, "    }}")?;
+    writeln!(out_file, "}}")?;
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../../dist/modlunky2");

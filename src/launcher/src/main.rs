@@ -13,20 +13,19 @@ use directories::ProjectDirs;
 use sha2::Digest;
 use sha2::Sha256;
 
-static MODLUNKY2_BUNDLE: &'static [u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modlunky2.zip"));
-static MODLUNKY2_VERSION: &'static str =
-    include_str!(concat!(env!("OUT_DIR"), "/modlunky2.version"));
+static MODLUNKY2_BUNDLE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modlunky2.zip"));
+static MODLUNKY2_VERSION: &str = include_str!(concat!(env!("OUT_DIR"), "/modlunky2.version"));
 
 include!(concat!(env!("OUT_DIR"), "/hashes.rs"));
 
-fn unzip(dest: &PathBuf) -> Result<()> {
+fn unzip(dest: &Path) -> Result<()> {
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(MODLUNKY2_BUNDLE))?;
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
 
         let outpath = match file.enclosed_name() {
-            Some(path) => dest.join(path.to_owned()),
+            Some(path) => dest.join(path),
             None => continue,
         };
 
@@ -123,10 +122,10 @@ fn main() -> Result<()> {
     let should_verify_hashes: bool = launcher_matches.is_present("verify-hashes");
     let remainder: Vec<_> = launcher_matches
         .values_of("remainder")
-        .map_or_else(|| vec![], |v| v.collect());
+        .map_or_else(std::vec::Vec::new, |v| v.collect());
 
     let project_dirs = ProjectDirs::from("", "spelunky.fyi", "modlunky2")
-        .ok_or(anyhow!("Failed initialize project dirs..."))?;
+        .ok_or_else(|| anyhow!("Failed initialize project dirs..."))?;
 
     println!("Launching modlunky2 v{}", MODLUNKY2_VERSION);
     let cache_dir = Path::new(project_dirs.cache_dir()).join("modlunky2-releases");
