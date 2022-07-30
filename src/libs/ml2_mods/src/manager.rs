@@ -8,7 +8,7 @@ use tokio::sync::{mpsc, oneshot};
 use tokio::task;
 use tracing::{debug, info, instrument};
 
-use crate::constants::{MANIFEST_FILENAME, PACKS_SUBPATH, PACK_METADATA_SUBPATH};
+use crate::constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
 use crate::data::{Manifest, Mod};
 
 #[derive(Derivative)]
@@ -154,7 +154,7 @@ impl ModManager {
     #[instrument(skip(self))]
     async fn get_mod(&self, id: &str) -> Result<GetResponse, GetError> {
         // First, check that the mod exists
-        let mod_path = self.install_path.join(PACKS_SUBPATH).join(id);
+        let mod_path = self.install_path.join(MODS_SUBPATH).join(id);
         let metadata = fs::metadata(mod_path).await.map_err(|e| match e.kind() {
             io::ErrorKind::NotFound => GetError::NotFoundError(),
             _ => GetError::UnknownError(format!("{:?}", e)),
@@ -177,7 +177,7 @@ impl ModManager {
     async fn load_mod_manifest(&self, id: &str) -> Result<Option<Manifest>, String> {
         let path = self
             .install_path
-            .join(PACK_METADATA_SUBPATH)
+            .join(MOD_METADATA_SUBPATH)
             .join(id)
             .join(MANIFEST_FILENAME);
         let json_result = fs::read(&path).await;
@@ -196,8 +196,8 @@ impl ModManager {
 
     #[instrument(skip(self))]
     async fn list_mods(&self) -> Result<ListResponse, ListError> {
-        let pack_path = self.install_path.join(PACKS_SUBPATH);
-        let mut dir = fs::read_dir(pack_path).await.map_err(|e| match e.kind() {
+        let mod_path = self.install_path.join(MODS_SUBPATH);
+        let mut dir = fs::read_dir(mod_path).await.map_err(|e| match e.kind() {
             io::ErrorKind::NotFound => ListError::NotFoundError(),
             _ => ListError::UnknownError(format!("{:?}", e)),
         })?;
@@ -228,7 +228,7 @@ impl ModManager {
 
     #[instrument(skip(self))]
     async fn remove_mod(&self, id: &str) -> Result<RemoveResponse, RemoveError> {
-        let mod_path = self.install_path.join(PACKS_SUBPATH).join(id);
+        let mod_path = self.install_path.join(MODS_SUBPATH).join(id);
         fs::remove_dir_all(mod_path)
             .await
             .map_err(|e| match e.kind() {
@@ -236,7 +236,7 @@ impl ModManager {
                 _ => RemoveError::UnknownError(format!("{:?}", e)),
             })?;
 
-        let metadata_path = self.install_path.join(PACK_METADATA_SUBPATH).join(id);
+        let metadata_path = self.install_path.join(MOD_METADATA_SUBPATH).join(id);
         let res = fs::remove_dir_all(metadata_path).await;
         // It's OK if the metadata directory doesn't exist
         match res {
