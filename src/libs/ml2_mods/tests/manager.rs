@@ -8,7 +8,7 @@ use tokio::fs::{self, OpenOptions};
 use tokio::sync::oneshot;
 
 use ml2_mods::{
-    constants::{PACKS_SUBPATH, PACK_METADATA_SUBPATH},
+    constants::{MODS_SUBPATH, MOD_METADATA_SUBPATH},
     data::{Manifest, ManifestModFile, Mod},
     manager::{Command, GetResponse, ListResponse, ModManager},
 };
@@ -119,13 +119,13 @@ async fn test_remove() -> Result<(), anyhow::Error> {
     // Note: panicking will leak the tempdir
     let dir = tempfile::tempdir()?;
 
-    let mod_path = dir.path().join(PACKS_SUBPATH).join(mod_id);
+    let mod_path = dir.path().join(MODS_SUBPATH).join(mod_id);
     fs::create_dir_all(mod_path.clone()).await?;
 
     let lua_path = mod_path.join("main.lua");
     touch_file(lua_path.clone()).await?;
 
-    let metadata_dir_path = dir.path().join(PACK_METADATA_SUBPATH).join(mod_id);
+    let metadata_dir_path = dir.path().join(MOD_METADATA_SUBPATH).join(mod_id);
     fs::create_dir_all(metadata_dir_path.clone()).await?;
 
     let manifest_path = mod_path.join(MANIFEST_FILENAME);
