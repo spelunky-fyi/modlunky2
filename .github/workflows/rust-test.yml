@@ -23,7 +23,7 @@ jobs:
         name: cargo check
         with:
           command: check
-          args: --frozen --workspace --all-targets --exclude launcher
+          args: --workspace --all-targets --exclude launcher
       - uses: actions-rs/cargo@v1
         name: cargo fmt
         with:
@@ -33,9 +33,9 @@ jobs:
         name: cargo clippy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --frozen --workspace --all-targets --exclude launcher
+          args: --workspace --all-targets --exclude launcher
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
           command: test
-          args: --frozen --workspace --all-targets --exclude launcher
+          args: --workspace --all-targets --exclude launcher
