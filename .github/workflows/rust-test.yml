@@ -1,0 +1,40 @@
+name: Rust testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/cargo@v1
+        name: cargo check
+        with:
+          command: check
+          args: --workspace --all-targets --all-features
+      - uses: actions-rs/cargo@v1
+        name: cargo fmt
+        with:
+          command: fmt
+          args: --all --check
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace --all-targets --all-features
+      - uses: actions-rs/cargo@v1
+        name: cargo test
+        with:
+          command: test
+          args: --workspace
