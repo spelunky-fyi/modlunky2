@@ -62,7 +62,12 @@ pub enum UpdateError {}
 pub struct RemoveResponse {}
 
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum RemoveError {}
+pub enum RemoveError {
+    #[error("Mod directory doesn't exist")]
+    NotFoundError(),
+    #[error("Unknown error: {0}")]
+    UnknownError(String),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetResponse {
@@ -136,6 +141,11 @@ impl ModManager {
                     // Prevent additional messages from being sent
                     self.commands_rx.close();
                 }
+                Command::Remove { id, resp } => {
+                    if resp.send(self.remove_mod(&id).await).is_err() {
+                        info!("Receiver dropped for Remove({:?})", id);
+                    }
+                }
                 _ => unimplemented!(),
             }
         }
@@ -173,6 +183,7 @@ impl ModManager {
         let json_result = fs::read(&path).await;
         if let Err(e) = json_result {
             match e.kind() {
+                // It's OK if the metadata.json doesn't exist
                 io::ErrorKind::NotFound => return Ok(None),
                 _ => return Err(format!("{:?}", e)),
             }
@@ -185,8 +196,8 @@ impl ModManager {
 
     #[instrument(skip(self))]
     async fn list_mods(&self) -> Result<ListResponse, ListError> {
-        let packs_path = self.install_path.join(PACKS_SUBPATH);
-        let mut dir = fs::read_dir(packs_path).await.map_err(|e| match e.kind() {
+        let pack_path = self.install_path.join(PACKS_SUBPATH);
+        let mut dir = fs::read_dir(pack_path).await.map_err(|e| match e.kind() {
             io::ErrorKind::NotFound => ListError::NotFoundError(),
             _ => ListError::UnknownError(format!("{:?}", e)),
         })?;
@@ -213,5 +224,27 @@ impl ModManager {
         }
 
         Ok(ListResponse { mods })
+    }
+
+    #[instrument(skip(self))]
+    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse, RemoveError> {
+        let mod_path = self.install_path.join(PACKS_SUBPATH).join(id);
+        fs::remove_dir_all(mod_path)
+            .await
+            .map_err(|e| match e.kind() {
+                io::ErrorKind::NotFound => RemoveError::NotFoundError(),
+                _ => RemoveError::UnknownError(format!("{:?}", e)),
+            })?;
+
+        let metadata_path = self.install_path.join(PACK_METADATA_SUBPATH).join(id);
+        let res = fs::remove_dir_all(metadata_path).await;
+        // It's OK if the metadata directory doesn't exist
+        match res {
+            Ok(()) => Ok(RemoveResponse {}),
+            Err(e) => match e.kind() {
+                io::ErrorKind::NotFound => Ok(RemoveResponse {}),
+                _ => Err(RemoveError::UnknownError(format!("{:?}", e))),
+            },
+        }
     }
 }

@@ -1,8 +1,14 @@
+use std::io;
 use std::path::PathBuf;
 
+use anyhow::{anyhow, bail};
+use ml2_mods::constants::MANIFEST_FILENAME;
+use ml2_mods::manager::RemoveResponse;
+use tokio::fs::{self, OpenOptions};
 use tokio::sync::oneshot;
 
 use ml2_mods::{
+    constants::{PACKS_SUBPATH, PACK_METADATA_SUBPATH},
     data::{Manifest, ManifestModFile, Mod},
     manager::{Command, GetResponse, ListResponse, ModManager},
 };
@@ -32,7 +38,7 @@ fn make_remote_control_mod() -> Mod {
     }
 }
 
-fn install_dir() -> String {
+fn testdata_install_dir() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join(r"tests\data\install_dir")
         .to_str()
@@ -42,7 +48,7 @@ fn install_dir() -> String {
 
 #[tokio::test]
 async fn test_get() {
-    let (manager, commands_tx) = ModManager::new(&install_dir());
+    let (manager, commands_tx) = ModManager::new(&testdata_install_dir());
     let manager_handle = manager.spawn();
 
     let (tx, rx) = oneshot::channel();
@@ -81,7 +87,7 @@ async fn test_get() {
 
 #[tokio::test]
 async fn test_list() {
-    let (manager, commands_tx) = ModManager::new(&install_dir());
+    let (manager, commands_tx) = ModManager::new(&testdata_install_dir());
     let manager_handle = manager.spawn();
 
     let (tx, rx) = oneshot::channel();
@@ -95,4 +101,68 @@ async fn test_list() {
 
     drop(commands_tx);
     manager_handle.await.unwrap();
+}
+
+async fn touch_file(path: PathBuf) -> Result<(), io::Error> {
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open(path.clone())
+        .await?;
+    file.sync_all().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_remove() -> Result<(), anyhow::Error> {
+    let mod_id = "some-mod";
+    // Note: panicking will leak the tempdir
+    let dir = tempfile::tempdir()?;
+
+    let mod_path = dir.path().join(PACKS_SUBPATH).join(mod_id);
+    fs::create_dir_all(mod_path.clone()).await?;
+
+    let lua_path = mod_path.join("main.lua");
+    touch_file(lua_path.clone()).await?;
+
+    let metadata_dir_path = dir.path().join(PACK_METADATA_SUBPATH).join(mod_id);
+    fs::create_dir_all(metadata_dir_path.clone()).await?;
+
+    let manifest_path = mod_path.join(MANIFEST_FILENAME);
+    touch_file(manifest_path.clone()).await?;
+
+    let dir_path = dir.path().to_str();
+    if dir_path.is_none() {
+        bail!("tempdir isn't valid unicode: {:?}", dir.path());
+    }
+    let (manager, commands_tx) = ModManager::new(dir_path.unwrap());
+    let manager_handle = manager.spawn();
+
+    let (tx, rx) = oneshot::channel();
+    commands_tx
+        .send(Command::Remove {
+            id: mod_id.to_string(),
+            resp: tx,
+        })
+        .await?;
+    // We'll check this later since assert_eq! may panic
+    let resp = rx.await??;
+
+    drop(commands_tx);
+    manager_handle.await?;
+
+    for p in [mod_path, lua_path, metadata_dir_path, manifest_path] {
+        match fs::metadata(p.clone()).await {
+            Ok(_) => Err(anyhow!("File/dir still exists: {:?}", p)),
+            Err(e) => match e.kind() {
+                io::ErrorKind::NotFound => Ok(()),
+                _ => Err(e.into()),
+            },
+        }?;
+    }
+    drop(dir);
+
+    assert_eq!(resp, RemoveResponse {});
+
+    Ok(())
 }

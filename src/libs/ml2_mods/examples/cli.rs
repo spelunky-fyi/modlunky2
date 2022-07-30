@@ -17,6 +17,7 @@ struct Cli {
 enum Commands {
     Get { id: String },
     List {},
+    Remove { id: String },
 }
 
 #[tokio::main]
@@ -40,6 +41,13 @@ async fn main() -> anyhow::Result<()> {
             let (resp_tx, resp_rx) = oneshot::channel();
             commands_tx
                 .send(manager::Command::List { resp: resp_tx })
+                .await?;
+            println!("{:#?}", resp_rx.await??);
+        }
+        Commands::Remove { id } => {
+            let (resp_tx, resp_rx) = oneshot::channel();
+            commands_tx
+                .send(manager::Command::Remove { id, resp: resp_tx })
                 .await?;
             println!("{:#?}", resp_rx.await??);
         }
