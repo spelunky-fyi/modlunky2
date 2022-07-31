@@ -19,26 +19,26 @@ use crate::data::{Manifest, Mod};
 pub enum Command {
     Install {
         package: InstallPackage,
-        resp: oneshot::Sender<Result<InstallResponse, InstallError>>,
+        resp: oneshot::Sender<Result<InstallResponse>>,
     },
     Update {
         id: String,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<UpdateResponse, UpdateError>>,
+        resp: oneshot::Sender<Result<UpdateResponse>>,
     },
     Remove {
         id: String,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<RemoveResponse, RemoveError>>,
+        resp: oneshot::Sender<Result<RemoveResponse>>,
     },
     Get {
         id: String,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<GetResponse, GetError>>,
+        resp: oneshot::Sender<Result<GetResponse>>,
     },
     List {
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<ListResponse, ListError>>,
+        resp: oneshot::Sender<Result<ListResponse>>,
     },
     Shutdown(),
 }
@@ -54,66 +54,45 @@ pub enum InstallPackage {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstallResponse {}
-
 #[derive(Debug, thiserror::Error)]
-pub enum InstallError {
-    #[error("Mod already exists")]
-    ModExistsError(),
+pub enum Error {
+    #[error("Mod {0} already exists")]
+    ModExistsError(String),
+    #[error("Mod {0} wasn't found")]
+    ModNotFoundError(String),
+    #[error("Mod {0} isn't in a directory")]
+    ModNonDirectoryError(String),
+
+    #[error("Couldn't parse manifest for mod {0}")]
+    ManifestParseError(String, #[source] anyhow::Error),
     #[error("Problem with installation source")]
     SourceError(#[source] anyhow::Error),
     #[error("Problem with the destination")]
     DestinationError(#[source] anyhow::Error),
+
     #[error("Unknown error: {0}")]
     UnknownError(#[source] anyhow::Error),
 }
 
+pub type Result<R> = std::result::Result<R, Error>;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InstallResponse {}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateResponse {}
 
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum UpdateError {}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RemoveResponse {}
-
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum RemoveError {
-    #[error("Mod directory doesn't exist")]
-    NotFoundError(),
-    #[error("Unknown error: {0}")]
-    UnknownError(String),
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetResponse {
     pub r#mod: Mod,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum GetError {
-    #[error("Mod isn't installed")]
-    NotFoundError(),
-    #[error("Mod isn't in a directory")]
-    NonDirectoryError(),
-    #[error("Couldn't read manifest for mod")]
-    ManifestParseError(String),
-    #[error("Unknown error: {0}")]
-    UnknownError(String),
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ListResponse {
     pub mods: Vec<Mod>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-pub enum ListError {
-    #[error("Mods directory doesn't exist")]
-    NotFoundError(),
-    #[error("Unknown error: {0}")]
-    UnknownError(String),
 }
 
 #[derive(Derivative)]
@@ -174,32 +153,27 @@ impl ModManager {
     }
 
     #[instrument(skip(self))]
-    async fn get_mod(&self, id: &str) -> Result<GetResponse, GetError> {
-        // First, check that the mod exists
-        let mod_path = self.install_path.join(MODS_SUBPATH).join(id);
-        path_metadata(&mod_path)
-            .await
-            .map_err(|e| GetError::UnknownError(format!("{:?}", e)))?
-            .map_or(Err(GetError::NotFoundError()), |m| {
-                if m.is_dir() {
-                    Ok(())
-                } else {
-                    Err(GetError::NonDirectoryError())
-                }
-            })?;
-
-        let manifest = self
-            .load_mod_manifest(id)
-            .await
-            .map_err(GetError::ManifestParseError)?;
+    async fn get_mod(&self, id: &str) -> Result<GetResponse> {
         let id = id.to_string();
+        // First, check that the mod exists
+        let mod_path = self.install_path.join(MODS_SUBPATH).join(&id);
+        match path_metadata(&mod_path).await? {
+            Some(m) => {
+                if !m.is_dir() {
+                    return Err(Error::ModNonDirectoryError(id));
+                }
+            }
+            None => return Err(Error::ModNotFoundError(id)),
+        }
+
+        let manifest = self.load_mod_manifest(&id).await?;
         Ok(GetResponse {
             r#mod: Mod { id, manifest },
         })
     }
 
     #[instrument(skip(self))]
-    async fn load_mod_manifest(&self, id: &str) -> Result<Option<Manifest>, String> {
+    async fn load_mod_manifest(&self, id: &str) -> Result<Option<Manifest>> {
         let path = self
             .install_path
             .join(MOD_METADATA_SUBPATH)
@@ -210,41 +184,43 @@ impl ModManager {
             match e.kind() {
                 // It's OK if the metadata.json doesn't exist
                 io::ErrorKind::NotFound => return Ok(None),
-                _ => return Err(format!("{:?}", e)),
+                _ => return Err(Error::UnknownError(e.into())),
             }
         }
         let json = json_result.unwrap();
-        let manifest: Manifest =
-            serde_json::from_slice(&json[..]).map_err(|e| format!("{:?}", e))?;
+        let manifest: Manifest = serde_json::from_slice(&json[..])
+            .map_err(|e| Error::ManifestParseError(id.to_string(), e.into()))?;
         Ok(Some(manifest))
     }
 
     #[instrument(skip(self))]
-    async fn list_mods(&self) -> Result<ListResponse, ListError> {
-        let mod_path = self.install_path.join(MODS_SUBPATH);
-        let mut dir = fs::read_dir(mod_path).await.map_err(|e| match e.kind() {
-            io::ErrorKind::NotFound => ListError::NotFoundError(),
-            _ => ListError::UnknownError(format!("{:?}", e)),
-        })?;
-
+    async fn list_mods(&self) -> Result<ListResponse> {
         let mut mods = Vec::new();
+        let mod_path = self.install_path.join(MODS_SUBPATH);
+        let mut dir = match fs::read_dir(mod_path).await {
+            Ok(d) => d,
+            Err(e) => match e.kind() {
+                io::ErrorKind::NotFound => return Ok(ListResponse { mods }),
+                _ => return Err(Error::UnknownError(e.into())),
+            },
+        };
+
         while let Some(entry) = dir
             .next_entry()
             .await
-            .map_err(|e| ListError::UnknownError(format!("{:?}", e)))?
+            .map_err(|e| Error::UnknownError(e.into()))?
         {
             if entry.file_name() == ".db" {
                 continue;
             }
-            let id = entry
-                .file_name()
-                .into_string()
-                .map_err(|e| ListError::UnknownError(format!("{:?}", e)))?;
+            let id = entry.file_name().into_string().map_err(|e| {
+                Error::UnknownError(anyhow!("Couldn't convert to unicode: {:?}", e))
+            })?;
             let res = self.get_mod(&id).await;
             match res {
                 Ok(data) => mods.push(data.r#mod),
-                Err(GetError::NonDirectoryError()) => {}
-                Err(e) => return Err(ListError::UnknownError(format!("{:?}", e))),
+                Err(Error::ModNonDirectoryError(_)) => {}
+                Err(e) => return Err(Error::UnknownError(e.into())),
             }
         }
 
@@ -252,13 +228,13 @@ impl ModManager {
     }
 
     #[instrument(skip(self))]
-    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse, RemoveError> {
+    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse> {
         let mod_path = self.install_path.join(MODS_SUBPATH).join(id);
         fs::remove_dir_all(mod_path)
             .await
             .map_err(|e| match e.kind() {
-                io::ErrorKind::NotFound => RemoveError::NotFoundError(),
-                _ => RemoveError::UnknownError(format!("{:?}", e)),
+                io::ErrorKind::NotFound => Error::ModNotFoundError(id.to_string()),
+                _ => Error::UnknownError(e.into()),
             })?;
 
         let metadata_path = self.install_path.join(MOD_METADATA_SUBPATH).join(id);
@@ -268,13 +244,13 @@ impl ModManager {
             Ok(()) => Ok(RemoveResponse {}),
             Err(e) => match e.kind() {
                 io::ErrorKind::NotFound => Ok(RemoveResponse {}),
-                _ => Err(RemoveError::UnknownError(format!("{:?}", e))),
+                _ => Err(Error::UnknownError(e.into())),
             },
         }
     }
 
     #[instrument(skip(self))]
-    async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse, InstallError> {
+    async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse> {
         match package {
             InstallPackage::Local {
                 source_path,
@@ -285,64 +261,53 @@ impl ModManager {
     }
 
     #[instrument(skip(self))]
-    async fn install_local_mod(
-        &self,
-        source: &str,
-        dest_id: &str,
-    ) -> Result<InstallResponse, InstallError> {
+    async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
         let dest_dir_path = self.install_path.join(MODS_SUBPATH).join(dest_id);
 
-        if path_metadata(&dest_dir_path)
-            .await
-            .map_err(|e| InstallError::DestinationError(e.into()))?
-            .is_some()
-        {
-            return Err(InstallError::ModExistsError());
+        if path_metadata(&dest_dir_path).await?.is_some() {
+            return Err(Error::ModExistsError(dest_id.to_string()));
         }
 
         let source_path = PathBuf::from(source);
-        path_metadata(&source_path)
-            .await
-            .map_err(|e| InstallError::SourceError(e.into()))?
-            .map_or_else(
-                || Err(InstallError::SourceError(anyhow!("not found"))),
-                |m| {
-                    if m.is_file() {
-                        Ok(())
-                    } else {
-                        Err(InstallError::SourceError(anyhow!("not a file")))
-                    }
-                },
-            )?;
+        path_metadata(&source_path).await?.map_or_else(
+            || Err(Error::SourceError(anyhow!("not found"))),
+            |m| {
+                if m.is_file() {
+                    Ok(())
+                } else {
+                    Err(Error::SourceError(anyhow!("not a file")))
+                }
+            },
+        )?;
 
         fs::create_dir_all(&dest_dir_path)
             .await
-            .map_err(|e| InstallError::DestinationError(e.into()))?;
+            .map_err(|e| Error::DestinationError(e.into()))?;
 
         let copy_type = CopyType::for_path(&source_path);
         match copy_type {
             CopyType::SingleFile(name) => fs::copy(source_path, dest_dir_path.join(name))
                 .await
-                .map(|_| ())
-                .map_err(|e| InstallError::UnknownError(anyhow!("Error copying file: {:?}", e)))?,
+                .map(|_| ()) // to make match-arm types equivalent
+                .map_err(|e| Error::UnknownError(anyhow!("Error copying file: {:?}", e)))?,
             CopyType::ZipFile() => tokio::task::spawn_blocking(move || {
                 extract_zip_archive(&source_path, dest_dir_path)
             })
             .await
-            .map_err(|e| InstallError::UnknownError(anyhow!("Error extrating zip {:?}", e)))??,
+            .map_err(|e| Error::UnknownError(anyhow!("Error extrating zip {:?}", e)))??,
         }
 
         Ok(InstallResponse {})
     }
 }
 
-async fn path_metadata(path: impl AsRef<Path>) -> Result<Option<std::fs::Metadata>, io::Error> {
+async fn path_metadata(path: impl AsRef<Path>) -> Result<Option<std::fs::Metadata>> {
     let dest_check_result = fs::metadata(path).await;
     match dest_check_result {
         Ok(m) => Ok(Some(m)),
         Err(e) => match e.kind() {
             io::ErrorKind::NotFound => Ok(None),
-            _ => Err(e),
+            _ => Err(Error::UnknownError(e.into())),
         },
     }
 }
@@ -373,11 +338,10 @@ impl CopyType {
 fn extract_zip_archive(
     source_path: impl AsRef<Path> + std::fmt::Debug,
     dest: PathBuf,
-) -> Result<(), InstallError> {
-    let source =
-        std::fs::File::open(&source_path).map_err(|e| InstallError::UnknownError(e.into()))?;
-    let mut archive = ZipArchive::new(source)
-        .map_err(|e| InstallError::SourceError(anyhow!("Opening zip {:?}", e)))?;
+) -> Result<()> {
+    let source = std::fs::File::open(&source_path).map_err(|e| Error::SourceError(e.into()))?;
+    let mut archive =
+        ZipArchive::new(source).map_err(|e| Error::SourceError(anyhow!("Opening zip {:?}", e)))?;
     let paths = zip_enclosed_paths(&mut archive)?;
     let rename_lua = count_lua_paths(&paths) == 1;
     let remove_first = paths_have_same_prefix(&paths);
@@ -385,20 +349,20 @@ fn extract_zip_archive(
     for i in 0..archive.len() {
         let mut file = archive
             .by_index(i)
-            .map_err(|e| InstallError::SourceError(anyhow!("Opening zip {:?}", e)))?;
+            .map_err(|e| Error::SourceError(anyhow!("Reading zip {:?}", e)))?;
         let file_dest = dest.join(&paths[i]);
         debug!("extracting {:?} to {:?}", file.name(), file_dest);
         if file.is_dir() {
-            std::fs::create_dir_all(file_dest).map_err(|e| InstallError::UnknownError(e.into()))?;
+            std::fs::create_dir_all(file_dest).map_err(|e| Error::UnknownError(e.into()))?;
         } else {
             match file_dest.parent() {
                 None => Ok(()),
                 Some(p) => std::fs::create_dir_all(p),
             }
-            .map_err(|e| InstallError::UnknownError(e.into()))?;
-            let mut f = std::fs::File::create(file_dest)
-                .map_err(|e| InstallError::UnknownError(e.into()))?;
-            std::io::copy(&mut file, &mut f).map_err(|e| InstallError::UnknownError(e.into()))?;
+            .map_err(|e| Error::UnknownError(e.into()))?;
+            let mut f =
+                std::fs::File::create(file_dest).map_err(|e| Error::UnknownError(e.into()))?;
+            std::io::copy(&mut file, &mut f).map_err(|e| Error::UnknownError(e.into()))?;
         }
     }
     Ok(())
@@ -436,15 +400,15 @@ fn fix_zip_names(paths: Vec<PathBuf>, rename_lua: bool, remove_first: bool) -> V
 }
 
 #[instrument(skip(zip))]
-fn zip_enclosed_paths(zip: &mut ZipArchive<std::fs::File>) -> Result<Vec<PathBuf>, InstallError> {
+fn zip_enclosed_paths(zip: &mut ZipArchive<std::fs::File>) -> Result<Vec<PathBuf>> {
     let mut paths = Vec::with_capacity(zip.len());
     for i in 0..zip.len() {
         let f = zip
             .by_index_raw(i)
-            .map_err(|e| InstallError::SourceError(anyhow!("Reading zip file {:?}", e)))?;
+            .map_err(|e| Error::SourceError(anyhow!("Reading zip file {:?}", e)))?;
         let p = f
             .enclosed_name()
-            .ok_or(InstallError::SourceError(anyhow!("Invalid file name")))?;
+            .ok_or(Error::SourceError(anyhow!("Invalid file name")))?;
         paths.push(p.into());
     }
     Ok(paths)
