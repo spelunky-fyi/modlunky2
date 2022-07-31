@@ -1,7 +1,7 @@
 use std::io;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use ml2_mods::constants::MANIFEST_FILENAME;
 use ml2_mods::manager::{InstallResponse, RemoveResponse};
 use tempfile::TempDir;
@@ -115,26 +115,25 @@ async fn touch_file(path: PathBuf) -> Result<(), io::Error> {
 }
 
 #[tokio::test]
-async fn test_remove() -> Result<(), anyhow::Error> {
+async fn test_remove() {
     let mod_id = "some-mod";
-    // Note: panicking will leak the tempdir
-    let dir = tempfile::tempdir()?;
+    let dir = tempfile::tempdir().unwrap();
 
     let mod_path = dir.path().join(MODS_SUBPATH).join(mod_id);
-    fs::create_dir_all(mod_path.clone()).await?;
+    fs::create_dir_all(mod_path.clone()).await.unwrap();
 
     let lua_path = mod_path.join("main.lua");
-    touch_file(lua_path.clone()).await?;
+    touch_file(lua_path.clone()).await.unwrap();
 
     let metadata_dir_path = dir.path().join(MOD_METADATA_SUBPATH).join(mod_id);
-    fs::create_dir_all(metadata_dir_path.clone()).await?;
+    fs::create_dir_all(metadata_dir_path.clone()).await.unwrap();
 
     let manifest_path = mod_path.join(MANIFEST_FILENAME);
-    touch_file(manifest_path.clone()).await?;
+    touch_file(manifest_path.clone()).await.unwrap();
 
     let dir_path = dir.path().to_str();
     if dir_path.is_none() {
-        bail!("tempdir isn't valid unicode: {:?}", dir.path());
+        panic!("tempdir isn't valid unicode: {:?}", dir.path());
     }
     let (manager, commands_tx) = ModManager::new(dir_path.unwrap());
     let manager_handle = manager.spawn();
@@ -145,27 +144,24 @@ async fn test_remove() -> Result<(), anyhow::Error> {
             id: mod_id.to_string(),
             resp: tx,
         })
-        .await?;
-    // We'll check this later since assert_eq! may panic
-    let resp = rx.await??;
-
-    drop(commands_tx);
-    manager_handle.await?;
-
-    for p in [mod_path, lua_path, metadata_dir_path, manifest_path] {
-        match fs::metadata(p.clone()).await {
-            Ok(_) => Err(anyhow!("File/dir still exists: {:?}", p)),
-            Err(e) => match e.kind() {
-                io::ErrorKind::NotFound => Ok(()),
-                _ => Err(e.into()),
-            },
-        }?;
-    }
-    drop(dir);
-
+        .await
+        .unwrap();
+    let resp = rx.await.unwrap().unwrap();
     assert_eq!(resp, RemoveResponse {});
 
-    Ok(())
+    drop(commands_tx);
+    manager_handle.await.unwrap();
+
+    for p in [mod_path, lua_path, metadata_dir_path, manifest_path] {
+        match fs::metadata(&p).await {
+            Ok(_) => panic!("File/dir still exists: {:?}", p),
+            Err(e) => match e.kind() {
+                io::ErrorKind::NotFound => (),
+                _ => panic!("Unexpected IO error: {:?}", e),
+            },
+        }
+    }
+    drop(dir);
 }
 
 async fn install_from_local_sources(
@@ -204,8 +200,8 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 }
 
 #[tokio::test]
-async fn test_install_locall() -> Result<(), anyhow::Error> {
-    let dir = tempfile::tempdir()?;
+async fn test_install_locall() {
+    let dir = tempfile::tempdir().unwrap();
     let (manager, commands_tx) = ModManager::new(&dir.path().as_os_str().to_str().unwrap());
     let manager_handle = manager.spawn();
 
@@ -254,6 +250,5 @@ async fn test_install_locall() -> Result<(), anyhow::Error> {
     // assert_exits_in(&dir, mod_id, "unicode👀.txt").await;
 
     drop(commands_tx);
-    manager_handle.await.unwrap();
-    Ok(())
+    manager_handle.await.unwrap()
 }
