@@ -3,14 +3,15 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, bail};
 use ml2_mods::constants::MANIFEST_FILENAME;
-use ml2_mods::manager::RemoveResponse;
+use ml2_mods::manager::{InstallResponse, RemoveResponse};
+use tempfile::TempDir;
 use tokio::fs::{self, OpenOptions};
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 
 use ml2_mods::{
     constants::{MODS_SUBPATH, MOD_METADATA_SUBPATH},
     data::{Manifest, ManifestModFile, Mod},
-    manager::{Command, GetResponse, ListResponse, ModManager},
+    manager::{Command, GetResponse, InstallPackage, ListResponse, ModManager},
 };
 
 fn make_provincial_mod() -> Mod {
@@ -164,5 +165,95 @@ async fn test_remove() -> Result<(), anyhow::Error> {
 
     assert_eq!(resp, RemoveResponse {});
 
+    Ok(())
+}
+
+async fn install_from_local_sources(
+    commands_tx: &mpsc::Sender<Command>,
+    source_file: &str,
+    dest_id: &str,
+) {
+    let source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(r"tests\data\local_sources")
+        .join(source_file)
+        .as_os_str()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let (tx, rx) = oneshot::channel();
+    commands_tx
+        .send(Command::Install {
+            package: InstallPackage::Local {
+                source_path,
+                dest_id: dest_id.to_string(),
+            },
+            resp: tx,
+        })
+        .await
+        .unwrap();
+    let resp = rx.await.unwrap().unwrap();
+    assert_eq!(resp, InstallResponse {})
+}
+
+async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
+    let path = dir.path().join(MODS_SUBPATH).join(mod_id).join(path);
+    fs::metadata(&path)
+        .await
+        .map_err(|e| anyhow!("checking for {:?}: {:?}", path, e))
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_install_locall() -> Result<(), anyhow::Error> {
+    let dir = tempfile::tempdir()?;
+    let (manager, commands_tx) = ModManager::new(&dir.path().as_os_str().to_str().unwrap());
+    let manager_handle = manager.spawn();
+
+    let mod_id = "unchanged";
+    install_from_local_sources(&commands_tx, "unchanged.txt", mod_id).await;
+    assert_exits_in(&dir, mod_id, "unchanged.txt").await;
+
+    let mod_id = "rename-lua";
+    install_from_local_sources(&commands_tx, "rename_me.lua", mod_id).await;
+    assert_exits_in(&dir, mod_id, "main.lua").await;
+
+    let mod_id = "multi-lua";
+    install_from_local_sources(&commands_tx, "multi_lua.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "ok.lua").await;
+    assert_exits_in(&dir, mod_id, "fine.lua").await;
+
+    let mod_id = "varying-prefixes";
+    install_from_local_sources(&commands_tx, "varying_prefixes.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "a/foo.txt").await;
+    assert_exits_in(&dir, mod_id, "b/bar.txt").await;
+
+    let mod_id = "single-file";
+    install_from_local_sources(&commands_tx, "single_file.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "lonely.txt").await;
+
+    let mod_id = "only-mod-data";
+    install_from_local_sources(&commands_tx, "only_mod_data.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "Data/inner.txt").await;
+
+    let mod_id = "empty-dirs";
+    install_from_local_sources(&commands_tx, "empty_dirs.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "x").await;
+    assert_exits_in(&dir, mod_id, "y").await;
+
+    let mod_id = "single-dir";
+    install_from_local_sources(&commands_tx, "single_dir.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "foo.txt").await;
+
+    let mod_id = "single-lua";
+    install_from_local_sources(&commands_tx, "single_lua.zip", mod_id).await;
+    assert_exits_in(&dir, mod_id, "main.lua").await;
+    assert_exits_in(&dir, mod_id, "unchanged.txt").await;
+
+    // let mod_id = "unicode";
+    // install_from_local_sources(&commands_tx, "unicode.zip", mod_id).await;
+    // assert_exits_in(&dir, mod_id, "unicode👀.txt").await;
+
+    drop(commands_tx);
+    manager_handle.await.unwrap();
     Ok(())
 }

@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use tokio::sync::oneshot;
 
-use ml2_mods::manager::{self, ModManager};
+use ml2_mods::manager::{self, InstallPackage, ModManager};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -18,6 +18,7 @@ enum Commands {
     Get { id: String },
     List {},
     Remove { id: String },
+    InstallLocal { source: String, id: String },
 }
 
 #[tokio::main]
@@ -48,6 +49,20 @@ async fn main() -> anyhow::Result<()> {
             let (resp_tx, resp_rx) = oneshot::channel();
             commands_tx
                 .send(manager::Command::Remove { id, resp: resp_tx })
+                .await?;
+            println!("{:#?}", resp_rx.await??);
+        }
+        Commands::InstallLocal { source, id } => {
+            let (resp_tx, resp_rx) = oneshot::channel();
+            let package = InstallPackage::Local {
+                source_path: source,
+                dest_id: id,
+            };
+            commands_tx
+                .send(manager::Command::Install {
+                    package,
+                    resp: resp_tx,
+                })
                 .await?;
             println!("{:#?}", resp_rx.await??);
         }
