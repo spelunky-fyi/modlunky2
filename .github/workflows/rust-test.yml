@@ -33,7 +33,7 @@ jobs:
         name: cargo clippy
         with:
           command: clippy
-          args: --workspace -- -D warnings
+          args: --workspace --all-targets --exclude launcher -- -D warnings
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
