@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::manager::Error;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Mod {
     pub id: String,
@@ -20,4 +22,43 @@ pub struct Manifest {
     pub description: String,
     pub logo: String,
     pub mod_file: ManifestModFile,
+}
+
+#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+pub enum ManagerError {
+    #[error("{0}")]
+    ModExistsError(String),
+    #[error("{0}")]
+    ModNotFoundError(String),
+    #[error("{0}")]
+    ModNonDirectoryError(String),
+    #[error("{0}")]
+    ManifestParseError(String),
+    #[error("{0}")]
+    SourceError(String),
+    #[error("{0}")]
+    DestinationError(String),
+    #[error("{0}")]
+    ChannelError(String),
+    #[error("{0}")]
+    UnknownError(String),
+}
+
+impl From<&Error> for ManagerError {
+    fn from(original: &Error) -> Self {
+        match original {
+            Error::ModExistsError(_) => ManagerError::ModExistsError(format!("{}", original)),
+            Error::ModNotFoundError(_) => ManagerError::ModNotFoundError(format!("{}", original)),
+            Error::ModNonDirectoryError(_) => {
+                ManagerError::ModNonDirectoryError(format!("{}", original))
+            }
+            Error::ManifestParseError(_m, _e) => {
+                ManagerError::ManifestParseError(format!("{}", original))
+            }
+            Error::SourceError(_) => ManagerError::SourceError(format!("{}", original)),
+            Error::DestinationError(_) => ManagerError::DestinationError(format!("{}", original)),
+            Error::ChannelError(_) => ManagerError::ChannelError(format!("{}", original)),
+            Error::UnknownError(_) => ManagerError::UnknownError(format!("{}", original)),
+        }
+    }
 }
