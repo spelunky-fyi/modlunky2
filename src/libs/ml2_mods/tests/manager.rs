@@ -188,7 +188,15 @@ async fn install_from_local_sources(
         .await
         .unwrap();
     let resp = rx.await.unwrap().unwrap();
-    assert_eq!(resp, InstallResponse {})
+    assert_eq!(
+        resp,
+        InstallResponse {
+            r#mod: Mod {
+                id: dest_id.to_string(),
+                manifest: None,
+            },
+        }
+    )
 }
 
 async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
