@@ -77,10 +77,14 @@ pub enum Error {
 pub type Result<R> = std::result::Result<R, Error>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstallResponse {}
+pub struct InstallResponse {
+    pub r#mod: Mod,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UpdateResponse {}
+pub struct UpdateResponse {
+    pub r#mod: Mod,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RemoveResponse {}
@@ -296,8 +300,12 @@ impl ModManager {
             .await
             .map_err(|e| Error::UnknownError(anyhow!("Error extrating zip {:?}", e)))??,
         }
-
-        Ok(InstallResponse {})
+        Ok(InstallResponse {
+            r#mod: Mod {
+                id: dest_id.to_string(),
+                manifest: None,
+            },
+        })
     }
 }
 
