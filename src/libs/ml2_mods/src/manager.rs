@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use derivative::Derivative;
+use serde::Serialize;
 use thiserror;
 use tokio::fs;
 use tokio::sync::{mpsc, oneshot};
@@ -12,7 +13,7 @@ use tracing::{debug, info, instrument};
 use zip::ZipArchive;
 
 use crate::constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
-use crate::data::{Manifest, Mod};
+use crate::data::{ManagerError, Manifest, Mod};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -376,6 +377,16 @@ impl ModManagerHandle {
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
         Ok(())
+    }
+}
+
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let e: ManagerError = self.into();
+        e.serialize(serializer)
     }
 }
 
