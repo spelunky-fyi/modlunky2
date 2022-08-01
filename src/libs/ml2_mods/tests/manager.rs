@@ -177,7 +177,7 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 #[tokio::test]
 async fn test_install_locall() {
     let dir = tempfile::tempdir().unwrap();
-    let (manager, handle) = ModManager::new(&dir.path().as_os_str().to_str().unwrap());
+    let (manager, handle) = ModManager::new(dir.path().as_os_str().to_str().unwrap());
     let manager_join = manager.spawn();
 
     let mod_id = "unchanged";
