@@ -17,20 +17,6 @@ use crate::data::{Manifest, Mod};
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub enum Command {
-    Install {
-        package: InstallPackage,
-        resp: oneshot::Sender<Result<InstallResponse>>,
-    },
-    Update {
-        id: String,
-        #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<UpdateResponse>>,
-    },
-    Remove {
-        id: String,
-        #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<RemoveResponse>>,
-    },
     Get {
         id: String,
         #[derivative(Debug = "ignore")]
@@ -39,6 +25,20 @@ pub enum Command {
     List {
         #[derivative(Debug = "ignore")]
         resp: oneshot::Sender<Result<ListResponse>>,
+    },
+    Remove {
+        id: String,
+        #[derivative(Debug = "ignore")]
+        resp: oneshot::Sender<Result<RemoveResponse>>,
+    },
+    Install {
+        package: InstallPackage,
+        resp: oneshot::Sender<Result<InstallResponse>>,
+    },
+    Update {
+        id: String,
+        #[derivative(Debug = "ignore")]
+        resp: oneshot::Sender<Result<UpdateResponse>>,
     },
     Shutdown(),
 }
@@ -70,24 +70,13 @@ pub enum Error {
     #[error("Problem with the destination")]
     DestinationError(#[source] anyhow::Error),
 
+    #[error("Channel error: {0}")]
+    ChannelError(#[source] anyhow::Error),
     #[error("Unknown error: {0}")]
     UnknownError(#[source] anyhow::Error),
 }
 
 pub type Result<R> = std::result::Result<R, Error>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstallResponse {
-    pub r#mod: Mod,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UpdateResponse {
-    pub r#mod: Mod,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RemoveResponse {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetResponse {
@@ -99,6 +88,19 @@ pub struct ListResponse {
     pub mods: Vec<Mod>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RemoveResponse {}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InstallResponse {
+    pub r#mod: Mod,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdateResponse {
+    pub r#mod: Mod,
+}
+
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct ModManager {
@@ -107,14 +109,22 @@ pub struct ModManager {
     commands_rx: mpsc::Receiver<Command>,
 }
 
+#[derive(Clone, Derivative)]
+#[derivative(Debug)]
+pub struct ModManagerHandle {
+    #[derivative(Debug = "ignore")]
+    commands_tx: mpsc::Sender<Command>,
+}
+
 impl ModManager {
-    pub fn new(install_path: &str) -> (Self, mpsc::Sender<Command>) {
+    pub fn new(install_path: &str) -> (Self, ModManagerHandle) {
         let (tx, rx) = mpsc::channel(1);
         let manager = ModManager {
             install_path: install_path.into(),
             commands_rx: rx,
         };
-        (manager, tx)
+        let handle = ModManagerHandle { commands_tx: tx };
+        (manager, handle)
     }
 
     // Consumes the ModManager, starting a task and returning its JoinHandle
@@ -137,10 +147,6 @@ impl ModManager {
                         info!("Receiver dropped for List()");
                     }
                 }
-                Command::Shutdown() => {
-                    // Prevent additional messages from being sent
-                    self.commands_rx.close();
-                }
                 Command::Remove { id, resp } => {
                     if resp.send(self.remove_mod(&id).await).is_err() {
                         info!("Receiver dropped for Remove({:?})", id);
@@ -150,6 +156,10 @@ impl ModManager {
                     if resp.send(self.install_mod(package.clone()).await).is_err() {
                         info!("Receiver dropped for Install({:?})", package);
                     }
+                }
+                Command::Shutdown() => {
+                    // Prevent additional messages from being sent
+                    self.commands_rx.close();
                 }
                 _ => unimplemented!(),
             }
@@ -306,6 +316,66 @@ impl ModManager {
                 manifest: None,
             },
         })
+    }
+}
+
+impl ModManagerHandle {
+    #[instrument]
+    pub async fn get(&self, mod_id: &str) -> Result<GetResponse> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::Get {
+                id: mod_id.to_string(),
+                resp: tx,
+            })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn list(&self) -> Result<ListResponse> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::List { resp: tx })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn remove(&self, mod_id: &str) -> Result<RemoveResponse> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::Remove {
+                id: mod_id.to_string(),
+                resp: tx,
+            })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn install(&self, package: &InstallPackage) -> Result<InstallResponse> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::Install {
+                package: package.clone(),
+                resp: tx,
+            })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn shutdown(&self) -> Result<()> {
+        self.commands_tx
+            .send(Command::Shutdown())
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        Ok(())
     }
 }
 
