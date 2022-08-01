@@ -4,13 +4,13 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use ml2_mods::constants::MANIFEST_FILENAME;
 use ml2_mods::manager::{InstallResponse, ModManagerHandle, RemoveResponse};
-use tempfile::TempDir;
+use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
 
 use ml2_mods::{
     constants::{MODS_SUBPATH, MOD_METADATA_SUBPATH},
     data::{Manifest, ManifestModFile, Mod},
-    manager::{GetResponse, InstallPackage, ListResponse, ModManager},
+    manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
 
 fn make_provincial_mod() -> Mod {
@@ -67,12 +67,18 @@ async fn test_get() {
         }
     );
 
+    let err = handle.get("does-not-exist").await.unwrap_err();
+    match err {
+        Error::ModNotFoundError(id) => assert_eq!(id, "does-not-exist"),
+        _ => panic!("Unexpected error from manager: {:?}", err),
+    }
+
     drop(handle);
     manager_join.await.unwrap();
 }
 
 #[tokio::test]
-async fn test_list() {
+async fn test_list_exists() {
     let (manager, handle) = ModManager::new(&testdata_install_dir());
     let manager_join = manager.spawn();
 
@@ -83,6 +89,20 @@ async fn test_list() {
             mods: vec![make_remote_control_mod(), make_provincial_mod()]
         }
     );
+
+    drop(handle);
+    manager_join.await.unwrap();
+}
+
+#[tokio::test]
+async fn test_list_nonexistent() {
+    let dir = tempdir().unwrap();
+    let path: String = dir.path().join("bogus_dir").to_str().unwrap().into();
+    let (manager, handle) = ModManager::new(&path);
+    let manager_join = manager.spawn();
+
+    let resp = handle.list().await.unwrap();
+    assert_eq!(resp, ListResponse { mods: vec![] });
 
     drop(handle);
     manager_join.await.unwrap();
@@ -125,6 +145,12 @@ async fn test_remove() {
     let resp = handle.remove(mod_id).await.unwrap();
     assert_eq!(resp, RemoveResponse {});
 
+    let err = handle.remove("does-not-exist").await.unwrap_err();
+    match err {
+        Error::ModNotFoundError(id) => assert_eq!(id, "does-not-exist"),
+        _ => panic!("Unexpected error from manager: {:?}", err),
+    }
+
     drop(handle);
     manager_join.await.unwrap();
 
@@ -137,7 +163,6 @@ async fn test_remove() {
             },
         }
     }
-    drop(dir);
 }
 
 async fn install_from_local_sources(handle: &ModManagerHandle, source_file: &str, dest_id: &str) {
