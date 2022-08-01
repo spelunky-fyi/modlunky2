@@ -29,11 +29,11 @@ jobs:
         with:
           command: fmt
           args: --all --check
-      - uses: actions-rs/clippy-check@v1
+      - uses: actions-rs/cargo@v1
         name: cargo clippy
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-targets --exclude launcher
+          command: clippy
+          args: --workspace -- -D warnings
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
