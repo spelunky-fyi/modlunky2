@@ -354,22 +354,22 @@ fn extract_zip_archive(
     let rename_lua = count_lua_paths(&paths) == 1;
     let remove_first = paths_have_same_prefix(&paths);
     let paths = fix_zip_names(paths, rename_lua, remove_first);
-    for i in 0..archive.len() {
+    for (i, dest_subpath) in paths.iter().enumerate().take(archive.len()) {
         let mut file = archive
             .by_index(i)
             .map_err(|e| Error::SourceError(anyhow!("Reading zip {:?}", e)))?;
-        let file_dest = dest.join(&paths[i]);
-        debug!("extracting {:?} to {:?}", file.name(), file_dest);
+        let dest_path = dest.join(&dest_subpath);
+        debug!("extracting {:?} to {:?}", file.name(), dest_path);
         if file.is_dir() {
-            std::fs::create_dir_all(file_dest).map_err(|e| Error::UnknownError(e.into()))?;
+            std::fs::create_dir_all(dest_path).map_err(|e| Error::UnknownError(e.into()))?;
         } else {
-            match file_dest.parent() {
+            match dest_path.parent() {
                 None => Ok(()),
                 Some(p) => std::fs::create_dir_all(p),
             }
             .map_err(|e| Error::UnknownError(e.into()))?;
             let mut f =
-                std::fs::File::create(file_dest).map_err(|e| Error::UnknownError(e.into()))?;
+                std::fs::File::create(dest_path).map_err(|e| Error::UnknownError(e.into()))?;
             std::io::copy(&mut file, &mut f).map_err(|e| Error::UnknownError(e.into()))?;
         }
     }
@@ -388,13 +388,7 @@ fn fix_zip_names(paths: Vec<PathBuf>, rename_lua: bool, remove_first: bool) -> V
             let rename_file = rename_lua
                 && match p.extension() {
                     None => false,
-                    Some(ext) => {
-                        if ext == "lua" {
-                            true
-                        } else {
-                            false
-                        }
-                    }
+                    Some(ext) => ext == "lua",
                 };
             if rename_file {
                 p.set_file_name("main.lua");
@@ -416,14 +410,14 @@ fn zip_enclosed_paths(zip: &mut ZipArchive<std::fs::File>) -> Result<Vec<PathBuf
             .map_err(|e| Error::SourceError(anyhow!("Reading zip file {:?}", e)))?;
         let p = f
             .enclosed_name()
-            .ok_or(Error::SourceError(anyhow!("Invalid file name")))?;
+            .ok_or_else(|| Error::SourceError(anyhow!("Invalid file name")))?;
         paths.push(p.into());
     }
     Ok(paths)
 }
 
 #[instrument(skip(paths))]
-fn paths_have_same_prefix(paths: &Vec<PathBuf>) -> bool {
+fn paths_have_same_prefix(paths: &[PathBuf]) -> bool {
     // Don't rename single files to ""
     if paths.len() == 1 && paths[0].components().count() == 1 {
         return false;
@@ -431,7 +425,7 @@ fn paths_have_same_prefix(paths: &Vec<PathBuf>) -> bool {
 
     let mut prefix = None;
     for p in paths {
-        let c = p.components().nth(0);
+        let c = p.components().next();
         if let Some(pre) = c {
             // We want to ignore paths that contain mod stuff.
             // If there's one, then either everything is ignored or the prefix varies.
@@ -445,11 +439,11 @@ fn paths_have_same_prefix(paths: &Vec<PathBuf>) -> bool {
             prefix = c
         }
     }
-    paths.iter().all(|p| p.components().nth(0) == prefix)
+    paths.iter().all(|p| p.components().next() == prefix)
 }
 
 #[instrument(skip(paths))]
-fn count_lua_paths(paths: &Vec<PathBuf>) -> usize {
+fn count_lua_paths(paths: &[PathBuf]) -> usize {
     paths
         .iter()
         .filter(|p| p.extension().map_or(false, |e| e == "lua"))
