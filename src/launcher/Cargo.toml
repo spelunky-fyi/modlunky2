@@ -10,7 +10,7 @@ edition = "2018"
 directories = "3.0.1"
 zip = "0.6.2"
 anyhow = "1.0.40"
-clap = "2.33.3"
+clap = "3.2.16"
 sha2 = "0.10.2"
 
 [build-dependencies]
