@@ -5,7 +5,7 @@ use ml2_mods::manager::{InstallPackage, ModManager};
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    #[clap(short = 'd', long, value_parser)]
+    #[clap(short = 'd', long)]
     install_dir: String,
 
     #[clap(subcommand)]
