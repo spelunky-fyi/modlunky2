@@ -1,12 +1,19 @@
 use clap::{Parser, Subcommand};
 
-use ml2_mods::manager::{InstallPackage, ModManager};
+use ml2_mods::{
+    manager::{InstallPackage, ModManager},
+    spelunkyfyi::http::ApiClient,
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    #[clap(short = 'd', long)]
-    install_dir: String,
+    #[clap(short = 'i', long)]
+    install_path: String,
+    #[clap(short = 't', long)]
+    token: Option<String>,
+    #[clap(long, default_value_t = String::from("https://spelunky.fyi"))]
+    service_root: String,
 
     #[clap(subcommand)]
     command: Commands,
@@ -25,8 +32,11 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let cli = Cli::parse();
-
-    let (manager, handle) = ModManager::new(&cli.install_dir);
+    let api_client = cli
+        .token
+        .map(|token| ApiClient::new(&cli.service_root, &token))
+        .transpose()?;
+    let (manager, handle) = ModManager::new(&cli.install_path, api_client);
     let manager_join = manager.spawn();
 
     match cli.command {

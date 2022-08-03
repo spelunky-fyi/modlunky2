@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use tokio::fs;
 
-use ml2_mods::spelunkyfyi::http::ApiClient;
+use ml2_mods::spelunkyfyi::http::{Api, ApiClient};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]

@@ -14,6 +14,7 @@ use zip::ZipArchive;
 
 use crate::constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
 use crate::data::{ManagerError, Manifest, Mod};
+use crate::spelunkyfyi::http::Api;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -57,6 +58,9 @@ pub enum InstallPackage {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Invalid config: {0}")]
+    InvalidConfig(String),
+
     #[error("Mod {0} already exists")]
     ModExistsError(String),
     #[error("Mod {0} wasn't found")]
@@ -104,8 +108,13 @@ pub struct UpdateResponse {
 
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub struct ModManager {
+pub struct ModManager<T>
+where
+    T: Api + Send + Sync + 'static,
+{
     install_path: PathBuf,
+    #[derivative(Debug = "ignore")]
+    api_client: Option<T>,
     #[derivative(Debug = "ignore")]
     commands_rx: mpsc::Receiver<Command>,
 }
@@ -117,11 +126,15 @@ pub struct ModManagerHandle {
     commands_tx: mpsc::Sender<Command>,
 }
 
-impl ModManager {
-    pub fn new(install_path: &str) -> (Self, ModManagerHandle) {
+impl<T> ModManager<T>
+where
+    T: Api + Send + Sync + 'static,
+{
+    pub fn new(install_path: &str, api_client: Option<T>) -> (Self, ModManagerHandle) {
         let (tx, rx) = mpsc::channel(1);
         let manager = ModManager {
             install_path: install_path.into(),
+            api_client,
             commands_rx: rx,
         };
         let handle = ModManagerHandle { commands_tx: tx };
