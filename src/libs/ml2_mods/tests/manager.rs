@@ -2,8 +2,10 @@ use std::io;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
+use async_trait::async_trait;
 use ml2_mods::constants::MANIFEST_FILENAME;
 use ml2_mods::manager::{InstallResponse, ModManagerHandle, RemoveResponse};
+use ml2_mods::spelunkyfyi::http::{Api, ApiClient, Error as ApiError, Mod as ApiMod};
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
 
@@ -12,6 +14,7 @@ use ml2_mods::{
     data::{Manifest, ManifestModFile, Mod},
     manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
+use tokio::io::AsyncWrite;
 
 fn make_provincial_mod() -> Mod {
     Mod {
@@ -46,9 +49,26 @@ fn testdata_install_dir() -> String {
         .into()
 }
 
+struct MockApi {}
+
+#[async_trait]
+impl Api for MockApi {
+    async fn get_manifest(&mut self, _id: &str) -> Result<ApiMod, ApiError> {
+        unimplemented!()
+    }
+    async fn download(
+        &mut self,
+        _uri: &str,
+        _writer: &mut (impl AsyncWrite + std::fmt::Debug + Send + Unpin),
+    ) -> Result<(), ApiError> {
+        unimplemented!()
+    }
+}
+
 #[tokio::test]
 async fn test_get() {
-    let (manager, handle) = ModManager::new(&testdata_install_dir());
+    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
+        ModManager::new(&testdata_install_dir(), None);
     let manager_join = manager.spawn();
 
     let resp = handle.get("provincial").await.unwrap();
@@ -79,7 +99,8 @@ async fn test_get() {
 
 #[tokio::test]
 async fn test_list_exists() {
-    let (manager, handle) = ModManager::new(&testdata_install_dir());
+    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
+        ModManager::new(&testdata_install_dir(), None);
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -98,7 +119,7 @@ async fn test_list_exists() {
 async fn test_list_nonexistent() {
     let dir = tempdir().unwrap();
     let path: String = dir.path().join("bogus_dir").to_str().unwrap().into();
-    let (manager, handle) = ModManager::new(&path);
+    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) = ModManager::new(&path, None);
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -139,7 +160,8 @@ async fn test_remove() {
     if dir_path.is_none() {
         panic!("tempdir isn't valid unicode: {:?}", dir.path());
     }
-    let (manager, handle) = ModManager::new(dir_path.unwrap());
+    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
+        ModManager::new(dir_path.unwrap(), None);
     let manager_join = manager.spawn();
 
     let resp = handle.remove(mod_id).await.unwrap();
@@ -202,7 +224,8 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 #[tokio::test]
 async fn test_install_locall() {
     let dir = tempfile::tempdir().unwrap();
-    let (manager, handle) = ModManager::new(dir.path().as_os_str().to_str().unwrap());
+    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
+        ModManager::new(dir.path().as_os_str().to_str().unwrap(), None);
     let manager_join = manager.spawn();
 
     let mod_id = "unchanged";
