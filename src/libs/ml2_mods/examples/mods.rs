@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 use ml2_mods::{
+    local::DiskMods,
     manager::{InstallPackage, ModManager},
     spelunkyfyi::http::ApiClient,
 };
@@ -36,7 +37,8 @@ async fn main() -> anyhow::Result<()> {
         .token
         .map(|token| ApiClient::new(&cli.service_root, &token))
         .transpose()?;
-    let (manager, handle) = ModManager::new(&cli.install_path, api_client);
+    let local_mods = DiskMods::new(&cli.install_path);
+    let (manager, handle) = ModManager::new(api_client, local_mods);
     let manager_join = manager.spawn();
 
     match cli.command {

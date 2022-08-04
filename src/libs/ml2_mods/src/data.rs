@@ -52,7 +52,7 @@ impl From<&Error> for ManagerError {
             Error::ModNonDirectoryError(_) => {
                 ManagerError::ModNonDirectoryError(format!("{}", original))
             }
-            Error::ManifestParseError(_m, _e) => {
+            Error::ManifestParseError(_) => {
                 ManagerError::ManifestParseError(format!("{}", original))
             }
             Error::SourceError(_) => ManagerError::SourceError(format!("{}", original)),
