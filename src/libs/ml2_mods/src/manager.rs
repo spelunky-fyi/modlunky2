@@ -1,6 +1,6 @@
+use anyhow::anyhow;
 use derivative::Derivative;
 use serde::Serialize;
-use thiserror;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task;
 use tracing::{debug, info, instrument};
@@ -104,7 +104,7 @@ where
     L: LocalMods + Send + Sync + 'static,
 {
     #[derivative(Debug = "ignore")]
-    _api_client: Option<A>, // TODO use this
+    api_client: Option<A>, // TODO use this
     #[derivative(Debug = "ignore")]
     local_mods: L,
     #[derivative(Debug = "ignore")]
@@ -126,7 +126,7 @@ where
     pub fn new(api_client: Option<A>, local_mods: L) -> (Self, ModManagerHandle) {
         let (tx, rx) = mpsc::channel(1);
         let manager = ModManager {
-            _api_client: api_client,
+            api_client,
             local_mods,
             commands_rx: rx,
         };
@@ -199,13 +199,31 @@ where
                 source_path,
                 dest_id,
             } => self.install_local_mod(&source_path, &dest_id).await,
-            InstallPackage::Remote { code: _code } => unimplemented!(),
+            InstallPackage::Remote { code } => self.install_remote_mod(&code).await,
         }
     }
 
     #[instrument(skip(self))]
     async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
-        let r#mod = self.local_mods.install(source, dest_id).await?;
+        let r#mod = self.local_mods.install_local(source, dest_id).await?;
+        Ok(InstallResponse { r#mod })
+    }
+
+    #[instrument(skip(self))]
+    async fn install_remote_mod(&self, code: &str) -> Result<InstallResponse> {
+        let downloaded = self
+            .api_client
+            .as_ref()
+            .ok_or_else(|| {
+                Error::UnknownError(anyhow!(
+                    "Tried to install remote mod, but API isn't configured"
+                ))
+            })?
+            .download_mod(code)
+            .await
+            .map_err(|e| Error::UnknownError(e.into()))?;
+        let r#mod = self.local_mods.install_remote(&downloaded).await?;
+
         Ok(InstallResponse { r#mod })
     }
 }
@@ -289,6 +307,7 @@ impl From<LocalError> for Error {
             LocalError::ManifestParseError(_m, _s) => Error::ManifestParseError(original),
             LocalError::SourceError(_) => Error::SourceError(original),
             LocalError::DestinationError(_) => Error::DestinationError(original),
+            LocalError::IoError(_) => Error::UnknownError(original.into()),
             LocalError::UnknownError(_) => Error::UnknownError(original.into()),
         }
     }

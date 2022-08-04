@@ -26,6 +26,7 @@ enum Commands {
     List {},
     Remove { id: String },
     InstallLocal { source: String, id: String },
+    InstallRemote { code: String },
 }
 
 #[tokio::main]
@@ -56,6 +57,10 @@ async fn main() -> anyhow::Result<()> {
                 source_path: source,
                 dest_id: id,
             };
+            println!("{:#?}", handle.install(&package).await?);
+        }
+        Commands::InstallRemote { code } => {
+            let package = InstallPackage::Remote { code };
             println!("{:#?}", handle.install(&package).await?);
         }
     }
