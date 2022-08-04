@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use ml2_mods::constants::MANIFEST_FILENAME;
+use ml2_mods::local::{DiskMods, Error as LocalError};
 use ml2_mods::manager::{InstallResponse, ModManagerHandle, RemoveResponse};
 use ml2_mods::spelunkyfyi::http::{Api, ApiClient, Error as ApiError, Mod as ApiMod};
 use tempfile::{tempdir, TempDir};
@@ -67,8 +68,9 @@ impl Api for MockApi {
 
 #[tokio::test]
 async fn test_get() {
-    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
-        ModManager::new(&testdata_install_dir(), None);
+    let local_mods = DiskMods::new(&testdata_install_dir());
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
     let manager_join = manager.spawn();
 
     let resp = handle.get("provincial").await.unwrap();
@@ -88,9 +90,10 @@ async fn test_get() {
     );
 
     let err = handle.get("does-not-exist").await.unwrap_err();
-    match err {
-        Error::ModNotFoundError(id) => assert_eq!(id, "does-not-exist"),
-        _ => panic!("Unexpected error from manager: {:?}", err),
+    if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
+        assert_eq!(id, "does-not-exist")
+    } else {
+        panic!("Unexpected error from manager: {:?}", err)
     }
 
     drop(handle);
@@ -99,8 +102,9 @@ async fn test_get() {
 
 #[tokio::test]
 async fn test_list_exists() {
-    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
-        ModManager::new(&testdata_install_dir(), None);
+    let local_mods = DiskMods::new(&testdata_install_dir());
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -119,7 +123,10 @@ async fn test_list_exists() {
 async fn test_list_nonexistent() {
     let dir = tempdir().unwrap();
     let path: String = dir.path().join("bogus_dir").to_str().unwrap().into();
-    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) = ModManager::new(&path, None);
+
+    let local_mods = DiskMods::new(&path);
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -160,17 +167,20 @@ async fn test_remove() {
     if dir_path.is_none() {
         panic!("tempdir isn't valid unicode: {:?}", dir.path());
     }
-    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
-        ModManager::new(dir_path.unwrap(), None);
+
+    let local_mods = DiskMods::new(dir_path.unwrap());
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
     let manager_join = manager.spawn();
 
     let resp = handle.remove(mod_id).await.unwrap();
     assert_eq!(resp, RemoveResponse {});
 
     let err = handle.remove("does-not-exist").await.unwrap_err();
-    match err {
-        Error::ModNotFoundError(id) => assert_eq!(id, "does-not-exist"),
-        _ => panic!("Unexpected error from manager: {:?}", err),
+    if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
+        assert_eq!(id, "does-not-exist")
+    } else {
+        panic!("Unexpected error from manager: {:?}", err)
     }
 
     drop(handle);
@@ -224,8 +234,10 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 #[tokio::test]
 async fn test_install_locall() {
     let dir = tempfile::tempdir().unwrap();
-    let (manager, handle): (ModManager<ApiClient>, ModManagerHandle) =
-        ModManager::new(dir.path().as_os_str().to_str().unwrap(), None);
+
+    let local_mods = DiskMods::new(dir.path().as_os_str().to_str().unwrap());
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
     let manager_join = manager.spawn();
 
     let mod_id = "unchanged";
