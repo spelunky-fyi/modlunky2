@@ -2,11 +2,10 @@ use std::io;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
-use async_trait::async_trait;
 use ml2_mods::constants::MANIFEST_FILENAME;
 use ml2_mods::local::{DiskMods, Error as LocalError};
 use ml2_mods::manager::{InstallResponse, ModManagerHandle, RemoveResponse};
-use ml2_mods::spelunkyfyi::http::{Api, ApiClient, Error as ApiError, Mod as ApiMod};
+use ml2_mods::spelunkyfyi::http::ApiClient;
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
 
@@ -15,7 +14,6 @@ use ml2_mods::{
     data::{Manifest, ManifestModFile, Mod},
     manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
-use tokio::io::AsyncWrite;
 
 fn make_provincial_mod() -> Mod {
     Mod {
@@ -30,7 +28,7 @@ fn make_remote_control_mod() -> Mod {
             name: "Remote Control".to_string(),
             slug: "remote-control".to_string(),
             description: "A fake mod for tests".to_string(),
-            logo: "mod_logo.png".to_string(),
+            logo: Some("mod_logo.png".to_string()),
             mod_file: ManifestModFile {
                 id: "QBRJYOGMYDCZ2VC269B6MKMHTQ".to_string(),
                 created_at: "2017-08-09T01:23:45.678901Z".to_string(),
@@ -48,22 +46,6 @@ fn testdata_install_dir() -> String {
         .to_str()
         .unwrap()
         .into()
-}
-
-struct MockApi {}
-
-#[async_trait]
-impl Api for MockApi {
-    async fn get_manifest(&mut self, _id: &str) -> Result<ApiMod, ApiError> {
-        unimplemented!()
-    }
-    async fn download(
-        &mut self,
-        _uri: &str,
-        _writer: &mut (impl AsyncWrite + std::fmt::Debug + Send + Unpin),
-    ) -> Result<(), ApiError> {
-        unimplemented!()
-    }
 }
 
 #[tokio::test]

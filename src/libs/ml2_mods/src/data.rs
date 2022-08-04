@@ -20,7 +20,7 @@ pub struct Manifest {
     pub name: String,
     pub slug: String,
     pub description: String,
-    pub logo: String,
+    pub logo: Option<String>,
     pub mod_file: ManifestModFile,
 }
 

@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -7,10 +7,12 @@ use async_trait::async_trait;
 use thiserror;
 use tokio::fs;
 use tracing::{debug, instrument};
+use zip::result::ZipError;
 use zip::ZipArchive;
 
 use crate::constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
-use crate::data::{Manifest, Mod};
+use crate::data::{Manifest, ManifestModFile, Mod};
+use crate::spelunkyfyi::http::{DownloadedLogo, DownloadedMod};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -27,6 +29,8 @@ pub enum Error {
     SourceError(#[source] anyhow::Error),
     #[error("Problem with the destination")]
     DestinationError(#[source] anyhow::Error),
+    #[error("I/O error")]
+    IoError(#[from] std::io::Error),
 
     #[error("Unknown error: {0}")]
     UnknownError(#[source] anyhow::Error),
@@ -39,9 +43,8 @@ pub trait LocalMods {
     async fn get(&self, id: &str) -> Result<Mod>;
     async fn list(&self) -> Result<Vec<Mod>>;
     async fn remove(&self, id: &str) -> Result<()>;
-    // TODO: ideally this would take a filename and tokio::fs::File.
-    // Note that taking AsyncRead is hard because we need a std::io::Read for zip crate.
-    async fn install(&self, source: &str, dest_id: &str) -> Result<Mod>;
+    async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
+    async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
 }
 
 pub struct DiskMods {
@@ -55,13 +58,28 @@ impl DiskMods {
         }
     }
 
+    fn manifest_dir_path(&self, id: &str) -> PathBuf {
+        self.install_path.join(MOD_METADATA_SUBPATH).join(id)
+    }
+
+    fn manifest_json_path(&self, id: &str) -> PathBuf {
+        self.manifest_dir_path(id).join(MANIFEST_FILENAME)
+    }
+
+    fn logo_path(&self, id: &str, logo_filename: &OsStr) -> PathBuf {
+        self.manifest_dir_path(id).join(logo_filename)
+    }
+
+    async fn create_manifest_dir(&self, id: &str) -> Result<PathBuf> {
+        let manifest_dir = self.manifest_dir_path(id);
+        debug!("Creating manifest dir {:?}", manifest_dir);
+        fs::create_dir_all(&manifest_dir).await?;
+        Ok(manifest_dir)
+    }
+
     #[instrument(skip(self))]
     async fn load_mod_manifest(&self, id: &str) -> Result<Option<Manifest>> {
-        let path = self
-            .install_path
-            .join(MOD_METADATA_SUBPATH)
-            .join(id)
-            .join(MANIFEST_FILENAME);
+        let path = self.manifest_json_path(id);
         let json_result = fs::read(&path).await;
         if let Err(e) = json_result {
             match e.kind() {
@@ -74,6 +92,73 @@ impl DiskMods {
         let manifest: Manifest = serde_json::from_slice(&json[..])
             .map_err(|e| Error::ManifestParseError(id.to_string(), e.into()))?;
         Ok(Some(manifest))
+    }
+
+    #[instrument(skip(self))]
+    async fn write_mod_manifest(&self, id: &str, manifest: &Manifest) -> Result<()> {
+        debug!("Writing manifest");
+        self.create_manifest_dir(id).await?;
+        let manifest_path = self.manifest_json_path(id);
+        let json = serde_json::to_string(manifest).map_err(|e| Error::UnknownError(e.into()))?;
+        debug!("Writing manifest JSON to {:?}", manifest_path);
+        fs::write(manifest_path, json).await?;
+        Ok(())
+    }
+
+    async fn make_dest_dir(&self, dest_id: &str) -> Result<PathBuf> {
+        let dest_dir_path = self.install_path.join(MODS_SUBPATH).join(dest_id);
+
+        if path_metadata(&dest_dir_path).await?.is_some() {
+            return Err(Error::AlreadyExists(dest_id.to_string()));
+        }
+        fs::create_dir_all(&dest_dir_path)
+            .await
+            .map_err(|e| Error::DestinationError(e.into()))?;
+        Ok(dest_dir_path)
+    }
+
+    #[instrument(skip(self))]
+    async fn install_main(&self, source: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
+        debug!("Installing main file");
+        let source = source.clone();
+        let dest_dir = dest_dir.clone();
+        let copy_type = CopyType::for_path(&source);
+        match copy_type {
+            CopyType::SingleFile(name) => fs::copy(source, dest_dir.join(name))
+                .await
+                .map(|_| ()) // to make match-arm types equivalent
+                .map_err(|e| Error::UnknownError(anyhow!("Error copying file: {:?}", e)))?,
+            CopyType::ZipFile() => {
+                tokio::task::spawn_blocking(move || extract_zip_archive(&source, &dest_dir))
+                    .await
+                    .map_err(|e| Error::UnknownError(anyhow!("Error extrating zip {:?}", e)))??
+            }
+        }
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    async fn install_logo(&self, source: &DownloadedLogo, dest_id: &str) -> Result<OsString> {
+        debug!("Installing logo file");
+        let extension = match source.content_type.as_str() {
+            "image/jpeg" => Ok("jpg"),
+            "image/png" => Ok("png"),
+            "image/gif" => Ok("gif"),
+            _ => Err(Error::UnknownError(anyhow!(
+                "unrecognized content-type for logo: {}",
+                source.content_type
+            ))),
+        }?;
+
+        self.create_manifest_dir(dest_id).await?;
+
+        let mut dest_name = OsString::from("mod_logo.");
+        dest_name.push(extension);
+        let dest_path = self.logo_path(dest_id, &dest_name);
+        debug!("Installing logo to path {:?}", dest_path);
+        fs::copy(&source.file, dest_path).await?;
+
+        Ok(dest_name)
     }
 }
 
@@ -154,13 +239,7 @@ impl LocalMods for DiskMods {
     }
 
     #[instrument(skip(self))]
-    async fn install(&self, source: &str, dest_id: &str) -> Result<Mod> {
-        let dest_dir_path = self.install_path.join(MODS_SUBPATH).join(dest_id);
-
-        if path_metadata(&dest_dir_path).await?.is_some() {
-            return Err(Error::AlreadyExists(dest_id.to_string()));
-        }
-
+    async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod> {
         let source_path = PathBuf::from(source);
         path_metadata(&source_path).await?.map_or_else(
             || Err(Error::SourceError(anyhow!("not found"))),
@@ -172,26 +251,53 @@ impl LocalMods for DiskMods {
                 }
             },
         )?;
+        let dest_dir = self.make_dest_dir(dest_id).await?;
+        self.install_main(&source.into(), &dest_dir).await?;
 
-        fs::create_dir_all(&dest_dir_path)
-            .await
-            .map_err(|e| Error::DestinationError(e.into()))?;
-
-        let copy_type = CopyType::for_path(&source_path);
-        match copy_type {
-            CopyType::SingleFile(name) => fs::copy(source_path, dest_dir_path.join(name))
-                .await
-                .map(|_| ()) // to make match-arm types equivalent
-                .map_err(|e| Error::UnknownError(anyhow!("Error copying file: {:?}", e)))?,
-            CopyType::ZipFile() => tokio::task::spawn_blocking(move || {
-                extract_zip_archive(&source_path, dest_dir_path)
-            })
-            .await
-            .map_err(|e| Error::UnknownError(anyhow!("Error extrating zip {:?}", e)))??,
-        }
         Ok(Mod {
             id: dest_id.to_string(),
             manifest: None,
+        })
+    }
+
+    #[instrument(skip(self, downloaded))]
+    async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
+        let dest_id = format!("fyi.{}", downloaded.r#mod.slug);
+        debug!("installing remote mod {}", dest_id);
+        let dest_path = self.make_dest_dir(&dest_id).await?;
+
+        self.install_main(&downloaded.main_file, &dest_path).await?;
+        let logo = if let Some(logo_file) = downloaded.logo_file.as_ref() {
+            let logo = self.install_logo(logo_file, &dest_id).await?;
+            let logo = logo
+                .to_str()
+                .ok_or_else(|| {
+                    Error::UnknownError(anyhow!("Failed to convert logo filename {:?}", logo))
+                })?
+                .to_string();
+            Some(logo)
+        } else {
+            None
+        };
+
+        let mod_file = ManifestModFile {
+            id: downloaded.mod_file.id.clone(),
+            created_at: downloaded.mod_file.created_at.to_string(),
+            download_url: downloaded.mod_file.download_url.clone(),
+        };
+
+        let manifest = Manifest {
+            name: downloaded.r#mod.name.clone(),
+            slug: downloaded.r#mod.slug.clone(),
+            description: downloaded.r#mod.description.clone(),
+            logo,
+            mod_file,
+        };
+        self.write_mod_manifest(&dest_id, &manifest).await?;
+
+        Ok(Mod {
+            id: dest_id,
+            manifest: Some(manifest),
         })
     }
 }
@@ -232,32 +338,26 @@ impl CopyType {
 #[instrument]
 fn extract_zip_archive(
     source_path: impl AsRef<Path> + std::fmt::Debug,
-    dest: PathBuf,
+    dest: &PathBuf,
 ) -> Result<()> {
     let source = std::fs::File::open(&source_path).map_err(|e| Error::SourceError(e.into()))?;
-    let mut archive =
-        ZipArchive::new(source).map_err(|e| Error::SourceError(anyhow!("Opening zip {:?}", e)))?;
+    let mut archive = ZipArchive::new(source)?;
     let paths = zip_enclosed_paths(&mut archive)?;
     let rename_lua = count_lua_paths(&paths) == 1;
     let remove_first = paths_have_same_prefix(&paths);
     let paths = fix_zip_names(paths, rename_lua, remove_first);
     for (i, dest_subpath) in paths.iter().enumerate().take(archive.len()) {
-        let mut file = archive
-            .by_index(i)
-            .map_err(|e| Error::SourceError(anyhow!("Reading zip {:?}", e)))?;
+        let mut file = archive.by_index(i)?;
         let dest_path = dest.join(&dest_subpath);
         debug!("extracting {:?} to {:?}", file.name(), dest_path);
         if file.is_dir() {
-            std::fs::create_dir_all(dest_path).map_err(|e| Error::UnknownError(e.into()))?;
+            std::fs::create_dir_all(dest_path)?;
         } else {
-            match dest_path.parent() {
-                None => Ok(()),
-                Some(p) => std::fs::create_dir_all(p),
+            if let Some(parent_path) = dest_path.parent() {
+                std::fs::create_dir_all(parent_path)?;
             }
-            .map_err(|e| Error::UnknownError(e.into()))?;
-            let mut f =
-                std::fs::File::create(dest_path).map_err(|e| Error::UnknownError(e.into()))?;
-            std::io::copy(&mut file, &mut f).map_err(|e| Error::UnknownError(e.into()))?;
+            let mut f = std::fs::File::create(dest_path)?;
+            std::io::copy(&mut file, &mut f)?;
         }
     }
     Ok(())
@@ -335,4 +435,10 @@ fn count_lua_paths(paths: &[PathBuf]) -> usize {
         .iter()
         .filter(|p| p.extension().map_or(false, |e| e == "lua"))
         .count()
+}
+
+impl From<ZipError> for Error {
+    fn from(err: ZipError) -> Self {
+        Self::SourceError(err.into())
+    }
 }
