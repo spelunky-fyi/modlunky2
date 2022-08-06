@@ -46,9 +46,9 @@ jobs:
 
     - name: Run svelte-check
       run: |
-        pnpm run check
+        npm run check
 
     - name: Check formatting with prettier
       run: |
-        pnpm run format-check
+        npm run format-check
 
