@@ -30,14 +30,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install app dependencies and build it
-        run: npm install && npm run build
+      - name: Install app dependencies
+        run: npm install
 
       - name: Run svelte-check
         run: npm run check
 
-      - name: Check formatting with prettier
-        run: npm run format-check
+      - name: Build
+        run: npm run build
 
       - name: Install Rust stable
         uses: actions-rs/toolchain@v1
