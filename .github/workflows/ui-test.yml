@@ -10,13 +10,12 @@ on:
 
 jobs:
   build:
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
         node-version: ["16.13.2"]
         npm-version: ["8.5.1"]
-    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -30,25 +29,11 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-
-    - name: Determine npm cache directory
-      id: npm-cache
-      run: |
-        echo "::set-output name=dir::$(npm config get cache)"
-
-    - name: Restore npm cache
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.npm-cache.outputs.dir }}
-        key: node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}
+        cache: 'npm'
 
     - name: Run svelte-check
-      run: |
-        npm run check
+      run: npm run check
 
     - name: Check formatting with prettier
-      run: |
-        npm run format-check
+      run: npm run format-check
 
