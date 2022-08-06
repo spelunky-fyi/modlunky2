@@ -1,0 +1,37 @@
+{
+  "name": "modlunky2-tauri",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "tauri": "tauri",
+    "lint": "eslint . --ext .ts --ext .svelte --ext .js",
+    "format-check": "prettier -c --plugin-search-dir=. **.svelte **.ts **.js",
+    "format-write": "prettier -w --plugin-search-dir=. **.svelte **.ts **.js"
+  },
+  "devDependencies": {
+    "@fortawesome/free-solid-svg-icons": "^6.1.2",
+    "@iconify-json/fa-solid": "^1.1.2",
+    "@sveltejs/vite-plugin-svelte": "^1.0.1",
+    "@tauri-apps/api": "^1.0.2",
+    "@tauri-apps/cli": "^1.0.5",
+    "@tsconfig/svelte": "^3.0.0",
+    "@unocss/preset-wind": "^0.45.4",
+    "@unocss/reset": "^0.45.4",
+    "eslint": "^8.21.0",
+    "prettier": "^2.7.1",
+    "svelte": "^3.49.0",
+    "svelte-awesome": "^3.0.0",
+    "svelte-check": "^2.8.0",
+    "svelte-dnd-action": "^0.9.19",
+    "svelte-preprocess": "^4.10.7",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.4",
+    "unocss": "^0.45.4",
+    "vite": "^3.0.0"
+  }
+}

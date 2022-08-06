@@ -3,4 +3,5 @@
 members = [
     "src/launcher",
     "src/libs/ml2_mods",
+    "src/tauri/src-tauri"
 ]
