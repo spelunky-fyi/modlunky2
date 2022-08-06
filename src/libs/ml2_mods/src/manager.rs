@@ -304,7 +304,6 @@ impl From<LocalError> for Error {
             LocalError::AlreadyExists(_) => Error::ModExistsError(original),
             LocalError::NotFound(_) => Error::ModNotFoundError(original),
             LocalError::NonDirectory(_) => Error::ModNonDirectoryError(original),
-            LocalError::ManifestParseError(_m, _s) => Error::ManifestParseError(original),
             LocalError::SourceError(_) => Error::SourceError(original),
             LocalError::DestinationError(_) => Error::DestinationError(original),
             LocalError::IoError(_) => Error::UnknownError(original.into()),
