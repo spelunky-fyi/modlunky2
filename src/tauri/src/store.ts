@@ -24,12 +24,18 @@ export const mods: Writable<Mod[]> = writable([
   },
 ]);
 
-export const enabledMods = derived(mods, ($mods) => $mods.filter((mod) => mod.enabled));
+export const enabledMods = derived(mods, ($mods) =>
+  $mods.filter((mod) => mod.enabled)
+);
 
-export const installedMods = derived(mods, ($mods) => $mods.filter((mod) => !mod.enabled));
+export const installedMods = derived(mods, ($mods) =>
+  $mods.filter((mod) => !mod.enabled)
+);
 
 export function toggleMod(id: number) {
-  mods.update((arr) => arr.map((mod) => (mod.id === id ? { ...mod, enabled: !mod.enabled } : mod)));
+  mods.update((arr) =>
+    arr.map((mod) => (mod.id === id ? { ...mod, enabled: !mod.enabled } : mod))
+  );
 }
 
 export const searchInput = writable("");
@@ -40,11 +46,13 @@ function search(mod: Mod, query: string) {
 
 export const filteredEnabledMods = derived(
   [enabledMods, searchInput],
-  ([$enabledMods, $searchInput]) => $enabledMods.filter((mod) => search(mod, $searchInput))
+  ([$enabledMods, $searchInput]) =>
+    $enabledMods.filter((mod) => search(mod, $searchInput))
 );
 export const filteredInstalledMods = derived(
   [installedMods, searchInput],
-  ([$installedMods, $searchInput]) => $installedMods.filter((mod) => search(mod, $searchInput))
+  ([$installedMods, $searchInput]) =>
+    $installedMods.filter((mod) => search(mod, $searchInput))
 );
 
 id_counter = 0;
