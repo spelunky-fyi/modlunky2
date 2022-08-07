@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - "src/modlunky2/**"
+      - "src/tests/**"
+      - "requirements*.txt"
 
 jobs:
   build:
@@ -23,7 +27,7 @@ jobs:
         name: cargo check
         with:
           command: check
-          args: --workspace --all-targets --exclude launcher
+          args: --workspace --all-targets --exclude launcher --locked
       - uses: actions-rs/cargo@v1
         name: cargo fmt
         with:
