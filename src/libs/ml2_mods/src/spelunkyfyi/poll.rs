@@ -13,16 +13,6 @@ use crate::manager::{ListResponse, ModManagerHandle};
 
 use super::http::{Api, Mod as ApiMod};
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("{0}")]
-    ShutdownError(#[source] anyhow::Error),
-    #[error("{0}")]
-    RecvError(#[from] broadcast::error::RecvError),
-}
-
-type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Poller<A>
@@ -44,8 +34,6 @@ where
 pub struct PollerHandle {
     #[derivative(Debug = "ignore")]
     shutdown: Arc<Notify>,
-    #[derivative(Debug = "ignore")]
-    mods_rx: broadcast::Receiver<ApiMod>,
 }
 
 impl<A> Poller<A>
@@ -55,11 +43,10 @@ where
     pub fn new(
         api_client: A,
         manger_handle: ModManagerHandle,
+        mods_tx: broadcast::Sender<ApiMod>,
         poll_interval: Duration,
         step_max_delay: Duration,
     ) -> (Self, PollerHandle) {
-        let (mods_tx, mods_rx) = broadcast::channel(10);
-
         let poller = Poller {
             api_client,
             manger_handle,
@@ -69,7 +56,6 @@ where
             step_dist: Uniform::new(Duration::from_nanos(0), step_max_delay),
         };
         let handle = PollerHandle {
-            mods_rx,
             shutdown: poller.shutdown.clone(),
         };
 
@@ -148,10 +134,5 @@ where
 impl PollerHandle {
     pub async fn shutdown(self) {
         self.shutdown.notify_one()
-    }
-
-    pub async fn recv(&mut self) -> Result<ApiMod> {
-        let m = self.mods_rx.recv().await?;
-        Ok(m)
     }
 }

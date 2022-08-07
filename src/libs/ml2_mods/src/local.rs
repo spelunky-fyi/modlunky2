@@ -50,7 +50,7 @@ pub trait LocalMods {
     async fn remove(&self, id: &str) -> Result<()>;
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
-    async fn update_latest(&self, id: &str, api_mod: &ApiMod) -> Result<bool>;
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<bool>;
 }
 
 pub struct DiskMods {
@@ -265,7 +265,7 @@ impl LocalMods for DiskMods {
 
     #[instrument(skip(self, downloaded))]
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
-        let dest_id = format!("fyi.{}", downloaded.r#mod.slug);
+        let dest_id = id_for_remote(&downloaded.r#mod);
         debug!("installing remote mod {}", dest_id);
         let dest_path = self.make_dest_dir(&dest_id).await?;
 
@@ -297,7 +297,7 @@ impl LocalMods for DiskMods {
             mod_file,
         };
         self.write_mod_manifest(&dest_id, &manifest).await?;
-        self.update_latest(&dest_id, &downloaded.r#mod).await?;
+        self.update_latest(&downloaded.r#mod).await?;
 
         Ok(Mod {
             id: dest_id,
@@ -305,23 +305,28 @@ impl LocalMods for DiskMods {
         })
     }
 
-    async fn update_latest(&self, id: &str, api_mod: &ApiMod) -> Result<bool> {
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<bool> {
+        let id = id_for_remote(api_mod);
         let latest = if let Some(mod_file) = api_mod.mod_files.first() {
             mod_file.id.clone()
         } else {
             return Ok(false);
         };
-        let prev_latest = self.load_latest(id).await?;
+        let prev_latest = self.load_latest(&id).await?;
 
         let different = prev_latest.as_ref().map(|p| p == &latest).unwrap_or(true);
         if different {
             let json = serde_json::to_string(&LatestFile { id: latest.clone() })?;
-            let path = self.create_manifest_dir(id).await?.join(LATEST_FILENAME);
+            let path = self.create_manifest_dir(&id).await?.join(LATEST_FILENAME);
             fs::write(&path, json).await?;
         }
 
         Ok(different)
     }
+}
+
+fn id_for_remote(remote: &ApiMod) -> String {
+    format!("fyi.{}", remote.slug)
 }
 
 async fn path_metadata(path: impl AsRef<Path>) -> Result<Option<std::fs::Metadata>> {

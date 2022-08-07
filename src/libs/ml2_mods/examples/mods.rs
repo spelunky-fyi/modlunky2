@@ -7,7 +7,7 @@ use ml2_mods::{
     manager::{InstallPackage, ModManager},
     spelunkyfyi::{http::ApiClient, poll::Poller},
 };
-use tokio::signal;
+use tokio::{signal, sync::broadcast};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -43,7 +43,8 @@ async fn main() -> anyhow::Result<()> {
         .map(|token| ApiClient::new(&cli.service_root, &token))
         .transpose()?;
     let local_mods = DiskMods::new(&cli.install_path);
-    let (manager, handle) = ModManager::new(api_client.clone(), local_mods);
+    let (mods_tx, mods_rx) = broadcast::channel(10);
+    let (manager, handle) = ModManager::new(api_client.clone(), local_mods, mods_rx);
     let manager_join = manager.spawn();
 
     match cli.command {
@@ -74,6 +75,7 @@ async fn main() -> anyhow::Result<()> {
             let (poller, poller_handle) = Poller::new(
                 api_client.unwrap(),
                 handle.clone(),
+                mods_tx,
                 Duration::from_secs(interval_sec),
                 Duration::from_secs(delay_sec),
             );

@@ -1,13 +1,13 @@
 use anyhow::anyhow;
 use derivative::Derivative;
 use serde::Serialize;
-use tokio::sync::{mpsc, oneshot};
-use tokio::task;
-use tracing::{debug, info, instrument};
+use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::{select, task};
+use tracing::{debug, info, instrument, warn};
 
 use crate::data::{ManagerError, Mod};
 use crate::local::{Error as LocalError, LocalMods};
-use crate::spelunkyfyi::http::Api;
+use crate::spelunkyfyi::http::{Api, Mod as ApiMod};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -33,7 +33,7 @@ enum Command {
     Update {
         package: InstallPackage,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<UpdateResponse>>,
+        _resp: oneshot::Sender<Result<UpdateResponse>>,
     },
     Shutdown(),
 }
@@ -97,18 +97,15 @@ pub struct UpdateResponse {
 }
 
 #[derive(Derivative)]
-#[derivative(Debug)]
 pub struct ModManager<A, L>
 where
     A: Api + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
-    #[derivative(Debug = "ignore")]
-    api_client: Option<A>, // TODO use this
-    #[derivative(Debug = "ignore")]
-    local_mods: L,
-    #[derivative(Debug = "ignore")]
+    api_client: Option<A>,
     commands_rx: mpsc::Receiver<Command>,
+    local_mods: L,
+    mods_rx: broadcast::Receiver<ApiMod>,
 }
 
 #[derive(Clone, Derivative)]
@@ -123,12 +120,17 @@ where
     A: Api + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
-    pub fn new(api_client: Option<A>, local_mods: L) -> (Self, ModManagerHandle) {
+    pub fn new(
+        api_client: Option<A>,
+        local_mods: L,
+        mods_rx: broadcast::Receiver<ApiMod>,
+    ) -> (Self, ModManagerHandle) {
         let (tx, rx) = mpsc::channel(1);
         let manager = ModManager {
             api_client,
-            local_mods,
             commands_rx: rx,
+            local_mods,
+            mods_rx,
         };
         let handle = ModManagerHandle { commands_tx: tx };
         (manager, handle)
@@ -141,35 +143,56 @@ where
 
     #[instrument(skip(self))]
     async fn run(&mut self) -> () {
-        while let Some(cmd) = self.commands_rx.recv().await {
-            debug!("Processing command {:?}", cmd);
-            match cmd {
-                Command::Get { id, resp } => {
-                    if resp.send(self.get_mod(&id).await).is_err() {
-                        info!("Receiver dropped for Get({:?})", id);
-                    }
+        loop {
+            select! {
+                opt_cmd = self.commands_rx.recv() => match opt_cmd {
+                    Some(cmd) => self.handle_command(cmd).await,
+                    None => break,
+                },
+                mod_res = self.mods_rx.recv() => match mod_res {
+                    Ok(m) => self.handle_mod_polled(m).await,
+                    Err(e) => debug!("Poller lost: {:?}", e),
                 }
-                Command::List { resp } => {
-                    if resp.send(self.list_mods().await).is_err() {
-                        info!("Receiver dropped for List()");
-                    }
-                }
-                Command::Remove { id, resp } => {
-                    if resp.send(self.remove_mod(&id).await).is_err() {
-                        info!("Receiver dropped for Remove({:?})", id);
-                    }
-                }
-                Command::Install { package, resp } => {
-                    if resp.send(self.install_mod(package.clone()).await).is_err() {
-                        info!("Receiver dropped for Install({:?})", package);
-                    }
-                }
-                Command::Shutdown() => {
-                    // Prevent additional messages from being sent
-                    self.commands_rx.close();
-                }
-                _ => unimplemented!(),
             }
+        }
+    }
+
+    #[instrument(skip(self))]
+    async fn handle_mod_polled(&self, api_mod: ApiMod) {
+        if let Err(e) = self.local_mods.update_latest(&api_mod).await {
+            warn!("Updating latest.json failed: {:?}", e)
+        }
+    }
+
+    #[instrument(skip(self))]
+    async fn handle_command(&mut self, cmd: Command) {
+        debug!("Processing command {:?}", cmd);
+        match cmd {
+            Command::Get { id, resp } => {
+                if resp.send(self.get_mod(&id).await).is_err() {
+                    info!("Receiver dropped for Get({:?})", id);
+                }
+            }
+            Command::List { resp } => {
+                if resp.send(self.list_mods().await).is_err() {
+                    info!("Receiver dropped for List()");
+                }
+            }
+            Command::Remove { id, resp } => {
+                if resp.send(self.remove_mod(&id).await).is_err() {
+                    info!("Receiver dropped for Remove({:?})", id);
+                }
+            }
+            Command::Install { package, resp } => {
+                if resp.send(self.install_mod(package.clone()).await).is_err() {
+                    info!("Receiver dropped for Install({:?})", package);
+                }
+            }
+            Command::Shutdown() => {
+                // Prevent additional messages from being sent
+                self.commands_rx.close();
+            }
+            _ => unimplemented!(),
         }
     }
 
@@ -225,6 +248,17 @@ where
         let r#mod = self.local_mods.install_remote(&downloaded).await?;
 
         Ok(InstallResponse { r#mod })
+    }
+}
+
+impl<A, L> std::fmt::Debug for ModManager<A, L>
+where
+    A: Api + Send + Sync + 'static,
+    L: LocalMods + Send + Sync + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Omit all contents
+        f.debug_struct("ModManager").finish()
     }
 }
 
@@ -284,7 +318,7 @@ impl ModManagerHandle {
         self.commands_tx
             .send(Command::Update {
                 package: package.clone(),
-                resp: tx,
+                _resp: tx,
             })
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
