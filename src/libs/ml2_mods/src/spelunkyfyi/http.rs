@@ -1,6 +1,7 @@
 use std::{
     fmt::Debug,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use anyhow::anyhow;
@@ -128,14 +129,14 @@ type TracedResponse<B> = ResponseBody<
 
 type TracedHyperService = BoxService<Request<Body>, Response<TracedResponse<Body>>, hyper::Error>;
 
-#[derive(Derivative)]
+#[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct ApiClient {
     base_uri: Uri,
     #[derivative(Debug = "ignore")]
     auth_token: String,
     #[derivative(Debug = "ignore")]
-    client: Mutex<TracedHyperService>,
+    client: Arc<Mutex<TracedHyperService>>,
 }
 
 enum Auth {
@@ -150,7 +151,6 @@ impl ApiClient {
         let inner_client =
             hyper::client::Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
         let client = ServiceBuilder::new()
-            // TODO: add a layer for retries with backoff
             .sensitive_headers([AUTHORIZATION])
             .trace_for_http()
             .follow_redirects()
@@ -159,7 +159,7 @@ impl ApiClient {
         // Note: We're using BoxService to avoid writing out the type of `client`.
         // BoxService doesn't have a Sync bound, which forces us to wrap it in a
         // mutex despite the concrete type being Sync.
-        let client = Mutex::new(BoxService::new(client));
+        let client = Arc::new(Mutex::new(BoxService::new(client)));
         let auth_token = auth_token.to_string();
 
         Ok(ApiClient {

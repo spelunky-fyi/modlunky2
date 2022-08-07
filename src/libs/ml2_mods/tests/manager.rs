@@ -14,6 +14,7 @@ use ml2_mods::{
     data::{Manifest, ManifestModFile, Mod},
     manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
+use tokio::sync::broadcast;
 
 fn make_provincial_mod() -> Mod {
     Mod {
@@ -48,11 +49,15 @@ fn testdata_install_dir() -> String {
         .into()
 }
 
+fn make_manager(install_path: &str) -> (ModManager<ApiClient, DiskMods>, ModManagerHandle) {
+    let local_mods = DiskMods::new(install_path);
+    let (_mods_tx, mods_rx) = broadcast::channel(1);
+    ModManager::new(None, local_mods, mods_rx)
+}
+
 #[tokio::test]
 async fn test_get() {
-    let local_mods = DiskMods::new(&testdata_install_dir());
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
+    let (manager, handle) = make_manager(&testdata_install_dir());
     let manager_join = manager.spawn();
 
     let resp = handle.get("provincial").await.unwrap();
@@ -84,9 +89,7 @@ async fn test_get() {
 
 #[tokio::test]
 async fn test_list_exists() {
-    let local_mods = DiskMods::new(&testdata_install_dir());
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
+    let (manager, handle) = make_manager(&testdata_install_dir());
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -106,9 +109,7 @@ async fn test_list_nonexistent() {
     let dir = tempdir().unwrap();
     let path: String = dir.path().join("bogus_dir").to_str().unwrap().into();
 
-    let local_mods = DiskMods::new(&path);
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
+    let (manager, handle) = make_manager(&path);
     let manager_join = manager.spawn();
 
     let resp = handle.list().await.unwrap();
@@ -133,6 +134,9 @@ async fn test_remove() {
     let mod_id = "some-mod";
     let dir = tempfile::tempdir().unwrap();
 
+    let (manager, handle) = make_manager(dir.path().to_str().unwrap());
+    let manager_join = manager.spawn();
+
     let mod_path = dir.path().join(MODS_SUBPATH).join(mod_id);
     fs::create_dir_all(mod_path.clone()).await.unwrap();
 
@@ -149,11 +153,6 @@ async fn test_remove() {
     if dir_path.is_none() {
         panic!("tempdir isn't valid unicode: {:?}", dir.path());
     }
-
-    let local_mods = DiskMods::new(dir_path.unwrap());
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
-    let manager_join = manager.spawn();
 
     let resp = handle.remove(mod_id).await.unwrap();
     assert_eq!(resp, RemoveResponse {});
@@ -217,9 +216,7 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 async fn test_install_locall() {
     let dir = tempfile::tempdir().unwrap();
 
-    let local_mods = DiskMods::new(dir.path().as_os_str().to_str().unwrap());
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
+    let (manager, handle) = make_manager(dir.path().to_str().unwrap());
     let manager_join = manager.spawn();
 
     let mod_id = "unchanged";

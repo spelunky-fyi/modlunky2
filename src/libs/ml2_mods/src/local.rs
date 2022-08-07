@@ -1,18 +1,24 @@
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use thiserror;
 use tokio::fs;
 use tracing::{debug, instrument};
 use zip::result::ZipError;
 use zip::ZipArchive;
 
-use crate::constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
+use crate::constants::{LATEST_FILENAME, MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
 use crate::data::{Manifest, ManifestModFile, Mod};
-use crate::spelunkyfyi::http::{DownloadedLogo, DownloadedMod};
+use crate::spelunkyfyi::http::{DownloadedLogo, DownloadedMod, Mod as ApiMod};
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct LatestFile {
+    id: String,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -23,12 +29,11 @@ pub enum Error {
     #[error("Mod {0} isn't in a directory")]
     NonDirectory(String),
 
-    #[error("Couldn't parse manifest for mod {0}")]
-    ManifestParseError(String, #[source] anyhow::Error),
     #[error("Problem with installation source")]
     SourceError(#[source] anyhow::Error),
     #[error("Problem with the destination")]
     DestinationError(#[source] anyhow::Error),
+
     #[error("I/O error")]
     IoError(#[from] std::io::Error),
 
@@ -45,6 +50,7 @@ pub trait LocalMods {
     async fn remove(&self, id: &str) -> Result<()>;
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
 pub struct DiskMods {
@@ -62,14 +68,6 @@ impl DiskMods {
         self.install_path.join(MOD_METADATA_SUBPATH).join(id)
     }
 
-    fn manifest_json_path(&self, id: &str) -> PathBuf {
-        self.manifest_dir_path(id).join(MANIFEST_FILENAME)
-    }
-
-    fn logo_path(&self, id: &str, logo_filename: &OsStr) -> PathBuf {
-        self.manifest_dir_path(id).join(logo_filename)
-    }
-
     async fn create_manifest_dir(&self, id: &str) -> Result<PathBuf> {
         let manifest_dir = self.manifest_dir_path(id);
         debug!("Creating manifest dir {:?}", manifest_dir);
@@ -77,28 +75,33 @@ impl DiskMods {
         Ok(manifest_dir)
     }
 
+    async fn load_latest(&self, id: &str) -> Result<Option<String>> {
+        let path = self.manifest_dir_path(id).join(LATEST_FILENAME);
+        let json = if let Some(content) = try_read(path).await? {
+            content
+        } else {
+            return Ok(None);
+        };
+        let latest: LatestFile = serde_json::from_slice(&json[..])?;
+        Ok(Some(latest.id))
+    }
+
     #[instrument(skip(self))]
     async fn load_mod_manifest(&self, id: &str) -> Result<Option<Manifest>> {
-        let path = self.manifest_json_path(id);
-        let json_result = fs::read(&path).await;
-        if let Err(e) = json_result {
-            match e.kind() {
-                // It's OK if the metadata.json doesn't exist
-                io::ErrorKind::NotFound => return Ok(None),
-                _ => return Err(Error::UnknownError(e.into())),
-            }
-        }
-        let json = json_result.unwrap();
-        let manifest: Manifest = serde_json::from_slice(&json[..])
-            .map_err(|e| Error::ManifestParseError(id.to_string(), e.into()))?;
-        Ok(Some(manifest))
+        let path = self.manifest_dir_path(id).join(MANIFEST_FILENAME);
+        let json = if let Some(content) = try_read(path).await? {
+            content
+        } else {
+            return Ok(None);
+        };
+        Ok(serde_json::from_slice(&json[..])?)
     }
 
     #[instrument(skip(self))]
     async fn write_mod_manifest(&self, id: &str, manifest: &Manifest) -> Result<()> {
         debug!("Writing manifest");
         self.create_manifest_dir(id).await?;
-        let manifest_path = self.manifest_json_path(id);
+        let manifest_path = self.manifest_dir_path(id).join(MANIFEST_FILENAME);
         let json = serde_json::to_string(manifest).map_err(|e| Error::UnknownError(e.into()))?;
         debug!("Writing manifest JSON to {:?}", manifest_path);
         fs::write(manifest_path, json).await?;
@@ -154,7 +157,7 @@ impl DiskMods {
 
         let mut dest_name = OsString::from("mod_logo.");
         dest_name.push(extension);
-        let dest_path = self.logo_path(dest_id, &dest_name);
+        let dest_path = self.manifest_dir_path(dest_id).join(&dest_name);
         debug!("Installing logo to path {:?}", dest_path);
         fs::copy(&source.file, dest_path).await?;
 
@@ -262,7 +265,7 @@ impl LocalMods for DiskMods {
 
     #[instrument(skip(self, downloaded))]
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
-        let dest_id = format!("fyi.{}", downloaded.r#mod.slug);
+        let dest_id = id_for_remote(&downloaded.r#mod);
         debug!("installing remote mod {}", dest_id);
         let dest_path = self.make_dest_dir(&dest_id).await?;
 
@@ -294,12 +297,44 @@ impl LocalMods for DiskMods {
             mod_file,
         };
         self.write_mod_manifest(&dest_id, &manifest).await?;
+        self.update_latest(&downloaded.r#mod).await?;
 
         Ok(Mod {
             id: dest_id,
             manifest: Some(manifest),
         })
     }
+
+    #[instrument(skip(self, api_mod))]
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>> {
+        let id = id_for_remote(api_mod);
+        let latest = if let Some(mod_file) = api_mod.mod_files.first() {
+            mod_file.id.clone()
+        } else {
+            return Ok(None);
+        };
+
+        let prev_latest = self.load_latest(&id).await?;
+        let same = if let Some(prev) = prev_latest {
+            prev == latest
+        } else {
+            false
+        };
+
+        if same {
+            Ok(None)
+        } else {
+            debug!("Writing latest.json for {}", id);
+            let json = serde_json::to_string(&LatestFile { id: latest.clone() })?;
+            let path = self.create_manifest_dir(&id).await?.join(LATEST_FILENAME);
+            fs::write(&path, json).await?;
+            Ok(Some(id))
+        }
+    }
+}
+
+fn id_for_remote(remote: &ApiMod) -> String {
+    format!("fyi.{}", remote.slug)
 }
 
 async fn path_metadata(path: impl AsRef<Path>) -> Result<Option<std::fs::Metadata>> {
@@ -311,6 +346,17 @@ async fn path_metadata(path: impl AsRef<Path>) -> Result<Option<std::fs::Metadat
             _ => Err(Error::UnknownError(e.into())),
         },
     }
+}
+
+async fn try_read(path: impl AsRef<Path>) -> Result<Option<Vec<u8>>> {
+    let content = fs::read(path.as_ref()).await;
+    if let Err(e) = content {
+        match e.kind() {
+            io::ErrorKind::NotFound => return Ok(None),
+            _ => return Err(e.into()),
+        }
+    };
+    Ok(Some(content.unwrap()))
 }
 
 enum CopyType {
@@ -435,6 +481,12 @@ fn count_lua_paths(paths: &[PathBuf]) -> usize {
         .iter()
         .filter(|p| p.extension().map_or(false, |e| e == "lua"))
         .count()
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Self::UnknownError(err.into())
+    }
 }
 
 impl From<ZipError> for Error {
