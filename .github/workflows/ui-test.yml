@@ -38,7 +38,8 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v1
+      - name: Setup Rust caching
+        uses: Swatinem/rust-cache@v1
 
       - run: npm install
 
@@ -46,4 +47,5 @@ jobs:
 
       - run: npm run build
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: Build Tauri
+        uses: tauri-apps/tauri-action@v0
