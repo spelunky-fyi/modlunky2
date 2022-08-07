@@ -29,7 +29,7 @@ where
     step_dist: Uniform<Duration>,
 }
 
-#[derive(Derivative)]
+#[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct PollerHandle {
     #[derivative(Debug = "ignore")]
@@ -67,6 +67,7 @@ where
         tokio::spawn(async move { self.run().await })
     }
 
+    #[instrument(skip(self))]
     async fn run(&mut self) {
         let mut poll_interval = time::interval(self.poll_interval);
         // If we fall behind, delay further updates

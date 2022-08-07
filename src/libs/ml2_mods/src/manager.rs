@@ -3,7 +3,7 @@ use derivative::Derivative;
 use serde::Serialize;
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tokio::{select, task};
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument, trace, warn};
 
 use crate::data::{ManagerError, Mod};
 use crate::local::{Error as LocalError, LocalMods};
@@ -34,6 +34,10 @@ enum Command {
         package: InstallPackage,
         #[derivative(Debug = "ignore")]
         _resp: oneshot::Sender<Result<UpdateResponse>>,
+    },
+    Subscribe {
+        #[derivative(Debug = "ignore")]
+        resp: oneshot::Sender<broadcast::Receiver<String>>,
     },
     Shutdown(),
 }
@@ -106,13 +110,15 @@ where
     commands_rx: mpsc::Receiver<Command>,
     local_mods: L,
     mods_rx: broadcast::Receiver<ApiMod>,
+    updates_tx: broadcast::Sender<String>,
 }
 
-#[derive(Clone, Derivative)]
+#[derive(Derivative)]
 #[derivative(Debug)]
 pub struct ModManagerHandle {
     #[derivative(Debug = "ignore")]
     commands_tx: mpsc::Sender<Command>,
+    updates_rx: broadcast::Receiver<String>,
 }
 
 impl<A, L> ModManager<A, L>
@@ -125,14 +131,19 @@ where
         local_mods: L,
         mods_rx: broadcast::Receiver<ApiMod>,
     ) -> (Self, ModManagerHandle) {
-        let (tx, rx) = mpsc::channel(1);
+        let (commands_tx, commands_rx) = mpsc::channel(1);
+        let (updates_tx, updates_rx) = broadcast::channel(5);
         let manager = ModManager {
             api_client,
-            commands_rx: rx,
+            commands_rx,
             local_mods,
             mods_rx,
+            updates_tx,
         };
-        let handle = ModManagerHandle { commands_tx: tx };
+        let handle = ModManagerHandle {
+            commands_tx,
+            updates_rx,
+        };
         (manager, handle)
     }
 
@@ -157,10 +168,17 @@ where
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, api_mod))]
     async fn handle_mod_polled(&self, api_mod: ApiMod) {
-        if let Err(e) = self.local_mods.update_latest(&api_mod).await {
-            warn!("Updating latest.json failed: {:?}", e)
+        trace!("Handling mod polled {}", api_mod.slug);
+        match self.local_mods.update_latest(&api_mod).await {
+            Ok(Some(id)) => {
+                if let Err(e) = self.updates_tx.send(id) {
+                    warn!("No update listeners: {:?}", e);
+                }
+            }
+            Ok(None) => {}
+            Err(e) => warn!("Updating latest.json failed: {:?}", e),
         }
     }
 
@@ -186,6 +204,11 @@ where
             Command::Install { package, resp } => {
                 if resp.send(self.install_mod(package.clone()).await).is_err() {
                     info!("Receiver dropped for Install({:?})", package);
+                }
+            }
+            Command::Subscribe { resp } => {
+                if resp.send(self.updates_tx.subscribe()).is_err() {
+                    info!("Receiver dropped for Subscribe()");
                 }
             }
             Command::Shutdown() => {
@@ -332,6 +355,28 @@ impl ModManagerHandle {
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
         Ok(())
+    }
+
+    #[instrument]
+    pub async fn duplicate(&self) -> Result<ModManagerHandle> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::Subscribe { resp: tx })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        let updates_rx = rx.await.map_err(|e| Error::ChannelError(e.into()))?;
+        let handle = ModManagerHandle {
+            commands_tx: self.commands_tx.clone(),
+            updates_rx,
+        };
+        Ok(handle)
+    }
+
+    pub async fn recieve_update(&mut self) -> Result<String> {
+        self.updates_rx
+            .recv()
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))
     }
 }
 

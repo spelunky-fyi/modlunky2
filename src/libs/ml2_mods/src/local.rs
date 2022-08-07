@@ -50,7 +50,7 @@ pub trait LocalMods {
     async fn remove(&self, id: &str) -> Result<()>;
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
-    async fn update_latest(&self, api_mod: &ApiMod) -> Result<bool>;
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
 pub struct DiskMods {
@@ -305,23 +305,31 @@ impl LocalMods for DiskMods {
         })
     }
 
-    async fn update_latest(&self, api_mod: &ApiMod) -> Result<bool> {
+    #[instrument(skip(self, api_mod))]
+    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>> {
         let id = id_for_remote(api_mod);
         let latest = if let Some(mod_file) = api_mod.mod_files.first() {
             mod_file.id.clone()
         } else {
-            return Ok(false);
+            return Ok(None);
         };
-        let prev_latest = self.load_latest(&id).await?;
 
-        let different = prev_latest.as_ref().map(|p| p == &latest).unwrap_or(true);
-        if different {
+        let prev_latest = self.load_latest(&id).await?;
+        let same = if let Some(prev) = prev_latest {
+            prev == latest
+        } else {
+            false
+        };
+
+        if same {
+            Ok(None)
+        } else {
+            debug!("Writing latest.json for {}", id);
             let json = serde_json::to_string(&LatestFile { id: latest.clone() })?;
             let path = self.create_manifest_dir(&id).await?.join(LATEST_FILENAME);
             fs::write(&path, json).await?;
+            Ok(Some(id))
         }
-
-        Ok(different)
     }
 }
 
