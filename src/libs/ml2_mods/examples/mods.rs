@@ -1,10 +1,13 @@
+use std::time::Duration;
+
 use clap::{Parser, Subcommand};
 
 use ml2_mods::{
     local::DiskMods,
     manager::{InstallPackage, ModManager},
-    spelunkyfyi::http::ApiClient,
+    spelunkyfyi::{http::ApiClient, poll::Poller},
 };
+use tokio::signal;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -27,6 +30,7 @@ enum Commands {
     Remove { id: String },
     InstallLocal { source: String, id: String },
     InstallRemote { code: String },
+    Poll { interval_sec: u64, delay_sec: u64 },
 }
 
 #[tokio::main]
@@ -39,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         .map(|token| ApiClient::new(&cli.service_root, &token))
         .transpose()?;
     let local_mods = DiskMods::new(&cli.install_path);
-    let (manager, handle) = ModManager::new(api_client, local_mods);
+    let (manager, handle) = ModManager::new(api_client.clone(), local_mods);
     let manager_join = manager.spawn();
 
     match cli.command {
@@ -62,6 +66,24 @@ async fn main() -> anyhow::Result<()> {
         Commands::InstallRemote { code } => {
             let package = InstallPackage::Remote { code };
             println!("{:#?}", handle.install(&package).await?);
+        }
+        Commands::Poll {
+            interval_sec,
+            delay_sec,
+        } => {
+            let (poller, poller_handle) = Poller::new(
+                api_client.unwrap(),
+                handle.clone(),
+                Duration::from_secs(interval_sec),
+                Duration::from_secs(delay_sec),
+            );
+            let poller_join = poller.spawn();
+            // We don't print anything for updates (yet)
+            println!("Polling (hope you have logging on) ...");
+            signal::ctrl_c().await?;
+            handle.shutdown().await?;
+            poller_handle.shutdown().await;
+            poller_join.await?;
         }
     }
 

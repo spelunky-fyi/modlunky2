@@ -11,7 +11,7 @@ use crate::spelunkyfyi::http::Api;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
-pub enum Command {
+enum Command {
     Get {
         id: String,
         #[derivative(Debug = "ignore")]
@@ -31,7 +31,7 @@ pub enum Command {
         resp: oneshot::Sender<Result<InstallResponse>>,
     },
     Update {
-        id: String,
+        package: InstallPackage,
         #[derivative(Debug = "ignore")]
         resp: oneshot::Sender<Result<UpdateResponse>>,
     },
@@ -134,7 +134,7 @@ where
         (manager, handle)
     }
 
-    // Consumes the ModManager, starting a task and returning its JoinHandle
+    /// Consumes the ModManager, starting a task and returning its [JoinHandle].
     pub fn spawn(mut self) -> task::JoinHandle<()> {
         tokio::spawn(async move { self.run().await })
     }
@@ -270,6 +270,19 @@ impl ModManagerHandle {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::Install {
+                package: package.clone(),
+                resp: tx,
+            })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn update(&self, package: &InstallPackage) -> Result<UpdateResponse> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::Update {
                 package: package.clone(),
                 resp: tx,
             })
