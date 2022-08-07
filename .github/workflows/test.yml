@@ -7,10 +7,13 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - "Cargo.*"
+      - "src/libs/**"
+      - "src/tauri/**"
 
 jobs:
   build:
-
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -18,28 +21,28 @@ jobs:
         python-version: [3.8, 3.9, "3.10"]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt
-    - name: Install package
-      run: |
-        python setup.py develop
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-    - name: Test with pytest
-      run: |
-        pytest -v src/
-    - name: Check formatting
-      run: |
-        black --check src/
-    - name: Check pylint
-      run: |
-        pylint --disable=R,C src/modlunky2
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt -r requirements-win.txt
+      - name: Install package
+        run: |
+          python setup.py develop
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Test with pytest
+        run: |
+          pytest -v src/
+      - name: Check formatting
+        run: |
+          black --check src/
+      - name: Check pylint
+        run: |
+          pylint --disable=R,C src/modlunky2
