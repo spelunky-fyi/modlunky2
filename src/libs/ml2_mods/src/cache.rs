@@ -123,7 +123,7 @@ where
             return;
         };
         let update_res = match api_client.get_manifest(&id).await {
-            Ok(m) => self.update_latest(&m).await,
+            Ok(m) => self.update_latest_json(&m).await,
             Err(e) => {
                 warn!("Error fetching mod info for {}: {}", id, e);
                 return;
@@ -282,8 +282,8 @@ where
     }
 
     #[instrument(skip(self))]
-    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>> {
-        let changed = self.local_mods.update_latest(api_mod).await?;
+    async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>> {
+        let changed = self.local_mods.update_latest_json(api_mod).await?;
         if let Some(id) = changed.as_ref() {
             self.send_change(Change::NewVersion { id: id.clone() })
                 .await

@@ -50,7 +50,7 @@ pub trait LocalMods {
     async fn remove(&self, id: &str) -> Result<()>;
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
-    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>>;
+    async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
 #[derive(Clone, Debug)]
@@ -63,6 +63,10 @@ impl DiskMods {
         Self {
             install_path: install_path.into(),
         }
+    }
+
+    fn mods_dir_path(&self, id: &str) -> PathBuf {
+        self.install_path.join(MODS_SUBPATH).join(id)
     }
 
     fn manifest_dir_path(&self, id: &str) -> PathBuf {
@@ -112,7 +116,7 @@ impl DiskMods {
     }
 
     async fn make_dest_dir(&self, dest_id: &str) -> Result<PathBuf> {
-        let dest_dir_path = self.install_path.join(MODS_SUBPATH).join(dest_id);
+        let dest_dir_path = self.mods_dir_path(dest_id);
 
         if path_metadata(&dest_dir_path).await?.is_some() {
             return Err(Error::AlreadyExists(dest_id.to_string()));
@@ -174,7 +178,7 @@ impl LocalMods for DiskMods {
     async fn get(&self, id: &str) -> Result<Mod> {
         let id = id.to_string();
         // First, check that the mod exists
-        let mod_path = self.install_path.join(MODS_SUBPATH).join(&id);
+        let mod_path = self.mods_dir_path(&id);
         match path_metadata(&mod_path).await? {
             Some(m) => {
                 if !m.is_dir() {
@@ -224,7 +228,7 @@ impl LocalMods for DiskMods {
 
     #[instrument(skip(self))]
     async fn remove(&self, id: &str) -> Result<()> {
-        let mod_path = self.install_path.join(MODS_SUBPATH).join(id);
+        let mod_path = self.mods_dir_path(id);
         fs::remove_dir_all(mod_path)
             .await
             .map_err(|e| match e.kind() {
@@ -300,7 +304,7 @@ impl LocalMods for DiskMods {
             mod_file,
         };
         self.write_mod_manifest(&dest_id, &manifest).await?;
-        self.update_latest(&downloaded.r#mod).await?;
+        self.update_latest_json(&downloaded.r#mod).await?;
 
         Ok(Mod {
             id: dest_id,
@@ -309,7 +313,7 @@ impl LocalMods for DiskMods {
     }
 
     #[instrument(skip(self, api_mod))]
-    async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>> {
+    async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>> {
         let id = id_for_remote(api_mod);
         let latest = if let Some(mod_file) = api_mod.mod_files.first() {
             mod_file.id.clone()
