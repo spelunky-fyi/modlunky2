@@ -1,8 +1,10 @@
 use anyhow::anyhow;
+use async_trait::async_trait;
 use derivative::Derivative;
 use serde::Serialize;
+use tokio::select;
 use tokio::sync::{broadcast, mpsc, oneshot};
-use tokio::task;
+use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, info, instrument};
 
 use crate::data::{ManagerError, Mod};
@@ -39,7 +41,6 @@ enum Command {
         #[derivative(Debug = "ignore")]
         resp: oneshot::Sender<broadcast::Receiver<String>>,
     },
-    Shutdown(),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -117,6 +118,7 @@ where
 pub struct ModManagerHandle {
     #[derivative(Debug = "ignore")]
     commands_tx: mpsc::Sender<Command>,
+    #[derivative(Debug = "ignore")]
     updates_rx: broadcast::Receiver<String>,
 }
 
@@ -141,71 +143,60 @@ where
         (manager, handle)
     }
 
-    /// Consumes the ModManager, starting a task and returning its [JoinHandle].
-    pub fn spawn(mut self) -> task::JoinHandle<()> {
-        tokio::spawn(async move { self.run().await })
-    }
-
-    #[instrument(skip(self))]
-    async fn run(&mut self) -> () {
-        while let Some(cmd) = self.commands_rx.recv().await {
-            debug!("Processing command {:?}", cmd);
-            match cmd {
-                Command::Get { id, resp } => {
-                    if resp.send(self.get_mod(&id).await).is_err() {
-                        info!("Receiver dropped for Get({:?})", id);
-                    }
+    #[instrument]
+    async fn handle_command(&self, cmd: Command) {
+        debug!("Processing command");
+        match cmd {
+            Command::Get { id, resp } => {
+                if resp.send(self.get_mod(&id).await).is_err() {
+                    info!("Receiver dropped for Get({:?})", id);
                 }
-                Command::List { resp } => {
-                    if resp.send(self.list_mods().await).is_err() {
-                        info!("Receiver dropped for List()");
-                    }
-                }
-                Command::Remove { id, resp } => {
-                    if resp.send(self.remove_mod(&id).await).is_err() {
-                        info!("Receiver dropped for Remove({:?})", id);
-                    }
-                }
-                Command::Install { package, resp } => {
-                    if resp.send(self.install_mod(package.clone()).await).is_err() {
-                        info!("Receiver dropped for Install({:?})", package);
-                    }
-                }
-                Command::Subscribe { resp } => {
-                    if resp.send(self.updates_tx.subscribe()).is_err() {
-                        info!("Receiver dropped for Subscribe()");
-                    }
-                }
-                Command::Shutdown() => {
-                    // Prevent additional messages from being sent
-                    self.commands_rx.close();
-                }
-                _ => unimplemented!(),
             }
+            Command::List { resp } => {
+                if resp.send(self.list_mods().await).is_err() {
+                    info!("Receiver dropped for List()");
+                }
+            }
+            Command::Remove { id, resp } => {
+                if resp.send(self.remove_mod(&id).await).is_err() {
+                    info!("Receiver dropped for Remove({:?})", id);
+                }
+            }
+            Command::Install { package, resp } => {
+                if resp.send(self.install_mod(package.clone()).await).is_err() {
+                    info!("Receiver dropped for Install({:?})", package);
+                }
+            }
+            Command::Subscribe { resp } => {
+                if resp.send(self.updates_tx.subscribe()).is_err() {
+                    info!("Receiver dropped for Subscribe()");
+                }
+            }
+            _ => unimplemented!(),
         }
     }
 
-    #[instrument(skip(self))]
-    async fn get_mod(&mut self, id: &str) -> Result<GetResponse> {
+    #[instrument]
+    async fn get_mod(&self, id: &str) -> Result<GetResponse> {
         let r#mod = self.local_mods.get(id).await?;
 
         Ok(GetResponse { r#mod })
     }
 
-    #[instrument(skip(self))]
-    async fn list_mods(&mut self) -> Result<ListResponse> {
+    #[instrument]
+    async fn list_mods(&self) -> Result<ListResponse> {
         let mods = self.local_mods.list().await?;
         Ok(ListResponse { mods })
     }
 
-    #[instrument(skip(self))]
-    async fn remove_mod(&mut self, id: &str) -> Result<RemoveResponse> {
+    #[instrument]
+    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse> {
         self.local_mods.remove(id).await?;
         Ok(RemoveResponse {})
     }
 
-    #[instrument(skip(self))]
-    async fn install_mod(&mut self, package: InstallPackage) -> Result<InstallResponse> {
+    #[instrument]
+    async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse> {
         match package {
             InstallPackage::Local {
                 source_path,
@@ -215,14 +206,14 @@ where
         }
     }
 
-    #[instrument(skip(self))]
-    async fn install_local_mod(&mut self, source: &str, dest_id: &str) -> Result<InstallResponse> {
+    #[instrument]
+    async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
         let r#mod = self.local_mods.install_local(source, dest_id).await?;
         Ok(InstallResponse { r#mod })
     }
 
-    #[instrument(skip(self))]
-    async fn install_remote_mod(&mut self, code: &str) -> Result<InstallResponse> {
+    #[instrument]
+    async fn install_remote_mod(&self, code: &str) -> Result<InstallResponse> {
         let downloaded = self
             .api_client
             .as_ref()
@@ -248,6 +239,24 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Omit all contents
         f.debug_struct("ModManager").finish()
+    }
+}
+
+#[async_trait]
+impl<A, L> IntoSubsystem<Error> for ModManager<A, L>
+where
+    A: Api + Send + Sync + 'static,
+    L: LocalMods + Send + Sync + 'static,
+{
+    #[instrument(skip_all)]
+    async fn run(mut self, subsystem: SubsystemHandle) -> Result<()> {
+        loop {
+            select! {
+                _ = subsystem.on_shutdown_requested() => break,
+                Some(cmd) = self.commands_rx.recv() => self.handle_command(cmd).await,
+            }
+        }
+        Ok(())
     }
 }
 
@@ -312,15 +321,6 @@ impl ModManagerHandle {
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
         rx.await.map_err(|e| Error::ChannelError(e.into()))?
-    }
-
-    #[instrument]
-    pub async fn shutdown(&self) -> Result<()> {
-        self.commands_tx
-            .send(Command::Shutdown())
-            .await
-            .map_err(|e| Error::ChannelError(e.into()))?;
-        Ok(())
     }
 
     #[instrument]

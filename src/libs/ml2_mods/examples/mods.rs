@@ -3,12 +3,14 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 
 use ml2_mods::{
-    cache::ModCache,
+    cache::{ModCache, ModCacheHandle},
+    data::Change,
     local::DiskMods,
-    manager::{InstallPackage, ModManager},
+    manager::{InstallPackage, ModManager, ModManagerHandle},
     spelunkyfyi::http::ApiClient,
 };
-use tokio::{select, signal, sync::broadcast};
+use tokio::{select, sync::broadcast};
+use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -49,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
         .token
         .map(|token| ApiClient::new(&cli.service_root, &token))
         .transpose()?;
-    let (mods_tx, mut mods_rx) = broadcast::channel(10);
+    let (mods_tx, mods_rx) = broadcast::channel(10);
     let (mod_cache, mod_cache_handle) = ModCache::new(
         api_client.clone(),
         Duration::from_secs(cli.api_poll_delay_sec),
@@ -59,50 +61,55 @@ async fn main() -> anyhow::Result<()> {
         Duration::from_secs(cli.local_scan_interval_sec),
     );
     let (manager, handle) = ModManager::new(api_client.clone(), mod_cache.clone());
-    let mod_cache_join = mod_cache.spawn().await?;
-    let manager_join = manager.spawn();
+    Toplevel::new()
+        .catch_signals()
+        .start("ModCache", mod_cache.into_subsystem())
+        .start("ModManager", manager.into_subsystem())
+        .start("CLI", |h| {
+            run(h, cli.command, handle, mod_cache_handle, mods_rx)
+        })
+        .handle_shutdown_requests(Duration::from_millis(1000))
+        .await?;
 
-    match cli.command {
+    Ok(())
+}
+
+async fn run(
+    subsystem: SubsystemHandle,
+    cmd: Commands,
+    manager: ModManagerHandle,
+    cache: ModCacheHandle,
+    mut mods_rx: broadcast::Receiver<Change>,
+) -> anyhow::Result<()> {
+    cache.ready().await;
+    match cmd {
         Commands::Get { id } => {
-            println!("{:#?}", handle.get(&id).await?);
+            println!("{:#?}", manager.get(&id).await?);
         }
         Commands::List {} => {
-            println!("{:#?}", handle.list().await?);
+            println!("{:#?}", manager.list().await?);
         }
         Commands::Remove { id } => {
-            println!("{:#?}", handle.remove(&id).await?);
+            println!("{:#?}", manager.remove(&id).await?);
         }
         Commands::InstallLocal { source, id } => {
             let package = InstallPackage::Local {
                 source_path: source,
                 dest_id: id,
             };
-            println!("{:#?}", handle.install(&package).await?);
+            println!("{:#?}", manager.install(&package).await?);
         }
         Commands::InstallRemote { code } => {
             let package = InstallPackage::Remote { code };
-            println!("{:#?}", handle.install(&package).await?);
+            println!("{:#?}", manager.install(&package).await?);
         }
         Commands::Poll {} => loop {
             select! {
-                res = signal::ctrl_c() => {
-                    res?;
-                    break
-                },
-                res = mods_rx.recv() => {
-                    match res {
-                        Ok(change) => println!("{:#?}", change),
-                        Err(_) => break,
-                    }
-                },
+                _ = subsystem.on_shutdown_requested() => break,
+                Ok(change) = mods_rx.recv() => println!("{:#?}", change),
             }
         },
     }
-
-    mod_cache_handle.shutdown();
-    drop(handle);
-    manager_join.await?;
-    mod_cache_join.await?;
-
+    subsystem.request_global_shutdown();
     Ok(())
 }

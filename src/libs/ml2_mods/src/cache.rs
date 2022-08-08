@@ -4,15 +4,15 @@ use std::{
     time::Duration,
 };
 
-use anyhow::anyhow;
 use async_trait::async_trait;
 use derivative::Derivative;
 use rand::{distributions::Uniform, Rng};
 use tokio::{
     select,
-    sync::{broadcast, oneshot, Mutex, Notify},
-    task, time,
+    sync::{broadcast, mpsc, Mutex},
+    time,
 };
+use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, instrument, trace, warn};
 
 use crate::{
@@ -41,14 +41,14 @@ where
     local_mods: L,
     local_scan_interval: Duration,
     #[derivative(Debug = "ignore")]
-    shutdown: Arc<Notify>,
+    ready_tx: mpsc::Sender<()>,
 }
 
-#[derive(Clone, Derivative)]
+#[derive(Derivative)]
 #[derivative(Debug)]
 pub struct ModCacheHandle {
     #[derivative(Debug = "ignore")]
-    shutdown: Arc<Notify>,
+    ready_rx: mpsc::Receiver<()>,
 }
 
 impl<A, L> ModCache<A, L>
@@ -64,6 +64,7 @@ where
         local_mods: L,
         local_scan_interval: Duration,
     ) -> (Self, ModCacheHandle) {
+        let (ready_tx, ready_rx) = mpsc::channel(1);
         let poller = ModCache {
             api_client,
             api_poll_interval,
@@ -72,49 +73,11 @@ where
             changes_tx,
             local_mods,
             local_scan_interval,
-            shutdown: Arc::new(Notify::new()),
+            ready_tx,
         };
-        let handle = ModCacheHandle {
-            shutdown: poller.shutdown.clone(),
-        };
+        let handle = ModCacheHandle { ready_rx };
 
         (poller, handle)
-    }
-
-    /// Consumes the Poller, starting a task and returning its JoinHandle. Won't return until initial load finishes.
-    pub async fn spawn(self) -> Result<task::JoinHandle<()>> {
-        let (tx, rx) = oneshot::channel();
-        let handle = tokio::spawn(async move { self.run(tx).await });
-        if rx.await.is_err() {
-            Err(Error::UnknownError(anyhow!(
-                "ModCache ready channel dropped"
-            )))
-        } else {
-            Ok(handle)
-        }
-    }
-
-    #[instrument(skip(self))]
-    async fn run(&self, ready_tx: oneshot::Sender<()>) {
-        self.populate_cache().await;
-        if ready_tx.send(()).is_err() {
-            warn!("Ready");
-        }
-
-        let mut api_interval = time::interval(self.api_poll_interval);
-        let mut local_scan_interval = time::interval(self.local_scan_interval);
-        // If we fall behind, delay further updates
-        api_interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
-        local_scan_interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
-        let mut codes: Vec<String> = Vec::new();
-        loop {
-            select! {
-                _ = self.shutdown.notified() => break,
-                _ = local_scan_interval.tick() => self.local_scan().await,
-                _ = api_interval.tick(), if codes.is_empty() => codes = self.list_mods_to_fetch().await,
-                _ = self.fetch_sleep(), if !codes.is_empty() => self.fetch_mod(codes.pop()).await,
-            }
-        }
     }
 
     #[instrument(skip(self))]
@@ -247,6 +210,35 @@ where
 }
 
 #[async_trait]
+impl<A, L> IntoSubsystem<Error> for ModCache<A, L>
+where
+    A: Api + Send + Sync + 'static,
+    L: LocalMods + Send + Sync + 'static,
+{
+    #[instrument(skip_all)]
+    async fn run(mut self, subsystem: SubsystemHandle) -> Result<()> {
+        self.populate_cache().await;
+        let _ = self.ready_tx.send(()).await;
+
+        let mut api_interval = time::interval(self.api_poll_interval);
+        let mut local_scan_interval = time::interval(self.local_scan_interval);
+        // If we fall behind, delay further updates
+        api_interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
+        local_scan_interval.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
+        let mut codes: Vec<String> = Vec::new();
+        loop {
+            select! {
+                _ = subsystem.on_shutdown_requested() => break,
+                _ = local_scan_interval.tick() => self.local_scan().await,
+                _ = api_interval.tick(), if codes.is_empty() => codes = self.list_mods_to_fetch().await,
+                _ = self.fetch_sleep(), if !codes.is_empty() => self.fetch_mod(codes.pop()).await,
+            }
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
 impl<A, L> LocalMods for ModCache<A, L>
 where
     A: Api + Send + Sync + 'static,
@@ -301,7 +293,7 @@ where
 }
 
 impl ModCacheHandle {
-    pub fn shutdown(self) {
-        self.shutdown.notify_one()
+    pub async fn ready(mut self) {
+        self.ready_rx.recv().await;
     }
 }

@@ -1,5 +1,6 @@
 use std::io;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use anyhow::anyhow;
 use ml2_mods::constants::MANIFEST_FILENAME;
@@ -14,6 +15,7 @@ use ml2_mods::{
     data::{Manifest, ManifestModFile, Mod},
     manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
+use tokio_graceful_shutdown::{IntoSubsystem, Toplevel};
 
 fn make_provincial_mod() -> Mod {
     Mod {
@@ -48,15 +50,18 @@ fn testdata_install_dir() -> String {
         .into()
 }
 
-fn make_manager(install_path: &str) -> (ModManager<ApiClient, DiskMods>, ModManagerHandle) {
+fn setup(install_path: &str) -> ModManagerHandle {
     let local_mods = DiskMods::new(install_path);
-    ModManager::new(None, local_mods)
+    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+        ModManager::new(None, local_mods);
+    let toplevel = Toplevel::new().start("ModManager", manager.into_subsystem());
+    tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));
+    handle
 }
 
 #[tokio::test]
 async fn test_get() {
-    let (manager, handle) = make_manager(&testdata_install_dir());
-    let manager_join = manager.spawn();
+    let handle = setup(&testdata_install_dir());
 
     let resp = handle.get("provincial").await.unwrap();
     assert_eq!(
@@ -80,15 +85,11 @@ async fn test_get() {
     } else {
         panic!("Unexpected error from manager: {:?}", err)
     }
-
-    drop(handle);
-    manager_join.await.unwrap();
 }
 
 #[tokio::test]
 async fn test_list_exists() {
-    let (manager, handle) = make_manager(&testdata_install_dir());
-    let manager_join = manager.spawn();
+    let handle = setup(&testdata_install_dir());
 
     let resp = handle.list().await.unwrap();
     assert_eq!(
@@ -97,9 +98,6 @@ async fn test_list_exists() {
             mods: vec![make_remote_control_mod(), make_provincial_mod()]
         }
     );
-
-    drop(handle);
-    manager_join.await.unwrap();
 }
 
 #[tokio::test]
@@ -107,14 +105,10 @@ async fn test_list_nonexistent() {
     let dir = tempdir().unwrap();
     let path: String = dir.path().join("bogus_dir").to_str().unwrap().into();
 
-    let (manager, handle) = make_manager(&path);
-    let manager_join = manager.spawn();
+    let handle = setup(&path);
 
     let resp = handle.list().await.unwrap();
     assert_eq!(resp, ListResponse { mods: vec![] });
-
-    drop(handle);
-    manager_join.await.unwrap();
 }
 
 async fn touch_file(path: PathBuf) {
@@ -132,8 +126,7 @@ async fn test_remove() {
     let mod_id = "some-mod";
     let dir = tempfile::tempdir().unwrap();
 
-    let (manager, handle) = make_manager(dir.path().to_str().unwrap());
-    let manager_join = manager.spawn();
+    let handle = setup(dir.path().to_str().unwrap());
 
     let mod_path = dir.path().join(MODS_SUBPATH).join(mod_id);
     fs::create_dir_all(mod_path.clone()).await.unwrap();
@@ -161,9 +154,6 @@ async fn test_remove() {
     } else {
         panic!("Unexpected error from manager: {:?}", err)
     }
-
-    drop(handle);
-    manager_join.await.unwrap();
 
     for p in [mod_path, lua_path, metadata_dir_path, manifest_path] {
         match fs::metadata(&p).await {
@@ -214,8 +204,7 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
 async fn test_install_locall() {
     let dir = tempfile::tempdir().unwrap();
 
-    let (manager, handle) = make_manager(dir.path().to_str().unwrap());
-    let manager_join = manager.spawn();
+    let handle = setup(dir.path().to_str().unwrap());
 
     let mod_id = "unchanged";
     install_from_local_sources(&handle, "unchanged.txt", mod_id).await;
@@ -260,7 +249,4 @@ async fn test_install_locall() {
     let mod_id = "unicode";
     install_from_local_sources(&handle, "unicode.zip", mod_id).await;
     assert_exits_in(&dir, mod_id, "unicode👀.txt").await;
-
-    drop(handle);
-    manager_join.await.unwrap()
 }
