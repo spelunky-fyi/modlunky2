@@ -53,6 +53,7 @@ pub trait LocalMods {
     async fn update_latest(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
+#[derive(Clone, Debug)]
 pub struct DiskMods {
     install_path: PathBuf,
 }
@@ -68,6 +69,7 @@ impl DiskMods {
         self.install_path.join(MOD_METADATA_SUBPATH).join(id)
     }
 
+    #[instrument(skip(self))]
     async fn create_manifest_dir(&self, id: &str) -> Result<PathBuf> {
         let manifest_dir = self.manifest_dir_path(id);
         debug!("Creating manifest dir {:?}", manifest_dir);
@@ -75,6 +77,7 @@ impl DiskMods {
         Ok(manifest_dir)
     }
 
+    #[instrument(skip(self))]
     async fn load_latest(&self, id: &str) -> Result<Option<String>> {
         let path = self.manifest_dir_path(id).join(LATEST_FILENAME);
         let json = if let Some(content) = try_read(path).await? {

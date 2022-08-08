@@ -24,6 +24,14 @@ pub struct Manifest {
     pub mod_file: ManifestModFile,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Change {
+    Added { r#mod: Mod },
+    Removed { id: String },
+    Updated { r#mod: Mod },
+    NewVersion { id: String },
+}
+
 #[derive(Debug, Serialize, Deserialize, thiserror::Error)]
 pub enum ManagerError {
     #[error("{0}")]

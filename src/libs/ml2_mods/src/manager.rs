@@ -2,12 +2,12 @@ use anyhow::anyhow;
 use derivative::Derivative;
 use serde::Serialize;
 use tokio::sync::{broadcast, mpsc, oneshot};
-use tokio::{select, task};
-use tracing::{debug, info, instrument, trace, warn};
+use tokio::task;
+use tracing::{debug, info, instrument};
 
 use crate::data::{ManagerError, Mod};
 use crate::local::{Error as LocalError, LocalMods};
-use crate::spelunkyfyi::http::{Api, Mod as ApiMod};
+use crate::spelunkyfyi::http::Api;
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -109,7 +109,6 @@ where
     api_client: Option<A>,
     commands_rx: mpsc::Receiver<Command>,
     local_mods: L,
-    mods_rx: broadcast::Receiver<ApiMod>,
     updates_tx: broadcast::Sender<String>,
 }
 
@@ -126,18 +125,13 @@ where
     A: Api + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
-    pub fn new(
-        api_client: Option<A>,
-        local_mods: L,
-        mods_rx: broadcast::Receiver<ApiMod>,
-    ) -> (Self, ModManagerHandle) {
+    pub fn new(api_client: Option<A>, local_mods: L) -> (Self, ModManagerHandle) {
         let (commands_tx, commands_rx) = mpsc::channel(1);
         let (updates_tx, updates_rx) = broadcast::channel(5);
         let manager = ModManager {
             api_client,
             commands_rx,
             local_mods,
-            mods_rx,
             updates_tx,
         };
         let handle = ModManagerHandle {
@@ -154,92 +148,64 @@ where
 
     #[instrument(skip(self))]
     async fn run(&mut self) -> () {
-        loop {
-            select! {
-                opt_cmd = self.commands_rx.recv() => match opt_cmd {
-                    Some(cmd) => self.handle_command(cmd).await,
-                    None => break,
-                },
-                mod_res = self.mods_rx.recv() => match mod_res {
-                    Ok(m) => self.handle_mod_polled(m).await,
-                    Err(e) => debug!("Poller lost: {:?}", e),
+        while let Some(cmd) = self.commands_rx.recv().await {
+            debug!("Processing command {:?}", cmd);
+            match cmd {
+                Command::Get { id, resp } => {
+                    if resp.send(self.get_mod(&id).await).is_err() {
+                        info!("Receiver dropped for Get({:?})", id);
+                    }
                 }
-            }
-        }
-    }
-
-    #[instrument(skip(self, api_mod))]
-    async fn handle_mod_polled(&self, api_mod: ApiMod) {
-        trace!("Handling mod polled {}", api_mod.slug);
-        match self.local_mods.update_latest(&api_mod).await {
-            Ok(Some(id)) => {
-                if let Err(e) = self.updates_tx.send(id) {
-                    warn!("No update listeners: {:?}", e);
+                Command::List { resp } => {
+                    if resp.send(self.list_mods().await).is_err() {
+                        info!("Receiver dropped for List()");
+                    }
                 }
-            }
-            Ok(None) => {}
-            Err(e) => warn!("Updating latest.json failed: {:?}", e),
-        }
-    }
-
-    #[instrument(skip(self))]
-    async fn handle_command(&mut self, cmd: Command) {
-        debug!("Processing command {:?}", cmd);
-        match cmd {
-            Command::Get { id, resp } => {
-                if resp.send(self.get_mod(&id).await).is_err() {
-                    info!("Receiver dropped for Get({:?})", id);
+                Command::Remove { id, resp } => {
+                    if resp.send(self.remove_mod(&id).await).is_err() {
+                        info!("Receiver dropped for Remove({:?})", id);
+                    }
                 }
-            }
-            Command::List { resp } => {
-                if resp.send(self.list_mods().await).is_err() {
-                    info!("Receiver dropped for List()");
+                Command::Install { package, resp } => {
+                    if resp.send(self.install_mod(package.clone()).await).is_err() {
+                        info!("Receiver dropped for Install({:?})", package);
+                    }
                 }
-            }
-            Command::Remove { id, resp } => {
-                if resp.send(self.remove_mod(&id).await).is_err() {
-                    info!("Receiver dropped for Remove({:?})", id);
+                Command::Subscribe { resp } => {
+                    if resp.send(self.updates_tx.subscribe()).is_err() {
+                        info!("Receiver dropped for Subscribe()");
+                    }
                 }
-            }
-            Command::Install { package, resp } => {
-                if resp.send(self.install_mod(package.clone()).await).is_err() {
-                    info!("Receiver dropped for Install({:?})", package);
+                Command::Shutdown() => {
+                    // Prevent additional messages from being sent
+                    self.commands_rx.close();
                 }
+                _ => unimplemented!(),
             }
-            Command::Subscribe { resp } => {
-                if resp.send(self.updates_tx.subscribe()).is_err() {
-                    info!("Receiver dropped for Subscribe()");
-                }
-            }
-            Command::Shutdown() => {
-                // Prevent additional messages from being sent
-                self.commands_rx.close();
-            }
-            _ => unimplemented!(),
         }
     }
 
     #[instrument(skip(self))]
-    async fn get_mod(&self, id: &str) -> Result<GetResponse> {
+    async fn get_mod(&mut self, id: &str) -> Result<GetResponse> {
         let r#mod = self.local_mods.get(id).await?;
 
         Ok(GetResponse { r#mod })
     }
 
     #[instrument(skip(self))]
-    async fn list_mods(&self) -> Result<ListResponse> {
+    async fn list_mods(&mut self) -> Result<ListResponse> {
         let mods = self.local_mods.list().await?;
         Ok(ListResponse { mods })
     }
 
     #[instrument(skip(self))]
-    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse> {
+    async fn remove_mod(&mut self, id: &str) -> Result<RemoveResponse> {
         self.local_mods.remove(id).await?;
         Ok(RemoveResponse {})
     }
 
     #[instrument(skip(self))]
-    async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse> {
+    async fn install_mod(&mut self, package: InstallPackage) -> Result<InstallResponse> {
         match package {
             InstallPackage::Local {
                 source_path,
@@ -250,13 +216,13 @@ where
     }
 
     #[instrument(skip(self))]
-    async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
+    async fn install_local_mod(&mut self, source: &str, dest_id: &str) -> Result<InstallResponse> {
         let r#mod = self.local_mods.install_local(source, dest_id).await?;
         Ok(InstallResponse { r#mod })
     }
 
     #[instrument(skip(self))]
-    async fn install_remote_mod(&self, code: &str) -> Result<InstallResponse> {
+    async fn install_remote_mod(&mut self, code: &str) -> Result<InstallResponse> {
         let downloaded = self
             .api_client
             .as_ref()

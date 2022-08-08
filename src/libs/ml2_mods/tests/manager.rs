@@ -14,7 +14,6 @@ use ml2_mods::{
     data::{Manifest, ManifestModFile, Mod},
     manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
 };
-use tokio::sync::broadcast;
 
 fn make_provincial_mod() -> Mod {
     Mod {
@@ -51,8 +50,7 @@ fn testdata_install_dir() -> String {
 
 fn make_manager(install_path: &str) -> (ModManager<ApiClient, DiskMods>, ModManagerHandle) {
     let local_mods = DiskMods::new(install_path);
-    let (_mods_tx, mods_rx) = broadcast::channel(1);
-    ModManager::new(None, local_mods, mods_rx)
+    ModManager::new(None, local_mods)
 }
 
 #[tokio::test]

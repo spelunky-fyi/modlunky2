@@ -3,9 +3,10 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 
 use ml2_mods::{
+    cache::ModCache,
     local::DiskMods,
     manager::{InstallPackage, ModManager},
-    spelunkyfyi::{http::ApiClient, poll::Poller},
+    spelunkyfyi::http::ApiClient,
 };
 use tokio::{select, signal, sync::broadcast};
 
@@ -18,6 +19,12 @@ struct Cli {
     token: Option<String>,
     #[clap(long, default_value_t = String::from("https://spelunky.fyi"))]
     service_root: String,
+    #[clap(long, default_value_t = 15)]
+    api_poll_interval_sec: u64,
+    #[clap(long, default_value_t = 1)]
+    api_poll_delay_sec: u64,
+    #[clap(long, default_value_t = 5)]
+    local_scan_interval_sec: u64,
 
     #[clap(subcommand)]
     command: Commands,
@@ -30,7 +37,7 @@ enum Commands {
     Remove { id: String },
     InstallLocal { source: String, id: String },
     InstallRemote { code: String },
-    Poll { interval_sec: u64, delay_sec: u64 },
+    Poll {},
 }
 
 #[tokio::main]
@@ -42,9 +49,17 @@ async fn main() -> anyhow::Result<()> {
         .token
         .map(|token| ApiClient::new(&cli.service_root, &token))
         .transpose()?;
-    let local_mods = DiskMods::new(&cli.install_path);
-    let (mods_tx, mods_rx) = broadcast::channel(10);
-    let (manager, mut handle) = ModManager::new(api_client.clone(), local_mods, mods_rx);
+    let (mods_tx, mut mods_rx) = broadcast::channel(10);
+    let (mod_cache, mod_cache_handle) = ModCache::new(
+        api_client.clone(),
+        Duration::from_secs(cli.api_poll_delay_sec),
+        Duration::from_secs(cli.api_poll_delay_sec),
+        mods_tx,
+        DiskMods::new(&cli.install_path),
+        Duration::from_secs(cli.local_scan_interval_sec),
+    );
+    let (manager, handle) = ModManager::new(api_client.clone(), mod_cache.clone());
+    let mod_cache_join = mod_cache.spawn().await?;
     let manager_join = manager.spawn();
 
     match cli.command {
@@ -68,40 +83,26 @@ async fn main() -> anyhow::Result<()> {
             let package = InstallPackage::Remote { code };
             println!("{:#?}", handle.install(&package).await?);
         }
-        Commands::Poll {
-            interval_sec,
-            delay_sec,
-        } => {
-            let (poller, poller_handle) = Poller::new(
-                api_client.unwrap(),
-                handle.duplicate().await?,
-                mods_tx,
-                Duration::from_secs(interval_sec),
-                Duration::from_secs(delay_sec),
-            );
-            let poller_join = poller.spawn();
-            loop {
-                select! {
-                    res = signal::ctrl_c() => {
-                        res?;
-                        break
-                    },
-                    res = handle.recieve_update() => {
-                        match res {
-                            Ok(id) => println!("Detected update for {}", id),
-                            Err(_) => break,
-                        }
-                    },
-                }
+        Commands::Poll {} => loop {
+            select! {
+                res = signal::ctrl_c() => {
+                    res?;
+                    break
+                },
+                res = mods_rx.recv() => {
+                    match res {
+                        Ok(change) => println!("{:#?}", change),
+                        Err(_) => break,
+                    }
+                },
             }
-            handle.shutdown().await?;
-            poller_handle.shutdown().await;
-            poller_join.await?;
-        }
+        },
     }
 
+    mod_cache_handle.shutdown();
     drop(handle);
     manager_join.await?;
+    mod_cache_join.await?;
 
     Ok(())
 }
