@@ -6,7 +6,7 @@ use ml2_mods::{
     cache::{ModCache, ModCacheHandle},
     data::Change,
     local::DiskMods,
-    manager::{InstallPackage, ModManager, ModManagerHandle},
+    manager::{ModManager, ModManagerHandle, ModSource},
     spelunkyfyi::http::ApiClient,
 };
 use tokio::{select, sync::broadcast};
@@ -95,25 +95,25 @@ async fn run(
             println!("{:#?}", manager.remove(&id).await?);
         }
         Commands::InstallLocal { source, id } => {
-            let package = InstallPackage::Local {
+            let package = ModSource::Local {
                 source_path: source,
                 dest_id: id,
             };
             println!("{:#?}", manager.install(&package).await?);
         }
         Commands::InstallRemote { code } => {
-            let package = InstallPackage::Remote { code };
+            let package = ModSource::Remote { code };
             println!("{:#?}", manager.install(&package).await?);
         }
         Commands::UpdateLocal { source, id } => {
-            let package = InstallPackage::Local {
+            let package = ModSource::Local {
                 source_path: source,
                 dest_id: id,
             };
             println!("{:#?}", manager.install(&package).await?);
         }
         Commands::UpdateRemote { code } => {
-            let package = InstallPackage::Remote { code };
+            let package = ModSource::Remote { code };
             println!("{:#?}", manager.update(&package).await?);
         }
         Commands::Poll {} => loop {

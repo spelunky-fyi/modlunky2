@@ -17,25 +17,25 @@ enum Command {
     Get {
         id: String,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<GetResponse>>,
+        resp: oneshot::Sender<Result<Mod>>,
     },
     List {
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<ListResponse>>,
+        resp: oneshot::Sender<Result<Vec<Mod>>>,
     },
     Remove {
         id: String,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<RemoveResponse>>,
+        resp: oneshot::Sender<Result<()>>,
     },
     Install {
-        package: InstallPackage,
-        resp: oneshot::Sender<Result<InstallResponse>>,
+        package: ModSource,
+        resp: oneshot::Sender<Result<Mod>>,
     },
     Update {
-        package: InstallPackage,
+        package: ModSource,
         #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<Result<UpdateResponse>>,
+        resp: oneshot::Sender<Result<Mod>>,
     },
     Subscribe {
         #[derivative(Debug = "ignore")]
@@ -44,7 +44,7 @@ enum Command {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum InstallPackage {
+pub enum ModSource {
     Local {
         source_path: String,
         dest_id: String,
@@ -77,29 +77,6 @@ pub enum Error {
 }
 
 pub type Result<R> = std::result::Result<R, Error>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GetResponse {
-    pub r#mod: Mod,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ListResponse {
-    pub mods: Vec<Mod>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RemoveResponse {}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstallResponse {
-    pub r#mod: Mod,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UpdateResponse {
-    pub r#mod: Mod,
-}
 
 #[derive(Derivative)]
 pub struct ModManager<A, L>
@@ -181,70 +158,63 @@ where
     }
 
     #[instrument(skip(self))]
-    async fn get_mod(&self, id: &str) -> Result<GetResponse> {
-        let r#mod = self.local_mods.get(id).await?;
-
-        Ok(GetResponse { r#mod })
+    async fn get_mod(&self, id: &str) -> Result<Mod> {
+        Ok(self.local_mods.get(id).await?)
     }
 
     #[instrument(skip(self))]
-    async fn list_mods(&self) -> Result<ListResponse> {
-        let mods = self.local_mods.list().await?;
-        Ok(ListResponse { mods })
+    async fn list_mods(&self) -> Result<Vec<Mod>> {
+        Ok(self.local_mods.list().await?)
     }
 
     #[instrument(skip(self))]
-    async fn remove_mod(&self, id: &str) -> Result<RemoveResponse> {
+    async fn remove_mod(&self, id: &str) -> Result<()> {
         self.local_mods.remove(id).await?;
-        Ok(RemoveResponse {})
+        Ok(())
     }
 
     #[instrument(skip(self))]
-    async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse> {
+    async fn install_mod(&self, package: ModSource) -> Result<Mod> {
         match package {
-            InstallPackage::Local {
+            ModSource::Local {
                 source_path,
                 dest_id,
-            } => self.install_local_mod(&source_path, &dest_id).await,
-            InstallPackage::Remote { code } => self.install_remote_mod(&code).await,
+            } => self
+                .local_mods
+                .install_local(&source_path, &dest_id)
+                .await
+                .map_err(|e| e.into()),
+            ModSource::Remote { code } => self.install_remote_mod(&code).await,
         }
     }
 
     #[instrument(skip(self))]
-    async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
-        let r#mod = self.local_mods.install_local(source, dest_id).await?;
-        Ok(InstallResponse { r#mod })
-    }
-
-    #[instrument(skip(self))]
-    async fn install_remote_mod(&self, code: &str) -> Result<InstallResponse> {
+    async fn install_remote_mod(&self, code: &str) -> Result<Mod> {
         let downloaded = self.download_mod(code).await?;
         let r#mod = self.local_mods.install_remote(&downloaded).await?;
-        Ok(InstallResponse { r#mod })
+        Ok(r#mod)
     }
 
     #[instrument(skip(self))]
-    async fn update_mod(&self, package: InstallPackage) -> Result<UpdateResponse> {
+    async fn update_mod(&self, package: ModSource) -> Result<Mod> {
         match package {
-            InstallPackage::Local {
+            ModSource::Local {
                 source_path,
                 dest_id,
-            } => self.update_local_mod(&source_path, &dest_id).await,
-            InstallPackage::Remote { code } => self.update_remote_mod(&code).await,
+            } => self
+                .local_mods
+                .update_local(&source_path, &dest_id)
+                .await
+                .map_err(|e| e.into()),
+            ModSource::Remote { code } => self.update_remote_mod(&code).await,
         }
     }
 
     #[instrument(skip(self))]
-    async fn update_local_mod(&self, source: &str, dest_id: &str) -> Result<UpdateResponse> {
-        let r#mod = self.local_mods.update_local(source, dest_id).await?;
-        Ok(UpdateResponse { r#mod })
-    }
-
-    #[instrument(skip(self))]
-    async fn update_remote_mod(&self, code: &str) -> Result<UpdateResponse> {
+    async fn update_remote_mod(&self, code: &str) -> Result<Mod> {
         let downloaded = self.download_mod(code).await?;
         let r#mod = self.local_mods.update_remote(&downloaded).await?;
-        Ok(UpdateResponse { r#mod })
+        Ok(r#mod)
     }
 
     #[instrument]
@@ -295,7 +265,7 @@ where
 
 impl ModManagerHandle {
     #[instrument]
-    pub async fn get(&self, mod_id: &str) -> Result<GetResponse> {
+    pub async fn get(&self, mod_id: &str) -> Result<Mod> {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::Get {
@@ -308,7 +278,7 @@ impl ModManagerHandle {
     }
 
     #[instrument]
-    pub async fn list(&self) -> Result<ListResponse> {
+    pub async fn list(&self) -> Result<Vec<Mod>> {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::List { resp: tx })
@@ -318,7 +288,7 @@ impl ModManagerHandle {
     }
 
     #[instrument]
-    pub async fn remove(&self, mod_id: &str) -> Result<RemoveResponse> {
+    pub async fn remove(&self, mod_id: &str) -> Result<()> {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::Remove {
@@ -331,7 +301,7 @@ impl ModManagerHandle {
     }
 
     #[instrument]
-    pub async fn install(&self, package: &InstallPackage) -> Result<InstallResponse> {
+    pub async fn install(&self, package: &ModSource) -> Result<Mod> {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::Install {
@@ -344,7 +314,7 @@ impl ModManagerHandle {
     }
 
     #[instrument]
-    pub async fn update(&self, package: &InstallPackage) -> Result<UpdateResponse> {
+    pub async fn update(&self, package: &ModSource) -> Result<Mod> {
         let (tx, rx) = oneshot::channel();
         self.commands_tx
             .send(Command::Update {

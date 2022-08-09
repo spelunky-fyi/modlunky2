@@ -5,7 +5,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use ml2_mods::constants::MANIFEST_FILENAME;
 use ml2_mods::local::{DiskMods, Error as LocalError};
-use ml2_mods::manager::{InstallResponse, ModManagerHandle, RemoveResponse};
+use ml2_mods::manager::ModManagerHandle;
 use ml2_mods::spelunkyfyi::http::ApiClient;
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
@@ -13,7 +13,7 @@ use tokio::fs::{self, OpenOptions};
 use ml2_mods::{
     constants::{MODS_SUBPATH, MOD_METADATA_SUBPATH},
     data::{Manifest, ManifestModFile, Mod},
-    manager::{Error, GetResponse, InstallPackage, ListResponse, ModManager},
+    manager::{Error, ModManager, ModSource},
 };
 use tokio_graceful_shutdown::{IntoSubsystem, Toplevel};
 
@@ -64,20 +64,10 @@ async fn test_get() {
     let handle = setup(&testdata_install_dir());
 
     let resp = handle.get("provincial").await.unwrap();
-    assert_eq!(
-        resp,
-        GetResponse {
-            r#mod: make_provincial_mod()
-        }
-    );
+    assert_eq!(resp, make_provincial_mod());
 
     let resp = handle.get("fyi.remote-control").await.unwrap();
-    assert_eq!(
-        resp,
-        GetResponse {
-            r#mod: make_remote_control_mod()
-        }
-    );
+    assert_eq!(resp, make_remote_control_mod());
 
     let err = handle.get("does-not-exist").await.unwrap_err();
     if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
@@ -92,12 +82,7 @@ async fn test_list_exists() {
     let handle = setup(&testdata_install_dir());
 
     let resp = handle.list().await.unwrap();
-    assert_eq!(
-        resp,
-        ListResponse {
-            mods: vec![make_remote_control_mod(), make_provincial_mod()]
-        }
-    );
+    assert_eq!(resp, vec![make_remote_control_mod(), make_provincial_mod()]);
 }
 
 #[tokio::test]
@@ -108,7 +93,7 @@ async fn test_list_nonexistent() {
     let handle = setup(&path);
 
     let resp = handle.list().await.unwrap();
-    assert_eq!(resp, ListResponse { mods: vec![] });
+    assert_eq!(resp, vec![]);
 }
 
 async fn touch_file(path: PathBuf) {
@@ -145,8 +130,7 @@ async fn test_remove() {
         panic!("tempdir isn't valid unicode: {:?}", dir.path());
     }
 
-    let resp = handle.remove(mod_id).await.unwrap();
-    assert_eq!(resp, RemoveResponse {});
+    handle.remove(mod_id).await.unwrap();
 
     let err = handle.remove("does-not-exist").await.unwrap_err();
     if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
@@ -175,7 +159,7 @@ async fn install_from_local_sources(handle: &ModManagerHandle, source_file: &str
         .unwrap()
         .to_string();
     let resp = handle
-        .install(&InstallPackage::Local {
+        .install(&ModSource::Local {
             source_path,
             dest_id: dest_id.to_string(),
         })
@@ -183,11 +167,9 @@ async fn install_from_local_sources(handle: &ModManagerHandle, source_file: &str
         .unwrap();
     assert_eq!(
         resp,
-        InstallResponse {
-            r#mod: Mod {
-                id: dest_id.to_string(),
-                manifest: None,
-            },
+        Mod {
+            id: dest_id.to_string(),
+            manifest: None,
         }
     )
 }
