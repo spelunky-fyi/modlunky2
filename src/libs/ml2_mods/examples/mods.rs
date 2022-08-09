@@ -39,6 +39,8 @@ enum Commands {
     Remove { id: String },
     InstallLocal { source: String, id: String },
     InstallRemote { code: String },
+    UpdateLocal { source: String, id: String },
+    UpdateRemote { code: String },
     Poll {},
 }
 
@@ -102,6 +104,17 @@ async fn run(
         Commands::InstallRemote { code } => {
             let package = InstallPackage::Remote { code };
             println!("{:#?}", manager.install(&package).await?);
+        }
+        Commands::UpdateLocal { source, id } => {
+            let package = InstallPackage::Local {
+                source_path: source,
+                dest_id: id,
+            };
+            println!("{:#?}", manager.install(&package).await?);
+        }
+        Commands::UpdateRemote { code } => {
+            let package = InstallPackage::Remote { code };
+            println!("{:#?}", manager.update(&package).await?);
         }
         Commands::Poll {} => loop {
             select! {

@@ -194,8 +194,21 @@ where
     #[instrument(skip(self))]
     async fn mod_installed(&self, new: &Mod) {
         let old = self.cache.lock().await.insert(new.id.clone(), new.clone());
+        if old.is_some() {
+            warn!("When installing mod {:?}, it was already in cache", new.id);
+        }
+        self.send_change(Change::Added { r#mod: new.clone() }).await
+    }
+
+    #[instrument(skip(self))]
+    async fn mod_updated(&self, new: &Mod) {
+        let old = self.cache.lock().await.insert(new.id.clone(), new.clone());
         if let Some(m) = old {
-            warn!("When installing mod, it was already in cache: {:?}", m);
+            if &m == new {
+                warn!("When updating mod {:?}, nothing changed", new.id);
+            }
+        } else {
+            warn!("When updating mod {:?}, it was already in cache", new.id);
         }
         self.send_change(Change::Added { r#mod: new.clone() }).await
     }
@@ -274,7 +287,7 @@ where
         Ok(new)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
         let new = self.local_mods.install_remote(downloaded).await?;
         self.mod_installed(&new).await;
@@ -282,6 +295,20 @@ where
     }
 
     #[instrument(skip(self))]
+    async fn update_local(&self, source: &str, dest_id: &str) -> Result<Mod> {
+        let new = self.local_mods.update_local(source, dest_id).await?;
+        self.mod_updated(&new).await;
+        Ok(new)
+    }
+
+    #[instrument(skip_all)]
+    async fn update_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
+        let new = self.local_mods.update_remote(downloaded).await?;
+        self.mod_updated(&new).await;
+        Ok(new)
+    }
+
+    #[instrument(skip_all)]
     async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>> {
         let changed = self.local_mods.update_latest_json(api_mod).await?;
         if let Some(id) = changed.as_ref() {

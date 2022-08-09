@@ -9,7 +9,7 @@ use tracing::{debug, info, instrument};
 
 use crate::data::{ManagerError, Mod};
 use crate::local::{Error as LocalError, LocalMods};
-use crate::spelunkyfyi::http::Api;
+use crate::spelunkyfyi::http::{Api, DownloadedMod};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -35,7 +35,7 @@ enum Command {
     Update {
         package: InstallPackage,
         #[derivative(Debug = "ignore")]
-        _resp: oneshot::Sender<Result<UpdateResponse>>,
+        resp: oneshot::Sender<Result<UpdateResponse>>,
     },
     Subscribe {
         #[derivative(Debug = "ignore")]
@@ -167,35 +167,39 @@ where
                     info!("Receiver dropped for Install({:?})", package);
                 }
             }
+            Command::Update { package, resp } => {
+                if resp.send(self.update_mod(package.clone()).await).is_err() {
+                    info!("Receiver dropped for Install({:?})", package);
+                }
+            }
             Command::Subscribe { resp } => {
                 if resp.send(self.updates_tx.subscribe()).is_err() {
                     info!("Receiver dropped for Subscribe()");
                 }
             }
-            _ => unimplemented!(),
         }
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn get_mod(&self, id: &str) -> Result<GetResponse> {
         let r#mod = self.local_mods.get(id).await?;
 
         Ok(GetResponse { r#mod })
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn list_mods(&self) -> Result<ListResponse> {
         let mods = self.local_mods.list().await?;
         Ok(ListResponse { mods })
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn remove_mod(&self, id: &str) -> Result<RemoveResponse> {
         self.local_mods.remove(id).await?;
         Ok(RemoveResponse {})
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn install_mod(&self, package: InstallPackage) -> Result<InstallResponse> {
         match package {
             InstallPackage::Local {
@@ -206,28 +210,57 @@ where
         }
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn install_local_mod(&self, source: &str, dest_id: &str) -> Result<InstallResponse> {
         let r#mod = self.local_mods.install_local(source, dest_id).await?;
         Ok(InstallResponse { r#mod })
     }
 
-    #[instrument]
+    #[instrument(skip(self))]
     async fn install_remote_mod(&self, code: &str) -> Result<InstallResponse> {
+        let downloaded = self.download_mod(code).await?;
+        let r#mod = self.local_mods.install_remote(&downloaded).await?;
+        Ok(InstallResponse { r#mod })
+    }
+
+    #[instrument(skip(self))]
+    async fn update_mod(&self, package: InstallPackage) -> Result<UpdateResponse> {
+        match package {
+            InstallPackage::Local {
+                source_path,
+                dest_id,
+            } => self.update_local_mod(&source_path, &dest_id).await,
+            InstallPackage::Remote { code } => self.update_remote_mod(&code).await,
+        }
+    }
+
+    #[instrument(skip(self))]
+    async fn update_local_mod(&self, source: &str, dest_id: &str) -> Result<UpdateResponse> {
+        let r#mod = self.local_mods.update_local(source, dest_id).await?;
+        Ok(UpdateResponse { r#mod })
+    }
+
+    #[instrument(skip(self))]
+    async fn update_remote_mod(&self, code: &str) -> Result<UpdateResponse> {
+        let downloaded = self.download_mod(code).await?;
+        let r#mod = self.local_mods.update_remote(&downloaded).await?;
+        Ok(UpdateResponse { r#mod })
+    }
+
+    #[instrument]
+    async fn download_mod(&self, code: &str) -> Result<DownloadedMod> {
         let downloaded = self
             .api_client
             .as_ref()
             .ok_or_else(|| {
                 Error::UnknownError(anyhow!(
-                    "Tried to install remote mod, but API isn't configured"
+                    "Tried to access remote mod, but API isn't configured"
                 ))
             })?
             .download_mod(code)
             .await
             .map_err(|e| Error::UnknownError(e.into()))?;
-        let r#mod = self.local_mods.install_remote(&downloaded).await?;
-
-        Ok(InstallResponse { r#mod })
+        Ok(downloaded)
     }
 }
 
@@ -316,7 +349,7 @@ impl ModManagerHandle {
         self.commands_tx
             .send(Command::Update {
                 package: package.clone(),
-                _resp: tx,
+                resp: tx,
             })
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;

@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use tempfile::{tempdir, TempDir};
 use thiserror;
 use tokio::fs;
 use tracing::{debug, instrument};
@@ -50,6 +51,8 @@ pub trait LocalMods {
     async fn remove(&self, id: &str) -> Result<()>;
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
+    async fn update_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
+    async fn update_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
     async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
@@ -170,6 +173,45 @@ impl DiskMods {
 
         Ok(dest_name)
     }
+
+    async fn prep_for_update(&self, dest_id: &str) -> Result<TempDir> {
+        let temp_dir = tempdir()?;
+        let temp_mod_path = temp_dir.path().join(dest_id);
+        let old_mod_path = self.mods_dir_path(dest_id);
+        if path_metadata(&old_mod_path).await?.is_none() {
+            return Err(Error::NotFound(dest_id.to_string()));
+        }
+        fs::rename(&old_mod_path, &temp_mod_path).await?;
+        debug!("Stashed old mod version in {:?}", temp_mod_path);
+        Ok(temp_dir)
+    }
+
+    async fn finish_update(
+        &self,
+        dest_id: &str,
+        temp_dir: TempDir,
+        install_result: Result<Mod>,
+    ) -> Result<Mod> {
+        let temp_mod_path = temp_dir.path().join(dest_id);
+        let r#mod = match install_result {
+            Err(e) => {
+                fs::rename(&temp_mod_path, self.mods_dir_path(dest_id)).await?;
+                return Err(e);
+            }
+            Ok(m) => m,
+        };
+
+        let temp_save_path = temp_mod_path.join("save.dat");
+        if path_metadata(&temp_save_path).await?.is_some() {
+            debug!("Restoring save.dat");
+            fs::copy(
+                &temp_save_path,
+                self.mods_dir_path(dest_id).join("save.dat"),
+            )
+            .await?;
+        }
+        Ok(r#mod)
+    }
 }
 
 #[async_trait]
@@ -250,6 +292,7 @@ impl LocalMods for DiskMods {
 
     #[instrument(skip(self))]
     async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod> {
+        debug!("Installing local mod {:?}", dest_id);
         let source_path = PathBuf::from(source);
         path_metadata(&source_path).await?.map_or_else(
             || Err(Error::SourceError(anyhow!("not found"))),
@@ -270,10 +313,10 @@ impl LocalMods for DiskMods {
         })
     }
 
-    #[instrument(skip(self, downloaded))]
+    #[instrument(skip_all)]
     async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
         let dest_id = id_for_remote(&downloaded.r#mod);
-        debug!("installing remote mod {}", dest_id);
+        debug!("Installing remote mod {:?}", dest_id);
         let dest_path = self.make_dest_dir(&dest_id).await?;
 
         self.install_main(&downloaded.main_file, &dest_path).await?;
@@ -310,6 +353,21 @@ impl LocalMods for DiskMods {
             id: dest_id,
             manifest: Some(manifest),
         })
+    }
+
+    #[instrument(skip(self))]
+    async fn update_local(&self, source: &str, dest_id: &str) -> Result<Mod> {
+        let temp_dir = self.prep_for_update(dest_id).await?;
+        let install_result = self.install_local(source, dest_id).await;
+        self.finish_update(dest_id, temp_dir, install_result).await
+    }
+
+    #[instrument(skip_all)]
+    async fn update_remote(&self, downloaded: &DownloadedMod) -> Result<Mod> {
+        let dest_id = id_for_remote(&downloaded.r#mod);
+        let temp_dir = self.prep_for_update(&dest_id).await?;
+        let install_result = self.install_remote(downloaded).await;
+        self.finish_update(&dest_id, temp_dir, install_result).await
     }
 
     #[instrument(skip(self, api_mod))]
