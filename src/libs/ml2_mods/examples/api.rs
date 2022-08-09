@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use tokio::fs;
 
-use ml2_mods::spelunkyfyi::http::{Api, ApiClient};
+use ml2_mods::spelunkyfyi::http::{HttpClient, RemoteMods};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
 
-    let client = ApiClient::new(&cli.service_root, &cli.token)?;
+    let client = HttpClient::new(&cli.service_root, &cli.token)?;
 
     match cli.command {
         Commands::Info { code } => {

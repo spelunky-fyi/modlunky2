@@ -9,9 +9,9 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use http::{
-    header::{InvalidHeaderValue, ToStrError, AUTHORIZATION, CONTENT_TYPE},
+    header::{ToStrError, AUTHORIZATION, CONTENT_TYPE},
     uri::{InvalidUri, InvalidUriParts},
-    HeaderValue, Request, Response, StatusCode, Uri,
+    HeaderValue, Request, Response, Uri,
 };
 use hyper::{
     body::{Buf, HttpBody},
@@ -32,6 +32,8 @@ use tower_http::{
     ServiceBuilderExt,
 };
 use tracing::instrument;
+
+use super::{Error, Result};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Mod {
@@ -72,29 +74,6 @@ pub struct Image {
     pub image_url: String,
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Invalid URI: {0:?}")]
-    InvalidUri(#[from] anyhow::Error),
-    #[error("Invalid auth token")]
-    InvalidToken(#[from] InvalidHeaderValue),
-
-    #[error("HTTP status: {0}")]
-    StatusError(StatusCode),
-    #[error("HTTP error: {0}")]
-    GenericHttpError(#[source] anyhow::Error),
-
-    #[error("I/O error: {0}")]
-    IoError(#[from] std::io::Error),
-    #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
-
-    #[error("Unknown error: {0:?}")]
-    UnknownError(#[source] anyhow::Error),
-}
-
-type Result<R> = std::result::Result<R, Error>;
-
 #[derive(Debug)]
 pub struct DownloadedLogo {
     pub content_type: String,
@@ -114,7 +93,7 @@ pub struct DownloadedMod {
 }
 
 #[async_trait]
-pub trait Api {
+pub trait RemoteMods {
     async fn get_manifest(&self, code: &str) -> Result<Mod>;
     async fn download_mod(&self, code: &str) -> Result<DownloadedMod>;
 }
@@ -131,7 +110,7 @@ type TracedHyperService = BoxService<Request<Body>, Response<TracedResponse<Body
 
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
-pub struct ApiClient {
+pub struct HttpClient {
     base_uri: Uri,
     #[derivative(Debug = "ignore")]
     auth_token: String,
@@ -144,7 +123,7 @@ enum Auth {
     No(),
 }
 
-impl ApiClient {
+impl HttpClient {
     pub fn new(service_root: &str, auth_token: &str) -> Result<Self> {
         let base_uri = service_root.parse::<Uri>()?;
 
@@ -162,7 +141,7 @@ impl ApiClient {
         let client = Arc::new(Mutex::new(BoxService::new(client)));
         let auth_token = auth_token.to_string();
 
-        Ok(ApiClient {
+        Ok(HttpClient {
             client,
             auth_token,
             base_uri,
@@ -269,7 +248,7 @@ impl ApiClient {
 }
 
 #[async_trait]
-impl Api for ApiClient {
+impl RemoteMods for HttpClient {
     #[instrument]
     async fn get_manifest(&self, id: &str) -> Result<Mod> {
         let uri = self.uri_from_path(Path::new("/api/mods/").join(id))?;

@@ -3,18 +3,18 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use ml2_mods::constants::MANIFEST_FILENAME;
-use ml2_mods::local::{DiskMods, Error as LocalError};
-use ml2_mods::manager::ModManagerHandle;
-use ml2_mods::spelunkyfyi::http::ApiClient;
+use ml2_mods::{
+    data::{Manifest, ManifestModFile, Mod},
+    local::{
+        constants::{MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH},
+        disk::DiskMods,
+        Error as LocalError,
+    },
+    manager::{Error, ModManager, ModManagerHandle, ModSource},
+    spelunkyfyi::http::HttpClient,
+};
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
-
-use ml2_mods::{
-    constants::{MODS_SUBPATH, MOD_METADATA_SUBPATH},
-    data::{Manifest, ManifestModFile, Mod},
-    manager::{Error, ModManager, ModSource},
-};
 use tokio_graceful_shutdown::{IntoSubsystem, Toplevel};
 
 fn make_provincial_mod() -> Mod {
@@ -23,6 +23,7 @@ fn make_provincial_mod() -> Mod {
         manifest: None,
     }
 }
+
 fn make_remote_control_mod() -> Mod {
     Mod {
         id: "fyi.remote-control".to_string(),
@@ -52,7 +53,7 @@ fn testdata_install_dir() -> String {
 
 fn setup(install_path: &str) -> ModManagerHandle {
     let local_mods = DiskMods::new(install_path);
-    let (manager, handle): (ModManager<ApiClient, DiskMods>, ModManagerHandle) =
+    let (manager, handle): (ModManager<HttpClient, DiskMods>, ModManagerHandle) =
         ModManager::new(None, local_mods);
     let toplevel = Toplevel::new().start("ModManager", manager.into_subsystem());
     tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));

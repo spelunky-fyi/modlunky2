@@ -6,54 +6,21 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tempfile::{tempdir, TempDir};
-use thiserror;
 use tokio::fs;
 use tracing::{debug, instrument};
 use zip::result::ZipError;
 use zip::ZipArchive;
 
-use crate::constants::{LATEST_FILENAME, MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH};
+use super::{
+    constants::{LATEST_FILENAME, MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH},
+    Error, LocalMods, Result,
+};
 use crate::data::{Manifest, ManifestModFile, Mod};
 use crate::spelunkyfyi::http::{DownloadedLogo, DownloadedMod, Mod as ApiMod};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct LatestFile {
     id: String,
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Mod {0} already exists")]
-    AlreadyExists(String),
-    #[error("Mod {0} wasn't found")]
-    NotFound(String),
-    #[error("Mod {0} isn't in a directory")]
-    NonDirectory(String),
-
-    #[error("Problem with installation source")]
-    SourceError(#[source] anyhow::Error),
-    #[error("Problem with the destination")]
-    DestinationError(#[source] anyhow::Error),
-
-    #[error("I/O error")]
-    IoError(#[from] std::io::Error),
-
-    #[error("Unknown error: {0}")]
-    UnknownError(#[source] anyhow::Error),
-}
-
-pub type Result<R> = std::result::Result<R, Error>;
-
-#[async_trait]
-pub trait LocalMods {
-    async fn get(&self, id: &str) -> Result<Mod>;
-    async fn list(&self) -> Result<Vec<Mod>>;
-    async fn remove(&self, id: &str) -> Result<()>;
-    async fn install_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
-    async fn install_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
-    async fn update_local(&self, source: &str, dest_id: &str) -> Result<Mod>;
-    async fn update_remote(&self, downloaded: &DownloadedMod) -> Result<Mod>;
-    async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>>;
 }
 
 #[derive(Clone, Debug)]

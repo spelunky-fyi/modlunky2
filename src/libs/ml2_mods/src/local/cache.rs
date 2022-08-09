@@ -15,21 +15,19 @@ use tokio::{
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, instrument, trace, warn};
 
+use super::{LocalMods, Result};
+use crate::data::Mod;
 use crate::{
     data::Change,
     local::Error,
-    spelunkyfyi::http::{Api, DownloadedMod, Mod as ApiMod},
-};
-use crate::{
-    data::Mod,
-    local::{LocalMods, Result},
+    spelunkyfyi::http::{DownloadedMod, Mod as ApiMod, RemoteMods},
 };
 
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct ModCache<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     api_client: Option<A>,
@@ -53,7 +51,7 @@ pub struct ModCacheHandle {
 
 impl<A, L> ModCache<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     pub fn new(
@@ -225,7 +223,7 @@ where
 #[async_trait]
 impl<A, L> IntoSubsystem<Error> for ModCache<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     #[instrument(skip_all)]
@@ -254,7 +252,7 @@ where
 #[async_trait]
 impl<A, L> LocalMods for ModCache<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     #[instrument(skip(self))]

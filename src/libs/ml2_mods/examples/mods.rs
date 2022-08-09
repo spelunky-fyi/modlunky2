@@ -3,11 +3,13 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 
 use ml2_mods::{
-    cache::{ModCache, ModCacheHandle},
     data::Change,
-    local::DiskMods,
+    local::{
+        cache::{ModCache, ModCacheHandle},
+        disk::DiskMods,
+    },
     manager::{ModManager, ModManagerHandle, ModSource},
-    spelunkyfyi::http::ApiClient,
+    spelunkyfyi::http::HttpClient,
 };
 use tokio::{select, sync::broadcast};
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
@@ -51,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let api_client = cli
         .token
-        .map(|token| ApiClient::new(&cli.service_root, &token))
+        .map(|token| HttpClient::new(&cli.service_root, &token))
         .transpose()?;
     let (mods_tx, mods_rx) = broadcast::channel(10);
     let (mod_cache, mod_cache_handle) = ModCache::new(

@@ -9,7 +9,7 @@ use tracing::{debug, info, instrument};
 
 use crate::data::{ManagerError, Mod};
 use crate::local::{Error as LocalError, LocalMods};
-use crate::spelunkyfyi::http::{Api, DownloadedMod};
+use crate::spelunkyfyi::http::{DownloadedMod, RemoteMods};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -81,7 +81,7 @@ pub type Result<R> = std::result::Result<R, Error>;
 #[derive(Derivative)]
 pub struct ModManager<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     api_client: Option<A>,
@@ -101,7 +101,7 @@ pub struct ModManagerHandle {
 
 impl<A, L> ModManager<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     pub fn new(api_client: Option<A>, local_mods: L) -> (Self, ModManagerHandle) {
@@ -236,7 +236,7 @@ where
 
 impl<A, L> std::fmt::Debug for ModManager<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -248,7 +248,7 @@ where
 #[async_trait]
 impl<A, L> IntoSubsystem<Error> for ModManager<A, L>
 where
-    A: Api + Send + Sync + 'static,
+    A: RemoteMods + Send + Sync + 'static,
     L: LocalMods + Send + Sync + 'static,
 {
     #[instrument(skip_all)]
