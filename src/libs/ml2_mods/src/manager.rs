@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use derivative::Derivative;
 use serde::Serialize;
 use tokio::select;
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot};
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, info, instrument};
 
@@ -36,10 +36,6 @@ enum Command {
         package: ModSource,
         #[derivative(Debug = "ignore")]
         resp: oneshot::Sender<Result<Mod>>,
-    },
-    Subscribe {
-        #[derivative(Debug = "ignore")]
-        resp: oneshot::Sender<broadcast::Receiver<String>>,
     },
 }
 
@@ -87,16 +83,13 @@ where
     api_client: Option<A>,
     commands_rx: mpsc::Receiver<Command>,
     local_mods: L,
-    updates_tx: broadcast::Sender<String>,
 }
 
-#[derive(Derivative)]
+#[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct ModManagerHandle {
     #[derivative(Debug = "ignore")]
     commands_tx: mpsc::Sender<Command>,
-    #[derivative(Debug = "ignore")]
-    updates_rx: broadcast::Receiver<String>,
 }
 
 impl<A, L> ModManager<A, L>
@@ -106,17 +99,12 @@ where
 {
     pub fn new(api_client: Option<A>, local_mods: L) -> (Self, ModManagerHandle) {
         let (commands_tx, commands_rx) = mpsc::channel(1);
-        let (updates_tx, updates_rx) = broadcast::channel(5);
         let manager = ModManager {
             api_client,
             commands_rx,
             local_mods,
-            updates_tx,
         };
-        let handle = ModManagerHandle {
-            commands_tx,
-            updates_rx,
-        };
+        let handle = ModManagerHandle { commands_tx };
         (manager, handle)
     }
 
@@ -147,11 +135,6 @@ where
             Command::Update { package, resp } => {
                 if resp.send(self.update_mod(package.clone()).await).is_err() {
                     info!("Receiver dropped for Install({:?})", package);
-                }
-            }
-            Command::Subscribe { resp } => {
-                if resp.send(self.updates_tx.subscribe()).is_err() {
-                    info!("Receiver dropped for Subscribe()");
                 }
             }
         }
@@ -324,28 +307,6 @@ impl ModManagerHandle {
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
         rx.await.map_err(|e| Error::ChannelError(e.into()))?
-    }
-
-    #[instrument]
-    pub async fn duplicate(&self) -> Result<ModManagerHandle> {
-        let (tx, rx) = oneshot::channel();
-        self.commands_tx
-            .send(Command::Subscribe { resp: tx })
-            .await
-            .map_err(|e| Error::ChannelError(e.into()))?;
-        let updates_rx = rx.await.map_err(|e| Error::ChannelError(e.into()))?;
-        let handle = ModManagerHandle {
-            commands_tx: self.commands_tx.clone(),
-            updates_rx,
-        };
-        Ok(handle)
-    }
-
-    pub async fn recieve_update(&mut self) -> Result<String> {
-        self.updates_rx
-            .recv()
-            .await
-            .map_err(|e| Error::ChannelError(e.into()))
     }
 }
 

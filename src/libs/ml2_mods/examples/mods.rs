@@ -9,8 +9,15 @@ use ml2_mods::{
         disk::DiskMods,
     },
     manager::{ModManager, ModManagerHandle, ModSource},
-    spelunkyfyi::http::HttpClient,
+    spelunkyfyi::{
+        http::HttpClient,
+        web_socket::{
+            WebSocketClient, DEFAULT_MAX_PING_INTERVAL, DEFAULT_MIN_PING_INTERVAL,
+            DEFAULT_PONG_TIMEOUT,
+        },
+    },
 };
+use rand::distributions::Uniform;
 use tokio::{select, sync::broadcast};
 use tokio_graceful_shutdown::{IntoSubsystem as _, SubsystemHandle, Toplevel};
 
@@ -23,12 +30,20 @@ struct Cli {
     token: Option<String>,
     #[clap(long, default_value_t = String::from("https://spelunky.fyi"))]
     service_root: String,
+
     #[clap(long, default_value_t = 15)]
     api_poll_interval_sec: u64,
     #[clap(long, default_value_t = 1)]
     api_poll_delay_sec: u64,
     #[clap(long, default_value_t = 5)]
     local_scan_interval_sec: u64,
+
+    #[clap(long)]
+    ping_min_interval: Option<u64>,
+    #[clap(long)]
+    ping_max_interval: Option<u64>,
+    #[clap(long)]
+    pong_timeout: Option<u64>,
 
     #[clap(subcommand)]
     command: Commands,
@@ -43,18 +58,20 @@ enum Commands {
     InstallRemote { code: String },
     UpdateLocal { source: String, id: String },
     UpdateRemote { code: String },
-    Poll {},
+    Run {},
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
-
     let cli = Cli::parse();
+
     let api_client = cli
         .token
-        .map(|token| HttpClient::new(&cli.service_root, &token))
+        .as_ref()
+        .map(|token| HttpClient::new(&cli.service_root, token))
         .transpose()?;
+
     let (mods_tx, mods_rx) = broadcast::channel(10);
     let (mod_cache, mod_cache_handle) = ModCache::new(
         api_client.clone(),
@@ -64,13 +81,45 @@ async fn main() -> anyhow::Result<()> {
         DiskMods::new(&cli.install_path),
         Duration::from_secs(cli.local_scan_interval_sec),
     );
-    let (manager, handle) = ModManager::new(api_client.clone(), mod_cache.clone());
-    Toplevel::new()
+
+    let (manager, manager_handle) = ModManager::new(api_client.clone(), mod_cache.clone());
+
+    let ping_interval_dist = Uniform::new(
+        cli.ping_min_interval
+            .map(Duration::from_secs)
+            .unwrap_or(DEFAULT_MIN_PING_INTERVAL),
+        cli.ping_max_interval
+            .map(Duration::from_secs)
+            .unwrap_or(DEFAULT_MAX_PING_INTERVAL),
+    );
+    let pong_timeout = cli
+        .pong_timeout
+        .map(Duration::from_secs)
+        .unwrap_or(DEFAULT_PONG_TIMEOUT);
+    let web_socket_client = cli
+        .token
+        .as_ref()
+        .map(|token| {
+            WebSocketClient::new(
+                &cli.service_root,
+                token,
+                manager_handle.clone(),
+                ping_interval_dist,
+                pong_timeout,
+            )
+        })
+        .transpose()?;
+
+    let mut toplevel = Toplevel::new()
         .catch_signals()
         .start("ModCache", mod_cache.into_subsystem())
-        .start("ModManager", manager.into_subsystem())
+        .start("ModManager", manager.into_subsystem());
+    if let Some(web_socket_client) = web_socket_client {
+        toplevel = toplevel.start("WebSocket", web_socket_client.into_subsystem());
+    }
+    toplevel
         .start("CLI", |h| {
-            run(h, cli.command, handle, mod_cache_handle, mods_rx)
+            run(h, cli.command, manager_handle, mod_cache_handle, mods_rx)
         })
         .handle_shutdown_requests(Duration::from_millis(1000))
         .await?;
@@ -118,7 +167,7 @@ async fn run(
             let package = ModSource::Remote { code };
             println!("{:#?}", manager.update(&package).await?);
         }
-        Commands::Poll {} => loop {
+        Commands::Run {} => loop {
             select! {
                 _ = subsystem.on_shutdown_requested() => break,
                 Ok(change) = mods_rx.recv() => println!("{:#?}", change),
