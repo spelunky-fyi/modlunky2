@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 import dataclasses
-from functools import lru_cache
+from functools import cache
 import datetime
 import glob
 import logging
@@ -339,7 +339,7 @@ class LevelsTab(Tab):
             self.install_dir / "Mods/Extracted"
         )
 
-    @lru_cache()
+    @cache
     def lvl_icon(self, level_type):
         if level_type == LevelType.CUSTOM:
             image_path = BASE_DIR / "static/images/lvl_custom.png"
@@ -2313,7 +2313,7 @@ class LevelsTab(Tab):
 
         for lvl_name in custom_levels:
             tree.insert("", "end", text=lvl_name, image=self.lvl_icon(LevelType.CUSTOM))
-        for lvl_name in modded_levels:
+        for lvl_name in vanilla_levels:
             if lvl_name in modded_levels:
                 tree.insert(
                     "", "end", text=lvl_name, image=self.lvl_icon(LevelType.MODDED)
