@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import dataclasses
+from functools import lru_cache
 import datetime
 import glob
 import logging
@@ -45,6 +46,12 @@ from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger(__name__)
+
+
+class LevelType(Enum):
+    VANILLA = 1
+    MODDED = 2
+    CUSTOM = 3
 
 
 class EditorType(Enum):
@@ -150,8 +157,6 @@ class LevelsTab(Tab):
         self.sister_locations = None
         self.icon_add = None
         self.icon_folder = None
-        self.icon_lvl_vanilla = None
-        self.icon_lvl_modded = None
         self.loaded_pack = None
         self.last_selected_tab = None
         self.list_preview_tiles_ref = None
@@ -334,21 +339,16 @@ class LevelsTab(Tab):
             self.install_dir / "Mods/Extracted"
         )
 
-    def lvl_icon(self, modded):
-        if modded:
-            if self.icon_lvl_modded == None:
-                self.icon_lvl_modded = ImageTk.PhotoImage(
-                    Image.open(BASE_DIR / "static/images/lvl_modded.png").resize(
-                        (20, 20)
-                    )
-                )
-            return self.icon_lvl_modded
+    @lru_cache()
+    def lvl_icon(self, level_type):
+        if level_type == LevelType.CUSTOM:
+            image_path = BASE_DIR / "static/images/lvl_custom.png"
+        elif level_type == LevelType.MODDED:
+            image_path = BASE_DIR / "static/images/lvl_modded.png"
         else:
-            if self.icon_lvl_vanilla == None:
-                self.icon_lvl_vanilla = ImageTk.PhotoImage(
-                    Image.open(BASE_DIR / "static/images/lvl.png").resize((20, 20))
-                )
-            return self.icon_lvl_vanilla
+            image_path = BASE_DIR / "static/images/lvl.png"
+
+        return ImageTk.PhotoImage(Image.open(image_path).resize((20, 20)))
 
     # Run when start screen option is selected
     def load_editor(self):
@@ -2287,30 +2287,41 @@ class LevelsTab(Tab):
             tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
-        # Load lvls frome extracts that selected pack doesn't have
 
         loaded_pack = tree.heading("#0")["text"].split("/")[0]
-        # self.textures_dir = self.packs_path / loaded_pack / "Data/Textures"
         root = Path(self.packs_path / loaded_pack)
-        pattern = "*.lvl"
 
-        for filepath in glob.iglob(str(defaults_path) + "/***.lvl"):
-            lvl_in_use = False
-            path_in_str = str(filepath)
-            lvl_name = os.path.basename(os.path.normpath(path_in_str))
-            for path, _, files in os.walk(Path(root)):
-                for name in files:
-                    if fnmatch(name, pattern):
-                        found_lvl = str(os.path.join(path, name))
-                        if os.path.basename(os.path.normpath(found_lvl)) == str(
-                            lvl_name
-                        ):
-                            lvl_in_use = True
-                            tree.insert(
-                                "", "end", text=str(lvl_name), image=self.lvl_icon(True)
-                            )
-            if not lvl_in_use:
-                tree.insert("", "end", text=str(lvl_name), image=self.lvl_icon(False))
+        def get_levels_in_dir(dir_path):
+            levels = glob.iglob(str(dir_path))
+            levels = [str(file_path) for file_path in levels]
+            levels = [
+                os.path.basename(os.path.normpath(file_path)) for file_path in levels
+            ]
+            return levels
+
+        # Load all .lvl files from extracts so we know which are modded and which are not
+        # Treat all that don't exist in extracts as a custom level file
+        custom_levels = get_levels_in_dir(root / "Data/Levels/***.lvl")
+        vanilla_levels = get_levels_in_dir(defaults_path / "***.lvl")
+
+        modded_levels = [
+            lvl_name for lvl_name in custom_levels if lvl_name in vanilla_levels
+        ]
+        custom_levels = [
+            lvl_name for lvl_name in custom_levels if lvl_name not in modded_levels
+        ]
+
+        for lvl_name in custom_levels:
+            tree.insert("", "end", text=lvl_name, image=self.lvl_icon(LevelType.CUSTOM))
+        for lvl_name in modded_levels:
+            if lvl_name in modded_levels:
+                tree.insert(
+                    "", "end", text=lvl_name, image=self.lvl_icon(LevelType.MODDED)
+                )
+            else:
+                tree.insert(
+                    "", "end", text=lvl_name, image=self.lvl_icon(LevelType.VANILLA)
+                )
 
     def load_pack_custom_lvls(self, tree, lvl_dir, selected_lvl=None):
         self.reset()
@@ -2347,11 +2358,17 @@ class LevelsTab(Tab):
                     if name == lvl_name:
                         lvl_in_use = True
                         item = tree.insert(
-                            "", "end", text=str(lvl_name), image=self.lvl_icon(True)
+                            "",
+                            "end",
+                            text=str(lvl_name),
+                            image=self.lvl_icon(LevelType.MODDED),
                         )
                 if not lvl_in_use:
                     item = tree.insert(
-                        "", "end", text=str(lvl_name), image=self.lvl_icon(False)
+                        "",
+                        "end",
+                        text=str(lvl_name),
+                        image=self.lvl_icon(LevelType.VANILLA),
                     )
                 if item != None and lvl_name == selected_lvl:
                     tree.selection_set(item)
@@ -3234,7 +3251,7 @@ class LevelsTab(Tab):
             self.button_save_custom["state"] = tk.DISABLED
             logger.debug("Saved")
             for item in self.tree_files_custom.selection():
-                self.tree_files_custom.item(item, image=self.lvl_icon(True))
+                self.tree_files_custom.item(item, image=self.lvl_icon(LevelType.MODDED))
             return True
         except Exception:  # pylint: disable=broad-except
             logger.critical("Failed to save level: %s", tb_info())
@@ -3397,7 +3414,7 @@ class LevelsTab(Tab):
 
                 logger.debug("Saved!")
                 for item in self.tree_files.selection():
-                    self.tree_files.item(item, image=self.lvl_icon(True))
+                    self.tree_files.item(item, image=self.lvl_icon(LevelType.MODDED))
                 self.save_needed = False
                 self.button_save["state"] = tk.DISABLED
                 logger.debug("Saved")
