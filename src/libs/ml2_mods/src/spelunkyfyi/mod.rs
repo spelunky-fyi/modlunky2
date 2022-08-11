@@ -1,6 +1,7 @@
 use ::http::{header::InvalidHeaderValue, StatusCode};
 
 pub mod http;
+pub mod web_socket;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

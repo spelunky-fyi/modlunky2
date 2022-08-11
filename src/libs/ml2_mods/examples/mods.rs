@@ -12,7 +12,7 @@ use ml2_mods::{
     spelunkyfyi::http::HttpClient,
 };
 use tokio::{select, sync::broadcast};
-use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
+use tokio_graceful_shutdown::{IntoSubsystem as _, SubsystemHandle, Toplevel};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
