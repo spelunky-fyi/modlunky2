@@ -1,5 +1,6 @@
 use ::http::{header::InvalidHeaderValue, StatusCode};
 
+pub mod demo;
 pub mod http;
 pub mod web_socket;
 

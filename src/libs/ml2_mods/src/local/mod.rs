@@ -1,5 +1,6 @@
 pub mod cache;
 pub mod constants;
+pub mod demo;
 pub mod disk;
 
 use async_trait::async_trait;

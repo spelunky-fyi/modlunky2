@@ -26,7 +26,13 @@ use tokio_tungstenite::{
 };
 use tracing::{debug, info, instrument, trace, warn};
 
+use crate::manager::{ModManagerHandle, ModSource};
+
 use super::{Error, Result};
+
+pub const DEFAULT_MIN_PING_INTERVAL: Duration = Duration::from_secs(15);
+pub const DEFAULT_MAX_PING_INTERVAL: Duration = Duration::from_secs(25);
+pub const DEFAULT_PONG_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -54,6 +60,7 @@ enum Check {
 pub struct WebSocketClient {
     #[derivative(Debug = "ignore")]
     authz_value: HeaderValue,
+    manager_handle: ModManagerHandle,
     ping_interval_dist: Uniform<Duration>,
     pong_timeout: Duration,
     service_uri: Uri,
@@ -74,6 +81,7 @@ impl WebSocketClient {
     pub fn new(
         service_root: &str,
         auth_token: &str,
+        manager_handle: ModManagerHandle,
         ping_interval_dist: Uniform<Duration>,
         pong_timeout: Duration,
     ) -> Result<Self> {
@@ -85,6 +93,7 @@ impl WebSocketClient {
 
         Ok(WebSocketClient {
             authz_value,
+            manager_handle,
             ping_interval_dist,
             pong_timeout,
             retry_policy,
@@ -223,20 +232,47 @@ impl WebSocketClient {
         match msg.action.as_str() {
             "web-connected" | "hello" => {
                 debug!("Received channel greeting of type {:?}", msg.action);
-                let resp = serde_json::to_string(&ChannelMessage {
-                    action: "announce".to_string(),
-                    channel_name: msg.channel_name.clone(),
-                    data: None,
-                })
-                .map_err(|e| ConnectionError::Permanent(e.into()))?;
-                stream.send(Message::Text(resp)).await?;
-            }
-            "install" => {
-                info!("Received install request: {:?}", msg);
+                send_message(
+                    stream,
+                    ChannelMessage {
+                        action: "announce".to_string(),
+                        channel_name: msg.channel_name.clone(),
+                        data: None,
+                    },
+                )
+                .await?;
             }
             "web-disconnected" => {
                 debug!("Received channel parting");
-            } // Nothing to do
+            } // Nothing
+            "install" => {
+                info!("Received install request: {:?}", msg);
+                match msg.data {
+                    None => warn!("WebSocket received install message without data"),
+                    Some(data) => {
+                        let res = self
+                            .manager_handle
+                            .install(&ModSource::Remote {
+                                code: data.install_code,
+                            })
+                            .await;
+                        if let Err(e) = res {
+                            // Note that this error has nothing to do with the WebSocket
+                            warn!("Installing mod via WebSocket failed: {:?}", e);
+                        } else {
+                            send_message(
+                                stream,
+                                ChannelMessage {
+                                    action: "install-complete".to_string(),
+                                    channel_name: msg.channel_name.clone(),
+                                    data: None,
+                                },
+                            )
+                            .await?;
+                        }
+                    }
+                }
+            }
             _ => {
                 warn!(
                     "Received WebSocket message from server with unrecognized action {:?}",
@@ -246,6 +282,15 @@ impl WebSocketClient {
         }
         Ok(())
     }
+}
+
+async fn send_message(
+    stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+    msg: ChannelMessage,
+) -> std::result::Result<(), ConnectionError> {
+    let reply = serde_json::to_string(&msg).map_err(|e| ConnectionError::Permanent(e.into()))?;
+    stream.send(Message::Text(reply)).await?;
+    Ok(())
 }
 
 impl From<WsError> for ConnectionError {
