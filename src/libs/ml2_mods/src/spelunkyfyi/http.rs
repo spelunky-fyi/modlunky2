@@ -17,7 +17,7 @@ use hyper::{
     body::{Buf, HttpBody},
     Body,
 };
-use hyper_tls::HttpsConnector;
+use ml2_net::http::{HttpClient, TracedResponse};
 use serde::{Deserialize, Serialize};
 use tempfile::{tempdir, TempDir};
 use tokio::{
@@ -25,12 +25,7 @@ use tokio::{
     io::{AsyncWrite, AsyncWriteExt as _},
     sync::Mutex,
 };
-use tower::{util::BoxService, Service as _, ServiceBuilder, ServiceExt as _};
-use tower_http::{
-    classify::{NeverClassifyEos, ServerErrorsFailureClass},
-    trace::{DefaultOnBodyChunk, DefaultOnEos, DefaultOnFailure, ResponseBody},
-    ServiceBuilderExt,
-};
+use tower::{Service as _, ServiceExt as _};
 use tracing::instrument;
 
 use super::{Error, Result};
@@ -98,24 +93,14 @@ pub trait RemoteMods {
     async fn download_mod(&self, code: &str) -> Result<DownloadedMod>;
 }
 
-type TracedResponse<B> = ResponseBody<
-    B,
-    NeverClassifyEos<ServerErrorsFailureClass>,
-    DefaultOnBodyChunk,
-    DefaultOnEos,
-    DefaultOnFailure,
->;
-
-type TracedHyperService = BoxService<Request<Body>, Response<TracedResponse<Body>>, hyper::Error>;
-
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
-pub struct HttpClient {
+pub struct HttpApiMods {
     base_uri: Uri,
     #[derivative(Debug = "ignore")]
     auth_token: String,
     #[derivative(Debug = "ignore")]
-    client: Arc<Mutex<TracedHyperService>>,
+    http_client: Arc<Mutex<HttpClient>>,
 }
 
 enum Auth {
@@ -123,28 +108,12 @@ enum Auth {
     No(),
 }
 
-impl HttpClient {
-    pub fn new(service_root: &str, auth_token: &str) -> Result<Self> {
-        let base_uri = service_root.parse::<Uri>()?;
-
-        let inner_client =
-            hyper::client::Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
-        let client = ServiceBuilder::new()
-            .sensitive_headers([AUTHORIZATION])
-            .trace_for_http()
-            .follow_redirects()
-            .service(inner_client);
-
-        // Note: We're using BoxService to avoid writing out the type of `client`.
-        // BoxService doesn't have a Sync bound, which forces us to wrap it in a
-        // mutex despite the concrete type being Sync.
-        let client = Arc::new(Mutex::new(BoxService::new(client)));
-        let auth_token = auth_token.to_string();
-
-        Ok(HttpClient {
-            client,
-            auth_token,
-            base_uri,
+impl HttpApiMods {
+    pub fn new(service_root: &str, auth_token: &str, http_client: HttpClient) -> Result<Self> {
+        Ok(HttpApiMods {
+            auth_token: auth_token.to_string(),
+            base_uri: service_root.parse::<Uri>()?,
+            http_client: Arc::new(Mutex::new(http_client)),
         })
     }
 
@@ -176,7 +145,7 @@ impl HttpClient {
             .map_err(|e| Error::UnknownError(e.into()))?;
 
         let res = self
-            .client
+            .http_client
             .lock()
             .await
             .ready()
@@ -248,7 +217,7 @@ impl HttpClient {
 }
 
 #[async_trait]
-impl RemoteMods for HttpClient {
+impl RemoteMods for HttpApiMods {
     #[instrument]
     async fn get_manifest(&self, id: &str) -> Result<Mod> {
         let uri = self.uri_from_path(Path::new("/api/mods/").join(id))?;

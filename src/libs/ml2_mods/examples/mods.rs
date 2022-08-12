@@ -1,6 +1,9 @@
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
+use rand::distributions::Uniform;
+use tokio::{select, sync::broadcast};
+use tokio_graceful_shutdown::{IntoSubsystem as _, SubsystemHandle, Toplevel};
 
 use ml2_mods::{
     data::Change,
@@ -10,16 +13,14 @@ use ml2_mods::{
     },
     manager::{ModManager, ModManagerHandle, ModSource},
     spelunkyfyi::{
-        http::HttpClient,
+        http::HttpApiMods,
         web_socket::{
             WebSocketClient, DEFAULT_MAX_PING_INTERVAL, DEFAULT_MIN_PING_INTERVAL,
             DEFAULT_PONG_TIMEOUT,
         },
     },
 };
-use rand::distributions::Uniform;
-use tokio::{select, sync::broadcast};
-use tokio_graceful_shutdown::{IntoSubsystem as _, SubsystemHandle, Toplevel};
+use ml2_net::http::new_http_client;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -69,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
     let api_client = cli
         .token
         .as_ref()
-        .map(|token| HttpClient::new(&cli.service_root, token))
+        .map(|token| HttpApiMods::new(&cli.service_root, token, new_http_client()))
         .transpose()?;
 
     let (mods_tx, mods_rx) = broadcast::channel(10);

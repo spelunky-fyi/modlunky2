@@ -2,9 +2,10 @@ use std::path::PathBuf;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
+use ml2_net::http::new_http_client;
 use tokio::fs;
 
-use ml2_mods::spelunkyfyi::http::{HttpClient, RemoteMods};
+use ml2_mods::spelunkyfyi::http::{HttpApiMods, RemoteMods};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -29,15 +30,15 @@ async fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
 
-    let client = HttpClient::new(&cli.service_root, &cli.token)?;
+    let http_api_mods = HttpApiMods::new(&cli.service_root, &cli.token, new_http_client())?;
 
     match cli.command {
         Commands::Info { code } => {
-            let manifest = client.get_manifest(&code).await?;
+            let manifest = http_api_mods.get_manifest(&code).await?;
             println!("{:#?}", manifest)
         }
         Commands::DownloadMod { code, dir } => {
-            let downloaded = client.download_mod(&code).await?;
+            let downloaded = http_api_mods.download_mod(&code).await?;
 
             let dir = PathBuf::from(dir);
             fs::create_dir_all(&dir).await?;

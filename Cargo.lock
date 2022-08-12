@@ -1875,6 +1875,7 @@ dependencies = [
  "hyper",
  "hyper-tls",
  "instant",
+ "ml2_net",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -1884,10 +1885,20 @@ dependencies = [
  "tokio-graceful-shutdown",
  "tokio-tungstenite",
  "tower",
- "tower-http",
  "tracing",
  "tracing-subscriber",
  "zip",
+]
+
+[[package]]
+name = "ml2_net"
+version = "0.1.0"
+dependencies = [
+ "http",
+ "hyper",
+ "hyper-tls",
+ "tower",
+ "tower-http",
 ]
 
 [[package]]

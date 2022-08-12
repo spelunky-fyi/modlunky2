@@ -11,7 +11,7 @@ use ml2_mods::{
         Error as LocalError,
     },
     manager::{Error, ModManager, ModManagerHandle, ModSource},
-    spelunkyfyi::http::HttpClient,
+    spelunkyfyi::http::HttpApiMods,
 };
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{self, OpenOptions};
@@ -53,7 +53,7 @@ fn testdata_install_dir() -> String {
 
 fn setup(install_path: &str) -> ModManagerHandle {
     let local_mods = DiskMods::new(install_path);
-    let (manager, handle): (ModManager<HttpClient, DiskMods>, ModManagerHandle) =
+    let (manager, handle): (ModManager<HttpApiMods, DiskMods>, ModManagerHandle) =
         ModManager::new(None, local_mods);
     let toplevel = Toplevel::new().start("ModManager", manager.into_subsystem());
     tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));
