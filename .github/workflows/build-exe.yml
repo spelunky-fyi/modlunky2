@@ -52,5 +52,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: modlunky2.exe
-          path: src/target/release/modlunky2.exe
+          path: target/release/modlunky2.exe
           retention-days: 5
