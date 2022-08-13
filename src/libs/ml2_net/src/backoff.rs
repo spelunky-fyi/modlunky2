@@ -51,7 +51,7 @@ impl RetryPolicy {
                 .next_backoff()
                 .map(tokio::time::sleep)
                 .ok_or_else(|| result.unwrap_err()),
-            Err(BackoffKind::Permanent) => return Err(result.unwrap_err()),
+            Err(BackoffKind::Permanent) => Err(result.unwrap_err()),
         }
     }
 }
