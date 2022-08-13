@@ -11,15 +11,17 @@ pub enum Error {
     #[error("Invalid auth token")]
     InvalidToken(#[from] InvalidHeaderValue),
 
-    #[error("HTTP status: {0}")]
+    #[error("HTTP status: {0:?}")]
     StatusError(StatusCode),
-    #[error("HTTP error: {0}")]
+    #[error("HTTP error: {0:?}")]
     GenericHttpError(#[source] anyhow::Error),
 
-    #[error("I/O error: {0}")]
+    #[error("I/O error: {0:?}")]
     IoError(#[from] std::io::Error),
-    #[error("JSON error: {0}")]
+    #[error("JSON error: {0:?}")]
     JsonError(#[from] serde_json::Error),
+    #[error("WebSocket error: {0:?}")]
+    WebSocketError(#[from] tokio_tungstenite::tungstenite::Error),
 
     #[error("Unknown error: {0:?}")]
     UnknownError(#[source] anyhow::Error),

@@ -6,8 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-http = "0.2.8"
-hyper = { version = "0.14.20", features = ["client", "http1", "http2", "tcp"] }
-hyper-tls = "0.5.0"
-tower = { version = "0.4.13", features = ["util"] }
-tower-http = { version = "0.3.4", features = ["follow-redirect", "sensitive-headers", "set-header", "trace", "util"] }
+anyhow = "1.0"
+backoff = "0.4"
+http = "0.2"
+hyper = { version = "0.14", features = ["client", "http1", "http2", "tcp"] }
+hyper-tls = "0.5"
+instant = "0.1"
+thiserror = "1.0"
+tokio = {version = "1.20", features = ["fs", "macros", "rt", "rt-multi-thread", "signal", "sync", "time", "tracing"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.3", features = ["follow-redirect", "sensitive-headers", "set-header", "trace", "util"] }

@@ -3,16 +3,13 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
-use backoff::{
-    backoff::Backoff,
-    exponential::{ExponentialBackoff, ExponentialBackoffBuilder},
-};
 use derivative::Derivative;
 use futures_util::{SinkExt as _, StreamExt as _};
 use http::{
     header::{AUTHORIZATION, CONNECTION, HOST, SEC_WEBSOCKET_KEY, SEC_WEBSOCKET_VERSION, UPGRADE},
     HeaderValue, Request, StatusCode, Uri,
 };
+use ml2_net::backoff::{AsBackoffKind, BackoffKind, ExponentialBackoffBuilder, RetryPolicy};
 use rand::distributions::Uniform;
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -64,17 +61,7 @@ pub struct WebSocketClient {
     ping_interval_dist: Uniform<Duration>,
     pong_timeout: Duration,
     service_uri: Uri,
-    retry_policy: ExponentialBackoff<TokioClock>,
-}
-
-#[derive(Debug, thiserror::Error)]
-enum ConnectionError {
-    #[error("Reconnect due to: {0:?}")]
-    Reconnect(#[source] anyhow::Error),
-    #[error("Transient error due to: {0:?}")]
-    Transient(#[source] anyhow::Error),
-    #[error("Permanent error due to: {0:?}")]
-    Permanent(#[source] anyhow::Error),
+    retry_policy: RetryPolicy,
 }
 
 impl WebSocketClient {
@@ -85,37 +72,18 @@ impl WebSocketClient {
         ping_interval_dist: Uniform<Duration>,
         pong_timeout: Duration,
     ) -> Result<Self> {
-        let authz_value = HeaderValue::from_str(&format!("Token {}", auth_token))?;
-        let service_uri = root_to_service_uri(service_root)?;
-        let retry_policy = ExponentialBackoffBuilder::default()
+        let backoff = ExponentialBackoffBuilder::default()
             .with_max_elapsed_time(None)
             .build();
 
         Ok(WebSocketClient {
-            authz_value,
+            authz_value: HeaderValue::from_str(&format!("Token {}", auth_token))?,
             manager_handle,
             ping_interval_dist,
             pong_timeout,
-            retry_policy,
-            service_uri,
+            retry_policy: RetryPolicy::new(backoff),
+            service_uri: root_to_service_uri(service_root)?,
         })
-    }
-
-    async fn attempt_connecting(&mut self, subsys: &SubsystemHandle) -> Result<Duration> {
-        match self.connect_and_run(subsys).await {
-            Ok(_) => self.retry_policy.reset(),
-            Err(ConnectionError::Reconnect(e)) => {
-                debug!("Error causing reconnect {:?}", e);
-                self.retry_policy.reset();
-            }
-            Err(ConnectionError::Permanent(e)) => return Err(Error::UnknownError(e)),
-            Err(ConnectionError::Transient(e)) => {
-                debug!("Transient error causing reattempt {:?}", e);
-            }
-        }
-        self.retry_policy
-            .next_backoff()
-            .ok_or_else(|| Error::UnknownError(anyhow!("Connection retries exhausted")))
     }
 
     #[instrument(skip_all)]
@@ -134,8 +102,7 @@ impl WebSocketClient {
             .header(UPGRADE, "websocket")
             .header(SEC_WEBSOCKET_VERSION, "13")
             .header(SEC_WEBSOCKET_KEY, generate_key())
-            .body(())
-            .map_err(|e| ConnectionError::Permanent(e.into()))?;
+            .body(())?;
 
         // This is the maximum number of messages that will be queued in Tungstenite. This doesn't
         // include pong or close messages. All messages are buffered before they're written. So,
@@ -161,7 +128,7 @@ impl WebSocketClient {
                 _ = subsys.on_shutdown_requested() => {
                     stream.close(None).await.map_err(|e| {
                         debug!("Error trying to close WebSocket: {:?}",  e);
-                        ConnectionError::Permanent(e.into())
+                        e
                     })?;
                     break
                 },
@@ -172,8 +139,7 @@ impl WebSocketClient {
                         rand::thread_rng().fill_bytes(&mut payload[..]);
                         stream
                             .send(Message::Ping(payload))
-                            .await
-                            .map_err(|e| ConnectionError::Reconnect(e.into()))?;
+                            .await?;
                         check_state = Check::Pong();
                         check_sleep = Box::pin(time::sleep(self.pong_timeout));
                     }
@@ -221,7 +187,7 @@ impl WebSocketClient {
             "Parsing JSON message {:?}",
             std::str::from_utf8(json)
                 .ok()
-                .unwrap_or("(conversion failed)")
+                .unwrap_or("(UTF-8 conversion failed)")
         );
         let msg = serde_json::from_slice::<ChannelMessage>(json);
         if let Err(e) = msg {
@@ -288,57 +254,72 @@ async fn send_message(
     stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
     msg: ChannelMessage,
 ) -> std::result::Result<(), ConnectionError> {
-    let reply = serde_json::to_string(&msg).map_err(|e| ConnectionError::Permanent(e.into()))?;
+    let reply = serde_json::to_string(&msg)?;
     stream.send(Message::Text(reply)).await?;
     Ok(())
 }
 
-impl From<WsError> for ConnectionError {
-    fn from(err: WsError) -> Self {
+#[derive(Debug, thiserror::Error)]
+enum ConnectionError {
+    #[error(transparent)]
+    HttpRequestError(#[from] http::Error),
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    WebSocketError(#[from] WsError),
+}
+
+impl From<ConnectionError> for Error {
+    fn from(err: ConnectionError) -> Self {
         match err {
-            WsError::Http(resp) => {
-                let status = resp.status();
-                match status {
-                    StatusCode::TOO_MANY_REQUESTS
-                    | StatusCode::SERVICE_UNAVAILABLE
-                    | StatusCode::GATEWAY_TIMEOUT => {
-                        ConnectionError::Transient(Error::StatusError(status).into())
-                    }
-                    StatusCode::FORBIDDEN => ConnectionError::Permanent(anyhow!(
-                        "Forbidden. Potentially incorrect token"
-                    )),
-                    _ => ConnectionError::Permanent(Error::StatusError(status).into()),
-                }
-            }
-            WsError::Io(e) => ConnectionError::Transient(e.into()),
-            _ => ConnectionError::Permanent(err.into()),
+            ConnectionError::HttpRequestError(inner) => inner.into(),
+            ConnectionError::JsonError(inner) => inner.into(),
+            ConnectionError::WebSocketError(inner) => inner.into(),
         }
     }
 }
 
-#[derive(Debug, Default)]
-struct TokioClock;
-
-impl backoff::Clock for TokioClock {
-    fn now(&self) -> instant::Instant {
-        tokio::time::Instant::now().into_std()
+impl AsBackoffKind for ConnectionError {
+    fn as_backoff_kind(&self) -> BackoffKind {
+        match self {
+            ConnectionError::JsonError(_) => BackoffKind::Permanent,
+            ConnectionError::HttpRequestError(_) => BackoffKind::Permanent,
+            ConnectionError::WebSocketError(inner) => match &inner {
+                &WsError::Http(resp) => {
+                    let status = resp.status();
+                    match status {
+                        StatusCode::TOO_MANY_REQUESTS
+                        | StatusCode::SERVICE_UNAVAILABLE
+                        | StatusCode::GATEWAY_TIMEOUT => BackoffKind::Transient,
+                        _ => BackoffKind::Permanent,
+                    }
+                }
+                &WsError::Io(_) => BackoffKind::Transient,
+                _ => BackoffKind::Permanent,
+            },
+        }
     }
 }
 
 #[async_trait]
 impl IntoSubsystem<Error> for WebSocketClient {
     async fn run(mut self, subsys: SubsystemHandle) -> Result<()> {
-        // Don't delay initial connection
-        let mut cur_delay = Duration::from_millis(0);
-        // This implements connection attempts with cancellation
+        let mut last_result = Ok(());
+
         loop {
             select! {
                 _ = subsys.on_shutdown_requested() => break,
-                () = time::sleep(cur_delay) => match self.attempt_connecting(&subsys).await {
-                    Ok(delay) => cur_delay = delay,
-                    Err(e) => {
-                        warn!("WebSocket connection failed permanently: {:?}", e);
-                        break
+                () = self.retry_policy.wait_to_retry(last_result)? => {
+                    last_result = self.connect_and_run(&subsys).await;
+                    // This is complicated because we want to indicate a problem with configuration
+                    // when it's an HTTP error with status 403 Forbidden
+                    if let Err(e) = &last_result {
+                        if let Err(ConnectionError::WebSocketError(WsError::Http(resp))) = &last_result {
+                            if resp.status() == StatusCode::FORBIDDEN {
+                                warn!("WebSocket authorization failed. Incorrect token?");
+                            }
+                        }
+                        info!("WebSocket connection error: {:?}", e);
                     }
                 }
             }
