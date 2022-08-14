@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
     let (mods_tx, mods_rx) = broadcast::channel(10);
     let (mod_cache, mod_cache_handle) = ModCache::new(
         api_client.clone(),
-        Duration::from_secs(cli.api_poll_delay_sec),
+        Duration::from_secs(cli.api_poll_interval_sec),
         Duration::from_secs(cli.api_poll_delay_sec),
         mods_tx,
         DiskMods::new(&cli.install_path),
