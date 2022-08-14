@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use ml2_mods::{
-    data::Change,
+    data::{Change, ManagerError, Mod},
     local::{cache::ModCache, disk::DiskMods},
-    manager::{ModManager, ModManagerHandle},
+    manager::{ModManager, ModManagerHandle, ModSource},
     spelunkyfyi::{
         http::HttpApiMods,
         web_socket::{self, WebSocketClient},
@@ -26,7 +26,7 @@ pub(crate) fn setup_mod_management<R: Runtime>(
     app_handle: AppHandle<R>,
     http_client: HttpClient,
     config: &Config,
-) -> anyhow::Result<(Toplevel, ModManagerHandle)> {
+) -> anyhow::Result<Toplevel> {
     let install_path = config.install_dir.clone().unwrap();
     let token: Option<&String> = config.spelunky_fyi_api_token.as_ref();
     let service_root = config.spelunky_fyi_root();
@@ -46,6 +46,7 @@ pub(crate) fn setup_mod_management<R: Runtime>(
     );
 
     let (manager, manager_handle) = ModManager::new(api_client.clone(), mod_cache.clone());
+    app_handle.manage(manager_handle.clone());
 
     let ping_interval_dist = Uniform::new(
         web_socket::DEFAULT_MIN_PING_INTERVAL,
@@ -73,7 +74,7 @@ pub(crate) fn setup_mod_management<R: Runtime>(
     if let Some(web_socket_client) = web_socket_client {
         toplevel = toplevel.start("WebSocket", web_socket_client.into_subsystem());
     }
-    Ok((toplevel, manager_handle))
+    Ok(toplevel)
 }
 
 async fn emit_mod_changes<R: Runtime>(
@@ -96,4 +97,75 @@ async fn emit_mod_changes<R: Runtime>(
         }
     }
     Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn get_mod(
+    id: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Mod, ManagerError> {
+    Ok(manager_handle.get(&id).await?)
+}
+
+#[tauri::command]
+pub(crate) async fn list_mods(
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Vec<Mod>, ManagerError> {
+    Ok(manager_handle.list().await?)
+}
+
+#[tauri::command]
+pub(crate) async fn remove_mod(
+    id: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<(), ManagerError> {
+    Ok(manager_handle.remove(&id).await?)
+}
+
+#[tauri::command]
+pub(crate) async fn install_local_mod(
+    source_path: String,
+    dest_id: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Mod, ManagerError> {
+    Ok(manager_handle
+        .install(&ModSource::Local {
+            source_path: source_path,
+            dest_id: dest_id,
+        })
+        .await?)
+}
+
+#[tauri::command]
+pub(crate) async fn install_remote_mod(
+    code: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Mod, ManagerError> {
+    Ok(manager_handle
+        .install(&ModSource::Remote { code: code })
+        .await?)
+}
+
+#[tauri::command]
+pub(crate) async fn update_local_mod(
+    source_path: String,
+    dest_id: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Mod, ManagerError> {
+    Ok(manager_handle
+        .update(&ModSource::Local {
+            source_path: source_path,
+            dest_id: dest_id,
+        })
+        .await?)
+}
+
+#[tauri::command]
+pub(crate) async fn update_remote_mod(
+    code: String,
+    manager_handle: tauri::State<'_, ModManagerHandle>,
+) -> Result<Mod, ManagerError> {
+    Ok(manager_handle
+        .update(&ModSource::Remote { code: code })
+        .await?)
 }

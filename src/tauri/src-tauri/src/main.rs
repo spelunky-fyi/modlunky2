@@ -12,7 +12,7 @@ use directories::{BaseDirs, ProjectDirs};
 use ml2_mods::spelunkyfyi::http::DEFAULT_SERVICE_ROOT;
 use ml2_net::http::new_http_client;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Runtime};
 use tokio::select;
 use tokio_graceful_shutdown::{SubsystemHandle, Toplevel};
 use tracing::info;
@@ -56,13 +56,22 @@ async fn main() -> anyhow::Result<()> {
     let config: Config = serde_json::from_slice(&config_json[..])?;
 
     tauri::async_runtime::set(tokio::runtime::Handle::current());
-    let tauri_app = tauri::Builder::default().build(tauri::generate_context!())?;
-    let app_handle = tauri_app.handle();
+    let tauri_app = tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![
+            mods::get_mod,
+            mods::list_mods,
+            mods::remove_mod,
+            mods::install_local_mod,
+            mods::install_remote_mod,
+            mods::update_local_mod,
+            mods::update_remote_mod
+        ])
+        .build(tauri::generate_context!())?;
 
     let (exit_tx, exit_rx) = tokio::sync::oneshot::channel();
     let mut exit_tx_wrap = Some(exit_tx);
     let toplevel = {
-        let app_handle = app_handle.clone();
+        let app_handle = tauri_app.handle();
         Toplevel::new()
             .catch_signals()
             .start("Exit Waiter", |subsys| {
@@ -72,10 +81,7 @@ async fn main() -> anyhow::Result<()> {
 
     let http_client = new_http_client();
     let toplevel = if config.install_dir.is_some() {
-        let (toplevel, mod_manager_handle) =
-            setup_mod_management(toplevel, app_handle.clone(), http_client, &config)?;
-        tauri_app.manage(mod_manager_handle);
-        toplevel
+        setup_mod_management(toplevel, tauri_app.handle(), http_client, &config)?
     } else {
         toplevel
     };

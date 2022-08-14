@@ -1,13 +1,12 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 use derivative::Derivative;
-use serde::Serialize;
 use tokio::select;
 use tokio::sync::{mpsc, oneshot};
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, info, instrument};
 
-use crate::data::{ManagerError, Mod};
+use crate::data::Mod;
 use crate::local::{Error as LocalError, LocalMods};
 use crate::spelunkyfyi::http::{DownloadedMod, RemoteMods};
 
@@ -307,16 +306,6 @@ impl ModManagerHandle {
             .await
             .map_err(|e| Error::ChannelError(e.into()))?;
         rx.await.map_err(|e| Error::ChannelError(e.into()))?
-    }
-}
-
-impl Serialize for Error {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let e: ManagerError = self.into();
-        e.serialize(serializer)
     }
 }
 

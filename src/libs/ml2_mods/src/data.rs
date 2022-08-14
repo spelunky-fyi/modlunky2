@@ -52,8 +52,8 @@ pub enum ManagerError {
     UnknownError(String),
 }
 
-impl From<&Error> for ManagerError {
-    fn from(original: &Error) -> Self {
+impl From<Error> for ManagerError {
+    fn from(original: Error) -> Self {
         match original {
             Error::ModExistsError(_) => ManagerError::ModExistsError(format!("{}", original)),
             Error::ModNotFoundError(_) => ManagerError::ModNotFoundError(format!("{}", original)),
