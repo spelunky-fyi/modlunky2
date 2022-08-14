@@ -93,6 +93,8 @@ pub trait RemoteMods {
     async fn download_mod(&self, code: &str) -> Result<DownloadedMod>;
 }
 
+pub const DEFAULT_SERVICE_ROOT: &str = "https://spelunky.fyi";
+
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct HttpApiMods {

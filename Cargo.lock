@@ -1898,6 +1898,7 @@ name = "modlunky2"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "directories",
  "ml2_mods",
  "ml2_net",
  "rand 0.8.5",

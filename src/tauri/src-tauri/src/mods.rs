@@ -19,17 +19,19 @@ use tokio::{
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
 use tracing::log::warn;
 
+use crate::Config;
+
 pub(crate) fn setup_mod_management<R: Runtime>(
     toplevel: Toplevel,
     app_handle: AppHandle<R>,
     http_client: HttpClient,
+    config: &Config,
 ) -> anyhow::Result<(Toplevel, ModManagerHandle)> {
-    let install_path = r"".to_string();
-    let token: Option<String> = None;
-    let service_root = "https://spelunky.fyi".to_string();
+    let install_path = config.install_dir.clone().unwrap();
+    let token: Option<&String> = config.spelunky_fyi_api_token.as_ref();
+    let service_root = config.spelunky_fyi_root();
 
     let api_client = token
-        .as_ref()
         .map(|token| HttpApiMods::new(&service_root, token, http_client))
         .transpose()?;
 
