@@ -4,8 +4,10 @@
   import { Stack } from "./lib/common";
   import Console from "./lib/Console.svelte";
   import TabBar from "./lib/TabBar.svelte";
+  import { listen } from "@tauri-apps/api/event";
 
   $: padding = $activeTabIndex !== 4 && $activeTabIndex !== 7;
+  listen("mod-change", (event) => console.log(event));
 </script>
 
 <main

@@ -3,30 +3,15 @@
     windows_subsystem = "windows"
 )]
 
+mod mods;
+
 use std::time::Duration;
 
-use tauri::{AppHandle, Runtime};
+use ml2_net::http::new_http_client;
+use mods::setup_mod_management;
+use tauri::{AppHandle, Manager, Runtime};
 use tokio::select;
 use tokio_graceful_shutdown::{SubsystemHandle, Toplevel};
-
-async fn impatient(subsys: SubsystemHandle) -> anyhow::Result<()> {
-    tokio::time::sleep(Duration::from_secs(5)).await;
-    subsys.request_global_shutdown();
-    Ok(())
-}
-
-async fn wait_for_exit<R: Runtime>(
-    subsys: SubsystemHandle,
-    app_handle: AppHandle<R>,
-    exit_rx: tokio::sync::oneshot::Receiver<()>,
-) -> anyhow::Result<()> {
-    select! {
-        ()  = subsys.on_shutdown_requested() => {app_handle.exit(0)},
-        _ = exit_rx => {},
-    }
-    subsys.request_global_shutdown();
-    Ok(())
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -38,12 +23,19 @@ async fn main() -> anyhow::Result<()> {
 
     let (exit_tx, exit_rx) = tokio::sync::oneshot::channel();
     let mut exit_tx_wrap = Some(exit_tx);
-    let toplevel = Toplevel::new()
-        .catch_signals()
-        .start("Exit Waiter", |subsys| {
-            wait_for_exit(subsys, app_handle, exit_rx)
-        })
-        .start("Impatient", impatient);
+    let toplevel = {
+        let app_handle = app_handle.clone();
+        Toplevel::new()
+            .catch_signals()
+            .start("Exit Waiter", |subsys| {
+                wait_for_exit(subsys, app_handle, exit_rx)
+            })
+    };
+
+    let http_client = new_http_client();
+    let (toplevel, mod_manager_handle) =
+        setup_mod_management(toplevel, app_handle.clone(), http_client)?;
+    tauri_app.manage(mod_manager_handle);
 
     let graceful_handle =
         tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));
@@ -57,5 +49,19 @@ async fn main() -> anyhow::Result<()> {
     });
 
     graceful_handle.await??;
+    Ok(())
+}
+
+/// This function bridges between Tauri events and the graceful shutdown system
+async fn wait_for_exit<R: Runtime>(
+    subsys: SubsystemHandle,
+    app_handle: AppHandle<R>,
+    exit_rx: tokio::sync::oneshot::Receiver<()>,
+) -> anyhow::Result<()> {
+    select! {
+        ()  = subsys.on_shutdown_requested() => {app_handle.exit(0)},
+        _ = exit_rx => {},
+    }
+    subsys.request_global_shutdown();
     Ok(())
 }
