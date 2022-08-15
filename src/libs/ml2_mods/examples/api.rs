@@ -1,11 +1,14 @@
-use std::path::PathBuf;
+use std::{ops::Deref, path::PathBuf};
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use ml2_net::http::new_http_client;
-use tokio::fs;
+use tokio::{fs, select, sync::watch};
 
-use ml2_mods::spelunkyfyi::http::{HttpApiMods, RemoteMods};
+use ml2_mods::{
+    data::DownloadProgress,
+    spelunkyfyi::http::{HttpApiMods, RemoteMods},
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -38,7 +41,16 @@ async fn main() -> anyhow::Result<()> {
             println!("{:#?}", manifest)
         }
         Commands::DownloadMod { code, dir } => {
-            let downloaded = http_api_mods.download_mod(&code).await?;
+            let (main_tx, mut main_rx) = watch::channel(DownloadProgress::Waiting());
+            let (logo_tx, mut logo_rx) = watch::channel(DownloadProgress::Waiting());
+            let mut download_mod = http_api_mods.download_mod(&code, &main_tx, &logo_tx);
+            let downloaded = loop {
+                select! {
+                    res = (&mut download_mod) => break res?,
+                    Ok(()) = main_rx.changed() => println!("Main: {:?}", main_rx.borrow().deref()),
+                    Ok(()) = logo_rx.changed() => println!("Logo: {:?}", logo_rx.borrow().deref()),
+                }
+            };
 
             let dir = PathBuf::from(dir);
             fs::create_dir_all(&dir).await?;

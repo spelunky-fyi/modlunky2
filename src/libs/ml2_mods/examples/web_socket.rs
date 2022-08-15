@@ -4,7 +4,7 @@ use clap::Parser;
 
 use ml2_mods::{
     local::demo::LoggingLocalMods,
-    manager::ModManager,
+    manager::{ModManager, DEFAULT_RECEIVING_INTERVAL},
     spelunkyfyi::{
         demo::LoggingRemoteMods,
         web_socket::{
@@ -14,6 +14,7 @@ use ml2_mods::{
     },
 };
 use rand::distributions::Uniform;
+use tokio::sync::broadcast;
 use tokio_graceful_shutdown::{IntoSubsystem, Toplevel};
 
 #[derive(Parser)]
@@ -37,7 +38,16 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
 
-    let (manager, manager_handle) = ModManager::new(Some(LoggingRemoteMods), LoggingLocalMods);
+    // These are "dangling" because we don't wire up a full system
+    let (_detected_tx, detected_rx) = broadcast::channel(10);
+    let (changes_tx, _changes_rx) = broadcast::channel(10);
+    let (manager, manager_handle) = ModManager::new(
+        Some(LoggingRemoteMods),
+        LoggingLocalMods,
+        changes_tx,
+        detected_rx,
+        DEFAULT_RECEIVING_INTERVAL,
+    );
     let ping_interval_dist = Uniform::new(
         cli.ping_min_interval
             .map(Duration::from_secs)

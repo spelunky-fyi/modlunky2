@@ -1,6 +1,9 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
+use tokio::sync::watch;
 use tracing::{info, instrument};
+
+use crate::data::DownloadProgress;
 
 use super::{
     http::{DownloadedMod, Mod, RemoteMods},
@@ -19,7 +22,12 @@ impl RemoteMods for LoggingRemoteMods {
     }
 
     #[instrument]
-    async fn download_mod(&self, _code: &str) -> Result<DownloadedMod> {
+    async fn download_mod(
+        &self,
+        _code: &str,
+        _main_tx: &watch::Sender<DownloadProgress>,
+        _logo_tx: &watch::Sender<DownloadProgress>,
+    ) -> Result<DownloadedMod> {
         info!("download_mod");
         Err(Error::UnknownError(anyhow!("Not implemented")))
     }

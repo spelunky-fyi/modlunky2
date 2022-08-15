@@ -11,9 +11,9 @@ use ml2_mods::{
         cache::{ModCache, ModCacheHandle},
         disk::DiskMods,
     },
-    manager::{ModManager, ModManagerHandle, ModSource},
+    manager::{ModManager, ModManagerHandle, ModSource, DEFAULT_RECEIVING_INTERVAL},
     spelunkyfyi::{
-        http::HttpApiMods,
+        http::{HttpApiMods, DEFAULT_SERVICE_ROOT},
         web_socket::{
             WebSocketClient, DEFAULT_MAX_PING_INTERVAL, DEFAULT_MIN_PING_INTERVAL,
             DEFAULT_PONG_TIMEOUT,
@@ -29,15 +29,18 @@ struct Cli {
     install_path: String,
     #[clap(short = 't', long)]
     token: Option<String>,
-    #[clap(long, default_value_t = String::from("https://spelunky.fyi"))]
+    #[clap(long, default_value_t = DEFAULT_SERVICE_ROOT.to_string())]
     service_root: String,
 
+    // We poll and scan more aggressively to make the demo snappier
     #[clap(long, default_value_t = 15)]
     api_poll_interval_sec: u64,
     #[clap(long, default_value_t = 1)]
     api_poll_delay_sec: u64,
     #[clap(long, default_value_t = 5)]
     local_scan_interval_sec: u64,
+    #[clap(long, default_value_t = DEFAULT_RECEIVING_INTERVAL.as_millis() as u64)]
+    receiving_interval_millis: u64,
 
     #[clap(long)]
     ping_min_interval: Option<u64>,
@@ -73,17 +76,24 @@ async fn main() -> anyhow::Result<()> {
         .map(|token| HttpApiMods::new(&cli.service_root, token, new_http_client()))
         .transpose()?;
 
-    let (mods_tx, mods_rx) = broadcast::channel(10);
+    let (detected_tx, detected_rx) = broadcast::channel(10);
     let (mod_cache, mod_cache_handle) = ModCache::new(
         api_client.clone(),
         Duration::from_secs(cli.api_poll_interval_sec),
         Duration::from_secs(cli.api_poll_delay_sec),
-        mods_tx,
+        detected_tx,
         DiskMods::new(&cli.install_path),
         Duration::from_secs(cli.local_scan_interval_sec),
     );
 
-    let (manager, manager_handle) = ModManager::new(api_client.clone(), mod_cache.clone());
+    let (changes_tx, changes_rx) = broadcast::channel(10);
+    let (manager, manager_handle) = ModManager::new(
+        api_client.clone(),
+        mod_cache.clone(),
+        changes_tx,
+        detected_rx,
+        Duration::from_millis(cli.receiving_interval_millis),
+    );
 
     let ping_interval_dist = Uniform::new(
         cli.ping_min_interval
@@ -120,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
     }
     toplevel
         .start("CLI", |h| {
-            run(h, cli.command, manager_handle, mod_cache_handle, mods_rx)
+            run(h, cli.command, manager_handle, mod_cache_handle, changes_rx)
         })
         .handle_shutdown_requests(Duration::from_millis(1000))
         .await?;

@@ -1,5 +1,6 @@
 use std::{
     fmt::Debug,
+    num::ParseIntError,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -9,7 +10,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use http::{
-    header::{ToStrError, AUTHORIZATION, CONTENT_TYPE},
+    header::{ToStrError, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE},
     uri::{InvalidUri, InvalidUriParts},
     HeaderValue, Request, Response, Uri,
 };
@@ -23,10 +24,13 @@ use tempfile::{tempdir, TempDir};
 use tokio::{
     fs,
     io::{AsyncWrite, AsyncWriteExt as _},
-    sync::Mutex,
+    join,
+    sync::{watch, Mutex},
 };
 use tower::{Service as _, ServiceExt as _};
 use tracing::instrument;
+
+use crate::data::DownloadProgress;
 
 use super::{Error, Result};
 
@@ -90,7 +94,12 @@ pub struct DownloadedMod {
 #[async_trait]
 pub trait RemoteMods {
     async fn get_manifest(&self, code: &str) -> Result<Mod>;
-    async fn download_mod(&self, code: &str) -> Result<DownloadedMod>;
+    async fn download_mod(
+        &self,
+        code: &str,
+        main_tx: &watch::Sender<DownloadProgress>,
+        logo_tx: &watch::Sender<DownloadProgress>,
+    ) -> Result<DownloadedMod>;
 }
 
 pub const DEFAULT_SERVICE_ROOT: &str = "https://spelunky.fyi";
@@ -165,29 +174,50 @@ impl HttpApiMods {
         &self,
         uri: &str,
         writer: &mut (impl AsyncWrite + Debug + Send + Unpin),
+        progress: &watch::Sender<DownloadProgress>,
     ) -> Result<String> {
+        let _ = progress.send(DownloadProgress::Started());
         let uri = uri.parse::<Uri>()?;
         let mut res = self.get_uri(&uri, Auth::No()).await?;
         let content_type = res
             .headers()
             .get(CONTENT_TYPE)
-            .map(|v| v.to_str())
-            .transpose()?
-            .map(|s| s.to_string());
+            .ok_or_else(|| Error::GenericHttpError(anyhow!("No content type for URI {}", uri)))?
+            .to_str()?
+            .to_string();
+        let expected_bytes = if let Some(val) = res.headers().get(CONTENT_LENGTH) {
+            Some(val.to_str()?.parse::<u64>()?)
+        } else {
+            None
+        };
         tokio::pin!(writer);
+        let mut received_bytes = 0_u64;
         while let Some(chunk) = res.body_mut().data().await {
             let chunk = chunk?;
+            received_bytes += chunk.len() as u64;
+            let _ = progress.send(DownloadProgress::Receiving {
+                expected_bytes,
+                received_bytes,
+            });
             writer.write_all(&chunk).await?;
         }
-        content_type
-            .ok_or_else(|| Error::GenericHttpError(anyhow!("No content type for URI {}", uri)))
+        writer.flush().await?;
+
+        let _ = progress.send(DownloadProgress::Finished());
+        Ok(content_type)
     }
 
     #[instrument(skip_all)]
-    async fn download_mod_file(&self, mod_file: &ModFile, dir: &TempDir) -> Result<PathBuf> {
+    async fn download_mod_file(
+        &self,
+        mod_file: &ModFile,
+        dir: &TempDir,
+        progress: &watch::Sender<DownloadProgress>,
+    ) -> Result<PathBuf> {
         let file_path = dir.path().join(&mod_file.filename);
         let mut file = fs::File::create(&file_path).await?;
-        self.download(&mod_file.download_url, &mut file).await?;
+        self.download(&mod_file.download_url, &mut file, progress)
+            .await?;
         Ok(file_path)
     }
 
@@ -196,8 +226,10 @@ impl HttpApiMods {
         &self,
         logo_url: &Option<String>,
         dir: &TempDir,
+        progress: &watch::Sender<DownloadProgress>,
     ) -> Result<Option<DownloadedLogo>> {
         if logo_url.is_none() {
+            let _ = progress.send(DownloadProgress::Finished());
             return Ok(None);
         }
         let logo_url = logo_url.as_ref().unwrap();
@@ -209,7 +241,7 @@ impl HttpApiMods {
 
         let file_path = dir.path().join(&file_name);
         let mut file = fs::File::create(&file_path).await?;
-        let content_type = self.download(logo_url, &mut file).await?;
+        let content_type = self.download(logo_url, &mut file, progress).await?;
         let logo = DownloadedLogo {
             file: file_path,
             content_type,
@@ -230,7 +262,12 @@ impl RemoteMods for HttpApiMods {
     }
 
     #[instrument]
-    async fn download_mod(&self, code: &str) -> Result<DownloadedMod> {
+    async fn download_mod(
+        &self,
+        code: &str,
+        main_tx: &watch::Sender<DownloadProgress>,
+        logo_tx: &watch::Sender<DownloadProgress>,
+    ) -> Result<DownloadedMod> {
         let api_mod = self.get_manifest(code).await?;
 
         let mod_file = api_mod
@@ -240,8 +277,11 @@ impl RemoteMods for HttpApiMods {
             .clone();
 
         let dir = tempdir()?;
-        let main_file = self.download_mod_file(&mod_file, &dir).await?;
-        let logo_file = self.download_logo(&api_mod.logo, &dir).await?;
+        let (main_res, logo_res) = join!(
+            self.download_mod_file(&mod_file, &dir, main_tx),
+            self.download_logo(&api_mod.logo, &dir, logo_tx)
+        );
+        let (main_file, logo_file) = (main_res?, logo_res?);
         Ok(DownloadedMod {
             r#mod: api_mod,
             mod_file,
@@ -266,6 +306,12 @@ impl From<InvalidUriParts> for Error {
 
 impl From<ToStrError> for Error {
     fn from(e: ToStrError) -> Error {
+        Error::GenericHttpError(e.into())
+    }
+}
+
+impl From<ParseIntError> for Error {
+    fn from(e: ParseIntError) -> Error {
         Error::GenericHttpError(e.into())
     }
 }

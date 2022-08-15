@@ -3,7 +3,7 @@ use std::time::Duration;
 use ml2_mods::{
     data::{Change, ManagerError, Mod},
     local::{cache::ModCache, disk::DiskMods},
-    manager::{ModManager, ModManagerHandle, ModSource},
+    manager::{ModManager, ModManagerHandle, ModSource, DEFAULT_RECEIVING_INTERVAL},
     spelunkyfyi::{
         http::HttpApiMods,
         web_socket::{self, WebSocketClient},
@@ -32,20 +32,27 @@ pub(crate) fn setup_mod_management<R: Runtime>(
     let service_root = config.spelunky_fyi_root();
 
     let api_client = token
-        .map(|token| HttpApiMods::new(&service_root, token, http_client))
+        .map(|token| HttpApiMods::new(service_root, token, http_client))
         .transpose()?;
 
-    let (mods_tx, mods_rx) = broadcast::channel(10);
+    let (detected_tx, detected_rx) = broadcast::channel(10);
     let (mod_cache, _) = ModCache::new(
         api_client.clone(),
         Duration::from_secs(60 * 60),
         Duration::from_secs(10),
-        mods_tx,
+        detected_tx,
         DiskMods::new(&install_path),
         Duration::from_secs(15),
     );
 
-    let (manager, manager_handle) = ModManager::new(api_client.clone(), mod_cache.clone());
+    let (changes_tx, changes_rx) = broadcast::channel(10);
+    let (manager, manager_handle) = ModManager::new(
+        api_client,
+        mod_cache.clone(),
+        changes_tx,
+        detected_rx,
+        DEFAULT_RECEIVING_INTERVAL,
+    );
     app_handle.manage(manager_handle.clone());
 
     let ping_interval_dist = Uniform::new(
@@ -56,7 +63,7 @@ pub(crate) fn setup_mod_management<R: Runtime>(
         .as_ref()
         .map(|token| {
             WebSocketClient::new(
-                &service_root,
+                service_root,
                 token,
                 manager_handle.clone(),
                 ping_interval_dist,
@@ -69,7 +76,7 @@ pub(crate) fn setup_mod_management<R: Runtime>(
         .start("Mod Cache", mod_cache.into_subsystem())
         .start("Mod Manager", manager.into_subsystem())
         .start("Mod Change Emmitter", |subsys| {
-            emit_mod_changes(subsys, app_handle, mods_rx)
+            emit_mod_changes(subsys, app_handle, changes_rx)
         });
     if let Some(web_socket_client) = web_socket_client {
         toplevel = toplevel.start("WebSocket", web_socket_client.into_subsystem());
@@ -130,8 +137,8 @@ pub(crate) async fn install_local_mod(
 ) -> Result<Mod, ManagerError> {
     Ok(manager_handle
         .install(&ModSource::Local {
-            source_path: source_path,
-            dest_id: dest_id,
+            source_path,
+            dest_id,
         })
         .await?)
 }
@@ -141,9 +148,7 @@ pub(crate) async fn install_remote_mod(
     code: String,
     manager_handle: tauri::State<'_, ModManagerHandle>,
 ) -> Result<Mod, ManagerError> {
-    Ok(manager_handle
-        .install(&ModSource::Remote { code: code })
-        .await?)
+    Ok(manager_handle.install(&ModSource::Remote { code }).await?)
 }
 
 #[tauri::command]
@@ -154,8 +159,8 @@ pub(crate) async fn update_local_mod(
 ) -> Result<Mod, ManagerError> {
     Ok(manager_handle
         .update(&ModSource::Local {
-            source_path: source_path,
-            dest_id: dest_id,
+            source_path,
+            dest_id,
         })
         .await?)
 }
@@ -165,7 +170,5 @@ pub(crate) async fn update_remote_mod(
     code: String,
     manager_handle: tauri::State<'_, ModManagerHandle>,
 ) -> Result<Mod, ManagerError> {
-    Ok(manager_handle
-        .update(&ModSource::Remote { code: code })
-        .await?)
+    Ok(manager_handle.update(&ModSource::Remote { code }).await?)
 }

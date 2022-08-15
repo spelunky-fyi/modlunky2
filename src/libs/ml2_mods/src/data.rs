@@ -25,10 +25,39 @@ pub struct Manifest {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DownloadProgress {
+    Waiting(),
+    Started(),
+    Receiving {
+        expected_bytes: Option<u64>,
+        received_bytes: u64,
+    },
+    Finished(),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ModProgress {
+    Waiting {
+        id: String,
+    },
+    Started {
+        id: String,
+    },
+    Downloading {
+        id: String,
+        main_file: DownloadProgress,
+        logo_file: DownloadProgress,
+    },
+    Finished {
+        r#mod: Mod,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Change {
-    Added { r#mod: Mod },
-    Removed { id: String },
-    Updated { r#mod: Mod },
+    Add { progress: ModProgress },
+    Remove { id: String },
+    Update { progress: ModProgress },
     NewVersion { id: String },
 }
 

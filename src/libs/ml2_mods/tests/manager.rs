@@ -10,11 +10,14 @@ use ml2_mods::{
         disk::DiskMods,
         Error as LocalError,
     },
-    manager::{Error, ModManager, ModManagerHandle, ModSource},
+    manager::{Error, ModManager, ModManagerHandle, ModSource, DEFAULT_RECEIVING_INTERVAL},
     spelunkyfyi::http::HttpApiMods,
 };
 use tempfile::{tempdir, TempDir};
-use tokio::fs::{self, OpenOptions};
+use tokio::{
+    fs::{self, OpenOptions},
+    sync::broadcast,
+};
 use tokio_graceful_shutdown::{IntoSubsystem, Toplevel};
 
 fn make_provincial_mod() -> Mod {
@@ -53,8 +56,16 @@ fn testdata_install_dir() -> String {
 
 fn setup(install_path: &str) -> ModManagerHandle {
     let local_mods = DiskMods::new(install_path);
-    let (manager, handle): (ModManager<HttpApiMods, DiskMods>, ModManagerHandle) =
-        ModManager::new(None, local_mods);
+    // These are "dangling" because we don't wire up a full system
+    let (_detected_tx, detected_rx) = broadcast::channel(10);
+    let (changes_tx, _changes_rx) = broadcast::channel(10);
+    let (manager, handle): (ModManager<HttpApiMods, DiskMods>, ModManagerHandle) = ModManager::new(
+        None,
+        local_mods,
+        changes_tx,
+        detected_rx,
+        DEFAULT_RECEIVING_INTERVAL,
+    );
     let toplevel = Toplevel::new().start("ModManager", manager.into_subsystem());
     tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));
     handle

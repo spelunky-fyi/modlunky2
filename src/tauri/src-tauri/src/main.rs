@@ -31,10 +31,8 @@ pub(crate) struct Config {
 impl Config {
     pub(crate) fn spelunky_fyi_root(&self) -> &str {
         self.spelunky_fyi_root
-            .as_ref()
-            .map(|s| s.as_str())
-            .or(Some(DEFAULT_SERVICE_ROOT))
-            .unwrap()
+            .as_deref()
+            .unwrap_or(DEFAULT_SERVICE_ROOT)
     }
 }
 
@@ -90,9 +88,8 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(toplevel.handle_shutdown_requests(Duration::from_millis(1000)));
     tauri_app.run(move |_app_handle, event| {
         if let tauri::RunEvent::ExitRequested { .. } = event {
-            let inner = exit_tx_wrap.take();
-            if inner.is_some() {
-                let _ = inner.unwrap().send(());
+            if let Some(inner) = exit_tx_wrap.take() {
+                let _ = inner.send(());
             }
         }
     });

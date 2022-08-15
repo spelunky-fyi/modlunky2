@@ -7,6 +7,7 @@ use std::{
 use async_trait::async_trait;
 use derivative::Derivative;
 use rand::{distributions::Uniform, Rng};
+use serde::{Deserialize, Serialize};
 use tokio::{
     select,
     sync::{broadcast, mpsc, Mutex},
@@ -16,9 +17,8 @@ use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, instrument, trace, warn};
 
 use super::{LocalMods, Result};
-use crate::data::Mod;
 use crate::{
-    data::Change,
+    data::Mod,
     local::Error,
     spelunkyfyi::http::{DownloadedMod, Mod as ApiMod, RemoteMods},
 };
@@ -35,7 +35,7 @@ where
     api_step_dist: Uniform<Duration>,
     cache: Arc<Mutex<HashMap<String, Mod>>>,
     #[derivative(Debug = "ignore")]
-    changes_tx: broadcast::Sender<Change>,
+    detected_tx: broadcast::Sender<DetectedChange>,
     local_mods: L,
     local_scan_interval: Duration,
     #[derivative(Debug = "ignore")]
@@ -49,6 +49,14 @@ pub struct ModCacheHandle {
     ready_rx: mpsc::Receiver<()>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DetectedChange {
+    Added(Mod),
+    Updated(Mod),
+    Removed(String),
+    NewVersion(String),
+}
+
 impl<A, L> ModCache<A, L>
 where
     A: RemoteMods + Send + Sync + 'static,
@@ -58,7 +66,7 @@ where
         api_client: Option<A>,
         api_poll_interval: Duration,
         api_step_max_delay: Duration,
-        changes_tx: broadcast::Sender<Change>,
+        detected_tx: broadcast::Sender<DetectedChange>,
         local_mods: L,
         local_scan_interval: Duration,
     ) -> (Self, ModCacheHandle) {
@@ -68,7 +76,7 @@ where
             api_poll_interval,
             api_step_dist: Uniform::new(Duration::from_nanos(0), api_step_max_delay),
             cache: Arc::new(Mutex::new(HashMap::new())),
-            changes_tx,
+            detected_tx,
             local_mods,
             local_scan_interval,
             ready_tx,
@@ -172,15 +180,15 @@ where
             .collect();
         for id in removed {
             cache.remove(&id);
-            self.send_change(Change::Removed { id }).await;
+            self.send_change(DetectedChange::Removed(id)).await;
         }
 
         for new in mods.iter() {
             let old = cache.get(&new.id);
             let change = match old.map(|o| o == new) {
-                None => Some(Change::Added { r#mod: new.clone() }),
+                None => Some(DetectedChange::Added(new.clone())),
                 Some(true) => None,
-                Some(false) => Some(Change::Updated { r#mod: new.clone() }),
+                Some(false) => Some(DetectedChange::Updated(new.clone())),
             };
             if let Some(c) = change {
                 cache.insert(new.id.to_string(), new.clone());
@@ -195,7 +203,6 @@ where
         if old.is_some() {
             warn!("When installing mod {:?}, it was already in cache", new.id);
         }
-        self.send_change(Change::Added { r#mod: new.clone() }).await
     }
 
     #[instrument(skip(self))]
@@ -208,13 +215,12 @@ where
         } else {
             warn!("When updating mod {:?}, it was already in cache", new.id);
         }
-        self.send_change(Change::Added { r#mod: new.clone() }).await
     }
 
     #[instrument(skip(self))]
-    async fn send_change(&self, change: Change) {
+    async fn send_change(&self, change: DetectedChange) {
         trace!("Sending change {:?}", change);
-        if self.changes_tx.send(change).is_err() {
+        if self.detected_tx.send(change).is_err() {
             debug!("All receivers dropped");
         }
     }
@@ -273,8 +279,6 @@ where
     #[instrument(skip(self))]
     async fn remove(&self, id: &str) -> Result<()> {
         self.local_mods.remove(id).await?;
-        self.send_change(Change::Removed { id: id.to_string() })
-            .await;
         Ok(())
     }
 
@@ -310,7 +314,7 @@ where
     async fn update_latest_json(&self, api_mod: &ApiMod) -> Result<Option<String>> {
         let changed = self.local_mods.update_latest_json(api_mod).await?;
         if let Some(id) = changed.as_ref() {
-            self.send_change(Change::NewVersion { id: id.clone() })
+            self.send_change(DetectedChange::NewVersion(id.clone()))
                 .await
         }
         Ok(changed)
