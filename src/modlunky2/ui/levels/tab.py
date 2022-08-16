@@ -2278,12 +2278,14 @@ class LevelsTab(Tab):
         self.lvls_path = Path(lvl_dir)
         self.organize_pack()
         logger.debug("lvls_path = %s", lvl_dir)
-        defaults_path = self.extracts_path
         for i in tree.get_children():
             tree.delete(i)
 
         tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
-        if not str(lvl_dir).endswith("Arena"):
+
+        in_arena_folder = str(lvl_dir).endswith("Arena")
+        if not in_arena_folder:
+            defaults_path = self.extracts_path
             tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
@@ -2311,8 +2313,11 @@ class LevelsTab(Tab):
             lvl_name for lvl_name in custom_levels if lvl_name not in modded_levels
         ]
 
-        for lvl_name in custom_levels:
-            tree.insert("", "end", text=lvl_name, image=self.lvl_icon(LevelType.CUSTOM))
+        if not in_arena_folder:
+            for lvl_name in custom_levels:
+                tree.insert(
+                    "", "end", text=lvl_name, image=self.lvl_icon(LevelType.CUSTOM)
+                )
         for lvl_name in vanilla_levels:
             if lvl_name in modded_levels:
                 tree.insert(
