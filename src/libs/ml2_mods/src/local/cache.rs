@@ -16,7 +16,7 @@ use tokio::{
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 use tracing::{debug, instrument, trace, warn};
 
-use super::{LocalMods, Result};
+use super::{LocalMods, ModLogo, Result};
 use crate::{
     data::Mod,
     local::Error,
@@ -318,6 +318,11 @@ where
                 .await
         }
         Ok(changed)
+    }
+
+    #[instrument(skip(self))]
+    async fn get_mod_logo(&self, id: &str) -> Result<ModLogo> {
+        self.local_mods.get_mod_logo(id).await
     }
 }
 

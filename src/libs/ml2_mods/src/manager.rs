@@ -11,7 +11,7 @@ use tracing::{debug, info, instrument};
 
 use crate::data::{Change, DownloadProgress, Mod, ModProgress};
 use crate::local::cache::DetectedChange;
-use crate::local::{Error as LocalError, LocalMods};
+use crate::local::{Error as LocalError, LocalMods, ModLogo};
 use crate::spelunkyfyi::{
     http::{DownloadedMod, RemoteMods},
     Error as RemoteError,
@@ -42,6 +42,11 @@ enum Command {
         package: ModSource,
         #[derivative(Debug = "ignore")]
         resp: oneshot::Sender<Result<Mod>>,
+    },
+    GetModLogo {
+        id: String,
+        #[derivative(Debug = "ignore")]
+        resp: oneshot::Sender<Result<ModLogo>>,
     },
 }
 
@@ -182,7 +187,12 @@ where
             }
             Command::Update { package, resp } => {
                 if resp.send(self.update_mod(package.clone()).await).is_err() {
-                    info!("Receiver dropped for Install({:?})", package);
+                    info!("Receiver dropped for Update({:?})", package);
+                }
+            }
+            Command::GetModLogo { id, resp } => {
+                if resp.send(self.get_mod_logo(&id).await).is_err() {
+                    info!("Receiver dropped for GetModLogo({:?})", id);
                 }
             }
         }
@@ -380,6 +390,11 @@ where
             }
         }
     }
+
+    #[instrument(skip(self))]
+    async fn get_mod_logo(&self, id: &str) -> Result<ModLogo> {
+        Ok(self.local_mods.get_mod_logo(id).await?)
+    }
 }
 
 impl<A, L> std::fmt::Debug for ModManager<A, L>
@@ -468,6 +483,19 @@ impl ModManagerHandle {
         self.commands_tx
             .send(Command::Update {
                 package: package.clone(),
+                resp: tx,
+            })
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))?;
+        rx.await.map_err(|e| Error::ChannelError(e.into()))?
+    }
+
+    #[instrument]
+    pub async fn get_mod_logo(&self, mod_id: &str) -> Result<ModLogo> {
+        let (tx, rx) = oneshot::channel();
+        self.commands_tx
+            .send(Command::GetModLogo {
+                id: mod_id.to_string(),
                 resp: tx,
             })
             .await

@@ -1,5 +1,6 @@
-use std::time::Duration;
+use std::{future::Future, time::Duration};
 
+use anyhow::anyhow;
 use ml2_mods::{
     data::{Change, ManagerError, Mod},
     local::{cache::ModCache, disk::DiskMods},
@@ -11,13 +12,16 @@ use ml2_mods::{
 };
 use ml2_net::http::HttpClient;
 use rand::distributions::Uniform;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{
+    http::{Request, Response, ResponseBuilder},
+    AppHandle, Manager, Runtime,
+};
 use tokio::{
     select,
     sync::broadcast::{self, error::RecvError},
 };
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
-use tracing::log::warn;
+use tracing::warn;
 
 use crate::Config;
 
@@ -75,13 +79,53 @@ pub(crate) fn setup_mod_management<R: Runtime>(
     let mut toplevel = toplevel
         .start("Mod Cache", mod_cache.into_subsystem())
         .start("Mod Manager", manager.into_subsystem())
-        .start("Mod Change Emmitter", |subsys| {
+        .start("Mod Change Emitter", |subsys| {
             emit_mod_changes(subsys, app_handle, changes_rx)
         });
     if let Some(web_socket_client) = web_socket_client {
         toplevel = toplevel.start("WebSocket", web_socket_client.into_subsystem());
     }
     Ok(toplevel)
+}
+
+pub(crate) fn handle_mod_logo_request<R: Runtime>(
+    app_handle: &AppHandle<R>,
+    request: &Request,
+) -> Result<Response, Box<dyn std::error::Error>> {
+    let mod_id = request
+        .uri()
+        .strip_prefix("mod-logo://localhost/")
+        .ok_or_else(|| anyhow!("Request URI {:?} has unexpected prefix", request.uri()))?;
+    let manager: tauri::State<ModManagerHandle> = app_handle.state();
+
+    let logo = {
+        let mod_id = mod_id.to_string();
+        let manager = manager.inner().clone();
+        safe_block_on(async move { manager.get_mod_logo(&mod_id).await })?
+    };
+    ResponseBuilder::new()
+        .status(200)
+        .mimetype(&logo.mime_type)
+        .body(logo.bytes)
+}
+
+// This works around block_on panicking when run from within Tokio.
+// The code is copy-pasted from tauri/src/async_runtime.rs
+pub(crate) fn safe_block_on<F>(task: F) -> F::Output
+where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        let (tx, rx) = std::sync::mpsc::sync_channel(1);
+        let handle_ = handle.clone();
+        handle.spawn_blocking(move || {
+            tx.send(handle_.block_on(task)).unwrap();
+        });
+        rx.recv().unwrap()
+    } else {
+        tauri::async_runtime::block_on(task)
+    }
 }
 
 async fn emit_mod_changes<R: Runtime>(

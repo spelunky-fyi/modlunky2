@@ -17,7 +17,7 @@ use tokio::select;
 use tokio_graceful_shutdown::{SubsystemHandle, Toplevel};
 use tracing::info;
 
-use crate::mods::setup_mod_management;
+use crate::mods::{handle_mod_logo_request, setup_mod_management};
 
 // IMPORTANT: This definition is incomplete and shouldn't be persisted
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -64,6 +64,7 @@ async fn main() -> anyhow::Result<()> {
             mods::update_local_mod,
             mods::update_remote_mod
         ])
+        .register_uri_scheme_protocol("mod-logo", handle_mod_logo_request)
         .build(tauri::generate_context!())?;
 
     let (exit_tx, exit_rx) = tokio::sync::oneshot::channel();

@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use tracing::{info, instrument};
 
-use super::{Error, LocalMods, Result};
+use super::{Error, LocalMods, ModLogo, Result};
 use crate::{
     data::Mod,
     spelunkyfyi::http::{DownloadedMod, Mod as ApiMod},
@@ -58,6 +58,12 @@ impl LocalMods for LoggingLocalMods {
     #[instrument]
     async fn update_latest_json(&self, _api_mod: &ApiMod) -> Result<Option<String>> {
         info!("update_latest_json");
+        Err(Error::UnknownError(anyhow!("Not implemented")))
+    }
+
+    #[instrument(skip(self))]
+    async fn get_mod_logo(&self, _id: &str) -> Result<ModLogo> {
+        info!("get_logo_bytes");
         Err(Error::UnknownError(anyhow!("Not implemented")))
     }
 }

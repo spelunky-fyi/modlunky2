@@ -11,6 +11,7 @@ use tracing::{debug, instrument};
 use zip::result::ZipError;
 use zip::ZipArchive;
 
+use super::ModLogo;
 use super::{
     constants::{LATEST_FILENAME, MANIFEST_FILENAME, MODS_SUBPATH, MOD_METADATA_SUBPATH},
     Error, LocalMods, Result,
@@ -362,6 +363,37 @@ impl LocalMods for DiskMods {
             fs::write(&path, json).await?;
             Ok(Some(id))
         }
+    }
+
+    #[instrument(skip(self))]
+    async fn get_mod_logo(&self, id: &str) -> Result<ModLogo> {
+        let logo_name = self
+            .load_mod_manifest(id)
+            .await?
+            .ok_or_else(|| anyhow!("Mod {:?} has no manifest. Therefore it has no logo", id))?
+            .logo
+            .ok_or_else(|| anyhow!("Mod {:?} has no logo", id))?;
+        let logo_path = self.manifest_dir_path(id).join(&logo_name);
+
+        let ext = logo_path
+            .extension()
+            .ok_or_else(|| anyhow!("No extenison in {:?} for mod {:?}", logo_name, id))?
+            .to_str()
+            .ok_or_else(|| anyhow!("Non-unicode extension in {:?} for mod {:?}", logo_name, id))?;
+        let mime_type = match ext {
+            "jpg" => "imag/jpeg",
+            "gif" => "imag/gif",
+            "png" => "image/png",
+            _ => {
+                return Err(
+                    anyhow!("Unexpected extension in {:?} for mod {:?}", logo_name, id).into(),
+                )
+            }
+        }
+        .to_string();
+
+        let bytes = fs::read(&logo_path).await?;
+        Ok(ModLogo { mime_type, bytes })
     }
 }
 
