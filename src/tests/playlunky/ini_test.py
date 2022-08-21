@@ -10,14 +10,14 @@ def test_legacy_keep_unknown():
             dedent(
                 """\
         [settings]
-        random_character_select=off
-        enable_loose_audio_files=on
+        random_character_select=false
+        enable_loose_audio_files=true
         some_unknown_field=ABACAB00
-        cache_decoded_audio_files=off  # test inline-comment
-        enable_developer_mode=off
+        cache_decoded_audio_files=false  # test inline-comment
+        enable_developer_mode=false
 
         [script_settings]
-        enable_developer_console=on
+        enable_developer_console=true
         console_history_size=50  # test inline-comment
     """
             )
@@ -37,28 +37,28 @@ def test_legacy_keep_unknown():
         some_unknown_field=ABACAB00
         
         [script_settings]
-        enable_developer_console=on
+        enable_developer_console=true
         console_history_size=50
-        enable_developer_mode=off
+        enable_developer_mode=false
 
         [general_settings]
-        enable_loose_file_warning=on
-        disable_asset_caching=off
-        block_save_game=off
-        allow_save_game_mods=on
-        speedrun_mode=off
+        enable_loose_file_warning=true
+        disable_asset_caching=false
+        block_save_game=false
+        allow_save_game_mods=true
+        speedrun_mode=false
 
         [audio_settings]
-        enable_loose_audio_files=on
-        cache_decoded_audio_files=off
-        synchronous_update=on
+        enable_loose_audio_files=true
+        cache_decoded_audio_files=false
+        synchronous_update=true
 
         [sprite_settings]
-        random_character_select=on
-        generate_character_journal_stickers=on
-        generate_character_journal_entries=on
-        generate_sticker_pixel_art=on
-        enable_sprite_hot_loading=off
+        random_character_select=true
+        generate_character_journal_stickers=true
+        generate_character_journal_entries=true
+        generate_sticker_pixel_art=true
+        enable_sprite_hot_loading=false
         sprite_hot_load_delay=400
     """
         ).strip()
@@ -71,13 +71,13 @@ def test_legacy_no_unknowns():
             dedent(
                 """\
         [settings]
-        random_character_select=off
-        enable_loose_audio_files=on
-        cache_decoded_audio_files=off
-        enable_developer_mode=off
+        random_character_select=false
+        enable_loose_audio_files=true
+        cache_decoded_audio_files=false
+        enable_developer_mode=false
 
         [script_settings]
-        enable_developer_console=on
+        enable_developer_console=true
         console_history_size=50
     """
             )
@@ -94,28 +94,28 @@ def test_legacy_no_unknowns():
         == dedent(
             """\
         [script_settings]
-        enable_developer_console=on
+        enable_developer_console=true
         console_history_size=50
-        enable_developer_mode=off
+        enable_developer_mode=false
 
         [general_settings]
-        enable_loose_file_warning=on
-        disable_asset_caching=off
-        block_save_game=off
-        allow_save_game_mods=on
-        speedrun_mode=off
+        enable_loose_file_warning=true
+        disable_asset_caching=false
+        block_save_game=false
+        allow_save_game_mods=true
+        speedrun_mode=false
 
         [audio_settings]
-        enable_loose_audio_files=on
-        cache_decoded_audio_files=off
-        synchronous_update=on
+        enable_loose_audio_files=true
+        cache_decoded_audio_files=false
+        synchronous_update=true
 
         [sprite_settings]
-        random_character_select=on
-        generate_character_journal_stickers=on
-        generate_character_journal_entries=on
-        generate_sticker_pixel_art=on
-        enable_sprite_hot_loading=off
+        random_character_select=true
+        generate_character_journal_stickers=true
+        generate_character_journal_entries=true
+        generate_sticker_pixel_art=true
+        enable_sprite_hot_loading=false
         sprite_hot_load_delay=400
     """
         ).strip()
@@ -140,10 +140,10 @@ def test_ini_with_known_values():
             dedent(
                 """\
         [settings]
-        random_character_select=off
-        enable_loose_audio_files=on
-        cache_decoded_audio_files=off
-        enable_developer_mode=off
+        random_character_select=false
+        enable_loose_audio_files=true
+        cache_decoded_audio_files=false
+        enable_developer_mode=false
     """
             )
         )
@@ -167,7 +167,7 @@ def test_ini_with_partial_config():
             dedent(
                 """\
         [settings]
-        random_character_select=off
+        random_character_select=false
     """
             )
         )
