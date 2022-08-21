@@ -21,7 +21,7 @@ use tokio::{
     sync::broadcast::{self, error::RecvError},
 };
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle, Toplevel};
-use tracing::warn;
+use tracing::{instrument, warn};
 
 use crate::Config;
 
@@ -128,6 +128,7 @@ where
     }
 }
 
+#[instrument(skip_all)]
 async fn emit_mod_changes<R: Runtime>(
     subsys: SubsystemHandle,
     app_handle: AppHandle<R>,
