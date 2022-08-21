@@ -107,9 +107,9 @@ class PlaylunkyConfig:
     @staticmethod
     def set_boolean(ini: configparser.ConfigParser, name: str, val: bool):
         if val is True:
-            val = "on"
+            val = "true"
         else:
-            val = "off"
+            val = "false"
 
         ini.set(OPTION_TO_SECTION[name], name, val)
 
