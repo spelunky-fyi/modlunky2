@@ -23,7 +23,7 @@ def download_overlunky_release(call, install_dir, launch):
 
     try:
         download_file = BytesIO()
-        response = requests.get(OVERLUNKY_RELEASE_URL, stream=True)
+        response = requests.get(OVERLUNKY_RELEASE_URL, stream=True, timeout=5)
         amount_downloaded = 0
         block_size = 102400
 

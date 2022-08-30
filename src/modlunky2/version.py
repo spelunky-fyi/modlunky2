@@ -12,7 +12,8 @@ def latest_version():
     try:
         return version.parse(
             requests.get(
-                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest"
+                "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest",
+                timeout=5,
             ).json()["tag_name"]
         )
     except Exception:  # pylint: disable=broad-except
