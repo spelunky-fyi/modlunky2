@@ -6,7 +6,7 @@ from anyio import run
 from anyio.to_thread import run_sync
 from hypercorn.asyncio import serve
 from hypercorn.config import Config as HypercornConfig
-from hypercorn.typing import ASGI3Framework
+from hypercorn.typing import Framework
 
 from modlunky2.config import Config
 from modlunky2.web.demo import make_asgi_app
@@ -35,8 +35,8 @@ def _async_worker(config: Config, shutting_down: threading.Event):
 
     async def _serve():
         await serve(
-            # Hypercorn's ASGI3Framework uses a more precise type than Starlette
-            typing.cast(ASGI3Framework, app),
+            # Hypercorn's Framework uses a more precise type than Starlette
+            typing.cast(Framework, app),
             hypercorn_conf,
             shutdown_trigger=shutdown_trigger,
         )
