@@ -49,7 +49,7 @@ def download_playlunky_release(call, tag, download_url, launch):
             raise ValueError("Expected .zip but didn't find one")
 
         download_file = BytesIO()
-        response = requests.get(download_url, stream=True)
+        response = requests.get(download_url, stream=True, timeout=5)
         amount_downloaded = 0
         block_size = 102400
 
@@ -216,7 +216,7 @@ def cache_playlunky_releases(call):
     )
     try:
         logger.debug("Downloading releases to %s", temp_path)
-        response = requests.get(PLAYLUNKY_RELEASES_URL, allow_redirects=True)
+        response = requests.get(PLAYLUNKY_RELEASES_URL, allow_redirects=True, timeout=5)
         if not response.ok:
             logger.warning(
                 "Failed to cache playlunky releases... Will try again later."
