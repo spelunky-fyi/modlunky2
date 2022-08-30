@@ -2,7 +2,7 @@ Pillow==9.2.0
 anyio==3.6.1
 colorhash==1.0.4
 fnvhash==0.1.0
-hypercorn==0.13.2
+hypercorn==0.14.1
 packaging==21.3
 platformdirs==2.5.2
 pyperclip==1.8.2
