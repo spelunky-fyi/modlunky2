@@ -265,7 +265,7 @@ def download_contents(_call, url):
     contents = BytesIO()
 
     try:
-        response = requests.get(url, stream=True, allow_redirects=True)
+        response = requests.get(url, stream=True, allow_redirects=True, timeout=5)
         response.raise_for_status()
         amount_downloaded = 0
         block_size = 102400
