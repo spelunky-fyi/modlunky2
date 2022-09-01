@@ -11,12 +11,12 @@ directories = "4.0.1"
 zip = "0.6.2"
 anyhow = "1.0.63"
 clap = "3.2.19"
-sha2 = "0.10.2"
+sha2 = "0.10.3"
 
 [build-dependencies]
 zip = "0.6.2"
 walkdir = "2.3.2"
-sha2 = "0.10.2"
+sha2 = "0.10.3"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
