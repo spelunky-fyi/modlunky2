@@ -196,20 +196,24 @@ MISC_CATEGORIES = [
     ({Label.NO, Label.NO_GOLD, Label.LOW, Label.SUNKEN_CITY}, "No% Sunken City"),
     # -------------------------------------------
     (
+        {Label.ICE_CAVES_SHORTCUT, Label.ANY},
+        "Ice Caves Shortcut Any%",
+    ),
+    (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
-        "Ice Caves Shortcut%",
+        "Ice Caves Shortcut Low%",
     ),
     (
         {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
-        "Pacifist Ice Caves Shortcut%",
+        "Pacifist Ice Caves Shortcut Low%",
     ),
     (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.MILLIONAIRE, Label.ANY},
-        "Ice Caves Shortcut% Millionaire",
+        "Ice Caves Shortcut Low% Millionaire",
     ),
     (
         {Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
-        "Ice Caves Shortcut Sunken City%",
+        "Ice Caves Shortcut Low% Sunken City",
     ),
 ]
 
@@ -371,11 +375,11 @@ PACIFIST_CATEGORIES = [
     ),
     (
         {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.ANY},
-        "Pacifist Ice Caves Shortcut%",
+        "Pacifist Ice Caves Shortcut Low%",
     ),
     (
         {Label.PACIFIST, Label.ICE_CAVES_SHORTCUT, Label.LOW, Label.SUNKEN_CITY},
-        "Pacifist Ice Caves Shortcut Sunken City%",
+        "Pacifist Ice Caves Shortcut Low% Sunken City",
     ),
 ]
 

@@ -679,7 +679,7 @@ class RunState:
 
     def fail_low(self):
         self.is_low_percent = False
-        self.run_label.discard(Label.LOW, Label.NO, Label.ICE_CAVES_SHORTCUT)
+        self.run_label.discard(Label.LOW, Label.NO)
 
     def update_on_level_start(self, world: int, theme: Theme, ropes: int):
         if not self.level_started:

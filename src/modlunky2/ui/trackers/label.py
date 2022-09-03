@@ -30,9 +30,9 @@ class Label(Enum):
     NO_TELEPORTER = LabelMetadata("No TP", start=True)
     NO_GOLD = LabelMetadata("No Gold", start=True)
     PACIFIST = LabelMetadata("Pacifist", start=True)
+    ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut")
     CHAIN = LabelMetadata("Chain")
     LOW = LabelMetadata("Low", start=True, hide_early=False, percent_priority=5)
-    ICE_CAVES_SHORTCUT = LabelMetadata("Ice Caves Shortcut", percent_priority=0)
     NO = LabelMetadata("No", start=True, hide_early=False, percent_priority=5)
     ANY = LabelMetadata(
         "Any", start=True, hide_early=False, percent_priority=4, terminus=True
@@ -198,8 +198,8 @@ class RunLabel:
             if Label.LOW not in vis:
                 vis.discard(Label.CHAIN)
 
-        # Handle ICS% and No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
-        if not vis.isdisjoint({Label.NO, Label.ICE_CAVES_SHORTCUT}):
+        # Handle No% hiding Low%. We do this here to avoid multiple passes over _HIDES/duplicating _HIDES[Label.LOW]
+        if not vis.isdisjoint({Label.NO}):
             vis.discard(Label.LOW)
             vis -= self._HIDES[Label.LOW]
 
