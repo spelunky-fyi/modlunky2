@@ -6,9 +6,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
-use clap::App;
 use clap::AppSettings;
 use clap::Arg;
+use clap::Command;
 use directories::ProjectDirs;
 use sha2::Digest;
 use sha2::Sha256;
@@ -29,7 +29,7 @@ fn unzip(dest: &Path) -> Result<()> {
             None => continue,
         };
 
-        if (&*file.name()).ends_with('/') {
+        if (*file.name()).ends_with('/') {
             println!("File {} extracted to \"{}\"", i, outpath.display());
             fs::create_dir_all(&outpath)?;
         } else {
@@ -92,7 +92,7 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
 }
 
 fn main() -> Result<()> {
-    let launcher_matches = App::new("modlunky2")
+    let launcher_matches = Command::new("modlunky2")
         .setting(AppSettings::TrailingVarArg)
         .setting(AppSettings::DontDelimitTrailingValues)
         .setting(AppSettings::AllowLeadingHyphen)
