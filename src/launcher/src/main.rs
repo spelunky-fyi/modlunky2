@@ -6,8 +6,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
-use clap::AppSettings;
 use clap::Arg;
+use clap::ArgAction;
 use clap::Command;
 use directories::ProjectDirs;
 use sha2::Digest;
@@ -93,35 +93,37 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
 
 fn main() -> Result<()> {
     let launcher_matches = Command::new("modlunky2")
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontDelimitTrailingValues)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::DisableVersion)
-        .setting(AppSettings::DisableHelpFlags)
-        .setting(AppSettings::DisableHelpSubcommand)
+        .trailing_var_arg(true)
+        .dont_delimit_trailing_values(true)
+        .allow_hyphen_values(true)
+        .disable_version_flag(true)
+        .disable_help_flag(true)
+        .disable_help_subcommand(true)
         .arg(
-            Arg::with_name("clear-cache")
+            Arg::new("clear-cache")
                 .long("clear-cache")
                 .required(false)
-                .takes_value(false),
+                .takes_value(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::with_name("verify-hashes")
+            Arg::new("verify-hashes")
                 .long("verify-hashes")
                 .required(false)
+                .action(ArgAction::SetTrue)
                 .takes_value(false),
         )
         .arg(
-            Arg::with_name("remainder")
-                .multiple(true)
+            Arg::new("remainder")
+                .multiple_values(true)
                 .allow_hyphen_values(true),
         )
         .get_matches();
 
-    let should_clear_cache: bool = launcher_matches.is_present("clear-cache");
-    let should_verify_hashes: bool = launcher_matches.is_present("verify-hashes");
+    let should_clear_cache: bool = launcher_matches.get_flag("clear-cache");
+    let should_verify_hashes: bool = launcher_matches.get_flag("verify-hashes");
     let remainder: Vec<_> = launcher_matches
-        .values_of("remainder")
+        .get_many::<String>("remainder")
         .map_or_else(std::vec::Vec::new, |v| v.collect());
 
     let project_dirs = ProjectDirs::from("", "spelunky.fyi", "modlunky2")
