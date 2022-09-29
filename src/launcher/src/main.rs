@@ -93,9 +93,7 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
 
 fn main() -> Result<()> {
     let launcher_matches = Command::new("modlunky2")
-        .trailing_var_arg(true)
         .dont_delimit_trailing_values(true)
-        .allow_hyphen_values(true)
         .disable_version_flag(true)
         .disable_help_flag(true)
         .disable_help_subcommand(true)
@@ -103,20 +101,19 @@ fn main() -> Result<()> {
             Arg::new("clear-cache")
                 .long("clear-cache")
                 .required(false)
-                .takes_value(false)
                 .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("verify-hashes")
                 .long("verify-hashes")
                 .required(false)
-                .action(ArgAction::SetTrue)
-                .takes_value(false),
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("remainder")
-                .multiple_values(true)
-                .allow_hyphen_values(true),
+                .trailing_var_arg(true)
+                .allow_hyphen_values(true)
+                .action(ArgAction::Append),
         )
         .get_matches();
 
