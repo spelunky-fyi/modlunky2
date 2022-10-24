@@ -137,15 +137,27 @@ class OlmecAndMech(BaseJsonSpriteLoader):
     _sprite_sheet_path = Path("Data/Textures/monsters_olmec.png")
     _chunk_size = 128
     _chunk_map = {
+        # textures.json would require additional handling. So, we just define each piece manually
         "olmec": (0, 0, 4, 4),
+        "olmec_stone1": (4, 0, 8, 4),
+        "olmec_stone2": (8, 0, 12, 4),
+        "olmec_stone3": (12, 0, 16, 4),
+        "olmec_piece1": (0, 4, 4, 6),
+        "olmec_piece2": (0, 6, 4, 8),
+        "olmec_piece3": (0, 8, 4, 10),
+        "olmec_piece4": (0, 10, 4, 12),
+        "olmec_piece5": (0, 12, 4, 14),
+        "olmec_cannon1": (4, 4, 8, 6),
+        "olmec_cannon2": (4, 6, 8, 8),
+        "olmec_cannon3": (4, 8, 8, 10),
+        "olmec_cannon4": (8, 4, 10, 6),
+        "olmec_cannon5": (8, 6, 10, 8),
+        "olmec_floater1": (10, 4, 12, 5),
+        "olmec_floater2": (12, 4, 14, 5),
+        "olmec_floater3": (14, 4, 16, 5),
         "empty_mech": (10, 5, 12, 7),
     }
     _entity_names = [
-        "ENT_TYPE_FX_OLMECPART_FLOATER",
-        "ENT_TYPE_FX_OLMECPART_LARGE",
-        "ENT_TYPE_FX_OLMECPART_MEDIUM",
-        "ENT_TYPE_FX_OLMECPART_SMALL",
-        "ENT_TYPE_FX_OLMECPART_SMALLEST",
         "ENT_TYPE_MOUNT_MECH",
         "ENT_TYPE_FX_MECH_COLLAR",
     ]
