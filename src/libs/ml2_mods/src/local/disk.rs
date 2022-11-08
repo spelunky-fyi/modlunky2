@@ -458,7 +458,7 @@ fn extract_zip_archive(
     let paths = fix_zip_names(paths, rename_lua, remove_first);
     for (i, dest_subpath) in paths.iter().enumerate().take(archive.len()) {
         let mut file = archive.by_index(i)?;
-        let dest_path = dest.join(&dest_subpath);
+        let dest_path = dest.join(dest_subpath);
         debug!("extracting {:?} to {:?}", file.name(), dest_path);
         if file.is_dir() {
             std::fs::create_dir_all(dest_path)?;

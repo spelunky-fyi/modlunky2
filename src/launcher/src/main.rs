@@ -41,7 +41,7 @@ fn unzip(dest: &Path) -> Result<()> {
             );
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    fs::create_dir_all(&p)?;
+                    fs::create_dir_all(p)?;
                 }
             }
             let mut outfile = fs::File::create(&outpath)?;
@@ -85,7 +85,7 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
 
     if should_invalidate {
         println!("Clearing cached directory at {:?}", release_dir);
-        std::fs::remove_dir_all(&release_dir)?;
+        std::fs::remove_dir_all(release_dir)?;
     }
 
     Ok(())

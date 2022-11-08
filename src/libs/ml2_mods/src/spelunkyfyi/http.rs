@@ -239,7 +239,7 @@ impl HttpApiMods {
             .file_name()
             .ok_or_else(|| Error::UnknownError(anyhow!("Logo URL doesn't have a file name")))?;
 
-        let file_path = dir.path().join(&file_name);
+        let file_path = dir.path().join(file_name);
         let mut file = fs::File::create(&file_path).await?;
         let content_type = self.download(logo_url, &mut file, progress).await?;
         let logo = DownloadedLogo {

@@ -45,7 +45,7 @@ where
             let mut f = File::open(path)?;
 
             f.read_to_end(&mut buffer)?;
-            zip.write_all(&*buffer)?;
+            zip.write_all(&buffer)?;
             let digest = Sha256::digest(&buffer);
             buffer.clear();
             hashes.insert(name.to_str().unwrap().into(), format!("{:x}", digest));
