@@ -1,4 +1,6 @@
-from chunk import Chunk
+# Per PEP 594, the chunk module is deprecated in Python 3.11.
+# It must be replaced by Python 3.12's EoL (ETA Oct 2028)
+from chunk import Chunk  # pylint: disable=deprecated-module
 
 
 class RIFFChunk(Chunk):
