@@ -56,8 +56,9 @@ class Theme(ttk.LabelFrame):
 
 
 class InstallDir(ttk.LabelFrame):
-    def __init__(self, parent, modlunky_config: Config):
+    def __init__(self, parent, tab_control, modlunky_config: Config):
         super().__init__(parent, text="Install Directory")
+        self.tab_control = tab_control
         self.modlunky_config = modlunky_config
 
         self.columnconfigure(0, weight=1)
@@ -104,6 +105,8 @@ class InstallDir(ttk.LabelFrame):
             self.install_dir_var.set(directory)
             self.modlunky_config.install_dir = Path(directory)
             self.modlunky_config.save()
+            for i in range(0, 5):
+                self.tab_control.tab(i, state="normal")
 
     def feeling_lucky(self):
         install_dir = guess_install_dir(self.modlunky_config.exe_dir)
@@ -111,11 +114,16 @@ class InstallDir(ttk.LabelFrame):
             self.install_dir_var.set(str(install_dir))
             self.modlunky_config.install_dir = install_dir
             self.modlunky_config.save()
+            for i in range(0, 5):
+                self.tab_control.tab(i, state="normal")
 
     def clear_install_dir(self):
         self.install_dir_var.set("")
         self.modlunky_config.install_dir = None
         self.modlunky_config.save()
+        logger.critical("You must go to the Settings and set the Install Directory!")
+        for i in range(0, 5):
+            self.tab_control.tab(i, state="disabled")
 
 
 class FYISettings(ttk.LabelFrame):
@@ -229,7 +237,7 @@ class SettingsTab(Tab):
         config_frame.columnconfigure(0, weight=1)
         config_frame.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
-        install_dir_frame = InstallDir(config_frame, modlunky_config)
+        install_dir_frame = InstallDir(config_frame, tab_control, modlunky_config)
         install_dir_frame.grid(row=0, column=0, pady=5, padx=5, sticky="new")
 
         theme_frame = Theme(config_frame, modlunky_config)

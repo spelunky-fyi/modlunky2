@@ -14,6 +14,8 @@ SECTIONS = {
         "speedrun_mode",
         "block_save_game",
         "allow_save_game_mods",
+        "disable_steam_achievements",
+        "use_playlunky_save",
     ],
     "script_settings": [
         "enable_developer_mode",
@@ -27,11 +29,14 @@ SECTIONS = {
     ],
     "sprite_settings": [
         "random_character_select",
+        "link_related_files",
         "generate_character_journal_stickers",
         "generate_character_journal_entries",
         "generate_sticker_pixel_art",
         "enable_sprite_hot_loading",
         "sprite_hot_load_delay",
+        "enable_customizable_sheets",
+        "enable_luminance_scaling",
     ],
 }
 
@@ -59,6 +64,8 @@ class PlaylunkyConfig:
     disable_asset_caching: bool = False
     block_save_game: bool = False
     allow_save_game_mods: bool = True
+    use_playlunky_save: bool = False
+    disable_steam_achievements: bool = False
     speedrun_mode: bool = False
 
     # Script Settings
@@ -73,11 +80,14 @@ class PlaylunkyConfig:
 
     # Sprite Settings
     random_character_select: bool = False
+    link_related_files: bool = True
     generate_character_journal_stickers: bool = True
     generate_character_journal_entries: bool = True
     generate_sticker_pixel_art: bool = True
     enable_sprite_hot_loading: bool = False
     sprite_hot_load_delay: int = 400
+    enable_customizable_sheets: bool = True
+    enable_luminance_scaling: bool = True
 
     @classmethod
     def from_ini(cls, handle: TextIO) -> "PlaylunkyConfig":
