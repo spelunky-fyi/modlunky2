@@ -70,6 +70,8 @@ class LevelsTab(Tab):
         **kwargs,
     ):  # Loads editor start screen
         super().__init__(tab_control, *args, **kwargs)
+        if not modlunky_config.install_dir:
+            return
         self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
@@ -335,6 +337,8 @@ class LevelsTab(Tab):
             self.load_editor()
 
     def on_load(self):
+        if not hasattr(self, "install_dir"):
+            return
         self._sprite_fetcher = SpelunkySpriteFetcher(
             self.install_dir / "Mods/Extracted"
         )

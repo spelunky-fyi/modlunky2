@@ -124,7 +124,10 @@ class PlayTab(Tab):
 
         # Play Button
         self.button_play = ttk.Button(
-            self, text="Play!", state=tk.DISABLED, command=self.play
+            self,
+            text="Play!",
+            state=tk.DISABLED,
+            command=self.play,
         )
         self.button_play.grid(row=3, column=0, pady=5, padx=5, sticky="nswe")
 
@@ -202,7 +205,7 @@ class PlayTab(Tab):
 
     def load_from_load_order(self):
         load_order_path = self.load_order_path
-        if not load_order_path.exists():
+        if not load_order_path or not load_order_path.exists():
             return
 
         with load_order_path.open("r") as load_order_file:
@@ -243,6 +246,8 @@ class PlayTab(Tab):
 
     @property
     def load_order_path(self):
+        if not self.modlunky_config.install_dir:
+            return False
         return self.modlunky_config.install_dir / "Mods/Packs/load_order.txt"
 
     def should_install(self):

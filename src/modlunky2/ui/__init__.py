@@ -230,6 +230,13 @@ class ModlunkyUI:
             modlunky_config=modlunky_config,
         )
 
+        if not modlunky_config.install_dir:
+            logger.critical(
+                "You must go to the Settings and set the Install Directory to use modlunky2!"
+            )
+            for i in range(0, 5):
+                self.tab_control.tab(i, state="disabled")
+
         self.select_last_tab()
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_change)
         self.tab_control.grid(column=0, row=1, padx=2, pady=(4, 0), sticky="nsew")
@@ -486,6 +493,7 @@ class ModlunkyUI:
 
     def mainloop(self):
         try:
+
             self.root.mainloop()
         except KeyboardInterrupt:
             self.quit()
