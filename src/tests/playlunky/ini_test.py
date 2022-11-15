@@ -46,6 +46,8 @@ def test_legacy_keep_unknown():
         disable_asset_caching=false
         block_save_game=false
         allow_save_game_mods=true
+        use_playlunky_save=false
+        disable_steam_achievements=false
         speedrun_mode=false
 
         [audio_settings]
@@ -55,11 +57,14 @@ def test_legacy_keep_unknown():
 
         [sprite_settings]
         random_character_select=true
+        link_related_files=true
         generate_character_journal_stickers=true
         generate_character_journal_entries=true
         generate_sticker_pixel_art=true
         enable_sprite_hot_loading=false
         sprite_hot_load_delay=400
+        enable_customizable_sheets=true
+        enable_luminance_scaling=true
     """
         ).strip()
     )
@@ -103,6 +108,8 @@ def test_legacy_no_unknowns():
         disable_asset_caching=false
         block_save_game=false
         allow_save_game_mods=true
+        use_playlunky_save=false
+        disable_steam_achievements=false
         speedrun_mode=false
 
         [audio_settings]
@@ -112,11 +119,14 @@ def test_legacy_no_unknowns():
 
         [sprite_settings]
         random_character_select=true
+        link_related_files=true
         generate_character_journal_stickers=true
         generate_character_journal_entries=true
         generate_sticker_pixel_art=true
         enable_sprite_hot_loading=false
         sprite_hot_load_delay=400
+        enable_customizable_sheets=true
+        enable_luminance_scaling=true
     """
         ).strip()
     )
