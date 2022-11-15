@@ -124,10 +124,7 @@ class PlayTab(Tab):
 
         # Play Button
         self.button_play = ttk.Button(
-            self,
-            text="Play!",
-            state=tk.DISABLED,
-            command=self.play,
+            self, text="Play!", state=tk.DISABLED, command=self.play
         )
         self.button_play.grid(row=3, column=0, pady=5, padx=5, sticky="nswe")
 

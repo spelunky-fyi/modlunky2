@@ -493,7 +493,6 @@ class ModlunkyUI:
 
     def mainloop(self):
         try:
-
             self.root.mainloop()
         except KeyboardInterrupt:
             self.quit()
