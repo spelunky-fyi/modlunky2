@@ -373,9 +373,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.24"
+version = "4.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60494cedb60cb47462c0ff7be53de32c0e42a6fc2c772184554fa12bd9489c03"
+checksum = "389ca505fd2c00136e0d0cd34bcd8b6bd0b59d5779aab396054b716334230c1c"
 dependencies = [
  "atty",
  "bitflags",
@@ -1507,9 +1507,9 @@ dependencies = [
 
 [[package]]
 name = "image"
-version = "0.24.4"
+version = "0.24.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd8e4fb07cf672b1642304e731ef8a6a4c7891d67bb4fd4f5ce58cd6ed86803c"
+checksum = "69b7ea949b537b0fd0af141fff8c77690f2ce96f4f41f042ccb6c69c6c965945"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -2232,9 +2232,9 @@ dependencies = [
 
 [[package]]
 name = "os_str_bytes"
-version = "6.3.1"
+version = "6.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
+checksum = "7b5bf27447411e9ee3ff51186bf7a08e16c341efdde93f4d823e8844429bed7e"
 
 [[package]]
 name = "overload"
@@ -3286,7 +3286,7 @@ dependencies = [
  "scopeguard",
  "serde",
  "unicode-segmentation",
- "uuid 1.2.1",
+ "uuid 1.2.2",
  "windows 0.39.0",
  "windows-implement",
  "x11-dl",
@@ -3350,7 +3350,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
- "uuid 1.2.1",
+ "uuid 1.2.2",
  "webkit2gtk",
  "webview2-com",
  "windows 0.39.0",
@@ -3394,7 +3394,7 @@ dependencies = [
  "tauri-utils",
  "thiserror",
  "time 0.3.17",
- "uuid 1.2.1",
+ "uuid 1.2.2",
  "walkdir",
 ]
 
@@ -3427,7 +3427,7 @@ dependencies = [
  "serde_json",
  "tauri-utils",
  "thiserror",
- "uuid 1.2.1",
+ "uuid 1.2.2",
  "webview2-com",
  "windows 0.39.0",
 ]
@@ -3445,7 +3445,7 @@ dependencies = [
  "raw-window-handle",
  "tauri-runtime",
  "tauri-utils",
- "uuid 1.2.1",
+ "uuid 1.2.2",
  "webkit2gtk",
  "webview2-com",
  "windows 0.39.0",
@@ -3925,9 +3925,9 @@ checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 
 [[package]]
 name = "uuid"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "feb41e78f93363bb2df8b0e86a2ca30eed7806ea16ea0c790d757cf93f79be83"
+checksum = "422ee0de9031b5b948b97a8fc04e3aa35230001a722ddd27943e0be31564ce4c"
 dependencies = [
  "getrandom 0.2.8",
 ]
