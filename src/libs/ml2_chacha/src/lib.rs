@@ -22,6 +22,7 @@ fn xnasamx(constant: u64, data: u64) -> u64 {
     data
 }
 
+#[derive(Default)]
 pub struct NasamGenerator {
     previous_key: u64,
 }
@@ -34,17 +35,12 @@ impl NasamGenerator {
     }
 }
 
-impl Default for NasamGenerator {
-    fn default() -> Self {
-        return Self { previous_key: 0 };
-    }
-}
-
 trait Spel2ChaCha {
     fn hash_filepath(&self, filepath: &[u8]) -> Vec<u8>;
     fn decrypt(&self, filepath: &[u8], data: &[u8]) -> Vec<u8>;
 }
 
+#[derive(Default)]
 pub struct Spel2ChaChaVersion1 {}
 
 impl Spel2ChaChaVersion1 {
@@ -64,7 +60,7 @@ impl Spel2ChaCha for Spel2ChaChaVersion1 {
 
     fn decrypt(&self, filepath: &[u8], data: &[u8]) -> Vec<u8> {
         let h = two_rounds(&quads_to_bytes(&[0xBABE, 0, 0, 0, 0, 0, 0, 0]));
-        let h = mix_in_filepath(&filepath, &h);
+        let h = mix_in_filepath(filepath, &h);
 
         let key = quad_rounds(&add_bytes_as_quads(&h, &quad_rounds(&h)));
         decrypt_common(data, &key)
@@ -117,7 +113,7 @@ impl Spel2ChaCha for Spel2ChaChaVersion2 {
             0,
             0,
         ]));
-        let h = mix_in_filepath(&filepath, &h);
+        let h = mix_in_filepath(filepath, &h);
 
         let tmp = add_bytes_as_quads(&h, &quad_rounds(&h));
         let mut tmp = bytes_to_quads(&tmp);
@@ -224,7 +220,7 @@ fn quad_rounds(bytes: &[u8]) -> Vec<u8> {
 fn mix_in(h: &[u8], s: &[u8]) -> Vec<u8> {
     let mut buf = Cursor::new(s);
     let len = h.len();
-    let mut out: Vec<u8> = h.clone().into();
+    let mut out: Vec<u8> = h.to_vec();
 
     while buf.remaining() > 0 {
         let amount = cmp::min(len, buf.remaining());
@@ -239,7 +235,7 @@ fn mix_in(h: &[u8], s: &[u8]) -> Vec<u8> {
 }
 
 fn mix_in_filepath(filepath: &[u8], h: &[u8]) -> Vec<u8> {
-    let mut out: Vec<u8> = h.clone().into();
+    let mut out: Vec<u8> = h.to_vec();
 
     for idx in (0..filepath.len()).step_by(64) {
         let amount = cmp::min(idx + 64, filepath.len());
@@ -395,7 +391,7 @@ mod tests {
             ]
         );
 
-        let input2 = ['A' as u8; 100];
+        let input2 = [b'A'; 100];
         let output = mix_in(input, &input2[..]);
         assert_eq!(
             output,
@@ -455,7 +451,7 @@ mod tests {
             vec![26, 179, 242, 15, 166, 167, 221, 26, 174, 209, 254, 86, 24]
         );
 
-        let out = chacha.decrypt(b"soundbank.bank", &['A' as u8; 64][..]);
+        let out = chacha.decrypt(b"soundbank.bank", &[b'A'; 64][..]);
         assert_eq!(
             out,
             vec![
@@ -466,7 +462,7 @@ mod tests {
             ]
         );
 
-        let out = chacha.decrypt(b"soundbank.bank", &['A' as u8; 80][..]);
+        let out = chacha.decrypt(b"soundbank.bank", &[b'A'; 80][..]);
         assert_eq!(
             out,
             vec![
@@ -491,7 +487,7 @@ mod tests {
             vec![225, 238, 172, 4, 94, 243, 170, 1, 163, 85, 34, 169, 103]
         );
 
-        let out = chacha.decrypt(b"soundbank.bank", &['A' as u8; 64][..]);
+        let out = chacha.decrypt(b"soundbank.bank", &[b'A'; 64][..]);
         assert_eq!(
             out,
             vec![
@@ -502,7 +498,7 @@ mod tests {
             ]
         );
 
-        let out = chacha.decrypt(b"soundbank.bank", &['A' as u8; 80][..]);
+        let out = chacha.decrypt(b"soundbank.bank", &[b'A'; 80][..]);
         assert_eq!(
             out,
             vec![
