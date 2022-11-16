@@ -15,11 +15,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["16.13.2"]
-        npm-version: ["8.5.1"]
 
     defaults:
       run:
