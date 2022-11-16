@@ -39,7 +39,7 @@ jobs:
           toolchain: stable
 
       - name: Setup Rust caching
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - run: npm install
 
