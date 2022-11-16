@@ -1878,6 +1878,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ml2_chacha"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "bytes",
+]
+
+[[package]]
 name = "ml2_mods"
 version = "0.1.0"
 dependencies = [
