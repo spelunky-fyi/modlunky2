@@ -1878,6 +1878,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ml2_assets"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "ml2_chacha",
+ "zstd",
+]
+
+[[package]]
 name = "ml2_chacha"
 version = "0.1.0"
 dependencies = [

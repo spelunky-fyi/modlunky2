@@ -22,20 +22,20 @@ fn xnasamx(constant: u64, data: u64) -> u64 {
     data
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct NasamGenerator {
-    previous_key: u64,
+    pub key: u64,
 }
 
 impl NasamGenerator {
-    pub fn get_next_key(&mut self, data: u64) -> u64 {
-        let new_key = xnasamx(self.previous_key, data);
-        self.previous_key = new_key;
+    pub fn update(&mut self, data: u64) -> u64 {
+        let new_key = xnasamx(self.key, data);
+        self.key = new_key;
         new_key
     }
 }
 
-trait Spel2ChaCha {
+pub trait Spel2ChaCha {
     fn hash_filepath(&self, filepath: &[u8]) -> Vec<u8>;
     fn decrypt(&self, filepath: &[u8], data: &[u8]) -> Vec<u8>;
 }
@@ -67,6 +67,7 @@ impl Spel2ChaCha for Spel2ChaChaVersion1 {
     }
 }
 
+#[derive(Debug)]
 pub struct Spel2ChaChaVersion2 {
     pub key: u64,
 }
@@ -310,8 +311,8 @@ mod tests {
     #[test]
     fn test_xnasamx_generator() {
         let mut keygen = NasamGenerator::default();
-        assert_eq!(keygen.get_next_key(20), 12792988793366353668);
-        assert_eq!(keygen.get_next_key(32), 3725411152094604090);
+        assert_eq!(keygen.update(20), 12792988793366353668);
+        assert_eq!(keygen.update(32), 3725411152094604090);
     }
 
     #[test]
@@ -414,7 +415,7 @@ mod tests {
         );
 
         let mut gen = NasamGenerator::default();
-        let key = gen.get_next_key(10);
+        let key = gen.update(10);
         let chacha = Spel2ChaChaVersion2::new(key);
         let out = chacha.hash_filepath(b"soundbank.bank");
         assert_eq!(
@@ -478,7 +479,7 @@ mod tests {
     #[test]
     fn test_decrypt_v2() {
         let mut gen = NasamGenerator::default();
-        let key = gen.get_next_key(10);
+        let key = gen.update(10);
 
         let chacha = Spel2ChaChaVersion2::new(key);
         let out = chacha.decrypt(b"soundbank.bank", b"Hello, world!");
