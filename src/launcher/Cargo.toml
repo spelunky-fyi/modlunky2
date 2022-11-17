@@ -10,7 +10,7 @@ edition = "2021"
 directories = "4.0.1"
 zip = "0.6.3"
 anyhow = "1.0.66"
-clap = "4.0.24"
+clap = "4.0.26"
 sha2 = "0.10.6"
 
 [build-dependencies]
