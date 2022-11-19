@@ -15,7 +15,7 @@ fn main() -> std::io::Result<()> {
 
     let start = SystemTime::now();
 
-    store.extract(Path::new("testing"));
+    store.extract(Path::new("test-extract"));
     let elapsed = start.elapsed().unwrap();
     println!("Finished... {:?}ms", elapsed.as_millis());
 

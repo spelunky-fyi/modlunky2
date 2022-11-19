@@ -1,6 +1,6 @@
 mod files;
 
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::{
     collections::HashMap,
     fs::{create_dir_all, File},
@@ -10,6 +10,7 @@ use std::{
 
 use byteorder::{ReadBytesExt, LE};
 
+use image::{ImageOutputFormat, Rgba, RgbaImage};
 use ml2_chacha::{NasamGenerator, Spel2ChaCha, Spel2ChaChaVersion2};
 use zstd::decode_all;
 
@@ -83,6 +84,16 @@ pub struct Asset {
     pub data: Option<Vec<u8>>,
 }
 
+fn get_idx_from_mask(idx: Option<u32>) -> usize {
+    match idx {
+        Some(0xFF) => 0,
+        Some(0xFF00) => 1,
+        Some(0xFF0000) => 2,
+        Some(0xFF000000) => 3,
+        _ => 0,
+    }
+}
+
 impl Asset {
     fn extract<T: Spel2ChaCha>(&self, extract_dir: &Path, chacha: &T) {
         let filepath = match &self.filepath {
@@ -90,27 +101,57 @@ impl Asset {
             None => return,
         };
 
-        let data = match &self.data {
-            Some(data) => data,
+        let mut data = match &self.data {
+            Some(data) => data.to_vec(),
             None => return,
         };
 
         let filepath_str: String = String::from_utf8_lossy(filepath).into();
-        let fullpath = extract_dir.join(filepath_str);
+        let mut fullpath = extract_dir.join(filepath_str);
 
         if let Some(parent) = fullpath.parent() {
             create_dir_all(parent).unwrap();
         }
 
         if self.meta.is_encrypted {
-            let data = chacha.decrypt(filepath, data);
-            let data = decode_all(&data[..]).unwrap();
-            let mut file = File::create(fullpath).unwrap();
-            file.write_all(&data).unwrap();
-        } else {
-            let mut file = File::create(fullpath).unwrap();
-            file.write_all(data).unwrap();
+            data = chacha.decrypt(filepath, &data);
+            data = decode_all(&data[..]).unwrap();
         }
+
+        if let Some(ext) = fullpath.extension() {
+            if ext == "DDS" {
+                let dds = ddsfile::Dds::read(Cursor::new(&data)).unwrap();
+
+                let width = dds.get_width();
+                let height = dds.get_height();
+                let max_size = width * height;
+                let mut img = RgbaImage::new(width, height);
+
+                for (idx, chunk) in dds.get_data(0).unwrap().chunks(4).enumerate() {
+                    let idx = idx as u32;
+                    if idx >= max_size {
+                        break;
+                    }
+                    let x = idx % width;
+                    let y = idx / width;
+
+                    let r = chunk[get_idx_from_mask(dds.header.spf.r_bit_mask)];
+                    let g = chunk[get_idx_from_mask(dds.header.spf.g_bit_mask)];
+                    let b = chunk[get_idx_from_mask(dds.header.spf.b_bit_mask)];
+                    let a = chunk[get_idx_from_mask(dds.header.spf.a_bit_mask)];
+
+                    img.put_pixel(x, y, Rgba([r, g, b, a]));
+                }
+
+                fullpath.set_extension("png");
+                data = Vec::new();
+                img.write_to(&mut Cursor::new(&mut data), ImageOutputFormat::Png)
+                    .unwrap();
+            }
+        }
+
+        let mut file = File::create(fullpath).unwrap();
+        file.write_all(&data).unwrap();
     }
 
     fn load_data<T: Seek + Read>(&mut self, handle: &mut T) {
