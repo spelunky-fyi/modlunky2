@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
     let reader = BufReader::new(File::open(strings_path)?);
     let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
     let mut stdout = std::io::stdout().lock();
-    hasher.merge_hashes(&lines, &mut stdout).ok();
+    hasher.merge_hashes(&lines, &mut stdout);
 
     Ok(())
 }

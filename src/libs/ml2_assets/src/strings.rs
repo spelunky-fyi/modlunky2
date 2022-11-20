@@ -20,13 +20,13 @@ impl StringHasher {
             };
 
             let mut string_hash: Option<String> = None;
-            if line.starts_with("#") {
+            if line.starts_with('#') {
                 let comment_section = line.trim_matches(&comment_matches[..]);
                 if !comment_section.is_empty() {
                     current_section = Some(comment_section.into());
                 }
             } else {
-                let mut to_hash: String = line.into();
+                let mut to_hash: String = line;
                 if let Some(current_section) = &current_section {
                     to_hash.push_str(current_section);
                 }
@@ -44,10 +44,8 @@ impl StringHasher {
         Self { hashes }
     }
 
-    pub fn merge_hashes<W: Write>(&self, lines: &Vec<String>, writer: &mut W) -> Result<(), ()> {
-        if lines.len() != self.hashes.len() {
-            return Err(());
-        }
+    pub fn merge_hashes<W: Write>(&self, lines: &Vec<String>, writer: &mut W) {
+        assert!(lines.len() == self.hashes.len());
 
         for (line_num, line) in lines.iter().enumerate() {
             let hash = &self.hashes[line_num];
@@ -60,7 +58,5 @@ impl StringHasher {
                 writer.write(format!("{}\n", line).as_bytes()).ok();
             }
         }
-
-        Ok(())
     }
 }
