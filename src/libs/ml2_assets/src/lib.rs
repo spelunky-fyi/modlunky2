@@ -1,4 +1,5 @@
 mod files;
+pub mod strings;
 
 use std::io::{Cursor, Write};
 use std::{
