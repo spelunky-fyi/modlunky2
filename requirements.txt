@@ -2,7 +2,7 @@ Pillow==9.3.0
 anyio==3.6.2
 colorhash==1.2.1
 fnvhash==0.1.0
-httpx==0.23.0
+httpx==0.23.1
 hypercorn==0.14.3
 packaging==21.3
 platformdirs==2.5.4
