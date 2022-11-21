@@ -3,7 +3,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::path::Path;
 
-use ml2_assets::strings::StringHasher;
+use ml2_assets::StringHasher;
 
 fn main() -> std::io::Result<()> {
     let strings_path = Path::new(
