@@ -24,9 +24,7 @@ jobs:
           # Python 3.8 is the latest version supporting Windows 7
           python-version: 3.8
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: |
           # Install pyinstaller in addition to usual deps
