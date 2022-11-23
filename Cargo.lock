@@ -1461,6 +1461,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hound"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d13cdbd5dbb29f9c88095bbdc2590c9cba0d0a1269b983fef6b2cdd7e9f4db1"
+
+[[package]]
 name = "html5ever"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2036,6 +2042,7 @@ dependencies = [
  "byteorder",
  "crc32fast",
  "ddsfile",
+ "hound",
  "image",
  "ml2_chacha",
  "riff-io",

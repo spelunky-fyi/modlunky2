@@ -26,3 +26,4 @@ crc32fast = "1"
 riff-io = "0.1"
 ml2_chacha = {path = "../ml2_chacha"}
 bitreader = "0.3"
+hound = "3.5"

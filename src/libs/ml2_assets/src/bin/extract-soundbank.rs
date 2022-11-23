@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Write;
+
 use ml2_assets::Soundbank;
 
 fn main() -> std::io::Result<()> {
@@ -7,7 +10,18 @@ fn main() -> std::io::Result<()> {
     let soundbank = Soundbank::from_path(soundbank_path);
     for fsb in soundbank.fsbs {
         for track in fsb.tracks {
-            println!("{:?}", &track.name);
+            if fsb.header.mode.file_extension() == "wav" {
+                let wav = track.rebuild_as(&fsb.header.mode);
+                let mut f = File::create(format!(
+                    "test-extract/{}.{}",
+                    &track.name,
+                    fsb.header.mode.file_extension()
+                ))
+                .unwrap();
+                f.write_all(&wav).unwrap();
+
+                println!("{:?}", &track.name);
+            }
         }
     }
 
