@@ -1,5 +1,5 @@
 black==22.10.0
-flake8==5.0.4
+flake8==6.0.0
 pylint==2.15.6
 pytest==7.2.0
 pip-api==0.0.30
