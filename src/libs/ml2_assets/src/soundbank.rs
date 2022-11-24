@@ -260,55 +260,53 @@ impl Track {
         })
     }
 
+    fn rebuild_wav(&self, width: u32) -> Vec<u8> {
+        let mut wav = Cursor::new(Vec::with_capacity(
+            (self.samples * self.channels as u32 * width) as usize,
+        ));
+        let size = self.samples * self.channels as u32 * width;
+        let spec = hound::WavSpec {
+            channels: self.channels as u16,
+            sample_rate: self.frequency,
+            bits_per_sample: width as u16 * 8,
+            sample_format: hound::SampleFormat::Int,
+        };
+
+        let mut wav_writer = hound::WavWriter::new(&mut wav, spec).unwrap();
+
+        for offset in (0..size).step_by(width as usize) {
+            let offset = offset as usize;
+            match width {
+                1 => {
+                    let sample = self.data[offset] as i8;
+                    wav_writer.write_sample(sample).unwrap();
+                }
+                2 => {
+                    let mut bytes = &self.data[offset..offset + (width as usize)];
+                    let sample = bytes.read_i16::<LE>().unwrap();
+                    wav_writer.write_sample(sample).unwrap();
+                }
+                4 => {
+                    let mut bytes = &self.data[offset..offset + (width as usize)];
+                    let sample = bytes.read_i32::<LE>().unwrap();
+                    wav_writer.write_sample(sample).unwrap();
+                }
+                _ => unreachable!(),
+            }
+        }
+
+        wav_writer.finalize().unwrap();
+
+        wav.into_inner()
+    }
+
     pub fn rebuild_as(&self, format: &SoundFormat) -> Vec<u8> {
         use SoundFormat::*;
 
         match format {
-            PCM8 | PCM16 | PCM32 => {
-                let width = match format {
-                    PCM8 => 1,
-                    PCM16 => 2,
-                    PCM32 => 4,
-                    _ => unreachable!(),
-                };
-                let mut wav = Cursor::new(Vec::with_capacity(
-                    (self.samples * self.channels as u32 * width) as usize,
-                ));
-                let size = self.samples * self.channels as u32 * width;
-                let spec = hound::WavSpec {
-                    channels: self.channels as u16,
-                    sample_rate: self.frequency,
-                    bits_per_sample: width as u16 * 8,
-                    sample_format: hound::SampleFormat::Int,
-                };
-
-                let mut wav_writer = hound::WavWriter::new(&mut wav, spec).unwrap();
-
-                for offset in (0..size).step_by(width as usize) {
-                    let offset = offset as usize;
-                    match width {
-                        1 => {
-                            let sample = self.data[offset] as i8;
-                            wav_writer.write_sample(sample).unwrap();
-                        }
-                        2 => {
-                            let mut bytes = &self.data[offset..offset + (width as usize)];
-                            let sample = bytes.read_i16::<LE>().unwrap();
-                            wav_writer.write_sample(sample).unwrap();
-                        }
-                        4 => {
-                            let mut bytes = &self.data[offset..offset + (width as usize)];
-                            let sample = bytes.read_i32::<LE>().unwrap();
-                            wav_writer.write_sample(sample).unwrap();
-                        }
-                        _ => unreachable!(),
-                    }
-                }
-
-                wav_writer.finalize().unwrap();
-
-                wav.into_inner()
-            }
+            PCM8 => self.rebuild_wav(1),
+            PCM16 => self.rebuild_wav(2),
+            PCM32 => self.rebuild_wav(4),
             _ => unimplemented!("sorry..."),
         }
     }
