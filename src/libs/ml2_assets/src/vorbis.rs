@@ -253,7 +253,7 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Vec<u8> {
 
     let setup_packet_buff = match VORBIS_HEADER_LOOKUP.get(&crc32) {
         Some(val) => *val,
-        _ => panic!("Unknown Vorbis Header."),
+        _ => panic!("Unknown Vorbis Header: {}", crc32),
     };
 
     let mut info = VorbisInfo::new();
@@ -308,7 +308,7 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Vec<u8> {
         };
 
         let blocksize = unsafe { vorbis_sys::vorbis_packet_blocksize(&mut info.0, &mut packet) };
-        assert!(blocksize != 0);
+        assert!(blocksize > 0);
 
         granulepos = match prev_blocksize {
             0 => 0,

@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 use std::io::Write;
 
 use ml2_assets::Soundbank;
@@ -9,19 +9,19 @@ fn main() -> std::io::Result<()> {
 
     let soundbank = Soundbank::from_path(soundbank_path);
     for fsb in soundbank.fsbs {
-        for track in fsb.tracks {
-            if fsb.header.mode.file_extension() == "ogg" {
-                let filename = format!(
-                    "test-extract/{}.{}",
-                    &track.name,
-                    fsb.header.mode.file_extension()
-                );
+        let extension = fsb.header.mode.file_extension();
+        create_dir_all(format!("test-extract/soundbank/{}", extension)).unwrap();
 
-                println!("{:?}", filename);
-                let out = track.rebuild_as(&fsb.header.mode);
-                let mut f = File::create(filename).unwrap();
-                f.write_all(&out).unwrap();
-            }
+        for track in fsb.tracks {
+            let filename = format!(
+                "test-extract/soundbank/{}/{}.{}",
+                extension, &track.name, extension
+            );
+            println!("{:?}", filename);
+
+            let out = track.rebuild_as(&fsb.header.mode);
+            let mut f = File::create(filename).unwrap();
+            f.write_all(&out).unwrap();
         }
     }
 
