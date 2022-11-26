@@ -11,16 +11,17 @@ fn main() -> std::io::Result<()> {
     for fsb in soundbank.fsbs {
         for track in fsb.tracks {
             if fsb.header.mode.file_extension() == "wav" {
-                let wav = track.rebuild_as(&fsb.header.mode);
-                let mut f = File::create(format!(
+                let out = track.rebuild_as(&fsb.header.mode);
+                let filename = format!(
                     "test-extract/{}.{}",
                     &track.name,
                     fsb.header.mode.file_extension()
-                ))
-                .unwrap();
-                f.write_all(&wav).unwrap();
+                );
 
-                println!("{:?}", &track.name);
+                println!("{:?}", filename);
+
+                let mut f = File::create(filename).unwrap();
+                f.write_all(&out).unwrap();
             }
         }
     }

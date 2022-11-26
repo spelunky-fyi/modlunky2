@@ -1031,6 +1031,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "gcc"
+version = "0.3.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f5f3913fa0bfe7ee1fd8248b6b9f42a5af4b9d65ec2dd2c3c26132b950ecfc2"
+
+[[package]]
 name = "gdk"
 version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1966,7 +1972,10 @@ dependencies = [
  "hound",
  "image",
  "ml2_chacha",
+ "ml2_vorbis_header",
+ "ogg-sys",
  "riff-io",
+ "vorbis-sys",
  "zstd 0.12.0+zstd.1.5.2",
 ]
 
@@ -2022,6 +2031,13 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
+]
+
+[[package]]
+name = "ml2_vorbis_header"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
 ]
 
 [[package]]
@@ -2248,6 +2264,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c92d4ddb4bd7b50d730c215ff871754d0da6b2178849f8a2a2ab69712d0c073b"
 dependencies = [
  "objc",
+]
+
+[[package]]
+name = "ogg-sys"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a95b8c172e17df1a41bf8d666301d3b2c4efeb90d9d0415e2a4dc0668b35fdb2"
+dependencies = [
+ "gcc",
+ "libc",
+ "pkg-config",
 ]
 
 [[package]]
@@ -4121,6 +4148,18 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vorbis-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd9ed6ef5361a85e68ccc005961d995c2d44e31f0816f142025f2ca2383dfbfd"
+dependencies = [
+ "cc",
+ "libc",
+ "ogg-sys",
+ "pkg-config",
+]
 
 [[package]]
 name = "walkdir"

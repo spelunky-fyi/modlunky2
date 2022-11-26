@@ -25,5 +25,8 @@ ddsfile = "0.5"
 crc32fast = "1"
 riff-io = "0.1"
 ml2_chacha = {path = "../ml2_chacha"}
+ml2_vorbis_header = {path = "../ml2_vorbis_header"}
 bitreader = "0.3"
 hound = "3.5"
+ogg-sys = "0.0.9"
+vorbis-sys = "0.1.1"

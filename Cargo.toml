@@ -6,5 +6,6 @@ members = [
     "src/libs/ml2_mods",
     "src/libs/ml2_net",
     "src/libs/ml2_chacha",
+    "src/libs/ml2_vorbis_header",
     "src/tauri/src-tauri"
 ]

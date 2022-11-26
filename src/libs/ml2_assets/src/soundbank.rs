@@ -9,6 +9,8 @@ use byteorder::ReadBytesExt;
 use byteorder::LE;
 use riff_io::Entry;
 
+use crate::vorbis::rebuild_vorbis;
+
 #[derive(Debug)]
 pub enum SoundFormat {
     None,
@@ -307,6 +309,7 @@ impl Track {
             PCM8 => self.rebuild_wav(1),
             PCM16 => self.rebuild_wav(2),
             PCM32 => self.rebuild_wav(4),
+            VORBIS => rebuild_vorbis(self),
             _ => unimplemented!("sorry..."),
         }
     }
