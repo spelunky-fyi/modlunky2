@@ -3,6 +3,7 @@ use std::io::Read;
 
 use byteorder::ReadBytesExt;
 use byteorder::LE;
+use ogg_sys::ogg_packet_clear;
 use ogg_sys::{
     ogg_packet, ogg_page, ogg_stream_clear, ogg_stream_flush, ogg_stream_packetin,
     ogg_stream_pageout, ogg_stream_state, oggpack_buffer, oggpack_bytes, oggpack_write,
@@ -160,7 +161,7 @@ impl OggPage {
     }
 
     fn body_len(&self) -> i32 {
-        self.0.header_len
+        self.0.body_len
     }
 
     fn body(&self) -> &[u8] {
@@ -219,6 +220,8 @@ fn rebuild_id_header(
 
 fn rebuild_comment_header() -> ogg_sys::ogg_packet {
     let mut packet: ogg_sys::ogg_packet = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
+    unsafe { ogg_packet_clear(&mut packet) };
+
     let mut comment = VorbisComment::new();
     comment.header_out(&mut packet);
 
@@ -296,18 +299,16 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Vec<u8> {
         packet.packetno = packetno;
 
         match inbuf.read_u16::<LE>() {
-            Ok(size) => {
-                packet_size = size;
-                packet.e_o_s = 0;
-            }
-            Err(_) => {
-                packet_size = 0;
-                packet.e_o_s = 1;
-            }
+            Ok(size) => packet_size = size,
+            Err(_) => packet_size = 0,
+        };
+        packet.e_o_s = match packet_size {
+            0 => 1,
+            _ => 0,
         };
 
         let blocksize = unsafe { vorbis_sys::vorbis_packet_blocksize(&mut info.0, &mut packet) };
-        assert!(blocksize > 0);
+        assert!(blocksize != 0);
 
         granulepos = match prev_blocksize {
             0 => 0,
@@ -319,6 +320,6 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Vec<u8> {
         state.packetin(&mut packet);
         state.write_packets_pageout(&mut out);
     }
-
+    state.write_packets_flush(&mut out);
     out
 }
