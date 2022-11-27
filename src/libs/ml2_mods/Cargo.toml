@@ -1,8 +1,8 @@
 [package]
 name = "ml2_mods"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.57"
+edition.workspace = true
+rust-version.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,26 +10,35 @@ rust-version = "1.57"
 anyhow = "1.0"
 async-trait = "0.1"
 backoff = "0.4"
-chrono = {version = "0.4", default-features = false, features = ["serde"]}
+chrono = { version = "0.4", default-features = false, features = ["serde"] }
 derivative = "2.2"
 futures-util = "0.3"
 http = "0.2"
-hyper = {version = "0.14", features = ["client", "http1", "http2", "tcp"]}
+hyper = { version = "0.14", features = ["client", "http1", "http2", "tcp"] }
 hyper-tls = "0.5"
 instant = "0.1"
 ml2_net = { path = "../ml2_net" }
 rand = "0.8"
-serde = {version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tempfile = "3.3"
 thiserror = "1.0"
-tokio = {version = "1.22", features = ["fs", "macros", "rt", "rt-multi-thread", "signal", "sync", "time", "tracing"] }
+tokio = { version = "1.22", features = [
+    "fs",
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "signal",
+    "sync",
+    "time",
+    "tracing",
+] }
 tokio-graceful-shutdown = "0.11"
 tokio-tungstenite = { version = "0.17", features = ["native-tls"] }
-tower = {version = "0.4", features = ["util"]}
+tower = { version = "0.4", features = ["util"] }
 tracing = "0.1"
 zip = "0.6"
 
 [dev-dependencies]
-clap = {version = "4.0", features = ["derive"]}
+clap = { version = "4.0", features = ["derive"] }
 tracing-subscriber = "0.3"

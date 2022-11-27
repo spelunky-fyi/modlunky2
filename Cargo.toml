@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
     "src/launcher",
     "src/libs/ml2_assets",
@@ -9,5 +8,10 @@ members = [
     "src/libs/ml2_net",
     "src/libs/ml2_types",
     "src/libs/ml2_vorbis_header",
-    "src/tauri/src-tauri"
+    "src/tauri/src-tauri",
 ]
+
+[workspace.package]
+# Note: src-tauri doesn't use these
+edition = "2021"
+rust-version = "1.64"

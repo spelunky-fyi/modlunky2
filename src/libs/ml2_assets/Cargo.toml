@@ -1,7 +1,8 @@
 [package]
 name = "ml2_assets"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+rust-version.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,8 +26,8 @@ crc32fast = "1"
 ddsfile = "0.5"
 hound = "3.5"
 image = "0.24"
-ml2_chacha = {path = "../ml2_chacha"}
-ml2_vorbis_header = {path = "../ml2_vorbis_header"}
+ml2_chacha = { path = "../ml2_chacha" }
+ml2_vorbis_header = { path = "../ml2_vorbis_header" }
 ogg-sys = "0.0.9"
 riff-io = "0.1"
 thiserror = "1"
