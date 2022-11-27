@@ -5,7 +5,7 @@ use std::path::Path;
 
 use ml2_assets::StringHasher;
 
-fn main() -> std::io::Result<()> {
+fn main() -> anyhow::Result<()> {
     let strings_path = Path::new(
         r#"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted\strings00.str"#,
     );
@@ -15,9 +15,9 @@ fn main() -> std::io::Result<()> {
     let hasher = StringHasher::from_reader(reader);
 
     let reader = BufReader::new(File::open(strings_path)?);
-    let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
+    let lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
     let mut stdout = std::io::stdout().lock();
-    hasher.merge_hashes(&lines, &mut stdout);
+    hasher.merge_hashes(&lines, &mut stdout)?;
 
     Ok(())
 }

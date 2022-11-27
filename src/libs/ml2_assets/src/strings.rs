@@ -44,19 +44,22 @@ impl StringHasher {
         Self { hashes }
     }
 
-    pub fn merge_hashes<W: Write>(&self, lines: &Vec<String>, writer: &mut W) {
+    pub fn merge_hashes<W: Write>(
+        &self,
+        lines: &Vec<String>,
+        writer: &mut W,
+    ) -> Result<(), std::io::Error> {
         assert!(lines.len() == self.hashes.len());
 
         for (line_num, line) in lines.iter().enumerate() {
             let hash = &self.hashes[line_num];
 
             if let Some(hash) = hash {
-                writer
-                    .write(format!("{}: {}\n", &hash, line).as_bytes())
-                    .ok();
+                writer.write(format!("{}: {}\n", &hash, line).as_bytes())?;
             } else {
-                writer.write(format!("{}\n", line).as_bytes()).ok();
+                writer.write(format!("{}\n", line).as_bytes())?;
             }
         }
+        Ok(())
     }
 }

@@ -7,14 +7,27 @@ use std::{
 };
 
 use byteorder::{ReadBytesExt, LE};
-
-use image::{ImageOutputFormat, Rgba, RgbaImage};
-use ml2_chacha::{NasamGenerator, Spel2ChaCha, Spel2ChaChaVersion2};
+use image::{ImageError, ImageOutputFormat, Rgba, RgbaImage};
+use thiserror::Error;
 use zstd::decode_all;
+
+use ml2_chacha::{NasamGenerator, Spel2ChaCha, Spel2ChaChaVersion2};
 
 use crate::files::get_filepath_registry;
 
 const BUNDLE_OFFSET: u64 = 0x400;
+
+#[derive(Error, Debug)]
+pub enum AssetError {
+    #[error("IoError")]
+    IoError(#[from] std::io::Error),
+
+    #[error("DdsError")]
+    DdsError(#[from] ddsfile::Error),
+
+    #[error("ImageError")]
+    ImageError(#[from] ImageError),
+}
 
 #[derive(Debug)]
 pub struct AssetMeta {
@@ -45,35 +58,33 @@ impl AssetMeta {
         + self.asset_len as u64 // The size of the asset
     }
 
-    fn from_handle<T: Seek + Read>(handle: &mut T) -> Option<Self> {
-        let offset = handle.stream_position().unwrap();
+    fn from_handle<T: Seek + Read>(handle: &mut T) -> Result<Option<Self>, AssetError> {
+        let offset = handle.stream_position()?;
 
-        let data_len = handle.read_u32::<LE>().unwrap();
-        let filepath_len = handle.read_u32::<LE>().unwrap();
+        let data_len = handle.read_u32::<LE>()?;
+        let filepath_len = handle.read_u32::<LE>()?;
 
         if (data_len, filepath_len) == (0, 0) {
-            return None;
+            return Ok(None);
         }
 
         let asset_len = data_len - 1;
         let mut filepath_hash = vec![0; filepath_len as usize];
-        handle.read_exact(&mut filepath_hash).unwrap();
+        handle.read_exact(&mut filepath_hash)?;
 
-        let is_encrypted = handle.read_u8().unwrap() == 1;
-        let asset_offset = handle.stream_position().unwrap();
+        let is_encrypted = handle.read_u8()? == 1;
+        let asset_offset = handle.stream_position()?;
 
-        handle
-            .seek(std::io::SeekFrom::Current(asset_len as i64))
-            .unwrap();
+        handle.seek(std::io::SeekFrom::Current(asset_len as i64))?;
 
-        Some(Self {
+        Ok(Some(Self {
             offset,
             filepath_len,
             filepath_hash,
             is_encrypted,
             asset_offset,
             asset_len,
-        })
+        }))
     }
 }
 
@@ -95,39 +106,39 @@ fn get_idx_from_mask(idx: Option<u32>) -> usize {
 }
 
 impl Asset {
-    fn extract<T: Spel2ChaCha>(&self, extract_dir: &Path, chacha: &T) {
+    fn extract<T: Spel2ChaCha>(&self, extract_dir: &Path, chacha: &T) -> Result<(), AssetError> {
         let filepath = match &self.filepath {
             Some(filepath) => filepath,
-            None => return,
+            None => return Ok(()),
         };
 
         let mut data = match &self.data {
             Some(data) => data.to_vec(),
-            None => return,
+            None => return Ok(()),
         };
 
         let filepath_str: String = String::from_utf8_lossy(filepath).into();
         let mut fullpath = extract_dir.join(filepath_str);
 
         if let Some(parent) = fullpath.parent() {
-            create_dir_all(parent).unwrap();
+            create_dir_all(parent)?;
         }
 
         if self.meta.is_encrypted {
             data = chacha.decrypt(filepath, &data);
-            data = decode_all(&data[..]).unwrap();
+            data = decode_all(&data[..])?;
         }
 
         if let Some(ext) = fullpath.extension() {
             if ext == "DDS" {
-                let dds = ddsfile::Dds::read(Cursor::new(&data)).unwrap();
+                let dds = ddsfile::Dds::read(Cursor::new(&data))?;
 
                 let width = dds.get_width();
                 let height = dds.get_height();
                 let max_size = width * height;
                 let mut img = RgbaImage::new(width, height);
 
-                for (idx, chunk) in dds.get_data(0).unwrap().chunks(4).enumerate() {
+                for (idx, chunk) in dds.get_data(0)?.chunks(4).enumerate() {
                     let idx = idx as u32;
                     if idx >= max_size {
                         break;
@@ -145,22 +156,22 @@ impl Asset {
 
                 fullpath.set_extension("png");
                 data = Vec::new();
-                img.write_to(&mut Cursor::new(&mut data), ImageOutputFormat::Png)
-                    .unwrap();
+                img.write_to(&mut Cursor::new(&mut data), ImageOutputFormat::Png)?;
             }
         }
 
-        let mut file = File::create(fullpath).unwrap();
-        file.write_all(&data).unwrap();
+        let mut file = File::create(fullpath)?;
+        file.write_all(&data)?;
+
+        Ok(())
     }
 
-    fn load_data<T: Seek + Read>(&mut self, handle: &mut T) {
-        handle
-            .seek(SeekFrom::Start(self.meta.asset_offset))
-            .unwrap();
+    fn load_data<T: Seek + Read>(&mut self, handle: &mut T) -> Result<(), AssetError> {
+        handle.seek(SeekFrom::Start(self.meta.asset_offset))?;
         let mut data = vec![0; self.meta.asset_len as usize];
-        handle.read_exact(&mut data).unwrap();
+        handle.read_exact(&mut data)?;
         self.data = Some(data);
+        Ok(())
     }
 }
 
@@ -173,15 +184,13 @@ pub struct AssetStore<T: Seek + Read> {
 }
 
 impl<T: Seek + Read> AssetStore<T> {
-    pub fn from_handle(mut handle: T) -> Self {
+    pub fn from_handle(mut handle: T) -> Result<Self, AssetError> {
         let mut assets = Vec::new();
         let mut keygen = NasamGenerator::default();
 
-        handle
-            .seek(std::io::SeekFrom::Start(BUNDLE_OFFSET))
-            .unwrap();
+        handle.seek(std::io::SeekFrom::Start(BUNDLE_OFFSET))?;
 
-        while let Some(meta) = AssetMeta::from_handle(&mut handle) {
+        while let Some(meta) = AssetMeta::from_handle(&mut handle)? {
             keygen.update(meta.asset_len as u64 + 1);
             assets.push(Asset {
                 meta,
@@ -201,7 +210,8 @@ impl<T: Seek + Read> AssetStore<T> {
         };
 
         inst.populate_filepaths();
-        inst
+
+        Ok(inst)
     }
 
     fn populate_filepaths(&mut self) {
@@ -222,13 +232,14 @@ impl<T: Seek + Read> AssetStore<T> {
         }
     }
 
-    pub fn extract(&mut self, extract_dir: &Path) {
+    pub fn extract(&mut self, extract_dir: &Path) -> Result<(), AssetError> {
         for asset in self.assets.iter_mut() {
             if asset.filepath.is_none() {
                 continue;
             }
-            asset.load_data(&mut self.handle);
-            asset.extract(extract_dir, &self.chacha);
+            asset.load_data(&mut self.handle)?;
+            asset.extract(extract_dir, &self.chacha)?;
         }
+        Ok(())
     }
 }

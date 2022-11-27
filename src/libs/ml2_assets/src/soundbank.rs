@@ -5,10 +5,6 @@ use thiserror::Error;
 
 use crate::fsb5::{Fsb5, Fsb5Error};
 
-pub struct Soundbank {
-    pub fsbs: Vec<Fsb5>,
-}
-
 #[derive(Error, Debug)]
 pub enum SoundbankError {
     #[error("Not FSB5 Data.")]
@@ -16,6 +12,10 @@ pub enum SoundbankError {
 
     #[error("IoError")]
     IoError(#[from] std::io::Error),
+}
+
+pub struct Soundbank {
+    pub fsbs: Vec<Fsb5>,
 }
 
 impl Soundbank {
