@@ -14,13 +14,19 @@ on:
 
 jobs:
   build:
+    name: "Rust ${{matrix.rust}}"
     runs-on: windows-latest
+    strategy:
+      matrix:
+        # Test stable and MSRV
+        rust: [stable, "1.64"]
 
     steps:
       - uses: actions/checkout@v3
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{matrix.rust}}
           components: clippy
       - name: cargo check
         run: cargo check --workspace --all-targets --exclude launcher --locked
