@@ -1,0 +1,15 @@
+[package]
+name = "ml2_entity_data"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+anyhow = "1"
+serde = { version = "1.0" }
+serde_json = "1.0"
+uneval = "0.2.4"
+ml2_types = {path = "../ml2_types"}
+
+[dependencies]
+ml2_types = {path = "../ml2_types"}
+lazy_static = "1"

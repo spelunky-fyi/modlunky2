@@ -1990,6 +1990,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ml2_entity_data"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "lazy_static",
+ "ml2_types",
+ "serde",
+ "serde_json",
+ "uneval",
+]
+
+[[package]]
 name = "ml2_mods"
 version = "0.1.0"
 dependencies = [
@@ -2033,6 +2045,13 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
+]
+
+[[package]]
+name = "ml2_types"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -4054,6 +4073,16 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
+
+[[package]]
+name = "uneval"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63cc5d2fd8648d7e2be86098f60c9ece7045cc710b3c1e226910e2f37d11dc73"
+dependencies = [
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "unicode-bidi"

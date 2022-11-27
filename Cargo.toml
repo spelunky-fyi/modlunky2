@@ -3,9 +3,11 @@
 members = [
     "src/launcher",
     "src/libs/ml2_assets",
+    "src/libs/ml2_chacha",
+    "src/libs/ml2_entity_data",
     "src/libs/ml2_mods",
     "src/libs/ml2_net",
-    "src/libs/ml2_chacha",
+    "src/libs/ml2_types",
     "src/libs/ml2_vorbis_header",
     "src/tauri/src-tauri"
 ]
