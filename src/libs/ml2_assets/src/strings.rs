@@ -55,9 +55,9 @@ impl StringHasher {
             let hash = &self.hashes[line_num];
 
             if let Some(hash) = hash {
-                writer.write(format!("{}: {}\n", &hash, line).as_bytes())?;
+                writer.write_all(format!("{}: {}\n", &hash, line).as_bytes())?;
             } else {
-                writer.write(format!("{}\n", line).as_bytes())?;
+                writer.write_all(format!("{}\n", line).as_bytes())?;
             }
         }
         Ok(())
