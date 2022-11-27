@@ -1,7 +1,8 @@
 [package]
 name = "ml2_vorbis_header"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 lazy_static = "1"
