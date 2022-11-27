@@ -18,15 +18,17 @@ name = "ml2-extract-soundbank"
 path = "src/bin/extract-soundbank.rs"
 
 [dependencies]
+anyhow = "1"
+bitreader = "0.3"
 byteorder = "1"
-zstd = "0.12"
-image = "0.24"
-ddsfile = "0.5"
 crc32fast = "1"
-riff-io = "0.1"
+ddsfile = "0.5"
+hound = "3.5"
+image = "0.24"
 ml2_chacha = {path = "../ml2_chacha"}
 ml2_vorbis_header = {path = "../ml2_vorbis_header"}
-bitreader = "0.3"
-hound = "3.5"
 ogg-sys = "0.0.9"
+riff-io = "0.1"
+thiserror = "1"
 vorbis-sys = "0.1.1"
+zstd = "0.12"
