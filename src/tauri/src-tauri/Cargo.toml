@@ -3,6 +3,7 @@ name = "modlunky2"
 version = "0.1.0"
 description = "A tool for creating and using mods related to Spelunky 2"
 # Using worskspace inheritence breaks Tauri's build script
+license = "Apache-2.0"
 edition = "2021"
 rust-version = "1.64"
 
