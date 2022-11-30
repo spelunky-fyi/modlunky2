@@ -37,3 +37,5 @@ jobs:
         run: cargo clippy --workspace --all-targets --exclude launcher --locked -- -D warnings
       - name: cargo test
         run: cargo test --workspace --all-targets --exclude launcher --locked
+      - name: cargo deny check
+        uses: EmbarkStudios/cargo-deny-action@v1
