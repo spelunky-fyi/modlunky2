@@ -333,7 +333,7 @@ fn root_to_service_uri(service_root: &str) -> Result<Uri, Error> {
     let path = Path::new(service_root.path()).join("ws/gateway/ml/");
     let path = path
         .to_str()
-        .ok_or_else(|| Error::InvalidUri(anyhow!("Failed to convert {:?}", path)))?;
+        .ok_or_else(|| Error::InvalidUri(anyhow!("Failed to convert {path:?}")))?;
 
     let mut parts = service_root.into_parts();
     parts.scheme = Some(scheme.try_into()?);

@@ -222,9 +222,10 @@ impl LocalMods for DiskMods {
             if entry.file_name() == ".db" {
                 continue;
             }
-            let id = entry.file_name().into_string().map_err(|e| {
-                Error::UnknownError(anyhow!("Couldn't convert to unicode: {:?}", e))
-            })?;
+            let id = entry
+                .file_name()
+                .into_string()
+                .map_err(|e| Error::UnknownError(anyhow!("Couldn't convert to unicode: {e:?}")))?;
             let res = self.get(&id).await;
             match res {
                 Ok(r#mod) => mods.push(r#mod),
@@ -293,7 +294,7 @@ impl LocalMods for DiskMods {
             let logo = logo
                 .to_str()
                 .ok_or_else(|| {
-                    Error::UnknownError(anyhow!("Failed to convert logo filename {:?}", logo))
+                    Error::UnknownError(anyhow!("Failed to convert logo filename {logo:?}"))
                 })?
                 .to_string();
             Some(logo)
@@ -370,25 +371,23 @@ impl LocalMods for DiskMods {
         let logo_name = self
             .load_mod_manifest(id)
             .await?
-            .ok_or_else(|| anyhow!("Mod {:?} has no manifest. Therefore it has no logo", id))?
+            .ok_or_else(|| anyhow!("Mod {id:?} has no manifest. Therefore it has no logo"))?
             .logo
-            .ok_or_else(|| anyhow!("Mod {:?} has no logo", id))?;
+            .ok_or_else(|| anyhow!("Mod {id:?} has no logo"))?;
         let logo_path = self.manifest_dir_path(id).join(&logo_name);
 
         let ext = logo_path
             .extension()
-            .ok_or_else(|| anyhow!("No extenison in {:?} for mod {:?}", logo_name, id))?
+            .ok_or_else(|| anyhow!("No extenison in {logo_name:?} for mod {id:?}"))?
             .to_str()
-            .ok_or_else(|| anyhow!("Non-unicode extension in {:?} for mod {:?}", logo_name, id))?;
+            .ok_or_else(|| anyhow!("Non-unicode extension in {logo_name:?} for mod {id:?}"))?;
         let mime_type = match ext {
             "jpg" => "imag/jpeg",
             "gif" => "imag/gif",
             "png" => "image/png",
-            _ => {
-                return Err(
-                    anyhow!("Unexpected extension in {:?} for mod {:?}", logo_name, id).into(),
-                )
-            }
+            _ => Err(anyhow!(
+                "Unexpected extension in {logo_name:?} for mod {id:?}"
+            ))?,
         }
         .to_string();
 
@@ -504,7 +503,7 @@ fn zip_enclosed_paths(zip: &mut ZipArchive<std::fs::File>) -> Result<Vec<PathBuf
     for i in 0..zip.len() {
         let f = zip
             .by_index_raw(i)
-            .map_err(|e| Error::SourceError(anyhow!("Reading zip file {:?}", e)))?;
+            .map_err(|e| Error::SourceError(anyhow!("Reading zip file {e:?}")))?;
         let p = f
             .enclosed_name()
             .ok_or_else(|| Error::SourceError(anyhow!("Invalid file name")))?;

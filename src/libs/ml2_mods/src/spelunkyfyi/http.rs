@@ -132,7 +132,7 @@ impl HttpApiMods {
         let path = Path::new(self.base_uri.path()).join(path);
         let path = path
             .to_str()
-            .ok_or_else(|| Error::InvalidUri(anyhow!("Failed to convert {:?}", path)))?;
+            .ok_or_else(|| Error::InvalidUri(anyhow!("Failed to convert {path:?}")))?;
 
         let mut parts = self.base_uri.clone().into_parts();
         parts.path_and_query = Some(path.try_into()?);
@@ -182,7 +182,7 @@ impl HttpApiMods {
         let content_type = res
             .headers()
             .get(CONTENT_TYPE)
-            .ok_or_else(|| Error::GenericHttpError(anyhow!("No content type for URI {}", uri)))?
+            .ok_or_else(|| Error::GenericHttpError(anyhow!("No content type for URI {uri}")))?
             .to_str()?
             .to_string();
         let expected_bytes = if let Some(val) = res.headers().get(CONTENT_LENGTH) {

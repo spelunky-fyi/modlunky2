@@ -190,7 +190,7 @@ async fn assert_exits_in(dir: &TempDir, mod_id: &str, path: &str) {
     let path = dir.path().join(MODS_SUBPATH).join(mod_id).join(path);
     fs::metadata(&path)
         .await
-        .map_err(|e| anyhow!("checking for {:?}: {:?}", path, e))
+        .map_err(|e| anyhow!("checking for {path:?}: {e:?}"))
         .unwrap();
 }
 
