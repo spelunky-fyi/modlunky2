@@ -35,7 +35,7 @@ impl StringHasher {
                 hasher.update(to_hash.as_bytes());
                 let checksum = hasher.finalize();
 
-                string_hash = Some(format!("0x{:08x}", checksum));
+                string_hash = Some(format!("0x{checksum:08x}"));
             }
 
             hashes.push(string_hash);
@@ -57,7 +57,7 @@ impl StringHasher {
             if let Some(hash) = hash {
                 writer.write_all(format!("{}: {}\n", &hash, line).as_bytes())?;
             } else {
-                writer.write_all(format!("{}\n", line).as_bytes())?;
+                writer.write_all(format!("{line}\n").as_bytes())?;
             }
         }
         Ok(())

@@ -77,7 +77,7 @@ impl WebSocketClient {
             .build();
 
         Ok(WebSocketClient {
-            authz_value: HeaderValue::from_str(&format!("Token {}", auth_token))?,
+            authz_value: HeaderValue::from_str(&format!("Token {auth_token}"))?,
             manager_handle,
             ping_interval_dist,
             pong_timeout,

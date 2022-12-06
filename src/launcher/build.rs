@@ -39,7 +39,7 @@ where
         // Write file or directory explicitly
         // Some unzip tools unzip files with directory paths correctly, some do not!
         if path.is_file() {
-            println!("adding file {:?} as {:?} ...", path, name);
+            println!("adding file {path:?} as {name:?} ...");
             #[allow(deprecated)]
             zip.start_file_from_path(name, options)?;
             let mut f = File::open(path)?;
@@ -48,11 +48,11 @@ where
             zip.write_all(&buffer)?;
             let digest = Sha256::digest(&buffer);
             buffer.clear();
-            hashes.insert(name.to_str().unwrap().into(), format!("{:x}", digest));
+            hashes.insert(name.to_str().unwrap().into(), format!("{digest:x}"));
         } else if !name.as_os_str().is_empty() {
             // Only if not root! Avoids path spec / warning
             // and mapname conversion failed error on unzip
-            println!("adding dir {:?} as {:?} ...", path, name);
+            println!("adding dir {path:?} as {name:?} ...");
             #[allow(deprecated)]
             zip.add_directory_from_path(name, options)?;
         }
@@ -97,7 +97,7 @@ fn main() -> io::Result<()> {
 
     writeln!(out_file, "static KNOWN_FILES: &[&str] = &[")?;
     for key in hashes.keys() {
-        writeln!(out_file, "    r\"{}\",", key)?;
+        writeln!(out_file, "    r\"{key}\",")?;
     }
     write!(out_file, "];\n\n")?;
 
@@ -115,7 +115,7 @@ fn main() -> io::Result<()> {
             continue;
         }
 
-        writeln!(out_file, "        r\"{}\" => Some(r\"{}\"),", key, value)?;
+        writeln!(out_file, "        r\"{key}\" => Some(r\"{value}\"),")?;
     }
 
     writeln!(out_file, "        _ => None,")?;

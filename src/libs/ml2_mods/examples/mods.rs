@@ -181,7 +181,7 @@ async fn run(
         Commands::Run {} => loop {
             select! {
                 _ = subsystem.on_shutdown_requested() => break,
-                Ok(change) = mods_rx.recv() => println!("{:#?}", change),
+                Ok(change) = mods_rx.recv() => println!("{change:#?}"),
             }
         },
     }

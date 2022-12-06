@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Info { code } => {
             let manifest = http_api_mods.get_manifest(&code).await?;
-            println!("{:#?}", manifest)
+            println!("{manifest:#?}")
         }
         Commands::DownloadMod { code, dir } => {
             let (main_tx, mut main_rx) = watch::channel(DownloadProgress::Waiting());

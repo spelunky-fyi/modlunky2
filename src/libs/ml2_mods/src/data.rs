@@ -84,18 +84,16 @@ pub enum ManagerError {
 impl From<Error> for ManagerError {
     fn from(original: Error) -> Self {
         match original {
-            Error::ModExistsError(_) => ManagerError::ModExistsError(format!("{}", original)),
-            Error::ModNotFoundError(_) => ManagerError::ModNotFoundError(format!("{}", original)),
+            Error::ModExistsError(_) => ManagerError::ModExistsError(format!("{original}")),
+            Error::ModNotFoundError(_) => ManagerError::ModNotFoundError(format!("{original}")),
             Error::ModNonDirectoryError(_) => {
-                ManagerError::ModNonDirectoryError(format!("{}", original))
+                ManagerError::ModNonDirectoryError(format!("{original}"))
             }
-            Error::ManifestParseError(_) => {
-                ManagerError::ManifestParseError(format!("{}", original))
-            }
-            Error::SourceError(_) => ManagerError::SourceError(format!("{}", original)),
-            Error::DestinationError(_) => ManagerError::DestinationError(format!("{}", original)),
-            Error::ChannelError(_) => ManagerError::ChannelError(format!("{}", original)),
-            Error::UnknownError(_) => ManagerError::UnknownError(format!("{}", original)),
+            Error::ManifestParseError(_) => ManagerError::ManifestParseError(format!("{original}")),
+            Error::SourceError(_) => ManagerError::SourceError(format!("{original}")),
+            Error::DestinationError(_) => ManagerError::DestinationError(format!("{original}")),
+            Error::ChannelError(_) => ManagerError::ChannelError(format!("{original}")),
+            Error::UnknownError(_) => ManagerError::UnknownError(format!("{original}")),
         }
     }
 }

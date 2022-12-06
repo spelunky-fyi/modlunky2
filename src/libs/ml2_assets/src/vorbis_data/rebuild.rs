@@ -105,7 +105,7 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Result<Vec<u8>, RebuildError> {
 
     let setup_packet_buff = match VORBIS_HEADER_LOOKUP.get(&crc32) {
         Some(val) => *val,
-        _ => panic!("Unknown Vorbis Header: {}", crc32),
+        _ => panic!("Unknown Vorbis Header: {crc32}"),
     };
 
     let mut info = VorbisInfo::new();

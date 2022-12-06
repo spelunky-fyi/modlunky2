@@ -85,7 +85,7 @@ async fn test_get() {
     if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
         assert_eq!(id, "does-not-exist")
     } else {
-        panic!("Unexpected error from manager: {:?}", err)
+        panic!("Unexpected error from manager: {err:?}")
     }
 }
 
@@ -148,15 +148,15 @@ async fn test_remove() {
     if let Error::ModNotFoundError(LocalError::NotFound(id)) = err {
         assert_eq!(id, "does-not-exist")
     } else {
-        panic!("Unexpected error from manager: {:?}", err)
+        panic!("Unexpected error from manager: {err:?}")
     }
 
     for p in [mod_path, lua_path, metadata_dir_path, manifest_path] {
         match fs::metadata(&p).await {
-            Ok(_) => panic!("File/dir still exists: {:?}", p),
+            Ok(_) => panic!("File/dir still exists: {p:?}"),
             Err(e) => match e.kind() {
                 io::ErrorKind::NotFound => (),
-                _ => panic!("Unexpected IO error: {:?}", e),
+                _ => panic!("Unexpected IO error: {e:?}"),
             },
         }
     }

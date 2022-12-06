@@ -246,7 +246,7 @@ where
 
     #[instrument(skip(self))]
     async fn install_remote_mod(&self, code: &str) -> Result<Mod> {
-        let id = format!("fyi.{}", code);
+        let id = format!("fyi.{code}");
         self.send_change(Change::Add {
             progress: ModProgress::Started { id },
         });
@@ -293,7 +293,7 @@ where
 
     #[instrument(skip(self))]
     async fn update_remote_mod(&self, code: &str) -> Result<Mod> {
-        let id = format!("fyi.{}", code);
+        let id = format!("fyi.{code}");
         self.send_change(Change::Update {
             progress: ModProgress::Started { id },
         });
@@ -330,7 +330,7 @@ where
 
     #[instrument]
     async fn download_mod(&self, code: &str, op_kind: OpKind) -> Result<DownloadedMod> {
-        let id = format!("fyi.{}", code);
+        let id = format!("fyi.{code}");
         // TODO send  updates
         let api_client = self.api_client.as_ref().ok_or_else(|| {
             Error::UnknownError(anyhow!(

@@ -73,10 +73,7 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
             io::copy(&mut file, &mut sha256)?;
             let file_hash = format!("{:x}", sha256.finalize());
             if file_hash != expected_hash {
-                println!(
-                    "Expected hash didn't match for {}. Invalidating cache...",
-                    known_file
-                );
+                println!("Expected hash didn't match for {known_file}. Invalidating cache...");
                 should_invalidate = true;
                 break;
             }
@@ -84,7 +81,7 @@ fn verify_release_cache(release_dir: &PathBuf, verify_hashes: bool) -> Result<()
     }
 
     if should_invalidate {
-        println!("Clearing cached directory at {:?}", release_dir);
+        println!("Clearing cached directory at {release_dir:?}");
         std::fs::remove_dir_all(release_dir)?;
     }
 
@@ -126,7 +123,7 @@ fn main() -> Result<()> {
     let project_dirs = ProjectDirs::from("", "spelunky.fyi", "modlunky2")
         .ok_or_else(|| anyhow!("Failed initialize project dirs..."))?;
 
-    println!("Launching modlunky2 v{}", MODLUNKY2_VERSION);
+    println!("Launching modlunky2 v{MODLUNKY2_VERSION}");
     let cache_dir = Path::new(project_dirs.cache_dir()).join("modlunky2-releases");
     if !cache_dir.exists() {
         println!(
@@ -139,7 +136,7 @@ fn main() -> Result<()> {
     let release_dir = cache_dir.join(MODLUNKY2_VERSION);
     if release_dir.exists() {
         if should_clear_cache {
-            println!("Clearing cached directory at {:?}", release_dir);
+            println!("Clearing cached directory at {release_dir:?}");
             std::fs::remove_dir_all(&release_dir)?;
         } else {
             verify_release_cache(&release_dir, should_verify_hashes)?;
