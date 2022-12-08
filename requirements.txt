@@ -4,7 +4,7 @@ colorhash==1.2.1
 fnvhash==0.1.0
 httpx==0.23.1
 hypercorn==0.14.3
-packaging==21.3
+packaging==22.0
 platformdirs==2.6.0
 pyperclip==1.8.2
 pyserde==0.9.6
