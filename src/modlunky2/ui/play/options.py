@@ -40,6 +40,16 @@ class OptionsFrame(ttk.Frame):
             command=self.handle_console_checkbutton,
         )
 
+        self.enable_overlunky_var = tk.BooleanVar()
+        self.enable_overlunky_var.set(self.modlunky_config.playlunky_overlunky)
+        self.enable_overlunky_checkbox = ttk.Checkbutton(
+            self,
+            text="Load Overlunky",
+            variable=self.enable_overlunky_var,
+            compound="left",
+            command=self.handle_overlunky_checkbutton,
+        )
+
         self.desktop_shortcut_var = tk.BooleanVar()
         self.desktop_shortcut_var.set(self.modlunky_config.playlunky_shortcut)
         self.desktop_shortcut_checkbox = ttk.Checkbutton(
@@ -102,6 +112,10 @@ class OptionsFrame(ttk.Frame):
                     row=row_num, column=0, padx=3, sticky="w"
                 )
                 row_num += 1
+                self.enable_overlunky_checkbox.grid(
+                    row=row_num, column=0, padx=3, sticky="w"
+                )
+                row_num += 1
 
     @staticmethod
     def format_text(text):
@@ -109,6 +123,10 @@ class OptionsFrame(ttk.Frame):
 
     def handle_console_checkbutton(self):
         self.modlunky_config.playlunky_console = self.enable_console_var.get()
+        self.modlunky_config.save()
+
+    def handle_overlunky_checkbutton(self):
+        self.modlunky_config.playlunky_overlunky = self.enable_overlunky_var.get()
         self.modlunky_config.save()
 
     @property

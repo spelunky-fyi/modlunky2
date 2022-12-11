@@ -5,7 +5,8 @@ from typing import List, Optional
 import zipfile
 from io import BytesIO
 from tkinter import ttk
-
+from functools import partial
+import webbrowser
 import requests
 
 from modlunky2.config import Config
@@ -45,7 +46,7 @@ def download_overlunky_release(call, install_dir, launch):
 
 
 class DownloadFrame(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, task_manager):
+    def __init__(self, parent, modlunky_config: Config, task_manager, tab):
         super().__init__(parent)
 
         self.parent = parent
@@ -53,6 +54,8 @@ class DownloadFrame(ttk.Frame):
         self.task_manager = task_manager
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, minsize=60)
+        self.rowconfigure(1, minsize=60)
+        self.rowconfigure(2, minsize=60)
 
         self.task_manager.register_task(
             "overlunky:start_download",
@@ -69,8 +72,22 @@ class DownloadFrame(ttk.Frame):
             "overlunky:download_failed", self.on_download_failed
         )
 
-        self.button = ttk.Button(self, text="Download Latest", command=self.download)
-        self.button.grid(row=0, column=0, sticky="nswe")
+        self.button = ttk.Button(
+            self,
+            text="Download latest WHIP build and script bundle",
+            command=self.download,
+        )
+        self.button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.button_update = ttk.Button(
+            self,
+            text="Reconfigure automatic updates",
+            command=partial(tab.launch, ["--update"]),
+        )
+        self.button_update.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.button_guide = ttk.Button(self, text="Documentation", command=tab.guide)
+        self.button_guide.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
 
     def download(self, launch=False):
         self.button["state"] = tk.DISABLED
@@ -97,12 +114,19 @@ class DownloadFrame(ttk.Frame):
             self.button["state"] = tk.NORMAL
 
 
-def launch_overlunky(_call, exe_path, command_prefix: Optional[List[str]]):
+def launch_overlunky(
+    _call,
+    exe_path,
+    command_prefix: Optional[List[str]],
+    command_args: Optional[List[str]],
+):
     logger.info("Executing Overlunky Launcher with %s", exe_path)
     working_dir = exe_path.parent
     cmd = [f"{exe_path}"]
     if command_prefix:
         cmd = command_prefix + cmd
+    if command_args:
+        cmd = cmd + command_args
     proc = subprocess.Popen(
         cmd, cwd=working_dir, creationflags=subprocess.CREATE_NEW_CONSOLE
     )
@@ -134,17 +158,41 @@ class OverlunkyTab(Tab):
         self.overlunky_frame.rowconfigure(0, weight=0)
         self.overlunky_frame.rowconfigure(1, weight=1)
         self.overlunky_frame.rowconfigure(2, minsize=60)
+        self.overlunky_frame.rowconfigure(3, minsize=60)
+        self.overlunky_frame.rowconfigure(4, minsize=60)
         self.overlunky_frame.columnconfigure(0, weight=1)
 
         self.download_frame = DownloadFrame(
-            self.overlunky_frame, self.modlunky_config, self.task_manager
+            self.overlunky_frame, self.modlunky_config, self.task_manager, self
         )
         self.download_frame.grid(row=1, column=0, pady=5, padx=5, sticky="nswe")
 
         self.button_launch = ttk.Button(
-            self.overlunky_frame, text="Launch!", command=self.launch
+            self.overlunky_frame,
+            text="Inject to running game process",
+            command=partial(
+                self.launch,
+                ["--console"],
+            ),
         )
-        self.button_launch.grid(row=2, column=0, pady=5, padx=5, sticky="nswe")
+        self.button_launch.grid(row=3, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.button_launch_game = ttk.Button(
+            self.overlunky_frame,
+            text="Launch vanilla game with Overlunky",
+            command=partial(
+                self.launch,
+                ["--console", "--launch_game", self.modlunky_config.install_dir],
+            ),
+        )
+        self.button_launch_game.grid(row=4, column=0, pady=5, padx=5, sticky="nswe")
+
+        ttk.Label(
+            self.overlunky_frame,
+            text="To use Overlunky with Playlunky/mods, use 'Inject' or enable 'Load Overlunky' option in the Playlunky tab.",
+            font="sans 9 bold",
+        ).grid(row=5, column=0, padx=5, pady=5, sticky="s")
+
         self.on_load()
 
     def enable_button(self):
@@ -171,7 +219,7 @@ class OverlunkyTab(Tab):
 
         return answer
 
-    def launch(self):
+    def launch(self, args=None):
         exe_path = self.modlunky_config.install_dir / OVERLUNKY_EXE
 
         self.disable_button()
@@ -189,8 +237,12 @@ class OverlunkyTab(Tab):
             "overlunky:launch_overlunky",
             exe_path=exe_path,
             command_prefix=self.modlunky_config.command_prefix,
+            command_args=args,
         )
 
     def overlunky_closed(self):
         self.enable_button()
         self.on_load()
+
+    def guide(self):
+        webbrowser.open_new_tab("https://github.com/spelunky-fyi/overlunky#readme")

@@ -183,6 +183,7 @@ class Config:
     )
     playlunky_version: Optional[str] = field(default=None, skip_if_default=True)
     playlunky_console: bool = field(default=False, skip_if_default=True)
+    playlunky_overlunky: bool = field(default=False, skip_if_default=True)
     playlunky_shortcut: bool = field(default=False, skip_if_default=True)
     geometry: str = field(default=f"{MIN_WIDTH}x{MIN_HEIGHT}", skip_if_default=True)
     spelunky_fyi_root: str = field(

@@ -28,7 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def launch_playlunky(
-    _call, install_dir, exe_path, use_console, command_prefix: Optional[List[str]]
+    _call,
+    install_dir,
+    exe_path,
+    use_console,
+    use_overlunky,
+    command_prefix: Optional[List[str]],
 ):
     logger.info(
         "Executing Playlunky Launcher with %s", exe_path.relative_to(PLAYLUNKY_DATA_DIR)
@@ -41,6 +46,9 @@ def launch_playlunky(
 
     if use_console:
         cmd.append("--console")
+
+    if use_overlunky:
+        cmd.append("--overlunky")
 
     proc = subprocess.Popen(cmd, cwd=working_dir)
     proc.communicate()
@@ -327,6 +335,7 @@ class PlayTab(Tab):
             install_dir=self.modlunky_config.install_dir,
             exe_path=exe_path,
             use_console=self.modlunky_config.playlunky_console,
+            use_overlunky=self.modlunky_config.playlunky_overlunky,
             command_prefix=self.modlunky_config.command_prefix,
         )
 
