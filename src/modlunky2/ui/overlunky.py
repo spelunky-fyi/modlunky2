@@ -103,7 +103,9 @@ def launch_overlunky(_call, exe_path, command_prefix: Optional[List[str]]):
     cmd = [f"{exe_path}"]
     if command_prefix:
         cmd = command_prefix + cmd
-    proc = subprocess.Popen(cmd, cwd=working_dir)
+    proc = subprocess.Popen(
+        cmd, cwd=working_dir, creationflags=subprocess.CREATE_NEW_CONSOLE
+    )
     proc.communicate()
 
 
