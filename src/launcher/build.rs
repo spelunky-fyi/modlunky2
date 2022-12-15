@@ -77,12 +77,12 @@ fn main() -> io::Result<()> {
         .trim()
         .into();
     let dest_path = Path::new(&out_dir).join("modlunky2.version");
-    fs::write(&dest_path, version)?;
+    fs::write(dest_path, version)?;
 
     // Zip up and bundle the modlunky2 dist
     let src_dir = "../../dist/modlunky2";
     let dest_path = Path::new(&out_dir).join("modlunky2.zip");
-    let out_file = File::create(&dest_path).unwrap();
+    let out_file = File::create(dest_path).unwrap();
     let walkdir = WalkDir::new(src_dir);
     let it = walkdir.into_iter();
     let hashes = zip_dir(
@@ -93,7 +93,7 @@ fn main() -> io::Result<()> {
     )?;
 
     let dest_path = Path::new(&out_dir).join("hashes.rs");
-    let mut out_file = File::create(&dest_path).unwrap();
+    let mut out_file = File::create(dest_path).unwrap();
 
     writeln!(out_file, "static KNOWN_FILES: &[&str] = &[")?;
     for key in hashes.keys() {
