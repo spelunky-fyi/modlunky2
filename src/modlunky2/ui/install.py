@@ -68,7 +68,7 @@ class SourceChooser(ttk.Frame):
         self.file_chooser_var.set(filename)
         parent = Path(filename).parent
 
-        self.modlunky_config.last_install_browse = parent.as_posix()
+        self.modlunky_config.last_install_browse = parent
         self.modlunky_config.save()
         self.master.master.render()
 
