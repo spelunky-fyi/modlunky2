@@ -1,4 +1,4 @@
-Pillow==9.3.0
+Pillow==9.4.0
 anyio==3.6.2
 colorhash==1.2.1
 fnvhash==0.1.0
