@@ -170,7 +170,7 @@ class PlayTab(Tab):
         if self.modlunky_config.install_dir:
             path = self.modlunky_config.install_dir / "playlunky.ini"
             if path.exists():
-                with path.open() as ini_file:
+                with path.open(encoding="utf-8") as ini_file:
                     try:
                         self.ini = PlaylunkyConfig.from_ini(ini_file)
                     except configparser.Error:
@@ -205,7 +205,7 @@ class PlayTab(Tab):
                         option,
                     )
 
-        with path.open("w") as handle:
+        with path.open("w", encoding="utf-8") as handle:
             self.ini.write(handle)
 
     def load_from_load_order(self):
@@ -246,7 +246,7 @@ class PlayTab(Tab):
             return
 
         path = self.modlunky_config.install_dir / "steam_appid.txt"
-        with path.open("w") as handle:
+        with path.open("w", encoding="utf-8") as handle:
             handle.write("418530")
 
     @property
@@ -296,7 +296,9 @@ class PlayTab(Tab):
             logger.info("No version info for current download. Updating to latest.")
             return True
 
-        with downloaded_version_path.open("r") as downloaded_version_file:
+        with downloaded_version_path.open(
+            "r", encoding="utf-8"
+        ) as downloaded_version_file:
             downloaded_version = downloaded_version_file.read().strip()
 
         if downloaded_version != release_version:

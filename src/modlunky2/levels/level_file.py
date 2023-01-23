@@ -126,7 +126,7 @@ class LevelFile:
         self.level_templates.write(handle)
 
     def write_path(self, level_path: Path):
-        with level_path.open("w") as level_fh:
+        with level_path.open("w", encoding="cp1252") as level_fh:
             self.write(level_fh)
 
     def print(self):

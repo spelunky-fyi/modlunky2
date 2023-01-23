@@ -226,7 +226,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
 
         TRACKERS_DIR.mkdir(parents=True, exist_ok=True)
         self.text_file = TRACKERS_DIR / file_name
-        with self.text_file.open("w") as handle:
+        with self.text_file.open("w", encoding="utf-8") as handle:
             handle.write(self.text)
 
         self.watcher_thread.start()
@@ -252,7 +252,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
             return
         self.text = new_text
         self.label.configure(text=self.text)
-        with self.text_file.open("w") as handle:
+        with self.text_file.open("w", encoding="utf-8") as handle:
             handle.write(new_text)
 
     def shut_down(self, level, message):
@@ -297,7 +297,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         if self.on_close:
             self.on_close()
 
-        with self.text_file.open("w") as handle:
+        with self.text_file.open("w", encoding="utf-8") as handle:
             handle.write("Not running")
 
         return super().destroy()

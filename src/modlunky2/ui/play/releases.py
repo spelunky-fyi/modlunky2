@@ -65,7 +65,7 @@ def download_playlunky_release(call, tag, download_url, launch):
 
         version_path = dest_path / PLAYLUNKY_VERSION_FILENAME
         logger.debug("Writing version to %s", version_path)
-        with version_path.open("w") as version_file:
+        with version_path.open("w", encoding="utf-8") as version_file:
             version_file.write(version)
 
     except Exception:  # pylint: disable=broad-except
