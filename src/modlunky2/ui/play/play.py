@@ -213,7 +213,7 @@ class PlayTab(Tab):
         if not load_order_path or not load_order_path.exists():
             return
 
-        with load_order_path.open("r") as load_order_file:
+        with load_order_path.open("r", encoding="utf-8") as load_order_file:
             for line in load_order_file:
                 line = line.strip()
 
@@ -232,7 +232,7 @@ class PlayTab(Tab):
 
     def write_load_order(self):
         load_order_path = self.load_order_path
-        with load_order_path.open("w") as load_order_file:
+        with load_order_path.open("w", encoding="utf-8") as load_order_file:
             all_packs = set(self.packs_frame.pack_objs.keys())
             for pack in self.load_order.all():
                 all_packs.remove(pack)
