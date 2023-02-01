@@ -171,6 +171,7 @@ class _UnorderedMapNodeType(MemType[_UnorderedMapNode]):
 K = TypeVar("K")  # pylint: disable=invalid-name
 V = TypeVar("V")  # pylint: disable=invalid-name
 
+
 # Contains key-value pairs. Only the "core" data is fetched eagerly.
 # Lookups are done on-demand, and may fail.
 @dataclass(frozen=True)

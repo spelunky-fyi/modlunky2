@@ -205,7 +205,6 @@ class OverlunkyTab(Tab):
         return (self.modlunky_config.install_dir / OVERLUNKY_EXE).exists()
 
     def should_install(self):
-
         msg = (
             f"You don't have Overlunky installed at {self.modlunky_config.install_dir / OVERLUNKY_EXE}.\n\n"
             "Would you like to install and run the latest?"

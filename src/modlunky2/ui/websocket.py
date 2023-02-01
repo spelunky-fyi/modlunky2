@@ -104,7 +104,6 @@ class WebSocketThread(threading.Thread):
             logger.debug("Unknown action (%s). Ignoring", payload)
 
     async def handle_install(self, channel_name, data):
-
         if "install-code" not in data:
             logger.warning("Invalid install request: %s", data)
             return
@@ -171,7 +170,6 @@ class WebSocketThread(threading.Thread):
                 return
 
     async def run_async(self):
-
         tasks = []
 
         logger.debug("starting healthcheck")

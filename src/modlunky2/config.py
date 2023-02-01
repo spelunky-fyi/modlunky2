@@ -111,6 +111,7 @@ def guess_install_dir(exe_dir: Optional[Path] = None):
 
 T = TypeVar("T")
 
+
 # Common config for all trackers. Currently a placeholder
 @dataclass
 class CommonTrackerConfig:

@@ -264,7 +264,6 @@ class Arena:
         bytes_ = [0xFF] * ARENA_SIZE
 
         for template in level_file.level_templates.all():
-
             chunk_idx = 0
             room = template.chunks[chunk_idx]
             while TemplateSetting.IGNORE in room.settings:
@@ -288,7 +287,6 @@ class Arena:
                 row_start = row_idx * PREVIEW_WIDTH
 
                 for tile_idx, tile in enumerate(row):
-
                     byte_offset = row_start + column_offset + tile_idx
                     tile_name = tile_codes[tile]
                     if flipped:
@@ -348,7 +346,6 @@ class DmPreviewTok:
 
     @classmethod
     def from_path(cls, dmpreview_path):
-
         arenas = []
 
         with dmpreview_path.open("rb") as dmpreview:

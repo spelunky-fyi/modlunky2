@@ -224,7 +224,6 @@ class Spel2Process:
     def get_spel2_module(self):
         module_handles = win32process.EnumProcessModules(self.proc_handle)
         for module_handle in module_handles:
-
             module_filename = Path(
                 win32process.GetModuleFileNameEx(self.proc_handle, module_handle)
             )

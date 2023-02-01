@@ -20,6 +20,7 @@ from typing import (
 import typing
 from typing_extensions import get_args, get_origin
 
+
 # Abstract memory-reader interface, used if pointers are dereferenced.
 class MemoryReader(ABC):
     @abstractmethod
@@ -43,6 +44,7 @@ _EMPTY_BYTES_READER = BytesReader(bytes())
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name
+
 
 # MemType abstracts constructing a field value from memory.
 #
@@ -224,6 +226,7 @@ def unwrap_collection_type(path: FieldPath, py_type: type) -> Tuple[type, type]:
 
 DeferredMemType = Callable[[FieldPath, Type], MemType]
 DeferredBiMemType = Callable[[FieldPath, Type], BiMemType]
+
 
 # Metadata stored during dataclass definition
 @dataclass(frozen=True)

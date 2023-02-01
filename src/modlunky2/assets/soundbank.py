@@ -20,7 +20,6 @@ class Extension(Enum):
 def extract_soundbank(
     soundbank_path: Path, dest_path: Path, extract_extensions: Extension = None
 ):
-
     if extract_extensions:
         extract_extensions = set(ext.value for ext in extract_extensions)
 

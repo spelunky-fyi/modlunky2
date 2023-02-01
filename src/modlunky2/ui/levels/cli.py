@@ -179,7 +179,6 @@ def main():
 
 
 def launch(args):
-
     make_user_dirs()
     launcher_exe: Optional[Path] = args.launcher_exe
     exe_dir = None

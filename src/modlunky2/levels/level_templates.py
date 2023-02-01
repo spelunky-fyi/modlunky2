@@ -215,7 +215,6 @@ class Chunk:
         return chunk
 
     def write(self, handle: TextIO):
-
         if self.comment:
             handle.write(f"{format_comment(self.comment).rstrip()}\n")
 

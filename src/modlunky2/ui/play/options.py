@@ -75,7 +75,6 @@ class OptionsFrame(ttk.Frame):
             for option in options:
                 option_type = OPTION_TYPES.get(option, bool)
                 if option_type == int:
-
                     self.ini_options[option] = tk.IntVar()
                     _frame = ttk.Frame(self)
                     _frame.grid(row=row_num, column=0, sticky="ew")
@@ -162,7 +161,6 @@ class OptionsFrame(ttk.Frame):
             self.shortcut_path.unlink()
 
     def handle_desktop_shortcut(self):
-
         shortcut = self.desktop_shortcut_var.get()
         self.modlunky_config.playlunky_shortcut = shortcut
 

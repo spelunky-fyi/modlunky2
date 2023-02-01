@@ -54,7 +54,6 @@ class LevelFile:
 
         level_fh = Peekable(level_fh)
         for line in level_fh:
-
             line = line.strip()
             if not line:
                 continue

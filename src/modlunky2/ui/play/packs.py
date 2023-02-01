@@ -105,7 +105,6 @@ def cache_fyi_pack_details(
 
 
 class PacksFrame(ScrollableLabelFrame):
-
     CACHE_FYI_INTERVAL = 1000 * 10 * 60
 
     def __init__(self, play_tab, parent, modlunky_config: Config, task_manager):

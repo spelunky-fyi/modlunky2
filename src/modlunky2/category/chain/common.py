@@ -9,6 +9,7 @@ from modlunky2.mem.state import State
 
 logger = logging.getLogger(__name__)
 
+
 # Status of the quest chain.
 # The properties are for convenience in 'if' condition
 class ChainStatus(IntEnum):

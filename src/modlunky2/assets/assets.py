@@ -529,7 +529,6 @@ class DiskBundle:
         compressed_dir,
         resolution_policy=ResolutionPolicy.RAISE_ERROR,
     ):
-
         modfiles_by_filename = defaultdict(list)
         disk_assets = {}
 

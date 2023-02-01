@@ -120,7 +120,6 @@ class Tab(ttk.Frame):
 
 class ScrollableFrame(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
-
         self.inner = ScrollableFrameInner(parent)
         self.inner.grid(sticky="nsew")
 
@@ -129,7 +128,6 @@ class ScrollableFrame(ttk.Frame):
 
 class ScrollableLabelFrame(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
-
         self.wrapper = ttk.LabelFrame(parent, *args, **kwargs)
         self.wrapper.columnconfigure(0, weight=1)
         self.wrapper.rowconfigure(0, weight=1)
@@ -197,7 +195,6 @@ class ScrollableMixin:
 
 class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
     def __init__(self, parent, *args, **kw):
-
         ttk.Frame.__init__(self, parent, *args, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -235,7 +232,6 @@ class ScrollableFrameInner(ScrollableMixin, ttk.Frame):
 
 class ScrollableFrameLegacy(ScrollableMixin, ttk.LabelFrame):
     def __init__(self, parent, *args, **kw):
-
         ttk.LabelFrame.__init__(self, parent, *args, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)

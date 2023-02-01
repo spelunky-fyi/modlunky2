@@ -261,7 +261,6 @@ def write_manifest(dest_dir: Path, mod_details, mod_file, logo=None):
 
 
 def download_contents(_call, url):
-
     contents = BytesIO()
 
     try:
