@@ -10,13 +10,13 @@ rust-version.workspace = true
 
 [dependencies]
 directories = "4.0.1"
-zip = "0.6.3"
+zip = "0.6.4"
 anyhow = "1.0.68"
 clap = "4.1.4"
 sha2 = "0.10.6"
 
 [build-dependencies]
-zip = "0.6.3"
+zip = "0.6.4"
 walkdir = "2.3.2"
 sha2 = "0.10.6"
 
