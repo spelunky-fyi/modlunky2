@@ -166,7 +166,7 @@ class RunLabel:
         for mut in self._MUTUALLY_EXCLUSIVE:
             inter = mut & self._set
             if len(inter) > 1:
-                raise Exception(f"Found mutually-exclusive labels {inter}")
+                raise ValueError(f"Found mutually-exclusive labels {inter}")
 
     def _visible(
         self, hide_early: bool, excluded_categories: FrozenSet[Label]
@@ -215,7 +215,7 @@ class RunLabel:
             if found is None:
                 found = candidate
             elif candidate.value.percent_priority == found.value.percent_priority:
-                raise Exception(
+                raise RuntimeError(
                     f"Showing labels with equal percent_priority {candidate} {found}"
                 )
             elif candidate.value.percent_priority > found.value.percent_priority:
