@@ -14,24 +14,24 @@
     "format-write": "prettier -w --plugin-search-dir=. **.svelte **.ts **.js"
   },
   "devDependencies": {
-    "@fortawesome/free-solid-svg-icons": "^6.1.2",
-    "@iconify-json/fa-solid": "^1.1.2",
-    "@sveltejs/vite-plugin-svelte": "^1.0.1",
+    "@fortawesome/free-solid-svg-icons": "^6.3.0",
+    "@iconify-json/fa-solid": "^1.1.4",
+    "@sveltejs/vite-plugin-svelte": "^1.4.0",
     "@tauri-apps/api": "^1.2.0",
-    "@tauri-apps/cli": "^1.2.0",
+    "@tauri-apps/cli": "^1.2.3",
     "@tsconfig/svelte": "^3.0.0",
     "@unocss/preset-wind": "^0.45.4",
     "@unocss/reset": "^0.45.4",
-    "eslint": "^8.21.0",
-    "prettier": "^2.7.1",
-    "svelte": "^3.49.0",
-    "svelte-awesome": "^3.0.0",
-    "svelte-check": "^2.8.0",
-    "svelte-dnd-action": "^0.9.19",
+    "eslint": "^8.34.0",
+    "prettier": "^2.8.4",
+    "svelte": "^3.55.1",
+    "svelte-awesome": "^3.0.1",
+    "svelte-check": "^2.10.3",
+    "svelte-dnd-action": "^0.9.22",
     "svelte-preprocess": "^4.10.7",
-    "tslib": "^2.4.0",
-    "typescript": "^4.6.4",
-    "unocss": "^0.45.4",
-    "vite": "^3.0.0"
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5",
+    "unocss": "^0.45.30",
+    "vite": "^3.2.5"
   }
 }
