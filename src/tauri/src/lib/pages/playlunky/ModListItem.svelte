@@ -35,7 +35,7 @@
     </ModListItemButton>
     {#if draggable}
       <ModListItemButton
-        class={dragging ? "cursor-grab" : "cursor-grabbing"}
+        styleClass={dragging ? "cursor-grab" : "cursor-grabbing"}
         on:mousedown
         on:mouseup
         on:touchstart

@@ -1,10 +1,12 @@
 <script lang="ts">
   import { Button } from "../../common";
+
+  export let styleClass = "";
 </script>
 
 <Button
   color="transparent"
-  class="text-zinc-500 {$$restProps.class || ''}"
+  class="text-zinc-500 {styleClass}"
   on:click
   on:mousedown
   on:mouseup

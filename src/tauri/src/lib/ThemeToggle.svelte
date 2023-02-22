@@ -4,6 +4,8 @@
   import Icon from "svelte-awesome";
   import { Button } from "./common";
 
+  export let styleClass = "";
+
   const storageKey = "theme-preference";
 
   const theme = {
@@ -15,7 +17,9 @@
     if (item) {
       return item;
     } else {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     }
   }
 
@@ -52,6 +56,6 @@
   });
 </script>
 
-<Button color="transparent" on:click={handleClick} class="w-9 h-9 {$$restProps.class || ''}">
+<Button color="transparent" on:click={handleClick} class="w-9 h-9 {styleClass}">
   <Icon data={theme.value === "dark" ? faSun : faMoon} />
 </Button>

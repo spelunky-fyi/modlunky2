@@ -17,11 +17,15 @@
 <OptionGroup>
   <Text level="h3" slot="heading">Version Select</Text>
   <Stack spacing="none">
-    <Button size="tiny" class="flex-1 rounded-l rounded-r-none border-r-0">stable</Button>
+    <Button size="tiny" class="flex-1 rounded-l rounded-r-none border-r-0"
+      >stable</Button
+    >
     <Button size="tiny" class="flex-1 rounded-none border-x-0">nightly</Button>
     <Stack class="flex-1" spacing="none">
-      <Button size="tiny" class="flex-1 rounded-none border-x-0">{$version.revision}</Button>
-      <Menu class="rounded-l-none rounded-r">
+      <Button size="tiny" class="flex-1 rounded-none border-x-0"
+        >{$version.revision}</Button
+      >
+      <Menu styleClass="rounded-l-none rounded-r">
         <div class="i-fa-solid-chevron-down" />
         <Stack direction="vertical" spacing="none" slot="content">
           {#each versions as v, index (v.id)}

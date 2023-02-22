@@ -18,5 +18,5 @@
       class:tab-active={$activeTabIndex === index}>{tab.title}</button
     >
   {/each}
-  <ThemeToggle class="absolute inset-y-2 right-2" />
+  <ThemeToggle styleClass="absolute inset-y-2 right-2" />
 </div>

@@ -4,6 +4,7 @@
 
   let open = false;
   let menu: HTMLElement;
+  export let styleClass = "";
 
   onMount(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -31,7 +32,7 @@
 </script>
 
 <div class="relative " bind:this={menu}>
-  <Button class={$$restProps.class || ""} on:click={() => (open = !open)}>
+  <Button class={styleClass} on:click={() => (open = !open)}>
     <slot />
   </Button>
   {#if open}
