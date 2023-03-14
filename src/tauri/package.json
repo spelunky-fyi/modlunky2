@@ -22,7 +22,7 @@
     "@tsconfig/svelte": "^3.0.0",
     "@unocss/preset-wind": "^0.50.0",
     "@unocss/reset": "^0.50.0",
-    "eslint": "^8.35.0",
+    "eslint": "^8.36.0",
     "prettier": "^2.8.4",
     "svelte": "^3.56.0",
     "svelte-awesome": "^3.1.0",
