@@ -14,7 +14,7 @@ tauri-build = { version = "1.2.1", features = [] }
 
 [dependencies]
 anyhow = "1.0"
-directories = "4.0"
+directories = "5.0"
 ml2_mods = { path = "../../libs/ml2_mods" }
 ml2_net = { path = "../../libs/ml2_net" }
 rand = "0.8"
