@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import Unocss from "unocss/vite";
-import { extractorSvelte, presetIcons, presetWebFonts } from "unocss";
+import { presetIcons, presetWebFonts } from "unocss";
+import extractorSvelte from '@unocss/extractor-svelte';
 import { presetWind } from "@unocss/preset-wind";
 
 // https://vitejs.dev/config/
@@ -18,7 +19,7 @@ export default defineConfig({
   },
   plugins: [
     Unocss({
-      extractors: [extractorSvelte],
+      extractors: [extractorSvelte()],
       shortcuts: [
         {
           tab: "flex items-center justify-center px-2 py-1.5 font-semibold rounded-t hover:bg-zinc-100 dark:hover:bg-zinc-600 transition",
