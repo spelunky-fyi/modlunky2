@@ -20,7 +20,7 @@
     "@tauri-apps/api": "^1.2.0",
     "@tauri-apps/cli": "^1.2.3",
     "@tsconfig/svelte": "^4.0.1",
-    "@unocss/extractor-svelte": "^0.51.4",
+    "@unocss/extractor-svelte": "^0.51.5",
     "@unocss/preset-wind": "^0.51.2",
     "@unocss/reset": "^0.51.2",
     "eslint": "^8.38.0",
