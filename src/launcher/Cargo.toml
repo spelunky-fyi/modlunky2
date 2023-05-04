@@ -12,7 +12,7 @@ rust-version.workspace = true
 directories = "5.0.0"
 zip = "0.6.4"
 anyhow = "1.0.70"
-clap = "4.2.5"
+clap = "4.2.7"
 sha2 = "0.10.6"
 
 [build-dependencies]
