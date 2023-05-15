@@ -3,4 +3,4 @@ flake8==6.0.0
 pylint==2.17.4
 pytest==7.3.1
 pip-api==0.0.30
-pyinstaller==5.10.1
+pyinstaller==5.11.0
