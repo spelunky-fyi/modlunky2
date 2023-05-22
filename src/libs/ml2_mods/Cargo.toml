@@ -41,5 +41,5 @@ tracing = "0.1"
 zip = "0.6"
 
 [dev-dependencies]
-clap = { version = "4.2", features = ["derive"] }
+clap = { version = "4.3", features = ["derive"] }
 tracing-subscriber = "0.3"
