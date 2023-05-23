@@ -11,6 +11,6 @@ pyserde==0.10.5
 requests==2.30.0
 sfyi-fsb5==1.1
 starlette==0.27.0
-typing_extensions==4.5.0
+typing_extensions==4.6.0
 websockets==11.0.3
 zstandard==0.21.0
