@@ -8,11 +8,11 @@
   let dragDisabled = true;
 
   function handleConsider(event: CustomEvent) {
-    $mods = [...event.detail.items];
+    $enabledMods = [...event.detail.items];
   }
 
   function handleFinalize(event: CustomEvent) {
-    $mods = [...event.detail.items];
+    $enabledMods = [...event.detail.items];
     dragDisabled = true;
   }
 
@@ -28,7 +28,7 @@
 <ModListHeader count={$enabledMods.length}>Enabled</ModListHeader>
 <ul
   use:dndzone={{
-    items: $mods,
+    items: $enabledMods,
     dragDisabled,
     flipDurationMs,
     dropTargetStyle: {},

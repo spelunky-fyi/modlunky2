@@ -24,9 +24,27 @@ export const mods: Writable<Mod[]> = writable([
   },
 ]);
 
-export const enabledMods = derived(mods, ($mods) =>
-  $mods.filter((mod) => mod.enabled)
-);
+export const enabledMods: Writable<Mod[]> = writable([]);
+mods.subscribe((mods) => {
+  // Update enabled mods without changing order
+  enabledMods.update((enabledMods) => {
+    const newEnabledMods = mods.filter((mod) => mod.enabled);
+    // Update enabled mods references and add new enabled mods
+    for (let newEnabledMod of newEnabledMods) {
+      let enabledModIndex = enabledMods.findIndex(
+        (enabledMod) => enabledMod.id === newEnabledMod.id
+      );
+
+      if (enabledModIndex !== -1) {
+        enabledMods[enabledModIndex] = newEnabledMod;
+      } else if (newEnabledMod.enabled) {
+        enabledMods.push(newEnabledMod);
+      }
+    }
+    // Remove disabled or no longer existant mods
+    return enabledMods.filter((mod) => newEnabledMods.includes(mod));
+  });
+});
 
 export const installedMods = derived(mods, ($mods) =>
   $mods.filter((mod) => !mod.enabled)
