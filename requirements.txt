@@ -1,5 +1,5 @@
 Pillow==9.5.0
-anyio==3.6.2
+anyio==3.7.0
 colorhash==1.2.1
 fnvhash==0.1.0
 httpx==0.24.1
