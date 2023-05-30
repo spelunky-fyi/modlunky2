@@ -129,7 +129,7 @@ impl WebSocketClient {
             ..Default::default()
         };
 
-        let mut stream = tokio_tungstenite::connect_async_with_config(request, Some(config))
+        let mut stream = tokio_tungstenite::connect_async_with_config(request, Some(config), false)
             .await
             .map(|v| v.0)?;
         debug!("WebSocket connected");
