@@ -1,9 +1,5 @@
-<script lang="ts">
-  export let size: ButtonSize = "default";
-  export let color: ButtonColor = "default";
-  export let disabled = false;
-
-  const buttonStyles = {
+<script context="module" lang="ts">
+  export const buttonStyles = {
     base: "flex items-center justify-center gap-2.5 border-none rounded transition font-medium font-roboto cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
 
     size: {
@@ -28,6 +24,12 @@
       info: "bg-sky-600 hover:bg-sky-500 active:bg-opacity-75 disabled:bg-sky-600 text-sky-100",
     },
   };
+</script>
+
+<script lang="ts">
+  export let size: ButtonSize = "default";
+  export let color: ButtonColor = "default";
+  export let disabled = false;
 </script>
 
 <button
