@@ -21,7 +21,7 @@
     "@tauri-apps/cli": "^1.3.1",
     "@tsconfig/svelte": "^4.0.1",
     "@unocss/extractor-svelte": "^0.52.7",
-    "@unocss/preset-wind": "^0.52.4",
+    "@unocss/preset-wind": "^0.53.0",
     "@unocss/reset": "^0.52.4",
     "eslint": "^8.41.0",
     "prettier": "^2.8.8",
