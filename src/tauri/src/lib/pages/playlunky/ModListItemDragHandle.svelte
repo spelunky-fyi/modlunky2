@@ -11,8 +11,8 @@
   on:touchstart
   on:touchend
   class="{buttonStyles.base}
-    {buttonStyles.size['default']}
-    {buttonStyles.colors['transparent']}
+    {buttonStyles.size.default}
+    {buttonStyles.colors.transparent}
     text-zinc-500 {styleClass}"
 >
   <slot />
