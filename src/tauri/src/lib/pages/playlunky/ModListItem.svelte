@@ -3,6 +3,7 @@
   import { Stack, Text } from "../../common";
   import ModLogo from "./ModLogo.svelte";
   import ModListItemButton from "./ModListItemButton.svelte";
+  import ModListItemDragHandle from "./ModListItemDragHandle.svelte";
 
   export let name = "Mod Name";
   export let draggable = false;
@@ -34,7 +35,7 @@
       <div class="i-fa-solid-trash-alt" />
     </ModListItemButton>
     {#if draggable}
-      <ModListItemButton
+      <ModListItemDragHandle
         styleClass={dragging ? "cursor-grab" : "cursor-grabbing"}
         on:mousedown
         on:mouseup
@@ -42,7 +43,7 @@
         on:touchend
       >
         <div class="i-fa-solid-bars" />
-      </ModListItemButton>
+      </ModListItemDragHandle>
     {/if}
   </Stack>
 </Stack>
