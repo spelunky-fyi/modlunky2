@@ -7,7 +7,7 @@ hypercorn==0.14.3
 packaging==23.1
 platformdirs==3.5.3
 pyperclip==1.8.2
-pyserde==0.10.8
+pyserde==0.11.0
 requests==2.31.0
 sfyi-fsb5==1.1
 starlette==0.28.0
