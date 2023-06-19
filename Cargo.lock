@@ -4313,9 +4313,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-graceful-shutdown"
-version = "0.12.1"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eb79512dae3f5a9edea10ab138f785c9076643c5485a4395ba16eedb1923a9f"
+checksum = "30666f313a52f7e87e9f14212d3e33c2ab59b444c405188ffcf8c36a84ca7688"
 dependencies = [
  "async-recursion",
  "async-trait",
