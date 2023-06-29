@@ -31,7 +31,7 @@
     "svelte-dnd-action": "^0.9.22",
     "svelte-preprocess": "^5.0.4",
     "tslib": "^2.6.0",
-    "typescript": "^5.1.3",
+    "typescript": "^5.1.6",
     "unocss": "^0.53.4",
     "vite": "^3.2.7"
   }
