@@ -4833,7 +4833,7 @@ class LevelsTab(Tab):
                                                 ImageTk.getimage(tiles[-1][1])
                                                 .resize(
                                                     (self.mag_full, self.mag_full),
-                                                    Image.ANTIALIAS,
+                                                    Image.Resampling.LANCZOS,
                                                 )
                                                 .convert("RGBA")
                                             )
@@ -7030,7 +7030,7 @@ class LevelsTab(Tab):
             width = width + difference
             height = height + difference
 
-        img = img.resize((width, height), Image.ANTIALIAS)
+        img = img.resize((width, height), Image.Resampling.LANCZOS)
         return img
 
     @staticmethod

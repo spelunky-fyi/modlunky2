@@ -105,7 +105,9 @@ class CategoryButtons(ttk.Frame):
         self.window = None
 
         self.cat_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "cat2.png").resize((24, 24), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "cat2.png").resize(
+                (24, 24), Image.Resampling.LANCZOS
+            )
         )
 
         self.category_button = ttk.Button(

@@ -160,7 +160,7 @@ class Pack:
         ):
             self.logo_img = ImageTk.PhotoImage(
                 Image.open(self.pack_metadata_path / self.manifest["logo"]).resize(
-                    (40, 40), Image.ANTIALIAS
+                    (40, 40), Image.Resampling.LANCZOS
                 )
             )
             self.logo.configure(image=self.logo_img)

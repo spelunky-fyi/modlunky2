@@ -100,10 +100,12 @@ class BaseSpriteMerger(ABC):
             lines.reverse()
             current_height = 0
             for line in lines:
-                line_width, line_height = default_font.getsize(line)
-                current_height = current_height + line_height
+                _line_left, _line_top, line_right, line_bottom = default_font.getbbox(
+                    line
+                )
+                current_height = current_height + line_bottom
                 self._grid_image_draw.text(
-                    (image_size[0] - line_width, image_size[1] - current_height),
+                    (image_size[0] - line_right, image_size[1] - current_height),
                     line,
                     font=default_font,
                 )

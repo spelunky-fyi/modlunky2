@@ -130,16 +130,24 @@ class PacksFrame(ScrollableLabelFrame):
         self.pack_objs: Dict[str, Pack] = {}
 
         self.folder_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "folder.png").resize((36, 36), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "folder.png").resize(
+                (36, 36), Image.Resampling.LANCZOS
+            )
         )
         self.trash_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "trash.png").resize((36, 36), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "trash.png").resize(
+                (36, 36), Image.Resampling.LANCZOS
+            )
         )
         self.options_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "options.png").resize((36, 36), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "options.png").resize(
+                (36, 36), Image.Resampling.LANCZOS
+            )
         )
         self.update_icon = ImageTk.PhotoImage(
-            Image.open(ICON_PATH / "update.png").resize((36, 36), Image.ANTIALIAS)
+            Image.open(ICON_PATH / "update.png").resize(
+                (36, 36), Image.Resampling.LANCZOS
+            )
         )
 
         # Schedule cache update in the future. Will attempt immediate pull first
