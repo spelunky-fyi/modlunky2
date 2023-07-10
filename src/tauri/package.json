@@ -28,7 +28,7 @@
     "svelte": "^3.59.2",
     "svelte-awesome": "^3.2.1",
     "svelte-check": "^3.4.5",
-    "svelte-dnd-action": "^0.9.22",
+    "svelte-dnd-action": "^0.9.24",
     "svelte-preprocess": "^5.0.4",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6",
