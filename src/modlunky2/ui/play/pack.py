@@ -1,7 +1,9 @@
 import json
 import logging
 import shutil
+import sys
 import tkinter as tk
+import traceback
 from tkinter import ttk
 
 from PIL import Image, ImageTk
@@ -158,15 +160,20 @@ class Pack:
             self.manifest.get("logo")
             and (self.pack_metadata_path / self.manifest["logo"]).exists()
         ):
-            self.logo_img = ImageTk.PhotoImage(
-                Image.open(self.pack_metadata_path / self.manifest["logo"]).resize(
-                    (40, 40), Image.Resampling.LANCZOS
+            try:
+                self.logo_img = ImageTk.PhotoImage(
+                    Image.open(self.pack_metadata_path / self.manifest["logo"]).resize(
+                        (40, 40), Image.Resampling.LANCZOS
+                    )
                 )
-            )
-            self.logo.configure(image=self.logo_img)
-        else:
-            self.logo_img = None
-            self.logo.configure(image=None)
+            except Exception:  # pylint: disable=broad-exception-caught
+                logger.error(
+                    "Failed to load logo for %s: %s",
+                    self.name,
+                    "".join(traceback.format_exception(*sys.exc_info())).strip(),
+                )
+
+        self.logo.configure(image=self.logo_img)
 
         self.check_needs_update()
         self.render_buttons()
