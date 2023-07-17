@@ -23,7 +23,7 @@
     "@unocss/extractor-svelte": "^0.53.5",
     "@unocss/preset-wind": "^0.53.1",
     "@unocss/reset": "^0.53.1",
-    "eslint": "^8.44.0",
+    "eslint": "^8.45.0",
     "prettier": "^3.0.0",
     "svelte": "^3.59.2",
     "svelte-awesome": "^3.2.1",
