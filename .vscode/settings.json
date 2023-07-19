@@ -4,22 +4,18 @@
   "files.eol": "\n",
   // UI
   "svelte.plugin.typescript.enable": true,
-  "eslint.validate": [
-    "javascript",
-    "typescript",
-    "svelte"],
+  "eslint.validate": ["javascript", "typescript", "svelte"],
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   // Python
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "none",
   "python.linting.pylintEnabled": true,
-  "python.linting.pylintArgs": [
-    "--disable=R,C"
-  ],
-  "python.testing.pytestArgs": [
-    "src/"
-  ],
+  "python.linting.pylintArgs": ["--disable=R,C"],
+  "python.testing.pytestArgs": ["src/"],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
 }
