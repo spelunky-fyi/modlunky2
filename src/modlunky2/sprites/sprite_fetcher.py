@@ -115,16 +115,16 @@ class SpelunkySpriteFetcher:
             new_font = ImageFont.truetype(
                 str(BASE_DIR / "static/fonts/FiraSans-SemiBold.ttf"), size=font_size
             )
-            dimensions = imgdraw.textsize(imgtxt, new_font)
-            if dimensions[0] > (w - (padding * 2)) or dimensions[1] > (
-                h - (padding * 2) - padding
-            ):
+            dimensions = imgdraw.textbbox((0, 0), imgtxt, new_font)
+            if (dimensions[2] - dimensions[0]) > (w - (padding * 2)) or (
+                dimensions[3] - dimensions[1]
+            ) > (h - (padding * 2) - padding):
                 break
             font = new_font
 
-        txt_dimensions = imgdraw.textsize(imgtxt, font)
-        x_padding = (w - txt_dimensions[0]) / 2
-        y_padding = (h - txt_dimensions[1]) / 2
+        txt_dimensions = imgdraw.textbbox((0, 0), imgtxt, font)
+        x_padding = (w - (txt_dimensions[2] - txt_dimensions[0])) / 2
+        y_padding = (h - (txt_dimensions[3] - txt_dimensions[1])) / 2
 
         imgdraw.multiline_text(
             (x_padding, y_padding),
