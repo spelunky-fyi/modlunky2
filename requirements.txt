@@ -10,7 +10,7 @@ pyperclip==1.8.2
 pyserde==0.12.1
 requests==2.31.0
 sfyi-fsb5==1.1
-starlette==0.30.0
+starlette==0.31.0
 typing_extensions==4.7.1
 websockets==11.0.3
 zstandard==0.21.0
