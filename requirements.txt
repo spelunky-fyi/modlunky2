@@ -5,7 +5,7 @@ fnvhash==0.1.0
 httpx==0.24.1
 hypercorn==0.14.4
 packaging==23.1
-platformdirs==3.9.1
+platformdirs==3.10.0
 pyperclip==1.8.2
 pyserde==0.12.2
 requests==2.31.0
