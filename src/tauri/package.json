@@ -32,7 +32,7 @@
     "svelte-preprocess": "^5.0.4",
     "tslib": "^2.6.1",
     "typescript": "^5.1.6",
-    "unocss": "^0.54.1",
+    "unocss": "^0.54.2",
     "vite": "^3.2.7"
   }
 }
