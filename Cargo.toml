@@ -10,6 +10,7 @@ members = [
     "src/libs/ml2_vorbis_header",
     "src/tauri/src-tauri",
 ]
+resolver = "2"
 
 # Note: src-tauri doesn't use these
 [workspace.package]
