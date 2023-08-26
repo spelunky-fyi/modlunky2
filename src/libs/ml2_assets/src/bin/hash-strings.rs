@@ -7,7 +7,7 @@ use ml2_assets::StringHasher;
 
 fn main() -> anyhow::Result<()> {
     let strings_path = Path::new(
-        r#"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted\strings00.str"#,
+        r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Mods\Extracted\strings00.str",
     );
     let file = File::open(strings_path)?;
     let reader = BufReader::new(file);

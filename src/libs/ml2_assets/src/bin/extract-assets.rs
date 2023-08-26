@@ -7,7 +7,7 @@ use ml2_assets::AssetStore;
 
 fn main() -> anyhow::Result<()> {
     let spel2_path =
-        Path::new(r#"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Spel2.exe"#);
+        Path::new(r"C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2\Spel2.exe");
     let file = File::open(spel2_path)?;
     let mut reader = BufReader::new(file);
 
