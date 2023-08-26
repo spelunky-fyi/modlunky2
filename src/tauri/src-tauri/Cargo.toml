@@ -2,10 +2,9 @@
 name = "modlunky2"
 version = "0.1.0"
 description = "A tool for creating and using mods related to Spelunky 2"
-# Using worskspace inheritence breaks Tauri's build script
-license = "Apache-2.0"
-edition = "2021"
-rust-version = "1.64"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -17,4 +17,4 @@ resolver = "2"
 license = "Apache-2.0"
 edition = "2021"
 # Reminder: update workflows when increasing
-rust-version = "1.64"
+rust-version = "1.70"

@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         # Test stable and MSRV
-        rust: [stable, "1.64"]
+        rust: [stable, "1.70"]
 
     steps:
       - uses: actions/checkout@v3
