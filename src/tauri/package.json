@@ -20,9 +20,9 @@
     "@tauri-apps/api": "^1.4.0",
     "@tauri-apps/cli": "^1.4.0",
     "@tsconfig/svelte": "^5.0.2",
-    "@unocss/extractor-svelte": "^0.55.3",
-    "@unocss/preset-wind": "^0.55.6",
-    "@unocss/reset": "^0.55.2",
+    "@unocss/extractor-svelte": "^0.55.7",
+    "@unocss/preset-wind": "^0.55.7",
+    "@unocss/reset": "^0.55.7",
     "eslint": "^8.48.0",
     "prettier": "^3.0.2",
     "svelte": "^3.59.2",
@@ -32,7 +32,7 @@
     "svelte-preprocess": "^5.0.4",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
-    "unocss": "^0.55.3",
+    "unocss": "^0.55.7",
     "vite": "^3.2.7"
   }
 }
