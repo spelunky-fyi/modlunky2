@@ -24,7 +24,7 @@
     "@unocss/preset-wind": "^0.55.7",
     "@unocss/reset": "^0.55.7",
     "eslint": "^8.48.0",
-    "prettier": "^3.0.2",
+    "prettier": "^3.0.3",
     "svelte": "^3.59.2",
     "svelte-awesome": "^3.2.1",
     "svelte-check": "^3.5.1",
