@@ -18,4 +18,5 @@ updates:
     groups:
       unocss:
         patterns:
-          - "@unocss*"
+          - "@unocss/*"
+          - "unocss"
