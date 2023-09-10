@@ -17,7 +17,7 @@ sha2 = "0.10.7"
 
 [build-dependencies]
 zip = "0.6.6"
-walkdir = "2.3.3"
+walkdir = "2.4.0"
 sha2 = "0.10.7"
 
 [target.'cfg(windows)'.build-dependencies]
