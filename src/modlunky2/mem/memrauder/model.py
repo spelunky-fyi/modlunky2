@@ -259,7 +259,7 @@ class _StructField:
 @dataclass(frozen=True)
 class DataclassStruct(MemType[T]):
     path: FieldPath
-    dataclass: T
+    dataclass: Type[T]
 
     struct_fields: Dict[str, _StructField] = dataclasses.field(init=False)
 
@@ -358,7 +358,7 @@ class ScalarCValueConstructionError(Exception):
 @dataclass(frozen=True)
 class ScalarCType(BiMemType[T]):
     path: FieldPath
-    py_type: T
+    py_type: Type[T]
     c_type: type
 
     # Dict doesn't work correctly, presumably c_foo isn't hashable

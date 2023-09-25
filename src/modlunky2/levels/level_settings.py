@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from collections import OrderedDict
-from typing import ClassVar, Generic, Optional, TextIO, TypeVar
+from typing import ClassVar, Generic, Optional, TextIO, TypeVar, cast
 
 from modlunky2.levels.utils import (
     DirectivePrefixes,
@@ -115,7 +115,8 @@ class LevelSetting(Generic[T]):
             return
 
         if self.name == "size":
-            value = tuple(self.value.split())
+            # The cast is for pylint, which doesn't recognize the narrowing of isinstance
+            value = tuple(cast(self.value, str).split())
             if len(value) != 2:
                 raise ValueError("Directive `size` expects 2 values.")
         elif self.name == "liquid_gravity":
