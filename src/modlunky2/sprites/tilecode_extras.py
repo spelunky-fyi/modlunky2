@@ -126,10 +126,25 @@ class StickyTrapSheet(BaseSpriteLoader):
         "sticky_trap": (0, 0, 1, 2),
     }
 
+ARROWS_POISON_TILENAMES = [
+    "arrow_wooden",
+    "arrow_metal",
+    "arrow_wooden_poison",
+    "arrow_metal_poison",
+    "venom",
+]
+
+class ArrowsPoisonSheet(BaseSpriteLoader):
+    _sprite_sheet_path = Path("static/images/arrows_poison.png")
+    _chunk_size = 128
+    _chunk_map = {
+        tilename: (idx, 0, idx + 1, 1) for idx, tilename in enumerate(ARROWS_POISON_TILENAMES)
+    }
 
 EXTRA_TILECODE_CLASSES = [
     ChainAndBlocksCeilingSheet,
     SpikeballTrapSheet,
     StickyTrapSheet,
     TreasureVaultChestSheet,
+    ArrowsPoisonSheet,
 ]
