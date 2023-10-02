@@ -17,7 +17,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
     "@iconify-json/fa-solid": "^1.1.5",
     "@sveltejs/vite-plugin-svelte": "^1.4.0",
-    "@tauri-apps/api": "^1.4.0",
+    "@tauri-apps/api": "^1.5.0",
     "@tauri-apps/cli": "^1.5.0",
     "@tsconfig/svelte": "^5.0.2",
     "@unocss/extractor-svelte": "^0.56.4",
