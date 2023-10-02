@@ -120,14 +120,8 @@ impl WebSocketClient {
             .header(SEC_WEBSOCKET_KEY, generate_key())
             .body(())?;
 
-        // This is the maximum number of messages that will be queued in Tungstenite. This doesn't
-        // include pong or close messages. All messages are buffered before they're written. So,
-        // the smallest functional value is 1. Notably, the size of the messages and the underlying
-        // TCP send buffer aren't considered.
-        let config = WebSocketConfig {
-            max_send_queue: Some(2),
-            ..Default::default()
-        };
+        let mut config = WebSocketConfig::default();
+        config.max_write_buffer_size = 2 * config.write_buffer_size;
 
         let mut stream = tokio_tungstenite::connect_async_with_config(request, Some(config), false)
             .await
@@ -163,6 +157,7 @@ impl WebSocketClient {
                         stream
                             .send(Message::Ping(payload))
                             .await?;
+                        stream.flush().await?;
                         check_state = Check::Pong();
                         check_sleep = Box::pin(time::sleep(self.pong_timeout));
                     }
@@ -312,6 +307,7 @@ async fn send_message(
 ) -> Result<(), ConnectionError> {
     let reply = serde_json::to_string(&msg)?;
     stream.send(Message::Text(reply)).await?;
+    stream.flush().await?;
     Ok(())
 }
 
