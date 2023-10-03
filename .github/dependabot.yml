@@ -10,6 +10,11 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 10
+    groups:
+      tauri:
+        patterns:
+          - "tauri"
+          - "tauri-build"
   - package-ecosystem: npm
     directory: "/src/tauri/"
     schedule:
@@ -20,3 +25,6 @@ updates:
         patterns:
           - "@unocss/*"
           - "unocss"
+      tauri:
+        patterns:
+          - "@tauri-apps/*"
