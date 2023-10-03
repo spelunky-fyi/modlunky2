@@ -116,7 +116,7 @@ class LevelSetting(Generic[T]):
 
         if self.name == "size":
             # The cast is for pylint, which doesn't recognize the narrowing of isinstance
-            value = tuple(cast(self.value, str).split())
+            value = tuple(cast(str, self.value).split())
             if len(value) != 2:
                 raise ValueError("Directive `size` expects 2 values.")
         elif self.name == "liquid_gravity":
