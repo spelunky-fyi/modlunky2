@@ -23,7 +23,10 @@ def struct_field(
         metadata = {}
     field_meta = StructFieldMeta(offset, deferred_mem_type)
     field_meta.put_into(metadata)
-    return dataclasses.field(metadata=metadata, **kwargs)
+    # This should only be called in the context of a dataclass
+    return dataclasses.field(  # pylint: disable=invalid-field-call
+        metadata=metadata, **kwargs
+    )
 
 
 dc_struct: DeferredMemType = DataclassStruct  # pylint: disable=invalid-name
