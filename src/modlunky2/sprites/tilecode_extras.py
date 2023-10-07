@@ -128,10 +128,10 @@ class StickyTrapSheet(BaseSpriteLoader):
 
 
 class PoisonSheet(BaseSpriteLoader):
-    _sprite_sheet_path = Path("static/images/arrows_poison.png")
+    _sprite_sheet_path = Path("static/images/venom.png")
     _chunk_size = 128
     _chunk_map = {
-        "venom": (4, 0, 5, 1),
+        "venom": (0, 0, 1, 1),
     }
 
 
