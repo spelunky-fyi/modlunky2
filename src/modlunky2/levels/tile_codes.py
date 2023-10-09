@@ -403,6 +403,11 @@ VALID_TILE_CODES = set(
         "punishball_attach_top",
         "punishball_attach_left",
         "punishball_attach_right",
+        "arrow_wooden",
+        "arrow_metal",
+        "arrow_wooden_poison",
+        "arrow_metal_poison",
+        "venom",
     ]
 )
 

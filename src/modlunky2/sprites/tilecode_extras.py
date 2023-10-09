@@ -127,9 +127,18 @@ class StickyTrapSheet(BaseSpriteLoader):
     }
 
 
+class PoisonSheet(BaseSpriteLoader):
+    _sprite_sheet_path = Path("static/images/venom.png")
+    _chunk_size = 128
+    _chunk_map = {
+        "venom": (0, 0, 1, 1),
+    }
+
+
 EXTRA_TILECODE_CLASSES = [
     ChainAndBlocksCeilingSheet,
     SpikeballTrapSheet,
     StickyTrapSheet,
     TreasureVaultChestSheet,
+    PoisonSheet,
 ]
