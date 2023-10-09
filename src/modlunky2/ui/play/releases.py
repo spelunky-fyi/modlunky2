@@ -263,6 +263,9 @@ class VersionFrame(ttk.LabelFrame):
         self.bold_font = tk_font.Font(font="TkDefaultFont")
         self.bold_font.configure(weight="bold")
 
+        self.warning = ttk.Label(self, text="Nightly is probably the version you want to use! Stable doesn't receive regular updates for the modding API!", wraplength=220, font=self.bold_font, foreground="darkred")
+        self.warning.grid(row=1, column=0, pady=(5, 0), padx=10, sticky="w")
+
         self.selected_label = ttk.Label(self, text="Playlunky Version")
         self.selected_label.grid(row=2, column=0, pady=(5, 0), padx=10, sticky="w")
         self.selected_var = tk.StringVar()
@@ -283,6 +286,12 @@ class VersionFrame(ttk.LabelFrame):
     def show_uninstall_frame(self):
         self.download_frame.grid_forget()
         self.uninstall_frame.grid(row=4, column=0, padx=10, sticky="ew")
+
+    def show_warning(self):
+        self.warning.grid(row=1, column=0, pady=(5, 0), padx=10, sticky="w")
+
+    def hide_warning(self):
+        self.warning.grid_forget()
 
     def get_available_releases(self):
         available_releases = {}
@@ -346,7 +355,7 @@ class VersionFrame(ttk.LabelFrame):
 
     def render(self):
         self.available_releases = self.get_available_releases()
-        available_releases = ["stable", "nightly"] + [
+        available_releases = ["nightly", "stable"] + [
             release
             for release in self.available_releases
             if release not in ["nightly", "stable"]
@@ -394,6 +403,11 @@ class VersionFrame(ttk.LabelFrame):
             self.show_uninstall_frame()
         else:
             self.show_download_frame()
+
+        if selected_version == "nightly":
+            self.hide_warning()
+        else:
+            self.show_warning()
 
         self.parent.enable_button()
 
