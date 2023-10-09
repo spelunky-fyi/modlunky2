@@ -263,7 +263,13 @@ class VersionFrame(ttk.LabelFrame):
         self.bold_font = tk_font.Font(font="TkDefaultFont")
         self.bold_font.configure(weight="bold")
 
-        self.warning = ttk.Label(self, text="Nightly is probably the version you want to use! Stable doesn't receive regular updates for the modding API!", wraplength=220, font=self.bold_font, foreground="darkred")
+        self.warning = ttk.Label(
+            self,
+            text="Nightly is probably the version you want to use! Stable doesn't receive regular updates for the modding API!",
+            wraplength=220,
+            font=self.bold_font,
+            foreground="darkred",
+        )
         self.warning.grid(row=1, column=0, pady=(5, 0), padx=10, sticky="w")
 
         self.selected_label = ttk.Label(self, text="Playlunky Version")
