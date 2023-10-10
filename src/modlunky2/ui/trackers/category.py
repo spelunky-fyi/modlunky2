@@ -99,8 +99,8 @@ class CategoryButtons(ttk.Frame):
     def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1, minsize=200)
+        self.columnconfigure(1, weight=10000)
         self.rowconfigure(0, minsize=60)
         self.window = None
 
@@ -116,6 +116,7 @@ class CategoryButtons(ttk.Frame):
             text="Category",
             compound="left",
             command=self.launch,
+            width=1,
         )
         self.category_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 

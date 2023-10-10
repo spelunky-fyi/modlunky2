@@ -2,7 +2,10 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+from PIL import Image, ImageTk
+
 from modlunky2.config import Config, PacifistTrackerConfig
+from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 from modlunky2.mem.state import RunRecapFlags
 
@@ -15,23 +18,20 @@ from modlunky2.ui.trackers.common import (
 logger = logging.getLogger(__name__)
 
 
-class PacifistButtons(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.modlunky_config = modlunky_config
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, minsize=60)
-        self.window = None
+ICON_PATH = BASE_DIR / "static/images"
 
-        self.pacifist_button = ttk.Button(
-            self,
-            text="Pacifist",
-            command=self.launch,
-        )
-        self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+class PacifistModifiers(ttk.LabelFrame):
+    def __init__(
+        self, parent, pacifist_tracker_config: PacifistTrackerConfig, *args, **kwargs
+    ):
+        super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+
+        self.pacifist_tracker_config = pacifist_tracker_config
 
         self.show_kill_count = tk.BooleanVar()
-        self.show_kill_count.set(self.modlunky_config.trackers.pacifist.show_kill_count)
+        self.show_kill_count.set(self.pacifist_tracker_config.show_kill_count)
         self.show_kill_count_checkbox = ttk.Checkbutton(
             self,
             text="Show Kill Count",
@@ -43,12 +43,39 @@ class PacifistButtons(ttk.Frame):
         self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="w")
 
     def toggle_show_kill_count(self):
-        self.modlunky_config.trackers.pacifist.show_kill_count = (
-            self.show_kill_count.get()
+        self.pacifist_tracker_config.show_kill_count = self.show_kill_count.get()
+        self.parent.config_update_callback()
+
+
+class PacifistButtons(ttk.Frame):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1, minsize=200)
+        self.columnconfigure(1, weight=10000)
+        self.rowconfigure(0, minsize=60)
+        self.window = None
+
+        self.pacifist_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "pacifist.png").resize(
+                (24, 24), Image.Resampling.LANCZOS
+            )
         )
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.pacifist)
+
+        self.pacifist_button = ttk.Button(
+            self,
+            text="Pacifist",
+            image=self.pacifist_icon,
+            compound="left",
+            command=self.launch,
+            width=1,
+        )
+        self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.modifiers = PacifistModifiers(
+            self, self.modlunky_config.trackers.pacifist, text="Modifiers"
+        )
+        self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -61,6 +88,11 @@ class PacifistButtons(ttk.Frame):
             tracker=PacifistTracker(),
             config=self.modlunky_config.trackers.pacifist,
         )
+
+    def config_update_callback(self):
+        self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.pacifist)
 
     def window_closed(self):
         self.window = None
