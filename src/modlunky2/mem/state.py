@@ -173,10 +173,13 @@ class State:
     arena_state: ArenaState = struct_field(0x95C, dc_struct, default_factory=ArenaState)
     run_recap_flags: RunRecapFlags = struct_field(0xA34, sc_uint32, default=0)
     hud_flags: HudFlags = struct_field(0xA50, sc_uint32, default=0)
+    time_last_level: int = struct_field(0xA40, sc_uint32, default=0)
     time_level: int = struct_field(0xA44, sc_uint32, default=0)
+    time_tutorial: int = struct_field(0xA48, sc_uint32, default=0)
     presence_flags: PresenceFlags = struct_field(0xA54, sc_uint32, default=0)
     next_entity_uid: int = struct_field(0x12E0, sc_uint32, default=0)
     items: Optional[Items] = struct_field(0x12F0, pointer(dc_struct), default=None)
     instance_id_to_pointer: UidEntityMap = struct_field(
         0x1348, uid_entity_map, default_factory=DictMap
     )
+    time_startup: int = struct_field(0x13A0, sc_uint32, default=0)

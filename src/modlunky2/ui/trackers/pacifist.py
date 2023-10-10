@@ -40,7 +40,7 @@ class PacifistButtons(ttk.Frame):
             offvalue=False,
             command=self.toggle_show_kill_count,
         )
-        self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="nw")
+        self.show_kill_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="w")
 
     def toggle_show_kill_count(self):
         self.modlunky_config.trackers.pacifist.show_kill_count = (

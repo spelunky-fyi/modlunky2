@@ -218,16 +218,23 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
 
         self.text = "Connecting..."
         self.label = tk.Label(
-            self, text=self.text, bg=self.color_key, fg="white", font=font
+            self,
+            text=self.text,
+            bg=self.color_key,
+            fg="white",
+            font=font,
+            justify="right",
         )
         self.label.columnconfigure(0, weight=1)
         self.label.rowconfigure(0, weight=1)
         self.label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
         TRACKERS_DIR.mkdir(parents=True, exist_ok=True)
-        self.text_file = TRACKERS_DIR / file_name
-        with self.text_file.open("w", encoding="utf-8") as handle:
-            handle.write(self.text)
+        self.text_file = None
+        if file_name:
+            self.text_file = TRACKERS_DIR / file_name
+            with self.text_file.open("w", encoding="utf-8") as handle:
+                handle.write(self.text)
 
         self.watcher_thread.start()
         self.after(self.POLL_INTERVAL, self.after_watcher_thread)
@@ -252,8 +259,9 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
             return
         self.text = new_text
         self.label.configure(text=self.text)
-        with self.text_file.open("w", encoding="utf-8") as handle:
-            handle.write(new_text)
+        if self.text_file:
+            with self.text_file.open("w", encoding="utf-8") as handle:
+                handle.write(new_text)
 
     def shut_down(self, level, message):
         logger.log(level, "%s", message)
@@ -297,7 +305,8 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         if self.on_close:
             self.on_close()
 
-        with self.text_file.open("w", encoding="utf-8") as handle:
-            handle.write("Not running")
+        if self.text_file:
+            with self.text_file.open("w", encoding="utf-8") as handle:
+                handle.write("Not running")
 
         return super().destroy()
