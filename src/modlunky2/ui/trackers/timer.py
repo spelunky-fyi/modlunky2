@@ -188,7 +188,7 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         if config.show_level:
             out.append(f"Level: {self.format(self.time_level)}")
         if config.show_last_level:
-            out.append(f"Last level: {self.format(self.time_last_level)}")
+            out.append(f"Last Level: {self.format(self.time_last_level)}")
         if config.show_tutorial:
             out.append(f"Tutorial: {self.format(self.time_tutorial)}")
         if config.show_startup:
