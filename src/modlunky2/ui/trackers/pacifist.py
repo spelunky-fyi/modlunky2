@@ -73,7 +73,7 @@ class PacifistButtons(ttk.Frame):
         self.pacifist_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         self.modifiers = PacifistModifiers(
-            self, self.modlunky_config.trackers.pacifist, text="Modifiers"
+            self, self.modlunky_config.trackers.pacifist, text="Options"
         )
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
