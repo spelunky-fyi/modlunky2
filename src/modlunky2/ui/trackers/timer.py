@@ -3,7 +3,10 @@ import tkinter as tk
 from tkinter import ttk
 import datetime
 
+from PIL import Image, ImageTk
+
 from modlunky2.config import Config, TimerTrackerConfig
+from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 
 from modlunky2.ui.trackers.common import (
@@ -14,25 +17,20 @@ from modlunky2.ui.trackers.common import (
 
 logger = logging.getLogger(__name__)
 
+ICON_PATH = BASE_DIR / "static/images"
 
-class TimerButtons(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+
+class TimerModifiers(ttk.LabelFrame):
+    def __init__(
+        self, parent, timer_tracker_config: TimerTrackerConfig, *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
-        self.modlunky_config = modlunky_config
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, minsize=60)
-        self.window = None
-        self.modlunky_config.trackers.timer.anchor = "w"
+        self.parent = parent
 
-        self.timer_button = ttk.Button(
-            self,
-            text="Timer",
-            command=self.launch,
-        )
-        self.timer_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+        self.timer_tracker_config = timer_tracker_config
 
         self.show_total = tk.BooleanVar()
-        self.show_total.set(self.modlunky_config.trackers.timer.show_total)
+        self.show_total.set(self.timer_tracker_config.show_total)
         self.show_total_checkbox = ttk.Checkbutton(
             self,
             text="Total",
@@ -44,7 +42,7 @@ class TimerButtons(ttk.Frame):
         self.show_total_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="w")
 
         self.show_level = tk.BooleanVar()
-        self.show_level.set(self.modlunky_config.trackers.timer.show_level)
+        self.show_level.set(self.timer_tracker_config.show_level)
         self.show_level_checkbox = ttk.Checkbutton(
             self,
             text="Level",
@@ -56,7 +54,7 @@ class TimerButtons(ttk.Frame):
         self.show_level_checkbox.grid(row=0, column=2, pady=5, padx=5, sticky="w")
 
         self.show_last_level = tk.BooleanVar()
-        self.show_last_level.set(self.modlunky_config.trackers.timer.show_last_level)
+        self.show_last_level.set(self.timer_tracker_config.show_last_level)
         self.show_last_level_checkbox = ttk.Checkbutton(
             self,
             text="Last Level",
@@ -68,7 +66,7 @@ class TimerButtons(ttk.Frame):
         self.show_last_level_checkbox.grid(row=0, column=3, pady=5, padx=5, sticky="w")
 
         self.show_tutorial = tk.BooleanVar()
-        self.show_tutorial.set(self.modlunky_config.trackers.timer.show_tutorial)
+        self.show_tutorial.set(self.timer_tracker_config.show_tutorial)
         self.show_tutorial_checkbox = ttk.Checkbutton(
             self,
             text="Tutorial",
@@ -80,7 +78,7 @@ class TimerButtons(ttk.Frame):
         self.show_tutorial_checkbox.grid(row=0, column=4, pady=5, padx=5, sticky="w")
 
         self.show_startup = tk.BooleanVar()
-        self.show_startup.set(self.modlunky_config.trackers.timer.show_startup)
+        self.show_startup.set(self.timer_tracker_config.show_startup)
         self.show_startup_checkbox = ttk.Checkbutton(
             self,
             text="Session",
@@ -92,34 +90,55 @@ class TimerButtons(ttk.Frame):
         self.show_startup_checkbox.grid(row=0, column=5, pady=5, padx=5, sticky="w")
 
     def toggle_show_total(self):
-        self.modlunky_config.trackers.timer.show_total = self.show_total.get()
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.timer)
+        self.timer_tracker_config.show_total = self.show_total.get()
+        self.parent.config_update_callback()
 
     def toggle_show_level(self):
-        self.modlunky_config.trackers.timer.show_level = self.show_level.get()
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.timer)
+        self.timer_tracker_config.show_level = self.show_level.get()
+        self.parent.config_update_callback()
 
     def toggle_show_last_level(self):
-        self.modlunky_config.trackers.timer.show_last_level = self.show_last_level.get()
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.timer)
+        self.timer_tracker_config.show_last_level = self.show_last_level.get()
+        self.parent.config_update_callback()
 
     def toggle_show_tutorial(self):
-        self.modlunky_config.trackers.timer.show_tutorial = self.show_tutorial.get()
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.timer)
+        self.timer_tracker_config.show_tutorial = self.show_tutorial.get()
+        self.parent.config_update_callback()
 
     def toggle_show_startup(self):
-        self.modlunky_config.trackers.timer.show_startup = self.show_startup.get()
-        self.modlunky_config.save()
-        if self.window:
-            self.window.update_config(self.modlunky_config.trackers.timer)
+        self.timer_tracker_config.show_startup = self.show_startup.get()
+        self.parent.config_update_callback()
+
+
+class TimerButtons(ttk.Frame):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1, minsize=200)
+        self.columnconfigure(1, weight=10000)
+        self.rowconfigure(0, minsize=60)
+        self.window = None
+
+        self.timer_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "timer.png").resize(
+                (24, 24), Image.Resampling.LANCZOS
+            )
+        )
+
+        self.timer_button = ttk.Button(
+            self,
+            image=self.timer_icon,
+            text="Timer",
+            compound="left",
+            command=self.launch,
+            width=1,
+        )
+        self.timer_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.modifiers = TimerModifiers(
+            self, self.modlunky_config.trackers.timer, text="Modifiers"
+        )
+        self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
@@ -132,6 +151,11 @@ class TimerButtons(ttk.Frame):
             tracker=TimerTracker(),
             config=self.modlunky_config.trackers.timer,
         )
+
+    def config_update_callback(self):
+        self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.timer)
 
     def window_closed(self):
         self.window = None
