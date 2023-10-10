@@ -136,7 +136,7 @@ class TimerButtons(ttk.Frame):
         self.timer_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
 
         self.modifiers = TimerModifiers(
-            self, self.modlunky_config.trackers.timer, text="Modifiers"
+            self, self.modlunky_config.trackers.timer, text="Timers shown"
         )
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
