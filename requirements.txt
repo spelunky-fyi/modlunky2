@@ -3,7 +3,7 @@ anyio==4.0.0
 colorhash==1.2.1
 fnvhash==0.1.0
 httpx==0.25.0
-hypercorn==0.14.4
+hypercorn==0.15.0
 packaging==23.2
 platformdirs==3.11.0
 pyperclip==1.8.2
