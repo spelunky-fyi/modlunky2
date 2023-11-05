@@ -143,7 +143,7 @@ class OptionsFrame(ttk.LabelFrame):
     def get_font_size_label(self):
         return f"Font size: {self.font_size.get()}"
 
-    def font_changed(self, event):
+    def font_changed(self, _event):
         self.font_label.configure(text=self.get_font_size_label())
         self.ml_config.tracker_font_size = int(self.font_size.get())
         self.ml_config.save()
