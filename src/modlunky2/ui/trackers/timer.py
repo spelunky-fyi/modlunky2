@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 import datetime
 
-from PIL import Image, ImageTk
 from dataclasses import dataclass
+from PIL import Image, ImageTk
 
 from modlunky2.config import Config, TimerTrackerConfig
 from modlunky2.constants import BASE_DIR
@@ -197,7 +197,13 @@ class TimerButtons(ttk.Frame):
 class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initialize()
+        self.time_total = 0
+        self.time_level = 0
+        self.time_last_level = 0
+        self.time_tutorial = 0
+        self.time_startup = 0
+        self.il_times = []
+        self.first_level = None
 
     def initialize(self):
         self.time_total = 0
