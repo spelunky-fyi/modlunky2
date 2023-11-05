@@ -79,10 +79,12 @@ class PacifistButtons(ttk.Frame):
 
     def launch(self):
         color_key = self.modlunky_config.tracker_color_key
+        font_size = self.modlunky_config.tracker_font_size
         self.disable_button()
         self.window = TrackerWindow(
             title="Pacifist Tracker",
             color_key=color_key,
+            font_size=font_size,
             on_close=self.window_closed,
             file_name="pacifist.txt",
             tracker=PacifistTracker(),

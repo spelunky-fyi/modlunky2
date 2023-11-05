@@ -107,7 +107,7 @@ class OptionsFrame(ttk.LabelFrame):
         self.columnconfigure(0, weight=1)
 
         self.rowconfigure(0, minsize=60)
-        self.rowconfigure(1, minsize=60)
+        self.rowconfigure(3, minsize=60)
 
         self.color_button = ttk.Button(
             self, text="Color Key", command=self.choose_color
@@ -118,9 +118,35 @@ class OptionsFrame(ttk.LabelFrame):
         )
         self.color_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
 
+        font_callback = parent.register(self.font_changed)
+        self.font_size = tk.IntVar(value=self.ml_config.tracker_font_size)
+        self.font_label = ttk.Label(self, text=self.get_font_size_label())
+        self.font_label.grid(
+            row=1, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
+        )
+        self.font_slider = ttk.Scale(
+            self,
+            from_=10,
+            to=80,
+            orient="horizontal",
+            command=font_callback,
+            variable=self.font_size,
+        )
+        self.font_slider.grid(
+            row=2, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
+        )
+
         ttk.Button(
             self, text="Tracker Files", command=lambda: open_directory(TRACKERS_DIR)
-        ).grid(row=1, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
+        ).grid(row=3, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
+
+    def get_font_size_label(self):
+        return f"Font size: {self.font_size.get()}"
+
+    def font_changed(self, event):
+        self.font_label.configure(text=self.get_font_size_label())
+        self.ml_config.tracker_font_size = int(self.font_size.get())
+        self.ml_config.save()
 
     def render(self):
         color_key = self.ml_config.tracker_color_key
@@ -132,3 +158,10 @@ class OptionsFrame(ttk.LabelFrame):
 
     def choose_color(self):
         ChooseColor(options_frame=self, ml_config=self.ml_config)
+
+    def set_font_size(self, font_size):
+        print("fuck")
+        print(f"{font_size}")
+        if len(font_size) > 0:
+            self.ml_config.tracker_font_size = int(font_size)
+            self.ml_config.save()
