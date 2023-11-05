@@ -4,6 +4,7 @@ from tkinter import ttk
 import datetime
 
 from PIL import Image, ImageTk
+from dataclasses import dataclass
 
 from modlunky2.config import Config, TimerTrackerConfig
 from modlunky2.constants import BASE_DIR
@@ -18,6 +19,14 @@ from modlunky2.ui.trackers.common import (
 logger = logging.getLogger(__name__)
 
 ICON_PATH = BASE_DIR / "static/images"
+
+
+@dataclass
+class IL:
+    world: int
+    level: int
+    theme: int
+    time: int
 
 
 class TimerModifiers(ttk.LabelFrame):
@@ -89,6 +98,18 @@ class TimerModifiers(ttk.LabelFrame):
         )
         self.show_startup_checkbox.grid(row=0, column=5, pady=5, padx=5, sticky="w")
 
+        self.show_ils = tk.BooleanVar()
+        self.show_ils.set(self.timer_tracker_config.show_ils)
+        self.show_ils_checkbox = ttk.Checkbutton(
+            self,
+            text="ILs",
+            variable=self.show_ils,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_ils,
+        )
+        self.show_ils_checkbox.grid(row=0, column=6, pady=5, padx=5, sticky="w")
+
     def toggle_show_total(self):
         self.timer_tracker_config.show_total = self.show_total.get()
         self.parent.config_update_callback()
@@ -107,6 +128,10 @@ class TimerModifiers(ttk.LabelFrame):
 
     def toggle_show_startup(self):
         self.timer_tracker_config.show_startup = self.show_startup.get()
+        self.parent.config_update_callback()
+
+    def toggle_show_ils(self):
+        self.timer_tracker_config.show_ils = self.show_ils.get()
         self.parent.config_update_callback()
 
 
@@ -175,6 +200,7 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         self.time_last_level = 0
         self.time_tutorial = 0
         self.time_startup = 0
+        self.il_times = []
 
     def initialize(self):
         self.time_total = 0
@@ -182,6 +208,7 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         self.time_last_level = 0
         self.time_tutorial = 0
         self.time_startup = 0
+        self.il_times = []
 
     def poll(self, proc: Spel2Process, config: TimerTrackerConfig) -> WindowData:
         game_state = proc.get_state()
@@ -193,6 +220,19 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         self.time_last_level = game_state.time_last_level
         self.time_tutorial = game_state.time_tutorial
         self.time_startup = game_state.time_startup
+
+        while len(self.il_times) > game_state.level_count:
+            self.il_times.pop()
+
+        if game_state.level_count > len(self.il_times):
+            self.il_times.append(
+                IL(
+                    game_state.world,
+                    game_state.level,
+                    game_state.theme,
+                    self.time_level,
+                )
+            )
 
         label = self.get_text(config)
         return WindowData(label)
@@ -217,5 +257,9 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
             out.append(f"Tutorial: {self.format(self.time_tutorial)}")
         if config.show_startup:
             out.append(f"Session: {self.format(self.time_startup)}")
+
+        if config.show_ils:
+            for il in self.il_times:
+                out.append(f"{il.world}-{il.level}: {self.format(il.time)}")
 
         return "\n".join(out)

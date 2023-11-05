@@ -167,6 +167,7 @@ class State:
     theme: Theme = struct_field(0x74, sc_uint8, default=Theme.DWELLING)
     theme_next: Theme = struct_field(0x75, sc_uint8, default=Theme.DWELLING)
     win_state: WinState = struct_field(0x76, sc_int8, default=WinState.NO_WIN)
+    level_count: int = struct_field(0x83, sc_uint8, default=0)
     waddler_storage: FrozenSet[EntityType] = struct_field(
         0x8C, array(sc_uint32, 99), default=frozenset()
     )
