@@ -177,6 +177,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         tracker: Tracker[ConfigType, WindowData],
         config: ConfigType,
         color_key: str,
+        font_size: int,
         *args,
         **kwargs,
     ):
@@ -192,6 +193,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
             config=config.clone(),
         )
         self.color_key = color_key
+        self.font_size = font_size
 
         self.icon_png = PhotoImage(file=BASE_DIR / "static/images/icon.png")
         self.iconphoto(False, self.icon_png)
@@ -214,7 +216,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         self.bind("<Button-1>", self.clickwin)
         self.bind("<B1-Motion>", self.dragwin)
 
-        font = tk.font.Font(family="Helvitica", size=42, weight="bold")
+        font = tk.font.Font(family="Helvetica", size=self.font_size, weight="bold")
 
         self.text = "Connecting..."
         self.label = tk.Label(
@@ -227,7 +229,7 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         )
         self.label.columnconfigure(0, weight=1)
         self.label.rowconfigure(0, weight=1)
-        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="ne")
 
         TRACKERS_DIR.mkdir(parents=True, exist_ok=True)
         self.text_file = None
