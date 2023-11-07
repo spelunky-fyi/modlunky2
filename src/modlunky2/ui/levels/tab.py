@@ -42,6 +42,7 @@ from modlunky2.levels.level_templates import (
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
+from modlunky2.ui.levels.vanilla_levels.rules.rules_tree import RulesTree
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
@@ -1242,7 +1243,7 @@ class LevelsTab(Tab):
         self.rules_tab.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
         self.tree = RulesTree(
-            self.rules_tab, self, selectmode="browse"
+            self.rules_tab, self.changes_made, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree.bind("<Double-1>", lambda e: self.on_double_click(self.tree))
         self.tree.place(x=30, y=95)
@@ -1264,7 +1265,7 @@ class LevelsTab(Tab):
         self.vsb.grid(row=0, column=1, sticky="nse")
 
         self.tree_chances_levels = RulesTree(
-            self.rules_tab, self, selectmode="browse"
+            self.rules_tab, self.changes_made, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree_chances_levels.bind(
             "<Double-1>", lambda e: self.on_double_click(self.tree_chances_levels)
@@ -1288,7 +1289,7 @@ class LevelsTab(Tab):
         self.vsb_chances_levels.grid(row=1, column=1, sticky="nse")
 
         self.tree_chances_monsters = RulesTree(
-            self.rules_tab, self, selectmode="browse"
+            self.rules_tab, self.changes_made, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         self.tree_chances_monsters.bind(
             "<Double-1>", lambda e: self.on_double_click(self.tree_chances_monsters)
@@ -7285,47 +7286,3 @@ class LevelsTree(ttk.Treeview):
         else:
             return False
 
-
-class RulesTree(ttk.Treeview):
-    def __init__(self, parent, levels_tab, *args, **kwargs):
-        ttk.Treeview.__init__(self, parent, *args, **kwargs)
-        self.levels_tab = levels_tab
-
-        self.popup_menu = tk.Menu(self, tearoff=0)
-        self.popup_menu_parent = tk.Menu(self, tearoff=0)
-        self.popup_menu.add_command(label="Add", command=self.add)
-        self.popup_menu_parent.add_command(label="Add", command=self.add)
-        self.popup_menu.add_command(label="Delete", command=self.delete_selected)
-
-        self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
-
-    def popup(self, event):
-        try:
-            if len(self.selection()) == 1:
-                self.popup_menu.tk_popup(event.x_root, event.y_root, 0)
-            else:
-                self.popup_menu_parent.tk_popup(event.x_root, event.y_root, 0)
-        finally:
-            self.popup_menu.grab_release()
-
-    def delete_selected(self):
-        msg_box = tk.messagebox.askquestion(
-            "Delete?",
-            "Delete this rule?",
-            icon="warning",
-        )
-        if msg_box == "yes":
-            item_iid = self.selection()[0]
-            self.delete(item_iid)
-            self.levels_tab.save_needed = True
-            self.levels_tab.button_save["state"] = tk.NORMAL
-
-    def add(self):
-        _edited = self.insert(
-            "",
-            "end",
-            values=["COMMENT", "VAL", "// COMMENT"],
-        )
-        self.levels_tab.save_needed = True
-        self.levels_tab.button_save["state"] = tk.NORMAL
-        # self.selection_set(0, 'end')
