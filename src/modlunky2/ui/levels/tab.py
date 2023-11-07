@@ -42,7 +42,7 @@ from modlunky2.levels.level_templates import (
 from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
-from modlunky2.ui.levels.levels_tree import LevelsTree
+from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
