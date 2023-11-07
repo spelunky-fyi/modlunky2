@@ -31,7 +31,7 @@ from serde.se import serialize
 from modlunky2.config import Config, CustomLevelSaveFormat
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
-from modlunky2.levels.level_chances import LevelChance, LevelChances
+from modlunky2.levels.level_chances import LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
 from modlunky2.levels.level_templates import (
     Chunk,
@@ -39,7 +39,7 @@ from modlunky2.levels.level_templates import (
     LevelTemplates,
     TemplateSetting,
 )
-from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
+from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
