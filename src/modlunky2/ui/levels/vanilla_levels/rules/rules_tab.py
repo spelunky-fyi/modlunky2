@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import ttk
 
 from modlunky2.config import Config
