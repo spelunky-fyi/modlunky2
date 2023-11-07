@@ -1,6 +1,5 @@
 # List of tiles that will be included in the tile palette even if they do not already
 # exist in the level file, since they are likely options to be used for the current theme.
-@staticmethod
 def suggested_tiles_for_theme(theme, include_common = True):
     common_tiles = [
         "floor",
