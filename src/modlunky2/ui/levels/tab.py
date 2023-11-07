@@ -42,7 +42,7 @@ from modlunky2.levels.level_templates import (
 from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
-from modlunky2.ui.levels.vanilla_levels.rules.rules_tree import RulesTree
+from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
@@ -219,12 +219,6 @@ class LevelsTab(Tab):
         self.variables_tab = None
         self.button_back = None
         self.button_save = None
-        self.tree = None
-        self.vsb = None
-        self.tree_chances_levels = None
-        self.vsb_chances_levels = None
-        self.tree_chances_monsters = None
-        self.vsb_chances_monsters = None
         self.current_value_full = None
         self.slider_zoom_full = None
         self.canvas_grids_full = None
@@ -1215,7 +1209,7 @@ class LevelsTab(Tab):
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
 
-        self.rules_tab = ttk.Frame(self.tab_control)
+        self.rules_tab = RulesTab(self.tab_control, self.modlunky_config, self.changes_made)
         self.editor_tab = ttk.Frame(
             self.tab_control
         )  # Tab 2 is the actual level editor
@@ -1237,80 +1231,6 @@ class LevelsTab(Tab):
         )
         self.button_save.grid(row=2, column=0, sticky="nswe")
         self.button_save["state"] = tk.DISABLED
-
-        # Rules Tab
-        self.rules_tab.columnconfigure(0, weight=1)  # Column 1 = Everything Else
-        self.rules_tab.rowconfigure(0, weight=1)  # Row 0 = List box / Label
-
-        self.tree = RulesTree(
-            self.rules_tab, self.changes_made, selectmode="browse"
-        )  # This tree shows rules parses from the lvl file
-        self.tree.bind("<Double-1>", lambda e: self.on_double_click(self.tree))
-        self.tree.place(x=30, y=95)
-        # style = ttk.Style(self)
-        self.vsb = ttk.Scrollbar(
-            self.rules_tab, orient="vertical", command=self.tree.yview
-        )
-        self.vsb.place(x=30 + 200 + 2, y=95, height=200 + 20)
-        self.tree.configure(yscrollcommand=self.vsb.set)
-        self.tree["columns"] = ("1", "2", "3")
-        self.tree["show"] = "headings"
-        self.tree.column("1", width=100, anchor="w")
-        self.tree.column("2", width=10, anchor="w")
-        self.tree.column("3", width=100, anchor="w")
-        self.tree.heading("1", text="Level Settings")
-        self.tree.heading("2", text="Value")
-        self.tree.heading("3", text="Notes")
-        self.tree.grid(row=0, column=0, sticky="nwse")
-        self.vsb.grid(row=0, column=1, sticky="nse")
-
-        self.tree_chances_levels = RulesTree(
-            self.rules_tab, self.changes_made, selectmode="browse"
-        )  # This tree shows rules parses from the lvl file
-        self.tree_chances_levels.bind(
-            "<Double-1>", lambda e: self.on_double_click(self.tree_chances_levels)
-        )
-        self.tree_chances_levels.place(x=30, y=95)
-        # style = ttk.Style(self)
-        self.vsb_chances_levels = ttk.Scrollbar(
-            self.rules_tab, orient="vertical", command=self.tree_chances_levels.yview
-        )
-        self.vsb_chances_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
-        self.tree_chances_levels.configure(yscrollcommand=self.vsb_chances_levels.set)
-        self.tree_chances_levels["columns"] = ("1", "2", "3")
-        self.tree_chances_levels["show"] = "headings"
-        self.tree_chances_levels.column("1", width=100, anchor="w")
-        self.tree_chances_levels.column("2", width=10, anchor="w")
-        self.tree_chances_levels.column("3", width=100, anchor="w")
-        self.tree_chances_levels.heading("1", text="Level Chances")
-        self.tree_chances_levels.heading("2", text="Value")
-        self.tree_chances_levels.heading("3", text="Notes")
-        self.tree_chances_levels.grid(row=1, column=0, sticky="nwse")
-        self.vsb_chances_levels.grid(row=1, column=1, sticky="nse")
-
-        self.tree_chances_monsters = RulesTree(
-            self.rules_tab, self.changes_made, selectmode="browse"
-        )  # This tree shows rules parses from the lvl file
-        self.tree_chances_monsters.bind(
-            "<Double-1>", lambda e: self.on_double_click(self.tree_chances_monsters)
-        )
-        self.tree_chances_monsters.place(x=30, y=95)
-        # style = ttk.Style(self)
-        self.vsb_chances_monsters = ttk.Scrollbar(
-            self.rules_tab, orient="vertical", command=self.tree_chances_monsters.yview
-        )
-        self.vsb_chances_monsters.place(x=30 + 200 + 2, y=95, height=200 + 20)
-        self.tree.configure(yscrollcommand=self.vsb_chances_monsters.set)
-        self.tree_chances_monsters["columns"] = ("1", "2", "3")
-        self.tree_chances_monsters["show"] = "headings"
-        self.tree_chances_monsters.column("1", width=100, anchor="w")
-        self.tree_chances_monsters.column("2", width=10, anchor="w")
-        self.tree_chances_monsters.column("3", width=100, anchor="w")
-        self.tree_chances_monsters.heading("1", text="Monster Chances")
-        self.tree_chances_monsters.heading("2", text="Value")
-        self.tree_chances_monsters.heading("3", text="Notes")
-        self.tree_chances_monsters.grid(row=2, column=0, sticky="nwse")
-        self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
 
         #  View Tab
 
@@ -3284,9 +3204,9 @@ class LevelsTab(Tab):
                 tags.append(r"\!liquid")
                 tags.append(r"\!purge")
                 tile_codes = TileCodes()
-                level_chances = LevelChances()
-                level_settings = LevelSettings()
-                monster_chances = MonsterChances()
+                level_chances = self.rules_tab.get_level_chances()
+                level_settings = self.rules_tab.get_level_settings()
+                monster_chances = self.rules_tab.get_monster_chances()
                 level_templates = LevelTemplates()
 
                 for tilecode in self.tile_pallete_ref_in_use:
@@ -3295,47 +3215,6 @@ class LevelsTab(Tab):
                             name=tilecode[0].split(" ", 1)[0],
                             value=tilecode[0].split(" ", 1)[1],
                             comment="",
-                        )
-                    )
-
-                bad_chars = ["[", "]", "'", '"']
-                bad_chars_settings = ["[", "]", "'", '"', ","]
-                for entry in self.tree.get_children():
-                    values = self.tree.item(entry)["values"]
-                    value_final = ""
-                    for i in bad_chars_settings:
-                        value_final = str(values[1]).replace(i, "")
-                    level_settings.set_obj(
-                        LevelSetting(
-                            name=str(values[0]),
-                            value=value_final,
-                            comment=str(values[2]),
-                        )
-                    )
-
-                for entry in self.tree_chances_monsters.get_children():
-                    values = self.tree_chances_monsters.item(entry)["values"]
-                    value_final = ""
-                    for i in bad_chars:
-                        value_final = str(values[1]).replace(i, "")
-                    monster_chances.set_obj(
-                        MonsterChance(
-                            name=str(values[0]),
-                            value=value_final,
-                            comment=str(values[2]),
-                        )
-                    )
-
-                for entry in self.tree_chances_levels.get_children():
-                    values = self.tree_chances_levels.item(entry)["values"]
-                    value_final = ""
-                    for i in bad_chars:
-                        value_final = str(values[1]).replace(i, "")
-                    level_chances.set_obj(
-                        LevelChance(
-                            name=str(values[0]),
-                            value=value_final,
-                            comment=str(values[2]),
                         )
                     )
 
@@ -4401,87 +4280,7 @@ class LevelsTab(Tab):
             self.check_dependencies()
         return ref_tile
 
-    def on_double_click(self, tree_view):
-        # First check if a blank space was selected
-        entry_index = tree_view.focus()
-        if entry_index == "":
-            return
 
-        win = PopupWindow("Edit Entry", self.modlunky_config)
-        win.columnconfigure(1, minsize=500)
-
-        # Grab the entry's values
-        for child in tree_view.get_children():
-            if child == entry_index:
-                values = tree_view.item(child)["values"]
-                break
-
-        col1_lbl = ttk.Label(win, text="Entry: ")
-        col1_ent = ttk.Entry(win)
-        col1_ent.insert(0, values[0])  # Default is column 1's current value
-        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
-        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="nsew")
-
-        col2_lbl = ttk.Label(win, text="Value: ")
-        col2_ent = ttk.Entry(win)
-        col2_ent.insert(0, values[1])  # Default is column 2's current value
-        col2_lbl.grid(row=1, column=0, padx=2, pady=2, sticky="nse")
-        col2_ent.grid(row=1, column=1, padx=2, pady=2, sticky="nsew")
-
-        col3_lbl = ttk.Label(win, text="Comment: ")
-        col3_ent = ttk.Entry(win)
-        col3_ent.insert(0, values[2])  # Default is column 3's current value
-        col3_lbl.grid(row=2, column=0, padx=2, pady=2, sticky="nse")
-        col3_ent.grid(row=2, column=1, padx=2, pady=2, sticky="nsew")
-
-        def update_then_destroy():
-            if self.confirm_entry(
-                tree_view, col1_ent.get(), col2_ent.get(), col3_ent.get()
-            ):
-                win.destroy()
-                self.save_needed = True
-                self.button_save["state"] = tk.NORMAL
-
-        separator = ttk.Separator(win)
-        separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="nsew")
-
-        buttons = ttk.Frame(win)
-        buttons.grid(row=4, column=0, columnspan=2, sticky="nsew")
-        buttons.columnconfigure(0, weight=1)
-        buttons.columnconfigure(1, weight=1)
-
-        ok_button = ttk.Button(buttons, text="Ok", command=update_then_destroy)
-        ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
-
-        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
-        cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
-
-    def confirm_entry(self, tree_view, entry1, entry2, entry3):
-        ####
-        # Whatever validation you need
-        ####
-
-        # Grab the current index in the tree
-        current_index = tree_view.index(tree_view.focus())
-
-        # Remove it from the tree
-        self.delete_current_entry(tree_view)
-
-        # Put it back in with the upated values
-        tree_view.insert("", current_index, values=(entry1, entry2, entry3))
-        self.save_needed = True
-
-        return True
-
-    def delete_current_entry(self, tree_view):
-        curr = tree_view.focus()
-
-        if curr == "":
-            return
-
-        tree_view.delete(curr)
-        self.save_needed = True
-        self.button_save["state"] = tk.NORMAL
 
     def populate_tilecode_pallete(
         self,
@@ -4652,24 +4451,20 @@ class LevelsTab(Tab):
 
         self.full_size = None
         if len(self.tree_files.selection()) > 0:
-            for entry in self.tree.get_children():
-                if self.tree.item(entry, option="values")[0] == "size":
-                    self.full_size = self.tree.item(entry, option="values")[1]
-                    logger.debug(
-                        "Size found: %s", self.tree.item(entry, option="values")[1]
-                    )
-                    if self.full_size is not None:
-                        level_height = int(self.full_size.split(", ")[1]) * 8
-                        level_width = int(self.full_size.split(", ")[0]) * 10
-                    else:
-                        level_height = int(8)
-                        level_width = int(8)
-                    self.canvas_full.delete("all")
-                    self.canvas_full_dual.delete("all")
-                    self._draw_grid_full(level_width, level_height, self.canvas_full)
-                    self._draw_grid_full(
-                        level_width, level_height, self.canvas_full_dual
-                    )
+            self.full_size = self.rules_tab.get_full_size()
+            if self.full_size is not None:
+                logger.debug("Size found: %s", self.full_size)
+                level_height = int(self.full_size.split(", ")[1]) * 8
+                level_width = int(self.full_size.split(", ")[0]) * 10
+            else:
+                level_height = int(8)
+                level_width = int(8)
+            self.canvas_full.delete("all")
+            self.canvas_full_dual.delete("all")
+            self._draw_grid_full(level_width, level_height, self.canvas_full)
+            self._draw_grid_full(
+                level_width, level_height, self.canvas_full_dual
+            )
             # if self.full_size == None:
             #    self.canvas_full.grid_remove()
             #    self.canvas_full_dual.grid_remove()
@@ -5374,19 +5169,8 @@ class LevelsTab(Tab):
         for widget in self.tile_pallete.scrollable_frame.winfo_children():
             widget.destroy()
 
-        # removes any old rules that might be there from the last file
-        for i in self.tree_chances_levels.get_children():
-            self.tree_chances_levels.delete(i)
+        self.rules_tab.reset()
 
-        # removes any old rules that might be there from the last file
-        for i in self.tree_chances_monsters.get_children():
-            self.tree_chances_monsters.delete(i)
-
-        # removes any old rules that might be there from the last file
-        for i in self.tree.get_children():
-            self.tree.delete(i)
-
-        self.tree.delete(*self.tree.get_children())
         self.tree_levels.delete(*self.tree_levels.get_children())
 
         # Enables widgets to use
@@ -5679,55 +5463,11 @@ class LevelsTab(Tab):
             self.mag,
         )
 
-        level_rules = level.level_settings.all()
         self.full_size = None
-        bad_chars = ["[", "]", '"', "'", "(", ")"]
-        for rules in level_rules:
-            value_final = str(rules.value)
-            for i in bad_chars:
-                value_final = value_final.replace(i, "")
-            self.tree.insert(
-                "",
-                "end",
-                text="L1",
-                values=(str(rules.name), value_final, str(rules.comment)),
-            )
 
-        level_chances = level.monster_chances.all()
-        for rules in level_chances:
-            self.tree_chances_monsters.insert(
-                "",
-                "end",
-                text="L1",
-                values=(
-                    str(rules.name),
-                    str(rules.value)
-                    .strip("[")
-                    .strip("]")
-                    .strip("(")
-                    .strip(")")
-                    .strip('"'),
-                    str(rules.comment),
-                ),
-            )
-
-        level_monsters = level.level_chances.all()
-        for rules in level_monsters:
-            self.tree_chances_levels.insert(
-                "",
-                "end",
-                text="L1",
-                values=(
-                    str(rules.name),
-                    str(rules.value)
-                    .strip("[")
-                    .strip("]")
-                    .strip("(")
-                    .strip(")")
-                    .strip('"'),
-                    str(rules.comment),
-                ),
-            )
+        self.rules_tab.load_level_settings(level.level_settings)
+        self.rules_tab.load_monster_chances(level.monster_chances)
+        self.rules_tab.load_level_chances(level.level_chances)
 
         level_templates = level.level_templates.all()
 
