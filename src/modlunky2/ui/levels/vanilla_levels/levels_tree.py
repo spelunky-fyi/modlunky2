@@ -5,6 +5,7 @@ from tkinter import ttk
 import pyperclip
 
 from modlunky2.config import Config
+from modlunky2.levels.level_templates import Chunk, LevelTemplate, LevelTemplates, TemplateSetting
 from modlunky2.ui.widgets import PopupWindow
 
 logger = logging.getLogger(__name__)
@@ -237,4 +238,63 @@ class LevelsTree(ttk.Treeview):
             self.delete(item_iid)
             self.selection_set(edited)
 
+    def get_level_templates(self):
+        level_templates = LevelTemplates()
+        for room_parent in self.get_children():
+            template_chunks = []
+            room_list_name = self.item(room_parent)["text"].split(" ", 1)[0]
+            room_list_comment = ""
+            if len(self.item(room_parent)["text"].split("//", 1)) > 1:
+                room_list_comment = self.item(room_parent)["text"].split("//", 1)[1]
+            for room in self.get_children(room_parent):
+                room_data = self.item(room, option="values")
+                room_name = self.item(room)["text"]
+                room_foreground = []
+                room_background = []
+                room_settings = []
 
+                for line in room_data:
+                    row = []
+                    back_row = []
+                    tag_found = False
+                    background_found = False
+                    for tag in TAGS:
+                        if str(line) == str(tag): # This line is a tag.
+                            tag_found = True
+                            break
+                    if not tag_found:
+                        for char in str(line):
+                            if not background_found and str(char) != " ":
+                                row.append(str(char))
+                            elif background_found and str(char) != " ":
+                                back_row.append(str(char))
+                            elif char == " ":
+                                background_found = True
+                    else:
+                        room_settings.append(
+                            TemplateSetting(str(line.split("!", 1)[1]))
+                        )
+                        logger.debug("FOUND %s", line.split("!", 1)[1])
+                    
+                    if not tag_found:
+                        room_foreground.append(row)
+                        if back_row != []:
+                            room_background.append(back_row)
+
+                template_chunks.append(
+                    Chunk(
+                        comment=room_name,
+                        settings=room_settings,
+                        foreground=room_foreground,
+                        background=room_background,
+                    )
+                )
+            level_templates.set_obj(
+                LevelTemplate(
+                    name=room_list_name,
+                    comment=room_list_comment,
+                    chunks=template_chunks,
+                )
+            )
+
+        return level_templates
