@@ -3161,20 +3161,10 @@ class LevelsTab(Tab):
     def save_changes(self):
         if self.save_needed:
             try:
-                tags = []
-                tags.append(r"\!ignore")
-                tags.append(r"\!flip")
-                tags.append(r"\!onlyflip")
-                tags.append(r"\!dual")
-                tags.append(r"\!rare")
-                tags.append(r"\!hard")
-                tags.append(r"\!liquid")
-                tags.append(r"\!purge")
-                tile_codes = TileCodes()
                 level_chances = self.rules_tab.get_level_chances()
                 level_settings = self.rules_tab.get_level_settings()
                 monster_chances = self.rules_tab.get_monster_chances()
-                level_templates = LevelTemplates()
+                level_templates = self.tree_levels.get_level_templates()
 
                 for tilecode in self.tile_pallete_ref_in_use:
                     tile_codes.set_obj(
@@ -3185,68 +3175,6 @@ class LevelsTab(Tab):
                         )
                     )
 
-                for room_parent in self.tree_levels.get_children():
-                    template_chunks = []
-                    room_list_name = self.tree_levels.item(room_parent)["text"].split(
-                        " ", 1
-                    )[0]
-                    room_list_comment = ""
-                    if (
-                        len(self.tree_levels.item(room_parent)["text"].split("//", 1))
-                        > 1
-                    ):
-                        room_list_comment = self.tree_levels.item(room_parent)[
-                            "text"
-                        ].split("//", 1)[1]
-                    for room in self.tree_levels.get_children(room_parent):
-                        room_data = self.tree_levels.item(room, option="values")
-                        room_name = self.tree_levels.item(room)["text"]
-                        room_foreground = []
-                        room_background = []
-                        room_settings = []
-
-                        for line in room_data:
-                            row = []
-                            back_row = []
-                            tag_found = False
-                            background_found = False
-                            for tag in tags:
-                                if str(line) == str(tag):  # this line is a tag
-                                    tag_found = True
-                            if not tag_found:
-                                for char in str(line):
-                                    if not background_found and str(char) != " ":
-                                        row.append(str(char))
-                                    elif background_found and str(char) != " ":
-                                        back_row.append(str(char))
-                                    elif char == " ":
-                                        background_found = True
-                            else:
-                                room_settings.append(
-                                    TemplateSetting(str(line.split("!", 1)[1]))
-                                )
-                                logger.debug("FOUND %s", line.split("!", 1)[1])
-
-                            if not tag_found:
-                                room_foreground.append(row)
-                                if back_row != []:
-                                    room_background.append(back_row)
-
-                        template_chunks.append(
-                            Chunk(
-                                comment=room_name,
-                                settings=room_settings,
-                                foreground=room_foreground,
-                                background=room_background,
-                            )
-                        )
-                    level_templates.set_obj(
-                        LevelTemplate(
-                            name=room_list_name,
-                            comment=room_list_comment,
-                            chunks=template_chunks,
-                        )
-                    )
                 level_file = LevelFile(
                     "",
                     level_settings,
