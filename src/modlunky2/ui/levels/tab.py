@@ -43,7 +43,7 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.textures import TextureUtil
-from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree
+from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
@@ -2139,8 +2139,7 @@ class LevelsTab(Tab):
 
     def reset(self):
         logger.debug("Resetting..")
-        for i in self.tree_levels.get_children():
-            self.tree_levels.delete(i)
+        self.tree_levels.reset()
         try:
             for tile_palette in [self.tile_pallete, self.tile_pallete_custom]:
                 for widget in tile_palette.scrollable_frame.winfo_children():
@@ -2842,11 +2841,9 @@ class LevelsTab(Tab):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def dual_toggle(self):
-        item_iid = self.tree_levels.selection()[0]
-        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
-        if parent_iid:
-            room_name = self.tree_levels.item(item_iid, option="text")
-            room_rows = self.tree_levels.item(item_iid, option="values")
+        current_room = self.tree_levels.get_selected_room()
+
+        if current_room:
             new_room_data = []
 
             tags = []
@@ -2861,7 +2858,7 @@ class LevelsTab(Tab):
 
             if self.var_dual.get() == 1:  # converts room into dual
                 new_room_data.append(r"\!dual")
-                for row in room_rows:
+                for row in current_room.rows:
                     tag_row = False
                     new_row = ""
                     for tag in tags:
@@ -2874,14 +2871,14 @@ class LevelsTab(Tab):
                         new_room_data.append(str(new_row))
                     else:
                         new_room_data.append(str(row))
-            else:  # converts room into none dual
+            else:  # converts room into non-dual
                 msg_box = tk.messagebox.askquestion(
                     "Delete Dual Room?",
                     "Un-dualing this room will delete your background layer. This is not recoverable.\nContinue?",
                     icon="warning",
                 )
                 if msg_box == "yes":
-                    for row in room_rows:
+                    for row in current_room.rows:
                         tag_row = False
                         new_row = ""
                         for tag in tags:
@@ -2895,15 +2892,7 @@ class LevelsTab(Tab):
                         if new_row != "":
                             new_room_data.append(str(new_row))
 
-            edited = self.tree_levels.insert(
-                parent_iid,
-                self.tree_levels.index(item_iid),
-                text=room_name,
-                values=new_room_data,
-            )
-            # Remove it from the tree
-            self.tree_levels.delete(item_iid)
-            self.tree_levels.selection_set(edited)
+            self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
             self.room_select(None)
             self.remember_changes()
 

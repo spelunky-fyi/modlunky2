@@ -10,6 +10,11 @@ from modlunky2.ui.widgets import PopupWindow
 logger = logging.getLogger(__name__)
 
 @dataclass
+class LevelsTreeRoom:
+    name: str
+    rows: List[str]
+
+@dataclass
 class RoomType:
     name: str
     x_size: int
@@ -204,4 +209,32 @@ class LevelsTree(ttk.Treeview):
             return True
         else:
             return False
+
+
+    def reset(self):
+        for i in self.get_children():
+            self.delete(i)
+
+    def get_selected_room(self):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)
+        if parent_iid:
+            room_name = self.item(item_iid, option="text")
+            room_rows = self.item(item_iid, option="values")
+            return LevelsTreeRoom(room_name, room_rows)
+        return None
+
+    def replace_selected_room(self, replacement):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)
+        if parent_iid:
+            edited = self.insert(
+                parent_iid,
+                self.index(item_iid),
+                text = replacement.name,
+                values = replacement.rows,
+            )
+            self.delete(item_iid)
+            self.selection_set(edited)
+
 
