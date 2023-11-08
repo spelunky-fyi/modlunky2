@@ -3610,87 +3610,79 @@ class LevelsTab(Tab):
             self.no_conflicts_label.grid_remove()
 
     def remember_changes(self):  # remembers changes made to rooms
-        item_iid = self.tree_levels.selection()[0]
-        parent_iid = self.tree_levels.parent(item_iid)  # gets selected room
-        try:
-            if parent_iid:
-                room_name = str(self.tree_levels.item(item_iid)["text"])
-                # self.canvas.delete("all")
-                # self.canvas_dual.delete("all")
-                new_room_data = ""
-                if int(self.var_dual.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!dual"
-                if int(self.var_purge.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!purge"
-                if int(self.var_flip.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!flip"
-                if int(self.var_only_flip.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!onlyflip"
-                if int(self.var_rare.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!rare"
-                if int(self.var_hard.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!hard"
-                if int(self.var_liquid.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!liquid"
-                if int(self.var_ignore.get()) == 1:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    new_room_data += r"\!ignore"
+        current_room = self.tree_levels.get_selected_room()
+        # try:
+            # if parent_iid:
+        if current_room:
+            # room_name = str(self.tree_levels.item(item_iid)["text"])
+            # self.canvas.delete("all")
+            # self.canvas_dual.delete("all")
+            new_room_data = ""
+            if int(self.var_dual.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!dual"
+            if int(self.var_purge.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!purge"
+            if int(self.var_flip.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!flip"
+            if int(self.var_only_flip.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!onlyflip"
+            if int(self.var_rare.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!rare"
+            if int(self.var_hard.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!hard"
+            if int(self.var_liquid.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!liquid"
+            if int(self.var_ignore.get()) == 1:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                new_room_data += r"\!ignore"
 
-                for row in self.tiles_meta:
-                    if new_room_data != "":
-                        new_room_data += "\n"
-                    for block in row:
-                        if str(block) == "None":
-                            new_room_data += str(" ")
-                        else:
-                            new_room_data += str(block)
-                room_save = []
-                for line in new_room_data.split("\n", 100):
-                    room_save.append(line)
-                # Put it back in with the upated values
-                edited = self.tree_levels.insert(
-                    parent_iid,
-                    self.tree_levels.index(item_iid),
-                    text=room_name,
-                    values=room_save,
-                )
-                # Remove it from the tree
-                self.tree_levels.delete(item_iid)
-                self.tree_levels.selection_set(edited)
-                # self.room_select(None)
-                logger.debug("temp saved: \n%s", new_room_data)
-                logger.debug("Changes remembered!")
-                self.save_needed = True
-                self.button_save["state"] = tk.NORMAL
-            else:
-                self.canvas.delete("all")
-                self.canvas_dual.delete("all")
-                self.canvas.grid_remove()
-                self.canvas_dual.grid_remove()
-                self.foreground_label.grid_remove()
-                self.background_label.grid_remove()
-        except Exception:  # pylint: disable=broad-except
+            for row in self.tiles_meta:
+                if new_room_data != "":
+                    new_room_data += "\n"
+                for block in row:
+                    if str(block) == "None":
+                        new_room_data += str(" ")
+                    else:
+                        new_room_data += str(block)
+            room_save = []
+            for line in new_room_data.split("\n", 100):
+                room_save.append(line)
+            # Put it back in with the upated values
+            self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, room_save))
+
+            # self.room_select(None)
+            logger.debug("temp saved: \n%s", new_room_data)
+            logger.debug("Changes remembered!")
+            self.changes_made()
+        else:
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
             self.canvas.grid_remove()
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
+        # except Exception:  # pylint: disable=broad-except
+        #     self.canvas.delete("all")
+        #     self.canvas_dual.delete("all")
+        #     self.canvas.grid_remove()
+        #     self.canvas_dual.grid_remove()
+        #     self.foreground_label.grid_remove()
+        #     self.background_label.grid_remove()
 
     def toggle_list_hide(self):
         if self.button_hide_tree["text"] == "<<":
