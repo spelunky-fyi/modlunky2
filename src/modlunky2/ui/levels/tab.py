@@ -2842,7 +2842,7 @@ class LevelsTab(Tab):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def dual_toggle(self):
-        current_room = []
+        current_room = self.tree_levels.get_selected_room()
 
         if current_room:
             new_room_data = current_room.rows
@@ -2857,6 +2857,8 @@ class LevelsTab(Tab):
                 )
                 if msg_box == "yes":
                     new_room_data = remove_dual(current_room.rows)
+                else:
+                    return
 
             self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
             self.room_select(None)
