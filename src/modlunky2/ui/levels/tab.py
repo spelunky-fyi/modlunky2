@@ -43,6 +43,7 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.textures import TextureUtil
+from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
@@ -2841,36 +2842,13 @@ class LevelsTab(Tab):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def dual_toggle(self):
-        current_room = self.tree_levels.get_selected_room()
+        current_room = []
 
         if current_room:
-            new_room_data = []
-
-            tags = []
-            tags.append(r"\!ignore")
-            tags.append(r"\!flip")
-            tags.append(r"\!onlyflip")
-            tags.append(r"\!dual")
-            tags.append(r"\!rare")
-            tags.append(r"\!hard")
-            tags.append(r"\!liquid")
-            tags.append(r"\!purge")
+            new_room_data = current_room.rows
 
             if self.var_dual.get() == 1:  # converts room into dual
-                new_room_data.append(r"\!dual")
-                for row in current_room.rows:
-                    tag_row = False
-                    new_row = ""
-                    for tag in tags:
-                        if row.startswith(tag):
-                            tag_row = True
-                    if not tag_row:
-                        new_row = row + " "
-                        for _char in row:
-                            new_row += "0"
-                        new_room_data.append(str(new_row))
-                    else:
-                        new_room_data.append(str(row))
+                new_room_data = make_dual(current_room.rows)
             else:  # converts room into non-dual
                 msg_box = tk.messagebox.askquestion(
                     "Delete Dual Room?",
@@ -2878,19 +2856,7 @@ class LevelsTab(Tab):
                     icon="warning",
                 )
                 if msg_box == "yes":
-                    for row in current_room.rows:
-                        tag_row = False
-                        new_row = ""
-                        for tag in tags:
-                            if str(row).startswith(tag):
-                                tag_row = True
-                        if not tag_row:
-                            new_row = str(row).split(" ", 2)[0]
-                        else:
-                            if not row.startswith(r"\!dual"):
-                                new_row = row
-                        if new_row != "":
-                            new_room_data.append(str(new_row))
+                    new_room_data = remove_dual(current_room.rows)
 
             self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
             self.room_select(None)
