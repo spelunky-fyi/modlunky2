@@ -3,10 +3,12 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 import pyperclip
+from typing import List
 
 from modlunky2.config import Config
 from modlunky2.levels.level_templates import Chunk, LevelTemplate, LevelTemplates, TemplateSetting
 from modlunky2.ui.widgets import PopupWindow
+from modlunky2.ui.levels.shared.tags import TAGS
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +277,7 @@ class LevelsTree(ttk.Treeview):
                             TemplateSetting(str(line.split("!", 1)[1]))
                         )
                         logger.debug("FOUND %s", line.split("!", 1)[1])
-                    
+
                     if not tag_found:
                         room_foreground.append(row)
                         if back_row != []:
