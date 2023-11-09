@@ -3166,6 +3166,7 @@ class LevelsTab(Tab):
                 monster_chances = self.rules_tab.get_monster_chances()
                 level_templates = self.tree_levels.get_level_templates()
 
+                tile_codes = TileCodes()
                 for tilecode in self.tile_pallete_ref_in_use:
                     tile_codes.set_obj(
                         TileCode(
