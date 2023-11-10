@@ -218,6 +218,24 @@ class LevelsTree(ttk.Treeview):
         for i in self.get_children():
             self.delete(i)
 
+    def get_rooms(self):
+        level_tree_rooms = []
+        for room_parent in self.get_children():
+            room_templates = []
+            for room in self.get_children(room_parent):
+                room_name = self.item(room, option="text")
+                room_rows = self.item(room, option="values")
+                room_templates.append(LevelsTreeRoom(room_name, room_rows))
+            level_tree_rooms.append(room_templates)
+        return level_tree_rooms
+
+    def replace_rooms(self, replacements):
+        item_iid = self.selection()[0]
+        parent_iid = self.parent(item_iid)
+        if parent_iid:
+        for room_parent in self.get_children():
+
+
     def get_selected_room(self):
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)
