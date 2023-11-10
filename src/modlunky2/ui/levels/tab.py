@@ -5059,7 +5059,7 @@ class LevelsTab(Tab):
 
         self.rules_tab.reset()
 
-        self.tree_levels.delete(*self.tree_levels.get_children())
+        self.tree_levels.reset()
 
         # Enables widgets to use
         self.scale["state"] = tk.NORMAL
