@@ -18,6 +18,11 @@ class LevelsTreeRoom:
     rows: List[str]
 
 @dataclass
+class LevelsTreeTemplate:
+    name: str
+    rooms: List[LevelsTreeRoom]
+
+@dataclass
 class RoomType:
     name: str
     x_size: int
@@ -219,22 +224,42 @@ class LevelsTree(ttk.Treeview):
             self.delete(i)
 
     def get_rooms(self):
-        level_tree_rooms = []
+        level_templates = []
         for room_parent in self.get_children():
-            room_templates = []
+            rooms = []
             for room in self.get_children(room_parent):
                 room_name = self.item(room, option="text")
                 room_rows = self.item(room, option="values")
-                room_templates.append(LevelsTreeRoom(room_name, room_rows))
-            level_tree_rooms.append(room_templates)
-        return level_tree_rooms
+                rooms.append(LevelsTreeRoom(room_name, room_rows))
+            level_templates.append(LevelsTreeTemplate(self.item(room_parent, option="text"), rooms))
+        return level_templates
 
     def replace_rooms(self, replacements):
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)
+        selected_parent_index = None
         if parent_iid:
-        for room_parent in self.get_children():
+            selected_parent_index = self.index(parent_iid)
+        selected_item_index = None
+        if item_iid:
+            selected_item_index = self.index(item_iid)
 
+        for parent_index, parent in enumerate(self.get_children()):
+            for child_index, child in enumerate(self.get_children(parent)):
+                self.delete(child)
+                if len(replacements) > parent_index and len(replacements[parent_index].rooms) > child_index:
+                    room = replacements[parent_index].rooms[child_index]
+                    new_child = self.insert(
+                        parent,
+                        child_index,
+                        text=room.name,
+                        values=room.rows,
+                    )
+                    if selected_parent_index == parent_index and selected_item_index == child_index:
+                        self.selection_set(new_child)
+                        selected_child = new_child
+
+        return selected_child
 
     def get_selected_room(self):
         item_iid = self.selection()[0]
