@@ -4285,9 +4285,6 @@ class LevelsTab(Tab):
                 logger.debug("Size found: %s", self.full_size)
                 level_height = int(self.full_size.split(", ")[1]) * 8
                 level_width = int(self.full_size.split(", ")[0]) * 10
-            else:
-                level_height = int(8)
-                level_width = int(8)
             self.canvas_full.delete("all")
             self.canvas_full_dual.delete("all")
             self._draw_grid_full(level_width, level_height, self.canvas_full)
