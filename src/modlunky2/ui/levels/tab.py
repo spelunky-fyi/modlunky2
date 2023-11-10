@@ -3779,6 +3779,32 @@ class LevelsTab(Tab):
 
     def replace_tiles(self, tile, new_tile, replace_where):
         if replace_where == "all rooms":
+            # new_rooms = []
+            # existing_rooms = self.tree_levels.get_rooms()
+            # for existing_template in existing_rooms:
+            #     new_template = []
+            #     new_rooms.append(new_template)
+            #     for existing_room in existing_template:
+            #         room_data = []
+            #         room_name = existing_room.name
+            #         room_rows = existing_room.rows
+            #         for row in room_rows:
+            #             new_row = ""
+            #             if not str(row).startswith(r"\!"):
+            #                 for replace_code in row:
+            #                     if replace_code == str(tile):
+            #                         replace_code = str(new_tile)
+            #                         new_row += str(new_tile)
+            #                     else:
+            #                         new_row += str(replace_code)
+            #             else:
+            #                 new_row = str(row)
+            #             room_data.append(new_row)
+            #         new_template.append(LevelsTreeRoom(room_name, room_data))
+            # new_selected_room = self.tree_levels.replace_rooms(new_rooms)
+            # if new_selected_room:
+            #     self.last_selected_room = new_selected_room
+            #     self.room_select(None)
             for room_parent in self.tree_levels.get_children():
                 for room in self.tree_levels.get_children(room_parent):
                     room_data = []
