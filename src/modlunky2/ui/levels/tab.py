@@ -3805,6 +3805,7 @@ class LevelsTab(Tab):
             if new_selected_room:
                 self.last_selected_room = new_selected_room
                 self.room_select(None)
+            self.changes_made()
         else:
             row_count = 0
             for row in self.tiles_meta:
