@@ -44,7 +44,7 @@ from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
-from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom
+from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
@@ -3779,37 +3779,14 @@ class LevelsTab(Tab):
 
     def replace_tiles(self, tile, new_tile, replace_where):
         if replace_where == "all rooms":
-            # new_rooms = []
-            # existing_rooms = self.tree_levels.get_rooms()
-            # for existing_template in existing_rooms:
-            #     new_template = []
-            #     new_rooms.append(new_template)
-            #     for existing_room in existing_template:
-            #         room_data = []
-            #         room_name = existing_room.name
-            #         room_rows = existing_room.rows
-            #         for row in room_rows:
-            #             new_row = ""
-            #             if not str(row).startswith(r"\!"):
-            #                 for replace_code in row:
-            #                     if replace_code == str(tile):
-            #                         replace_code = str(new_tile)
-            #                         new_row += str(new_tile)
-            #                     else:
-            #                         new_row += str(replace_code)
-            #             else:
-            #                 new_row = str(row)
-            #             room_data.append(new_row)
-            #         new_template.append(LevelsTreeRoom(room_name, room_data))
-            # new_selected_room = self.tree_levels.replace_rooms(new_rooms)
-            # if new_selected_room:
-            #     self.last_selected_room = new_selected_room
-            #     self.room_select(None)
-            for room_parent in self.tree_levels.get_children():
-                for room in self.tree_levels.get_children(room_parent):
+            existing_templates = self.tree_levels.get_rooms()
+            new_templates = []
+            for existing_template in existing_templates:
+                new_rooms = []
+                for existing_room in existing_template.rooms:
                     room_data = []
-                    room_name = self.tree_levels.item(room, option="text")
-                    room_rows = self.tree_levels.item(room, option="values")
+                    room_name = existing_room.name
+                    room_rows = existing_room.rows
                     for row in room_rows:
                         new_row = ""
                         if not str(row).startswith(r"\!"):
@@ -3822,19 +3799,12 @@ class LevelsTab(Tab):
                         else:
                             new_row = str(row)
                         room_data.append(new_row)
-                    # Put it back in with the upated values
-                    edited = self.tree_levels.insert(
-                        room_parent,
-                        self.tree_levels.index(room),
-                        text=str(room_name),
-                        values=room_data,
-                    )
-                    # Remove it from the tree
-                    self.tree_levels.delete(room)
-                    if room == self.last_selected_room:
-                        self.tree_levels.selection_set(edited)
-                        self.last_selected_room = edited
-                        self.room_select(None)
+                    new_rooms.append(LevelsTreeRoom(room_name, room_data))
+                new_templates.append(LevelsTreeTemplate(existing_template.name, new_rooms))
+            new_selected_room = self.tree_levels.replace_rooms(new_templates)
+            if new_selected_room:
+                self.last_selected_room = new_selected_room
+                self.room_select(None)
         else:
             row_count = 0
             for row in self.tiles_meta:
