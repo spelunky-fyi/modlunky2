@@ -3777,6 +3777,12 @@ class LevelsTab(Tab):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
+    def replace_rooms(self, replacement_rooms):
+        new_selected_room = self.tree_levels.replace_rooms(replacement_rooms)
+        if new_selected_room:
+            self.last_selected_room = new_selected_room
+            self.room_select(None)
+
     def replace_tiles(self, tile, new_tile, replace_where):
         if replace_where == "all rooms":
             existing_templates = self.tree_levels.get_rooms()
@@ -3801,10 +3807,7 @@ class LevelsTab(Tab):
                         room_data.append(new_row)
                     new_rooms.append(LevelsTreeRoom(room_name, room_data))
                 new_templates.append(LevelsTreeTemplate(existing_template.name, new_rooms))
-            new_selected_room = self.tree_levels.replace_rooms(new_templates)
-            if new_selected_room:
-                self.last_selected_room = new_selected_room
-                self.room_select(None)
+            self.replace_rooms(new_templates)
             self.changes_made()
         else:
             row_count = 0
@@ -3851,36 +3854,7 @@ class LevelsTab(Tab):
                 tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
                 return
 
-            for room_parent in self.tree_levels.get_children():
-                for room in self.tree_levels.get_children(room_parent):
-                    room_data = []
-                    room_name = self.tree_levels.item(room, option="text")
-                    room_rows = self.tree_levels.item(room, option="values")
-                    for row in room_rows:
-                        new_row = ""
-                        if not str(row).startswith(r"\!"):
-                            for replace_code in row:
-                                if replace_code == tile_code:
-                                    replace_code = "0"
-                                    new_row += "0"
-                                else:
-                                    new_row += str(replace_code)
-                        else:
-                            new_row = str(row)
-                        room_data.append(new_row)
-                    # Put it back in with the upated values
-                    edited = self.tree_levels.insert(
-                        room_parent,
-                        self.tree_levels.index(room),
-                        text=str(room_name),
-                        values=room_data,
-                    )
-                    # Remove it from the tree
-                    self.tree_levels.delete(room)
-                    if room == self.last_selected_room:
-                        self.tree_levels.selection_set(edited)
-                        self.last_selected_room = edited
-                        self.room_select(None)
+            self.replace_tiles(tile_code, "0", "all rooms")
             logger.debug("Replaced %s in all rooms with air/empty", tile_id)
 
             self.usable_codes.append(str(tile_code))
@@ -3917,8 +3891,7 @@ class LevelsTab(Tab):
                 self.panel_sel_secondary["image"] = new_selection[1]
 
             self.get_codes_left()
-            self.save_needed = True
-            self.button_save["state"] = tk.NORMAL
+            self.changes_made()
             self.check_dependencies()
         else:
             return
@@ -3936,36 +3909,7 @@ class LevelsTab(Tab):
                 tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
                 return
 
-            for room_parent in self.tree_levels.get_children():
-                for room in self.tree_levels.get_children(room_parent):
-                    room_data = []
-                    room_name = self.tree_levels.item(room, option="text")
-                    room_rows = self.tree_levels.item(room, option="values")
-                    for row in room_rows:
-                        new_row = ""
-                        if not str(row).startswith(r"\!"):
-                            for replace_code in row:
-                                if replace_code == tile_code:
-                                    replace_code = "0"
-                                    new_row += "0"
-                                else:
-                                    new_row += str(replace_code)
-                        else:
-                            new_row = str(row)
-                        room_data.append(new_row)
-                    # Put it back in with the upated values
-                    edited = self.tree_levels.insert(
-                        room_parent,
-                        self.tree_levels.index(room),
-                        text=str(room_name),
-                        values=room_data,
-                    )
-                    # Remove it from the tree
-                    self.tree_levels.delete(room)
-                    if room == self.last_selected_room:
-                        self.tree_levels.selection_set(edited)
-                        self.last_selected_room = edited
-                        self.room_select(None)
+            self.replace_tiles(tile_code, "0", "all rooms")
             logger.debug("Replaced %s in all rooms with air/empty", tile_code)
 
             self.usable_codes.append(str(tile_code))
