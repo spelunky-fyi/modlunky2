@@ -43,7 +43,7 @@ class LevelDependencies():
         if Path(levels_path / lvl).exists():
             return LevelFile.from_path(Path(levels_path / lvl))
         else:
-            logger.info(
+            logger.debug(
                 "local dependency for lvl %s not found, attempting to load from extracts", lvl
             )
             return LevelFile.from_path(Path(extracts_path) / lvl)
