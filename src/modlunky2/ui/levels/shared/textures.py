@@ -247,3 +247,62 @@ class TextureUtil():
 
             out = Image.alpha_composite(image1, txt)
         return out
+
+    @staticmethod
+    def get_bg_texture_file_name(level_file_name):
+        if (
+            level_file_name.startswith("abzu.lvl")
+            or level_file_name.startswith("lake")
+            or level_file_name.startswith("tide")
+            or level_file_name.startswith("end")
+            or level_file_name.endswith("_tidepool.lvl")
+        ):
+            return "bg_tidepool.png"
+        elif (
+            level_file_name.startswith("babylon")
+            or level_file_name.startswith("hallofu")
+            or level_file_name.endswith("_babylon.lvl")
+            or level_file_name.startswith("palace")
+            or level_file_name.startswith("tiamat")
+        ):
+            return "bg_babylon.png"
+        elif level_file_name.startswith("basecamp"):
+            return "bg_cave.png"
+        elif level_file_name.startswith("beehive"):
+            return "bg_beehive.png"
+        elif (
+            level_file_name.startswith("blackmark")
+            or level_file_name.startswith("jungle")
+            or level_file_name.startswith("challenge_moon")
+            or level_file_name.endswith("_jungle.lvl")
+        ):
+            return "bg_jungle.png"
+        elif (
+            level_file_name.startswith("challenge_star")
+            or level_file_name.startswith("temple")
+            or level_file_name.endswith("_temple.lvl")
+        ):
+            return "bg_temple.png"
+        elif (
+            level_file_name.startswith("challenge_sun")
+            or level_file_name.startswith("sunken")
+            or level_file_name.startswith("hundun")
+            or level_file_name.startswith("ending_hard")
+            or level_file_name.endswith("_sunkencity.lvl")
+        ):
+            return "bg_sunken.png"
+        elif level_file_name.startswith("city"):
+            return "bg_gold.png"
+        elif level_file_name.startswith("duat"):
+            return "bg_temple.png"
+        elif level_file_name.startswith("egg"):
+            return "bg_eggplant.png"
+        elif level_file_name.startswith("ice") or level_file_name.endswith("_icecavesarea.lvl"):
+            return "bg_ice.png"
+        elif level_file_name.startswith("olmec"):
+            return "bg_stone.png"
+        elif level_file_name.startswith("vlad"):
+            return "bg_vlad.png"
+        elif level_file_name.startswith("volcano") or level_file_name.endswith("_volcano.lvl"):
+            return "bg_volcano.png"
+        return "bg_cave.png"
