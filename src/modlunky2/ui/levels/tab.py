@@ -4684,14 +4684,13 @@ class LevelsTab(Tab):
             )  # Creates seperate image path variable for bgbg image
 
             file_id = self.tree_files.selection()[0]
-            room_item = self.tree_levels.selection()[0]
-            room_id = self.tree_levels.parent(
-                room_item
-            )  # checks which room is being opened to see if a special bg is needed
+            # checks which room is being opened to see if a special bg is needed
+            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
             factor = 0.6  # darkens the image
+
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png":
-                if str(self.tree_levels.item(room_id, option="text")).startswith(
-                    r"\.mothership"
+                if str(selected_room_template_name).startswith(
+                    "mothership"
                 ):
                     self.lvl_bgbg_path = self.textures_dir / "bg_mothership.png"
                     factor = 1.0  # keeps image the same
