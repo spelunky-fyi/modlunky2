@@ -9,6 +9,7 @@ from modlunky2.config import Config
 from modlunky2.levels.level_templates import Chunk, LevelTemplate, LevelTemplates, TemplateSetting
 from modlunky2.ui.widgets import PopupWindow
 from modlunky2.ui.levels.shared.tags import TAGS
+from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,11 @@ class LevelsTreeRoom:
 class LevelsTreeTemplate:
     name: str
     rooms: List[LevelsTreeRoom]
+
+@dataclass
+class LevelsTreeSetroom:
+    template: LevelsTreeTemplate
+    setroom: MatchedSetroom
 
 @dataclass
 class RoomType:
@@ -223,15 +229,18 @@ class LevelsTree(ttk.Treeview):
         for i in self.get_children():
             self.delete(i)
 
+    def __get_room_template(self, parent):
+        rooms = []
+        for room in self.get_children(parent):
+            room_name = self.item(room, option="text")
+            room_rows = self.item(room, option="values")
+            rooms.append(LevelsTreeRoom(room_name, room_rows))
+        return LevelsTreeTemplate(self.item(parent, option="text"), rooms)
+
     def get_rooms(self):
         level_templates = []
         for room_parent in self.get_children():
-            rooms = []
-            for room in self.get_children(room_parent):
-                room_name = self.item(room, option="text")
-                room_rows = self.item(room, option="values")
-                rooms.append(LevelsTreeRoom(room_name, room_rows))
-            level_templates.append(LevelsTreeTemplate(self.item(room_parent, option="text"), rooms))
+            level_templates.append(self.__get_room_template(room_parent))
         return level_templates
 
     def replace_rooms(self, replacements):
@@ -343,3 +352,16 @@ class LevelsTree(ttk.Treeview):
             )
 
         return level_templates
+
+    def get_setrooms(self):
+        setrooms = []
+        for room_template in self.get_children():
+            matched_template = Setroom.find_vanilla_setroom(self.item(room_template, option="text").split("//")[0].strip())
+            if not matched_template:
+                continue
+
+            setrooms.append(LevelsTreeSetroom(
+                template=self.__get_room_template(room_template),
+                setroom=matched_template
+            ))
+        return setrooms

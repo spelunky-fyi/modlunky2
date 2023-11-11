@@ -4308,26 +4308,30 @@ class LevelsTab(Tab):
         def flip_text(x_coord):
             return x_coord[::-1]
 
-        for room_template in self.tree_levels.get_children():
-            room_x = 0
-            room_y = 0
-            matched_template = Setroom.find_vanilla_setroom(self.tree_levels.item(room_template, option="text").split("//")[0].strip())
-            if not matched_template:
-                continue
-            room_x = matched_template.coords.x
-            room_y = matched_template.coords.y
+        for setroom_template in self.tree_levels.get_setrooms():
 
-            flip_room = False
+        # for room_template in self.tree_levels.get_children():
+        #     room_x = 0
+        #     room_y = 0
+        #     matched_template = Setroom.find_vanilla_setroom(self.tree_levels.item(room_template, option="text").split("//")[0].strip())
+        #     if not matched_template:
+        #         continue
+        #     room_x = matched_template.coords.x
+        #     room_y = matched_template.coords.y
 
-            logger.debug("%s", self.tree_levels.item(room_template, option="text"))
+            room_x = setroom_template.setroom.coords.x
+            room_y = setroom_template.setroom.coords.y
+            logger.debug("%s", setroom_template.template.name)
             logger.debug("Room pos: %sx%s", room_x, room_y)
             current_room_tiles = []
             current_room_tiles_dual = []
             layers = []
 
-            if len(self.tree_levels.get_children(room_template)) != 0:
-                template = self.tree_levels.get_children(room_template)[0]
-                for cr_line in self.tree_levels.item(template, option="values"):
+            tree_rooms = setroom_template.template.rooms
+            flip_room = False
+            if len(tree_rooms) != 0:
+                tree_room = tree_rooms[0]
+                for cr_line in tree_room.rows:
                     if str(cr_line).startswith(r"\!"):
                         logger.debug("found tag %s", cr_line)
                         if str(cr_line) == r"\!onlyflip":
