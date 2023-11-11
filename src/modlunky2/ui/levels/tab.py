@@ -5068,13 +5068,12 @@ class LevelsTab(Tab):
 
         level_templates = level.level_templates.all()
 
+        tree_templates = []
         for template in level_templates:
             template_comment = ""
             if str(template.comment) != "":
                 template_comment = "// " + str(template.comment)
-            entry = self.node = self.tree_levels.insert(
-                "", "end", text=str(template.name) + "   " + template_comment
-            )
+            rooms = []
             for room in template.chunks:
                 room_string = []  # makes room data into string for storing
 
@@ -5099,9 +5098,9 @@ class LevelsTab(Tab):
                 if comment:
                     room_name = comment
 
-                self.node = self.tree_levels.insert(
-                    entry, "end", values=room_string, text=str(room_name)
-                )
+                rooms.append(LevelsTreeRoom(str(room_name), room_string))
+            tree_templates.append(LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms))
+        self.tree_levels.set_rooms(tree_templates)
 
     def read_custom_lvl_file(self, lvl, theme=None):
         if Path(self.lvls_path / lvl).exists():

@@ -270,6 +270,14 @@ class LevelsTree(ttk.Treeview):
 
         return selected_child
 
+    def set_rooms(self, rooms):
+        for room in rooms:
+            entry = self.insert(
+                "", "end", text=room.name
+            )
+            for layout in room.rooms:
+                self.insert(entry, "end", values=layout.rows, text=layout.name)
+
     def get_selected_room_template_name(self):
         selection = self.selection()
         if len(selection) == 0:
