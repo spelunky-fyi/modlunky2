@@ -2,7 +2,7 @@ from collections import namedtuple
 import re
 
 RoomCoords = namedtuple("RoomCoords", ["x", "y"])
-MatchedTemplate = namedtuple("MatchedTemplate", ["name", "coords"])
+MatchedSetroom = namedtuple("MatchedSetroom", ["name", "coords"])
 
 class BaseTemplate():
     setroom = "setroom{y}-{x}"
@@ -34,7 +34,7 @@ class Setroom():
         for setroom in template_list:
             match = Setroom.match_setroom(setroom, room)
             if match:
-                return MatchedTemplate(setroom, match)
+                return MatchedSetroom(setroom, match)
         return None
 
     @staticmethod
