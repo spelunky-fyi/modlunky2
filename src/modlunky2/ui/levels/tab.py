@@ -4311,51 +4311,13 @@ class LevelsTab(Tab):
         for room_template in self.tree_levels.get_children():
             room_x = 0
             room_y = 0
-            if self.tree_levels.item(room_template, option="text").startswith(
-                "setroom"
-            ):
-                room_y = int(
-                    self.tree_levels.item(room_template, option="text")
-                    .split("-")[0]
-                    .split("room")[1]
-                )
-            elif self.tree_levels.item(room_template, option="text").startswith(
-                "challenge_"
-            ):
-                if (
-                    len(self.tree_levels.item(room_template, option="text").split("-"))
-                    == 2
-                ):
-                    room_y = int(
-                        self.tree_levels.item(room_template, option="text")
-                        .split("-")[0]
-                        .split("challenge_")[1]
-                    )
-                else:
-                    continue
-            elif self.tree_levels.item(room_template, option="text").startswith(
-                "palaceofpleasure_"
-            ):
-                room_y = int(
-                    self.tree_levels.item(room_template, option="text")
-                    .split("-")[0]
-                    .split("palaceofpleasure_")[1]
-                )
-            else:
+            matched_template = Setroom.find_vanilla_setroom(self.tree_levels.item(room_template, option="text").split("//")[0].strip())
+            if not matched_template:
                 continue
+            room_x = matched_template.coords.x
+            room_y = matched_template.coords.y
 
             flip_room = False
-            if len(self.tree_levels.item(room_template, option="text").split("//")) > 0:
-                room_x = int(
-                    self.tree_levels.item(room_template, option="text")
-                    .split("-")[1]
-                    .split("//")[0]
-                    .strip()
-                )
-            else:
-                room_x = int(
-                    self.tree_levels.item(room_template, option="text").split("-")[1]
-                )
 
             logger.debug("%s", self.tree_levels.item(room_template, option="text"))
             logger.debug("Room pos: %sx%s", room_x, room_y)
