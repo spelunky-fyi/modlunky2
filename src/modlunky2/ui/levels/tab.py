@@ -5020,7 +5020,6 @@ class LevelsTab(Tab):
 
         self.lvl_biome = Biomes.get_biome_for_level(lvl)
         self.lvl_bg_path = self.textures_dir / TextureUtil.get_bg_texture_file_name(lvl)
-        logger.info("level: %s, biome: %s", lvl, self.lvl_biome)
 
         logger.debug("searching %s", self.lvls_path / lvl)
         if Path(self.lvls_path / lvl).exists():

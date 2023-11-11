@@ -251,6 +251,14 @@ class TextureUtil():
     @staticmethod
     def get_bg_texture_file_name(level_file_name):
         if (
+            level_file_name.startswith("challenge_sun")
+            or level_file_name.startswith("sunken")
+            or level_file_name.startswith("hundun")
+            or level_file_name.startswith("ending_hard")
+            or level_file_name.endswith("_sunkencity.lvl")
+        ):
+            return "bg_sunken.png"
+        elif (
             level_file_name.startswith("abzu.lvl")
             or level_file_name.startswith("lake")
             or level_file_name.startswith("tide")
@@ -283,14 +291,6 @@ class TextureUtil():
             or level_file_name.endswith("_temple.lvl")
         ):
             return "bg_temple.png"
-        elif (
-            level_file_name.startswith("challenge_sun")
-            or level_file_name.startswith("sunken")
-            or level_file_name.startswith("hundun")
-            or level_file_name.startswith("ending_hard")
-            or level_file_name.endswith("_sunkencity.lvl")
-        ):
-            return "bg_sunken.png"
         elif level_file_name.startswith("city"):
             return "bg_gold.png"
         elif level_file_name.startswith("duat"):
