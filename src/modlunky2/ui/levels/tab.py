@@ -47,6 +47,7 @@ from modlunky2.ui.levels.shared.setrooms import BaseTemplate, Setroom
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_dependencies import LevelDependencies
+from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
@@ -82,9 +83,8 @@ class LevelsTab(Tab):
         self.modlunky_config = modlunky_config
 
         self.modlunky_ui = modlunky_ui
-        self.tree_levels = LevelsTree(
-            self, self.changes_made, self.reset_canvas, self.modlunky_config, selectmode="browse"
-        )
+        self.level_list_panel = LevelListPanel(self, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
+
         self.last_selected_room = None
         # TODO: Get actual resolution
         self.screen_width = 1290
@@ -243,7 +243,6 @@ class LevelsTab(Tab):
         self.vsb_depend = None
         self.button_resolve_variables = None
         self.dependencies = None
-        self.vsb_tree_levels = None
         self.my_list = None
         self.mag = None
         self.canvas_grids = None
@@ -1521,20 +1520,11 @@ class LevelsTab(Tab):
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.editor_tab.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
-        self.tree_levels = LevelsTree(
-            self.editor_tab, self.changes_made, self.reset_canvas, self.modlunky_config, selectmode="browse"
-        )  # This tree shows the rooms in the level editor
-        self.tree_levels.place(x=30, y=95)
-        self.vsb_tree_levels = ttk.Scrollbar(
-            self.editor_tab, orient="vertical", command=self.tree_levels.yview
-        )
-        self.vsb_tree_levels.place(x=30 + 200 + 2, y=95, height=200 + 20)
-        self.tree_levels.configure(yscrollcommand=self.vsb_tree_levels.set)
+        self.level_list_panel = LevelListPanel(self.editor_tab, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
+        self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
         self.my_list = os.listdir(
             self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
         )
-        self.tree_levels.grid(row=0, column=0, rowspan=5, sticky="nswe")
-        self.vsb_tree_levels.grid(row=0, column=0, rowspan=5, sticky="nse")
 
         self.mag = 50  # the size of each tiles in the grid; 50 is optimal
         self.rows = (
@@ -2143,7 +2133,7 @@ class LevelsTab(Tab):
 
     def reset(self):
         logger.debug("Resetting..")
-        self.tree_levels.reset()
+        self.level_list_panel.reset()
         try:
             for tile_palette in [self.tile_pallete, self.tile_pallete_custom]:
                 for widget in tile_palette.scrollable_frame.winfo_children():
@@ -2845,7 +2835,7 @@ class LevelsTab(Tab):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def dual_toggle(self):
-        current_room = self.tree_levels.get_selected_room()
+        current_room = self.level_list_panel.get_selected_room()
 
         if current_room:
             new_room_data = current_room.rows
@@ -2863,7 +2853,7 @@ class LevelsTab(Tab):
                 else:
                     return
 
-            self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
+            self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
             self.room_select(None)
             self.remember_changes()
 
@@ -3167,7 +3157,7 @@ class LevelsTab(Tab):
                 level_chances = self.rules_tab.get_level_chances()
                 level_settings = self.rules_tab.get_level_settings()
                 monster_chances = self.rules_tab.get_monster_chances()
-                level_templates = self.tree_levels.get_level_templates()
+                level_templates = self.level_list_panel.get_level_templates()
 
                 tile_codes = TileCodes()
                 for tilecode in self.tile_pallete_ref_in_use:
@@ -3614,13 +3604,8 @@ class LevelsTab(Tab):
             self.no_conflicts_label.grid_remove()
 
     def remember_changes(self):  # remembers changes made to rooms
-        current_room = self.tree_levels.get_selected_room()
-        # try:
-            # if parent_iid:
+        current_room = self.level_list_panel.get_selected_room()
         if current_room:
-            # room_name = str(self.tree_levels.item(item_iid)["text"])
-            # self.canvas.delete("all")
-            # self.canvas_dual.delete("all")
             new_room_data = ""
             if int(self.var_dual.get()) == 1:
                 if new_room_data != "":
@@ -3667,9 +3652,8 @@ class LevelsTab(Tab):
             for line in new_room_data.split("\n", 100):
                 room_save.append(line)
             # Put it back in with the upated values
-            self.tree_levels.replace_selected_room(LevelsTreeRoom(current_room.name, room_save))
+            self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, room_save))
 
-            # self.room_select(None)
             logger.debug("temp saved: \n%s", new_room_data)
             logger.debug("Changes remembered!")
             self.changes_made()
@@ -3680,23 +3664,14 @@ class LevelsTab(Tab):
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
-        # except Exception:  # pylint: disable=broad-except
-        #     self.canvas.delete("all")
-        #     self.canvas_dual.delete("all")
-        #     self.canvas.grid_remove()
-        #     self.canvas_dual.grid_remove()
-        #     self.foreground_label.grid_remove()
-        #     self.background_label.grid_remove()
 
     def toggle_list_hide(self):
         if self.button_hide_tree["text"] == "<<":
-            self.tree_levels.grid_remove()
-            self.vsb_tree_levels.grid_remove()
+            self.level_list_panel.grid_remove()
             self.editor_tab.columnconfigure(0, minsize=0)  # Column 0 = Level List
             self.button_hide_tree["text"] = ">>"
         else:
-            self.tree_levels.grid()
-            self.vsb_tree_levels.grid()
+            self.level_list_panel.grid()
             self.editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
             self.button_hide_tree["text"] = "<<"
 
@@ -3781,14 +3756,14 @@ class LevelsTab(Tab):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def replace_rooms(self, replacement_rooms):
-        new_selected_room = self.tree_levels.replace_rooms(replacement_rooms)
+        new_selected_room = self.level_list_panel.replace_rooms(replacement_rooms)
         if new_selected_room:
             self.last_selected_room = new_selected_room
             self.room_select(None)
 
     def replace_tiles(self, tile, new_tile, replace_where):
         if replace_where == "all rooms":
-            existing_templates = self.tree_levels.get_rooms()
+            existing_templates = self.level_list_panel.get_rooms()
             new_templates = []
             for existing_template in existing_templates:
                 new_rooms = []
@@ -4308,7 +4283,7 @@ class LevelsTab(Tab):
         def flip_text(x_coord):
             return x_coord[::-1]
 
-        for setroom_template in self.tree_levels.get_setrooms():
+        for setroom_template in self.level_list_panel.get_setrooms():
             room_x = setroom_template.setroom.coords.x
             room_y = setroom_template.setroom.coords.y
 
@@ -4560,7 +4535,7 @@ class LevelsTab(Tab):
         try:
             file_id = self.tree_files.selection()[0]
             # checks which room is being opened to see if a special bg is needed
-            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
+            selected_room_template_name = self.level_list_panel.get_selected_room_template_name()
             factor = 1.0  # keeps image the same
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
                 selected_room_template_name
@@ -4635,7 +4610,7 @@ class LevelsTab(Tab):
 
             file_id = self.tree_files.selection()[0]
             # checks which room is being opened to see if a special bg is needed
-            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
+            selected_room_template_name = self.level_list_panel.get_selected_room_template_name()
             factor = 1.0  # keeps image the same
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
                 selected_room_template_name
@@ -4685,7 +4660,7 @@ class LevelsTab(Tab):
 
             file_id = self.tree_files.selection()[0]
             # checks which room is being opened to see if a special bg is needed
-            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
+            selected_room_template_name = self.level_list_panel.get_selected_room_template_name()
             factor = 0.6  # darkens the image
 
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png":
@@ -4752,7 +4727,7 @@ class LevelsTab(Tab):
 
     def room_select(self, _event):  # Loads room when click if not parent node
         self.dual_mode = False
-        selected_room = self.tree_levels.get_selected_room()
+        selected_room = self.level_list_panel.get_selected_room()
         if selected_room:
             self.last_selected_room = selected_room
             self.canvas.delete("all")
@@ -4946,7 +4921,7 @@ class LevelsTab(Tab):
 
         self.rules_tab.reset()
 
-        self.tree_levels.reset()
+        self.level_list_panel.reset()
 
         # Enables widgets to use
         self.scale["state"] = tk.NORMAL
@@ -4961,7 +4936,6 @@ class LevelsTab(Tab):
         self.combobox.set(r"empty")
         self.combobox_alt.set(r"empty")
 
-        self.tree_levels.bind("<ButtonRelease-1>", self.room_select)
         self.tile_pallete_ref_in_use = []
         self.tile_pallete_map = {}
         self.lvl = lvl
@@ -5100,7 +5074,7 @@ class LevelsTab(Tab):
 
                 rooms.append(LevelsTreeRoom(str(room_name), room_string))
             tree_templates.append(LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms))
-        self.tree_levels.set_rooms(tree_templates)
+        self.level_list_panel.set_rooms(tree_templates)
 
     def read_custom_lvl_file(self, lvl, theme=None):
         if Path(self.lvls_path / lvl).exists():
