@@ -34,7 +34,7 @@ class Setroom():
         for setroom in template_list:
             match = Setroom.match_setroom(setroom, room)
             if match:
-                  return MatchedTemplate(setroom, match)
+                return MatchedTemplate(setroom, match)
         return None
 
     @staticmethod
