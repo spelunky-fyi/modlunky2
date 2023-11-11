@@ -45,6 +45,7 @@ from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_them
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
+from modlunky2.ui.levels.vanilla_levels.level_dependencies import LevelDependencies
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
@@ -5035,120 +5036,10 @@ class LevelsTab(Tab):
                 lvl_path = self.extracts_path / lvl
 
         # Levels to load dependency tilecodes from
+        level_dependencies = LevelDependencies.dependencies_for_level(lvl)
         levels = []
-        if not lvl.startswith("base"):
-            if Path(self.lvls_path / "generic.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "generic.lvl")))
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "generic.lvl")
-                )
-        if lvl.startswith("base"):
-            if Path(self.lvls_path / "basecamp.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "basecamp.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "basecamp.lvl")
-                )
-        elif lvl.startswith("cave"):
-            if Path(self.lvls_path / "dwellingarea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "dwellingarea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "dwellingarea.lvl")
-                )
-        elif (
-            lvl.startswith("blackmark")
-            or lvl.startswith("beehive")
-            or lvl.startswith("challenge_moon")
-        ):
-            if Path(self.lvls_path / "junglearea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "junglearea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "junglearea.lvl")
-                )
-        elif lvl.startswith("vlads"):
-            if Path(self.lvls_path / "volcanoarea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "volcanoarea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "volcanoarea.lvl")
-                )
-        elif lvl.startswith("lake") or lvl.startswith("challenge_star"):
-            if Path(self.lvls_path / "tidepoolarea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "tidepoolarea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "tidepoolarea.lvl")
-                )
-        elif (
-            lvl.startswith("hallofush")
-            or lvl.startswith("challenge_star")
-            or lvl.startswith("babylonarea_1")
-            or lvl.startswith("palace")
-        ):
-            if Path(self.lvls_path / "babylonarea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "babylonarea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "babylonarea.lvl")
-                )
-        elif lvl.startswith("challenge_sun"):
-            if Path(self.lvls_path / "sunkencityarea.lvl").is_dir():
-                levels.append(
-                    LevelFile.from_path(Path(self.lvls_path / "sunkencityarea.lvl"))
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "sunkencityarea.lvl")
-                )
-        elif lvl.startswith("end"):
-            if Path(self.lvls_path / "ending.lvl").is_dir():
-                levels.append(LevelFile.from_path(Path(self.lvls_path / "ending.lvl")))
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    LevelFile.from_path(Path(self.extracts_path) / "ending.lvl")
-                )
+        for dependency in level_dependencies:
+            levels.append(LevelDependencies.loaded_level_file_for_path(dependency, self.lvls_path, self.extracts_path))
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
         level = None
