@@ -243,7 +243,6 @@ class LevelsTab(Tab):
         self.vsb_depend = None
         self.button_resolve_variables = None
         self.dependencies = None
-        self.my_list = None
         self.mag = None
         self.canvas_grids = None
         self.scrollable_canvas_frame = None
@@ -1522,9 +1521,6 @@ class LevelsTab(Tab):
 
         self.level_list_panel = LevelListPanel(self.editor_tab, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
-        self.my_list = os.listdir(
-            self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
-        )
 
         self.mag = 50  # the size of each tiles in the grid; 50 is optimal
         self.rows = (
