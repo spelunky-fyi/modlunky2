@@ -4757,7 +4757,7 @@ class LevelsTab(Tab):
             self.last_selected_room = selected_room
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
-            current_settings = selected_room.rows[0]
+            current_settings = []
             current_room_tiles = []
             current_settings = []
 
