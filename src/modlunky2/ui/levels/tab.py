@@ -4309,18 +4309,9 @@ class LevelsTab(Tab):
             return x_coord[::-1]
 
         for setroom_template in self.tree_levels.get_setrooms():
-
-        # for room_template in self.tree_levels.get_children():
-        #     room_x = 0
-        #     room_y = 0
-        #     matched_template = Setroom.find_vanilla_setroom(self.tree_levels.item(room_template, option="text").split("//")[0].strip())
-        #     if not matched_template:
-        #         continue
-        #     room_x = matched_template.coords.x
-        #     room_y = matched_template.coords.y
-
             room_x = setroom_template.setroom.coords.x
             room_y = setroom_template.setroom.coords.y
+
             logger.debug("%s", setroom_template.template.name)
             logger.debug("Room pos: %sx%s", room_x, room_y)
             current_room_tiles = []
