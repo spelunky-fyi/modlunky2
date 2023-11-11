@@ -42,6 +42,7 @@ from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
+from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
@@ -5017,76 +5018,8 @@ class LevelsTab(Tab):
         self.tile_pallete_map = {}
         self.lvl = lvl
 
-        self.lvl_biome = "cave"  # cave by default, depicts what background and sprites will be loaded
-        self.lvl_bg_path = self.textures_dir / "bg_cave.png"
-        if (
-            lvl.startswith("abzu.lvl")
-            or lvl.startswith("lake")
-            or lvl.startswith("tide")
-            or lvl.startswith("end")
-            or lvl.endswith("_tidepool.lvl")
-        ):
-            self.lvl_biome = "tidepool"
-            self.lvl_bg_path = self.textures_dir / "bg_tidepool.png"
-        elif (
-            lvl.startswith("babylon")
-            or lvl.startswith("hallofu")
-            or lvl.endswith("_babylon.lvl")
-            or lvl.startswith("palace")
-            or lvl.startswith("tiamat")
-        ):
-            self.lvl_biome = "babylon"
-            self.lvl_bg_path = self.textures_dir / "bg_babylon.png"
-        elif lvl.startswith("basecamp"):
-            self.lvl_biome = "cave"
-        elif lvl.startswith("beehive"):
-            self.lvl_biome = "beehive"
-            self.lvl_bg_path = self.textures_dir / "bg_beehive.png"
-        elif (
-            lvl.startswith("blackmark")
-            or lvl.startswith("jungle")
-            or lvl.startswith("challenge_moon")
-            or lvl.endswith("_jungle.lvl")
-        ):
-            self.lvl_biome = "jungle"
-            self.lvl_bg_path = self.textures_dir / "bg_jungle.png"
-        elif (
-            lvl.startswith("challenge_star")
-            or lvl.startswith("temple")
-            or lvl.endswith("_temple.lvl")
-        ):
-            self.lvl_biome = "temple"
-            self.lvl_bg_path = self.textures_dir / "bg_temple.png"
-        elif (
-            lvl.startswith("challenge_sun")
-            or lvl.startswith("sunken")
-            or lvl.startswith("hundun")
-            or lvl.startswith("ending_hard")
-            or lvl.endswith("_sunkencity.lvl")
-        ):
-            self.lvl_biome = "sunken"
-            self.lvl_bg_path = self.textures_dir / "bg_sunken.png"
-        elif lvl.startswith("city"):
-            self.lvl_biome = "gold"
-            self.lvl_bg_path = self.textures_dir / "bg_gold.png"
-        elif lvl.startswith("duat"):
-            self.lvl_biome = "duat"
-            self.lvl_bg_path = self.textures_dir / "bg_temple.png"
-        elif lvl.startswith("egg"):
-            self.lvl_biome = "eggplant"
-            self.lvl_bg_path = self.textures_dir / "bg_eggplant.png"
-        elif lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl"):
-            self.lvl_biome = "ice"
-            self.lvl_bg_path = self.textures_dir / "bg_ice.png"
-        elif lvl.startswith("olmec"):
-            self.lvl_biome = "jungle"
-            self.lvl_bg_path = self.textures_dir / "bg_stone.png"
-        elif lvl.startswith("vlad"):
-            self.lvl_biome = "volcano"
-            self.lvl_bg_path = self.textures_dir / "bg_vlad.png"
-        elif lvl.startswith("volcano") or lvl.endswith("_volcano.lvl"):
-            self.lvl_biome = "volcano"
-            self.lvl_bg_path = self.textures_dir / "bg_volcano.png"
+        self.lvl_biome = Biomes.get_biome_for_level(lvl)
+        self.lvl_bg_path = self.textures_dir / TextureUtil.get_bg_texture_file_name(lvl)
 
         logger.debug("searching %s", self.lvls_path / lvl)
         if Path(self.lvls_path / lvl).exists():
