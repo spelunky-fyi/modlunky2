@@ -270,8 +270,21 @@ class LevelsTree(ttk.Treeview):
 
         return selected_child
 
+    def get_selected_room_template_name(self):
+        selection = self.selection()
+        if len(selection) == 0:
+            return None
+        item_iid = selection[0]
+        parent_iid = self.parent(item_iid)
+        if parent_iid:
+            return self.item(parent_iid, option="text")
+        return None
+
     def get_selected_room(self):
-        item_iid = self.selection()[0]
+        selection = self.selection()
+        if len(selection) == 0:
+            return None
+        item_iid = selection[0]
         parent_iid = self.parent(item_iid)
         if parent_iid:
             room_name = self.item(item_iid, option="text")

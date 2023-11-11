@@ -4559,15 +4559,13 @@ class LevelsTab(Tab):
 
         try:
             file_id = self.tree_files.selection()[0]
-            room_item = self.tree_levels.selection()[0]
-            room_id = self.tree_levels.parent(
-                room_item
-            )  # checks which room is being opened to see if a special bg is needed
+            # checks which room is being opened to see if a special bg is needed
+            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
             factor = 1.0  # keeps image the same
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
-                self.tree_levels.item(room_id, option="text")
+                selected_room_template_name
             ).startswith(
-                r"\.setroom1"
+                "setroom1"
             ):  # mothership rooms are setroom10-1 to setroom13-2
                 self.cur_lvl_bg_path = self.textures_dir / "bg_mothership.png"
             elif str(self.tree_files.item(file_id, option="text")).startswith(
@@ -4636,15 +4634,13 @@ class LevelsTab(Tab):
             )  # store as a temp dif variable so it can switch back to the normal bg when needed
 
             file_id = self.tree_files.selection()[0]
-            room_item = self.tree_levels.selection()[0]
-            room_id = self.tree_levels.parent(
-                room_item
-            )  # checks which room is being opened to see if a special bg is needed
+            # checks which room is being opened to see if a special bg is needed
+            selected_room_template_name = self.tree_levels.get_selected_room_template_name()
             factor = 1.0  # keeps image the same
             if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
-                self.tree_levels.item(room_id, option="text")
+                selected_room_template_name
             ).startswith(
-                r"\.setroom1"
+                "setroom1"
             ):  # mothership rooms are setroom10-1 to setroom13-2
                 self.cur_lvl_bg_path = self.textures_dir / "bg_mothership.png"
             elif str(self.tree_files.item(file_id, option="text")).startswith(
