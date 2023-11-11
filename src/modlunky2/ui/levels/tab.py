@@ -43,6 +43,7 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
+from modlunky2.ui.levels.shared.setrooms import BaseTemplate, Setroom
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_dependencies import LevelDependencies
@@ -5317,23 +5318,13 @@ class LevelsTab(Tab):
 
         # Creates a matrix of empty elements that rooms from the level file will load into.
         rooms = [[None for _ in range(8)] for _ in range(15)]
-        # Replaces human-friendly {y} and {x} in the level template format with a regex
-        # to find the coordinate of each level template.
-        template_regex = (
-            "^"
-            + self.current_save_format.room_template_format.format(
-                y=r"(?P<y>\d+)", x=r"(?P<x>\d+)"
-            )
-            + "$"
-        )
 
         for template in level.level_templates.all():
-            match = re.search(template_regex, template.name)
+            match = Setroom.match_setroom(self.current_save_format.room_template_format, template.name)
             if match is not None:
                 # Fill in the room list at the coordinate of this room with the loaded template data.
-                x = int(match.group("x"))
-                y = int(match.group("y"))
-                rooms[y][x] = template
+                rooms[match.y][match.x] = template
+
         # Filtered room matrix which will be populated with the rooms that were not empty.
         # Essentially, we are going to be removing all of the 'None' from the rooms matrix
         # which weren't replaced with an actual room.
