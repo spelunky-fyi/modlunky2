@@ -42,7 +42,7 @@ from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
-from modlunky2.ui.levels.shared.biomes import Biomes
+from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
@@ -5020,6 +5020,7 @@ class LevelsTab(Tab):
 
         self.lvl_biome = Biomes.get_biome_for_level(lvl)
         self.lvl_bg_path = self.textures_dir / TextureUtil.get_bg_texture_file_name(lvl)
+        logger.info("level: %s, biome: %s", lvl, self.lvl_biome)
 
         logger.debug("searching %s", self.lvls_path / lvl)
         if Path(self.lvls_path / lvl).exists():
@@ -5312,19 +5313,19 @@ class LevelsTab(Tab):
         theme = self.read_theme(level, self.current_save_format)
         if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
             themes = [
-                "cave",
-                "jungle",
-                "volcano",
-                "tidepool",
-                "temple",
-                "ice",
-                "babylon",
-                "sunken",
+                BIOME.DWELLING,
+                BIOME.JUNGLE,
+                BIOME.VOLCANA,
+                BIOME.TIDE_POOL,
+                BIOME.TEMPLE,
+                BIOME.ICE_CAVES,
+                BIOME.NEO_BABYLON,
+                BIOME.SUNKEN_CITY,
             ]
             for x, themeselect in enumerate(themes):
                 if lvl.startswith("dm" + str(x + 1)):
                     theme = themeselect
-        self.lvl_biome = theme or "cave"
+        self.lvl_biome = theme or BIOME.DWELLING
 
         # Get a formatted name for the theme to display to the user.
         theme_name = self.name_of_theme(theme)
@@ -5644,90 +5645,90 @@ class LevelsTab(Tab):
     @staticmethod
     def theme_for_name(name):
         if name == "Dwelling":
-            return "cave"
+            return BIOME.DWELLING
         elif name == "Jungle":
-            return "jungle"
+            return BIOME.JUNGLE
         elif name == "Volcana":
-            return "volcano"
+            return BIOME.VOLCANA
         elif name == "Olmec":
-            return "olmec"
+            return BIOME.OLMEC
         elif name == "Tide Pool":
-            return "tidepool"
+            return BIOME.TIDE_POOL
         elif name == "Temple":
-            return "temple"
+            return BIOME.TEMPLE
         elif name == "Ice Caves":
-            return "ice"
+            return BIOME.ICE_CAVES
         elif name == "Neo Babylon":
-            return "babylon"
+            return BIOME.NEO_BABYLON
         elif name == "Sunken City":
-            return "sunken"
+            return BIOME.SUNKEN_CITY
         elif name == "City of Gold":
-            return "gold"
+            return BIOME.CITY_OF_GOLD
         elif name == "Duat":
-            return "duat"
+            return BIOME.DUAT
         elif name == "Eggplant World":
-            return "eggplant"
+            return BIOME.EGGPLANT
         elif name == "Surface":
-            return "surface"
+            return BIOME.SURFACE
         return None
 
     # Gets a string that can be used to display the name of a theme.
     @staticmethod
     def name_of_theme(theme):
-        if theme == "cave":
+        if theme == BIOME.DWELLING:
             return "Dwelling"
-        elif theme == "tidepool":
+        elif theme == BIOME.TIDE_POOL:
             return "Tide Pool"
-        elif theme == "babylon":
+        elif theme == BIOME.NEO_BABYLON:
             return "Neo Babylon"
-        elif theme == "jungle":
+        elif theme == BIOME.JUNGLE:
             return "Jungle"
-        elif theme == "temple":
+        elif theme == BIOME.TEMPLE:
             return "Temple"
-        elif theme == "sunken":
+        elif theme == BIOME.SUNKEN_CITY:
             return "Sunken City"
-        elif theme == "gold":
+        elif theme == BIOME.CITY_OF_GOLD:
             return "City of Gold"
-        elif theme == "duat":
+        elif theme == BIOME.DUAT:
             return "Duat"
-        elif theme == "eggplant":
+        elif theme == BIOME.EGGPLANT_WORLD:
             return "Eggplant World"
-        elif theme == "ice":
+        elif theme == BIOME.ICE_CAVES:
             return "Ice Caves"
-        elif theme == "olmec":
+        elif theme == BIOME.OLMEC:
             return "Olmec"
-        elif theme == "volcano":
+        elif theme == BIOME.VOLCANA:
             return "Volcana"
-        elif theme == "surface":
+        elif theme == BIOME.SURFACE:
             return "Surface"
         return "Unknown"
 
     # Path to the background image that will be shown behind the grid.
     def background_for_theme(self, theme):
         def background_file(theme):
-            if theme == "cave":
+            if theme == BIOME.DWELLING:
                 return "bg_cave.png"
-            elif theme == "tidepool":
+            elif theme == BIOME.TIDE_POOL:
                 return "bg_tidepool.png"
-            elif theme == "babylon":
+            elif theme == BIOME.NEO_BABYLON:
                 return "bg_babylon.png"
-            elif theme == "jungle":
+            elif theme == BIOME.JUNGLE:
                 return "bg_jungle.png"
-            elif theme == "temple":
+            elif theme == BIOME.TEMPLE:
                 return "bg_temple.png"
-            elif theme == "sunken":
+            elif theme == BIOME.SUNKEN_CITY:
                 return "bg_sunken.png"
-            elif theme == "gold":
+            elif theme == BIOME.CITY_OF_GOLD:
                 return "bg_gold.png"
-            elif theme == "duat":
+            elif theme == BIOME.DUAT:
                 return "bg_temple.png"
-            elif theme == "eggplant":
+            elif theme == BIOME.EGGPLANT_WORLD:
                 return "bg_eggplant.png"
-            elif theme == "ice":
+            elif theme == BIOME.ICE_CAVES:
                 return "bg_ice.png"
-            elif theme == "olmec":
+            elif theme == BIOME.OLMEC:
                 return "bg_stone.png"
-            elif theme == "volcano":
+            elif theme == BIOME.VOLCANA:
                 return "bg_volcano.png"
             return "bg_cave.png"
 
