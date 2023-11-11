@@ -18,6 +18,14 @@ class Biomes():
     @staticmethod
     def get_biome_for_level(lvl): # cave by default, depicts what background and sprites will be loaded
         if (
+            lvl.startswith("challenge_sun")
+            or lvl.startswith("sunken")
+            or lvl.startswith("hundun")
+            or lvl.startswith("ending_hard")
+            or lvl.endswith("_sunkencity.lvl")
+        ):
+            return BIOME.SUNKEN_CITY
+        elif (
             lvl.startswith("abzu.lvl")
             or lvl.startswith("lake")
             or lvl.startswith("tide")
@@ -50,14 +58,6 @@ class Biomes():
             or lvl.endswith("_temple.lvl")
         ):
             return BIOME.TEMPLE
-        elif (
-            lvl.startswith("challenge_sun")
-            or lvl.startswith("sunken")
-            or lvl.startswith("hundun")
-            or lvl.startswith("ending_hard")
-            or lvl.endswith("_sunkencity.lvl")
-        ):
-            return BIOME.SUNKEN_CITY
         elif lvl.startswith("city"):
             return BIOME.CITY_OF_GOLD
         elif lvl.startswith("duat"):
