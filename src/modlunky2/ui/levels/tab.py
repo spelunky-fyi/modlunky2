@@ -4752,22 +4752,16 @@ class LevelsTab(Tab):
 
     def room_select(self, _event):  # Loads room when click if not parent node
         self.dual_mode = False
-        item_iid = self.tree_levels.selection()[0]
-        parent_iid = self.tree_levels.parent(item_iid)
-        if parent_iid:
-            self.last_selected_room = item_iid
+        selected_room = self.tree_levels.get_selected_room()
+        if selected_room:
+            self.last_selected_room = selected_room
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
-            current_settings = self.tree_levels.item(item_iid, option="values")[
-                0
-            ]  # Room settings
-            current_room = self.tree_levels.item(
-                item_iid, option="values"
-            )  # Room foreground
+            current_settings = selected_room.rows[0]
             current_room_tiles = []
             current_settings = []
 
-            for cr_line in current_room:
+            for cr_line in selected_room.rows:
                 if str(cr_line).startswith(r"\!"):
                     logger.debug("found tag %s", cr_line)
                     current_settings.append(cr_line)
