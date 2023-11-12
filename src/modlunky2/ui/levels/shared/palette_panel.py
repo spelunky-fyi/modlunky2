@@ -156,7 +156,7 @@ class PalettePanel(ttk.Frame):
         self.on_delete_tilecode =on_delete_tilecode
         self.on_add_tilecode = on_add_tilecode
 
-        # The tile palletes are loaded into here as buttons with their image
+        # The tile palettes are loaded into here as buttons with their image
         # as a tile and text as their value to grab when needed.
         self.palette = ScrollableFrameLegacy(self, text="Tile Palette", width=50)
         self.palette.scrollable_frame["width"] = 50
