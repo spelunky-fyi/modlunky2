@@ -17,11 +17,12 @@ class NewTilecodeCombobox(ttk.Frame):
 
         self.combobox_container = ttk.Frame(self.selection_container)
         self.combobox_container.grid(row=1, column=0, sticky="nsw")
-        self.combobox = ttk.Combobox(self.combobox_container, height=20)
+        self.combobox = ttk.Combobox(self.combobox_container, height=20, width=50)
         self.combobox.grid(row=0, column=0, sticky="nswe")
-        self.combobox_alt = ttk.Combobox(self.combobox_container, height=40)
-        self.combobox_alt.grid(row=0, column=1, sticky="nswe")
+        self.combobox_alt = ttk.Combobox(self.combobox_container, height=40, width=23)
+        self.combobox_alt.grid(row=0, column=2, sticky="nswe")
         self.combobox_alt["state"] = tk.DISABLED
+        self.combobox_alt.grid_remove()
 
         self.combobox["values"] = sorted(VALID_TILE_CODES, key=str.lower)
         self.combobox_alt["values"] = sorted(VALID_TILE_CODES, key=str.lower)
@@ -59,9 +60,13 @@ class NewTilecodeCombobox(ttk.Frame):
         new_value = int(float(self.scale.get()))
         self.scale_var.set(str(new_value))
         if new_value == 100:
-            self.combobox_alt["state"] = tk.DISABLED
+            self.combobox_alt.grid_remove()
+            self.combobox.configure(width=50)
+            self.combobox_container.columnconfigure(1, minsize=0)
         else:
-            self.combobox_alt["state"] = self.combobox["state"]
+            self.combobox.configure(width=23)
+            self.combobox_alt.grid()
+            self.combobox_container.columnconfigure(1, minsize=1)
 
     def add_tilecode(self):
         self.on_add_tilecode(
@@ -84,10 +89,7 @@ class NewTilecodeCombobox(ttk.Frame):
     def enable(self):
         self.scale["state"] = tk.NORMAL
         self.combobox["state"] = tk.NORMAL
-        if int(float(self.scale.get())) == 100:
-            self.combobox_alt["state"] = tk.DISABLED
-        else:
-            self.combobox_alt["state"] = tk.NORMAL
+        self.combobox_alt["state"] = tk.NORMAL
 
 class SelectedTilecodeView(ttk.Frame):
     def __init__(self, parent, title_prefix, on_delete, sprite_fetcher, *args, **kwargs):
