@@ -168,13 +168,12 @@ class TimerButtons(ttk.Frame):
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
-        color_key = self.modlunky_config.tracker_color_key
-        font_size = self.modlunky_config.tracker_font_size
         self.disable_button()
         self.window = TrackerWindow(
             title="Timer Tracker",
-            color_key=color_key,
-            font_size=font_size,
+            color_key=self.modlunky_config.tracker_color_key,
+            font_size=self.modlunky_config.tracker_font_size,
+            font_family=self.modlunky_config.tracker_font_family,
             on_close=self.window_closed,
             file_name="",
             tracker=TimerTracker(),
