@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from tkinter import ttk, colorchooser
+from tkinter import ttk, colorchooser, font
 from modlunky2.config import Config
 
 from modlunky2.ui.widgets import PopupWindow
@@ -146,15 +146,17 @@ class OptionsFrame(ttk.LabelFrame):
         self.font_family_label.grid(
             row=3, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
         )
-        self.font_family_input = ttk.Entry(
+        self.font_family_input = ttk.Combobox(
             self,
             textvariable=self.font_family,
-            validate="key",
+            validate="all",
+            values=list(font.families()),
         )
         self.font_family_input["validatecommand"] = (
             self.font_family_input.register(self.font_family_changed),
             "%P",
         )
+        self.font_family_input.bind("<<ComboboxSelected>>", self.font_family_picked)
         self.font_family_input.grid(
             row=4, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
         )
@@ -172,8 +174,8 @@ class OptionsFrame(ttk.LabelFrame):
         self.ml_config.save()
         return True
 
-    def font_family_changed(self, str):
-        self.ml_config.tracker_font_family = str
+    def font_family_changed(self, family=None):
+        self.ml_config.tracker_font_family = family
         self.ml_config.save()
         self.color_label.config(
             font=tk.font.Font(
@@ -181,6 +183,9 @@ class OptionsFrame(ttk.LabelFrame):
             ),
         )
         return True
+
+    def font_family_picked(self, _event=None):
+        return self.font_family_changed(self.font_family.get())
 
     def render(self):
         color_key = self.ml_config.tracker_color_key
