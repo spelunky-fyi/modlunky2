@@ -2,6 +2,8 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 import datetime
+import time
+import math
 
 from dataclasses import dataclass
 from PIL import Image, ImageTk
@@ -86,17 +88,17 @@ class TimerModifiers(ttk.LabelFrame):
         )
         self.show_tutorial_checkbox.grid(row=0, column=4, pady=5, padx=5, sticky="w")
 
-        self.show_startup = tk.BooleanVar()
-        self.show_startup.set(self.timer_tracker_config.show_startup)
-        self.show_startup_checkbox = ttk.Checkbutton(
+        self.show_session = tk.BooleanVar()
+        self.show_session.set(self.timer_tracker_config.show_session)
+        self.show_session_checkbox = ttk.Checkbutton(
             self,
             text="Session",
-            variable=self.show_startup,
+            variable=self.show_session,
             onvalue=True,
             offvalue=False,
-            command=self.toggle_show_startup,
+            command=self.toggle_show_session,
         )
-        self.show_startup_checkbox.grid(row=0, column=5, pady=5, padx=5, sticky="w")
+        self.show_session_checkbox.grid(row=0, column=5, pady=5, padx=5, sticky="w")
 
         self.show_ils = tk.BooleanVar()
         self.show_ils.set(self.timer_tracker_config.show_ils)
@@ -126,8 +128,8 @@ class TimerModifiers(ttk.LabelFrame):
         self.timer_tracker_config.show_tutorial = self.show_tutorial.get()
         self.parent.config_update_callback()
 
-    def toggle_show_startup(self):
-        self.timer_tracker_config.show_startup = self.show_startup.get()
+    def toggle_show_session(self):
+        self.timer_tracker_config.show_session = self.show_session.get()
         self.parent.config_update_callback()
 
     def toggle_show_ils(self):
@@ -201,6 +203,8 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         self.time_level = 0
         self.time_last_level = 0
         self.time_tutorial = 0
+        self.time_start = time.time()
+        self.time_session = 0
         self.time_startup = 0
         self.il_times = []
         self.first_level = None
@@ -210,6 +214,8 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         self.time_level = 0
         self.time_last_level = 0
         self.time_tutorial = 0
+        self.time_start = time.time()
+        self.time_session = 0
         self.time_startup = 0
         self.il_times = []
         self.first_level = None
@@ -219,11 +225,13 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
         if game_state is None:
             return None
 
+        if self.time_startup == 0:
+            self.time_startup = game_state.time_startup
         self.time_total = game_state.time_total
         self.time_level = game_state.time_level
         self.time_last_level = game_state.time_last_level
         self.time_tutorial = game_state.time_tutorial
-        self.time_startup = game_state.time_startup
+        self.time_session = self.time_startup + (time.time() - self.time_start) * 60
 
         if self.first_level is None or game_state.level_count == 0:
             self.first_level = game_state.level_count
@@ -262,8 +270,8 @@ class TimerTracker(Tracker[TimerTrackerConfig, WindowData]):
             out.append(f"Last: {self.format(self.time_last_level)}")
         if config.show_tutorial:
             out.append(f"Tutorial: {self.format(self.time_tutorial)}")
-        if config.show_startup:
-            out.append(f"Session: {self.format(self.time_startup)}")
+        if config.show_session:
+            out.append(f"Session: {self.format(self.time_session)}")
 
         if config.show_ils:
             if self.first_level == 0:
