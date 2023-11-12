@@ -54,7 +54,10 @@ class ChooseColor(PopupWindow):
         ttk.Separator(self).grid(row=1, column=0, pady=5, sticky="nsew")
 
         self.color_label = tk.Label(
-            self, font=tk.font.Font(family="Helvitica", size=16, weight="bold")
+            self,
+            font=tk.font.Font(
+                family=self.modlunky_config.tracker_font_family, size=16, weight="bold"
+            ),
         )
         self.color_label.grid(row=2, column=0, ipadx=5, padx=5, pady=5, sticky="nsew")
 
@@ -107,18 +110,20 @@ class OptionsFrame(ttk.LabelFrame):
         self.columnconfigure(0, weight=1)
 
         self.rowconfigure(0, minsize=60)
-        self.rowconfigure(3, minsize=60)
+        self.rowconfigure(5, minsize=60)
 
         self.color_button = ttk.Button(
             self, text="Color Key", command=self.choose_color
         )
         self.color_button.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
         self.color_label = tk.Label(
-            self, font=tk.font.Font(family="Helvitica", size=16, weight="bold")
+            self,
+            font=tk.font.Font(
+                family=self.ml_config.tracker_font_family, size=16, weight="bold"
+            ),
         )
         self.color_label.grid(row=0, column=1, ipadx=5, padx=5, pady=5, sticky="nsew")
 
-        font_callback = parent.register(self.font_changed)
         self.font_size = tk.IntVar(value=self.ml_config.tracker_font_size)
         self.font_label = ttk.Label(self, text=self.get_font_size_label())
         self.font_label.grid(
@@ -129,28 +134,60 @@ class OptionsFrame(ttk.LabelFrame):
             from_=10,
             to=80,
             orient="horizontal",
-            command=font_callback,
+            command=parent.register(self.font_changed),
             variable=self.font_size,
         )
         self.font_slider.grid(
             row=2, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
         )
 
+        self.font_family = tk.StringVar(value=self.ml_config.tracker_font_family)
+        self.font_family_label = ttk.Label(self, text="Font family:")
+        self.font_family_label.grid(
+            row=3, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
+        )
+        self.font_family_input = ttk.Entry(
+            self,
+            textvariable=self.font_family,
+            validate="key",
+        )
+        self.font_family_input["validatecommand"] = (
+            self.font_family_input.register(self.font_family_changed),
+            "%P",
+        )
+        self.font_family_input.grid(
+            row=4, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe"
+        )
+
         ttk.Button(
             self, text="Tracker Files", command=lambda: open_directory(TRACKERS_DIR)
-        ).grid(row=3, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
+        ).grid(row=5, column=0, columnspan=2, pady=(5, 5), padx=(5, 5), sticky="nswe")
 
     def get_font_size_label(self):
         return f"Font size: {self.font_size.get()}"
 
-    def font_changed(self, _event):
+    def font_changed(self, _event=None):
         self.font_label.configure(text=self.get_font_size_label())
         self.ml_config.tracker_font_size = int(self.font_size.get())
         self.ml_config.save()
+        return True
+
+    def font_family_changed(self, str):
+        self.ml_config.tracker_font_family = str
+        self.ml_config.save()
+        self.color_label.config(
+            font=tk.font.Font(
+                family=self.ml_config.tracker_font_family, size=16, weight="bold"
+            ),
+        )
+        return True
 
     def render(self):
         color_key = self.ml_config.tracker_color_key
         self.color_label.config(
+            font=tk.font.Font(
+                family=self.ml_config.tracker_font_family, size=16, weight="bold"
+            ),
             text=color_key,
             bg=color_key,
             fg=get_text_color(color_key),
@@ -158,8 +195,3 @@ class OptionsFrame(ttk.LabelFrame):
 
     def choose_color(self):
         ChooseColor(options_frame=self, ml_config=self.ml_config)
-
-    def set_font_size(self, font_size):
-        if len(font_size) > 0:
-            self.ml_config.tracker_font_size = int(font_size)
-            self.ml_config.save()

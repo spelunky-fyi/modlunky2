@@ -249,7 +249,7 @@ class ModlunkyUI:
         self.console.grid(column=0, row=0, padx=2, pady=2, sticky="ew")
 
         self.version_label = ttk.Label(
-            self.top_frame, text=f"v{self.current_version}", font="Helvitica 9 italic"
+            self.top_frame, text=f"v{self.current_version}", font="Helvetica 9 italic"
         )
         self.version_label.grid(column=0, row=3, padx=5, sticky="e")
 

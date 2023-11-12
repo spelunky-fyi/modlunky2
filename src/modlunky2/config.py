@@ -53,6 +53,7 @@ LAST_INSTALL_BROWSE_DEFAULT = "/"
 
 DEFAULT_COLOR_KEY = "#ff00ff"
 DEFAULT_FONT_SIZE = 24
+DEFAULT_FONT_FAMILY = "Helvetica"
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,7 @@ class Config:
     last_tab: Optional[str] = field(default=None, skip_if_default=True)
     tracker_color_key: str = field(default=DEFAULT_COLOR_KEY, skip_if_default=True)
     tracker_font_size: int = field(default=DEFAULT_FONT_SIZE, skip_if_default=True)
+    tracker_font_family: str = field(default=DEFAULT_FONT_FAMILY, skip_if_default=True)
     trackers: TrackersConfig = field(default_factory=TrackersConfig)
     show_packing: bool = field(default=False, skip_if_default=True)
     level_editor_tab: Optional[int] = field(default=None, skip_if_default=True)
