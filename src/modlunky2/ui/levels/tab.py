@@ -3539,7 +3539,7 @@ class LevelsTab(Tab):
                     self.tile_palette_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_name)
 
-            self.populate_tilecode_palette(self.palette_panel, self.mag)
+            self.populate_tilecode_palette(self.palette_panel)
 
             self.get_codes_left()
             self.changes_made()
@@ -3591,7 +3591,7 @@ class LevelsTab(Tab):
                     self.tile_palette_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_name)
 
-            self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
+            self.populate_tilecode_palette(self.palette_panel_custom)
 
             self.get_codes_left()
             self.changes_made()
@@ -3664,7 +3664,7 @@ class LevelsTab(Tab):
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
-        self.populate_tilecode_palette(palette_panel, scale)
+        self.populate_tilecode_palette(palette_panel)
         self.get_codes_left()
         self.changes_made()
         if palette_panel == self.palette_panel:
@@ -3673,7 +3673,7 @@ class LevelsTab(Tab):
 
 
 
-    def populate_tilecode_palette(self, palette_panel, scale):
+    def populate_tilecode_palette(self, palette_panel):
         palette_panel.update_with_palette(self.tile_palette_ref_in_use, self.tile_palette_suggestions, self.lvl_biome, self.lvl)
 
     def go_back(self):
@@ -4466,7 +4466,7 @@ class LevelsTab(Tab):
                         tilecode_item.append(ImageTk.PhotoImage(img_select))
                         self.tile_palette_ref_in_use.append(tilecode_item)
                         self.tile_palette_map[need[0]] = tilecode_item
-        self.populate_tilecode_palette(self.palette_panel, self.mag)
+        self.populate_tilecode_palette(self.palette_panel)
 
         self.full_size = None
 
@@ -4659,7 +4659,7 @@ class LevelsTab(Tab):
         self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
         # Load images and create buttons for all of the tile codes and suggestions that
         # we populated.
-        self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
+        self.populate_tilecode_palette(self.palette_panel_custom)
 
         # Creates a matrix of empty elements that rooms from the level file will load into.
         rooms = [[None for _ in range(8)] for _ in range(15)]
@@ -4855,7 +4855,7 @@ class LevelsTab(Tab):
         # Load suggested tiles for the new theme.
         self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
-        self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
+        self.populate_tilecode_palette(self.palette_panel_custom)
         # Draw the grid now that we have the newly textured tiles.
         self.draw_custom_level_canvases(theme)
 
