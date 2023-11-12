@@ -161,9 +161,9 @@ class LevelsTab(Tab):
         self.im_output_dual = None
         self.palette_panel = None
         self.palette_panel_custom = None
-        self.tile_pallete_ref_in_use = None
-        self.tile_pallete_map = {}
-        self.tile_pallete_suggestions = None
+        self.tile_palette_ref_in_use = None
+        self.tile_palette_map = {}
+        self.tile_palette_suggestions = None
         self.lvl = None
         self.lvl_biome = None
         self.node = None
@@ -266,7 +266,7 @@ class LevelsTab(Tab):
         self.checkbox_dual = None
         self.texture_images = None
         self.uni_tile_code_list = None
-        self.tile_pallete_ref = None
+        self.tile_palette_ref = None
         self.draw_mode = None
         self.tile_images = None
         self.current_level_path_custom = None
@@ -605,7 +605,7 @@ class LevelsTab(Tab):
         side_panel_tab_control.add(options_panel, text="Settings")
 
         tiles_panel.rowconfigure(0, weight=1)
-        # tiles_panel.rowconfigure(3, minsize=50)
+        tiles_panel.rowconfigure(3, minsize=50)
 
         options_panel.rowconfigure(2, minsize=20)
         options_panel.rowconfigure(4, minsize=20)
@@ -878,7 +878,7 @@ class LevelsTab(Tab):
             self.custom_editor_zoom_level = int(grid_size_var.get())
             self.lvl_bgs = {}
             if self.lvl:
-                for tile in self.tile_pallete_ref_in_use:
+                for tile in self.tile_palette_ref_in_use:
                     tile_name = tile[0].split(" ", 2)[0]
                     tile[1] = ImageTk.PhotoImage(
                         self.texture_fetcher.get_texture(
@@ -1635,7 +1635,7 @@ class LevelsTab(Tab):
         self.texture_images = []
 
         self.uni_tile_code_list = []
-        self.tile_pallete_ref = []
+        self.tile_palette_ref = []
 
         self.draw_mode = []  # slight adjustments of textures for tile preview
         # 1 = lower half tile
@@ -1759,14 +1759,14 @@ class LevelsTab(Tab):
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     x2_coord * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=self.tile_pallete_map[tile_code][1],
+                    image=self.tile_palette_map[tile_code][1],
                     anchor="nw",
                 )
             else:
                 self.tiles[int(row)][int(col)] = canvas.create_image(
                     int(col) * self.mag - x_coord_offset,
                     int(row) * self.mag - y_coord_offset,
-                    image=self.tile_pallete_map[tile_code][1],
+                    image=self.tile_palette_map[tile_code][1],
                     anchor="nw",
                 )
             self.tiles_meta[row][col] = tile_code
@@ -1833,7 +1833,7 @@ class LevelsTab(Tab):
             if tile_name != str(tile_name_ref[0]):
                 continue
             logger.debug("Applying custom anchor for %s", tile_name)
-            tile_ref = self.tile_pallete_map[tile_code]
+            tile_ref = self.tile_palette_map[tile_code]
             if tile_ref:
                 logger.debug("Found %s", tile_ref[0])
                 img = tile_ref[1]
@@ -1869,7 +1869,7 @@ class LevelsTab(Tab):
         tile_image_matrix[row][column] = canvas.create_image(
             column * tile_size - x_offset,
             row * tile_size - y_offset,
-            image=self.tile_pallete_map[tile_code][1],
+            image=self.tile_palette_map[tile_code][1],
             anchor="nw",
         )
         tile_code_matrix[row][column] = tile_code
@@ -1891,7 +1891,7 @@ class LevelsTab(Tab):
             return
 
         tile_code = tile_code_matrix[row][column]
-        tile = self.tile_pallete_map[tile_code]
+        tile = self.tile_palette_map[tile_code]
 
         palette_panel.select_tile(tile[0], tile[2], event.num == 1)
 
@@ -1919,9 +1919,9 @@ class LevelsTab(Tab):
             self.canvas_dual.grid_remove()
             self.foreground_label.grid_remove()
             self.background_label.grid_remove()
-            self.tile_pallete_map = {}
-            self.tile_pallete_ref_in_use = None
-            self.tile_pallete_suggestions = None
+            self.tile_palette_map = {}
+            self.tile_palette_ref_in_use = None
+            self.tile_palette_suggestions = None
             self.lvl = None
             self.lvl_biome = None
             self.custom_editor_foreground_tile_images = None
@@ -2649,7 +2649,7 @@ class LevelsTab(Tab):
             old_level_file.level_chances,
             old_level_file.level_settings,
             old_level_file.monster_chances,
-            self.tile_pallete_ref_in_use,
+            self.tile_palette_ref_in_use,
             self.custom_editor_foreground_tile_codes,
             self.custom_editor_background_tile_codes,
         )
@@ -2857,7 +2857,7 @@ class LevelsTab(Tab):
                 level_templates = self.level_list_panel.get_level_templates()
 
                 tile_codes = TileCodes()
-                for tilecode in self.tile_pallete_ref_in_use:
+                for tilecode in self.tile_palette_ref_in_use:
                     tile_codes.set_obj(
                         TileCode(
                             name=tilecode[0].split(" ", 1)[0],
@@ -3377,7 +3377,7 @@ class LevelsTab(Tab):
         win = PopupWindow("Replace Tiles", self.modlunky_config)
 
         replacees = []
-        for tile in self.tile_pallete_ref_in_use:
+        for tile in self.tile_palette_ref_in_use:
             replacees.append(str(tile[0]))
 
         col1_lbl = ttk.Label(win, text="Replace all ")
@@ -3534,12 +3534,12 @@ class LevelsTab(Tab):
             logger.debug("%s is now available for use.", tile_code)
 
             # Adds tilecode back to list to be reused.
-            for id_ in self.tile_pallete_ref_in_use:
+            for id_ in self.tile_palette_ref_in_use:
                 if str(tile_code) == str(id_[0].split(" ", 2)[1]):
-                    self.tile_pallete_ref_in_use.remove(id_)
+                    self.tile_palette_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_name)
 
-            self.populate_tilecode_pallete(self.palette_panel, self.mag)
+            self.populate_tilecode_palette(self.palette_panel, self.mag)
 
             self.get_codes_left()
             self.changes_made()
@@ -3586,12 +3586,12 @@ class LevelsTab(Tab):
             logger.debug("%s is now available for use.", tile_code)
 
             # Adds tilecode back to list to be reused.
-            for id_ in self.tile_pallete_ref_in_use:
+            for id_ in self.tile_palette_ref_in_use:
                 if str(tile_code) == str(id_[0].split(" ", 2)[1]):
-                    self.tile_pallete_ref_in_use.remove(id_)
+                    self.tile_palette_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_name)
 
-            self.populate_tilecode_pallete(self.palette_panel_custom, self.custom_editor_zoom_level)
+            self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
 
             self.get_codes_left()
             self.changes_made()
@@ -3639,8 +3639,8 @@ class LevelsTab(Tab):
             self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, 40)
         )
 
-        # compares tile id to tile ids in pallete list
-        for palette_tile in self.tile_pallete_ref_in_use:
+        # compares tile id to tile ids in palette list
+        for palette_tile in self.tile_palette_ref_in_use:
             palette_tile = palette_tile[0].split()[0].strip()
             if new_tile_code == palette_tile:
                 tkMessageBox.showinfo("Uh Oh!", "You already have that!")
@@ -3661,10 +3661,10 @@ class LevelsTab(Tab):
         ref_tile.append(new_tile_code + " " + str(usable_code))
         ref_tile.append(tile_image)
         ref_tile.append(tile_image_picker)
-        self.tile_pallete_ref_in_use.append(ref_tile)
-        self.tile_pallete_map[usable_code] = ref_tile
+        self.tile_palette_ref_in_use.append(ref_tile)
+        self.tile_palette_map[usable_code] = ref_tile
 
-        self.populate_tilecode_pallete(palette_panel, scale)
+        self.populate_tilecode_palette(palette_panel, scale)
         self.get_codes_left()
         self.changes_made()
         if palette_panel == self.palette_panel:
@@ -3673,8 +3673,8 @@ class LevelsTab(Tab):
 
 
 
-    def populate_tilecode_pallete(self, palette_panel, scale):
-        palette_panel.update_with_palette(self.tile_pallete_ref_in_use, self.tile_pallete_suggestions, self.lvl_biome, self.lvl)
+    def populate_tilecode_palette(self, palette_panel, scale):
+        palette_panel.update_with_palette(self.tile_palette_ref_in_use, self.tile_palette_suggestions, self.lvl_biome, self.lvl)
 
     def go_back(self):
         msg_box = tk.messagebox.askquestion(
@@ -3822,10 +3822,10 @@ class LevelsTab(Tab):
                         for block in str(room_row):
                             if str(block) != " ":
                                 tile_name = ""
-                                for _pallete_block in self.tile_pallete_ref_in_use:
+                                for _palette_block in self.tile_palette_ref_in_use:
                                     tiles = [
                                         c
-                                        for c in self.tile_pallete_ref_in_use
+                                        for c in self.tile_palette_ref_in_use
                                         if str(" " + block) in str(c[0])
                                     ]
                                     if tiles:
@@ -4287,10 +4287,10 @@ class LevelsTab(Tab):
                 for block in str(room_row):
                     if str(block) != " ":
                         tile_name = ""
-                        for _pallete_block in self.tile_pallete_ref_in_use:
+                        for _palette_block in self.tile_palette_ref_in_use:
                             tiles = [
                                 c
-                                for c in self.tile_pallete_ref_in_use
+                                for c in self.tile_palette_ref_in_use
                                 if str(" " + block) in str(c[0])
                             ]
                             if tiles:
@@ -4374,8 +4374,8 @@ class LevelsTab(Tab):
         self.level_list_panel.reset()
         self.button_replace["state"] = tk.NORMAL
 
-        self.tile_pallete_ref_in_use = []
-        self.tile_pallete_map = {}
+        self.tile_palette_ref_in_use = []
+        self.tile_palette_map = {}
         self.lvl = lvl
 
         self.lvl_biome = Biomes.get_biome_for_level(lvl)
@@ -4419,16 +4419,16 @@ class LevelsTab(Tab):
                 self.palette_panel.select_tile(tilecode_item[0], tilecode_item[2], True)
                 self.palette_panel.select_tile(tilecode_item[0], tilecode_item[2], False)
 
-                for i in self.tile_pallete_ref_in_use:
+                for i in self.tile_palette_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
-                        self.tile_pallete_ref_in_use.remove(i)
+                        self.tile_palette_ref_in_use.remove(i)
 
                 for i in self.usable_codes:
                     if str(i) == str(tilecode.value):
                         self.usable_codes.remove(i)
 
-                self.tile_pallete_ref_in_use.append(tilecode_item)
-                self.tile_pallete_map[tilecode.value] = tilecode_item
+                self.tile_palette_ref_in_use.append(tilecode_item)
+                self.tile_palette_map[tilecode.value] = tilecode_item
 
         if level is None:
             return
@@ -4447,7 +4447,7 @@ class LevelsTab(Tab):
                 for code in self.usable_codes:
                     if str(code) == need[0] and not any(
                         need[0] in str(code_in_use[0].split(" ", 3)[1])
-                        for code_in_use in self.tile_pallete_ref_in_use
+                        for code_in_use in self.tile_palette_ref_in_use
                     ):
                         for i in self.usable_codes:
                             if str(i) == str(need[0]):
@@ -4464,9 +4464,9 @@ class LevelsTab(Tab):
 
                         tilecode_item.append(ImageTk.PhotoImage(img))
                         tilecode_item.append(ImageTk.PhotoImage(img_select))
-                        self.tile_pallete_ref_in_use.append(tilecode_item)
-                        self.tile_pallete_map[need[0]] = tilecode_item
-        self.populate_tilecode_pallete(self.palette_panel, self.mag)
+                        self.tile_palette_ref_in_use.append(tilecode_item)
+                        self.tile_palette_map[need[0]] = tilecode_item
+        self.populate_tilecode_palette(self.palette_panel, self.mag)
 
         self.full_size = None
 
@@ -4574,8 +4574,8 @@ class LevelsTab(Tab):
         self.width_combobox["state"] = "readonly"
         self.height_combobox["state"] = "readonly"
 
-        self.tile_pallete_ref_in_use = []
-        self.tile_pallete_map = {}
+        self.tile_palette_ref_in_use = []
+        self.tile_palette_map = {}
         hard_floor_code = None
         # Populate the tile palette from the tile codes listed in the level file.
         for tilecode in level.tile_codes.all():
@@ -4593,8 +4593,8 @@ class LevelsTab(Tab):
             tilecode_item.append(ImageTk.PhotoImage(img_select))
 
             self.usable_codes.remove(tilecode.value)
-            self.tile_pallete_ref_in_use.append(tilecode_item)
-            self.tile_pallete_map[tilecode.value] = tilecode_item
+            self.tile_palette_ref_in_use.append(tilecode_item)
+            self.tile_palette_map[tilecode.value] = tilecode_item
             if str(tilecode.name) == "floor_hard":
                 # Keep track of the tile code used for hard floors since this will be
                 # used to populate the back layer tiles for rooms that are not dual.
@@ -4623,43 +4623,43 @@ class LevelsTab(Tab):
                     )
                 ),
             ]
-            self.tile_pallete_ref_in_use.append(tilecode_item)
-            self.tile_pallete_map[hard_floor_code] = tilecode_item
+            self.tile_palette_ref_in_use.append(tilecode_item)
+            self.tile_palette_map[hard_floor_code] = tilecode_item
 
         secondary_backup_index = 0
 
         # Populate the default tile code for left clicks.
-        if "1" in self.tile_pallete_map:
+        if "1" in self.tile_palette_map:
             # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
-            tile = self.tile_pallete_map["1"]
+            tile = self.tile_palette_map["1"]
             self.palette_panel_custom.select_tile(tile[0], tile[2], True)
-        elif len(self.tile_pallete_ref_in_use) > 0:
+        elif len(self.tile_palette_ref_in_use) > 0:
             # If there is no "1" tile, just populate with the first tile.
-            tile = self.tile_pallete_ref_in_use[0]
+            tile = self.tile_palette_ref_in_use[0]
             self.palette_panel_custom.select_tile(tile[0], tile[2], True)
             secondary_backup_index = 1
 
         # Populate the default tile code for right clicks.
-        if "0" in self.tile_pallete_map:
+        if "0" in self.tile_palette_map:
             # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
-            tile = self.tile_pallete_map["0"]
+            tile = self.tile_palette_map["0"]
             self.palette_panel_custom.select_tile(tile[0], tile[2], False)
-        elif len(self.tile_pallete_ref_in_use) > secondary_backup_index:
+        elif len(self.tile_palette_ref_in_use) > secondary_backup_index:
             # If there is not a "0" tile code, populate with the second tile code if the
             # primary tile code was populated from the first one.
-            tile = self.tile_pallete_ref_in_use[secondary_backup_index]
+            tile = self.tile_palette_ref_in_use[secondary_backup_index]
             self.palette_panel_custom.select_tile(tile[0], tile[2], False)
-        elif len(self.tile_pallete_ref_in_use) > 0:
+        elif len(self.tile_palette_ref_in_use) > 0:
             # If there are only one tile code available, populate both right and
             # left click with it.
-            tile = self.tile_pallete_ref_in_use[0]
+            tile = self.tile_palette_ref_in_use[0]
             self.palette_panel_custom.select_tile(tile[0], tile[2], False)
 
         # Populate the list of suggested tiles based on the current theme.
-        self.tile_pallete_suggestions = suggested_tiles_for_theme(theme)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
         # Load images and create buttons for all of the tile codes and suggestions that
         # we populated.
-        self.populate_tilecode_pallete(self.palette_panel_custom, self.custom_editor_zoom_level)
+        self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
 
         # Creates a matrix of empty elements that rooms from the level file will load into.
         rooms = [[None for _ in range(8)] for _ in range(15)]
@@ -4765,7 +4765,7 @@ class LevelsTab(Tab):
                 for tile_index, tile in enumerate(room_row):
                     if tile_index >= self.lvl_width * 10:
                         continue
-                    tilecode = self.tile_pallete_map[tile]
+                    tilecode = self.tile_palette_map[tile]
                     tile_name = tilecode[0].split(" ", 1)[0]
                     tile_image = tilecode[1]
                     x_offset = 0
@@ -4845,7 +4845,7 @@ class LevelsTab(Tab):
         self.theme_label["text"] = "Level Theme: " + self.name_of_theme(theme)
 
         # Retexture all of the tiles in use
-        for tilecode_item in self.tile_pallete_ref_in_use:
+        for tilecode_item in self.tile_palette_ref_in_use:
             tile_name = tilecode_item[0].split(" ", 2)[0]
             img = self.texture_fetcher.get_texture(
                 tile_name, theme, self.lvl, self.custom_editor_zoom_level
@@ -4853,9 +4853,9 @@ class LevelsTab(Tab):
             tilecode_item[1] = ImageTk.PhotoImage(img)
 
         # Load suggested tiles for the new theme.
-        self.tile_pallete_suggestions = suggested_tiles_for_theme(theme)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
-        self.populate_tilecode_pallete(self.palette_panel_custom, self.custom_editor_zoom_level)
+        self.populate_tilecode_palette(self.palette_panel_custom, self.custom_editor_zoom_level)
         # Draw the grid now that we have the newly textured tiles.
         self.draw_custom_level_canvases(theme)
 
@@ -5195,7 +5195,7 @@ class LevelsTab(Tab):
         hard_floor = None
         # Try to find a tile code for the empty tile and the hard floor to use as the
         # default tile codes of the front and back layers, respectively.
-        for tile_ref in self.tile_pallete_ref_in_use:
+        for tile_ref in self.tile_palette_ref_in_use:
             tile_name = str(tile_ref[0].split(" ", 2)[0])
             tile_code = str(tile_ref[0].split(" ", 2)[1])
             if tile_name == "empty":
