@@ -151,7 +151,7 @@ class TimerTrackerConfig(CommonTrackerConfig):
     show_level: bool = field(default=True, skip_if_default=True)
     show_last_level: bool = field(default=True, skip_if_default=True)
     show_tutorial: bool = field(default=False, skip_if_default=True)
-    show_startup: bool = field(default=False, skip_if_default=True)
+    show_session: bool = field(default=False, skip_if_default=True)
     show_ils: bool = field(default=False, skip_if_default=True)
 
 

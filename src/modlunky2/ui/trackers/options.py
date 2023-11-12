@@ -160,8 +160,6 @@ class OptionsFrame(ttk.LabelFrame):
         ChooseColor(options_frame=self, ml_config=self.ml_config)
 
     def set_font_size(self, font_size):
-        print("fuck")
-        print(f"{font_size}")
         if len(font_size) > 0:
             self.ml_config.tracker_font_size = int(font_size)
             self.ml_config.save()
