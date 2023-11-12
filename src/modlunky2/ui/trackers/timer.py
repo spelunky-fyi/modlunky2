@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import ttk
 import datetime
 import time
-import math
 
 from dataclasses import dataclass
 from PIL import Image, ImageTk
