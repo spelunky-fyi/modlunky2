@@ -599,18 +599,8 @@ class LevelsTab(Tab):
         side_panel_tab_control = ttk.Notebook(self.custom_editor_side_panel)
         side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
 
-        tiles_panel = tk.Frame(side_panel_tab_control)
-        options_panel = tk.Frame(side_panel_tab_control)
-        side_panel_tab_control.add(tiles_panel, text="Tiles")
-        side_panel_tab_control.add(options_panel, text="Settings")
-
-        tiles_panel.rowconfigure(0, weight=1)
-
-        options_panel.rowconfigure(2, minsize=20)
-        options_panel.rowconfigure(4, minsize=20)
-
         self.palette_panel_custom = PalettePanel(
-            tiles_panel,
+            side_panel_tab_control,
             self.delete_tilecode_custom,
             lambda tile, percent, alt_tile: self.add_tilecode(
                 tile,
@@ -622,7 +612,12 @@ class LevelsTab(Tab):
             self.texture_fetcher,
             self._sprite_fetcher,
         )
-        self.palette_panel_custom.grid(row=0, column=0, columnspan=4, sticky="news")
+        options_panel = tk.Frame(side_panel_tab_control)
+        side_panel_tab_control.add(self.palette_panel_custom, text="Tiles")
+        side_panel_tab_control.add(options_panel, text="Settings")
+
+        options_panel.rowconfigure(2, minsize=20)
+        options_panel.rowconfigure(4, minsize=20)
 
         settings_row = 0
 
