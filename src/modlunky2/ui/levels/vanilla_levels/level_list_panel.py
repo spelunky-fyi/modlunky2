@@ -1,7 +1,6 @@
-import tkinter as tk
 from tkinter import ttk
 
-from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
+from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree
 
 class LevelListPanel(ttk.Frame):
     def __init__(self, parent, on_edit, on_reset_canvas, on_room_select, modlunky_config, *args, **kwargs):
