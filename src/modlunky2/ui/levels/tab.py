@@ -605,7 +605,6 @@ class LevelsTab(Tab):
         side_panel_tab_control.add(options_panel, text="Settings")
 
         tiles_panel.rowconfigure(0, weight=1)
-        tiles_panel.rowconfigure(3, minsize=50)
 
         options_panel.rowconfigure(2, minsize=20)
         options_panel.rowconfigure(4, minsize=20)
@@ -1548,7 +1547,7 @@ class LevelsTab(Tab):
             self.texture_fetcher,
             self._sprite_fetcher,
         )
-        self.palette_panel.grid(row=0, column=9, rowspan=4, columnspan=4, sticky="nwse")
+        self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
         self.var_ignore = tk.IntVar()
         self.var_flip = tk.IntVar()
