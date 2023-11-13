@@ -4289,7 +4289,7 @@ class LevelsTab(Tab):
             # If the room couldn't be found, pop up a dialog asking the user to create
             # a new save format to load the file with. If a new format is created,
             # we can then attempt to load the file again.
-            self.show_format_error_dialog(lvl)
+            self.show_format_error_dialog(lvl, level)
             return
 
         # Refresh the list of usable tile codes to contain all of the tile codes
@@ -4562,6 +4562,9 @@ class LevelsTab(Tab):
             self.custom_level_canvas_background, self.grid_rooms_background
         )
 
+    def set_current_save_format(self, save_format):
+        self.current_save_format = save_format
+
     # Look through the level templates and try to find one that matches an existing save
     # format.
     def read_save_format(self, level):
@@ -4673,8 +4676,10 @@ class LevelsTab(Tab):
         return self.textures_dir / background_file(theme)
 
     # Shows an error dialog when attempting to open a level using an unrecognized template format.
-    def show_format_error_dialog(self, lvl):
-        def on_create(_):
+    def show_format_error_dialog(self, lvl, level_info):
+        def on_create(save_format):
+            self.options_panel.add_save_format(save_format)
+
             # When a new format is created, try reading the level file again.
             self.read_custom_lvl_file(lvl)
 
@@ -4684,7 +4689,25 @@ class LevelsTab(Tab):
             "Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n",
             "Continue",
             on_create,
+            self.get_suggested_saveroom_format(level_info),
         )
+
+    def get_suggested_saveroom_format(self, level_info):
+        template_regex = (
+            "^"
+            + r"(?P<begin>[^0-9]*)" + r"(?P<y>\d+)" + r"(?P<mid>[^0-9]*)" + r"(?P<x>\d+)" + r"(?P<end>[^0-9]*)"
+            + "$"
+        )
+        logger.info(template_regex)
+        for template in level_info.level_templates.all():
+            match = re.search(template_regex, template.name)
+            logger.info(template.name)
+            if match is not None:
+                logger.info("MATCHED")
+                begin = match.group("begin")
+                mid = match.group("mid")
+                ending = match.group("end")
+                return begin + "{y}" + mid + "{x}" + ending
 
     # Updates the level size from the options menu.
     def update_custom_level_size(self, width, height):
