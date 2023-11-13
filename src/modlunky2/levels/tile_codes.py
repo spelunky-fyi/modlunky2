@@ -10,6 +10,13 @@ from modlunky2.levels.utils import (
     format_comment,
 )
 
+VALID_SHORT_CODES = (
+    r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
+    r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
+    r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
+    r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
+)
+
 VALID_TILE_CODES = set(
     [
         "alien",
@@ -486,3 +493,12 @@ class TileCode:
 
     def write(self, handle: TextIO):
         handle.write(self.to_line())
+
+class ShortCode:
+    @staticmethod
+    def usable_codes():
+        usable_codes = []
+        for code in VALID_SHORT_CODES:
+            usable_codes.append(code)
+        return usable_codes
+

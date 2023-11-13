@@ -39,7 +39,7 @@ from modlunky2.levels.level_templates import (
     TemplateSetting,
 )
 from modlunky2.levels.monster_chances import MonsterChances
-from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
+from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, ShortCode
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
@@ -264,12 +264,6 @@ class LevelsTab(Tab):
         self.current_level_path_custom = None
 
         self.usable_codes = None
-        self.usable_codes_string = (
-            r"""!"#$%&'()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`"""
-            r"""abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—™š›œžŸ¡¢£¤¥¦§"""
-            r"""¨©ª«¬-®¯°±²³´µ¶·¸¹°»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæç"""
-            r"""èéêëìíîïðñòóôõö÷øùúûüýþÿ"""
-        )
 
         self.base_save_formats = [
             CustomLevelSaveFormat.level_sequence(),
@@ -604,7 +598,6 @@ class LevelsTab(Tab):
             self.texture_fetcher,
             self._sprite_fetcher,
         )
-        # options_panel = tk.Frame(side_panel_tab_control)
         self.options_panel = OptionsPanel(
             side_panel_tab_control,
             self.custom_editor_zoom_level,
@@ -2244,7 +2237,7 @@ class LevelsTab(Tab):
             canvas.unbind_all("<Button-4>")
             canvas.unbind_all("<Button-5>")
 
-    def get_codes_left(self):
+    def log_codes_left(self):
         codes = ""
         for code in self.usable_codes:
             codes += str(code)
@@ -2640,9 +2633,7 @@ class LevelsTab(Tab):
                 levelp = LevelFile.from_path(Path(self.extracts_path) / file)
             return levelp
 
-        usable_codes = []
-        for code in self.usable_codes_string:
-            usable_codes.append(code)
+        usable_codes = ShortCode.usable_codes()
 
         # finds tilecodes that are taken in all the dependacy files
         for level in self.sister_locations:
@@ -3260,7 +3251,7 @@ class LevelsTab(Tab):
 
             self.populate_tilecode_palette(self.palette_panel)
 
-            self.get_codes_left()
+            self.log_codes_left()
             self.changes_made()
             self.check_dependencies()
 
@@ -3312,7 +3303,7 @@ class LevelsTab(Tab):
 
             self.populate_tilecode_palette(self.palette_panel_custom)
 
-            self.get_codes_left()
+            self.log_codes_left()
             self.changes_made()
 
     def add_tilecode(
@@ -3384,7 +3375,7 @@ class LevelsTab(Tab):
         self.tile_palette_map[usable_code] = ref_tile
 
         self.populate_tilecode_palette(palette_panel)
-        self.get_codes_left()
+        self.log_codes_left()
         self.changes_made()
         if palette_panel == self.palette_panel:
             self.check_dependencies()
@@ -4117,10 +4108,8 @@ class LevelsTab(Tab):
 
     def read_vanilla_lvl_file(self, lvl):
         self.last_selected_room = None
-        self.usable_codes = []
+        self.usable_codes = ShortCode.usable_codes()
         self.check_dependencies()
-        for code in self.usable_codes_string:
-            self.usable_codes.append(code)
 
         self.rules_tab.reset()
 
@@ -4289,9 +4278,7 @@ class LevelsTab(Tab):
 
         # Refresh the list of usable tile codes to contain all of the tile codes
         # that are supported by the level editor.
-        self.usable_codes = []
-        for code in self.usable_codes_string:
-            self.usable_codes.append(code)
+        self.usable_codes = ShortCode.usable_codes()
 
         self.lvl = lvl
         self.current_level_custom = level
