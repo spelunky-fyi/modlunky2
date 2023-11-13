@@ -545,8 +545,11 @@ class LevelsTab(Tab):
         def slider_changed(_event):
             self.load_full_preview()
 
+        config_container = tk.Frame(self.preview_tab)
+        config_container.grid(row=0, column=0, columnspan=2, sticky="nw")
+
         self.slider_zoom_full = tk.Scale(
-            self.preview_tab,
+            config_container,
             from_=2,
             to=100,
             length=300,
@@ -555,7 +558,7 @@ class LevelsTab(Tab):
             command=slider_changed,
         )
         self.slider_zoom_full.set(50)
-        self.slider_zoom_full.grid(row=0, column=0, columnspan=2, sticky="nw")
+        self.slider_zoom_full.grid(row=0, column=0, sticky="nw")
 
         self.preview_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.preview_tab.rowconfigure(1, weight=1)  # Row 0 = List box / Label
