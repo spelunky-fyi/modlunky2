@@ -5,7 +5,7 @@ from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
 from modlunky2.utils import is_windows
 
 class MultiCanvasContainer(tk.Frame):
-    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, width, height, on_click, on_shiftclick, intro_text=None, *args, **kwargs):
+    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, width, height, on_click=None, on_shiftclick=None, intro_text=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         self.on_click = on_click
@@ -93,18 +93,18 @@ class MultiCanvasContainer(tk.Frame):
                 scrollable_frame,
                 textures_dir,
                 zoom_level,
-                lambda row, column, is_primary, i=index: self.on_click(
+                on_click and (lambda row, column, is_primary, i=index: self.on_click(
                     i,
                     row,
                     column,
                     is_primary
-                ),
-                lambda row, column, is_primary, i=index: self.on_shiftclick(
+                )),
+                on_shiftclick and (lambda row, column, is_primary, i=index: self.on_shiftclick(
                     i,
                     row,
                     column,
                     is_primary
-                ),
+                )),
                 bg="#343434",
             )
             new_canvas.grid(row=1, column=1)
