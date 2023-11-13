@@ -136,7 +136,6 @@ class CategoryButtons(ttk.Frame):
             file_name="category.txt",
             tracker=CategoryTracker(),
             config=self.modlunky_config.trackers.category,
-            ml_config=self.modlunky_config,
         )
 
     def config_update_callback(self):
