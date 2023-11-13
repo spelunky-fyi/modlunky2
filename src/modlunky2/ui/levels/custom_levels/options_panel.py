@@ -37,21 +37,28 @@ class OptionsPanel(ttk.Frame):
 
         self.rowconfigure(2, minsize=20)
         self.rowconfigure(4, minsize=20)
+        self.columnconfigure(0, weight=1)
 
+        right_padding = 10
         settings_row = 0
 
         theme_label = tk.Label(self, text="Level Theme:")
-        theme_label.grid(row=settings_row, column=0, columnspan=2, sticky="nsw")
+        theme_label.grid(row=settings_row, column=0, sticky="nsw")
         self.theme_label = theme_label
 
         settings_row += 1
+
+        theme_container = ttk.Frame(self)
+        theme_container.grid(row=settings_row, column=0, sticky="nwse")
+        theme_container.columnconfigure(1, weight=1)
+        theme_container.columnconfigure(3, minsize=right_padding)
 
         # Combobox for selecting the level theme. The theme affects the texture used to
         # display many tiles and the level background; the suggested tiles in the tile
         # palette; and the additional vanilla setrooms that are saved into the level
         # file.
-        self.theme_combobox = ttk.Combobox(self, height=25)
-        self.theme_combobox.grid(row=settings_row, column=0, sticky="nsw")
+        self.theme_combobox = ttk.Combobox(theme_container, height=25)
+        self.theme_combobox.grid(row=0, column=0, sticky="nsw")
         self.theme_combobox["state"] = tk.DISABLED
         self.theme_combobox["values"] = [
             "Dwelling",
@@ -77,13 +84,13 @@ class OptionsPanel(ttk.Frame):
             self.on_select_theme(biome)
 
         self.theme_select_button = tk.Button(
-            self,
+            theme_container,
             text="Update Theme",
             bg="yellow",
             command=update_theme,
         )
         self.theme_select_button["state"] = tk.DISABLED
-        self.theme_select_button.grid(row=settings_row, column=1, sticky="nsw")
+        self.theme_select_button.grid(row=0, column=2, sticky="nse")
 
         def theme_selected(_):
             self.theme_select_button["state"] = tk.NORMAL
@@ -97,8 +104,9 @@ class OptionsPanel(ttk.Frame):
         # increased again. This cache is cleared if another level is loaded or the
         # level editor is closed.
         size_frame = tk.Frame(self)
-        size_frame.grid(column=0, row=settings_row, columnspan=2, sticky="w")
-        size_frame.columnconfigure(2, minsize=10)
+        size_frame.grid(column=0, row=settings_row, sticky="news")
+        size_frame.columnconfigure(2, weight=1)
+        size_frame.columnconfigure(4, minsize=right_padding)
         self.size_label = tk.Label(size_frame, text="Level size:")
         self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
 
@@ -152,7 +160,7 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
         save_format_frame = tk.Frame(self)
-        save_format_frame.grid(column=0, row=settings_row, columnspan=2, sticky="nwe")
+        save_format_frame.grid(column=0, row=settings_row, sticky="nwe")
 
         save_format_variable = tk.IntVar()
         save_format_variable.set(0)
@@ -171,7 +179,7 @@ class OptionsPanel(ttk.Frame):
             self, text="", wraplength=350, justify=tk.LEFT
         )
         self.save_format_warning_message.grid(
-            column=0, row=settings_row, columnspan=2, sticky="nw"
+            column=0, row=settings_row, sticky="nw"
         )
 
         if self.modlunky_config.custom_level_editor_default_save_format:
@@ -242,6 +250,7 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
         grid_size_frame = tk.Frame(self)
         grid_size_frame.grid(row=settings_row, column=0, sticky="nw", pady=5)
+        grid_size_frame.columnconfigure(0, weight=1)
         grid_size_var = tk.StringVar()
         grid_size_var.set(str(zoom_level))
         grid_size_label_frame = tk.Frame(grid_size_frame)
@@ -255,10 +264,10 @@ class OptionsPanel(ttk.Frame):
         grid_size_scale = tk.Scale(
             grid_size_frame,
             from_=10,
-            to=100,
+            to=200,
             orient=tk.HORIZONTAL,
             variable=grid_size_var,
-            length=200,
+            length=390,
             showvalue=False,
         )
         grid_size_scale.grid(row=1, column=0, sticky="nwe")
