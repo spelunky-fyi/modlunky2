@@ -142,12 +142,6 @@ class LevelsTab(Tab):
         self.full_size = None
         self.current_level_custom = None
         self.mag_full = None
-        self.grid_lines_foreground = []
-        self.grid_lines_background = []
-        self.grid_rooms_foreground = []
-        self.grid_rooms_background = []
-        self.custom_editor_foreground_tile_images = None
-        self.custom_editor_background_tile_images = None
         self.custom_editor_foreground_tile_codes = None
         self.custom_editor_background_tile_codes = None
         self.editor_tab_control = None
@@ -1241,8 +1235,6 @@ class LevelsTab(Tab):
             self.tile_palette_suggestions = None
             self.lvl = None
             self.lvl_biome = None
-            self.custom_editor_foreground_tile_images = None
-            self.custom_editor_background_tile_images = None
             self.custom_editor_foreground_tile_codes = None
             self.custom_editor_background_tile_codes = None
             self.custom_editor_canvas.clear()
