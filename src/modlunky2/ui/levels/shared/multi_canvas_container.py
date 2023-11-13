@@ -5,7 +5,7 @@ from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
 from modlunky2.utils import is_windows
 
 class MultiCanvasContainer(tk.Frame):
-    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, width, height, on_click=None, on_shiftclick=None, intro_text=None, *args, **kwargs):
+    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, on_click=None, on_shiftclick=None, intro_text=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         self.on_click = on_click
@@ -20,6 +20,17 @@ class MultiCanvasContainer(tk.Frame):
         scrollable_canvas.rowconfigure(0, weight=1)
 
         scrollable_frame = tk.Frame(scrollable_canvas, bg="#343434")
+        scrollable_frame.grid(row=0, column=0, sticky="nswe")
+
+        width = scrollable_canvas.winfo_screenwidth()
+        height = scrollable_canvas.winfo_screenheight()
+        scrollable_canvas.create_window(
+            (width, height),
+            window=scrollable_frame,
+            anchor="center",
+        )
+        scrollable_canvas["width"] = width
+        scrollable_canvas["height"] = height
 
         scrollable_frame.columnconfigure(0, minsize=int(int(width) / 2))
         scrollable_frame.columnconfigure(1, weight=1)
@@ -29,16 +40,6 @@ class MultiCanvasContainer(tk.Frame):
         scrollable_frame.rowconfigure(1, weight=1)
         scrollable_frame.rowconfigure(2, minsize=100)
         scrollable_frame.rowconfigure(4, minsize=int(int(height) / 2))
-        scrollable_frame.grid(row=0, column=0, sticky="nswe")
-
-        scrollable_canvas.create_window(
-            (width, height),
-            window=scrollable_frame,
-            anchor="center",
-        )
-
-        scrollable_canvas["width"] = width
-        scrollable_canvas["height"] = height
 
         # Scroll bars for scrolling the canvases.
         hbar = ttk.Scrollbar(
