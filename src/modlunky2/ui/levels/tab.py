@@ -53,6 +53,7 @@ from modlunky2.ui.levels.vanilla_levels.level_dependencies import LevelDependenc
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
+from modlunky2.ui.levels.warm_welcome import WarmWelcome
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 from modlunky2.utils import is_windows, tb_info
 
@@ -99,49 +100,7 @@ class LevelsTab(Tab):
         self._sprite_fetcher = None
         self.texture_fetcher = TextureUtil(None)
 
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
         self.custom_editor_zoom_level = 30
-
-        self.lvl_editor_start_frame = tk.Frame(
-            self,
-            bg="black",
-        )
-        self.lvl_editor_start_frame.grid(row=0, column=0, columnspan=2, sticky="nswe")
-        self.lvl_editor_start_frame.columnconfigure(0, weight=1)
-        self.lvl_editor_start_frame.rowconfigure(1, weight=1)
-
-        self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
-        self.packs_path = self.install_dir / "Mods" / "Packs"
-
-        self.welcome_label_title = tk.Label(
-            self.lvl_editor_start_frame,
-            text=("Spelunky 2 Level Editor"),
-            anchor="center",
-            bg="black",
-            fg="white",
-            font=("Arial", 45),
-        )
-        self.welcome_label_title.grid(
-            row=0, column=0, sticky="nwe", ipady=30, padx=(10, 10)
-        )
-
-        self.welcome_label = tk.Label(
-            self.lvl_editor_start_frame,
-            text=(
-                "Welcome to the Spelunky 2 Level Editor!\n"
-                "Created by JackHasWifi with lots of help from "
-                "Garebear, Fingerspit, Wolfo, and the community.\n\n "
-                "NOTICE: Saving will save "
-                "changes to a file in your selected pack and never overwrite its extracts counterpart.\n"
-                "BIGGER NOTICE: Please make backups of your files. This is still in beta stages.."
-            ),
-            anchor="center",
-            bg="black",
-            fg="white",
-            font=("Arial", 12),
-        )
-        self.welcome_label.grid(row=1, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
         # Init Attributes
         self.lvls_path = None
@@ -265,6 +224,28 @@ class LevelsTab(Tab):
 
         self.usable_codes = None
 
+        self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
+        self.packs_path = self.install_dir / "Mods" / "Packs"
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        def open_editor():
+            if os.path.isdir(self.extracts_path):
+                self.lvls_path = self.extracts_path
+                self.load_editor()
+            else:
+                tk.messagebox.showerror(
+                    "Oops?",
+                    "Please extract your game before using the level editor.",
+                )
+
+        self.warm_welcome = WarmWelcome(
+            self,
+            open_editor
+        )
+        self.warm_welcome.grid(row=0, column=0, columnspan=2, sticky="nswe")
+
         self.base_save_formats = [
             CustomLevelSaveFormat.level_sequence(),
             CustomLevelSaveFormat.vanilla(),
@@ -277,24 +258,6 @@ class LevelsTab(Tab):
         # Save format used in the currently loaded level file.
         self.current_save_format = None
 
-        def load_extracts_lvls():
-            if os.path.isdir(self.extracts_path):
-                self.lvls_path = self.extracts_path
-                self.load_editor()
-            else:
-                tk.messagebox.showerror(
-                    "Oops?",
-                    "Please extract your game before using the level editor",
-                )
-
-        self.btn_lvl_extracts = ttk.Button(
-            self.lvl_editor_start_frame,
-            text="Open Editor",
-            command=load_extracts_lvls,
-        )
-        self.btn_lvl_extracts.grid(
-            row=2, column=0, sticky="nswe", ipady=30, padx=(20, 20), pady=(20, 20)
-        )
         self.standalone = standalone
         if standalone:
             self.on_load()
@@ -327,7 +290,7 @@ class LevelsTab(Tab):
         self.last_selected_file = None
         self.tiles = None
         self.tiles_meta = None
-        self.lvl_editor_start_frame.grid_remove()
+        self.warm_welcome.grid_remove()
 
         self.icon_add = ImageTk.PhotoImage(
             Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
@@ -3394,7 +3357,7 @@ class LevelsTab(Tab):
         )
         if msg_box == "yes":
             self.editor_tab_control.grid_remove()
-            self.lvl_editor_start_frame.grid()
+            self.warm_welcome.grid()
             self.tab_control.grid_remove()
             self.tree_files.grid_remove()
             # Resets widgets
