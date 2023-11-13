@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
-from modlunky2.config import Config, CustomLevelSaveFormat
+from modlunky2.config import CustomLevelSaveFormat
 from modlunky2.levels.tile_codes import VALID_TILE_CODES
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
@@ -34,8 +34,6 @@ class OptionsPanel(ttk.Frame):
 
         self.lvl_width = None
         self.lvl_height = None
-        # self.hide_grid_lines = False
-        # self.hide_grid_rooms = False
 
         self.rowconfigure(2, minsize=20)
         self.rowconfigure(4, minsize=20)
@@ -109,30 +107,14 @@ class OptionsPanel(ttk.Frame):
         self.width_combobox = ttk.Combobox(size_frame, height=25)
         self.width_combobox.grid(row=1, column=1, sticky="nswe")
         self.width_combobox["state"] = tk.DISABLED
-        self.width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.width_combobox["values"] = list(range(1, 9))
 
         tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
 
         self.height_combobox = ttk.Combobox(size_frame, height=25)
         self.height_combobox.grid(row=2, column=1, sticky="nswe")
         self.height_combobox["state"] = tk.DISABLED
-        self.height_combobox["values"] = [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-        ]
+        self.height_combobox["values"] = list(range(1, 16))
 
         def update_size():
             width = int(self.width_combobox.get())
@@ -222,21 +204,12 @@ class OptionsPanel(ttk.Frame):
 
         # Checkbox to toggle the visibility of the grid lines.
         hide_grid_var = tk.IntVar()
-        # hide_grid_var.set(self.hide_grid_lines)
         hide_grid_var.set(False)
 
         def toggle_hide_grid():
             nonlocal hide_grid_var
-            # self.hide_grid_lines = hide_grid_var.get()
 
             self.on_update_hide_grid_lines(hide_grid_var.get())
-
-            # self.hide_grid(
-            #     self.custom_level_canvas_foreground, self.grid_lines_foreground
-            # )
-            # self.hide_grid(
-            #     self.custom_level_canvas_background, self.grid_lines_background
-            # )
 
         settings_row += 1
         tk.Checkbutton(
@@ -250,20 +223,11 @@ class OptionsPanel(ttk.Frame):
 
         # Checkbox to toggle the visibility of the grid lines on room boundaries.
         hide_room_grid_var = tk.IntVar()
-        # hide_room_grid_var.set(self.hide_grid_rooms)
         hide_room_grid_var.set(False)
 
         def toggle_hide_room_grid():
             nonlocal hide_room_grid_var
-            # self.hide_grid_rooms = hide_room_grid_var.get()
             self.on_update_hide_room_lines(hide_room_grid_var.get())
-
-            # self.hide_room_grid(
-            #     self.custom_level_canvas_foreground, self.grid_rooms_foreground
-            # )
-            # self.hide_room_grid(
-            #     self.custom_level_canvas_background, self.grid_rooms_background
-            # )
 
         settings_row += 1
         tk.Checkbutton(
@@ -299,23 +263,8 @@ class OptionsPanel(ttk.Frame):
         )
         grid_size_scale.grid(row=1, column=0, sticky="nwe")
 
-        # grid_size_scale.set(self.custom_editor_zoom_level)
         def update_grid_size(_):
             self.on_update_zoom_level(int(grid_size_var.get()))
-            # self.custom_editor_zoom_level = int(grid_size_var.get())
-            # self.lvl_bgs = {}
-            # if self.lvl:
-            #     for tile in self.tile_palette_ref_in_use:
-            #         tile_name = tile[0].split(" ", 2)[0]
-            #         tile[1] = ImageTk.PhotoImage(
-            #             self.texture_fetcher.get_texture(
-            #                 tile_name,
-            #                 self.lvl_biome,
-            #                 self.lvl,
-            #                 self.custom_editor_zoom_level,
-            #             )
-            #         )
-            #     self.draw_custom_level_canvases(self.lvl_biome)
 
         grid_size_scale["command"] = update_grid_size
 
