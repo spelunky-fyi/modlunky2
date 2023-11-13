@@ -402,8 +402,6 @@ class LevelsTab(Tab):
             self.textures_dir,
             ["Foreground", "Background"],
             self.custom_editor_zoom_level,
-            self.screen_width,
-            self.screen_height,
             lambda index, row, column, is_primary: self.canvas_click(
                 self.custom_editor_canvas,
                 index,
@@ -567,11 +565,9 @@ class LevelsTab(Tab):
             self.textures_dir,
             ["Foreground", "Background"],
             50,
-            self.screen_width,
-            self.screen_height,
             intro_text="Select a level file to begin viewing",
         )
-        self.full_level_preview_canvas.grid(row=1, column=0, columnspan=2, sticky="nw")
+        self.full_level_preview_canvas.grid(row=1, column=0, columnspan=2, rowspan=2, sticky="nw")
 
         # Variables Tab
         self.variables_tab.columnconfigure(0, weight=1)  # Column 1 = Everything Else
