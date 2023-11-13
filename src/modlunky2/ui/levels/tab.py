@@ -2987,8 +2987,6 @@ class LevelsTab(Tab):
         level_height = 8
         level_width = 8
 
-        self.hide_intro_full()
-
         self.mag_full = int(self.slider_zoom_full.get() / 2)
         self.full_level_preview_canvas.clear()
         self.full_level_preview_canvas.set_zoom(self.mag_full)
@@ -3006,6 +3004,8 @@ class LevelsTab(Tab):
         else:
             self.show_intro_full()
             return
+
+        self.hide_intro_full()
 
         def flip_text(x_coord):
             return x_coord[::-1]
