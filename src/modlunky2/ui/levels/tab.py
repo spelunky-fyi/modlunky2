@@ -1654,11 +1654,6 @@ class LevelsTab(Tab):
             self.custom_editor_background_tile_codes = None
             self.custom_level_canvas_foreground.delete("all")
             self.custom_level_canvas_background.delete("all")
-            # self.theme_combobox["state"] = tk.DISABLED
-            # self.theme_select_button["state"] = tk.DISABLED
-            # self.width_combobox["state"] = tk.DISABLED
-            # self.height_combobox["state"] = tk.DISABLED
-            # self.size_select_button["state"] = tk.DISABLED
             self.button_save_custom["state"] = tk.DISABLED
             self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
