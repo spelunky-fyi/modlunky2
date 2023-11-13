@@ -5,7 +5,7 @@ from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
 from modlunky2.utils import is_windows
 
 class MultiCanvasContainer(tk.Frame):
-    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, width, height, on_click, on_shiftclick, *args, **kwargs):
+    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, width, height, on_click, on_shiftclick, intro_text=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         self.on_click = on_click
@@ -126,6 +126,22 @@ class MultiCanvasContainer(tk.Frame):
 
         switch_variable.set("0")
 
+        if intro_text:
+            # This intro frame covers the editor while there is no level selected with a hint message.
+            self.intro = tk.Frame(self, bg="#343434")
+            self.intro.grid(row=0, column=0, rowspan=2, columnspan=2, sticky="news")
+
+            intro_label = tk.Label(
+                self.intro,
+                text=intro_text,
+                font=("Arial", 45),
+                bg="#343434",
+                fg="white",
+                wraplength=600,
+            )
+            intro_label.place(relx=0.5, rely=0.5, anchor="center")
+
+
     def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
         if event.num == 5 or event.delta == -120:
@@ -213,3 +229,11 @@ class MultiCanvasContainer(tk.Frame):
     def draw_room_grid(self):
         for canvas in self.canvases:
             canvas.draw_room_grid()
+
+    def show_intro(self):
+        if self.intro:
+            self.intro.grid()
+
+    def hide_intro(self):
+        if self.intro:
+            self.intro.grid_remove()

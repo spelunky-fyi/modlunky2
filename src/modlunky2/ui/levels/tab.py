@@ -160,7 +160,6 @@ class LevelsTab(Tab):
         self.tree_files_custom = None
         self.button_back_custom = None
         self.button_save_custom = None
-        self.custom_level_editor_intro = None
         self.custom_editor_container = None
         self.custom_editor_canvas = None
         self.custom_editor_side_panel = None
@@ -430,23 +429,9 @@ class LevelsTab(Tab):
                 is_primary,
                 tile_codes_at(index),
             ),
+            "Select a level file to begin editing",
         )
         self.custom_editor_canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
-
-        # This intro frame covers the editor while there is no level selected with a hint message.
-        self.custom_level_editor_intro = tk.Frame(editor_view, bg="#343434")
-        self.custom_level_editor_intro.grid(
-            row=0, column=0, rowspan=2, columnspan=3, sticky="nswe"
-        )
-        intro_label = tk.Label(
-            self.custom_level_editor_intro,
-            text="Select a level file to begin editing",
-            font=("Arial", 45),
-            bg="#343434",
-            fg="white",
-            wraplength=600,
-        )
-        intro_label.place(relx=0.5, rely=0.5, anchor="center")
 
         # Side panel with the tile palette and level settings.
         self.custom_editor_side_panel = tk.Frame(tab)
@@ -1314,11 +1299,11 @@ class LevelsTab(Tab):
         self.button_save["state"] = tk.NORMAL
 
     def show_intro(self):
-        self.custom_level_editor_intro.grid()
+        self.custom_editor_canvas.show_intro()
         self.custom_editor_container.columnconfigure(2, minsize=0)
 
     def hide_intro(self):
-        self.custom_level_editor_intro.grid_remove()
+        self.custom_editor_canvas.hide_intro()
         self.custom_editor_container.columnconfigure(2, minsize=17)
 
     def reset_canvas(self):
