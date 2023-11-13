@@ -203,7 +203,6 @@ class LevelsTab(Tab):
         self.texture_images = None
         self.uni_tile_code_list = None
         self.tile_palette_ref = None
-        self.draw_mode = None
         self.tile_images = None
         self.current_level_path_custom = None
 
@@ -956,76 +955,6 @@ class LevelsTab(Tab):
         self.uni_tile_code_list = []
         self.tile_palette_ref = []
 
-        self.draw_mode = []  # slight adjustments of textures for tile preview
-        # 1 = lower half tile
-        # 2 = draw from bottom left
-        # 3 = center
-        # 4 = center to the right
-        # 5 = draw bottom left + raise 1 tile
-        # 6 = position doors
-        # 7 = draw bottom left + raise half tile
-        # 8 = draw bottom left + lower 1 tile.
-        # 9 = draw bottom left + raise 1 tile + move left 1.5 tiles
-        # 10 = draw bottom left + raise 2 tiles
-        # 11 = move left 1 tile
-        # 12 = raise 1 tile
-        # 13 = draw from bottom left + move left half tile
-        # 14 = precise bottom left for yama
-        # 15 = draw bottom left + raise 1 tile + move left 1 tile.
-        # 16 = move left half a tile.
-        # 17 = center + move down half a tile.
-        # 18 = draw bottom left + lower 1.5 tiles + move left 1.5 tiles.
-        self.draw_mode.append(["anubis", 7])
-        self.draw_mode.append(["olmec", 15])
-        self.draw_mode.append(["alienqueen", 7])
-        self.draw_mode.append(["kingu", 18])
-        self.draw_mode.append(["coffin", 2])
-        self.draw_mode.append(["dog_sign", 2])
-        self.draw_mode.append(["bunkbed", 2])
-        self.draw_mode.append(["telescope", 2])
-        self.draw_mode.append(["palace_table", 11])
-        self.draw_mode.append(["palace_chandelier", 11])
-        self.draw_mode.append(["moai_statue", 9])
-        self.draw_mode.append(["mother_statue", 10])
-        self.draw_mode.append(["empress_grave", 2])
-        self.draw_mode.append(["empty_mech", 2])
-        self.draw_mode.append(["olmecship", 7])
-        self.draw_mode.append(["lavamander", 2])
-        self.draw_mode.append(["mummy", 2])
-        self.draw_mode.append(["yama", 2])
-        self.draw_mode.append(["crown_statue", 7])
-        self.draw_mode.append(["lamassu", 2])
-        self.draw_mode.append(["madametusk", 2])
-        self.draw_mode.append(["giant_frog", 17])
-        self.draw_mode.append(["door", 13])
-        self.draw_mode.append(["starting_exit", 13])
-        self.draw_mode.append(["eggplant_door", 13])
-        self.draw_mode.append(["door2", 6])
-        self.draw_mode.append(["door_drop_held", 6])
-        self.draw_mode.append(["palace_entrance", 6])
-        self.draw_mode.append(["door2_secret", 6])
-        self.draw_mode.append(["ghist_door2", 6])
-        self.draw_mode.append(["ghist_door", 2])
-        self.draw_mode.append(["minister", 2])
-        self.draw_mode.append(["storage_guy", 2])
-        self.draw_mode.append(["idol", 4])
-        self.draw_mode.append(["idol_held", 4])
-        self.draw_mode.append(["ankh", 4])
-        self.draw_mode.append(["fountain_head", 13])
-        self.draw_mode.append(["yama", 14])
-        self.draw_mode.append(["plasma_cannon", 4])
-        self.draw_mode.append(["lockedchest", 4])
-        self.draw_mode.append(["shopkeeper_vat", 12])
-        self.draw_mode.append(["totem_trap", 2])
-        self.draw_mode.append(["lion_trap", 2])
-        self.draw_mode.append(["vlad", 4])
-        self.draw_mode.append(["yeti_queen", 2])
-        self.draw_mode.append(["yeti_king", 2])
-        self.draw_mode.append(["crabman", 2])
-        self.draw_mode.append(["giant_fly", 2])
-        self.draw_mode.append(["ammit", 16])
-        self.draw_mode.append(["humphead", 13])
-
         def canvas_click(
             event, canvas, is_primary, palette_panel
         ):  # when the level editor grid is clicked
@@ -1149,17 +1078,14 @@ class LevelsTab(Tab):
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
     def offset_for_tile(self, tile_name, tile_code, tile_size):
-        for tile_name_ref in self.draw_mode:
-            if tile_name != str(tile_name_ref[0]):
-                continue
-            logger.debug("Applying custom anchor for %s", tile_name)
-            tile_ref = self.tile_palette_map[tile_code]
-            if tile_ref:
-                logger.debug("Found %s", tile_ref[0])
-                img = tile_ref[1]
-                return TextureUtil.adjust_texture_xy(
-                    img.width(), img.height(), int(tile_name_ref[1]), tile_size
-                )
+        logger.debug("Applying custom anchor for %s", tile_name)
+        tile_ref = self.tile_palette_map[tile_code]
+        if tile_ref:
+            logger.debug("Found %s", tile_ref[0])
+            img = tile_ref[1]
+            return self.texture_fetcher.adjust_texture_xy(
+                img.width(), img.height(), tile_name, tile_size
+            )
 
         return 0, 0
 
@@ -3125,16 +3051,12 @@ class LevelsTab(Tab):
                                     # There's a missing tile id somehow
                                     logger.debug("%s Not Found", block)
 
-                                # x_coord = 0
-                                # y_coord = 0
-                                # for tile_name_ref in self.draw_mode:
-                                #     if tile_name == str(tile_name_ref[0]):
-                                #         x_coord, y_coord = TextureUtil.adjust_texture_xy(
-                                #             tile_image_full.width(),
-                                #             tile_image_full.height(),
-                                #             tile_name_ref[1],
-                                #             self.mag_full,
-                                #         )
+                                # x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                                #     tile_image_full.width(),
+                                #     tile_image_full.height(),
+                                #     tile_name,
+                                #     self.mag_full,
+                                # )
                                 self.full_level_preview_canvas.replace_tile_at(
                                     layer_index,
                                     room_y * 8 + currow,
@@ -3416,15 +3338,11 @@ class LevelsTab(Tab):
                                 logger.debug("%s Not Found", block)
                         if self.dual_mode and curcol > int((self.cols - 1) / 2):
                             x2_coord = int(curcol - ((self.cols - 1) / 2) - 1)
-                            x_coord = 0
-                            y_coord = 0
-                            for tile_name_ref in self.draw_mode:
-                                if tile_name == str(tile_name_ref[0]):
-                                    x_coord, y_coord = TextureUtil.adjust_texture_xy(
-                                        tile_image.width(),
-                                        tile_image.height(),
-                                        tile_name_ref[1],
-                                    )
+                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile_name,
+                            )
                             self.tiles[currow][curcol] = self.canvas_dual.create_image(
                                 x2_coord * self.mag - x_coord,
                                 currow * self.mag - y_coord,
@@ -3439,15 +3357,11 @@ class LevelsTab(Tab):
                             )
                             self.tiles_meta[currow][curcol] = block
                         else:
-                            x_coord = 0
-                            y_coord = 0
-                            for tile_name_ref in self.draw_mode:
-                                if tile_name == str(tile_name_ref[0]):
-                                    x_coord, y_coord = TextureUtil.adjust_texture_xy(
-                                        tile_image.width(),
-                                        tile_image.height(),
-                                        tile_name_ref[1],
-                                    )
+                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile_name,
+                            )
                             self.tiles[currow][curcol] = self.canvas.create_image(
                                 curcol * self.mag - x_coord,
                                 currow * self.mag - y_coord,
@@ -3862,16 +3776,12 @@ class LevelsTab(Tab):
                     tilecode = self.tile_palette_map[tile]
                     tile_name = tilecode[0].split(" ", 1)[0]
                     tile_image = tilecode[1]
-                    x_offset = 0
-                    y_offset = 0
-                    for tile_name_ref in self.draw_mode:
-                        if tile_name == str(tile_name_ref[0]):
-                            x_offset, y_offset = TextureUtil.adjust_texture_xy(
-                                tile_image.width(),
-                                tile_image.height(),
-                                tile_name_ref[1],
-                                self.custom_editor_zoom_level,
-                            )
+                    x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
+                        tile_image.width(),
+                        tile_image.height(),
+                        tile_name,
+                        self.custom_editor_zoom_level,
+                    )
                     self.custom_editor_canvas.replace_tile_at(
                         canvas_index,
                         row_index,
