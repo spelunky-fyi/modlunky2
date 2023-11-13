@@ -560,6 +560,24 @@ class LevelsTab(Tab):
         self.slider_zoom_full.set(50)
         self.slider_zoom_full.grid(row=0, column=0, sticky="nw")
 
+        # Checkbox to toggle the visibility of the grid lines.
+        hide_grid_var = tk.IntVar()
+        hide_grid_var.set(False)
+
+        def toggle_hide_grid():
+            nonlocal hide_grid_var
+
+            self.full_level_preview_canvas.hide_grid_lines(hide_grid_var.get())
+
+        tk.Checkbutton(
+            config_container,
+            text="Hide grid lines",
+            variable=hide_grid_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_hide_grid,
+        ).grid(row=0, column=1, sticky="sw", pady=5)
+
         self.preview_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.preview_tab.rowconfigure(1, weight=1)  # Row 0 = List box / Label
 
@@ -989,6 +1007,7 @@ class LevelsTab(Tab):
         self.draw_mode.append(["starting_exit", 13])
         self.draw_mode.append(["eggplant_door", 13])
         self.draw_mode.append(["door2", 6])
+        self.draw_mode.append(["door_drop_held", 6])
         self.draw_mode.append(["palace_entrance", 6])
         self.draw_mode.append(["door2_secret", 6])
         self.draw_mode.append(["ghist_door2", 6])
@@ -3122,6 +3141,7 @@ class LevelsTab(Tab):
                                             tile_image_full.width(),
                                             tile_image_full.height(),
                                             tile_name_ref[1],
+                                            self.mag_full,
                                         )
                                 self.full_level_preview_canvas.replace_tile_at(
                                     layer_index,
