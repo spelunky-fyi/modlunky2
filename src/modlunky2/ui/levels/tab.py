@@ -3133,23 +3133,23 @@ class LevelsTab(Tab):
                                     # There's a missing tile id somehow
                                     logger.debug("%s Not Found", block)
 
-                                x_coord = 0
-                                y_coord = 0
-                                for tile_name_ref in self.draw_mode:
-                                    if tile_name == str(tile_name_ref[0]):
-                                        x_coord, y_coord = TextureUtil.adjust_texture_xy(
-                                            tile_image_full.width(),
-                                            tile_image_full.height(),
-                                            tile_name_ref[1],
-                                            self.mag_full,
-                                        )
+                                # x_coord = 0
+                                # y_coord = 0
+                                # for tile_name_ref in self.draw_mode:
+                                #     if tile_name == str(tile_name_ref[0]):
+                                #         x_coord, y_coord = TextureUtil.adjust_texture_xy(
+                                #             tile_image_full.width(),
+                                #             tile_image_full.height(),
+                                #             tile_name_ref[1],
+                                #             self.mag_full,
+                                #         )
                                 self.full_level_preview_canvas.replace_tile_at(
                                     layer_index,
                                     room_y * 8 + currow,
                                     room_x * 10 + curcol,
                                     tile_image_full,
-                                    x_coord,
-                                    y_coord,
+                                    0,
+                                    0,
                                 )
                             curcol = curcol + 1
 
