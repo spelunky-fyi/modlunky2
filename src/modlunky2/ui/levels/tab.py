@@ -46,6 +46,7 @@ from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
+from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import BaseTemplate, Setroom
 from modlunky2.ui.levels.shared.textures import TextureUtil
@@ -160,8 +161,7 @@ class LevelsTab(Tab):
         self.button_back_custom = None
         self.button_save_custom = None
         self.custom_level_editor_intro = None
-        self.custom_level_canvas_foreground = None
-        self.custom_level_canvas_background = None
+        self.custom_editor_canvas = None
         self.custom_editor_side_panel = None
         self.tree_files = None
         self.vsb_tree_files = None
@@ -400,34 +400,36 @@ class LevelsTab(Tab):
         editor_view.columnconfigure(6, minsize=50)
         editor_view.rowconfigure(1, weight=1)
 
-        # Scrollable canvas that contains the canvases for both layers to keep
-        # their scroll positions in sync when switching between layers.
-        scrollable_canvas = tk.Canvas(editor_view, bg="#292929")
-        scrollable_canvas.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nswe")
-        scrollable_canvas.columnconfigure(0, weight=1)
-        scrollable_canvas.rowconfigure(0, weight=1)
+        def tile_codes_at(index):
+            if index == 0:
+                return self.custom_editor_foreground_tile_codes
+            else:
+                return self.custom_editor_background_tile_codes
 
-        scrollable_frame = tk.Frame(scrollable_canvas, bg="#343434")
-
-        scrollable_frame.columnconfigure(0, minsize=int(int(self.screen_width) / 2))
-        scrollable_frame.columnconfigure(1, weight=1)
-        scrollable_frame.columnconfigure(2, minsize=50)
-        scrollable_frame.columnconfigure(4, minsize=int(int(self.screen_width) / 2))
-        scrollable_frame.rowconfigure(0, minsize=int(int(self.screen_height) / 2))
-        scrollable_frame.rowconfigure(1, weight=1)
-        scrollable_frame.rowconfigure(2, minsize=100)
-        scrollable_frame.rowconfigure(4, minsize=int(int(self.screen_height) / 2))
-        scrollable_frame.grid(row=0, column=0, sticky="nswe")
-
-        width = self.screen_width
-        height = self.screen_height
-        scrollable_canvas.create_window(
-            (width, height),
-            window=scrollable_frame,
-            anchor="center",
+        self.custom_editor_canvas = MultiCanvasContainer(
+            editor_view,
+            self.textures_dir,
+            ["Foregroun35225d", "Backgr3ound"],
+            self.custom_editor_zoom_level,
+            self.screen_width,
+            self.screen_height,
+            lambda index, row, column, is_primary: self.canvas_click(
+                self.custom_editor_canvas,
+                index,
+                self.custom_editor_zoom_level,
+                row,
+                column,
+                is_primary,
+                tile_codes_at(index),
+            ),
+            lambda index, row, column, is_primary: self.canvas_shiftclick(
+                row,
+                column,
+                is_primary,
+                tile_codes_at(index),
+            ),
         )
-        scrollable_canvas["width"] = width
-        scrollable_canvas["height"] = height
+        self.custom_editor_canvas.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="news")
 
         # This intro frame covers the editor while there is no level selected with a hint message.
         self.custom_level_editor_intro = tk.Frame(editor_view, bg="#343434")
@@ -443,119 +445,6 @@ class LevelsTab(Tab):
             wraplength=600,
         )
         intro_label.place(relx=0.5, rely=0.5, anchor="center")
-
-        # Scroll bars for scrolling the canvases.
-        hbar = ttk.Scrollbar(
-            editor_view, orient="horizontal", command=scrollable_canvas.xview
-        )
-        hbar.grid(row=0, column=0, columnspan=7, rowspan=2, sticky="swe")
-        vbar = ttk.Scrollbar(
-            editor_view, orient="vertical", command=scrollable_canvas.yview
-        )
-        vbar.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nse")
-
-        # Bindings to allow scrolling with the mouse.
-        scrollable_canvas.bind(
-            "<Enter>",
-            lambda event: self._bind_to_mousewheel(
-                event, hbar, vbar, scrollable_canvas
-            ),
-        )
-        scrollable_canvas.bind(
-            "<Leave>",
-            lambda event: self._unbind_from_mousewheel(event, scrollable_canvas),
-        )
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: scrollable_canvas.configure(
-                scrollregion=scrollable_canvas.bbox("all")
-            ),
-        )
-
-        scrollable_canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
-
-        # Actual canvases that display the level's layers.
-        canvas_foreground = LevelCanvas(
-            scrollable_frame,
-            self.textures_dir,
-            self.custom_editor_zoom_level,
-            lambda row, column, is_primary: self.canvas_click(
-                self.custom_level_canvas_foreground,
-                self.custom_editor_zoom_level,
-                row,
-                column,
-                is_primary,
-                self.custom_editor_foreground_tile_codes
-            ),
-            lambda row, column, is_primary: self.canvas_shiftclick(
-                row,
-                column,
-                is_primary,
-                self.custom_editor_foreground_tile_codes
-            ),
-            bg="#343434",
-        )
-        canvas_background = LevelCanvas(
-            scrollable_frame,
-            self.textures_dir,
-            self.custom_editor_zoom_level,
-            lambda row, column, is_primary: self.canvas_click(
-                self.custom_level_canvas_background,
-                self.custom_editor_zoom_level,
-                row,
-                column,
-                is_primary,
-                self.custom_editor_background_tile_codes
-            ),
-            lambda row, column, is_primary: self.canvas_shiftclick(
-                row,
-                column,
-                is_primary,
-                self.custom_editor_background_tile_codes
-            ),
-            bg="#343434",
-        )
-
-        canvas_foreground.grid(row=1, column=1)
-        canvas_background.grid(row=1, column=1)
-        canvas_background.grid_remove()
-        self.custom_level_canvas_foreground = canvas_foreground
-        self.custom_level_canvas_background = canvas_background
-
-        # Buttons to switch the active layer.
-        switch_variable = tk.StringVar()
-
-        def toggle_layer():
-            nonlocal switch_variable
-            layer = switch_variable.get()
-            if layer == "0":
-                canvas_foreground.grid()
-                canvas_background.grid_remove()
-            else:
-                canvas_foreground.grid_remove()
-                canvas_background.grid()
-
-        front_view = tk.Radiobutton(
-            editor_view,
-            text="Foreground",
-            variable=switch_variable,
-            indicatoron=False,
-            value="0",
-            width=10,
-            command=toggle_layer,
-        )
-        switch_variable.set("0")
-        front_view.grid(column=0, row=0, sticky="ne")
-        back_view = tk.Radiobutton(
-            editor_view,
-            text="Background",
-            variable=switch_variable,
-            indicatoron=False,
-            value="1",
-            width=10,
-            command=toggle_layer,
-        )
-        back_view.grid(column=1, row=0, sticky="nw")
 
         # Side panel with the tile palette and level settings.
         self.custom_editor_side_panel = tk.Frame(tab)
@@ -1394,7 +1283,8 @@ class LevelsTab(Tab):
     # the selected tile.
     def canvas_click(
         self,
-        canvas,
+        canvas_container,
+        canvas_index,
         tile_size,
         row,
         column,
@@ -1405,7 +1295,8 @@ class LevelsTab(Tab):
         tile_name, tile_code = self.palette_panel_custom.selected_tile(is_primary)
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, tile_size)
 
-        canvas.replace_tile_at(row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
+        canvas_container.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
+        # canvas.replace_tile_at(row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
         tile_code_matrix[row][column] = tile_code
         self.changes_made()
 
@@ -1449,8 +1340,7 @@ class LevelsTab(Tab):
             self.custom_editor_background_tile_images = None
             self.custom_editor_foreground_tile_codes = None
             self.custom_editor_background_tile_codes = None
-            self.custom_level_canvas_foreground.clear()
-            self.custom_level_canvas_background.clear()
+            self.custom_editor_canvas.clear()
             self.button_save_custom["state"] = tk.DISABLED
             self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
@@ -3070,8 +2960,6 @@ class LevelsTab(Tab):
                 tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
                 return
 
-
-            canvases = [self.custom_level_canvas_foreground, self.custom_level_canvas_background]
             tile_code_matrices = [
                 self.custom_editor_foreground_tile_codes,
                 self.custom_editor_background_tile_codes,
@@ -3079,11 +2967,10 @@ class LevelsTab(Tab):
             new_tile = self.tile_palette_map["0"]
             for matrix_index in range(len(tile_code_matrices)):
                 tile_code_matrix = tile_code_matrices[matrix_index]
-                canvas = canvases[matrix_index]
                 for row in range(len(tile_code_matrix)):
                     for column in range(len(tile_code_matrix[row])):
                         if str(tile_code_matrix[row][column]) == str(tile_code):
-                            canvas.replace_tile_at(row, column, new_tile[1])
+                            self.custom_editor_canvas.replace_tile_at(matrix_index, row, column, new_tile[1])
                             tile_code_matrix[row][column] = "0"
             self.usable_codes.append(str(tile_code))
             logger.debug("%s is now available for use.", tile_code)
@@ -3405,17 +3292,14 @@ class LevelsTab(Tab):
                         self.custom_editor_zoom_level,
                     )
                 )
-            self.custom_level_canvas_foreground.set_zoom(zoom)
-            self.custom_level_canvas_background.set_zoom(zoom)
+            self.custom_editor_canvas.set_zoom(zoom)
             self.draw_custom_level_canvases(self.lvl_biome)
 
     def update_hide_grid(self, hide_grid):
-        self.custom_level_canvas_foreground.hide_grid_lines(hide_grid)
-        self.custom_level_canvas_background.hide_grid_lines(hide_grid)
+        self.custom_editor_canvas.hide_grid_lines(hide_grid)
 
     def update_hide_room_grid(self, hide_grid):
-        self.custom_level_canvas_foreground.hide_room_lines(hide_grid)
-        self.custom_level_canvas_background.hide_room_lines(hide_grid)
+        self.custom_editor_canvas.hide_room_lines(hide_grid)
 
     def _draw_grid_full(self, cols, rows, canvas):
         # resizes canvas for grids
@@ -4174,24 +4058,18 @@ class LevelsTab(Tab):
         height = self.lvl_height
 
         # Clear all existing images from the canvas before drawing the new images.
-        self.custom_level_canvas_foreground.clear()
-        self.custom_level_canvas_background.clear()
-
-        self.custom_level_canvas_foreground.configure_size(width, height)
-        self.custom_level_canvas_background.configure_size(width, height)
+        self.custom_editor_canvas.clear()
+        self.custom_editor_canvas.configure_size(width, height)
 
         # Draw lines to fill the size of the level.
-        self.custom_level_canvas_foreground.draw_background(theme)
-        self.custom_level_canvas_background.draw_background(theme)
-        self.custom_level_canvas_foreground.draw_grid()
-        self.custom_level_canvas_background.draw_grid()
-        self.custom_level_canvas_foreground.draw_room_grid()
-        self.custom_level_canvas_background.draw_room_grid()
+        self.custom_editor_canvas.draw_background(theme)
+        self.custom_editor_canvas.draw_grid()
+        self.custom_editor_canvas.draw_room_grid()
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
         # replaced with another tile.
-        def draw_layer(canvas, tile_codes):
+        def draw_layer(canvas_index, tile_codes):
             for row_index, room_row in enumerate(tile_codes):
                 if row_index >= self.lvl_height * 8:
                     continue
@@ -4211,7 +4089,8 @@ class LevelsTab(Tab):
                                 tile_name_ref[1],
                                 self.custom_editor_zoom_level,
                             )
-                    canvas.replace_tile_at(
+                    self.custom_editor_canvas.replace_tile_at(
+                        canvas_index,
                         row_index,
                         tile_index,
                         tile_image,
@@ -4219,14 +4098,11 @@ class LevelsTab(Tab):
                         y_offset,
                     )
 
-        draw_layer(
-            self.custom_level_canvas_foreground,
+        for index, tileset in enumerate([
             self.custom_editor_foreground_tile_codes,
-        )
-        draw_layer(
-            self.custom_level_canvas_background,
             self.custom_editor_background_tile_codes,
-        )
+        ]):
+            draw_layer(index, tileset)
 
     def set_current_save_format(self, save_format):
         self.current_save_format = save_format
