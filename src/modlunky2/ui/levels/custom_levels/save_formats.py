@@ -15,7 +15,7 @@ class SaveFormats():
 
     # Popup dialog with widgets to create a new room template.
     @staticmethod
-    def show_setroom_create_dialog(modlunky_config, title, message, button_title, button_action):
+    def show_setroom_create_dialog(modlunky_config, title, message, button_title, button_action, suggested_template_name = None):
         win = PopupWindow(title, modlunky_config)
         message = ttk.Label(win, text=message)
         name_label = ttk.Label(win, text="Name: ")
@@ -29,7 +29,10 @@ class SaveFormats():
         format_label.grid(row=2, column=0, sticky="nse")
         format_entry.grid(row=2, column=1, sticky="nswe")
         name_entry.insert(0, "Optional")
-        format_entry.insert(0, "setroom{y}_{x}")
+        if suggested_template_name:
+            format_entry.insert(0, suggested_template_name)
+        else:
+            format_entry.insert(0, "setroom{y}_{x}")
         name_entry_changed = False
         format_entry_changed = False
 
@@ -64,7 +67,10 @@ class SaveFormats():
             nonlocal format_entry_changed
             if str(format_entry.get()) == "":
                 format_entry_changed = False
-                format_entry.insert(0, "setroom{y}_{x}")
+                if suggested_template_name:
+                    format_entry.insert(0, suggested_template_name)
+                else:
+                    format_entry.insert(0, "setroom{y}_{x}")
                 format_entry.config(foreground="gray")
             else:
                 format_entry_changed = True
@@ -104,7 +110,7 @@ class SaveFormats():
             template_format = str(format_entry.get())
             name = str(name_entry.get()) if name_entry_changed else template_format
             if (
-                not format_entry_changed
+                (not format_entry_changed and suggested_template_name and template_format != suggested_template_name)
                 or template_format == ""
                 or name == ""
                 or template_format == "setroom{y}-{x}"
