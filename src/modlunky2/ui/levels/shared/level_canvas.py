@@ -27,38 +27,40 @@ class LevelCanvas(tk.Canvas):
         self.width = 0
         self.height = 0
 
-        shift_down = False
-        def holding_shift(_):
-            nonlocal shift_down
-            if shift_down:
-                return
-            shift_down = True
-            self.config(cursor="pencil")
-
-        def shift_up(_):
-            nonlocal shift_down
-            if not shift_down:
-                return
+        if on_pull_tile:
             shift_down = False
-            self.config(cursor="")
+            def holding_shift(_):
+                nonlocal shift_down
+                if shift_down:
+                    return
+                shift_down = True
+                self.config(cursor="pencil")
 
-        self.bind_all("<KeyPress-Shift_L>", holding_shift, add='+')
-        self.bind_all("<KeyPress-Shift_R>", holding_shift, add='+')
-        self.bind_all("<KeyRelease-Shift_L>", shift_up, add='+')
+            def shift_up(_):
+                nonlocal shift_down
+                if not shift_down:
+                    return
+                shift_down = False
+                self.config(cursor="")
 
-        # Click actions performed when holding shift to select the tile at the cursor's
-        # location.
-        self.bind("<Shift-Button-1>", self.shift_click)
-        self.bind("<Shift-Button-3>", self.shift_click)
-        self.bind("<Shift-B1-Motion>", lambda event: None)
-        self.bind("<Shift-B3-Motion>", lambda event: None)
+            self.bind_all("<KeyPress-Shift_L>", holding_shift, add='+')
+            self.bind_all("<KeyPress-Shift_R>", holding_shift, add='+')
+            self.bind_all("<KeyRelease-Shift_L>", shift_up, add='+')
 
-        # Click actions performed when the shift key is not down to "draw" the currently
-        # selected tile at the cursor's position.
-        self.bind("<Button-1>", self.click)
-        self.bind("<B1-Motion>", self.click)
-        self.bind("<Button-3>", self.click)
-        self.bind("<B3-Motion>", self.click)
+            # Click actions performed when holding shift to select the tile at the cursor's
+            # location.
+            self.bind("<Shift-Button-1>", self.shift_click)
+            self.bind("<Shift-Button-3>", self.shift_click)
+            self.bind("<Shift-B1-Motion>", lambda event: None)
+            self.bind("<Shift-B3-Motion>", lambda event: None)
+
+        if on_click:
+            # Click actions performed when the shift key is not down to "draw" the currently
+            # selected tile at the cursor's position.
+            self.bind("<Button-1>", self.click)
+            self.bind("<B1-Motion>", self.click)
+            self.bind("<Button-3>", self.click)
+            self.bind("<B3-Motion>", self.click)
 
     def click(self, event):
         is_primary = event.num == 1 or event.state & 0x0100 == 0x0100
