@@ -4573,11 +4573,10 @@ class LevelsTab(Tab):
             + self.modlunky_config.custom_level_editor_custom_save_formats
             + self.base_save_formats
         )
-        # for save_format in valid_save_formats:
-        for template in level.level_templates.all():
-            if Setroom.find_setroom_in_list(valid_save_formats, template.name):
-                # if template.name == save_format.room_template_format.format(y=0, x=0):
-                return save_format
+        for save_format in valid_save_formats:
+            for template in level.level_templates.all():
+                if template.name == save_format.room_template_format.format(y=0, x=0):
+                    return save_format
 
     # Read the comment of the template at room (0, 0) to extract the theme, defaulting to dwelling.
     def read_theme(self, level, save_format):
