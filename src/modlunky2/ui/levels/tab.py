@@ -161,6 +161,7 @@ class LevelsTab(Tab):
         self.button_back_custom = None
         self.button_save_custom = None
         self.custom_level_editor_intro = None
+        self.custom_editor_container = None
         self.custom_editor_canvas = None
         self.custom_editor_side_panel = None
         self.tree_files = None
@@ -394,10 +395,11 @@ class LevelsTab(Tab):
         # View that contains the canvases to edit the level along with some controls.
         editor_view = tk.Frame(tab)
         editor_view.grid(row=0, column=1, rowspan=3, sticky="nswe")
+        self.custom_editor_container = editor_view
 
-        editor_view.columnconfigure(3, weight=1)
-        editor_view.columnconfigure(7, minsize=17)
-        editor_view.columnconfigure(6, minsize=50)
+        editor_view.columnconfigure(0, weight=1)
+        editor_view.columnconfigure(2, minsize=0)
+        editor_view.columnconfigure(1, minsize=50)
         editor_view.rowconfigure(1, weight=1)
 
         def tile_codes_at(index):
@@ -409,7 +411,7 @@ class LevelsTab(Tab):
         self.custom_editor_canvas = MultiCanvasContainer(
             editor_view,
             self.textures_dir,
-            ["Foregroun35225d", "Backgr3ound"],
+            ["Foreground", "Background"],
             self.custom_editor_zoom_level,
             self.screen_width,
             self.screen_height,
@@ -429,12 +431,12 @@ class LevelsTab(Tab):
                 tile_codes_at(index),
             ),
         )
-        self.custom_editor_canvas.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="news")
+        self.custom_editor_canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
 
         # This intro frame covers the editor while there is no level selected with a hint message.
         self.custom_level_editor_intro = tk.Frame(editor_view, bg="#343434")
         self.custom_level_editor_intro.grid(
-            row=0, column=0, rowspan=2, columnspan=8, sticky="nswe"
+            row=0, column=0, rowspan=2, columnspan=3, sticky="nswe"
         )
         intro_label = tk.Label(
             self.custom_level_editor_intro,
@@ -469,7 +471,7 @@ class LevelsTab(Tab):
         side_panel_hide_button.configure(
             command=toggle_panel_hidden,
         )
-        side_panel_hide_button.grid(column=6, row=0, sticky="nwe")
+        side_panel_hide_button.grid(column=1, row=0, sticky="nwe")
 
         side_panel_tab_control = ttk.Notebook(self.custom_editor_side_panel)
         side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
@@ -1311,6 +1313,14 @@ class LevelsTab(Tab):
         self.button_save_custom["state"] = tk.NORMAL
         self.button_save["state"] = tk.NORMAL
 
+    def show_intro(self):
+        self.custom_level_editor_intro.grid()
+        self.custom_editor_container.columnconfigure(2, minsize=0)
+
+    def hide_intro(self):
+        self.custom_level_editor_intro.grid_remove()
+        self.custom_editor_container.columnconfigure(2, minsize=17)
+
     def reset_canvas(self):
         self.canvas.delete("all")
         self.canvas_dual.delete("all")
@@ -1324,7 +1334,7 @@ class LevelsTab(Tab):
             for palette_panel in [self.palette_panel, self.palette_panel_custom]:
                 palette_panel.reset()
             self.options_panel.disable_controls()
-            self.custom_level_editor_intro.grid()
+            self.show_intro()
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
             self.canvas.grid_remove()
@@ -3871,7 +3881,7 @@ class LevelsTab(Tab):
         self.lvl = lvl
         self.current_level_custom = level
         self.current_level_path_custom = Path(self.lvls_path) / lvl
-        self.custom_level_editor_intro.grid_remove()
+        self.hide_intro()
 
         self.set_current_save_format(save_format)
 
