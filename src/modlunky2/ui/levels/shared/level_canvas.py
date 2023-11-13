@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.ui.levels.shared.biomes import BIOME
@@ -7,7 +6,7 @@ from modlunky2.ui.levels.shared.biomes import BIOME
 import logging
 logger = logging.getLogger(__name__)
 
-class LevelCanvas(ttk.Frame):
+class LevelCanvas(tk.Canvas):
     def __init__(self, parent, textures_dir, zoom_level, on_click, on_pull_tile, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
@@ -28,27 +27,20 @@ class LevelCanvas(ttk.Frame):
         self.width = 0
         self.height = 0
 
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-
-        # scrollable_frame = tk.Frame(self, bg="#343434")
-        self.canvas = tk.Canvas(self, bg="#343434")
-        self.canvas.grid(row=0, column=0)
-
         shift_down = False
         def holding_shift(_):
             nonlocal shift_down
             if shift_down:
                 return
             shift_down = True
-            self.canvas.config(cursor="pencil")
+            self.config(cursor="pencil")
 
         def shift_up(_):
             nonlocal shift_down
             if not shift_down:
                 return
             shift_down = False
-            self.canvas.config(cursor="")
+            self.config(cursor="")
 
         self.bind_all("<KeyPress-Shift_L>", holding_shift, add='+')
         self.bind_all("<KeyPress-Shift_R>", holding_shift, add='+')
@@ -56,25 +48,25 @@ class LevelCanvas(ttk.Frame):
 
         # Click actions performed when holding shift to select the tile at the cursor's
         # location.
-        self.canvas.bind("<Shift-Button-1>", self.shift_click)
-        self.canvas.bind("<Shift-Button-3>", self.shift_click)
-        self.canvas.bind("<Shift-B1-Motion>", lambda event: None)
-        self.canvas.bind("<Shift-B3-Motion>", lambda event: None)
+        self.bind("<Shift-Button-1>", self.shift_click)
+        self.bind("<Shift-Button-3>", self.shift_click)
+        self.bind("<Shift-B1-Motion>", lambda event: None)
+        self.bind("<Shift-B3-Motion>", lambda event: None)
 
         # Click actions performed when the shift key is not down to "draw" the currently
         # selected tile at the cursor's position.
-        self.canvas.bind("<Button-1>", self.click)
-        self.canvas.bind("<B1-Motion>", self.click)
-        self.canvas.bind("<Button-3>", self.click)
-        self.canvas.bind("<B3-Motion>", self.click)
+        self.bind("<Button-1>", self.click)
+        self.bind("<B1-Motion>", self.click)
+        self.bind("<Button-3>", self.click)
+        self.bind("<B3-Motion>", self.click)
 
     def click(self, event):
         is_primary = event.num == 1 or event.state & 0x0100 == 0x0100
         column = int(event.x // self.zoom_level)
         row = int(event.y // self.zoom_level)
-        if column < 0 or event.x > int(self.canvas["width"]):
+        if column < 0 or event.x > int(self["width"]):
             return
-        if row < 0 or event.y > int(self.canvas["height"]):
+        if row < 0 or event.y > int(self["height"]):
             return
 
         self.on_click(row, column, is_primary)
@@ -83,9 +75,9 @@ class LevelCanvas(ttk.Frame):
         is_primary = event.num == 1
         column = int(event.x // self.zoom_level)
         row = int(event.y // self.zoom_level)
-        if column < 0 or event.x > int(self.canvas["width"]):
+        if column < 0 or event.x > int(self["width"]):
             return
-        if row < 0 or event.y > int(self.canvas["height"]):
+        if row < 0 or event.y > int(self["height"]):
             return
 
         self.on_pull_tile(row, column, is_primary)
@@ -98,8 +90,8 @@ class LevelCanvas(ttk.Frame):
     def replace_tile_at(self, row, column, image, offset_x=0, offset_y=0):
         curr_img = self.tile_images[row][column]
         if curr_img:
-            self.canvas.delete(curr_img)
-        self.tile_images[row][column] = self.canvas.create_image(
+            self.delete(curr_img)
+        self.tile_images[row][column] = self.create_image(
             column * self.zoom_level - offset_x,
             row * self.zoom_level - offset_y,
             image=image,
@@ -109,8 +101,8 @@ class LevelCanvas(ttk.Frame):
     def configure_size(self, width, height):
         self.width = width
         self.height = height
-        self.canvas["width"] = (self.zoom_level * width * 10) - 3
-        self.canvas["height"] = (self.zoom_level * height * 8) - 3
+        self["width"] = (self.zoom_level * width * 10) - 3
+        self["height"] = (self.zoom_level * height * 8) - 3
         self.tile_images = [
             [None for _ in range(width * 10)] for _ in range(height * 8)
         ]
@@ -128,13 +120,13 @@ class LevelCanvas(ttk.Frame):
 
         for x in range(0, self.width):
             for y in range(0, self.height):
-                self.canvas.create_image(
+                self.create_image(
                     x * self.zoom_level * 10, y * self.zoom_level * 8, image=bg_img, anchor="nw"
                 )
 
     def draw_grid(self):
         self.grid_lines = [
-            self.canvas.create_line(
+            self.create_line(
                 i * self.zoom_level,
                 0,
                 i * self.zoom_level,
@@ -143,7 +135,7 @@ class LevelCanvas(ttk.Frame):
             )
             for i in range(0, self.width * 10 + 2)
         ] + [
-            self.canvas.create_line(
+            self.create_line(
                 0,
                 i * self.zoom_level,
                 self.zoom_level * (self.width * 10 + 2),
@@ -156,7 +148,7 @@ class LevelCanvas(ttk.Frame):
 
     def draw_room_grid(self):
         self.room_lines = [
-            self.canvas.create_line(
+            self.create_line(
                 i * 10 * self.zoom_level,
                 0,
                 i * 10 * self.zoom_level,
@@ -166,7 +158,7 @@ class LevelCanvas(ttk.Frame):
             for i in range(0, self.width)
         ] + [
             # for i in range(0, rows * 8):
-            self.canvas.create_line(
+            self.create_line(
                 0,
                 i * 8 * self.zoom_level,
                 self.zoom_level * (self.width * 10),
@@ -180,22 +172,22 @@ class LevelCanvas(ttk.Frame):
     def hide_grid_lines(self, hide):
         self.grid_hidden = hide
         for grid_line in self.grid_lines:
-            self.canvas.itemconfig(
+            self.itemconfig(
                 grid_line, state=("hidden" if hide else "normal")
             )
 
     def hide_room_lines(self, hide):
         self.rooms_hidden = hide
         for room_line in self.room_lines:
-            self.canvas.itemconfig(
+            self.itemconfig(
                 room_line, state=("hidden" if hide else "normal")
             )
 
     def clear(self):
-        self.canvas.delete("all")
-        self.tile_images = []
-        self.grid_lines = []
-        self.room_lines = []
+        self.delete("all")
+        # self.tile_images = []
+        # self.grid_lines = []
+        # self.room_lines = []
 
     # Path to the background image that will be shown behind the grid.
     def background_for_theme(self, theme):

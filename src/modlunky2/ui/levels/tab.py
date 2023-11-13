@@ -492,7 +492,8 @@ class LevelsTab(Tab):
                 column,
                 is_primary,
                 self.custom_editor_foreground_tile_codes
-            )
+            ),
+            bg="#343434",
         )
         canvas_background = LevelCanvas(
             scrollable_frame,
@@ -511,7 +512,8 @@ class LevelsTab(Tab):
                 column,
                 is_primary,
                 self.custom_editor_background_tile_codes
-            )
+            ),
+            bg="#343434",
         )
 
         canvas_foreground.grid(row=1, column=1)
@@ -3070,31 +3072,19 @@ class LevelsTab(Tab):
 
 
             canvases = [self.custom_level_canvas_foreground, self.custom_level_canvas_background]
-            # tile_image_matrices = [
-            #     self.custom_editor_foreground_tile_images,
-            #     self.custom_editor_background_tile_images,
-            # ]
             tile_code_matrices = [
                 self.custom_editor_foreground_tile_codes,
                 self.custom_editor_background_tile_codes,
             ]
             new_tile = self.tile_palette_map["0"]
             for matrix_index in range(len(tile_code_matrices)):
-                # tile_image_matrix = tile_image_matrices[matrix_index]
                 tile_code_matrix = tile_code_matrices[matrix_index]
                 canvas = canvases[matrix_index]
                 for row in range(len(tile_code_matrix)):
                     for column in range(len(tile_code_matrix[row])):
                         if str(tile_code_matrix[row][column]) == str(tile_code):
                             canvas.replace_tile_at(row, column, new_tile[1])
-                            # canvas.delete(tile_image_matrix[row][column])
                             tile_code_matrix[row][column] = "0"
-                            # tile_image_matrix[row][column] = canvas.create_image(
-                            #     column * self.custom_editor_zoom_level,
-                            #     row * self.custom_editor_zoom_level,
-                            #     image=new_tile[1],
-                            #     anchor="nw",
-                            # )
             self.usable_codes.append(str(tile_code))
             logger.debug("%s is now available for use.", tile_code)
 
