@@ -73,3 +73,66 @@ class Biomes():
         elif lvl.startswith("volcano") or lvl.endswith("_volcano.lvl"):
             return BIOME.VOLCANA
         return BIOME.DWELLING
+
+    # Used for selecting a theme to get the theme code that
+    # corresponds to the display-friendly theme name.
+    @staticmethod
+    def biome_for_name(name):
+        if name == "Dwelling":
+            return BIOME.DWELLING
+        elif name == "Jungle":
+            return BIOME.JUNGLE
+        elif name == "Volcana":
+            return BIOME.VOLCANA
+        elif name == "Olmec":
+            return BIOME.OLMEC
+        elif name == "Tide Pool":
+            return BIOME.TIDE_POOL
+        elif name == "Temple":
+            return BIOME.TEMPLE
+        elif name == "Ice Caves":
+            return BIOME.ICE_CAVES
+        elif name == "Neo Babylon":
+            return BIOME.NEO_BABYLON
+        elif name == "Sunken City":
+            return BIOME.SUNKEN_CITY
+        elif name == "City of Gold":
+            return BIOME.CITY_OF_GOLD
+        elif name == "Duat":
+            return BIOME.DUAT
+        elif name == "Eggplant World":
+            return BIOME.EGGPLANT_WORLD
+        elif name == "Surface":
+            return BIOME.SURFACE
+        return None
+
+    # Gets a string that can be used to display the name of a biome.
+    @staticmethod
+    def name_of_biome(theme):
+        if theme == BIOME.DWELLING:
+            return "Dwelling"
+        elif theme == BIOME.TIDE_POOL:
+            return "Tide Pool"
+        elif theme == BIOME.NEO_BABYLON:
+            return "Neo Babylon"
+        elif theme == BIOME.JUNGLE:
+            return "Jungle"
+        elif theme == BIOME.TEMPLE:
+            return "Temple"
+        elif theme == BIOME.SUNKEN_CITY:
+            return "Sunken City"
+        elif theme == BIOME.CITY_OF_GOLD:
+            return "City of Gold"
+        elif theme == BIOME.DUAT:
+            return "Duat"
+        elif theme == BIOME.EGGPLANT_WORLD:
+            return "Eggplant World"
+        elif theme == BIOME.ICE_CAVES:
+            return "Ice Caves"
+        elif theme == BIOME.OLMEC:
+            return "Olmec"
+        elif theme == BIOME.VOLCANA:
+            return "Volcana"
+        elif theme == BIOME.SURFACE:
+            return "Surface"
+        return "Unknown"

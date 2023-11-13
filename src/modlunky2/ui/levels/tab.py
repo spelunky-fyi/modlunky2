@@ -41,6 +41,8 @@ from modlunky2.levels.level_templates import (
 from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes
 from modlunky2.sprites import SpelunkySpriteFetcher
+from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
+from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
@@ -161,6 +163,7 @@ class LevelsTab(Tab):
         self.im_output_dual = None
         self.palette_panel = None
         self.palette_panel_custom = None
+        self.options_panel = None
         self.tile_palette_ref_in_use = None
         self.tile_palette_map = {}
         self.tile_palette_suggestions = None
@@ -200,17 +203,6 @@ class LevelsTab(Tab):
         self.custom_level_canvas_foreground = None
         self.custom_level_canvas_background = None
         self.custom_editor_side_panel = None
-        self.theme_label = None
-        self.theme_combobox = None
-        self.theme_select_button = None
-        self.size_label = None
-        self.width_combobox = None
-        self.height_combobox = None
-        self.size_select_button = None
-        self.save_format_variable = None
-        self.save_format_radios = None
-        self.save_format_frame = None
-        self.save_format_warning_message = None
         self.tree_files = None
         self.vsb_tree_files = None
         self.rules_tab = None
@@ -612,284 +604,21 @@ class LevelsTab(Tab):
             self.texture_fetcher,
             self._sprite_fetcher,
         )
-        options_panel = tk.Frame(side_panel_tab_control)
+        # options_panel = tk.Frame(side_panel_tab_control)
+        self.options_panel = OptionsPanel(
+            side_panel_tab_control,
+            self.custom_editor_zoom_level,
+            self.select_theme,
+            self.update_custom_level_size,
+            self.set_current_save_format,
+            self.update_hide_grid,
+            self.update_hide_room_grid,
+            self.update_custom_editor_zoom,
+            self.modlunky_config
+        )
         side_panel_tab_control.add(self.palette_panel_custom, text="Tiles")
-        side_panel_tab_control.add(options_panel, text="Settings")
+        side_panel_tab_control.add(self.options_panel, text="Settings")
 
-        options_panel.rowconfigure(2, minsize=20)
-        options_panel.rowconfigure(4, minsize=20)
-
-        settings_row = 0
-
-        theme_label = tk.Label(options_panel, text="Level Theme:")
-        theme_label.grid(row=settings_row, column=0, columnspan=2, sticky="nsw")
-        self.theme_label = theme_label
-
-        settings_row += 1
-        # Combobox for selecting the level theme. The theme affects the texture used to
-        # display many tiles and the level background; the suggested tiles in the tile
-        # palette; and the additional vanilla setrooms that are saved into the level
-        # file.
-        self.theme_combobox = ttk.Combobox(options_panel, height=25)
-        self.theme_combobox.grid(row=settings_row, column=0, sticky="nsw")
-        self.theme_combobox["state"] = tk.DISABLED
-        self.theme_combobox["values"] = [
-            "Dwelling",
-            "Jungle",
-            "Volcana",
-            "Olmec",
-            "Tide Pool",
-            "Temple",
-            "Ice Caves",
-            "Neo Babylon",
-            "Sunken City",
-            "City of Gold",
-            "Duat",
-            "Eggplant World",
-            "Surface",
-        ]
-
-        def update_theme():
-            theme_name = str(self.theme_combobox.get())
-            theme = self.theme_for_name(theme_name)
-            self.select_theme(theme)
-            self.changes_made()
-
-        self.theme_select_button = tk.Button(
-            options_panel,
-            text="Update Theme",
-            bg="yellow",
-            command=update_theme,
-        )
-        self.theme_select_button["state"] = tk.DISABLED
-        self.theme_select_button.grid(row=settings_row, column=1, sticky="nsw")
-
-        def theme_selected(_):
-            self.theme_select_button["state"] = tk.NORMAL
-
-        self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
-
-        settings_row += 1
-        settings_row += 1
-        # Comboboxes to change the size of the level. If the size is decreased, the
-        # tiles in the missing space are still cached and restored if the size is
-        # increased again. This cache is cleared if another level is loaded or the
-        # level editor is closed.
-        size_frame = tk.Frame(options_panel)
-        size_frame.grid(column=0, row=settings_row, columnspan=2, sticky="w")
-        size_frame.columnconfigure(2, minsize=10)
-        self.size_label = tk.Label(size_frame, text="Level size:")
-        self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
-
-        tk.Label(size_frame, text="Width: ").grid(row=1, column=0, sticky="nsw")
-
-        self.width_combobox = ttk.Combobox(size_frame, height=25)
-        self.width_combobox.grid(row=1, column=1, sticky="nswe")
-        self.width_combobox["state"] = tk.DISABLED
-        self.width_combobox["values"] = [1, 2, 3, 4, 5, 6, 7, 8]
-
-        tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
-
-        self.height_combobox = ttk.Combobox(size_frame, height=25)
-        self.height_combobox.grid(row=2, column=1, sticky="nswe")
-        self.height_combobox["state"] = tk.DISABLED
-        self.height_combobox["values"] = [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-        ]
-
-        def update_size():
-            self.update_custom_level_size(
-                int(self.width_combobox.get()), int(self.height_combobox.get())
-            )
-
-        self.size_select_button = tk.Button(
-            size_frame,
-            text="Update Size",
-            bg="yellow",
-            command=update_size,
-        )
-        self.size_select_button["state"] = tk.DISABLED
-        self.size_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
-
-        def size_selected(_):
-            width = int(self.width_combobox.get())
-            height = int(self.height_combobox.get())
-            self.size_select_button["state"] = (
-                tk.DISABLED
-                if (width == self.lvl_width and height == self.lvl_height)
-                else tk.NORMAL
-            )
-
-        self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
-        self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
-
-        settings_row += 1
-        settings_row += 1
-
-        option_header = tk.Label(options_panel, text="Save format:")
-        option_header.grid(column=0, row=settings_row, sticky="nsw")
-
-        settings_row += 1
-        save_format_frame = tk.Frame(options_panel)
-        save_format_frame.grid(column=0, row=settings_row, columnspan=2, sticky="nwe")
-
-        save_format_variable = tk.IntVar()
-        save_format_variable.set(0)
-        self.save_format_variable = save_format_variable
-        self.save_format_radios = []
-        self.save_format_frame = save_format_frame
-
-        for save_format in (
-            self.base_save_formats
-            + self.modlunky_config.custom_level_editor_custom_save_formats
-        ):
-            self.add_save_format_radio(save_format, save_format_frame)
-
-        settings_row += 1
-        self.save_format_warning_message = tk.Label(
-            options_panel, text="", wraplength=350, justify=tk.LEFT
-        )
-        self.save_format_warning_message.grid(
-            column=0, row=settings_row, columnspan=2, sticky="nw"
-        )
-
-        if self.modlunky_config.custom_level_editor_default_save_format:
-            self.update_save_format_variable(
-                self.modlunky_config.custom_level_editor_default_save_format
-            )
-            self.update_save_format_warning(
-                self.modlunky_config.custom_level_editor_default_save_format
-            )
-
-        settings_row += 1
-
-        def create_template():
-            self.show_setroom_create_dialog(
-                "Create new room template format",
-                "Create a new room template format\n{x} and {y} are the coordinates of the room.",
-                "Create",
-                None,
-            )
-
-        create_template_button = tk.Button(
-            options_panel,
-            text="New save format",
-            bg="red",
-            fg="white",
-            command=create_template,
-        )
-        create_template_button.grid(row=settings_row, column=0, sticky="nw")
-
-        # Checkbox to toggle the visibility of the grid lines.
-        hide_grid_var = tk.IntVar()
-        hide_grid_var.set(self.hide_grid_lines)
-
-        def toggle_hide_grid():
-            nonlocal hide_grid_var
-            self.hide_grid_lines = hide_grid_var.get()
-            self.hide_grid(
-                self.custom_level_canvas_foreground, self.grid_lines_foreground
-            )
-            self.hide_grid(
-                self.custom_level_canvas_background, self.grid_lines_background
-            )
-
-        settings_row += 1
-        tk.Checkbutton(
-            options_panel,
-            text="Hide grid lines",
-            variable=hide_grid_var,
-            onvalue=True,
-            offvalue=False,
-            command=toggle_hide_grid,
-        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
-
-        # Checkbox to toggle the visibility of the grid lines on room boundaries.
-        hide_room_grid_var = tk.IntVar()
-        hide_room_grid_var.set(self.hide_grid_rooms)
-
-        def toggle_hide_room_grid():
-            nonlocal hide_room_grid_var
-            self.hide_grid_rooms = hide_room_grid_var.get()
-
-            self.hide_room_grid(
-                self.custom_level_canvas_foreground, self.grid_rooms_foreground
-            )
-            self.hide_room_grid(
-                self.custom_level_canvas_background, self.grid_rooms_background
-            )
-
-        settings_row += 1
-        tk.Checkbutton(
-            options_panel,
-            text="Hide room lines",
-            variable=hide_room_grid_var,
-            onvalue=True,
-            offvalue=False,
-            command=toggle_hide_room_grid,
-        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
-
-        settings_row += 1
-        grid_size_frame = tk.Frame(options_panel)
-        grid_size_frame.grid(row=settings_row, column=0, sticky="nw", pady=5)
-        grid_size_var = tk.StringVar()
-        grid_size_var.set(str(self.custom_editor_zoom_level))
-        grid_size_label_frame = tk.Frame(grid_size_frame)
-        grid_size_label_frame.grid(row=0, column=0, sticky="nw")
-
-        grid_size_header_label = tk.Label(grid_size_label_frame, text="Zoom:")
-        grid_size_header_label.grid(row=0, column=0, sticky="nwe")
-        grid_size_label = tk.Label(grid_size_label_frame, textvariable=grid_size_var)
-        grid_size_label.grid(row=0, column=1, sticky="nw")
-
-        grid_size_scale = tk.Scale(
-            grid_size_frame,
-            from_=10,
-            to=100,
-            orient=tk.HORIZONTAL,
-            variable=grid_size_var,
-            length=200,
-            showvalue=False,
-        )
-        grid_size_scale.grid(row=1, column=0, sticky="nwe")
-
-        # grid_size_scale.set(self.custom_editor_zoom_level)
-        def update_grid_size(_):
-            self.custom_editor_zoom_level = int(grid_size_var.get())
-            self.lvl_bgs = {}
-            if self.lvl:
-                for tile in self.tile_palette_ref_in_use:
-                    tile_name = tile[0].split(" ", 2)[0]
-                    tile[1] = ImageTk.PhotoImage(
-                        self.texture_fetcher.get_texture(
-                            tile_name,
-                            self.lvl_biome,
-                            self.lvl,
-                            self.custom_editor_zoom_level,
-                        )
-                    )
-                self.draw_custom_level_canvases(self.lvl_biome)
-
-        grid_size_scale["command"] = update_grid_size
-
-        # Change the cursor to a pencil while holding shift to let the user know that
-        # the tile will be selected instead of replaced when clicking. (Pencil was the
-        # closest I could find in the available cursors to something that would
-        # represent this action).
         shift_down = False
 
         def holding_shift(_):
@@ -1906,6 +1635,7 @@ class LevelsTab(Tab):
         try:
             for palette_panel in [self.palette_panel, self.palette_panel_custom]:
                 palette_panel.reset()
+            self.options_panel.disable_controls()
             self.custom_level_editor_intro.grid()
             self.canvas.delete("all")
             self.canvas_dual.delete("all")
@@ -1924,11 +1654,11 @@ class LevelsTab(Tab):
             self.custom_editor_background_tile_codes = None
             self.custom_level_canvas_foreground.delete("all")
             self.custom_level_canvas_background.delete("all")
-            self.theme_combobox["state"] = tk.DISABLED
-            self.theme_select_button["state"] = tk.DISABLED
-            self.width_combobox["state"] = tk.DISABLED
-            self.height_combobox["state"] = tk.DISABLED
-            self.size_select_button["state"] = tk.DISABLED
+            # self.theme_combobox["state"] = tk.DISABLED
+            # self.theme_select_button["state"] = tk.DISABLED
+            # self.width_combobox["state"] = tk.DISABLED
+            # self.height_combobox["state"] = tk.DISABLED
+            # self.size_select_button["state"] = tk.DISABLED
             self.button_save_custom["state"] = tk.DISABLED
             self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
@@ -3951,11 +3681,45 @@ class LevelsTab(Tab):
             for i in range(0, rows)
         ]
 
+    def update_custom_editor_zoom(self, zoom):
+        self.custom_editor_zoom_level = zoom
+        self.lvl_bgs = {}
+        if self.lvl:
+            for tile in self.tile_palette_ref_in_use:
+                tile_name = tile[0].split(" ", 2)[0]
+                tile[1] = ImageTk.PhotoImage(
+                    self.texture_fetcher.get_texture(
+                        tile_name,
+                        self.lvl_biome,
+                        self.lvl,
+                        self.custom_editor_zoom_level,
+                    )
+                )
+            self.draw_custom_level_canvases(self.lvl_biome)
+
+    def update_hide_grid(self, hide_grid):
+        self.hide_grid_lines = hide_grid
+        self.hide_grid(
+            self.custom_level_canvas_foreground, self.grid_lines_foreground
+        )
+        self.hide_grid(
+            self.custom_level_canvas_background, self.grid_lines_background
+        )
+
     def hide_grid(self, canvas, grid_lines):
         for grid_line in grid_lines:
             canvas.itemconfig(
                 grid_line, state=("hidden" if self.hide_grid_lines else "normal")
             )
+
+    def update_hide_room_grid(self, hide_grid):
+        self.hide_grid_rooms = hide_grid
+        self.hide_room_grid(
+            self.custom_level_canvas_foreground, self.grid_rooms_foreground
+        )
+        self.hide_room_grid(
+            self.custom_level_canvas_background, self.grid_rooms_background
+        )
 
     def hide_room_grid(self, canvas, grid_lines):
         for grid_line in grid_lines:
@@ -4560,13 +4324,8 @@ class LevelsTab(Tab):
                     theme = themeselect
         self.lvl_biome = theme or BIOME.DWELLING
 
-        # Get a formatted name for the theme to display to the user.
-        theme_name = self.name_of_theme(theme)
-        self.theme_combobox.set(theme_name)
-        self.theme_label["text"] = "Level Theme: " + theme_name
-        self.theme_combobox["state"] = "readonly"
-        self.width_combobox["state"] = "readonly"
-        self.height_combobox["state"] = "readonly"
+        self.options_panel.update_theme(theme)
+        self.options_panel.enable_controls()
 
         self.tile_palette_ref_in_use = []
         self.tile_palette_map = {}
@@ -4682,11 +4441,8 @@ class LevelsTab(Tab):
         width = len(filtered_rooms[0])
         self.lvl_width = width
         self.lvl_height = height
-        self.width_combobox.set(width)
-        self.height_combobox.set(height)
-        self.size_label["text"] = "Level size: {width} x {height}".format(
-            width=width, height=height
-        )
+
+        self.options_panel.update_level_size(width, height)
 
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
@@ -4832,11 +4588,9 @@ class LevelsTab(Tab):
     # Selects a new theme, updating the grid to theme tiles and backgrounds for the
     # new theme.
     def select_theme(self, theme):
-        self.theme_select_button["state"] = tk.DISABLED
         if theme == self.lvl_biome:
             return
         self.lvl_biome = theme
-        self.theme_label["text"] = "Level Theme: " + self.name_of_theme(theme)
 
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_palette_ref_in_use:
@@ -4852,6 +4606,8 @@ class LevelsTab(Tab):
         self.populate_tilecode_palette(self.palette_panel_custom)
         # Draw the grid now that we have the newly textured tiles.
         self.draw_custom_level_canvases(theme)
+
+        self.changes_made()
 
     # Used only in the combobox for selecting a theme to get the theme code that
     # corresponds to the display-friendly theme name.
@@ -4884,37 +4640,6 @@ class LevelsTab(Tab):
         elif name == "Surface":
             return BIOME.SURFACE
         return None
-
-    # Gets a string that can be used to display the name of a theme.
-    @staticmethod
-    def name_of_theme(theme):
-        if theme == BIOME.DWELLING:
-            return "Dwelling"
-        elif theme == BIOME.TIDE_POOL:
-            return "Tide Pool"
-        elif theme == BIOME.NEO_BABYLON:
-            return "Neo Babylon"
-        elif theme == BIOME.JUNGLE:
-            return "Jungle"
-        elif theme == BIOME.TEMPLE:
-            return "Temple"
-        elif theme == BIOME.SUNKEN_CITY:
-            return "Sunken City"
-        elif theme == BIOME.CITY_OF_GOLD:
-            return "City of Gold"
-        elif theme == BIOME.DUAT:
-            return "Duat"
-        elif theme == BIOME.EGGPLANT_WORLD:
-            return "Eggplant World"
-        elif theme == BIOME.ICE_CAVES:
-            return "Ice Caves"
-        elif theme == BIOME.OLMEC:
-            return "Olmec"
-        elif theme == BIOME.VOLCANA:
-            return "Volcana"
-        elif theme == BIOME.SURFACE:
-            return "Surface"
-        return "Unknown"
 
     # Path to the background image that will be shown behind the grid.
     def background_for_theme(self, theme):
@@ -4949,216 +4674,20 @@ class LevelsTab(Tab):
 
     # Shows an error dialog when attempting to open a level using an unrecognized template format.
     def show_format_error_dialog(self, lvl):
-        def on_create():
+        def on_create(_):
             # When a new format is created, try reading the level file again.
             self.read_custom_lvl_file(lvl)
 
-        self.show_setroom_create_dialog(
+        SaveFormats.show_setroom_create_dialog(
+            self.modlunky_config,
             "Couldn't find room templates",
             "Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n",
             "Continue",
             on_create,
         )
 
-    # Popup dialog with widgets to create a new room template.
-    def show_setroom_create_dialog(self, title, message, button_title, button_action):
-        win = PopupWindow(title, self.modlunky_config)
-        message = ttk.Label(win, text=message)
-        name_label = ttk.Label(win, text="Name: ")
-        name_entry = ttk.Entry(win, foreground="gray")
-        format_label = ttk.Label(win, text="Format: ")
-        format_entry = ttk.Entry(win, foreground="gray")
-        win.columnconfigure(1, weight=1)
-        message.grid(row=0, column=0, columnspan=2, sticky="nswe")
-        name_label.grid(row=1, column=0, sticky="nse")
-        name_entry.grid(row=1, column=1, sticky="nswe")
-        format_label.grid(row=2, column=0, sticky="nse")
-        format_entry.grid(row=2, column=1, sticky="nswe")
-        name_entry.insert(0, "Optional")
-        format_entry.insert(0, "setroom{y}_{x}")
-        name_entry_changed = False
-        format_entry_changed = False
-
-        # If displaying a placeholder, delete the placeholder text and update the font color
-        # when the field is focused.
-        def focus_name(_):
-            nonlocal name_entry_changed
-            if name_entry_changed:
-                return
-            name_entry.delete("0", "end")
-            name_entry.config(foreground="black")
-
-        def focus_format(_):
-            nonlocal format_entry_changed
-            if format_entry_changed:
-                return
-            format_entry.delete("0", "end")
-            format_entry.config(foreground="black")
-
-        # When defocusing the field, if the field is empty, replace the text with the
-        # placeholder text and change the font color.
-        def defocus_name(_):
-            nonlocal name_entry_changed
-            if str(name_entry.get()) == "":
-                name_entry_changed = False
-                name_entry.insert(0, "Optional")
-                name_entry.config(foreground="gray")
-            else:
-                name_entry_changed = True
-
-        def defocus_format(_):
-            nonlocal format_entry_changed
-            if str(format_entry.get()) == "":
-                format_entry_changed = False
-                format_entry.insert(0, "setroom{y}_{x}")
-                format_entry.config(foreground="gray")
-            else:
-                format_entry_changed = True
-
-        name_entry.bind("<FocusIn>", focus_name)
-        name_entry.bind("<FocusOut>", defocus_name)
-        format_entry.bind("<FocusIn>", focus_format)
-        format_entry.bind("<FocusOut>", defocus_format)
-
-        # Checkbox to enable or disable vanilla setrooms for themes such as ice caves which
-        # crash without them.
-        add_vanilla_var = tk.IntVar()
-        add_vanilla_var.set(True)
-        add_vanilla_label = ttk.Label(win, text="Include vanilla setrooms:")
-        add_vanilla_check = ttk.Checkbutton(win, variable=add_vanilla_var)
-        add_vanilla_label.grid(row=3, column=0, sticky="nse")
-        add_vanilla_check.grid(row=3, column=1, sticky="nsw")
-
-        add_vanilla_tip = ttk.Label(
-            win,
-            text=(
-                "It is recommended to include vanilla setrooms.\n"
-                "This setting adds setrooms for some themes which require them.\n"
-                "There could be errors if not using this in some themes."
-            ),
-        )
-        add_vanilla_tip.grid(row=4, column=0, columnspan=2, sticky="nswe")
-
-        win.rowconfigure(5, minsize=20)
-
-        buttons = ttk.Frame(win)
-        buttons.grid(row=6, column=0, columnspan=2, sticky="nswe")
-        buttons.columnconfigure(0, weight=1)
-        buttons.columnconfigure(1, weight=1)
-
-        def continue_open():
-            template_format = str(format_entry.get())
-            name = str(name_entry.get()) if name_entry_changed else template_format
-            if (
-                not format_entry_changed
-                or template_format == ""
-                or name == ""
-                or template_format == "setroom{y}-{x}"
-                or template_format == "setroom{x}-{y}"
-            ):
-                return
-            save_format = CustomLevelSaveFormat(
-                name, template_format, bool(add_vanilla_var.get())
-            )
-            win.destroy()
-            self.add_save_format(save_format)
-            if button_action:
-                button_action()
-
-        continue_button = ttk.Button(buttons, text=button_title, command=continue_open)
-        continue_button.grid(row=0, column=0, sticky="nswe")
-
-        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
-        cancel_button.grid(row=0, column=1, sticky="nswe")
-
-    # Create a new save format and save it to the config file to be loaded on future launches.
-    def add_save_format(self, save_format):
-        self.modlunky_config.custom_level_editor_custom_save_formats.append(save_format)
-        self.add_save_format_radio(save_format, self.save_format_frame)
-        self.modlunky_config.save()
-
-    # Updates the current radio button in the save format select options menu to the
-    # proper save format.
-    def update_save_format_variable(self, save_format):
-        if save_format in self.base_save_formats:
-            self.save_format_variable.set(self.base_save_formats.index(save_format))
-        elif (
-            save_format in self.modlunky_config.custom_level_editor_custom_save_formats
-        ):
-            self.save_format_variable.set(
-                len(self.base_save_formats)
-                + self.modlunky_config.custom_level_editor_custom_save_formats.index(
-                    save_format
-                )
-            )
-        self.save_format_radios[self.save_format_variable.get()].select()
-
-    # Adds a warning message below the save format radio list based on the selected
-    # save format.
-    def update_save_format_warning(self, save_format):
-        warning_message = ""
-        if save_format == CustomLevelSaveFormat.level_sequence():
-            warning_message = (
-                "This save format can be used to load saved level files into the "
-                "Custom Levels or Level Sequence packages.\n"
-                "(https://github.com/jaythebusinessgoose/LevelSequence)"
-            )
-        elif save_format == CustomLevelSaveFormat.vanilla():
-            warning_message = (
-                "WARNING: Files saved using vanilla setrooms will only work when loaded "
-                "into themes that use them. Otherwise, it will crash the game. Also, themes "
-                "that do allow loading vanilla setrooms will only load the required setrooms "
-                "for the default size of the level. It is recommended to use another save "
-                "format and use scripts to load the proper rooms."
-            )
-        elif not save_format.include_vanilla_setrooms:
-            warning_message = (
-                "WARNING: Some themes override the desired level with a vanilla setroom, so it "
-                "is recommended to use a save format that includes the correct vanilla setrooms."
-            )
-        self.save_format_warning_message["text"] = warning_message
-
-    # Update the current save format and update the UIs to represent this.
-    def set_current_save_format(self, save_format):
-        self.current_save_format = save_format
-        self.update_save_format_warning(save_format)
-        self.update_save_format_variable(save_format)
-
-    # Called when a save format radio button is selected.
-    def select_save_format_radio(self):
-        save_format_index = self.save_format_variable.get()
-        save_format = None
-        if save_format_index < len(self.base_save_formats):
-            save_format = self.base_save_formats[save_format_index]
-        else:
-            save_format = self.modlunky_config.custom_level_editor_custom_save_formats[
-                save_format_index - len(self.base_save_formats)
-            ]
-        if not save_format:
-            return
-        self.set_current_save_format(save_format)
-        self.modlunky_config.custom_level_editor_default_save_format = save_format
-        self.modlunky_config.save()
-
-    def add_save_format_radio(self, save_format, save_format_frame):
-        index = len(self.save_format_radios)
-        radio = tk.Radiobutton(
-            save_format_frame,
-            text=save_format.name,
-            variable=self.save_format_variable,
-            indicatoron=True,
-            value=index,
-            command=self.select_save_format_radio,
-        )
-        radio.grid(column=0, row=index, sticky="nsw")
-        self.save_format_radios.append(radio)
-
-        label = tk.Label(save_format_frame, text=save_format.room_template_format)
-        label.grid(column=1, row=index, sticky="nsw")
-
     # Updates the level size from the options menu.
     def update_custom_level_size(self, width, height):
-        self.size_select_button["state"] = tk.DISABLED
         if width == self.lvl_width and height == self.lvl_height:
             return
 
@@ -5221,9 +4750,6 @@ class LevelsTab(Tab):
         )
         self.custom_editor_background_tile_codes = fill_to_size_with_tile(
             self.custom_editor_background_tile_codes, hard_floor, width, height
-        )
-        self.size_label["text"] = "Level size: {width} x {height}".format(
-            width=width, height=height
         )
         self.lvl_width = width
         self.lvl_height = height
