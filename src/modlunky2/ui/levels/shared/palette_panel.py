@@ -113,7 +113,7 @@ class SelectedTilecodeView(ttk.Frame):
         self.title_label = ttk.Label(self, text=title_prefix + " empty 0")
 
         self.img = None
-        self.img_empty = ImageTk.PhotoImage(sprite_fetcher.get("empty"))
+        self.img_empty = ImageTk.PhotoImage(sprite_fetcher.get("empty").resize((40, 40), Image.Resampling.LANCZOS))
         self.img_view = ttk.Label(self, image=self.img_empty, width=50)
 
         self.columnconfigure(0, minsize=8)
