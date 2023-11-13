@@ -118,7 +118,7 @@ class MultiCanvasContainer(tk.Frame):
                 variable=switch_variable,
                 indicatoron=False,
                 value=str(index),
-                width=10,
+                width=max(len(canvas_title), 10),
                 command=switch_layer,
             )
 
