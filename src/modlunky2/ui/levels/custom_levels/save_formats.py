@@ -4,7 +4,7 @@ from modlunky2.ui.widgets import PopupWindow
 
 from modlunky2.config import Config, CustomLevelSaveFormat
 
-class SaveFormats():
+class SaveFormats:
 
     @staticmethod
     def base_save_formats():
