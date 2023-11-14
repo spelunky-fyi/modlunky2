@@ -6,6 +6,7 @@ from functools import lru_cache
 import datetime
 import glob
 import logging
+import math
 import os
 import os.path
 import re
@@ -95,7 +96,6 @@ class LevelsTab(Tab):
         # TODO: Get actual resolution
         self.screen_width = 1290
         self.screen_height = 720
-        self.dual_mode = False
         self.tab_control = tab_control
         self.install_dir = modlunky_config.install_dir
         self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
@@ -173,14 +173,7 @@ class LevelsTab(Tab):
         self.button_resolve_variables = None
         self.dependencies = None
         self.mag = None
-        self.canvas_grids = None
-        self.scrollable_canvas_frame = None
-        self.foreground_label = None
-        self.background_label = None
-        self.vbar = None
-        self.hbar = None
-        self.canvas = None
-        self.canvas_dual = None
+        self.vanilla_editor_canvas = None
         self.button_hide_tree = None
         self.button_replace = None
         self.button_clear = None
@@ -395,7 +388,7 @@ class LevelsTab(Tab):
             self.textures_dir,
             ["Foreground", "Background"],
             self.custom_editor_zoom_level,
-            lambda index, row, column, is_primary: self.canvas_click(
+            lambda index, row, column, is_primary: self.canvas_click_custom(
                 self.custom_editor_canvas,
                 index,
                 self.custom_editor_zoom_level,
@@ -404,7 +397,7 @@ class LevelsTab(Tab):
                 is_primary,
                 tile_codes_at(index),
             ),
-            lambda index, row, column, is_primary: self.canvas_shiftclick(
+            lambda index, row, column, is_primary: self.canvas_shiftclick_custom(
                 row,
                 column,
                 is_primary,
@@ -730,125 +723,49 @@ class LevelsTab(Tab):
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
 
         self.mag = 50  # the size of each tiles in the grid; 50 is optimal
-        self.rows = (
-            15  # default values, could be set to none and still work I think lol
-        )
-        self.cols = (
-            15  # default values, could be set to none and still work I think lol
-        )
 
-        self.canvas_grids = tk.Canvas(  # this is the main level editor grid
+        vanilla_editor_container = tk.Frame(
             self.editor_tab,
             bg="#292929",
         )
-        self.canvas_grids.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="nwse")
+        vanilla_editor_container.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="news")
 
-        self.canvas_grids.columnconfigure(2, weight=1)
-        self.canvas_grids.rowconfigure(0, weight=1)
-
-        self.scrollable_canvas_frame = tk.Frame(self.canvas_grids, bg="#343434")
-
-        # offsets the screen so user can freely scroll around work area
-        self.scrollable_canvas_frame.columnconfigure(
-            0, minsize=int(int(self.screen_width) / 2)
-        )
-        self.scrollable_canvas_frame.columnconfigure(1, weight=1)
-        self.scrollable_canvas_frame.columnconfigure(2, minsize=50)
-        self.scrollable_canvas_frame.columnconfigure(
-            4, minsize=int(int(self.screen_width) / 2)
-        )
-        self.scrollable_canvas_frame.rowconfigure(
-            0, minsize=int(int(self.screen_height) / 2)
-        )
-        self.scrollable_canvas_frame.rowconfigure(1, weight=1)
-        self.scrollable_canvas_frame.rowconfigure(2, minsize=100)
-        self.scrollable_canvas_frame.rowconfigure(2, minsize=100)
-        self.scrollable_canvas_frame.rowconfigure(
-            4, minsize=int(int(self.screen_height) / 2)
-        )
-
-        self.scrollable_canvas_frame.grid(row=0, column=0, sticky="nwes")
-
-        self.foreground_label = tk.Label(
-            self.scrollable_canvas_frame,
-            text="Foreground Area",
-            fg="white",
-            bg="#343434",
-        )
-        self.foreground_label.grid(row=2, column=1, sticky="nwse")
-        self.foreground_label.grid_remove()
-
-        self.background_label = tk.Label(
-            self.scrollable_canvas_frame,
-            text="Background Area",
-            fg="white",
-            bg="#343434",
-        )
-        self.background_label.grid(row=2, column=3, sticky="nwse")
-        self.background_label.grid_remove()
-
-        self.vbar = ttk.Scrollbar(
-            self.editor_tab, orient="vertical", command=self.canvas_grids.yview
-        )
-        self.vbar.grid(row=0, column=2, rowspan=4, columnspan=7, sticky="nse")
-        self.hbar = ttk.Scrollbar(
-            self.editor_tab, orient="horizontal", command=self.canvas_grids.xview
-        )
-        self.hbar.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="wes")
-
-        self.canvas_grids.config(
-            xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set
-        )
-        x_origin = self.canvas_grids.winfo_screenwidth() / 2
-        y_origin = self.canvas_grids.winfo_screenheight() / 2
-        self.canvas_grids.create_window(
-            (x_origin, y_origin), window=self.scrollable_canvas_frame, anchor="center"
-        )
-        self.canvas_grids.bind(
-            "<Enter>",
-            lambda event: self._bind_to_mousewheel(
-                event, self.hbar, self.vbar, self.canvas_grids
+        self.vanilla_editor_canvas = MultiCanvasContainer(
+            vanilla_editor_container,
+            self.textures_dir,
+            ["Foreground Area", "Background Area"],
+            self.mag,
+            lambda index, row, column, is_primary: self.canvas_click_vanilla(
+                self.vanilla_editor_canvas,
+                index,
+                self.mag,
+                row,
+                column,
+                is_primary,
             ),
+            None,
+            # lambda index, row, column, is_primary: canvas_shiftclick(),
+            "Select a room to begin editing",
+            side_by_side=True,
         )
-        self.canvas_grids.bind(
-            "<Leave>",
-            lambda event: self._unbind_from_mousewheel(event, self.canvas_grids),
-        )
-        self.scrollable_canvas_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas_grids.configure(
-                scrollregion=self.canvas_grids.bbox("all")
-            ),
-        )
+        self.vanilla_editor_canvas.grid(row=0, column=0, rowspan=4, columnspan=8, sticky="news")
 
-        self.canvas = tk.Canvas(  # this is the main level editor grid
-            self.scrollable_canvas_frame,
-            bg="#343434",
-        )
-        self.canvas.grid(row=1, column=1)
-        self.canvas.grid_remove()
-        self.canvas_dual = tk.Canvas(  # this is for dual level, it shows the back area
-            self.scrollable_canvas_frame,
-            width=0,
-            bg="yellow",
-        )
-        self.canvas_dual.grid(row=1, column=3, padx=(0, 50))
-        self.canvas_dual.grid_remove()  # hides it for now
-        self.dual_mode = False
+        vanilla_editor_container.columnconfigure(3, weight=1)
+        vanilla_editor_container.rowconfigure(0, weight=1)
 
         self.button_hide_tree = ttk.Button(
-            self.canvas_grids, text="<<", command=self.toggle_list_hide
+            vanilla_editor_container, text="<<", command=self.toggle_list_hide
         )
         self.button_hide_tree.grid(row=0, column=0, sticky="nw")
 
         self.button_replace = ttk.Button(
-            self.canvas_grids, text="Replace", command=self.replace_tiles_dia
+            vanilla_editor_container, text="Replace", command=self.replace_tiles_dia
         )
         self.button_replace.grid(row=0, column=1, sticky="nw")
         self.button_replace["state"] = tk.DISABLED
 
         self.button_clear = ttk.Button(
-            self.canvas_grids, text="Clear Canvas", command=self.clear_canvas
+            vanilla_editor_container, text="Clear Canvas", command=self.clear_canvas
         )
         self.button_clear.grid(row=0, column=2, sticky="nw")
         self.button_clear["state"] = tk.DISABLED
@@ -955,120 +872,6 @@ class LevelsTab(Tab):
         self.uni_tile_code_list = []
         self.tile_palette_ref = []
 
-        def canvas_click(
-            event, canvas, is_primary, palette_panel
-        ):  # when the level editor grid is clicked
-            # Get rectangle diameters
-            col_width = self.mag
-            row_height = self.mag
-            col = 0
-            row = 0
-            if canvas == self.canvas_dual:
-                col = ((event.x + int(self.canvas["width"])) + col_width) // col_width
-                row = event.y // row_height
-
-                if (
-                    col * self.mag < int(self.canvas["width"]) + self.mag
-                    or col * self.mag > int(self.canvas["width"]) * 2 + self.mag
-                ):
-                    logger.debug("col out of bounds")
-                    return
-
-                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
-                    logger.debug("row out of bounds")
-                    return
-            else:
-                # Calculate column and row number
-                col = event.x // col_width
-                row = event.y // row_height
-
-                if col * self.mag < 0 or col * self.mag > int(self.canvas["width"]):
-                    logger.debug("col out of bounds")
-                    return
-
-                if row * self.mag < 0 or row * self.mag > int(self.canvas["height"]):
-                    logger.debug("row out of bounds")
-                    return
-            # If the tile is not filled, create a rectangle
-            if self.dual_mode:
-                if int(col) == int((len(self.tiles[0]) - 1) / 2):
-                    logger.debug("Middle of dual detected; not tile placed")
-                    return
-
-            tile_name, tile_code = palette_panel.selected_tile(is_primary)
-            # tile_name = tile_label["text"].split(" ", 4)[2]
-            # tile_code = tile_label["text"].split(" ", 4)[3]
-            x_coord_offset, y_coord_offset = self.offset_for_tile(
-                tile_name, tile_code, self.mag
-            )
-
-            canvas.delete(self.tiles[int(row)][int(col)])
-            if canvas == self.canvas_dual:
-                x2_coord = int(int(col) - ((len(self.tiles[0]) - 1) / 2) - 1)
-                self.tiles[int(row)][int(col)] = canvas.create_image(
-                    x2_coord * self.mag - x_coord_offset,
-                    int(row) * self.mag - y_coord_offset,
-                    image=self.tile_palette_map[tile_code][1],
-                    anchor="nw",
-                )
-            else:
-                self.tiles[int(row)][int(col)] = canvas.create_image(
-                    int(col) * self.mag - x_coord_offset,
-                    int(row) * self.mag - y_coord_offset,
-                    image=self.tile_palette_map[tile_code][1],
-                    anchor="nw",
-                )
-            self.tiles_meta[row][col] = tile_code
-            logger.debug(
-                "%s replaced with %s",
-                self.tiles_meta[row][col],
-                tile_code,
-            )
-            self.remember_changes()  # remember changes made
-
-        self.canvas.bind(
-            "<Button-1>",
-            lambda event: canvas_click(event, self.canvas, True, self.palette_panel),
-        )
-        self.canvas.bind(
-            "<B1-Motion>",
-            lambda event: canvas_click(event, self.canvas, True, self.palette_panel),
-        )  # These second binds are so the user can hold down their mouse button when painting tiles
-        self.canvas.bind(
-            "<Button-3>",
-            lambda event: canvas_click(event, self.canvas, False, self.palette_panel),
-        )
-        self.canvas.bind(
-            "<B3-Motion>",
-            lambda event: canvas_click(event, self.canvas, False, self.palette_panel),
-        )  # These second binds are so the user can hold down their mouse button when painting tiles
-        # self.canvas.bind("<Key>", lambda event: )
-        self.canvas_dual.bind(
-            "<Button-1>",
-            lambda event: canvas_click(event, self.canvas_dual, True, self.palette_panel),
-        )
-        self.canvas_dual.bind(
-            "<B1-Motion>",
-            lambda event: canvas_click(event, self.canvas_dual, True, self.palette_panel),
-        )
-        self.canvas_dual.bind(
-            "<Button-3>",
-            lambda event: canvas_click(
-                event,
-                self.canvas_dual,
-                False,
-                self.palette_panel,
-            ),
-        )
-        self.canvas_dual.bind(
-            "<B3-Motion>",
-            lambda event: canvas_click(
-                event,
-                self.canvas_dual,
-                False,
-                self.palette_panel,
-            ),
-        )
         self.tree_files.bind(
             "<ButtonRelease-1>",
             lambda event: self.tree_filesitemclick(
@@ -1089,9 +892,31 @@ class LevelsTab(Tab):
 
         return 0, 0
 
+    def canvas_click_vanilla(
+        self,
+        canvas_container,
+        canvas_index,
+        tile_size,
+        row,
+        column,
+        is_primary,
+    ):
+        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, tile_size)
+
+        canvas_container.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
+
+        col = column
+        if canvas_index == 1:
+            col = col + (len(self.tiles_meta[row]) + 1) // 2
+
+        self.tiles_meta[row][col] = tile_code
+        self.remember_changes()
+
+
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
-    def canvas_click(
+    def canvas_click_custom(
         self,
         canvas_container,
         canvas_index,
@@ -1110,7 +935,7 @@ class LevelsTab(Tab):
         tile_code_matrix[row][column] = tile_code
         self.changes_made()
 
-    def canvas_shiftclick(self, row, column, is_primary, tile_code_matrix):
+    def canvas_shiftclick_custom(self, row, column, is_primary, tile_code_matrix):
         tile_code = tile_code_matrix[row][column]
         tile = self.tile_palette_map[tile_code]
 
@@ -1136,10 +961,7 @@ class LevelsTab(Tab):
         self.full_level_preview_canvas.hide_intro()
 
     def reset_canvas(self):
-        self.canvas.delete("all")
-        self.canvas_dual.delete("all")
-        self.canvas.grid_remove()
-        self.canvas_dual.grid_remove()
+        self.vanilla_editor_canvas.clear()
 
     def reset(self):
         logger.debug("Resetting..")
@@ -1150,12 +972,14 @@ class LevelsTab(Tab):
             self.options_panel.disable_controls()
             self.show_intro()
             self.show_intro_full()
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
+            self.vanilla_editor_canvas.show_intro()
+            self.vanilla_editor_canvas.clear()
+            # self.canvas.delete("all")
+            # self.canvas_dual.delete("all")
+            # self.canvas.grid_remove()
+            # self.canvas_dual.grid_remove()
+            # self.foreground_label.grid_remove()
+            # self.background_label.grid_remove()
             self.tile_palette_map = {}
             self.tile_palette_ref_in_use = None
             self.tile_palette_suggestions = None
@@ -2583,12 +2407,8 @@ class LevelsTab(Tab):
             logger.debug("Changes remembered!")
             self.changes_made()
         else:
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
+            self.vanilla_editor_canvas.clear()
+            self.vanilla_editor_canvas.show_intro()
 
     def toggle_list_hide(self):
         if self.button_hide_tree["text"] == "<<":
@@ -2719,8 +2539,6 @@ class LevelsTab(Tab):
                 for _ in row:
                     if self.tiles_meta[int(row_count)][int(col_count)] == tile:
                         self.tiles_meta[int(row_count)][int(col_count)] = new_tile
-                        # self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
-                        # self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
                     col_count = col_count + 1
                 row_count = row_count + 1
             self.remember_changes()  # remember changes made
@@ -2738,10 +2556,11 @@ class LevelsTab(Tab):
                 col_count = 0
                 for _ in row:
                     self.tiles_meta[int(row_count)][int(col_count)] = "0"
-                    self.canvas.delete(self.tiles[int(row_count)][int(col_count)])
-                    self.canvas_dual.delete(self.tiles[int(row_count)][int(col_count)])
                     col_count = col_count + 1
                 row_count = row_count + 1
+            self.vanilla_editor_canvas.clear()
+            self.vanilla_editor_canvas.draw_background(self.lvl_biome)
+            self.vanilla_editor_canvas.draw_grid()
             self.remember_changes()  # remember changes made
 
     def delete_tilecode_vanilla(self, tile_name, tile_code):
@@ -2904,12 +2723,8 @@ class LevelsTab(Tab):
             # Resets widgets
             self.button_replace["state"] = tk.DISABLED
             self.button_clear["state"] = tk.DISABLED
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
+            self.vanilla_editor_canvas.clear()
+            self.vanilla_editor_canvas.show_intro()
             self.button_back.grid_remove()
             self.button_save.grid_remove()
             self.vsb_tree_files.grid_remove()
@@ -3013,7 +2828,6 @@ class LevelsTab(Tab):
                         for block in str(room_row):
                             if str(block) != " ":
                                 tile_name = ""
-                                # for _palette_block in self.tile_palette_ref_in_use:
                                 tiles = [
                                     c
                                     for c in self.tile_palette_ref_in_use
@@ -3051,12 +2865,6 @@ class LevelsTab(Tab):
                                     # There's a missing tile id somehow
                                     logger.debug("%s Not Found", block)
 
-                                # x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
-                                #     tile_image_full.width(),
-                                #     tile_image_full.height(),
-                                #     tile_name,
-                                #     self.mag_full,
-                                # )
                                 self.full_level_preview_canvas.replace_tile_at(
                                     layer_index,
                                     room_y * 8 + currow,
@@ -3217,12 +3025,13 @@ class LevelsTab(Tab):
             )
 
     def room_select(self, _event):  # Loads room when click if not parent node
-        self.dual_mode = False
+        dual_mode = False
         selected_room = self.level_list_panel.get_selected_room()
         if selected_room:
+            self.vanilla_editor_canvas.clear()
+            self.vanilla_editor_canvas.hide_intro()
+
             self.last_selected_room = selected_room
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
             current_settings = []
             current_room_tiles = []
             current_settings = []
@@ -3236,13 +3045,13 @@ class LevelsTab(Tab):
                     current_room_tiles.append(str(cr_line))
                     for char in str(cr_line):
                         if str(char) == " ":
-                            self.dual_mode = True
+                            dual_mode = True
 
             if r"\!dual" in current_settings:
-                self.dual_mode = True
+                dual_mode = True
                 self.var_dual.set(1)
             else:
-                self.dual_mode = False
+                dual_mode = False
                 self.var_dual.set(0)
 
             if r"\!flip" in current_settings:
@@ -3280,31 +3089,20 @@ class LevelsTab(Tab):
             else:
                 self.var_liquid.set(0)
 
+
             self.rows = len(current_room_tiles)
             self.cols = len(str(current_room_tiles[0]))
 
-            # self.mag = self.canvas.winfo_height() / self.rows - 30
-            if not self.dual_mode:
-                self._draw_grid(
-                    self.cols, self.rows, self.canvas, False
-                )  # cols rows canvas dual(True/False)
-                self.canvas_dual["width"] = 0
-                self.canvas_dual["height"] = 0
-                self.canvas.grid()
-                self.canvas_dual.grid_remove()  # hides it for now
-                self.foreground_label.grid_remove()
-                self.background_label.grid_remove()
-            else:
-                self.canvas.grid()
-                self.canvas_dual.grid()  # brings it back
-                self._draw_grid(
-                    int((self.cols - 1) / 2), self.rows, self.canvas, False
-                )  # cols rows canvas dual(True/False)
-                self._draw_grid(
-                    int((self.cols - 1) / 2), self.rows, self.canvas_dual, True
-                )
-                self.foreground_label.grid()
-                self.background_label.grid()
+            roomwidth = int(math.ceil(self.cols / 10))
+            if dual_mode:
+                roomwidth = int(math.ceil(((self.cols - 1) / 2) / 10))
+            self.vanilla_editor_canvas.configure_size(roomwidth, int(math.ceil(self.rows / 8)))
+
+            # Draw lines to fill the size of the level.
+            self.vanilla_editor_canvas.draw_background(self.lvl_biome)
+            self.vanilla_editor_canvas.draw_grid()
+
+            self.vanilla_editor_canvas.hide_canvas(1, not dual_mode)
 
             # Create a grid of None to store the references to the tiles
             self.tiles = [
@@ -3324,36 +3122,32 @@ class LevelsTab(Tab):
                 for block in str(room_row):
                     if str(block) != " ":
                         tile_name = ""
-                        for _palette_block in self.tile_palette_ref_in_use:
-                            tiles = [
-                                c
-                                for c in self.tile_palette_ref_in_use
-                                if str(" " + block) in str(c[0])
-                            ]
-                            if tiles:
-                                tile_image = tiles[-1][1]
-                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
-                            else:
-                                # There's a missing tile id somehow
-                                logger.debug("%s Not Found", block)
-                        if self.dual_mode and curcol > int((self.cols - 1) / 2):
+                        # for _palette_block in self.tile_palette_ref_in_use:
+                        tiles = [
+                            c
+                            for c in self.tile_palette_ref_in_use
+                            if str(" " + block) in str(c[0])
+                        ]
+                        if tiles:
+                            tile_image = tiles[-1][1]
+                            tile_name = str(tiles[-1][0]).split(" ", 1)[0]
+                        else:
+                            # There's a missing tile id somehow
+                            logger.debug("%s Not Found", block)
+                        if dual_mode and curcol > int((self.cols - 1) / 2):
                             x2_coord = int(curcol - ((self.cols - 1) / 2) - 1)
                             x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
                                 tile_image.width(),
                                 tile_image.height(),
                                 tile_name,
                             )
-                            self.tiles[currow][curcol] = self.canvas_dual.create_image(
-                                x2_coord * self.mag - x_coord,
-                                currow * self.mag - y_coord,
-                                image=tile_image,
-                                anchor="nw",
-                            )
-                            _coords = (
-                                x2_coord * self.mag,
-                                currow * self.mag,
-                                x2_coord * self.mag + 50,
-                                currow * self.mag + 50,
+                            self.vanilla_editor_canvas.replace_tile_at(
+                                1,
+                                currow,
+                                x2_coord,
+                                tile_image,
+                                x_coord,
+                                y_coord,
                             )
                             self.tiles_meta[currow][curcol] = block
                         else:
@@ -3362,27 +3156,20 @@ class LevelsTab(Tab):
                                 tile_image.height(),
                                 tile_name,
                             )
-                            self.tiles[currow][curcol] = self.canvas.create_image(
-                                curcol * self.mag - x_coord,
-                                currow * self.mag - y_coord,
-                                image=tile_image,
-                                anchor="nw",
-                            )
-                            _coords = (
-                                curcol * self.mag,
-                                currow * self.mag,
-                                curcol * self.mag + 50,
-                                currow * self.mag + 50,
+                            self.vanilla_editor_canvas.replace_tile_at(
+                                0,
+                                currow,
+                                curcol,
+                                tile_image,
+                                x_coord,
+                                y_coord,
                             )
                             self.tiles_meta[currow][curcol] = block
                     curcol = curcol + 1
         else:
-            self.canvas.delete("all")
-            self.canvas_dual.delete("all")
-            self.canvas.grid_remove()
-            self.canvas_dual.grid_remove()
-            self.foreground_label.grid_remove()
-            self.background_label.grid_remove()
+            self.vanilla_editor_canvas.clear()
+            self.vanilla_editor_canvas.hide_canvas(1, True)
+            self.vanilla_editor_canvas.show_intro()
         self.button_clear["state"] = tk.NORMAL
 
     def read_lvl_file(self, editor_type, lvl):
