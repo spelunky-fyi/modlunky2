@@ -14,7 +14,7 @@ class BIOME():
     EGGPLANT_WORLD = "eggplant"
     SURFACE = "surface"
 
-class Biomes():
+class Biomes:
     @staticmethod
     def get_biome_for_level(lvl): # cave by default, depicts what background and sprites will be loaded
         if (

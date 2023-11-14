@@ -1,8 +1,15 @@
 from collections import namedtuple
+from enum import Enum
 import re
 
 RoomCoords = namedtuple("RoomCoords", ["x", "y"])
 MatchedSetroom = namedtuple("MatchedSetroom", ["name", "coords"])
+
+class VANILLA_SETROOM_TYPE(Enum):
+    NONE = "none"
+    FRONT = "front"
+    BACK = "back"
+    DUAL = "dual"
 
 class BaseTemplate():
     setroom = "setroom{y}-{x}"
