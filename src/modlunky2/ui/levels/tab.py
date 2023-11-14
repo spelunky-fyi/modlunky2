@@ -974,12 +974,6 @@ class LevelsTab(Tab):
             self.show_intro_full()
             self.vanilla_editor_canvas.show_intro()
             self.vanilla_editor_canvas.clear()
-            # self.canvas.delete("all")
-            # self.canvas_dual.delete("all")
-            # self.canvas.grid_remove()
-            # self.canvas_dual.grid_remove()
-            # self.foreground_label.grid_remove()
-            # self.background_label.grid_remove()
             self.tile_palette_map = {}
             self.tile_palette_ref_in_use = None
             self.tile_palette_suggestions = None
