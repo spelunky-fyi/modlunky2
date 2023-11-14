@@ -111,35 +111,25 @@ class LevelsTab(Tab):
         self.lvls_path = None
         self.save_needed = False
         self.last_selected_file = None
-        self.cur_lvl_bg_path = None
-        self.im_output = None
-        self.lvl_bg = None
-        self.lvl_bg_path = None
-        self.lvl_bgbg = None
-        self.lvl_bgbg_path = None
         self.lvl_width = None
         self.lvl_height = None
-        self.rows = None
-        self.cols = None
-        self.tiles = None
         self.tiles_meta = None
-        self.im_output_dual = None
+
         self.palette_panel = None
         self.palette_panel_custom = None
         self.options_panel = None
+
         self.tile_palette_ref_in_use = None
         self.tile_palette_map = {}
         self.tile_palette_suggestions = None
         self.lvl = None
         self.lvl_biome = None
-        self.node = None
         self.sister_locations = None
         self.icon_add = None
         self.icon_folder = None
         self.loaded_pack = None
         self.last_selected_tab = None
         self.list_preview_tiles_ref = None
-        self.full_size = None
         self.current_level_custom = None
         self.mag_full = None
         self.custom_editor_foreground_tile_codes = None
@@ -262,7 +252,6 @@ class LevelsTab(Tab):
         self.modlunky_ui.forget_console()
         self.save_needed = False
         self.last_selected_file = None
-        self.tiles = None
         self.tiles_meta = None
         self.warm_welcome.grid_remove()
 
@@ -1529,57 +1518,6 @@ class LevelsTab(Tab):
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
 
-    def _on_mousewheel(self, event, hbar, vbar, canvas):
-        scroll_dir = None
-        if event.num == 5 or event.delta == -120:
-            scroll_dir = 1
-        elif event.num == 4 or event.delta == 120:
-            scroll_dir = -1
-
-        if scroll_dir is None:
-            return
-
-        if event.state & (1 << 0):  # Shift / Horizontal Scroll
-            self._scroll_horizontal(scroll_dir, hbar, canvas)
-        else:
-            self._scroll_vertical(scroll_dir, vbar, canvas)
-
-    def _scroll_vertical(self, scroll_dir, scrollbar, canvas):
-        # If the scrollbar is max size don't bother scrolling
-        if scrollbar.get() == (0.0, 1.0):
-            return
-
-        canvas.yview_scroll(scroll_dir, "units")
-
-    def _scroll_horizontal(self, scroll_dir, scrollbar, canvas):
-        # If the scrollbar is max size don't bother scrolling
-        if scrollbar.get() == (0.0, 1.0):
-            return
-
-        canvas.xview_scroll(scroll_dir, "units")
-
-    def _bind_to_mousewheel(self, _event, hbar, vbar, canvas):
-        if is_windows():
-            canvas.bind_all(
-                "<MouseWheel>",
-                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
-            )
-        else:
-            canvas.bind_all(
-                "<Button-4>",
-                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
-            )
-            canvas.bind_all(
-                "<Button-5>",
-                lambda event: self._on_mousewheel(event, hbar, vbar, canvas),
-            )
-
-    def _unbind_from_mousewheel(self, _event, canvas):
-        if is_windows():
-            canvas.unbind_all("<MouseWheel>")
-        else:
-            canvas.unbind_all("<Button-4>")
-            canvas.unbind_all("<Button-5>")
 
     def log_codes_left(self):
         codes = ""
@@ -2745,13 +2683,13 @@ class LevelsTab(Tab):
         self.full_level_preview_canvas.clear()
         self.full_level_preview_canvas.set_zoom(self.mag_full)
 
-        self.full_size = None
+        full_size = None
         if len(self.tree_files.selection()) > 0:
-            self.full_size = self.rules_tab.get_full_size()
-            if self.full_size is not None:
-                logger.debug("Size found: %s", self.full_size)
-                level_height = int(self.full_size.split(", ")[1])
-                level_width = int(self.full_size.split(", ")[0])
+            full_size = self.rules_tab.get_full_size()
+            if full_size is not None:
+                logger.debug("Size found: %s", full_size)
+                level_height = int(full_size.split(", ")[1])
+                level_width = int(full_size.split(", ")[0])
             self.full_level_preview_canvas.configure_size(level_width, level_height)
             self.full_level_preview_canvas.draw_background(self.lvl_biome)
             self.full_level_preview_canvas.draw_grid()
@@ -2899,133 +2837,6 @@ class LevelsTab(Tab):
     def update_hide_room_grid(self, hide_grid):
         self.custom_editor_canvas.hide_room_lines(hide_grid)
 
-    def _draw_grid(self, cols, rows, canvas, dual):
-        # resizes canvas for grids
-        canvas["width"] = (self.mag * cols) - 3
-        canvas["height"] = (self.mag * rows) - 3
-
-        if not dual:  # applies normal bg image settings to main grid
-            self.cur_lvl_bg_path = (
-                self.lvl_bg_path
-            )  # store as a temp dif variable so it can switch back to the normal bg when needed
-
-            file_id = self.tree_files.selection()[0]
-            # checks which room is being opened to see if a special bg is needed
-            selected_room_template_name = self.level_list_panel.get_selected_room_template_name()
-            factor = 1.0  # keeps image the same
-            if self.lvl_bg_path == self.textures_dir / "bg_ice.png" and str(
-                selected_room_template_name
-            ).startswith(
-                "setroom1"
-            ):  # mothership rooms are setroom10-1 to setroom13-2
-                self.cur_lvl_bg_path = self.textures_dir / "bg_mothership.png"
-            elif str(self.tree_files.item(file_id, option="text")).startswith(
-                "blackmark"
-            ):
-                factor = 2.5  # brightens the image for black market
-            elif (
-                str(self.tree_files.item(file_id, option="text")).startswith("generic")
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "cosmic"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith("duat")
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "palace"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "ending_hard"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "challenge_m"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "challenge_st"
-                )
-            ):
-                factor = 0  # darkens the image for cosmic ocean and duat and others
-
-            image = Image.open(self.cur_lvl_bg_path).convert("RGBA")
-            image = image.resize(
-                (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
-            )  ## The (250, 250) is (height, width)
-            enhancer = ImageEnhance.Brightness(image)
-
-            self.im_output = enhancer.enhance(factor)
-
-            self.lvl_bg = ImageTk.PhotoImage(self.im_output)
-            canvas.create_image(0, 0, image=self.lvl_bg, anchor="nw")
-        else:  # applies special image settings if working with dual grid
-            self.lvl_bgbg_path = (
-                self.lvl_bg_path
-            )  # Creates seperate image path variable for bgbg image
-
-            file_id = self.tree_files.selection()[0]
-            # checks which room is being opened to see if a special bg is needed
-            selected_room_template_name = self.level_list_panel.get_selected_room_template_name()
-            factor = 0.6  # darkens the image
-
-            if self.lvl_bg_path == self.textures_dir / "bg_ice.png":
-                if str(selected_room_template_name).startswith(
-                    "mothership"
-                ):
-                    self.lvl_bgbg_path = self.textures_dir / "bg_mothership.png"
-                    factor = 1.0  # keeps image the same
-                else:
-                    factor = 2.5  # brightens the image for ices caves
-            elif str(self.tree_files.item(file_id, option="text")).startswith(
-                "blackmark"
-            ):
-                factor = 2.5  # brightens the image for black market
-            elif (
-                str(self.tree_files.item(file_id, option="text")).startswith("generic")
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "cosmic"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith("duat")
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "palace"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "ending_hard"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "challenge_m"
-                )
-                or str(self.tree_files.item(file_id, option="text")).startswith(
-                    "challenge_st"
-                )
-            ):
-                factor = 0  # darkens the image for cosmic ocean and duat and others
-
-            image_dual = Image.open(self.lvl_bgbg_path).convert("RGBA")
-            image_dual = image_dual.resize(
-                (int(canvas["width"]), int(canvas["height"])), Image.BILINEAR
-            )  ## The (250, 250) is (height, width)
-            enhancer = ImageEnhance.Brightness(image_dual)
-
-            self.im_output_dual = enhancer.enhance(factor)
-
-            self.lvl_bgbg = ImageTk.PhotoImage(self.im_output_dual)
-            canvas.create_image(0, 0, image=self.lvl_bgbg, anchor="nw")
-
-        # finishes by drawing grid on top
-        for i in range(0, cols + 2):
-            canvas.create_line(
-                (i) * self.mag,
-                0,
-                (i) * self.mag,
-                (rows) * self.mag,
-                fill="#F0F0F0",
-            )
-        for i in range(0, rows):
-            canvas.create_line(
-                0,
-                (i) * self.mag,
-                self.mag * (cols + 2),
-                (i) * self.mag,
-                fill="#F0F0F0",
-            )
-
     def room_select(self, _event):  # Loads room when click if not parent node
         dual_mode = False
         selected_room = self.level_list_panel.get_selected_room()
@@ -3092,13 +2903,13 @@ class LevelsTab(Tab):
                 self.var_liquid.set(0)
 
 
-            self.rows = len(current_room_tiles)
-            self.cols = len(str(current_room_tiles[0]))
+            rows = len(current_room_tiles)
+            cols = len(str(current_room_tiles[0]))
 
-            roomwidth = int(math.ceil(self.cols / 10))
+            roomwidth = int(math.ceil(cols / 10))
             if dual_mode:
-                roomwidth = int(math.ceil(((self.cols - 1) / 2) / 10))
-            self.vanilla_editor_canvas.configure_size(roomwidth, int(math.ceil(self.rows / 8)))
+                roomwidth = int(math.ceil(((cols - 1) / 2) / 10))
+            self.vanilla_editor_canvas.configure_size(roomwidth, int(math.ceil(rows / 8)))
 
             # Draw lines to fill the size of the level.
             self.vanilla_editor_canvas.draw_background(self.lvl_biome)
@@ -3107,11 +2918,8 @@ class LevelsTab(Tab):
             self.vanilla_editor_canvas.hide_canvas(1, not dual_mode)
 
             # Create a grid of None to store the references to the tiles
-            self.tiles = [
-                [None for _ in range(self.cols)] for _ in range(self.rows)
-            ]  # tile image displays
             self.tiles_meta = [
-                [None for _ in range(self.cols)] for _ in range(self.rows)
+                [None for _ in range(cols)] for _ in range(rows)
             ]  # meta for tile
 
             currow = -1
@@ -3136,8 +2944,8 @@ class LevelsTab(Tab):
                         else:
                             # There's a missing tile id somehow
                             logger.debug("%s Not Found", block)
-                        if dual_mode and curcol > int((self.cols - 1) / 2):
-                            x2_coord = int(curcol - ((self.cols - 1) / 2) - 1)
+                        if dual_mode and curcol > int((cols - 1) / 2):
+                            x2_coord = int(curcol - ((cols - 1) / 2) - 1)
                             x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
                                 tile_image.width(),
                                 tile_image.height(),
@@ -3195,7 +3003,6 @@ class LevelsTab(Tab):
         self.lvl = lvl
 
         self.lvl_biome = Biomes.get_biome_for_level(lvl)
-        self.lvl_bg_path = self.textures_dir / TextureUtil.get_bg_texture_file_name(lvl)
 
         logger.debug("searching %s", self.lvls_path / lvl)
         if Path(self.lvls_path / lvl).exists():
@@ -3283,8 +3090,6 @@ class LevelsTab(Tab):
                         self.tile_palette_ref_in_use.append(tilecode_item)
                         self.tile_palette_map[need[0]] = tilecode_item
         self.populate_tilecode_palette(self.palette_panel)
-
-        self.full_size = None
 
         self.rules_tab.load_level_settings(level.level_settings)
         self.rules_tab.load_monster_chances(level.monster_chances)
