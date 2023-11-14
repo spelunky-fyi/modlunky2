@@ -5,11 +5,12 @@ from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
 from modlunky2.utils import is_windows
 
 class MultiCanvasContainer(tk.Frame):
-    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, on_click=None, on_shiftclick=None, intro_text=None, *args, **kwargs):
+    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, on_click=None, on_shiftclick=None, intro_text=None, side_by_side = False, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         self.on_click = on_click
         self.on_shiftclick = on_shiftclick
+        self.side_by_side = side_by_side
 
         self.columnconfigure(1, weight=1)
         self.rowconfigure(1, weight=1)
@@ -34,8 +35,10 @@ class MultiCanvasContainer(tk.Frame):
 
         scrollable_frame.columnconfigure(0, minsize=int(int(width) / 2))
         scrollable_frame.columnconfigure(1, weight=1)
-        scrollable_frame.columnconfigure(2, minsize=50)
-        scrollable_frame.columnconfigure(4, minsize=int(int(width) / 2))
+        canvas_gaps = side_by_side and len(canvas_titles) - 1 or 1
+        for column in range(canvas_gaps):
+            scrollable_frame.columnconfigure((column+1)*2, minsize=50)
+        scrollable_frame.columnconfigure((canvas_gaps+1)*2, minsize=int(int(width) / 2))
         scrollable_frame.rowconfigure(0, minsize=int(int(height) / 2))
         scrollable_frame.rowconfigure(1, weight=1)
         scrollable_frame.rowconfigure(2, minsize=100)
@@ -73,11 +76,16 @@ class MultiCanvasContainer(tk.Frame):
 
         switches_container = tk.Frame(self, bg="#343434")
         switches_container.grid(row=0, column=0,sticky="nw")
+        self.switches_container = switches_container
 
         self.canvases = []
+        self.labels = []
+        self.radio_buttons = []
+        self.hidden_canvases = []
 
         # Buttons to switch the active layer.
         switch_variable = tk.StringVar()
+        self.switch_variable = switch_variable
 
         def switch_layer():
             nonlocal switch_variable
@@ -108,22 +116,35 @@ class MultiCanvasContainer(tk.Frame):
                 )),
                 bg="#343434",
             )
-            new_canvas.grid(row=1, column=1)
-            if index != 0:
+            new_canvas.grid(row=1, column=(side_by_side and (index*2) or 0) + 1)
+            if index != 0 and not side_by_side:
                 new_canvas.grid_remove()
             self.canvases.append(new_canvas)
 
-            switch_button = tk.Radiobutton(
-                switches_container,
-                text=canvas_title,
-                variable=switch_variable,
-                indicatoron=False,
-                value=str(index),
-                width=max(len(canvas_title), 10),
-                command=switch_layer,
-            )
+            if len(canvas_titles) > 1:
+                if side_by_side:
+                    label = tk.Label(
+                        scrollable_frame,
+                        text=canvas_title,
+                        fg="white",
+                        bg="#343434",
+                    )
+                    label.grid(row=2, column=index*2+1, sticky="news")
+                    # label.grid_remove()
+                    self.labels.append(label)
+                else:
+                    switch_button = tk.Radiobutton(
+                        switches_container,
+                        text=canvas_title,
+                        variable=switch_variable,
+                        indicatoron=False,
+                        value=str(index),
+                        width=max(len(canvas_title), 10),
+                        command=switch_layer,
+                    )
+                    self.radio_buttons.append(switch_button)
 
-            switch_button.grid(column=index, row=0, sticky="new")
+                    switch_button.grid(column=index, row=0, sticky="new")
 
         switch_variable.set("0")
 
@@ -238,3 +259,49 @@ class MultiCanvasContainer(tk.Frame):
     def hide_intro(self):
         if self.intro:
             self.intro.grid_remove()
+
+    def hide_canvas(self, canvas_index, hide):
+        if hide:
+            if canvas_index in self.hidden_canvases:
+                return
+            self.hidden_canvases.append(canvas_index)
+            selected_canvas = int(self.switch_variable.get())
+
+            self.canvases[canvas_index].grid_remove()
+            if self.side_by_side:
+                self.labels[canvas_index].grid_remove()
+
+                if len(self.hidden_canvases) >= len(self.canvases) - 1:
+                    for label in self.labels:
+                        label.grid_remove()
+            else:
+                self.radio_buttons[canvas_index].grid_remove()
+                if canvas_index == selected_canvas:
+                    for ind, canv in enumerate(self.canvases):
+                        if ind != canvas_index and not ind in self.hidden_canvases:
+                            canv.grid()
+                            self.switch_variable.set(str(ind))
+                            break
+                if len(self.hidden_canvases) >= len(self.canvases) - 1:
+                    self.switches_container.grid_remove()
+
+        elif self.side_by_side:
+            if not canvas_index in self.hidden_canvases:
+                return
+            self.hidden_canvases.remove(canvas_index)
+            self.canvases[canvas_index].grid()
+            self.labels[canvas_index].grid()
+            if len(self.hidden_canvases) < len(self.canvases) - 1:
+                for index, label in enumerate(self.labels):
+                    if not index in self.hidden_canvases:
+                        label.grid()
+        else:
+            if not canvas_index in self.hidden_canvases:
+                return
+            self.hidden_canvases.remove(canvas_index)
+            if len(self.canvases) - len(self.hidden_canvases) == 1:
+                self.canvaes[canvas_index].grid()
+
+            self.radio_buttons[canvas_index].grid()
+            if len(self.hidden_canvases) < len(self.canvases) - 1:
+                self.switches_container.grid()
