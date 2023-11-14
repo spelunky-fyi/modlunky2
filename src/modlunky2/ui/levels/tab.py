@@ -743,8 +743,7 @@ class LevelsTab(Tab):
                 column,
                 is_primary,
             ),
-            None,
-            # lambda index, row, column, is_primary: canvas_shiftclick(),
+            self.canvas_shiftclick_vanilla,
             "Select a room to begin editing",
             side_by_side=True,
         )
@@ -913,6 +912,15 @@ class LevelsTab(Tab):
         self.tiles_meta[row][col] = tile_code
         self.remember_changes()
 
+    def canvas_shiftclick_vanilla(self, canvas_index, row, column, is_primary):
+        col = column
+        if canvas_index == 1:
+            col = col + (len(self.tiles_meta[row]) + 1) // 2
+
+        tile_code = self.tiles_meta[row][col]
+        tile = self.tile_palette_map[tile_code]
+
+        self.palette_panel.select_tile(tile[0], tile[2], is_primary)
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
