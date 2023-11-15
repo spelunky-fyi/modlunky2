@@ -53,6 +53,7 @@ from modlunky2.ui.levels.shared.setrooms import BaseTemplate, Setroom
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
+from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import LevelDependencies
@@ -161,14 +162,7 @@ class LevelsTab(Tab):
         self.button_hide_tree = None
         self.button_replace = None
         self.button_clear = None
-        self.var_ignore = None
-        self.var_flip = None
-        self.var_only_flip = None
-        self.var_dual = None
-        self.var_rare = None
-        self.var_hard = None
-        self.var_liquid = None
-        self.var_purge = None
+        self.level_settings_bar = None
         self.checkbox_ignore = None
         self.checkbox_flip = None
         self.checkbox_only_flip = None
@@ -641,86 +635,8 @@ class LevelsTab(Tab):
         )
         self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
-        self.var_ignore = tk.IntVar()
-        self.var_flip = tk.IntVar()
-        self.var_only_flip = tk.IntVar()
-        self.var_dual = tk.IntVar()
-        self.var_rare = tk.IntVar()
-        self.var_hard = tk.IntVar()
-        self.var_liquid = tk.IntVar()
-        self.var_purge = tk.IntVar()
-        self.checkbox_ignore = ttk.Checkbutton(
-            self.editor_tab,
-            text="Ignore",
-            var=self.var_ignore,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_flip = ttk.Checkbutton(
-            self.editor_tab,
-            text="Flip",
-            var=self.var_flip,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_only_flip = ttk.Checkbutton(
-            self.editor_tab,
-            text="Only Flip",
-            var=self.var_only_flip,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_rare = ttk.Checkbutton(
-            self.editor_tab,
-            text="Rare",
-            var=self.var_rare,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_hard = ttk.Checkbutton(
-            self.editor_tab,
-            text="Hard",
-            var=self.var_hard,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_liquid = ttk.Checkbutton(
-            self.editor_tab,
-            text="Optimize Liquids",
-            var=self.var_liquid,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_purge = ttk.Checkbutton(
-            self.editor_tab,
-            text="Purge",
-            var=self.var_purge,
-            onvalue=1,
-            offvalue=0,
-            command=self.remember_changes,
-        )
-        self.checkbox_dual = ttk.Checkbutton(
-            self.editor_tab,
-            text="Dual",
-            var=self.var_dual,
-            onvalue=1,
-            offvalue=0,
-            command=self.dual_toggle,
-        )
-        self.checkbox_dual.grid(row=4, column=1, sticky="w")
-        self.checkbox_ignore.grid(row=4, column=2, sticky="w")
-        self.checkbox_purge.grid(row=4, column=3, sticky="w")
-        self.checkbox_rare.grid(row=4, column=4, sticky="w")
-        self.checkbox_hard.grid(row=4, column=5, sticky="w")
-        self.checkbox_flip.grid(row=4, column=6, sticky="w")
-        self.checkbox_only_flip.grid(row=4, column=7, sticky="w")
-        self.checkbox_liquid.grid(row=4, column=8, sticky="w")
+        self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.remember_changes, self.dual_toggle)
+        self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
 
         # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
         self.texture_images = []
@@ -1199,7 +1115,7 @@ class LevelsTab(Tab):
         if current_room:
             new_room_data = current_room.rows
 
-            if self.var_dual.get() == 1:  # converts room into dual
+            if self.level_settings_bar.dual():  # converts room into dual
                 new_room_data = make_dual(current_room.rows)
             else:  # converts room into non-dual
                 msg_box = tk.messagebox.askquestion(
@@ -1338,35 +1254,35 @@ class LevelsTab(Tab):
         current_room = self.level_list_panel.get_selected_room()
         if current_room:
             new_room_data = ""
-            if int(self.var_dual.get()) == 1:
+            if self.level_settings_bar.dual():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!dual"
-            if int(self.var_purge.get()) == 1:
+            if self.level_settings_bar.purge():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!purge"
-            if int(self.var_flip.get()) == 1:
+            if self.level_settings_bar.flip():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!flip"
-            if int(self.var_only_flip.get()) == 1:
+            if self.level_settings_bar.only_flip():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!onlyflip"
-            if int(self.var_rare.get()) == 1:
+            if self.level_settings_bar.rare():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!rare"
-            if int(self.var_hard.get()) == 1:
+            if self.level_settings_bar.hard():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!hard"
-            if int(self.var_liquid.get()) == 1:
+            if self.level_settings_bar.liquid():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!liquid"
-            if int(self.var_ignore.get()) == 1:
+            if self.level_settings_bar.ignore():
                 if new_room_data != "":
                     new_room_data += "\n"
                 new_room_data += r"\!ignore"
@@ -1902,48 +1818,16 @@ class LevelsTab(Tab):
                         if str(char) == " ":
                             dual_mode = True
 
-            if r"\!dual" in current_settings:
-                dual_mode = True
-                self.var_dual.set(1)
-            else:
-                dual_mode = False
-                self.var_dual.set(0)
 
-            if r"\!flip" in current_settings:
-                self.var_flip.set(1)
-            else:
-                self.var_flip.set(0)
-
-            if r"\!purge" in current_settings:
-                self.var_purge.set(1)
-            else:
-                self.var_purge.set(0)
-
-            if r"\!onlyflip" in current_settings:
-                self.var_only_flip.set(1)
-            else:
-                self.var_only_flip.set(0)
-
-            if r"\!ignore" in current_settings:
-                self.var_ignore.set(1)
-            else:
-                self.var_ignore.set(0)
-
-            if r"\!rare" in current_settings:
-                self.var_rare.set(1)
-            else:
-                self.var_rare.set(0)
-
-            if r"\!hard" in current_settings:
-                self.var_hard.set(1)
-            else:
-                self.var_hard.set(0)
-
-            if r"\!liquid" in current_settings:
-                self.var_liquid.set(1)
-            else:
-                self.var_liquid.set(0)
-
+            dual_mode = r"\!dual" in current_settings
+            self.level_settings_bar.set_dual(dual_mode)
+            self.level_settings_bar.set_flip(r"\!flip" in current_settings)
+            self.level_settings_bar.set_purge(r"\!purge" in current_settings)
+            self.level_settings_bar.set_only_flip(r"\!onlyflip" in current_settings)
+            self.level_settings_bar.set_ignore(r"\!ignore" in current_settings)
+            self.level_settings_bar.set_rare(r"\!rare" in current_settings)
+            self.level_settings_bar.set_hard(r"\!hard" in current_settings)
+            self.level_settings_bar.set_liquid(r"\!liquid" in current_settings)
 
             rows = len(current_room_tiles)
             cols = len(str(current_room_tiles[0]))
