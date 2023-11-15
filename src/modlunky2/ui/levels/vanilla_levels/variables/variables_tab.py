@@ -8,7 +8,17 @@ from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import Leve
 logger = logging.getLogger(__name__)
 
 class VariablesTab(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, lvls_path, extracts_path, request_save, on_conflicts_resolved, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        modlunky_config: Config,
+        lvls_path,
+        extracts_path,
+        request_save,
+        on_conflicts_resolved,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
 

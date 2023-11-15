@@ -185,6 +185,9 @@ class DependenciesTree(ttk.Treeview):
                                         template_count = template_count + 1
                     level[0].tile_codes = tile_codes_new
 
+                    if not self.lvls_path:
+                        raise RuntimeError("self.lvls_path not configured.")
+
                     path = Path(self.lvls_path / str(level[1][2].split(" ")[0]))
                     with Path(path).open("w", encoding="cp1252") as handle:
                         level[0].write(handle)
