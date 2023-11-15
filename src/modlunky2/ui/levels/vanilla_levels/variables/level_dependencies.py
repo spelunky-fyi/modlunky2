@@ -44,6 +44,9 @@ class LevelDependencies():
     def sister_locations_for_level(lvl_name, lvls_path, extracts_path):
         levels = []
 
+        if not lvls_path:
+            return []
+
         def append_level(item):
             # self.depend_order_label["text"] += " -> " + item
             if os.path.exists(Path(lvls_path / item)):
