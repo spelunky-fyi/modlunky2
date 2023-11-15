@@ -95,9 +95,6 @@ class LevelsTab(Tab):
         self.level_list_panel = LevelListPanel(self, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
 
         self.last_selected_room = None
-        # TODO: Get actual resolution
-        self.screen_width = 1290
-        self.screen_height = 720
         self.tab_control = tab_control
         self.install_dir = modlunky_config.install_dir
         self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
@@ -132,7 +129,6 @@ class LevelsTab(Tab):
         self.last_selected_tab = None
         self.list_preview_tiles_ref = None
         self.current_level_custom = None
-        self.mag_full = None
         self.custom_editor_foreground_tile_codes = None
         self.custom_editor_background_tile_codes = None
         self.editor_tab_control = None
@@ -163,18 +159,6 @@ class LevelsTab(Tab):
         self.button_replace = None
         self.button_clear = None
         self.level_settings_bar = None
-        self.checkbox_ignore = None
-        self.checkbox_flip = None
-        self.checkbox_only_flip = None
-        self.checkbox_rare = None
-        self.checkbox_hard = None
-        self.checkbox_liquid = None
-        self.checkbox_purge = None
-        self.checkbox_dual = None
-        self.texture_images = None
-        self.uni_tile_code_list = None
-        self.tile_palette_ref = None
-        self.tile_images = None
         self.current_level_path_custom = None
 
         self.usable_codes = None
@@ -637,12 +621,6 @@ class LevelsTab(Tab):
 
         self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.remember_changes, self.dual_toggle)
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
-
-        # the tilecodes are in the same order as the tiles in the image(50x50, left to right)
-        self.texture_images = []
-
-        self.uni_tile_code_list = []
-        self.tile_palette_ref = []
 
         self.tree_files.bind(
             "<ButtonRelease-1>",
@@ -1637,9 +1615,9 @@ class LevelsTab(Tab):
         level_height = 8
         level_width = 8
 
-        self.mag_full = int(self.slider_zoom_full.get() / 2)
+        mag_full = int(self.slider_zoom_full.get() / 2)
         self.full_level_preview_canvas.clear()
-        self.full_level_preview_canvas.set_zoom(self.mag_full)
+        self.full_level_preview_canvas.set_zoom(mag_full)
 
         full_size = None
         if len(self.tree_files.selection()) > 0:
@@ -1746,7 +1724,7 @@ class LevelsTab(Tab):
                                         tile_image = ImageTk.PhotoImage(
                                             ImageTk.getimage(tiles[-1][1])
                                             .resize(
-                                                (self.mag_full, self.mag_full),
+                                                (mag_full, mag_full),
                                                 Image.Resampling.LANCZOS,
                                             )
                                             .convert("RGBA")
