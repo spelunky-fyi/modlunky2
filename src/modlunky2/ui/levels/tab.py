@@ -21,7 +21,6 @@ from shutil import copyfile
 from tkinter import ttk
 from typing import Optional
 from typing_extensions import Self
-
 import pyperclip
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from serde.de import deserialize
@@ -39,6 +38,7 @@ from modlunky2.levels.level_templates import (
 )
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, ShortCode
 from modlunky2.sprites import SpelunkySpriteFetcher
+from modlunky2.ui.levels.custom_levels.custom_level_editor import CustomLevelEditor
 from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.custom_levels.save_level import save_level as save_custom_level
@@ -92,8 +92,6 @@ class LevelsTab(Tab):
         self._sprite_fetcher = None
         self.texture_fetcher = TextureUtil(None)
 
-        self.custom_editor_zoom_level = 30
-
         # Init Attributes
         self.lvls_path = None
         self.save_needed = False
@@ -102,8 +100,6 @@ class LevelsTab(Tab):
         self.tiles_meta = None
 
         self.palette_panel = None
-        self.palette_panel_custom = None
-        self.options_panel = None
 
         self.tile_palette_ref_in_use = None
         self.tile_palette_map = {}
@@ -117,16 +113,10 @@ class LevelsTab(Tab):
         self.custom_editor_background_tile_codes = None
         self.editor_tab_control = None
         self.single_room_editor_tab = None
-        self.full_level_editor_tab = None
+        self.custom_level_editor_tab = None
         self.last_selected_editor_tab = None
 
-        self.button_back_custom = None
-        self.button_save_custom = None
-        self.custom_editor_container = None
-        self.custom_editor_canvas = None
-        self.custom_editor_side_panel = None
         self.files_tree = None
-        self.files_tree_custom = None
         self.rules_tab = None
         self.editor_tab = None
         self.preview_tab = None
@@ -142,7 +132,7 @@ class LevelsTab(Tab):
         self.button_replace = None
         self.button_clear = None
         self.level_settings_bar = None
-        self.current_level_path_custom = None
+        # self.current_level_path_custom = None
 
         self.usable_codes = None
 
@@ -206,39 +196,51 @@ class LevelsTab(Tab):
         )
 
         self.single_room_editor_tab = ttk.Frame(self.editor_tab_control)
-        self.full_level_editor_tab = ttk.Frame(self.editor_tab_control)
+        self.custom_level_editor_tab = CustomLevelEditor(
+            self.editor_tab_control,
+            self.modlunky_config,
+            self.texture_fetcher,
+            self.packs_path,
+            self.extracts_path,
+            self.standalone,
+            self.go_back,
+        )
         self.last_selected_editor_tab = self.single_room_editor_tab
 
         self.editor_tab_control.add(
             self.single_room_editor_tab, text="Vanilla room editor"
         )
         self.editor_tab_control.add(
-            self.full_level_editor_tab, text="Custom level editor"
+            self.custom_level_editor_tab, text="Custom level editor"
         )
 
         self.load_single_room_editor(self.single_room_editor_tab)
-        self.load_full_level_editor(self.full_level_editor_tab)
 
         def tab_selected(event):
             if event.widget.select() == self.last_selected_editor_tab:
                 return
-            if self.save_needed:
+            save_needed = self.save_needed
+            if self.last_selected_editor_tab == self.custom_level_editor_tab:
+                self.save_needed = self.custom_level_editor_tab.save_needed
+            if save_needed:
                 msg_box = tk.messagebox.askquestion(
                     "Continue?",
                     "You have unsaved changes.\nContinue without saving?",
                     icon="warning",
                 )
                 if msg_box == "yes":
-                    self.save_needed = False
-                    self.button_save["state"] = tk.DISABLED
-                    self.button_save_custom["state"] = tk.DISABLED
+                    if self.last_selected_editor_tab == self.custom_level_editor_tab:
+                        self.last_selected_editor_tab.reset_save_button()
+                    else:
+                        self.save_needed = False
+                        self.button_save["state"] = tk.DISABLED
+                        self.button_save_custom["state"] = tk.DISABLED
                     logger.debug("Switched tabs without saving.")
                 else:
                     self.editor_tab_control.select(self.last_selected_editor_tab)
                     return
             self.reset()
             self.load_packs(self.files_tree)
-            self.load_packs(self.files_tree_custom)
             self.last_selected_editor_tab = event.widget.select()
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
@@ -249,139 +251,7 @@ class LevelsTab(Tab):
 
         self.editor_tab_control.bind("<<NotebookTabChanged>>", tab_selected)
         if self.modlunky_config.level_editor_tab == 1:
-            self.editor_tab_control.select(self.full_level_editor_tab)
-
-    def load_full_level_editor(self, tab):
-        tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
-        tab.columnconfigure(0, weight=0)
-        tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
-        tab.rowconfigure(0, weight=1)
-
-        self.files_tree_custom = FilesTree(
-            tab,
-            self.modlunky_config,
-            self.packs_path,
-            self.extracts_path,
-            PACK_LIST_TYPE.CUSTOM_LEVELS,
-            self.is_save_required,
-            self.reset_save_buttons,
-            self.update_lvls_path,
-            lambda lvl: self.on_select_file(
-                PACK_LIST_TYPE.CUSTOM_LEVELS,
-                lvl,
-            ),
-        )
-        self.files_tree_custom.grid(row=0, column=0, rowspan=1, sticky="news")
-        self.load_packs(self.files_tree_custom)
-
-        # Button below the file list to exit the editor.
-        self.button_back_custom = tk.Button(
-            tab, text="Exit Editor", bg="black", fg="white", command=self.go_back
-        )
-        if not self.standalone:
-            self.button_back_custom.grid(row=1, column=0, sticky="nswe")
-
-        # Button below the file list to save changes to the current file.
-        self.button_save_custom = tk.Button(
-            tab, text="Save", bg="Blue", fg="white", command=self.save_changes_full
-        )
-        self.button_save_custom.grid(row=2, column=0, sticky="nswe")
-        self.button_save_custom["state"] = tk.DISABLED
-
-        # View that contains the canvases to edit the level along with some controls.
-        editor_view = tk.Frame(tab)
-        editor_view.grid(row=0, column=1, rowspan=3, sticky="nswe")
-        self.custom_editor_container = editor_view
-
-        editor_view.columnconfigure(0, weight=1)
-        editor_view.columnconfigure(2, minsize=0)
-        editor_view.columnconfigure(1, minsize=50)
-        editor_view.rowconfigure(1, weight=1)
-
-        def tile_codes_at(index):
-            if index == 0:
-                return self.custom_editor_foreground_tile_codes
-            else:
-                return self.custom_editor_background_tile_codes
-
-        self.custom_editor_canvas = MultiCanvasContainer(
-            editor_view,
-            self.textures_dir,
-            ["Foreground", "Background"],
-            self.custom_editor_zoom_level,
-            lambda index, row, column, is_primary: self.canvas_click_custom(
-                self.custom_editor_canvas,
-                index,
-                self.custom_editor_zoom_level,
-                row,
-                column,
-                is_primary,
-                tile_codes_at(index),
-            ),
-            lambda index, row, column, is_primary: self.canvas_shiftclick_custom(
-                row,
-                column,
-                is_primary,
-                tile_codes_at(index),
-            ),
-            "Select a level file to begin editing",
-        )
-        self.custom_editor_canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
-
-        # Side panel with the tile palette and level settings.
-        self.custom_editor_side_panel = tk.Frame(tab)
-        self.custom_editor_side_panel.grid(column=2, row=0, rowspan=3, sticky="nswe")
-        self.custom_editor_side_panel.rowconfigure(0, weight=1)
-        self.custom_editor_side_panel.columnconfigure(0, weight=1)
-
-        # Allow hiding the side panel so more level can be seen.
-        side_panel_hidden = False
-        side_panel_hide_button = tk.Button(editor_view, text=">>")
-
-        def toggle_panel_hidden():
-            nonlocal side_panel_hidden
-            side_panel_hidden = not side_panel_hidden
-            if side_panel_hidden:
-                self.custom_editor_side_panel.grid_remove()
-                side_panel_hide_button.configure(text="<<")
-            else:
-                self.custom_editor_side_panel.grid()
-                side_panel_hide_button.configure(text=">>")
-
-        side_panel_hide_button.configure(
-            command=toggle_panel_hidden,
-        )
-        side_panel_hide_button.grid(column=1, row=0, sticky="nwe")
-
-        side_panel_tab_control = ttk.Notebook(self.custom_editor_side_panel)
-        side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
-
-        self.palette_panel_custom = PalettePanel(
-            side_panel_tab_control,
-            self.delete_tilecode_custom,
-            lambda tile, percent, alt_tile: self.add_tilecode(
-                tile,
-                percent,
-                alt_tile,
-                self.palette_panel_custom,
-                self.custom_editor_zoom_level
-            ),
-            self.texture_fetcher,
-            self._sprite_fetcher,
-        )
-        self.options_panel = OptionsPanel(
-            side_panel_tab_control,
-            self.custom_editor_zoom_level,
-            self.select_theme,
-            self.update_custom_level_size,
-            self.set_current_save_format,
-            self.update_hide_grid,
-            self.update_hide_room_grid,
-            self.update_custom_editor_zoom,
-            self.modlunky_config
-        )
-        side_panel_tab_control.add(self.palette_panel_custom, text="Tiles")
-        side_panel_tab_control.add(self.options_panel, text="Settings")
+            self.editor_tab_control.select(self.custom_level_editor_tab)
 
     def load_single_room_editor(self, editor_tab):
         editor_tab.columnconfigure(0, minsize=200)  # Column 0 = Level List
@@ -398,10 +268,7 @@ class LevelsTab(Tab):
             self.is_save_required,
             self.reset_save_buttons,
             self.update_lvls_path,
-            lambda lvl: self.on_select_file(
-                PACK_LIST_TYPE.VANILLA_ROOMS,
-                lvl,
-            ),
+            self.on_select_file,
         )
         self.files_tree.grid(row=0, column=0, rowspan=1, sticky="news")
 
@@ -628,45 +495,9 @@ class LevelsTab(Tab):
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
 
-    # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
-    # the selected tile.
-    def canvas_click_custom(
-        self,
-        canvas_container,
-        canvas_index,
-        tile_size,
-        row,
-        column,
-        is_primary,
-        tile_code_matrix,
-    ):
-
-        tile_name, tile_code = self.palette_panel_custom.selected_tile(is_primary)
-        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, tile_size)
-
-        canvas_container.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
-        # canvas.replace_tile_at(row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
-        tile_code_matrix[row][column] = tile_code
-        self.changes_made()
-
-    def canvas_shiftclick_custom(self, row, column, is_primary, tile_code_matrix):
-        tile_code = tile_code_matrix[row][column]
-        tile = self.tile_palette_map[tile_code]
-
-        self.palette_panel_custom.select_tile(tile[0], tile[2], is_primary)
-
     def changes_made(self):
         self.save_needed = True
-        self.button_save_custom["state"] = tk.NORMAL
         self.button_save["state"] = tk.NORMAL
-
-    def show_intro(self):
-        self.custom_editor_canvas.show_intro()
-        self.custom_editor_container.columnconfigure(2, minsize=0)
-
-    def hide_intro(self):
-        self.custom_editor_canvas.hide_intro()
-        self.custom_editor_container.columnconfigure(2, minsize=17)
 
     def show_intro_full(self):
         self.full_level_preview_canvas.show_intro()
@@ -681,10 +512,8 @@ class LevelsTab(Tab):
         logger.debug("Resetting..")
         self.level_list_panel.reset()
         try:
-            for palette_panel in [self.palette_panel, self.palette_panel_custom]:
-                palette_panel.reset()
-            self.options_panel.disable_controls()
-            self.show_intro()
+            self.palette_panel.reset()
+            self.custom_level_editor_tab.reset()
             self.show_intro_full()
             self.vanilla_editor_canvas.show_intro()
             self.vanilla_editor_canvas.clear()
@@ -693,11 +522,7 @@ class LevelsTab(Tab):
             self.tile_palette_suggestions = None
             self.lvl = None
             self.lvl_biome = None
-            self.custom_editor_foreground_tile_codes = None
-            self.custom_editor_background_tile_codes = None
-            self.custom_editor_canvas.clear()
             self.full_level_preview_canvas.clear()
-            self.button_save_custom["state"] = tk.DISABLED
             self.button_save["state"] = tk.DISABLED
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")
@@ -712,7 +537,6 @@ class LevelsTab(Tab):
     def reset_save_buttons(self):
         self.save_needed = False
         self.button_save["state"] = tk.DISABLED
-        self.button_save_custom["state"] = tk.DISABLED
 
     def log_codes_left(self):
         codes = ""
@@ -750,41 +574,7 @@ class LevelsTab(Tab):
             self.save_changes()
         elif self.editor_tab_control.index(self.editor_tab_control.select()) == 1:
             # Custom level editor
-            self.save_changes_full()
-
-    def save_changes_full(self):
-        if not self.save_needed:
-            logger.debug("No changes to save.")
-            return
-        old_level_file = self.current_level_custom
-
-        loaded_pack = self.files_tree_custom.get_loaded_pack()
-        backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
-        if save_custom_level(
-            self.lvls_path,
-            self.current_level_path_custom,
-            backup_dir,
-            self.lvl_width,
-            self.lvl_height,
-            self.lvl_biome,
-            self.current_save_format,
-            old_level_file.comment,
-            old_level_file.level_chances,
-            old_level_file.level_settings,
-            old_level_file.monster_chances,
-            self.tile_palette_ref_in_use,
-            self.custom_editor_foreground_tile_codes,
-            self.custom_editor_background_tile_codes,
-        ):
-            self.save_needed = False
-            self.button_save_custom["state"] = tk.DISABLED
-            logger.debug("Saved")
-            self.files_tree_custom.update_selected_file_icon(LEVEL_TYPE.MODDED)
-        else:
-            _msg_box = tk.messagebox.showerror(
-                "Oops?",
-                "Error saving..",
-            )
+            self.custom_level_editor_tab.save_changes()
 
     def save_changes(self):
         if self.save_needed:
@@ -1099,43 +889,6 @@ class LevelsTab(Tab):
             self.changes_made()
             self.variables_tab.check_dependencies()
 
-    def delete_tilecode_custom(self, tile_name, tile_code):
-        msg_box = tk.messagebox.askquestion(
-            "Delete Tilecode?",
-            "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air.",
-            icon="warning",
-        )
-        if msg_box == "yes":
-            if tile_name == r"empty":
-                tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
-                return
-
-            tile_code_matrices = [
-                self.custom_editor_foreground_tile_codes,
-                self.custom_editor_background_tile_codes,
-            ]
-            new_tile = self.tile_palette_map["0"]
-            for matrix_index in range(len(tile_code_matrices)):
-                tile_code_matrix = tile_code_matrices[matrix_index]
-                for row in range(len(tile_code_matrix)):
-                    for column in range(len(tile_code_matrix[row])):
-                        if str(tile_code_matrix[row][column]) == str(tile_code):
-                            self.custom_editor_canvas.replace_tile_at(matrix_index, row, column, new_tile[1])
-                            tile_code_matrix[row][column] = "0"
-            self.usable_codes.append(str(tile_code))
-            logger.debug("%s is now available for use.", tile_code)
-
-            # Adds tilecode back to list to be reused.
-            for id_ in self.tile_palette_ref_in_use:
-                if str(tile_code) == str(id_[0].split(" ", 2)[1]):
-                    self.tile_palette_ref_in_use.remove(id_)
-                    logger.debug("Deleted %s", tile_name)
-
-            self.populate_tilecode_palette(self.palette_panel_custom)
-
-            self.log_codes_left()
-            self.changes_made()
-
     def add_tilecode(
         self,
         tile,
@@ -1221,11 +974,11 @@ class LevelsTab(Tab):
             icon="warning",
         )
         if msg_box == "yes":
+            self.custom_level_editor_tab.reset()
             self.editor_tab_control.grid_remove()
             self.warm_welcome.grid()
             self.tab_control.grid_remove()
             self.files_tree.grid_remove()
-            self.files_tree_custom.grid_remove()
             # Resets widgets
             self.button_replace["state"] = tk.DISABLED
             self.button_clear["state"] = tk.DISABLED
@@ -1234,8 +987,7 @@ class LevelsTab(Tab):
             self.button_back.grid_remove()
             self.button_save.grid_remove()
             # Removes any old tiles that might be there from the last file.
-            for palette_panel in [self.palette_panel, self.palette_panel_custom]:
-                palette_panel.reset()
+            self.palette_panel.reset()
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
@@ -1380,28 +1132,6 @@ class LevelsTab(Tab):
                                 )
                             curcol = curcol + 1
 
-    def update_custom_editor_zoom(self, zoom):
-        self.custom_editor_zoom_level = zoom
-        if self.lvl:
-            for tile in self.tile_palette_ref_in_use:
-                tile_name = tile[0].split(" ", 2)[0]
-                tile[1] = ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(
-                        tile_name,
-                        self.lvl_biome,
-                        self.lvl,
-                        self.custom_editor_zoom_level,
-                    )
-                )
-            self.custom_editor_canvas.set_zoom(zoom)
-            self.draw_custom_level_canvases(self.lvl_biome)
-
-    def update_hide_grid(self, hide_grid):
-        self.custom_editor_canvas.hide_grid_lines(hide_grid)
-
-    def update_hide_room_grid(self, hide_grid):
-        self.custom_editor_canvas.hide_room_lines(hide_grid)
-
     def room_select(self, _event):  # Loads room when click if not parent node
         dual_mode = False
         selected_room = self.level_list_panel.get_selected_room()
@@ -1514,18 +1244,15 @@ class LevelsTab(Tab):
             self.vanilla_editor_canvas.show_intro()
         self.button_clear["state"] = tk.NORMAL
 
-    def on_select_file(self, editor_type, lvl):
+    def on_select_file(self, lvl):
         self.reset()
-        self.read_lvl_file(editor_type, lvl)
+        self.read_lvl_file(lvl)
 
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
 
-    def read_lvl_file(self, editor_type, lvl):
-        if editor_type == PACK_LIST_TYPE.VANILLA_ROOMS:
-            return self.read_vanilla_lvl_file(lvl)
-        else:
-            return self.read_custom_lvl_file(lvl)
+    def read_lvl_file(self, lvl):
+        return self.read_vanilla_lvl_file(lvl)
 
     def read_vanilla_lvl_file(self, lvl):
         self.last_selected_room = None
@@ -1669,424 +1396,6 @@ class LevelsTab(Tab):
                 rooms.append(LevelsTreeRoom(str(room_name), room_string))
             tree_templates.append(LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms))
         self.level_list_panel.set_rooms(tree_templates)
-
-    def read_custom_lvl_file(self, lvl, theme=None):
-        if Path(self.lvls_path / lvl).exists():
-            logger.debug("Found this lvl in pack; loading it")
-            lvl_path = Path(self.lvls_path) / lvl
-        else:
-            logger.debug(
-                "Did not find this lvl in pack; loading it from extracts instead"
-            )
-            if self.files_tree_custom.selected_file_is_arena():
-                lvl_path = self.extracts_path / "Arena" / lvl
-            else:
-                lvl_path = self.extracts_path / lvl
-        level = LevelFile.from_path(lvl_path)
-
-        # Try to detect what save format the file uses by attempting to read the room
-        # at (0, 0) which should always exist in a valid lvl file.
-        save_format = self.read_save_format(level)
-        if not save_format:
-            # If the room couldn't be found, pop up a dialog asking the user to create
-            # a new save format to load the file with. If a new format is created,
-            # we can then attempt to load the file again.
-            self.show_format_error_dialog(lvl, level)
-            return
-
-        # Refresh the list of usable tile codes to contain all of the tile codes
-        # that are supported by the level editor.
-        self.usable_codes = ShortCode.usable_codes()
-
-        self.lvl = lvl
-        self.current_level_custom = level
-        self.current_level_path_custom = Path(self.lvls_path) / lvl
-        self.hide_intro()
-
-        self.set_current_save_format(save_format)
-
-        # Attempt to read the theme from the level file. The theme will be saved in
-        # a comment in each room.
-        theme = self.read_theme(level, self.current_save_format)
-        # if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
-        if not theme and self.files_tree_custom.selected_file_is_arena():
-            themes = [
-                BIOME.DWELLING,
-                BIOME.JUNGLE,
-                BIOME.VOLCANA,
-                BIOME.TIDE_POOL,
-                BIOME.TEMPLE,
-                BIOME.ICE_CAVES,
-                BIOME.NEO_BABYLON,
-                BIOME.SUNKEN_CITY,
-            ]
-            for x, themeselect in enumerate(themes):
-                if lvl.startswith("dm" + str(x + 1)):
-                    theme = themeselect
-        self.lvl_biome = theme or BIOME.DWELLING
-
-        self.options_panel.update_theme(theme)
-        self.options_panel.enable_controls()
-
-        self.tile_palette_ref_in_use = []
-        self.tile_palette_map = {}
-        hard_floor_code = None
-        # Populate the tile palette from the tile codes listed in the level file.
-        for tilecode in level.tile_codes.all():
-            tilecode_item = []
-            tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
-
-            img = self.texture_fetcher.get_texture(
-                tilecode.name, theme, lvl, self.custom_editor_zoom_level
-            )
-            img_select = self.texture_fetcher.get_texture(
-                tilecode.name, theme, lvl, 40
-            )
-
-            tilecode_item.append(ImageTk.PhotoImage(img))
-            tilecode_item.append(ImageTk.PhotoImage(img_select))
-
-            if tilecode.value in self.usable_codes:
-                self.usable_codes.remove(tilecode.value)
-            self.tile_palette_ref_in_use.append(tilecode_item)
-            self.tile_palette_map[tilecode.value] = tilecode_item
-            if str(tilecode.name) == "floor_hard":
-                # Keep track of the tile code used for hard floors since this will be
-                # used to populate the back layer tiles for rooms that are not dual.
-                hard_floor_code = tilecode.value
-
-        # If a tile for hard floor was not found, create one since it is needed for the
-        # empty back layer rooms.
-        if hard_floor_code is None:
-            # The preferred tile code for hard floor is X, so use that if it is available.
-            # Otherwise, just use the first available code.
-            if self.usable_codes.count("X") > 0:
-                hard_floor_code = "X"
-            else:
-                hard_floor_code = self.usable_codes[0]
-            self.usable_codes.remove(hard_floor_code)
-            tilecode_item = [
-                "floor_hard " + str(hard_floor_code),
-                ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(
-                        "floor_hard", theme, lvl, self.custom_editor_zoom_level
-                    )
-                ),
-                ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(
-                        "floor_hard", theme, lvl, 40
-                    )
-                ),
-            ]
-            self.tile_palette_ref_in_use.append(tilecode_item)
-            self.tile_palette_map[hard_floor_code] = tilecode_item
-
-        secondary_backup_index = 0
-
-        # Populate the default tile code for left clicks.
-        if "1" in self.tile_palette_map:
-            # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
-            tile = self.tile_palette_map["1"]
-            self.palette_panel_custom.select_tile(tile[0], tile[2], True)
-        elif len(self.tile_palette_ref_in_use) > 0:
-            # If there is no "1" tile, just populate with the first tile.
-            tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel_custom.select_tile(tile[0], tile[2], True)
-            secondary_backup_index = 1
-
-        # Populate the default tile code for right clicks.
-        if "0" in self.tile_palette_map:
-            # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
-            tile = self.tile_palette_map["0"]
-            self.palette_panel_custom.select_tile(tile[0], tile[2], False)
-        elif len(self.tile_palette_ref_in_use) > secondary_backup_index:
-            # If there is not a "0" tile code, populate with the second tile code if the
-            # primary tile code was populated from the first one.
-            tile = self.tile_palette_ref_in_use[secondary_backup_index]
-            self.palette_panel_custom.select_tile(tile[0], tile[2], False)
-        elif len(self.tile_palette_ref_in_use) > 0:
-            # If there are only one tile code available, populate both right and
-            # left click with it.
-            tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel_custom.select_tile(tile[0], tile[2], False)
-
-        # Populate the list of suggested tiles based on the current theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
-        # Load images and create buttons for all of the tile codes and suggestions that
-        # we populated.
-        self.populate_tilecode_palette(self.palette_panel_custom)
-
-        # Creates a matrix of empty elements that rooms from the level file will load into.
-        rooms = [[None for _ in range(8)] for _ in range(15)]
-
-        for template in level.level_templates.all():
-            match = Setroom.match_setroom(self.current_save_format.room_template_format, template.name)
-            if match is not None:
-                # Fill in the room list at the coordinate of this room with the loaded template data.
-                rooms[match.y][match.x] = template
-
-        # Filtered room matrix which will be populated with the rooms that were not empty.
-        # Essentially, we are going to be removing all of the 'None' from the rooms matrix
-        # which weren't replaced with an actual room.
-        filtered_rooms = []
-        for row in rooms:
-            # Filter out all of the None from each row in the matrix.
-            newrow = list(filter(lambda room: room is not None, row))
-            if len(newrow) > 0:
-                filtered_rooms.append(newrow)
-            else:
-                # If the row was empty, do not include it at all and also break out
-                # of the loop to not include any future rows.
-                break
-
-        height = len(filtered_rooms)
-        width = len(filtered_rooms[0])
-        self.lvl_width = width
-        self.lvl_height = height
-
-        self.options_panel.update_level_size(width, height)
-
-        foreground_tiles = ["" for _ in range(height * 8)]
-        background_tiles = ["" for _ in range(height * 8)]
-
-        # Takes the matrix of rooms and creates an array of strings out of it, where each
-        # element in the array is a full row of tiles across the entire level, combining
-        # all rooms in the row.
-        for i, row in enumerate(filtered_rooms):
-            for template in row:
-                room = template.chunks[0]
-                for line_index, line in enumerate(room.foreground):
-                    index = i * 8 + line_index
-                    foreground_tiles[index] = foreground_tiles[index] + "".join(line)
-                    if (
-                        room.background is not None
-                        and len(room.background) > line_index
-                    ):
-                        background_tiles[index] = background_tiles[index] + "".join(
-                            room.background[line_index]
-                        )
-                    else:
-                        # If there is no back layer for this room, populate the back layer tile codes
-                        # with hard floor tile codes.
-                        background_tiles[index] = (
-                            background_tiles[index] + hard_floor_code * 10
-                        )
-
-        # Map each long string that contains the entire row of tile codes into an
-        # array where each element of the array is a single tile code.
-        def map_rooms(layer):
-            return list(
-                map(lambda room_row: list(map(lambda tile: tile, str(room_row))), layer)
-            )
-
-        self.custom_editor_foreground_tile_codes = map_rooms(foreground_tiles)
-        self.custom_editor_background_tile_codes = map_rooms(background_tiles)
-
-        # Fetch the images for each tile and draw them in the canvases.
-        self.draw_custom_level_canvases(theme)
-
-    def draw_custom_level_canvases(self, theme):
-        width = self.lvl_width
-        height = self.lvl_height
-
-        # Clear all existing images from the canvas before drawing the new images.
-        self.custom_editor_canvas.clear()
-        self.custom_editor_canvas.configure_size(width, height)
-
-        # Draw lines to fill the size of the level.
-        self.custom_editor_canvas.draw_background(theme)
-        self.custom_editor_canvas.draw_grid()
-        self.custom_editor_canvas.draw_room_grid()
-
-        # Draws all of the images of a layer on its canvas, and stores the images in
-        # the proper index of tile_images so they can be removed from the grid when
-        # replaced with another tile.
-        def draw_layer(canvas_index, tile_codes):
-            for row_index, room_row in enumerate(tile_codes):
-                if row_index >= self.lvl_height * 8:
-                    continue
-                for tile_index, tile in enumerate(room_row):
-                    if tile_index >= self.lvl_width * 10:
-                        continue
-                    tilecode = self.tile_palette_map[tile]
-                    tile_name = tilecode[0].split(" ", 1)[0]
-                    tile_image = tilecode[1]
-                    x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
-                        tile_image.width(),
-                        tile_image.height(),
-                        tile_name,
-                        self.custom_editor_zoom_level,
-                    )
-                    self.custom_editor_canvas.replace_tile_at(
-                        canvas_index,
-                        row_index,
-                        tile_index,
-                        tile_image,
-                        x_offset,
-                        y_offset,
-                    )
-
-        for index, tileset in enumerate([
-            self.custom_editor_foreground_tile_codes,
-            self.custom_editor_background_tile_codes,
-        ]):
-            draw_layer(index, tileset)
-
-    def set_current_save_format(self, save_format):
-        self.current_save_format = save_format
-        self.files_tree_custom.current_save_format = save_format
-        self.files_tree.current_save_format = save_format
-
-    # Look through the level templates and try to find one that matches an existing save
-    # format.
-    def read_save_format(self, level):
-        if self.modlunky_config.custom_level_editor_default_save_format is None:
-            raise TypeError("custom_level_editor_default_save_format shouldn't be None")
-
-        valid_save_formats = (
-            [self.modlunky_config.custom_level_editor_default_save_format]
-            + self.modlunky_config.custom_level_editor_custom_save_formats
-            + self.base_save_formats
-        )
-        for save_format in valid_save_formats:
-            for template in level.level_templates.all():
-                if template.name == save_format.room_template_format.format(y=0, x=0):
-                    return save_format
-
-    # Read the comment of the template at room (0, 0) to extract the theme, defaulting to dwelling.
-    def read_theme(self, level, save_format):
-        for template in level.level_templates.all():
-            if template.name == save_format.room_template_format.format(y=0, x=0):
-                return template.comment
-        return None
-
-    # Selects a new theme, updating the grid to theme tiles and backgrounds for the
-    # new theme.
-    def select_theme(self, theme):
-        if theme == self.lvl_biome:
-            return
-        self.lvl_biome = theme
-
-        # Retexture all of the tiles in use
-        for tilecode_item in self.tile_palette_ref_in_use:
-            tile_name = tilecode_item[0].split(" ", 2)[0]
-            img = self.texture_fetcher.get_texture(
-                tile_name, theme, self.lvl, self.custom_editor_zoom_level
-            )
-            tilecode_item[1] = ImageTk.PhotoImage(img)
-
-        # Load suggested tiles for the new theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
-        # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
-        self.populate_tilecode_palette(self.palette_panel_custom)
-        # Draw the grid now that we have the newly textured tiles.
-        self.draw_custom_level_canvases(theme)
-
-        self.changes_made()
-
-    # Shows an error dialog when attempting to open a level using an unrecognized template format.
-    def show_format_error_dialog(self, lvl, level_info):
-        def on_create(save_format):
-            self.options_panel.add_save_format(save_format)
-
-            # When a new format is created, try reading the level file again.
-            self.read_custom_lvl_file(lvl)
-
-        SaveFormats.show_setroom_create_dialog(
-            self.modlunky_config,
-            "Couldn't find room templates",
-            "Create a new room template format to load this level file?\n{x} and {y} are the coordinates of the room.\n",
-            "Continue",
-            on_create,
-            self.get_suggested_saveroom_format(level_info),
-        )
-
-    def get_suggested_saveroom_format(self, level_info):
-        template_regex = (
-            "^"
-            + r"(?P<begin>[^0-9]*)" + r"(?P<y>\d+)" + r"(?P<mid>[^0-9]*)" + r"(?P<x>\d+)" + r"(?P<end>[^0-9]*)"
-            + "$"
-        )
-        logger.info(template_regex)
-        for template in level_info.level_templates.all():
-            match = re.search(template_regex, template.name)
-            logger.info(template.name)
-            if match is not None:
-                logger.info("MATCHED")
-                begin = match.group("begin")
-                mid = match.group("mid")
-                ending = match.group("end")
-                return begin + "{y}" + mid + "{x}" + ending
-
-    # Updates the level size from the options menu.
-    def update_custom_level_size(self, width, height):
-        if width == self.lvl_width and height == self.lvl_height:
-            return
-
-        # If the new level size is creater than the current level size, fill in
-        # the level tile matrix with default tiles to fill the new size.
-        def fill_to_size_with_tile(tile_matrix, tile, width, height):
-            fill_rows = list(
-                map(
-                    lambda row: row
-                    + (
-                        []
-                        if (width * 10 <= len(row))
-                        else [tile for _ in range(width * 10 - len(row))]
-                    ),
-                    tile_matrix,
-                )
-            )
-            return fill_rows + (
-                []
-                if (height * 8 <= len(fill_rows))
-                else [
-                    [tile for _ in range(width * 10)]
-                    for _ in range(height * 8 - len(fill_rows))
-                ]
-            )
-
-        empty = None
-        hard_floor = None
-        # Try to find a tile code for the empty tile and the hard floor to use as the
-        # default tile codes of the front and back layers, respectively.
-        for tile_ref in self.tile_palette_ref_in_use:
-            tile_name = str(tile_ref[0].split(" ", 2)[0])
-            tile_code = str(tile_ref[0].split(" ", 2)[1])
-            if tile_name == "empty":
-                empty = tile_code
-            elif tile_name == "floor_hard":
-                hard_floor = tile_code
-
-        # If we didn't find an "empty" tile code, create one and use it.
-        if not empty:
-            empty = self.add_tilecode(
-                "empty",
-                "100",
-                "empty",
-                self.palette_panel_custom,
-                self.custom_editor_zoom_level,
-            )[0].split(" ", 2)[1]
-        # If we did not find a "hard_floor" tile code, create one and use it.
-        if not hard_floor:
-            hard_floor = self.add_tilecode(
-                "hard_floor",
-                "100",
-                "empty",
-                self.palette_panel_custom,
-                self.custom_editor_zoom_level,
-            )[0].split(" ", 2)[1]
-
-        self.custom_editor_foreground_tile_codes = fill_to_size_with_tile(
-            self.custom_editor_foreground_tile_codes, empty, width, height
-        )
-        self.custom_editor_background_tile_codes = fill_to_size_with_tile(
-            self.custom_editor_background_tile_codes, hard_floor, width, height
-        )
-        self.lvl_width = width
-        self.lvl_height = height
-        self.changes_made()
-        self.draw_custom_level_canvases(self.lvl_biome)
 
     def update_lvls_path(self, new_path):
         self.reset()
