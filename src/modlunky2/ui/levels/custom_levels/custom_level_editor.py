@@ -31,6 +31,7 @@ class CustomLevelEditor(ttk.Frame):
         texture_fetcher,
         packs_path,
         extracts_path,
+        textures_dir,
         standalone,
         on_go_back,
         *args,
@@ -50,6 +51,13 @@ class CustomLevelEditor(ttk.Frame):
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.rowconfigure(0, weight=1)
+
+        # Set the format that will be used for saving new level files.
+        if not self.modlunky_config.custom_level_editor_default_save_format:
+            self.modlunky_config.custom_level_editor_default_save_format = (
+                SaveFormats.base_save_formats()[0]
+            )
+        self.current_save_format = None
 
         self.files_tree = FilesTree(
             self,
@@ -91,7 +99,7 @@ class CustomLevelEditor(ttk.Frame):
 
         self.canvas = MultiCanvasContainer(
             editor_view,
-            self.textures_dir,
+            textures_dir,
             ["Foreground", "Background"],
             self.zoom_level,
             lambda index, row, column, is_primary: self.canvas_click(
@@ -200,9 +208,9 @@ class CustomLevelEditor(ttk.Frame):
                 "Error saving..",
             )
 
-    def on_select_file(self, lvl):
-        self.reset()
-        self.read_lvl_file(lvl)
+    # def on_select_file(self, lvl):
+    #     self.reset()
+    #     self.read_lvl_file(lvl)
 
     def read_lvl_file(self, lvl, theme=None):
         if Path(self.lvls_path / lvl).exists():
@@ -426,7 +434,7 @@ class CustomLevelEditor(ttk.Frame):
             self.tile_palette_ref_in_use,
             self.tile_palette_suggestions,
             self.lvl_biome,
-            self.lvl
+            self.lvl,
         )
 
     # Read the comment of the template at room (0, 0) to extract the theme, defaulting to dwelling.
