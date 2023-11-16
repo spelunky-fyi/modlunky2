@@ -1,67 +1,17 @@
 # pylint: disable=too-many-lines
 
-from copy import deepcopy
-import dataclasses
-from functools import lru_cache
-import datetime
-import glob
 import logging
-import math
 import os
 import os.path
-import re
-import shutil
 import tkinter as tk
-import tkinter.messagebox as tkMessageBox
-from dataclasses import dataclass
-from enum import Enum
-from fnmatch import fnmatch
-from pathlib import Path
-from shutil import copyfile
 from tkinter import ttk
-from typing import Optional
-from typing_extensions import Self
-import pyperclip
-from PIL import Image, ImageDraw, ImageEnhance, ImageTk
-from serde.de import deserialize
-import serde.json
-from serde.se import serialize
 
-from modlunky2.config import Config, CustomLevelSaveFormat
-from modlunky2.constants import BASE_DIR
-from modlunky2.levels import LevelFile
-from modlunky2.levels.level_templates import (
-    Chunk,
-    LevelTemplate,
-    LevelTemplates,
-    TemplateSetting,
-)
-from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, ShortCode
+from modlunky2.config import Config
 from modlunky2.sprites import SpelunkySpriteFetcher
 from modlunky2.ui.levels.custom_levels.custom_level_editor import CustomLevelEditor
-from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
-from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
-from modlunky2.ui.levels.custom_levels.save_level import save_level as save_custom_level
-from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
-from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
-from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
-from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
-from modlunky2.ui.levels.shared.make_backup import make_backup
-from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
-from modlunky2.ui.levels.shared.palette_panel import PalettePanel
-from modlunky2.ui.levels.shared.setrooms import BaseTemplate, Setroom
 from modlunky2.ui.levels.shared.textures import TextureUtil
-from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
-from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
-from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
-from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree, LevelsTreeRoom, LevelsTreeTemplate
-from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.levels.vanilla_levels.vanilla_level_editor import VanillaLevelEditor
-from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import LevelDependencies
-from modlunky2.ui.levels.vanilla_levels.variables.variables_tab import VariablesTab
 from modlunky2.ui.levels.warm_welcome import WarmWelcome
-from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
-from modlunky2.utils import is_windows, tb_info
 
 logger = logging.getLogger(__name__)
 
