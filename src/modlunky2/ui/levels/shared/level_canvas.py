@@ -1,9 +1,12 @@
+import logging
 import tkinter as tk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.ui.levels.shared.biomes import BIOME
 
 import logging
+logger = logging.getLogger(__name__)
+
 logger = logging.getLogger(__name__)
 
 class LevelCanvas(tk.Canvas):
@@ -90,6 +93,9 @@ class LevelCanvas(tk.Canvas):
         self.cached_bgs = {}
 
     def replace_tile_at(self, row, column, image, offset_x=0, offset_y=0):
+        if len(self.tile_images) <= row or len(self.tile_images[row]) <= column:
+            logger.debug("Attempted to draw tile outside of the range of the canvas.")
+            return
         curr_img = self.tile_images[row][column]
         if curr_img:
             self.delete(curr_img)
