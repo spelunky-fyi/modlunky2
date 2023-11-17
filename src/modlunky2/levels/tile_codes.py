@@ -494,6 +494,7 @@ class TileCode:
     def write(self, handle: TextIO):
         handle.write(self.to_line())
 
+
 class ShortCode:
     @staticmethod
     def usable_codes():
@@ -501,4 +502,3 @@ class ShortCode:
         for code in VALID_SHORT_CODES:
             usable_codes.append(code)
         return usable_codes
-
