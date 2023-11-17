@@ -24,6 +24,7 @@ from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import LevelDependencies
 from modlunky2.ui.levels.vanilla_levels.variables.variables_tab import VariablesTab
 from modlunky2.ui.widgets import PopupWindow
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,11 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.lvl_biome = None
         self.lvl = None
+        self.last_selected_room = None
+        self.usable_codes = ShortCode.usable_codes()
+        self.tile_palette_ref_in_use = []
+        self.tile_palette_map = {}
+        self.tiles_meta = []
 
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
@@ -196,12 +202,7 @@ class VanillaLevelEditor(ttk.Frame):
             textures_dir,
             ["Foreground Area", "Background Area"],
             self.mag,
-            lambda index, row, column, is_primary: self.canvas_click(
-                index,
-                row,
-                column,
-                is_primary,
-            ),
+            self.canvas_click,
             self.canvas_shiftclick,
             "Select a room to begin editing",
             side_by_side=True,
@@ -1030,7 +1031,7 @@ class VanillaLevelEditor(ttk.Frame):
                     self.tile_palette_ref_in_use.remove(id_)
                     logger.debug("Deleted %s", tile_name)
 
-            self.populate_tilecode_palette(self.palette_panel)
+            self.populate_tilecode_palette()
 
             self.log_codes_left()
             self.changes_made()
@@ -1110,7 +1111,7 @@ class VanillaLevelEditor(ttk.Frame):
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
-        self.populate_tilecode_palette(palette_panel)
+        self.populate_tilecode_palette()
         self.log_codes_left()
         self.changes_made()
         if palette_panel == self.palette_panel:
@@ -1143,7 +1144,6 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.clear()
             self.tile_palette_map = {}
             self.tile_palette_ref_in_use = None
-            self.tile_palette_suggestions = None
             self.lvl = None
             self.lvl_biome = None
             self.full_level_preview_canvas.clear()
