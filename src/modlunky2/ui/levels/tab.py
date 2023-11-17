@@ -10,6 +10,7 @@ from modlunky2.ui.levels.custom_levels.custom_level_editor import CustomLevelEdi
 from modlunky2.ui.levels.shared.textures import TextureUtil
 from modlunky2.ui.levels.vanilla_levels.vanilla_level_editor import VanillaLevelEditor
 from modlunky2.ui.levels.warm_welcome import WarmWelcome
+from modlunky2.ui.widgets import Tab
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +118,15 @@ class LevelsTab(Tab):
             self.custom_level_editor_tab, text="Custom level editor"
         )
 
+        tabs = [self.vanilla_level_editor_tab, self.custom_level_editor_tab]
+
+        # print(self.last_selected_editor_tab.save_needed)
         def tab_selected(event):
-            if event.widget.select() == self.last_selected_editor_tab:
+            # print(event.widget.select())
+            # print(self.last_selected_editor_tab)
+            # print(self.custom_level_editor_tab)
+            # print(self.last_selected_editor_tab.save_needed)
+            if tabs[event.widget.index("current")] == self.last_selected_editor_tab:
                 return
             if self.last_selected_editor_tab.save_needed:
                 msg_box = tk.messagebox.askquestion(
@@ -134,7 +142,8 @@ class LevelsTab(Tab):
                     return
             self.reset()
             # self.load_packs(self.files_tree)
-            self.last_selected_editor_tab = event.widget.select()
+            # self.last_selected_editor_tab = event.widget.select()
+            self.last_selected_editor_tab = tabs[event.widget.index("current")]
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
                 self.modlunky_config.level_editor_tab = 0

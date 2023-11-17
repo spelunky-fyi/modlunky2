@@ -99,7 +99,7 @@ class VanillaLevelEditor(ttk.Frame):
             None,
             self.extracts_path,
             self.save_requested,
-            lambda: self.files_tree.on_click(),
+            lambda: self.files_tree.on_click(None),
         )
 
         self.back_button = tk.Button(
@@ -533,7 +533,7 @@ class VanillaLevelEditor(ttk.Frame):
                                     0,
                                 )
                             curcol = curcol + 1
-                            
+
     def populate_tilecode_palette(self):
         self.palette_panel.update_with_palette(
             self.tile_palette_ref_in_use,
@@ -699,7 +699,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
             self.room_select(None)
             self.remember_changes()
-            
+
     def canvas_click(
         self,
         canvas_index,
@@ -728,6 +728,19 @@ class VanillaLevelEditor(ttk.Frame):
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
+
+    # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
+    def offset_for_tile(self, tile_name, tile_code, tile_size):
+        logger.debug("Applying custom anchor for %s", tile_name)
+        tile_ref = self.tile_palette_map[tile_code]
+        if tile_ref:
+            logger.debug("Found %s", tile_ref[0])
+            img = tile_ref[1]
+            return self.texture_fetcher.adjust_texture_xy(
+                img.width(), img.height(), tile_name, tile_size
+            )
+
+        return 0, 0
 
     def toggle_list_hide(self):
         if self.button_hide_tree["text"] == "<<":
@@ -1103,7 +1116,7 @@ class VanillaLevelEditor(ttk.Frame):
         if palette_panel == self.palette_panel:
             self.variables_tab.check_dependencies()
         return ref_tile
-    
+
     def update_lvls_path(self, new_path):
         self.reset()
         self.lvls_path = new_path
