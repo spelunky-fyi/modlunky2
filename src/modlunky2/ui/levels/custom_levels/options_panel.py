@@ -12,6 +12,7 @@ class OptionsPanel(ttk.Frame):
     def __init__(
         self,
         parent,
+        modlunky_config,
         zoom_level,
         on_select_theme,
         on_update_level_size,
@@ -19,7 +20,6 @@ class OptionsPanel(ttk.Frame):
         on_update_hide_grid_lines,
         on_update_hide_room_lines,
         on_update_zoom_level,
-        modlunky_config,
         *args,
         **kwargs):
         super().__init__(parent, *args, **kwargs)

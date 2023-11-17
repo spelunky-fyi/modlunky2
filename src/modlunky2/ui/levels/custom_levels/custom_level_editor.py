@@ -45,6 +45,9 @@ class CustomLevelEditor(ttk.Frame):
         self.tile_codes = None
 
         self.zoom_level = 30
+
+        self.save_needed = False
+
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -171,7 +174,7 @@ class CustomLevelEditor(ttk.Frame):
 
     def changes_made(self):
         self.save_needed = True
-        self.button_save["state"] = tk.NORMAL
+        self.save_button["state"] = tk.NORMAL
 
     def save_changes(self):
         if not self.save_needed:
@@ -206,9 +209,9 @@ class CustomLevelEditor(ttk.Frame):
                 "Error saving..",
             )
 
-    # def on_select_file(self, lvl):
-    #     self.reset()
-    #     self.read_lvl_file(lvl)
+    def on_select_file(self, lvl):
+        self.reset()
+        self.read_lvl_file(lvl)
 
     def read_lvl_file(self, lvl, theme=None):
         if Path(self.lvls_path / lvl).exists():
@@ -426,7 +429,7 @@ class CustomLevelEditor(ttk.Frame):
 
         # Fetch the images for each tile and draw them in the canvases.
         self.draw_canvas()
-        
+
     def populate_tilecode_palette(self):
         self.palette_panel.update_with_palette(
             self.tile_palette_ref_in_use,
@@ -441,7 +444,7 @@ class CustomLevelEditor(ttk.Frame):
             if template.name == save_format.room_template_format.format(y=0, x=0):
                 return template.comment
         return None
-    
+
     # Look through the level templates and try to find one that matches an existing save
     # format.
     def read_save_format(self, level):
@@ -551,7 +554,7 @@ class CustomLevelEditor(ttk.Frame):
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
 
         self.canvas.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
-        self.tile_codes[row][column] = tile_code
+        self.tile_codes[canvas_index][row][column] = tile_code
         self.changes_made()
 
     def canvas_shiftclick(self, index, row, column, is_primary):
@@ -763,10 +766,10 @@ class CustomLevelEditor(ttk.Frame):
 
         self.tile_codes = [
             fill_to_size_with_tile(
-                self.self.tile_codes[0], empty, width, height
+                self.tile_codes[0], empty, width, height
             ),
             fill_to_size_with_tile(
-                self.self.tile_codes[1], hard_floor, width, height
+                self.tile_codes[1], hard_floor, width, height
             ),
         ]
 
