@@ -18,6 +18,7 @@ from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEV
 from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom
+from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,18 @@ class CustomLevelEditor(ttk.Frame):
         self.packs_path = packs_path
         self.extracts_path = extracts_path
         self.lvls_path = None
+
         self.tile_codes = None
+        self.usable_codes = ShortCode.usable_codes()
+        self.lvl = None
+        self.lvl_biome = None
+        self.current_level = None
+        self.current_level_path = None
+        self.tile_palette_ref_in_use = []
+        self.tile_palette_map = {}
+        self.tile_palette_suggestions = []
+        self.lvl_width = None
+        self.lvl_height = None
 
         self.zoom_level = 30
 
@@ -103,18 +115,8 @@ class CustomLevelEditor(ttk.Frame):
             textures_dir,
             ["Foreground", "Background"],
             self.zoom_level,
-            lambda index, row, column, is_primary: self.canvas_click(
-                index,
-                row,
-                column,
-                is_primary,
-            ),
-            lambda index, row, column, is_primary: self.canvas_shiftclick(
-                index,
-                row,
-                column,
-                is_primary,
-            ),
+            self.canvas_click,
+            self.canvas_shiftclick,
             "Select a level file to begin editing",
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
@@ -542,13 +544,7 @@ class CustomLevelEditor(ttk.Frame):
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
-    def canvas_click(
-        self,
-        canvas_index,
-        row,
-        column,
-        is_primary,
-    ):
+    def canvas_click(self, canvas_index, row, column, is_primary):
 
         tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
@@ -576,12 +572,7 @@ class CustomLevelEditor(ttk.Frame):
 
         return 0, 0
 
-    def add_tilecode(
-        self,
-        tile,
-        percent,
-        alt_tile,
-    ):
+    def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
 
         invalid_tilecodes = []
