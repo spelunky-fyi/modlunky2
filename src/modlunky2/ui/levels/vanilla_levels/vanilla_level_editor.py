@@ -19,14 +19,20 @@ from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
-from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTreeRoom, LevelsTreeTemplate
+from modlunky2.ui.levels.vanilla_levels.levels_tree import (
+    LevelsTreeRoom,
+    LevelsTreeTemplate,
+)
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
-from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import LevelDependencies
+from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import (
+    LevelDependencies,
+)
 from modlunky2.ui.levels.vanilla_levels.variables.variables_tab import VariablesTab
 from modlunky2.ui.widgets import PopupWindow
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
+
 
 class VanillaLevelEditor(ttk.Frame):
     def __init__(
@@ -94,7 +100,9 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
 
-        self.rules_tab = RulesTab(self.tab_control, self.modlunky_config, self.changes_made)
+        self.rules_tab = RulesTab(
+            self.tab_control, self.modlunky_config, self.changes_made
+        )
         self.editor_tab = ttk.Frame(
             self.tab_control
         )  # Tab 2 is the actual level editor
@@ -174,7 +182,9 @@ class VanillaLevelEditor(ttk.Frame):
             50,
             intro_text="Select a level file to begin viewing",
         )
-        self.full_level_preview_canvas.grid(row=1, column=0, columnspan=2, rowspan=2, sticky="nw")
+        self.full_level_preview_canvas.grid(
+            row=1, column=0, columnspan=2, rowspan=2, sticky="nw"
+        )
 
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
@@ -186,7 +196,13 @@ class VanillaLevelEditor(ttk.Frame):
         self.editor_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
         self.editor_tab.rowconfigure(2, weight=1)  # Row 0 = List box / Label
 
-        self.level_list_panel = LevelListPanel(self.editor_tab, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
+        self.level_list_panel = LevelListPanel(
+            self.editor_tab,
+            self.changes_made,
+            self.reset_canvas,
+            self.room_select,
+            self.modlunky_config,
+        )
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
 
         self.mag = 50  # The size of each tiles in the grid; 50 is optimal.
@@ -195,7 +211,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.editor_tab,
             bg="#292929",
         )
-        vanilla_editor_container.grid(row=0, column=1, rowspan=4, columnspan=8, sticky="news")
+        vanilla_editor_container.grid(
+            row=0, column=1, rowspan=4, columnspan=8, sticky="news"
+        )
 
         self.canvas = MultiCanvasContainer(
             vanilla_editor_container,
@@ -233,20 +251,17 @@ class VanillaLevelEditor(ttk.Frame):
             self.editor_tab,
             self.delete_tilecode,
             lambda tile, percent, alt_tile: self.add_tilecode(
-                tile,
-                percent,
-                alt_tile,
-                self.palette_panel,
-                self.mag
+                tile, percent, alt_tile, self.palette_panel, self.mag
             ),
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
         self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
-        self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.remember_changes, self.dual_toggle)
+        self.level_settings_bar = LevelSettingsBar(
+            self.editor_tab, self.remember_changes, self.dual_toggle
+        )
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
-
 
     def read_lvl_file(self, lvl):
         self.last_selected_room = None
@@ -282,7 +297,11 @@ class VanillaLevelEditor(ttk.Frame):
         level_dependencies = LevelDependencies.dependencies_for_level(lvl)
         levels = []
         for dependency in level_dependencies:
-            levels.append(LevelDependencies.loaded_level_file_for_path(dependency, self.lvls_path, self.extracts_path))
+            levels.append(
+                LevelDependencies.loaded_level_file_for_path(
+                    dependency, self.lvls_path, self.extracts_path
+                )
+            )
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
         level = None
@@ -294,14 +313,20 @@ class VanillaLevelEditor(ttk.Frame):
                 tilecode_item = []
                 tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
 
-                img = self.texture_fetcher.get_texture(tilecode.name, self.lvl_biome, lvl, self.mag)
-                selection_img = self.texture_fetcher.get_texture(tilecode.name, self.lvl_biome, lvl, 40)
+                img = self.texture_fetcher.get_texture(
+                    tilecode.name, self.lvl_biome, lvl, self.mag
+                )
+                selection_img = self.texture_fetcher.get_texture(
+                    tilecode.name, self.lvl_biome, lvl, 40
+                )
 
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 tilecode_item.append(ImageTk.PhotoImage(selection_img))
 
                 self.palette_panel.select_tile(tilecode_item[0], tilecode_item[2], True)
-                self.palette_panel.select_tile(tilecode_item[0], tilecode_item[2], False)
+                self.palette_panel.select_tile(
+                    tilecode_item[0], tilecode_item[2], False
+                )
 
                 for i in self.tile_palette_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -388,9 +413,10 @@ class VanillaLevelEditor(ttk.Frame):
                     room_name = comment
 
                 rooms.append(LevelsTreeRoom(str(room_name), room_string))
-            tree_templates.append(LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms))
+            tree_templates.append(
+                LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms)
+            )
         self.level_list_panel.set_rooms(tree_templates)
-
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
@@ -496,9 +522,7 @@ class VanillaLevelEditor(ttk.Frame):
                                 if tiles:
                                     tile_name = str(tiles[-1][0]).split(" ", 1)[0]
                                     new_ref = True
-                                    for (
-                                        preview_tile_ref
-                                    ) in self.list_preview_tiles_ref:
+                                    for preview_tile_ref in self.list_preview_tiles_ref:
                                         if tile_name == str(preview_tile_ref[0]):
                                             new_ref = False
                                             tile_image_full = preview_tile_ref[1]
@@ -516,11 +540,9 @@ class VanillaLevelEditor(ttk.Frame):
                                         tile_ref.append(tile_name)
                                         tile_ref.append(tile_image)
                                         self.list_preview_tiles_ref.append(tile_ref)
-                                        tile_image_full = (
-                                            self.list_preview_tiles_ref[
-                                                len(self.list_preview_tiles_ref) - 1
-                                            ][1]
-                                        )
+                                        tile_image_full = self.list_preview_tiles_ref[
+                                            len(self.list_preview_tiles_ref) - 1
+                                        ][1]
                                 else:
                                     # There's a missing tile id somehow
                                     logger.debug("%s Not Found", block)
@@ -593,12 +615,11 @@ class VanillaLevelEditor(ttk.Frame):
                 save_path = None
                 if not os.path.exists(Path(self.lvls_path)):
                     os.makedirs(Path(self.lvls_path))
-                save_path = Path(
-                    self.lvls_path
-                    / self.files_tree.get_loaded_level()
-                )
+                save_path = Path(self.lvls_path / self.files_tree.get_loaded_level())
                 loaded_pack = self.files_tree.get_loaded_pack()
-                backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
+                backup_dir = (
+                    str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
+                )
                 make_backup(save_path, backup_dir)
                 logger.debug("Saving to %s", save_path)
 
@@ -669,7 +690,9 @@ class VanillaLevelEditor(ttk.Frame):
             for line in new_room_data.split("\n", 100):
                 room_save.append(line)
             # Put it back in with the upated values.
-            self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, room_save))
+            self.level_list_panel.replace_selected_room(
+                LevelsTreeRoom(current_room.name, room_save)
+            )
 
             logger.debug("temp saved: \n%s", new_room_data)
             logger.debug("Changes remembered!")
@@ -697,7 +720,9 @@ class VanillaLevelEditor(ttk.Frame):
                 else:
                     return
 
-            self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, new_room_data))
+            self.level_list_panel.replace_selected_room(
+                LevelsTreeRoom(current_room.name, new_room_data)
+            )
             self.room_select(None)
             self.remember_changes()
 
@@ -711,7 +736,14 @@ class VanillaLevelEditor(ttk.Frame):
         tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.mag)
 
-        self.canvas.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
+        self.canvas.replace_tile_at(
+            canvas_index,
+            row,
+            column,
+            self.tile_palette_map[tile_code][1],
+            x_offset,
+            y_offset,
+        )
 
         col = column
         if canvas_index == 1:
@@ -862,7 +894,9 @@ class VanillaLevelEditor(ttk.Frame):
                             new_row = str(row)
                         room_data.append(new_row)
                     new_rooms.append(LevelsTreeRoom(room_name, room_data))
-                new_templates.append(LevelsTreeTemplate(existing_template.name, new_rooms))
+                new_templates.append(
+                    LevelsTreeTemplate(existing_template.name, new_rooms)
+                )
             self.replace_rooms(new_templates)
             self.changes_made()
         else:
@@ -918,7 +952,6 @@ class VanillaLevelEditor(ttk.Frame):
                     for char in str(cr_line):
                         if str(char) == " ":
                             dual_mode = True
-
 
             dual_mode = r"\!dual" in current_settings
             self.level_settings_bar.set_dual(dual_mode)
@@ -1080,10 +1113,14 @@ class VanillaLevelEditor(ttk.Frame):
                 new_tile_code += "%" + alt_tile
 
         tile_image = ImageTk.PhotoImage(
-            self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, scale)
+            self.texture_fetcher.get_texture(
+                new_tile_code, self.lvl_biome, self.lvl, scale
+            )
         )
         tile_image_picker = ImageTk.PhotoImage(
-            self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, 40)
+            self.texture_fetcher.get_texture(
+                new_tile_code, self.lvl_biome, self.lvl, 40
+            )
         )
 
         # Compares tile id to tile ids in palette list.

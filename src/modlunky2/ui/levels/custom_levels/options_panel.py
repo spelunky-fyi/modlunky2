@@ -8,6 +8,7 @@ from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.widgets import PopupWindow, Tab
 
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,
@@ -21,7 +22,8 @@ class OptionsPanel(ttk.Frame):
         on_update_hide_room_lines,
         on_update_zoom_level,
         *args,
-        **kwargs):
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.modlunky_config = modlunky_config
@@ -178,9 +180,7 @@ class OptionsPanel(ttk.Frame):
         self.save_format_warning_message = tk.Label(
             self, text="", wraplength=350, justify=tk.LEFT
         )
-        self.save_format_warning_message.grid(
-            column=0, row=settings_row, sticky="nw"
-        )
+        self.save_format_warning_message.grid(column=0, row=settings_row, sticky="nw")
 
         if self.modlunky_config.custom_level_editor_default_save_format:
             self.update_save_format_variable(
@@ -307,7 +307,9 @@ class OptionsPanel(ttk.Frame):
     # proper save format.
     def update_save_format_variable(self, save_format):
         if save_format in SaveFormats.base_save_formats():
-            self.save_format_variable.set(SaveFormats.base_save_formats().index(save_format))
+            self.save_format_variable.set(
+                SaveFormats.base_save_formats().index(save_format)
+            )
         elif (
             save_format in self.modlunky_config.custom_level_editor_custom_save_formats
         ):

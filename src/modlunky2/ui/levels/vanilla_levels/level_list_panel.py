@@ -2,10 +2,22 @@ from tkinter import ttk
 
 from modlunky2.ui.levels.vanilla_levels.levels_tree import LevelsTree
 
+
 class LevelListPanel(ttk.Frame):
-    def __init__(self, parent, on_edit, on_reset_canvas, on_room_select, modlunky_config, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        on_edit,
+        on_reset_canvas,
+        on_room_select,
+        modlunky_config,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
-        self.levels_tree = LevelsTree(self, on_edit, on_reset_canvas, modlunky_config, selectmode="browse")
+        self.levels_tree = LevelsTree(
+            self, on_edit, on_reset_canvas, modlunky_config, selectmode="browse"
+        )
         self.vsb = ttk.Scrollbar(
             self, orient="vertical", command=self.levels_tree.yview
         )

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+
 class WarmWelcome(tk.Frame):
     def __init__(self, parent, on_open, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -42,11 +43,7 @@ class WarmWelcome(tk.Frame):
         )
         self.welcome_label.grid(row=1, column=0, sticky="nwe", ipady=30, padx=(10, 10))
 
-        self.button_open = ttk.Button(
-            main_frame,
-            text="Open Editor",
-            command=on_open
-        )
+        self.button_open = ttk.Button(main_frame, text="Open Editor", command=on_open)
         self.button_open.grid(
             row=2, column=0, sticky="news", ipady=30, padx=(20, 20), pady=(20, 20)
         )

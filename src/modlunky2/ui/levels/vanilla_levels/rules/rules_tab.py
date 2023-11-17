@@ -7,6 +7,7 @@ from modlunky2.levels.monster_chances import MonsterChance, MonsterChances
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tree import RulesTree
 from modlunky2.ui.widgets import PopupWindow
 
+
 class RulesTab(ttk.Frame):
     def __init__(self, parent, modlunky_config: Config, on_edit, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -16,8 +17,12 @@ class RulesTab(ttk.Frame):
         self.columnconfigure(0, weight=1)  # Column 1 = Everything Else
         self.rowconfigure(0, weight=1)  # Row 0 = List box / Label
 
-        self.tree_level_settings = RulesTree(self, on_edit, selectmode="browse")  # This tree shows rules parsed from the lvl file.
-        self.tree_level_settings.bind("<Double-1>", lambda e: self.on_double_click(self.tree_level_settings))
+        self.tree_level_settings = RulesTree(
+            self, on_edit, selectmode="browse"
+        )  # This tree shows rules parsed from the lvl file.
+        self.tree_level_settings.bind(
+            "<Double-1>", lambda e: self.on_double_click(self.tree_level_settings)
+        )
         self.tree_level_settings.place(x=30, y=95)
         # style = ttk.Style(self)
         self.vsb_level_settings = ttk.Scrollbar(
@@ -72,7 +77,9 @@ class RulesTab(ttk.Frame):
             self, orient="vertical", command=self.tree_monster_chances.yview
         )
         self.vsb_chances_monsters.place(x=30 + 200 + 2, y=95, height=200 + 20)
-        self.tree_monster_chances.configure(yscrollcommand=self.vsb_chances_monsters.set)
+        self.tree_monster_chances.configure(
+            yscrollcommand=self.vsb_chances_monsters.set
+        )
         self.tree_monster_chances["columns"] = ("1", "2", "3")
         self.tree_monster_chances["show"] = "headings"
         self.tree_monster_chances.column("1", width=100, anchor="w")
@@ -83,7 +90,6 @@ class RulesTab(ttk.Frame):
         self.tree_monster_chances.heading("3", text="Notes")
         self.tree_monster_chances.grid(row=2, column=0, sticky="nwse")
         self.vsb_chances_monsters.grid(row=2, column=1, sticky="nse")
-
 
     def on_double_click(self, tree_view):
         # First check if a blank space was selected
@@ -239,11 +245,11 @@ class RulesTab(ttk.Frame):
                 values=(
                     str(rule.name),
                     str(rule.value)
-                        .strip("[")
-                        .strip("]")
-                        .strip("(")
-                        .strip(")")
-                        .strip('"'),
+                    .strip("[")
+                    .strip("]")
+                    .strip("(")
+                    .strip(")")
+                    .strip('"'),
                     str(rule.comment),
                 ),
             )
@@ -276,11 +282,11 @@ class RulesTab(ttk.Frame):
                 values=(
                     str(rule.name),
                     str(rule.value)
-                        .strip("[")
-                        .strip("]")
-                        .strip("(")
-                        .strip(")")
-                        .strip('"'),
+                    .strip("[")
+                    .strip("]")
+                    .strip("(")
+                    .strip(")")
+                    .strip('"'),
                     str(rule.comment),
                 ),
             )

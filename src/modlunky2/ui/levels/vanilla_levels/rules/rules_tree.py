@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+
 class RulesTree(ttk.Treeview):
     def __init__(self, parent, on_edit, *args, **kwargs):
         ttk.Treeview.__init__(self, parent, *args, **kwargs)

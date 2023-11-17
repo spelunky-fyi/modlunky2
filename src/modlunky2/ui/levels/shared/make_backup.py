@@ -7,6 +7,7 @@ from shutil import copyfile
 
 logger = logging.getLogger(__name__)
 
+
 def make_backup(file, backup_dir):
     logger.debug("Making backup..")
     if os.path.isfile(file):

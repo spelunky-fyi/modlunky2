@@ -12,19 +12,24 @@ import tkinter as tk
 from tkinter import ttk
 
 from modlunky2.constants import BASE_DIR
-from modlunky2.ui.levels.custom_levels.create_level_dialog import present_create_level_dialog
+from modlunky2.ui.levels.custom_levels.create_level_dialog import (
+    present_create_level_dialog,
+)
 from modlunky2.ui.widgets import PopupWindow
 
 logger = logging.getLogger(__name__)
+
 
 class LEVEL_TYPE(Enum):
     VANILLA = 1
     MODDED = 2
     CUSTOM = 3
 
+
 class PACK_LIST_TYPE(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
+
 
 class FilesTree(ttk.Frame):
     def __init__(
@@ -139,7 +144,6 @@ class FilesTree(ttk.Frame):
             defaults_path = self.extracts_path / "Arena"
             root = root / "Arena"
 
-
         def get_levels_in_dir(dir_path):
             levels = glob.iglob(str(dir_path))
             levels = [str(file_path) for file_path in levels]
@@ -226,7 +230,10 @@ class FilesTree(ttk.Frame):
         self.tree.insert("", "end", text=str("[Create_New_Level]"), image=self.icon_add)
 
     def on_click(self, _event):
-        if self.tree.heading("#0")["text"] != "Select Pack" and self.last_selected_file is not None:
+        if (
+            self.tree.heading("#0")["text"] != "Select Pack"
+            and self.last_selected_file is not None
+        ):
             if self.is_save_required():
                 msg_box = tk.messagebox.askquestion(
                     "Continue?",
@@ -245,7 +252,6 @@ class FilesTree(ttk.Frame):
         item_text = ""
         for item in self.tree.selection():
             item_text = self.tree.item(item, "text")
-
 
         if item_text == "<<BACK":
             if self.tree.heading("#0")["text"].endswith("Arena"):
@@ -412,7 +418,13 @@ class FilesTree(ttk.Frame):
 
         loaded_pack = self.get_loaded_pack()
         backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
-        present_create_level_dialog(self.modlunky_config, backup_dir, self.lvls_path, self.current_save_format, on_created)
+        present_create_level_dialog(
+            self.modlunky_config,
+            backup_dir,
+            self.lvls_path,
+            self.current_save_format,
+            on_created,
+        )
 
     def reset_tree(self):
         for i in self.tree.get_children():

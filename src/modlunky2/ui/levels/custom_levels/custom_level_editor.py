@@ -22,6 +22,7 @@ from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
 
+
 class CustomLevelEditor(ttk.Frame):
     def __init__(
         self,
@@ -284,9 +285,7 @@ class CustomLevelEditor(ttk.Frame):
             img = self.texture_fetcher.get_texture(
                 tilecode.name, theme, lvl, self.zoom_level
             )
-            img_select = self.texture_fetcher.get_texture(
-                tilecode.name, theme, lvl, 40
-            )
+            img_select = self.texture_fetcher.get_texture(tilecode.name, theme, lvl, 40)
 
             tilecode_item.append(ImageTk.PhotoImage(img))
             tilecode_item.append(ImageTk.PhotoImage(img_select))
@@ -318,9 +317,7 @@ class CustomLevelEditor(ttk.Frame):
                     )
                 ),
                 ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(
-                        "floor_hard", theme, lvl, 40
-                    )
+                    self.texture_fetcher.get_texture("floor_hard", theme, lvl, 40)
                 ),
             ]
             self.tile_palette_ref_in_use.append(tilecode_item)
@@ -365,7 +362,9 @@ class CustomLevelEditor(ttk.Frame):
         rooms = [[None for _ in range(8)] for _ in range(15)]
 
         for template in level.level_templates.all():
-            match = Setroom.match_setroom(self.current_save_format.room_template_format, template.name)
+            match = Setroom.match_setroom(
+                self.current_save_format.room_template_format, template.name
+            )
             if match is not None:
                 # Fill in the room list at the coordinate of this room with the loaded template data.
                 rooms[match.y][match.x] = template
@@ -483,7 +482,11 @@ class CustomLevelEditor(ttk.Frame):
     def get_suggested_saveroom_format(self, level_info):
         template_regex = (
             "^"
-            + r"(?P<begin>[^0-9]*)" + r"(?P<y>\d+)" + r"(?P<mid>[^0-9]*)" + r"(?P<x>\d+)" + r"(?P<end>[^0-9]*)"
+            + r"(?P<begin>[^0-9]*)"
+            + r"(?P<y>\d+)"
+            + r"(?P<mid>[^0-9]*)"
+            + r"(?P<x>\d+)"
+            + r"(?P<end>[^0-9]*)"
             + "$"
         )
         logger.info(template_regex)
@@ -545,11 +548,17 @@ class CustomLevelEditor(ttk.Frame):
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
     def canvas_click(self, canvas_index, row, column, is_primary):
-
         tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
 
-        self.canvas.replace_tile_at(canvas_index, row, column, self.tile_palette_map[tile_code][1], x_offset, y_offset)
+        self.canvas.replace_tile_at(
+            canvas_index,
+            row,
+            column,
+            self.tile_palette_map[tile_code][1],
+            x_offset,
+            y_offset,
+        )
         self.tile_codes[canvas_index][row][column] = tile_code
         self.changes_made()
 
@@ -602,10 +611,14 @@ class CustomLevelEditor(ttk.Frame):
                 new_tile_code += "%" + alt_tile
 
         tile_image = ImageTk.PhotoImage(
-            self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, self.zoom_level)
+            self.texture_fetcher.get_texture(
+                new_tile_code, self.lvl_biome, self.lvl, self.zoom_level
+            )
         )
         tile_image_picker = ImageTk.PhotoImage(
-            self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, 40)
+            self.texture_fetcher.get_texture(
+                new_tile_code, self.lvl_biome, self.lvl, 40
+            )
         )
 
         # compares tile id to tile ids in palette list
@@ -654,7 +667,9 @@ class CustomLevelEditor(ttk.Frame):
                 for row in range(len(tile_code_matrix)):
                     for column in range(len(tile_code_matrix[row])):
                         if str(tile_code_matrix[row][column]) == str(tile_code):
-                            self.canvas.replace_tile_at(matrix_index, row, column, new_tile[1])
+                            self.canvas.replace_tile_at(
+                                matrix_index, row, column, new_tile[1]
+                            )
                             tile_code_matrix[row][column] = "0"
             self.usable_codes.append(str(tile_code))
             logger.debug("%s is now available for use.", tile_code)
@@ -746,22 +761,22 @@ class CustomLevelEditor(ttk.Frame):
                 "empty",
                 "100",
                 "empty",
-            )[0].split(" ", 2)[1]
+            )[0].split(
+                " ", 2
+            )[1]
         # If we did not find a "hard_floor" tile code, create one and use it.
         if not hard_floor:
             hard_floor = self.add_tilecode(
                 "hard_floor",
                 "100",
                 "empty",
-            )[0].split(" ", 2)[1]
+            )[0].split(
+                " ", 2
+            )[1]
 
         self.tile_codes = [
-            fill_to_size_with_tile(
-                self.tile_codes[0], empty, width, height
-            ),
-            fill_to_size_with_tile(
-                self.tile_codes[1], hard_floor, width, height
-            ),
+            fill_to_size_with_tile(self.tile_codes[0], empty, width, height),
+            fill_to_size_with_tile(self.tile_codes[1], hard_floor, width, height),
         ]
 
         self.lvl_width = width

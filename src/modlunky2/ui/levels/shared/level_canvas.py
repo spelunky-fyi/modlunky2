@@ -5,12 +5,16 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from modlunky2.ui.levels.shared.biomes import BIOME
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
+
 
 class LevelCanvas(tk.Canvas):
-    def __init__(self, parent, textures_dir, zoom_level, on_click, on_pull_tile, *args, **kwargs):
+    def __init__(
+        self, parent, textures_dir, zoom_level, on_click, on_pull_tile, *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.textures_dir = textures_dir
@@ -32,6 +36,7 @@ class LevelCanvas(tk.Canvas):
 
         if on_pull_tile:
             shift_down = False
+
             def holding_shift(_):
                 nonlocal shift_down
                 if shift_down:
@@ -46,9 +51,9 @@ class LevelCanvas(tk.Canvas):
                 shift_down = False
                 self.config(cursor="")
 
-            self.bind_all("<KeyPress-Shift_L>", holding_shift, add='+')
-            self.bind_all("<KeyPress-Shift_R>", holding_shift, add='+')
-            self.bind_all("<KeyRelease-Shift_L>", shift_up, add='+')
+            self.bind_all("<KeyPress-Shift_L>", holding_shift, add="+")
+            self.bind_all("<KeyPress-Shift_R>", holding_shift, add="+")
+            self.bind_all("<KeyRelease-Shift_L>", shift_up, add="+")
 
             # Click actions performed when holding shift to select the tile at the cursor's
             # location.
@@ -87,7 +92,6 @@ class LevelCanvas(tk.Canvas):
 
         self.on_pull_tile(row, column, is_primary)
 
-
     def set_zoom(self, zoom_level):
         self.zoom_level = zoom_level
         self.cached_bgs = {}
@@ -120,7 +124,9 @@ class LevelCanvas(tk.Canvas):
         if not bg_img:
             background = self.background_for_theme(theme)
             image = Image.open(background).convert("RGBA")
-            image = image.resize((self.zoom_level * 10, self.zoom_level * 8), Image.BILINEAR)
+            image = image.resize(
+                (self.zoom_level * 10, self.zoom_level * 8), Image.BILINEAR
+            )
             enhancer = ImageEnhance.Brightness(image)
             im_output = enhancer.enhance(1.0)
             bg_img = ImageTk.PhotoImage(im_output)
@@ -129,7 +135,10 @@ class LevelCanvas(tk.Canvas):
         for x in range(0, self.width):
             for y in range(0, self.height):
                 self.create_image(
-                    x * self.zoom_level * 10, y * self.zoom_level * 8, image=bg_img, anchor="nw"
+                    x * self.zoom_level * 10,
+                    y * self.zoom_level * 8,
+                    image=bg_img,
+                    anchor="nw",
                 )
 
     def draw_grid(self):
@@ -180,16 +189,12 @@ class LevelCanvas(tk.Canvas):
     def hide_grid_lines(self, hide):
         self.grid_hidden = hide
         for grid_line in self.grid_lines:
-            self.itemconfig(
-                grid_line, state=("hidden" if hide else "normal")
-            )
+            self.itemconfig(grid_line, state=("hidden" if hide else "normal"))
 
     def hide_room_lines(self, hide):
         self.rooms_hidden = hide
         for room_line in self.room_lines:
-            self.itemconfig(
-                room_line, state=("hidden" if hide else "normal")
-            )
+            self.itemconfig(room_line, state=("hidden" if hide else "normal"))
 
     def clear(self):
         self.delete("all")

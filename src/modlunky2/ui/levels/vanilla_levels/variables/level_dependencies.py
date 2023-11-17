@@ -7,7 +7,8 @@ from modlunky2.levels import LevelFile
 
 logger = logging.getLogger(__name__)
 
-class LevelDependencies():
+
+class LevelDependencies:
     @staticmethod
     def dependencies_for_level(lvl):
         levels = []
@@ -138,7 +139,8 @@ class LevelDependencies():
             return LevelFile.from_path(Path(levels_path / lvl))
         else:
             logger.debug(
-                "local dependency for lvl %s not found, attempting to load from extracts", lvl
+                "local dependency for lvl %s not found, attempting to load from extracts",
+                lvl,
             )
             return LevelFile.from_path(Path(extracts_path) / lvl)
 

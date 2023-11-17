@@ -14,6 +14,7 @@ from modlunky2.ui.widgets import Tab
 
 logger = logging.getLogger(__name__)
 
+
 class LevelsTab(Tab):
     def __init__(
         self,
@@ -56,10 +57,7 @@ class LevelsTab(Tab):
                     "Please extract your game before using the level editor.",
                 )
 
-        self.warm_welcome = WarmWelcome(
-            self,
-            open_editor
-        )
+        self.warm_welcome = WarmWelcome(self, open_editor)
         self.warm_welcome.grid(row=0, column=0, columnspan=2, sticky="nswe")
 
         self.standalone = standalone
