@@ -120,12 +120,7 @@ class LevelsTab(Tab):
 
         tabs = [self.vanilla_level_editor_tab, self.custom_level_editor_tab]
 
-        # print(self.last_selected_editor_tab.save_needed)
         def tab_selected(event):
-            # print(event.widget.select())
-            # print(self.last_selected_editor_tab)
-            # print(self.custom_level_editor_tab)
-            # print(self.last_selected_editor_tab.save_needed)
             if tabs[event.widget.index("current")] == self.last_selected_editor_tab:
                 return
             if self.last_selected_editor_tab.save_needed:
@@ -141,9 +136,8 @@ class LevelsTab(Tab):
                     self.editor_tab_control.select(self.last_selected_editor_tab)
                     return
             self.reset()
-            # self.load_packs(self.files_tree)
-            # self.last_selected_editor_tab = event.widget.select()
             self.last_selected_editor_tab = tabs[event.widget.index("current")]
+            self.last_selected_editor_tab.load_packs()
             tab = event.widget.tab(self.last_selected_editor_tab, "text")
             if tab == "Vanilla room editor":
                 self.modlunky_config.level_editor_tab = 0
