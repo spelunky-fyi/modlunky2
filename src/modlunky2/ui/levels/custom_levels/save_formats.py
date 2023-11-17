@@ -4,8 +4,8 @@ from modlunky2.ui.widgets import PopupWindow
 
 from modlunky2.config import Config, CustomLevelSaveFormat
 
-class SaveFormats:
 
+class SaveFormats:
     @staticmethod
     def base_save_formats():
         return [
@@ -15,7 +15,14 @@ class SaveFormats:
 
     # Popup dialog with widgets to create a new room template.
     @staticmethod
-    def show_setroom_create_dialog(modlunky_config, title, message, button_title, button_action, suggested_template_name = None):
+    def show_setroom_create_dialog(
+        modlunky_config,
+        title,
+        message,
+        button_title,
+        button_action,
+        suggested_template_name=None,
+    ):
         win = PopupWindow(title, modlunky_config)
         message = ttk.Label(win, text=message)
         name_label = ttk.Label(win, text="Name: ")
@@ -110,7 +117,11 @@ class SaveFormats:
             template_format = str(format_entry.get())
             name = str(name_entry.get()) if name_entry_changed else template_format
             if (
-                (not format_entry_changed and suggested_template_name and template_format != suggested_template_name)
+                (
+                    not format_entry_changed
+                    and suggested_template_name
+                    and template_format != suggested_template_name
+                )
                 or template_format == ""
                 or name == ""
                 or template_format == "setroom{y}-{x}"

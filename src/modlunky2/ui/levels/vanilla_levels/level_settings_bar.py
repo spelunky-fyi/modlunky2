@@ -4,10 +4,10 @@ from tkinter import ttk
 
 logger = logging.getLogger(__name__)
 
+
 class LevelSettingsBar(ttk.Frame):
     def __init__(self, parent, on_flip_setting, on_flip_dual_setting, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-
 
         self.var_ignore = tk.IntVar()
         self.var_flip = tk.IntVar()

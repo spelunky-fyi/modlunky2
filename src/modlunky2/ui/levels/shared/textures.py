@@ -2,7 +2,8 @@ import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageTk
 
-class TextureUtil():
+
+class TextureUtil:
     def __init__(self, sprite_fetcher):
         self.sprite_fetcher = sprite_fetcher
 
@@ -368,12 +369,16 @@ class TextureUtil():
             return "bg_temple.png"
         elif level_file_name.startswith("egg"):
             return "bg_eggplant.png"
-        elif level_file_name.startswith("ice") or level_file_name.endswith("_icecavesarea.lvl"):
+        elif level_file_name.startswith("ice") or level_file_name.endswith(
+            "_icecavesarea.lvl"
+        ):
             return "bg_ice.png"
         elif level_file_name.startswith("olmec"):
             return "bg_stone.png"
         elif level_file_name.startswith("vlad"):
             return "bg_vlad.png"
-        elif level_file_name.startswith("volcano") or level_file_name.endswith("_volcano.lvl"):
+        elif level_file_name.startswith("volcano") or level_file_name.endswith(
+            "_volcano.lvl"
+        ):
             return "bg_volcano.png"
         return "bg_cave.png"

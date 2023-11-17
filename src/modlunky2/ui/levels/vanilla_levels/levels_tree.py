@@ -6,33 +6,43 @@ import pyperclip
 from typing import List
 
 from modlunky2.config import Config
-from modlunky2.levels.level_templates import Chunk, LevelTemplate, LevelTemplates, TemplateSetting
+from modlunky2.levels.level_templates import (
+    Chunk,
+    LevelTemplate,
+    LevelTemplates,
+    TemplateSetting,
+)
 from modlunky2.ui.widgets import PopupWindow
 from modlunky2.ui.levels.shared.tags import TAGS
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class LevelsTreeRoom:
     name: str
     rows: List[str]
+
 
 @dataclass
 class LevelsTreeTemplate:
     name: str
     rooms: List[LevelsTreeRoom]
 
+
 @dataclass
 class LevelsTreeSetroom:
     template: LevelsTreeTemplate
     setroom: MatchedSetroom
+
 
 @dataclass
 class RoomType:
     name: str
     x_size: int
     y_size: int
+
 
 ROOM_TYPES = {
     f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
@@ -51,6 +61,7 @@ ROOM_TYPES = {
     ]
 }
 DEFAULT_ROOM_TYPE = "normal"
+
 
 class LevelsTree(ttk.Treeview):
     def __init__(self, parent, on_edit, reset_canvas, config: Config, *args, **kwargs):
@@ -224,7 +235,6 @@ class LevelsTree(ttk.Treeview):
         else:
             return False
 
-
     def reset(self):
         for i in self.get_children():
             self.delete(i)
@@ -256,7 +266,10 @@ class LevelsTree(ttk.Treeview):
         for parent_index, parent in enumerate(self.get_children()):
             for child_index, child in enumerate(self.get_children(parent)):
                 self.delete(child)
-                if len(replacements) > parent_index and len(replacements[parent_index].rooms) > child_index:
+                if (
+                    len(replacements) > parent_index
+                    and len(replacements[parent_index].rooms) > child_index
+                ):
                     room = replacements[parent_index].rooms[child_index]
                     new_child = self.insert(
                         parent,
@@ -264,7 +277,10 @@ class LevelsTree(ttk.Treeview):
                         text=room.name,
                         values=room.rows,
                     )
-                    if selected_parent_index == parent_index and selected_item_index == child_index:
+                    if (
+                        selected_parent_index == parent_index
+                        and selected_item_index == child_index
+                    ):
                         self.selection_set(new_child)
                         selected_child = new_child
 
@@ -272,9 +288,7 @@ class LevelsTree(ttk.Treeview):
 
     def set_rooms(self, rooms):
         for room in rooms:
-            entry = self.insert(
-                "", "end", text=room.name
-            )
+            entry = self.insert("", "end", text=room.name)
             for layout in room.rooms:
                 self.insert(entry, "end", values=layout.rows, text=layout.name)
 
@@ -307,8 +321,8 @@ class LevelsTree(ttk.Treeview):
             edited = self.insert(
                 parent_iid,
                 self.index(item_iid),
-                text = replacement.name,
-                values = replacement.rows,
+                text=replacement.name,
+                values=replacement.rows,
             )
             self.delete(item_iid)
             self.selection_set(edited)
@@ -334,7 +348,7 @@ class LevelsTree(ttk.Treeview):
                     tag_found = False
                     background_found = False
                     for tag in TAGS:
-                        if str(line) == str(tag): # This line is a tag.
+                        if str(line) == str(tag):  # This line is a tag.
                             tag_found = True
                             break
                     if not tag_found:
@@ -377,12 +391,16 @@ class LevelsTree(ttk.Treeview):
     def get_setrooms(self):
         setrooms = []
         for room_template in self.get_children():
-            matched_template = Setroom.find_vanilla_setroom(self.item(room_template, option="text").split("//")[0].strip())
+            matched_template = Setroom.find_vanilla_setroom(
+                self.item(room_template, option="text").split("//")[0].strip()
+            )
             if not matched_template:
                 continue
 
-            setrooms.append(LevelsTreeSetroom(
-                template=self.__get_room_template(room_template),
-                setroom=matched_template
-            ))
+            setrooms.append(
+                LevelsTreeSetroom(
+                    template=self.__get_room_template(room_template),
+                    setroom=matched_template,
+                )
+            )
         return setrooms

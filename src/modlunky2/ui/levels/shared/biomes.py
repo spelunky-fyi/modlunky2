@@ -1,4 +1,4 @@
-class BIOME():
+class BIOME:
     DWELLING = "cave"
     JUNGLE = "jungle"
     VOLCANA = "volcano"
@@ -14,9 +14,12 @@ class BIOME():
     EGGPLANT_WORLD = "eggplant"
     SURFACE = "surface"
 
+
 class Biomes:
     @staticmethod
-    def get_biome_for_level(lvl): # cave by default, depicts what background and sprites will be loaded
+    def get_biome_for_level(
+        lvl,
+    ):  # cave by default, depicts what background and sprites will be loaded
         if (
             lvl.startswith("challenge_sun")
             or lvl.startswith("sunken")

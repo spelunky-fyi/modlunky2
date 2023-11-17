@@ -12,6 +12,7 @@ from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
 
+
 class DependenciesTree(ttk.Treeview):
     def __init__(self, parent, lvls_path, extracts_path, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -246,9 +247,7 @@ class DependenciesTree(ttk.Treeview):
                                         compare_exists = False
                                         compare_to_exists = False
                                         # makes sure the detected conflicts are already listed
-                                        for (
-                                            tree_item
-                                        ) in self.get_children():
+                                        for tree_item in self.get_children():
                                             tree_item_check = self.item(
                                                 tree_item, option="values"
                                             )
@@ -308,7 +307,6 @@ class DependenciesTree(ttk.Treeview):
     def clear(self):
         for i in self.get_children():
             self.delete(i)
-
 
     def update_lvls_path(self, new_path):
         self.lvls_path = new_path

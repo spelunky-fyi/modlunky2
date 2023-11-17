@@ -4,8 +4,21 @@ from tkinter import ttk
 from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
 from modlunky2.utils import is_windows
 
+
 class MultiCanvasContainer(tk.Frame):
-    def __init__(self, parent, textures_dir, canvas_titles, zoom_level, on_click=None, on_shiftclick=None, intro_text=None, side_by_side = False, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        textures_dir,
+        canvas_titles,
+        zoom_level,
+        on_click=None,
+        on_shiftclick=None,
+        intro_text=None,
+        side_by_side=False,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.on_click = on_click
@@ -37,21 +50,19 @@ class MultiCanvasContainer(tk.Frame):
         scrollable_frame.columnconfigure(1, weight=1)
         canvas_gaps = side_by_side and len(canvas_titles) - 1 or 1
         for column in range(canvas_gaps):
-            scrollable_frame.columnconfigure((column+1)*2, minsize=50)
-        scrollable_frame.columnconfigure((canvas_gaps+1)*2, minsize=int(int(width) / 2))
+            scrollable_frame.columnconfigure((column + 1) * 2, minsize=50)
+        scrollable_frame.columnconfigure(
+            (canvas_gaps + 1) * 2, minsize=int(int(width) / 2)
+        )
         scrollable_frame.rowconfigure(0, minsize=int(int(height) / 2))
         scrollable_frame.rowconfigure(1, weight=1)
         scrollable_frame.rowconfigure(2, minsize=100)
         scrollable_frame.rowconfigure(4, minsize=int(int(height) / 2))
 
         # Scroll bars for scrolling the canvases.
-        hbar = ttk.Scrollbar(
-            self, orient="horizontal", command=scrollable_canvas.xview
-        )
+        hbar = ttk.Scrollbar(self, orient="horizontal", command=scrollable_canvas.xview)
         hbar.grid(row=0, column=0, columnspan=7, rowspan=2, sticky="swe")
-        vbar = ttk.Scrollbar(
-            self, orient="vertical", command=scrollable_canvas.yview
-        )
+        vbar = ttk.Scrollbar(self, orient="vertical", command=scrollable_canvas.yview)
         vbar.grid(row=0, column=0, columnspan=8, rowspan=2, sticky="nse")
 
         # Bindings to allow scrolling with the mouse.
@@ -75,7 +86,7 @@ class MultiCanvasContainer(tk.Frame):
         scrollable_canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
 
         switches_container = tk.Frame(self, bg="#343434")
-        switches_container.grid(row=0, column=0,sticky="nw")
+        switches_container.grid(row=0, column=0, sticky="nw")
         self.switches_container = switches_container
 
         self.canvases = []
@@ -91,32 +102,31 @@ class MultiCanvasContainer(tk.Frame):
             nonlocal switch_variable
             layer = switch_variable.get()
             for index, canvas in enumerate(self.canvases):
-
                 if index == int(layer):
                     canvas.grid()
                 else:
                     canvas.grid_remove()
 
-        for (index, canvas_title) in enumerate(canvas_titles):
+        for index, canvas_title in enumerate(canvas_titles):
             new_canvas = LevelCanvas(
                 scrollable_frame,
                 textures_dir,
                 zoom_level,
-                on_click and (lambda row, column, is_primary, i=index: self.on_click(
-                    i,
-                    row,
-                    column,
-                    is_primary
-                )),
-                on_shiftclick and (lambda row, column, is_primary, i=index: self.on_shiftclick(
-                    i,
-                    row,
-                    column,
-                    is_primary
-                )),
+                on_click
+                and (
+                    lambda row, column, is_primary, i=index: self.on_click(
+                        i, row, column, is_primary
+                    )
+                ),
+                on_shiftclick
+                and (
+                    lambda row, column, is_primary, i=index: self.on_shiftclick(
+                        i, row, column, is_primary
+                    )
+                ),
                 bg="#343434",
             )
-            new_canvas.grid(row=1, column=(side_by_side and (index*2) or 0) + 1)
+            new_canvas.grid(row=1, column=(side_by_side and (index * 2) or 0) + 1)
             if index != 0 and not side_by_side:
                 new_canvas.grid_remove()
             self.canvases.append(new_canvas)
@@ -129,7 +139,7 @@ class MultiCanvasContainer(tk.Frame):
                         fg="white",
                         bg="#343434",
                     )
-                    label.grid(row=2, column=index*2+1, sticky="news")
+                    label.grid(row=2, column=index * 2 + 1, sticky="news")
                     # label.grid_remove()
                     self.labels.append(label)
                 else:
@@ -162,7 +172,6 @@ class MultiCanvasContainer(tk.Frame):
                 wraplength=600,
             )
             intro_label.place(relx=0.5, rely=0.5, anchor="center")
-
 
     def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
@@ -222,7 +231,6 @@ class MultiCanvasContainer(tk.Frame):
     def configure_size(self, width, height):
         for canvas in self.canvases:
             canvas.configure_size(width, height)
-
 
     def set_zoom(self, zoom_level):
         for canvas in self.canvases:

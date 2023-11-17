@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from modlunky2.levels.tile_codes import VALID_TILE_CODES
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 
+
 class NewTilecodeCombobox(ttk.Frame):
     def __init__(self, parent, on_add_tilecode, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -42,16 +43,13 @@ class NewTilecodeCombobox(ttk.Frame):
             from_=0,
             to=100,
             orient=tk.HORIZONTAL,
-            command=self.update_scale
-        ) # Scale for the percentage of a selected tile.
+            command=self.update_scale,
+        )  # Scale for the percentage of a selected tile.
         self.scale.grid(row=1, column=0, sticky="ew")
         self.scale.set(100)
 
         self.add_button = tk.Button(
-            self,
-            text="Add Tilecode",
-            bg="yellow",
-            command=self.add_tilecode
+            self, text="Add Tilecode", bg="yellow", command=self.add_tilecode
         )
         self.add_button.grid(row=0, column=1, sticky="news")
         self.disable()
@@ -91,8 +89,11 @@ class NewTilecodeCombobox(ttk.Frame):
         self.combobox["state"] = tk.NORMAL
         self.combobox_alt["state"] = tk.NORMAL
 
+
 class SelectedTilecodeView(ttk.Frame):
-    def __init__(self, parent, title_prefix, on_delete, sprite_fetcher, *args, **kwargs):
+    def __init__(
+        self, parent, title_prefix, on_delete, sprite_fetcher, *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.sprite_fetcher = sprite_fetcher
@@ -105,7 +106,7 @@ class SelectedTilecodeView(ttk.Frame):
             bg="red",
             fg="white",
             width=10,
-            command=lambda: on_delete(self.tile_name(), self.tile_code())
+            command=lambda: on_delete(self.tile_name(), self.tile_code()),
         )
 
         # Shows selected tile. Important because this is used for more than just user
@@ -113,7 +114,9 @@ class SelectedTilecodeView(ttk.Frame):
         self.title_label = ttk.Label(self, text=title_prefix + " empty 0")
 
         self.img = None
-        self.img_empty = ImageTk.PhotoImage(sprite_fetcher.get("empty").resize((40, 40), Image.Resampling.LANCZOS))
+        self.img_empty = ImageTk.PhotoImage(
+            sprite_fetcher.get("empty").resize((40, 40), Image.Resampling.LANCZOS)
+        )
         self.img_view = ttk.Label(self, image=self.img_empty, width=50)
 
         self.columnconfigure(0, minsize=8)
@@ -150,12 +153,22 @@ class SelectedTilecodeView(ttk.Frame):
     def disable(self):
         self.delete_button["state"] = tk.DISABLED
 
+
 class PalettePanel(ttk.Frame):
-    def __init__(self, parent, on_delete_tilecode, on_add_tilecode, texture_fetcher, sprite_fetcher, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        on_delete_tilecode,
+        on_add_tilecode,
+        texture_fetcher,
+        sprite_fetcher,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.texture_fetcher = texture_fetcher
-        self.on_delete_tilecode =on_delete_tilecode
+        self.on_delete_tilecode = on_delete_tilecode
         self.on_add_tilecode = on_add_tilecode
 
         # The tile palettes are loaded into here as buttons with their image
@@ -164,8 +177,12 @@ class PalettePanel(ttk.Frame):
         self.palette.scrollable_frame["width"] = 50
         self.tile_images = []
 
-        self.primary_tile_view = SelectedTilecodeView(self, "Primary Tile:", self.delete_tilecode, sprite_fetcher)
-        self.secondary_tile_view = SelectedTilecodeView(self, "Secondary Tile:", self.delete_tilecode, sprite_fetcher)
+        self.primary_tile_view = SelectedTilecodeView(
+            self, "Primary Tile:", self.delete_tilecode, sprite_fetcher
+        )
+        self.secondary_tile_view = SelectedTilecodeView(
+            self, "Secondary Tile:", self.delete_tilecode, sprite_fetcher
+        )
 
         self.new_tile_panel = NewTilecodeCombobox(self, on_add_tilecode)
 
@@ -174,7 +191,6 @@ class PalettePanel(ttk.Frame):
         self.secondary_tile_view.grid(row=1, column=0, sticky="we")
         self.palette.grid(row=2, column=0, sticky="swne")
         self.new_tile_panel.grid(row=3, column=0, sticky="swne")
-
 
     def delete_tilecode(self, tile_name, tile_code):
         self.on_delete_tilecode(tile_name, tile_code)
@@ -211,15 +227,11 @@ class PalettePanel(ttk.Frame):
             new_tile.grid(row=count_row, column=count_col)
             new_tile.bind(
                 "<Button-1>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(
-                    event, r, c
-                ),
+                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
             )
             new_tile.bind(
                 "<Button-3>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(
-                    event, r, c
-                ),
+                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
             )
 
         if suggestions and len(suggestions):
@@ -256,13 +268,13 @@ class PalettePanel(ttk.Frame):
                     "<Button-1>",
                     lambda event, ts=suggestion, ti=tile_image: self.suggested_tile_pick(
                         event, ts, ti
-                    )
+                    ),
                 )
                 new_tile.bind(
                     "<Button-3>",
                     lambda event, ts=suggestion, ti=tile_image: self.suggested_tile_pick(
                         event, ts, ti
-                    )
+                    ),
                 )
         self.primary_tile_view.enable()
         self.secondary_tile_view.enable()
@@ -300,4 +312,7 @@ class PalettePanel(ttk.Frame):
         return self.primary_tile_view.tile_name(), self.primary_tile_view.tile_code()
 
     def secondary_tile(self):
-        return self.secondary_tile_view.tile_name(), self.secondary_tile_view.tile_code()
+        return (
+            self.secondary_tile_view.tile_name(),
+            self.secondary_tile_view.tile_code(),
+        )

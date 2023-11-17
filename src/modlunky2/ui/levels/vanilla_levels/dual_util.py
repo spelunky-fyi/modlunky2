@@ -2,6 +2,7 @@ from typing import List
 
 from modlunky2.ui.levels.shared.tags import TAGS
 
+
 def make_dual(rows: List[str]):
     new_room_data = []
     new_room_data.append(r"\!dual")
@@ -19,6 +20,7 @@ def make_dual(rows: List[str]):
         else:
             new_room_data.append(str(row))
     return new_room_data
+
 
 def remove_dual(rows: List[str]):
     new_room_data = []

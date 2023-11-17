@@ -2,10 +2,15 @@ import logging
 from tkinter import ttk
 
 from modlunky2.config import Config
-from modlunky2.ui.levels.vanilla_levels.variables.dependencies_tree import DependenciesTree
-from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import LevelDependencies
+from modlunky2.ui.levels.vanilla_levels.variables.dependencies_tree import (
+    DependenciesTree,
+)
+from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import (
+    LevelDependencies,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class VariablesTab(ttk.Frame):
     def __init__(
@@ -45,10 +50,7 @@ class VariablesTab(ttk.Frame):
         self.no_conflicts_label.grid(row=1, column=0, sticky="nwse")
 
         self.tree_depend = DependenciesTree(
-            self,
-            lvls_path,
-            extracts_path,
-            selectmode="browse"
+            self, lvls_path, extracts_path, selectmode="browse"
         )  # This tree shows rules parses from the lvl file
         # self.tree_depend.bind("<Double-1>", lambda e: self.on_double_click(self.tree))
         self.tree_depend.place(x=30, y=95)
@@ -68,7 +70,6 @@ class VariablesTab(ttk.Frame):
 
         self.button_resolve_variables.grid_remove()
         self.no_conflicts_label.grid_remove()
-
 
     def resolve_conflicts(self):
         if not self.request_save():
@@ -94,7 +95,9 @@ class VariablesTab(ttk.Frame):
 
         logger.debug("checking dependencies..")
 
-        levels = LevelDependencies.sister_locations_for_level(self.current_level_name, self.lvls_path, self.extracts_path)
+        levels = LevelDependencies.sister_locations_for_level(
+            self.current_level_name, self.lvls_path, self.extracts_path
+        )
         self.tree_depend.update_dependencies(levels)
 
         if len(self.tree_depend.get_children()) == 0:
@@ -103,7 +106,9 @@ class VariablesTab(ttk.Frame):
             self.button_resolve_variables.grid_remove()
             self.no_conflicts_label.grid()
         else:
-            self.depend_order_label["text"] = " -> ".join([level[0] for level in levels])
+            self.depend_order_label["text"] = " -> ".join(
+                [level[0] for level in levels]
+            )
             self.depend_order_label.grid()
             self.tree_depend.grid()
             self.button_resolve_variables.grid()
