@@ -1133,6 +1133,10 @@ class VanillaLevelEditor(ttk.Frame):
     def reset_canvas(self):
         self.canvas.clear()
 
+    def load_packs(self):
+        self.reset()
+        self.files_tree.load_packs()
+
     def reset(self):
         logger.debug("Resetting...")
         self.level_list_panel.reset()
