@@ -31,7 +31,6 @@ class LevelsTab(Tab):
 
         self.modlunky_ui = modlunky_ui
 
-        # self.tab_control = tab_control
         self.install_dir = modlunky_config.install_dir
         self.textures_dir = modlunky_config.install_dir / "Mods/Extracted/Data/Textures"
         self.extracts_path = self.install_dir / "Mods" / "Extracted" / "Data" / "Levels"
@@ -169,4 +168,3 @@ class LevelsTab(Tab):
             self.vanilla_level_editor_tab.reset()
             self.editor_tab_control.grid_remove()
             self.warm_welcome.grid()
-            # self.tab_control.grid_remove()

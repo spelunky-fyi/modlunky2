@@ -597,7 +597,7 @@ class CustomLevelEditor(ttk.Frame):
             new_tile_code += "%" + percent
             # Have to use a temporary directory due to TCL/Tkinter is trying to write
             # to a file name, not a file handle, and windows doesn't support sharing the
-            # file between processes
+            # file between processes.
             if alt_tile != "empty":
                 new_tile_code += "%" + alt_tile
 

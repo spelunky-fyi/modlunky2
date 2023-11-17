@@ -189,7 +189,7 @@ class VanillaLevelEditor(ttk.Frame):
         self.level_list_panel = LevelListPanel(self.editor_tab, self.changes_made, self.reset_canvas, self.room_select, self.modlunky_config)
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
 
-        self.mag = 50  # the size of each tiles in the grid; 50 is optimal
+        self.mag = 50  # The size of each tiles in the grid; 50 is optimal.
 
         vanilla_editor_container = tk.Frame(
             self.editor_tab,
@@ -278,7 +278,7 @@ class VanillaLevelEditor(ttk.Frame):
             else:
                 lvl_path = self.extracts_path / lvl
 
-        # Levels to load dependency tilecodes from
+        # Levels to load dependency tilecodes from.
         level_dependencies = LevelDependencies.dependencies_for_level(lvl)
         levels = []
         for dependency in level_dependencies:
@@ -318,7 +318,7 @@ class VanillaLevelEditor(ttk.Frame):
 
         if lvl.startswith(
             "generic"
-        ):  # adds tilecodes to generic that it relies on yet doesn't provide
+        ):  # Adds tilecodes to generic that it relies on yet doesn't provide.
             generic_needs = [
                 ["4", "push_block"],
                 ["t", "treasure"],
@@ -364,7 +364,7 @@ class VanillaLevelEditor(ttk.Frame):
                 template_comment = "// " + str(template.comment)
             rooms = []
             for room in template.chunks:
-                room_string = []  # makes room data into string for storing
+                room_string = []  # Makes room data into string for storing.
 
                 for setting in room.settings:
                     room_string.append(r"\!" + str(setting).split(".", 1)[1].lower())
@@ -394,8 +394,8 @@ class VanillaLevelEditor(ttk.Frame):
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
-        # sets default level size for levels that might not have a size variable like the challenge levels.
-        # 8x8 is what I went with
+        # Sets default level size for levels that might not have a size variable like the challenge levels.
+        # 8x8 is what I went with.
         level_height = 8
         level_width = 8
 
@@ -620,7 +620,7 @@ class VanillaLevelEditor(ttk.Frame):
             logger.debug("No changes to save")
         return True
 
-    def remember_changes(self):  # remembers changes made to rooms
+    def remember_changes(self):  # Remembers changes made to rooms.
         current_room = self.level_list_panel.get_selected_room()
         if current_room:
             new_room_data = ""
@@ -668,7 +668,7 @@ class VanillaLevelEditor(ttk.Frame):
             room_save = []
             for line in new_room_data.split("\n", 100):
                 room_save.append(line)
-            # Put it back in with the upated values
+            # Put it back in with the upated values.
             self.level_list_panel.replace_selected_room(LevelsTreeRoom(current_room.name, room_save))
 
             logger.debug("temp saved: \n%s", new_room_data)
@@ -684,9 +684,9 @@ class VanillaLevelEditor(ttk.Frame):
         if current_room:
             new_room_data = current_room.rows
 
-            if self.level_settings_bar.dual():  # converts room into dual
+            if self.level_settings_bar.dual():  # Converts room into dual.
                 new_room_data = make_dual(current_room.rows)
-            else:  # converts room into non-dual
+            else:  # Converts room into non-dual.
                 msg_box = tk.messagebox.askquestion(
                     "Delete Dual Room?",
                     "Un-dualing this room will delete your background layer. This is not recoverable.\nContinue?",
@@ -754,7 +754,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.button_hide_tree["text"] = "<<"
 
     def replace_tiles_dia(self):
-        # Set up window
+        # Set up window.
         win = PopupWindow("Replace Tiles", self.modlunky_config)
 
         replacees = []
@@ -874,7 +874,7 @@ class VanillaLevelEditor(ttk.Frame):
                         self.tiles_meta[int(row_count)][int(col_count)] = new_tile
                     col_count = col_count + 1
                 row_count = row_count + 1
-            self.remember_changes()  # remember changes made
+            self.remember_changes()  # Remember changes made.
             self.room_select(None)
 
     def clear_canvas(self):
@@ -894,9 +894,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.clear()
             self.canvas.draw_background(self.lvl_biome)
             self.canvas.draw_grid()
-            self.remember_changes()  # remember changes made
+            self.remember_changes()  # Remember changes made.
 
-    def room_select(self, _event):  # Loads room when click if not parent node
+    def room_select(self, _event):  # Loads room when click if not parent node.
         dual_mode = False
         selected_room = self.level_list_panel.get_selected_room()
         if selected_room:
@@ -944,7 +944,7 @@ class VanillaLevelEditor(ttk.Frame):
 
             self.canvas.hide_canvas(1, not dual_mode)
 
-            # Create a grid of None to store the references to the tiles
+            # Create a grid of None to store the references to the tiles.
             self.tiles_meta = [
                 [None for _ in range(cols)] for _ in range(rows)
             ]  # meta for tile
@@ -1075,7 +1075,7 @@ class VanillaLevelEditor(ttk.Frame):
             new_tile_code += "%" + percent
             # Have to use a temporary directory due to TCL/Tkinter is trying to write
             # to a file name, not a file handle, and windows doesn't support sharing the
-            # file between processes
+            # file between processes.
             if alt_tile != "empty":
                 new_tile_code += "%" + alt_tile
 
@@ -1086,7 +1086,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.texture_fetcher.get_texture(new_tile_code, self.lvl_biome, self.lvl, 40)
         )
 
-        # compares tile id to tile ids in palette list
+        # Compares tile id to tile ids in palette list.
         for palette_tile in self.tile_palette_ref_in_use:
             palette_tile = palette_tile[0].split()[0].strip()
             if new_tile_code == palette_tile:
