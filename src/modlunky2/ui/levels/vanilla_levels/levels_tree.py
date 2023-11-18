@@ -18,8 +18,23 @@ from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 
 logger = logging.getLogger(__name__)
 
+
 class LevelsTree(ttk.Treeview):
-    def __init__(self, parent, on_edit, reset_canvas, on_add_room, on_delete_room, on_duplicate_room, on_copy_room, on_paste_room, on_rename_room, config: Config, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        on_edit,
+        reset_canvas,
+        on_add_room,
+        on_delete_room,
+        on_duplicate_room,
+        on_copy_room,
+        on_paste_room,
+        on_rename_room,
+        config: Config,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
         self.config = config
         self.on_edit = on_edit

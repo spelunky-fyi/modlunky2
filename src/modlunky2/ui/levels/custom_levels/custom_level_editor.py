@@ -781,7 +781,9 @@ class CustomLevelEditor(ttk.Frame):
 
         self.tile_codes = [
             fill_to_size_with_tile(self.tile_codes[LAYER.FRONT], empty, width, height),
-            fill_to_size_with_tile(self.tile_codes[LAYER.BACK], hard_floor, width, height),
+            fill_to_size_with_tile(
+                self.tile_codes[LAYER.BACK], hard_floor, width, height
+            ),
         ]
 
         self.lvl_width = width
