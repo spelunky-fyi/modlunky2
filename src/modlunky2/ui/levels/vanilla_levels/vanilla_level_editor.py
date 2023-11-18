@@ -34,6 +34,10 @@ from modlunky2.utils import tb_info
 logger = logging.getLogger(__name__)
 
 
+class LAYER:
+    FRONT = 0
+    BACK = 1
+
 class VanillaLevelEditor(ttk.Frame):
     def __init__(
         self,
@@ -64,7 +68,7 @@ class VanillaLevelEditor(ttk.Frame):
         self.usable_codes = ShortCode.usable_codes()
         self.tile_palette_ref_in_use = []
         self.tile_palette_map = {}
-        self.tiles_meta = []
+        self.tile_codes = []
 
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
@@ -85,7 +89,7 @@ class VanillaLevelEditor(ttk.Frame):
         self.files_tree.grid(row=0, column=0, rowspan=1, sticky="news")
         self.files_tree.load_packs()
 
-        # Seperates Level Rules and Level Editor into two tabs
+        # Seperates Level Rules and Level Editor into two tabs.
         self.tab_control = ttk.Notebook(self)
         self.tab_control.grid(row=0, column=1, rowspan=3, sticky="nwse")
 
@@ -105,7 +109,7 @@ class VanillaLevelEditor(ttk.Frame):
         )
         self.editor_tab = ttk.Frame(
             self.tab_control
-        )  # Tab 2 is the actual level editor
+        )  # Tab 2 is the actual level editor.
         self.preview_tab = ttk.Frame(self.tab_control)
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -678,14 +682,18 @@ class VanillaLevelEditor(ttk.Frame):
                     new_room_data += "\n"
                 new_room_data += r"\!ignore"
 
-            for row in self.tiles_meta:
-                if new_room_data != "":
-                    new_room_data += "\n"
-                for block in row:
-                    if str(block) == "None":
-                        new_room_data += str(" ")
-                    else:
-                        new_room_data += str(block)
+            if new_room_data != "":
+                new_room_data += "\n"
+
+            # compressed_layers = list(map(, self.tile_codes))
+            # 1. Turn grids of tilecodes into lists of strings each representing a row of tilecodes.
+            compressed_layers = list(map(lambda layer: list(map("".join, layer)), self.tile_codes))
+            # 2. Draw the rest of the owl. (Zip the front and back layers together)
+            if self.level_settings_bar.dual():
+                new_room_data += "\n".join(list(map(" ".join, [list(row) for row in list(zip(compressed_layers[0], compressed_layers[1]))])))
+            else:
+                new_room_data += "\n".join(compressed_layers[0])
+
             room_save = []
             for line in new_room_data.split("\n", 100):
                 room_save.append(line)
@@ -745,19 +753,13 @@ class VanillaLevelEditor(ttk.Frame):
             y_offset,
         )
 
-        col = column
-        if canvas_index == 1:
-            col = col + (len(self.tiles_meta[row]) + 1) // 2
-
-        self.tiles_meta[row][col] = tile_code
+        # self.tiles_meta[row][col] = tile_code
+        self.tile_codes[canvas_index][row][column] = tile_code
         self.remember_changes()
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
-        col = column
-        if canvas_index == 1:
-            col = col + (len(self.tiles_meta[row]) + 1) // 2
-
-        tile_code = self.tiles_meta[row][col]
+        # tile_code = self.tiles_meta[row][col]
+        tile_code = self.tile_codes[canvas_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
@@ -900,14 +902,11 @@ class VanillaLevelEditor(ttk.Frame):
             self.replace_rooms(new_templates)
             self.changes_made()
         else:
-            row_count = 0
-            for row in self.tiles_meta:
-                col_count = 0
-                for _ in row:
-                    if self.tiles_meta[int(row_count)][int(col_count)] == tile:
-                        self.tiles_meta[int(row_count)][int(col_count)] = new_tile
-                    col_count = col_count + 1
-                row_count = row_count + 1
+            for layer in self.tile_codes:
+                for row_codes in layer:
+                    for column, tile_code in enumerate(row_codes):
+                        if tile_code == tile:
+                            row_codes[column] = new_tile
             self.remember_changes()  # Remember changes made.
             self.room_select(None)
 
@@ -918,13 +917,10 @@ class VanillaLevelEditor(ttk.Frame):
             icon="warning",
         )
         if msg_box == "yes":
-            row_count = 0
-            for row in self.tiles_meta:
-                col_count = 0
-                for _ in row:
-                    self.tiles_meta[int(row_count)][int(col_count)] = "0"
-                    col_count = col_count + 1
-                row_count = row_count + 1
+            for layer in self.tile_codes:
+                for row_codes in layer:
+                    for column, _ in enumerate(row_codes):
+                        row_codes[column] = "0"
             self.canvas.clear()
             self.canvas.draw_background(self.lvl_biome)
             self.canvas.draw_grid()
@@ -964,7 +960,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.level_settings_bar.set_liquid(r"\!liquid" in current_settings)
 
             rows = len(current_room_tiles)
-            cols = len(str(current_room_tiles[0]))
+            cols = len(str(current_room_tiles[0]).split(" ", 2)[0])
 
             roomwidth = int(math.ceil(cols / 10))
             if dual_mode:
@@ -977,64 +973,46 @@ class VanillaLevelEditor(ttk.Frame):
 
             self.canvas.hide_canvas(1, not dual_mode)
 
-            # Create a grid of None to store the references to the tiles.
-            self.tiles_meta = [
-                [None for _ in range(cols)] for _ in range(rows)
-            ]  # meta for tile
+            frontlayer_tiles = list(map(lambda row: list(map(lambda tile: tile, str(row.split(" ", 2)[0]))), current_room_tiles))
+            if len(current_room_tiles[0].split(" ", 2)) > 1:
+                backlayer_tiles = list(map(lambda row: list(map(lambda tile: tile, str(row.split(" ", 2)[1]))), current_room_tiles))
+            else:
+                backlayer_tiles = list(map(lambda row: list(map(lambda _: "0", str(row))), frontlayer_tiles))
 
-            currow = -1
-            curcol = 0
-            for room_row in current_room_tiles:
-                curcol = 0
-                currow = currow + 1
-                tile_image = None
-                logger.debug("Room row: %s", room_row)
-                for block in str(room_row):
-                    if str(block) != " ":
-                        tile_name = ""
-                        tiles = [
-                            c
-                            for c in self.tile_palette_ref_in_use
-                            if str(" " + block) in str(c[0])
-                        ]
-                        if tiles:
-                            tile_image = tiles[-1][1]
-                            tile_name = str(tiles[-1][0]).split(" ", 1)[0]
-                        else:
-                            # There's a missing tile id somehow
-                            logger.debug("%s Not Found", block)
-                        if dual_mode and curcol > int((cols - 1) / 2):
-                            x2_coord = int(curcol - ((cols - 1) / 2) - 1)
+            self.tile_codes = [
+                frontlayer_tiles,
+                backlayer_tiles,
+            ]
+
+            for canvas_index, layer_tile_codes in enumerate(self.tile_codes):
+                for row_index, row in enumerate(layer_tile_codes):
+                    for column_index, tile_code in enumerate(row):
+                            tile_name = ""
+                            tiles = [
+                                c
+                                for c in self.tile_palette_ref_in_use
+                                if str(" " + tile_code) in str(c[0])
+                            ]
+                            if tiles:
+                                tile_image = tiles[-1][1]
+                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
+                            else:
+                                # There's a missing tile id somehow
+                                logger.debug("%s Not Found", tile_code)
                             x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
                                 tile_image.width(),
                                 tile_image.height(),
                                 tile_name,
                             )
                             self.canvas.replace_tile_at(
-                                1,
-                                currow,
-                                x2_coord,
+                                canvas_index,
+                                row_index,
+                                column_index,
                                 tile_image,
                                 x_coord,
                                 y_coord,
                             )
-                            self.tiles_meta[currow][curcol] = block
-                        else:
-                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
-                                tile_image.width(),
-                                tile_image.height(),
-                                tile_name,
-                            )
-                            self.canvas.replace_tile_at(
-                                0,
-                                currow,
-                                curcol,
-                                tile_image,
-                                x_coord,
-                                y_coord,
-                            )
-                            self.tiles_meta[currow][curcol] = block
-                    curcol = curcol + 1
+
         else:
             self.canvas.clear()
             self.canvas.hide_canvas(1, True)
