@@ -1,28 +1,35 @@
+from dataclasses import dataclass
+import io
 import logging
 import math
 import os
 import os.path
 from pathlib import Path
 from PIL import Image, ImageTk
+import pyperclip
 import re
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as tkMessageBox
+from typing import List, Optional
 
 from modlunky2.levels import LevelFile
+from modlunky2.levels.level_templates import (
+    Chunk,
+    LevelTemplate,
+    LevelTemplates,
+    TemplateSetting,
+)
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, ShortCode
 from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
 from modlunky2.ui.levels.shared.make_backup import make_backup
 from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
+from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
-from modlunky2.ui.levels.vanilla_levels.levels_tree import (
-    LevelsTreeRoom,
-    LevelsTreeTemplate,
-)
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
 from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import (
     LevelDependencies,
@@ -37,6 +44,49 @@ logger = logging.getLogger(__name__)
 class LAYER:
     FRONT = 0
     BACK = 1
+
+
+@dataclass
+class RoomInstance:
+    name: Optional[str]
+    settings: List[TemplateSetting]
+    front: List[List[str]]
+    back: List[List[str]]
+
+@dataclass
+class RoomTemplate:
+    name: str
+    comment: Optional[str]
+    rooms: List[RoomInstance]
+
+@dataclass
+class MatchedSetroomTemplate:
+    template: RoomTemplate
+    setroom: MatchedSetroom
+
+@dataclass
+class RoomType:
+    name: str
+    x_size: int
+    y_size: int
+
+ROOM_TYPES = {
+    f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
+    for room_type in [
+        RoomType("normal", 10, 8),
+        RoomType("machine_wideroom", 20, 8),
+        RoomType("machine_tallroom", 10, 16),
+        RoomType("machine_bigroom", 20, 16),
+        RoomType("coffin_frog", 10, 16),
+        RoomType("ghistroom", 5, 5),
+        RoomType("feeling", 20, 16),
+        RoomType("chunk_ground", 5, 3),
+        RoomType("chunk_door", 6, 3),
+        RoomType("chunk_air", 5, 3),
+        RoomType("cache", 5, 5),
+    ]
+}
+DEFAULT_ROOM_TYPE = "normal"
 
 class VanillaLevelEditor(ttk.Frame):
     def __init__(
@@ -64,11 +114,12 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.lvl_biome = None
         self.lvl = None
-        self.last_selected_room = None
+        self.current_selected_room = None
         self.usable_codes = ShortCode.usable_codes()
         self.tile_palette_ref_in_use = []
         self.tile_palette_map = {}
         self.tile_codes = []
+        self.template_list = []
 
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
@@ -204,6 +255,12 @@ class VanillaLevelEditor(ttk.Frame):
             self.editor_tab,
             self.changes_made,
             self.reset_canvas,
+            self.on_insert_room,
+            self.on_delete_room,
+            self.on_duplicate_room,
+            self.on_copy_room,
+            self.on_paste_room,
+            self.on_rename_room,
             self.room_select,
             self.modlunky_config,
         )
@@ -263,12 +320,12 @@ class VanillaLevelEditor(ttk.Frame):
         self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
         self.level_settings_bar = LevelSettingsBar(
-            self.editor_tab, self.remember_changes, self.dual_toggle
+            self.editor_tab, self.setting_flip
         )
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
 
     def read_lvl_file(self, lvl):
-        self.last_selected_room = None
+        self.current_selected_room = None
         self.usable_codes = ShortCode.usable_codes()
         self.variables_tab.update_current_level_name(lvl)
         self.variables_tab.check_dependencies()
@@ -386,41 +443,13 @@ class VanillaLevelEditor(ttk.Frame):
 
         level_templates = level.level_templates.all()
 
-        tree_templates = []
+        self.template_list = []
         for template in level_templates:
-            template_comment = ""
-            if str(template.comment) != "":
-                template_comment = "// " + str(template.comment)
-            rooms = []
+            data_rooms = []
             for room in template.chunks:
-                room_string = []  # Makes room data into string for storing.
-
-                for setting in room.settings:
-                    room_string.append(r"\!" + str(setting).split(".", 1)[1].lower())
-
-                i = 0
-                for line in room.foreground:
-                    foreground = ""
-                    background = ""
-                    for code in line:
-                        foreground += str(code)
-                    if len(room.background) > 0:
-                        background += " "
-                        for code in room.background[i]:
-                            background += str(code)
-                    room_string.append(foreground + background)
-                    i = i + 1
-
-                room_name = "room"
-                comment = str(room.comment).lstrip("/ ").strip()
-                if comment:
-                    room_name = comment
-
-                rooms.append(LevelsTreeRoom(str(room_name), room_string))
-            tree_templates.append(
-                LevelsTreeTemplate(str(template.name) + "   " + template_comment, rooms)
-            )
-        self.level_list_panel.set_rooms(tree_templates)
+                data_rooms.append(self.convert_from_chunk(room))
+            self.template_list.append(RoomTemplate(template.name, template.comment, data_rooms))
+        self.level_list_panel.set_rooms(self.template_list)
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
@@ -449,117 +478,76 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.full_level_preview_canvas.hide_intro()
 
-        def flip_text(x_coord):
-            return x_coord[::-1]
+        def get_setrooms():
+            setrooms = []
+            for room_template in self.template_list:
+                matched_template = Setroom.find_vanilla_setroom(room_template.name)
+                if not matched_template:
+                    continue
 
-        for setroom_template in self.level_list_panel.get_setrooms():
+                setrooms.append(MatchedSetroomTemplate(room_template, matched_template))
+            return setrooms
+
+        for setroom_template in get_setrooms():
             room_x = setroom_template.setroom.coords.x
             room_y = setroom_template.setroom.coords.y
 
             logger.debug("%s", setroom_template.template.name)
             logger.debug("Room pos: %sx%s", room_x, room_y)
-            current_room_tiles = []
-            current_room_tiles_dual = []
-            layers = []
 
-            tree_rooms = setroom_template.template.rooms
-            flip_room = False
-            if len(tree_rooms) != 0:
-                tree_room = tree_rooms[0]
-                for cr_line in tree_room.rows:
-                    if str(cr_line).startswith(r"\!"):
-                        logger.debug("found tag %s", cr_line)
-                        if str(cr_line) == r"\!onlyflip":
-                            flip_room = True
-                        elif str(cr_line) == r"\!ignore":
-                            continue
-                    else:
-                        logger.debug("appending %s", cr_line)
-                        load_line = ""
-                        load_line_dual = ""
-                        dual_mode = False
-                        for char in str(cr_line):
-                            if str(char) == " ":
-                                dual_mode = True
-                                logger.debug("dual room found")
+            room_instances = setroom_template.template.rooms
+            if len(room_instances) != 0:
+                room_instance = room_instances[0]
 
-                                if flip_room:
-                                    current_room_tiles.append(flip_text(str(load_line)))
-                                else:
-                                    current_room_tiles.append(str(load_line))
-                            else:
-                                if dual_mode:
-                                    load_line_dual += str(char)
-                                else:
-                                    load_line += str(char)
-                        if dual_mode:
-                            if flip_room:
-                                current_room_tiles_dual.append(
-                                    flip_text(str(load_line_dual))
-                                )
-                            else:
-                                current_room_tiles_dual.append(str(load_line_dual))
-                        else:
-                            if flip_room:
-                                current_room_tiles.append(flip_text(str(load_line)))
-                            else:
-                                current_room_tiles.append(str(load_line))
-
-                curcol = 0
-
-                layers.append(current_room_tiles)
-                layers.append(current_room_tiles_dual)
-
-                for layer_index, layer in enumerate(layers):
+                for layer_index, layer in enumerate([room_instance.front, room_instance.back]):
                     for currow, room_row in enumerate(layer):
-                        curcol = 0
                         tile_image_full = None
                         logger.debug("Room row: %s", room_row)
-                        for block in str(room_row):
-                            if str(block) != " ":
-                                tile_name = ""
-                                tiles = [
-                                    c
-                                    for c in self.tile_palette_ref_in_use
-                                    if str(" " + block) in str(c[0])
-                                ]
-                                if tiles:
-                                    tile_name = str(tiles[-1][0]).split(" ", 1)[0]
-                                    new_ref = True
-                                    for preview_tile_ref in self.list_preview_tiles_ref:
-                                        if tile_name == str(preview_tile_ref[0]):
-                                            new_ref = False
-                                            tile_image_full = preview_tile_ref[1]
+                        if TemplateSetting.ONLYFLIP in room_instance.settings:
+                            room_row = room_row.reverse()
+                        for curcol, tile in enumerate(room_row):
+                            tile_name = ""
+                            tiles = [
+                                c
+                                for c in self.tile_palette_ref_in_use
+                                if str(" " + tile) in str(c[0])
+                            ]
+                            if tiles:
+                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
+                                new_ref = True
+                                for preview_tile_ref in self.list_preview_tiles_ref:
+                                    if tile_name == str(preview_tile_ref[0]):
+                                        new_ref = False
+                                        tile_image_full = preview_tile_ref[1]
 
-                                    if new_ref:
-                                        tile_ref = []
-                                        tile_image = ImageTk.PhotoImage(
-                                            ImageTk.getimage(tiles[-1][1])
-                                            .resize(
-                                                (mag_full, mag_full),
-                                                Image.Resampling.LANCZOS,
-                                            )
-                                            .convert("RGBA")
+                                if new_ref:
+                                    tile_ref = []
+                                    tile_image = ImageTk.PhotoImage(
+                                        ImageTk.getimage(tiles[-1][1])
+                                        .resize(
+                                            (mag_full, mag_full),
+                                            Image.Resampling.LANCZOS,
                                         )
-                                        tile_ref.append(tile_name)
-                                        tile_ref.append(tile_image)
-                                        self.list_preview_tiles_ref.append(tile_ref)
-                                        tile_image_full = self.list_preview_tiles_ref[
-                                            len(self.list_preview_tiles_ref) - 1
-                                        ][1]
-                                else:
-                                    # There's a missing tile id somehow
-                                    logger.debug("%s Not Found", block)
+                                        .convert("RGBA")
+                                    )
+                                    tile_ref.append(tile_name)
+                                    tile_ref.append(tile_image)
+                                    self.list_preview_tiles_ref.append(tile_ref)
+                                    tile_image_full = self.list_preview_tiles_ref[
+                                        len(self.list_preview_tiles_ref) - 1
+                                    ][1]
+                            else:
+                                # There's a missing tile id somehow
+                                logger.debug("%s Not Found", tile)
 
-                                self.full_level_preview_canvas.replace_tile_at(
-                                    layer_index,
-                                    room_y * 8 + currow,
-                                    room_x * 10 + curcol,
-                                    tile_image_full,
-                                    0,
-                                    0,
-                                )
-                            curcol = curcol + 1
+                            self.full_level_preview_canvas.replace_tile_at(
+                                layer_index,
+                                room_y * 8 + currow,
+                                room_x * 10 + curcol,
+                                tile_image_full,
+                                0,
+                                0,
+                            )
 
     def populate_tilecode_palette(self):
         self.palette_panel.update_with_palette(
@@ -590,13 +578,54 @@ class VanillaLevelEditor(ttk.Frame):
         self.save_needed = True
         self.save_button["state"] = tk.NORMAL
 
+    def convert_from_chunk(self, chunk):
+        settings = list(map(lambda setting: setting, chunk.settings))
+
+        i = 0
+        def map_layer(layer):
+            return list(map(lambda line: list(map(lambda tile: tile, line)), layer))
+        foreground_tiles = map_layer(chunk.foreground)
+        if len(chunk.background) > 0:
+            background_tiles = map_layer(chunk.background)
+        else:
+            background_tiles = [["0" for _ in range(len(row))] for row in foreground_tiles]
+
+        room_name = "room"
+        comment = str(chunk.comment).lstrip("/ ").strip()
+        if comment:
+            room_name = comment
+
+        return RoomInstance(str(room_name), settings, foreground_tiles, background_tiles)
+
+    def convert_to_chunk(self, room_instance):
+        return Chunk(
+            comment=room_instance.name,
+            settings=room_instance.settings,
+            foreground=room_instance.front,
+            background=room_instance.back,
+        )
+
+    def get_level_templates(self):
+        level_templates = LevelTemplates()
+        def convert_level_template(template):
+            return LevelTemplate(
+                name=template.name,
+                comment=template.comment,
+                chunks=list(map(self.convert_to_chunk, template.rooms))
+            )
+
+        for template in self.template_list:
+            level_templates.set_obj(convert_level_template(template))
+
+        return level_templates
+
     def save_changes(self):
         if self.save_needed:
             try:
                 level_chances = self.rules_tab.get_level_chances()
                 level_settings = self.rules_tab.get_level_settings()
                 monster_chances = self.rules_tab.get_monster_chances()
-                level_templates = self.level_list_panel.get_level_templates()
+                level_templates = self.get_level_templates()
 
                 tile_codes = TileCodes()
                 for tilecode in self.tile_palette_ref_in_use:
@@ -645,94 +674,16 @@ class VanillaLevelEditor(ttk.Frame):
             logger.debug("No changes to save")
         return True
 
-    def remember_changes(self):  # Remembers changes made to rooms.
-        current_room = self.level_list_panel.get_selected_room()
-        if current_room:
-            new_room_data = ""
-            if self.level_settings_bar.dual():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!dual"
-            if self.level_settings_bar.purge():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!purge"
-            if self.level_settings_bar.flip():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!flip"
-            if self.level_settings_bar.only_flip():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!onlyflip"
-            if self.level_settings_bar.rare():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!rare"
-            if self.level_settings_bar.hard():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!hard"
-            if self.level_settings_bar.liquid():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!liquid"
-            if self.level_settings_bar.ignore():
-                if new_room_data != "":
-                    new_room_data += "\n"
-                new_room_data += r"\!ignore"
+    def setting_flip(self, setting, value):
+        if value and not setting in self.current_selected_room.settings:
+            self.current_selected_room.settings.append(setting)
+        elif not value and setting in self.current_selected_room.settings:
+            self.current_selected_room.settings.remove(setting)
 
-            if new_room_data != "":
-                new_room_data += "\n"
+        if setting == TemplateSetting.DUAL:
+            self.canvas.hide_canvas(1, not value)
 
-            # compressed_layers = list(map(, self.tile_codes))
-            # 1. Turn grids of tilecodes into lists of strings each representing a row of tilecodes.
-            compressed_layers = list(map(lambda layer: list(map("".join, layer)), self.tile_codes))
-            # 2. Draw the rest of the owl. (Zip the front and back layers together)
-            if self.level_settings_bar.dual():
-                new_room_data += "\n".join(list(map(" ".join, [list(row) for row in list(zip(compressed_layers[0], compressed_layers[1]))])))
-            else:
-                new_room_data += "\n".join(compressed_layers[0])
-
-            room_save = []
-            for line in new_room_data.split("\n", 100):
-                room_save.append(line)
-            # Put it back in with the upated values.
-            self.level_list_panel.replace_selected_room(
-                LevelsTreeRoom(current_room.name, room_save)
-            )
-
-            logger.debug("temp saved: \n%s", new_room_data)
-            logger.debug("Changes remembered!")
-            self.changes_made()
-        else:
-            self.canvas.clear()
-            self.canvas.show_intro()
-
-    def dual_toggle(self):
-        current_room = self.level_list_panel.get_selected_room()
-
-        if current_room:
-            new_room_data = current_room.rows
-
-            if self.level_settings_bar.dual():  # Converts room into dual.
-                new_room_data = make_dual(current_room.rows)
-            else:  # Converts room into non-dual.
-                msg_box = tk.messagebox.askquestion(
-                    "Delete Dual Room?",
-                    "Un-dualing this room will delete your background layer. This is not recoverable.\nContinue?",
-                    icon="warning",
-                )
-                if msg_box == "yes":
-                    new_room_data = remove_dual(current_room.rows)
-                else:
-                    return
-
-            self.level_list_panel.replace_selected_room(
-                LevelsTreeRoom(current_room.name, new_room_data)
-            )
-            self.room_select(None)
-            self.remember_changes()
+        self.changes_made()
 
     def canvas_click(
         self,
@@ -753,12 +704,10 @@ class VanillaLevelEditor(ttk.Frame):
             y_offset,
         )
 
-        # self.tiles_meta[row][col] = tile_code
         self.tile_codes[canvas_index][row][column] = tile_code
-        self.remember_changes()
+        self.changes_made()
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
-        # tile_code = self.tiles_meta[row][col]
         tile_code = self.tile_codes[canvas_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
@@ -841,7 +790,7 @@ class VanillaLevelEditor(ttk.Frame):
                     return
                 if (
                     str(combo_where.get()) == "current room"
-                    and self.last_selected_room is None
+                    and self.current_selected_room is None
                 ):
                     error_lbl["text"] = "No current room selected.."
                     error_lbl.grid()
@@ -867,48 +816,23 @@ class VanillaLevelEditor(ttk.Frame):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
-    def replace_rooms(self, replacement_rooms):
-        new_selected_room = self.level_list_panel.replace_rooms(replacement_rooms)
-        if new_selected_room:
-            self.last_selected_room = new_selected_room
-            self.room_select(None)
-
     def replace_tiles(self, tile, new_tile, replace_where):
-        if replace_where == "all rooms":
-            existing_templates = self.level_list_panel.get_rooms()
-            new_templates = []
-            for existing_template in existing_templates:
-                new_rooms = []
-                for existing_room in existing_template.rooms:
-                    room_data = []
-                    room_name = existing_room.name
-                    room_rows = existing_room.rows
-                    for row in room_rows:
-                        new_row = ""
-                        if not str(row).startswith(r"\!"):
-                            for replace_code in row:
-                                if replace_code == str(tile):
-                                    replace_code = str(new_tile)
-                                    new_row += str(new_tile)
-                                else:
-                                    new_row += str(replace_code)
-                        else:
-                            new_row = str(row)
-                        room_data.append(new_row)
-                    new_rooms.append(LevelsTreeRoom(room_name, room_data))
-                new_templates.append(
-                    LevelsTreeTemplate(existing_template.name, new_rooms)
-                )
-            self.replace_rooms(new_templates)
-            self.changes_made()
-        else:
-            for layer in self.tile_codes:
+        def replace_room_chunk(room_chunk):
+            for layer in room_chunk:
                 for row_codes in layer:
                     for column, tile_code in enumerate(row_codes):
                         if tile_code == tile:
                             row_codes[column] = new_tile
-            self.remember_changes()  # Remember changes made.
-            self.room_select(None)
+
+
+        if replace_where == "all rooms":
+            for template in self.template_list:
+                for room_instance in template.rooms:
+                    replace_room_chunk([room_instance.front, room_instance.back])
+        else:
+            replace_room_chunk(self.tile_codes)
+        self.room_select(None)
+        self.changes_made()
 
     def clear_canvas(self):
         msg_box = tk.messagebox.askquestion(
@@ -924,48 +848,32 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.clear()
             self.canvas.draw_background(self.lvl_biome)
             self.canvas.draw_grid()
-            self.remember_changes()  # Remember changes made.
+            self.changes_made()
 
     def room_select(self, _event):  # Loads room when click if not parent node.
         dual_mode = False
-        selected_room = self.level_list_panel.get_selected_room()
-        if selected_room:
+        template_index, room_instance_index = self.level_list_panel.get_selected_room()
+        if template_index is not None and room_instance_index is not None:
             self.canvas.clear()
             self.canvas.hide_intro()
 
-            self.last_selected_room = selected_room
-            current_settings = []
-            current_room_tiles = []
+            selected_room = self.template_list[template_index].rooms[room_instance_index]
+            self.current_selected_room = selected_room
             current_settings = []
 
-            for cr_line in selected_room.rows:
-                if str(cr_line).startswith(r"\!"):
-                    logger.debug("found tag %s", cr_line)
-                    current_settings.append(cr_line)
-                else:
-                    logger.debug("appending %s", cr_line)
-                    current_room_tiles.append(str(cr_line))
-                    for char in str(cr_line):
-                        if str(char) == " ":
-                            dual_mode = True
-
-            dual_mode = r"\!dual" in current_settings
+            current_settings = selected_room.settings
+            dual_mode = TemplateSetting.DUAL in current_settings
             self.level_settings_bar.set_dual(dual_mode)
-            self.level_settings_bar.set_flip(r"\!flip" in current_settings)
-            self.level_settings_bar.set_purge(r"\!purge" in current_settings)
-            self.level_settings_bar.set_only_flip(r"\!onlyflip" in current_settings)
-            self.level_settings_bar.set_ignore(r"\!ignore" in current_settings)
-            self.level_settings_bar.set_rare(r"\!rare" in current_settings)
-            self.level_settings_bar.set_hard(r"\!hard" in current_settings)
-            self.level_settings_bar.set_liquid(r"\!liquid" in current_settings)
+            self.level_settings_bar.set_flip(TemplateSetting.FLIP in current_settings)
+            self.level_settings_bar.set_purge(TemplateSetting.PURGE in current_settings)
+            self.level_settings_bar.set_only_flip(TemplateSetting.ONLYFLIP in current_settings)
+            self.level_settings_bar.set_ignore(TemplateSetting.IGNORE in current_settings)
+            self.level_settings_bar.set_rare(TemplateSetting.RARE in current_settings)
+            self.level_settings_bar.set_hard(TemplateSetting.HARD in current_settings)
+            self.level_settings_bar.set_liquid(TemplateSetting.LIQUID in current_settings)
 
-            rows = len(current_room_tiles)
-            cols = len(str(current_room_tiles[0]).split(" ", 2)[0])
 
-            roomwidth = int(math.ceil(cols / 10))
-            if dual_mode:
-                roomwidth = int(math.ceil(((cols - 1) / 2) / 10))
-            self.canvas.configure_size(roomwidth, int(math.ceil(rows / 8)))
+            self.canvas.configure_size(int(math.ceil(len(selected_room.front[0]) / 10)), int(math.ceil(len(selected_room.front) / 8)))
 
             # Draw lines to fill the size of the level.
             self.canvas.draw_background(self.lvl_biome)
@@ -973,45 +881,39 @@ class VanillaLevelEditor(ttk.Frame):
 
             self.canvas.hide_canvas(1, not dual_mode)
 
-            frontlayer_tiles = list(map(lambda row: list(map(lambda tile: tile, str(row.split(" ", 2)[0]))), current_room_tiles))
-            if len(current_room_tiles[0].split(" ", 2)) > 1:
-                backlayer_tiles = list(map(lambda row: list(map(lambda tile: tile, str(row.split(" ", 2)[1]))), current_room_tiles))
-            else:
-                backlayer_tiles = list(map(lambda row: list(map(lambda _: "0", str(row))), frontlayer_tiles))
-
             self.tile_codes = [
-                frontlayer_tiles,
-                backlayer_tiles,
+                selected_room.front,
+                selected_room.back,
             ]
 
             for canvas_index, layer_tile_codes in enumerate(self.tile_codes):
                 for row_index, row in enumerate(layer_tile_codes):
                     for column_index, tile_code in enumerate(row):
-                            tile_name = ""
-                            tiles = [
-                                c
-                                for c in self.tile_palette_ref_in_use
-                                if str(" " + tile_code) in str(c[0])
-                            ]
-                            if tiles:
-                                tile_image = tiles[-1][1]
-                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
-                            else:
-                                # There's a missing tile id somehow
-                                logger.debug("%s Not Found", tile_code)
-                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
-                                tile_image.width(),
-                                tile_image.height(),
-                                tile_name,
-                            )
-                            self.canvas.replace_tile_at(
-                                canvas_index,
-                                row_index,
-                                column_index,
-                                tile_image,
-                                x_coord,
-                                y_coord,
-                            )
+                        tile_name = ""
+                        tiles = [
+                            c
+                            for c in self.tile_palette_ref_in_use
+                            if str(" " + tile_code) in str(c[0])
+                        ]
+                        if tiles:
+                            tile_image = tiles[-1][1]
+                            tile_name = str(tiles[-1][0]).split(" ", 1)[0]
+                        else:
+                            # There's a missing tile id somehow
+                            logger.debug("%s Not Found", tile_code)
+                        x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                            tile_image.width(),
+                            tile_image.height(),
+                            tile_name,
+                        )
+                        self.canvas.replace_tile_at(
+                            canvas_index,
+                            row_index,
+                            column_index,
+                            tile_image,
+                            x_coord,
+                            y_coord,
+                        )
 
         else:
             self.canvas.clear()
@@ -1144,6 +1046,71 @@ class VanillaLevelEditor(ttk.Frame):
 
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
+
+    def on_insert_room(self, parent_index):
+        room_template = self.template_list[parent_index]
+        # Set default prompt based on parent name
+        roomsize_key = "normal: 10x8"
+        parent_room_type = room_template.name
+        for room_size_text, room_type in ROOM_TYPES.items():
+            if parent_room_type.startswith(room_type.name):
+                roomsize_key = room_size_text
+                break
+
+        room_type = ROOM_TYPES[roomsize_key]
+        front_layer = [["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)]
+        back_layer = [["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)]
+        new_room = RoomInstance("new room", [], front_layer, back_layer)
+        room_template.rooms.append(
+            new_room
+        )
+        self.changes_made()
+        return new_room
+
+    def on_duplicate_room(self, parent_index, room_index):
+        room_template = self.template_list[parent_index]
+        room_instance = room_template.rooms[room_index]
+        new_settings = list(map(lambda setting: setting, room_instance.settings))
+        def map_layer(layer):
+            return [[t for t in row] for row in layer]
+        new_room = RoomInstance(room_instance.name + " COPY", new_settings, map_layer(room_instance.front), map_layer(room_instance.back))
+        room_template.rooms.append(new_room)
+        self.changes_made()
+        return new_room
+
+    def on_delete_room(self, parent_index, room_index):
+        room_template = self.template_list[parent_index]
+        if room_template.rooms[room_index] == self.current_selected_room:
+            self.canvas.clear()
+            self.canvas.show_intro()
+        del room_template.rooms[room_index]
+        self.changes_made()
+
+    def on_copy_room(self, parent_index, room_index):
+        room_template = self.template_list[parent_index]
+        room_instance = room_template.rooms[room_index]
+        chunk = self.convert_to_chunk(room_instance)
+        output = io.StringIO()
+        chunk.write(output)
+        pyperclip.copy(output.getvalue())
+        output.close()
+
+    def on_paste_room(self, parent_index):
+        data = pyperclip.paste().encode("utf-8").decode("cp1252")
+        if data is not None and len(data) > 0:
+            input_text = io.StringIO(initial_value=data)
+            chunk = Chunk.parse(input_text)
+
+            room_template = self.template_list[parent_index]
+            new_room = self.convert_from_chunk(chunk)
+            room_template.rooms.append(new_room)
+            self.changes_made()
+            return new_room
+
+    def on_rename_room(self, parent_index, room_index, new_name):
+        room_template = self.template_list[parent_index]
+        room_instance = room_template.rooms[room_index]
+        room_instance.name = new_name
 
     def reset_canvas(self):
         self.canvas.clear()

@@ -2,12 +2,16 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.levels.level_templates import TemplateSetting
+
 logger = logging.getLogger(__name__)
 
 
 class LevelSettingsBar(ttk.Frame):
-    def __init__(self, parent, on_flip_setting, on_flip_dual_setting, *args, **kwargs):
+    def __init__(self, parent, on_flip_setting, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+
+        self.on_flip_setting = on_flip_setting
 
         self.var_ignore = tk.IntVar()
         self.var_flip = tk.IntVar()
@@ -23,7 +27,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_ignore,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_ignore,
         )
         self.checkbox_flip = ttk.Checkbutton(
             self,
@@ -31,7 +35,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_flip,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_flip,
         )
         self.checkbox_only_flip = ttk.Checkbutton(
             self,
@@ -39,7 +43,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_only_flip,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_only_flip,
         )
         self.checkbox_rare = ttk.Checkbutton(
             self,
@@ -47,7 +51,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_rare,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_rare,
         )
         self.checkbox_hard = ttk.Checkbutton(
             self,
@@ -55,7 +59,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_hard,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_hard,
         )
         self.checkbox_liquid = ttk.Checkbutton(
             self,
@@ -63,7 +67,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_liquid,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_liquid,
         )
         self.checkbox_purge = ttk.Checkbutton(
             self,
@@ -71,7 +75,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_purge,
             onvalue=1,
             offvalue=0,
-            command=on_flip_setting,
+            command=self.on_flip_purge,
         )
         self.checkbox_dual = ttk.Checkbutton(
             self,
@@ -79,7 +83,7 @@ class LevelSettingsBar(ttk.Frame):
             var=self.var_dual,
             onvalue=1,
             offvalue=0,
-            command=on_flip_dual_setting,
+            command=self.on_flip_dual,
         )
         self.checkbox_dual.grid(row=4, column=0, sticky="w")
         self.checkbox_ignore.grid(row=4, column=2, sticky="w")
@@ -91,6 +95,30 @@ class LevelSettingsBar(ttk.Frame):
         self.checkbox_liquid.grid(row=4, column=8, sticky="w")
 
         self.columnconfigure(0, weight=1)
+
+    def on_flip_ignore(self):
+        self.on_flip_setting(TemplateSetting.IGNORE, self.ignore())
+
+    def on_flip_liquid(self):
+        self.on_flip_setting(TemplateSetting.LIQUID, self.liquid())
+
+    def on_flip_hard(self):
+        self.on_flip_setting(TemplateSetting.HARD, self.hard())
+
+    def on_flip_rare(self):
+        self.on_flip_setting(TemplateSetting.RARE, self.rare())
+
+    def on_flip_flip(self):
+        self.on_flip_setting(TemplateSetting.FLIP, self.flip())
+
+    def on_flip_only_flip(self):
+        self.on_flip_setting(TemplateSetting.ONLYFLIP, self.only_flip())
+
+    def on_flip_purge(self):
+        self.on_flip_setting(TemplateSetting.PURGE, self.purge())
+
+    def on_flip_dual(self):
+        self.on_flip_setting(TemplateSetting.DUAL, self.dual())
 
     def ignore(self):
         return int(self.var_ignore.get()) == 1

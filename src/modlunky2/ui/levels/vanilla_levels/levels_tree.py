@@ -18,57 +18,18 @@ from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class LevelsTreeRoom:
-    name: str
-    rows: List[str]
-
-
-@dataclass
-class LevelsTreeTemplate:
-    name: str
-    rooms: List[LevelsTreeRoom]
-
-
-@dataclass
-class LevelsTreeSetroom:
-    template: LevelsTreeTemplate
-    setroom: MatchedSetroom
-
-
-@dataclass
-class RoomType:
-    name: str
-    x_size: int
-    y_size: int
-
-
-ROOM_TYPES = {
-    f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
-    for room_type in [
-        RoomType("normal", 10, 8),
-        RoomType("machine_wideroom", 20, 8),
-        RoomType("machine_tallroom", 10, 16),
-        RoomType("machine_bigroom", 20, 16),
-        RoomType("coffin_frog", 10, 16),
-        RoomType("ghistroom", 5, 5),
-        RoomType("feeling", 20, 16),
-        RoomType("chunk_ground", 5, 3),
-        RoomType("chunk_door", 6, 3),
-        RoomType("chunk_air", 5, 3),
-        RoomType("cache", 5, 5),
-    ]
-}
-DEFAULT_ROOM_TYPE = "normal"
-
-
 class LevelsTree(ttk.Treeview):
-    def __init__(self, parent, on_edit, reset_canvas, config: Config, *args, **kwargs):
+    def __init__(self, parent, on_edit, reset_canvas, on_add_room, on_delete_room, on_duplicate_room, on_copy_room, on_paste_room, on_rename_room, config: Config, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.config = config
         self.on_edit = on_edit
         self.reset_canvas = reset_canvas
+        self.on_add_room = on_add_room
+        self.on_delete_room = on_delete_room
+        self.on_duplicate_room = on_duplicate_room
+        self.on_copy_room = on_copy_room
+        self.on_paste_room = on_paste_room
+        self.on_rename_room = on_rename_room
 
         # two different context menus to show depending on what is clicked (room or room list)
         self.popup_menu_child = tk.Menu(self, tearoff=0)
@@ -111,40 +72,29 @@ class LevelsTree(ttk.Treeview):
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)  # gets selected room
         if parent_iid:
-            item_name = self.item(item_iid)["text"]
-            room_data = self.item(item_iid, option="values")
-            self.insert(parent_iid, "end", text=item_name + " COPY", values=room_data)
+            item_index = self.index(item_iid)
+            parent_index = self.index(parent_iid)
+            new_room = self.on_duplicate_room(parent_index, item_index)
+            self.insert(parent_iid, "end", text=new_room.name)
 
     def copy(self):
-        item = self.selection()[0]
-        copy_text = str(self.item(item, option="text"))
-        copy_values_raw = self.item(item, option="values")
-        copy_values = ""
-        for line in copy_values_raw:
-            copy_values += str(line) + "\n"
-        logger.debug("copied %s", copy_values)
-        pyperclip.copy(copy_text + "\n" + copy_values)
-
-    def paste(self):
-        data = pyperclip.paste().encode("utf-8").decode("cp1252")
-
-        paste_text = data.split("\n", 1)[0]
-        paste_values_raw = data.split("\n", 1)[1]
-
-        paste_values = []
-        paste_values = paste_values_raw.split("\n")
-
-        for item in paste_values:
-            if item == "":
-                paste_values.remove(item)  # removes empty line
-        logger.debug("pasted %s", paste_values)
-
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)  # gets selected room
         if parent_iid:
-            self.insert(parent_iid, "end", text=paste_text, values=paste_values)
-        else:
-            self.insert(item_iid, "end", text=paste_text, values=paste_values)
+            item_index = self.index(item_iid)
+            parent_index = self.index(parent_iid)
+            self.on_copy_room(parent_index, item_index)
+
+    def paste(self):
+        item_iid = self.selection()[0]
+        if item_iid:
+            item_index = self.index(item_iid)
+            parent_iid = self.parent(item_iid)  # gets selected room
+            if parent_iid:
+                item_index = self.index(parent_iid)
+                item_iid = parent_iid
+            new_room = self.on_paste_room(item_index)
+            self.insert(item_iid, "end", text=new_room.name)
 
     def delete_selected(self):
         item_iid = self.selection()[0]
@@ -159,6 +109,9 @@ class LevelsTree(ttk.Treeview):
                 icon="warning",
             )
             if msg_box == "yes":
+                parent_index = self.index(parent_iid)
+                item_index = self.index(item_iid)
+                self.on_delete_room(parent_index, item_index)
                 self.delete(item_iid)
                 self.reset_canvas()
 
@@ -176,17 +129,8 @@ class LevelsTree(ttk.Treeview):
         if entry_index == "":
             return
 
-        # Set default prompt based on parent name
-        roomsize_key = "normal: 10x8"
-        parent_room_type = self.item(parent)["text"]
-        for room_size_text, room_type in ROOM_TYPES.items():
-            if parent_room_type.startswith(room_type.name):
-                roomsize_key = room_size_text
-                break
-
-        room_type = ROOM_TYPES[roomsize_key]
-        new_room_data = ["0" * room_type.x_size] * room_type.y_size
-        self.insert(parent, "end", text="new room", values=new_room_data)
+        new_room = self.on_add_room(self.index(parent))
+        self.insert(parent, "end", text=new_room.name)
 
     def rename_dialog(self):
         item_iid = self.selection()[0]
@@ -231,6 +175,12 @@ class LevelsTree(ttk.Treeview):
     def confirm_entry(self, entry1):
         if entry1 != "":
             self.item(self.focus(), text=entry1)
+            item_iid = self.selection()[0]
+            parent_iid = self.parent(item_iid)  # gets selected room
+            if parent_iid:
+                item_index = self.index(item_iid)
+                parent_index = self.index(parent_iid)
+                self.on_rename_room(parent_index, item_index, entry1)
             return True
         else:
             return False
@@ -239,168 +189,21 @@ class LevelsTree(ttk.Treeview):
         for i in self.get_children():
             self.delete(i)
 
-    def __get_room_template(self, parent):
-        rooms = []
-        for room in self.get_children(parent):
-            room_name = self.item(room, option="text")
-            room_rows = self.item(room, option="values")
-            rooms.append(LevelsTreeRoom(room_name, room_rows))
-        return LevelsTreeTemplate(self.item(parent, option="text"), rooms)
-
-    def get_rooms(self):
-        level_templates = []
-        for room_parent in self.get_children():
-            level_templates.append(self.__get_room_template(room_parent))
-        return level_templates
-
-    def replace_rooms(self, replacements):
-        item_iid = self.selection()[0]
-        parent_iid = self.parent(item_iid)
-        selected_parent_index = None
-        if parent_iid:
-            selected_parent_index = self.index(parent_iid)
-        selected_item_index = None
-        if item_iid:
-            selected_item_index = self.index(item_iid)
-
-        for parent_index, parent in enumerate(self.get_children()):
-            for child_index, child in enumerate(self.get_children(parent)):
-                self.delete(child)
-                if (
-                    len(replacements) > parent_index
-                    and len(replacements[parent_index].rooms) > child_index
-                ):
-                    room = replacements[parent_index].rooms[child_index]
-                    new_child = self.insert(
-                        parent,
-                        child_index,
-                        text=room.name,
-                        values=room.rows,
-                    )
-                    if (
-                        selected_parent_index == parent_index
-                        and selected_item_index == child_index
-                    ):
-                        self.selection_set(new_child)
-                        selected_child = new_child
-
-        return selected_child
-
     def set_rooms(self, rooms):
         for room in rooms:
-            entry = self.insert("", "end", text=room.name)
+            room_display_name = str(room.name)
+            if len(str(room.comment)) > 0:
+                room_display_name += "   // " + room.comment
+            entry = self.insert("", "end", text=room_display_name)
             for layout in room.rooms:
-                self.insert(entry, "end", values=layout.rows, text=layout.name)
-
-    def get_selected_room_template_name(self):
-        selection = self.selection()
-        if len(selection) == 0:
-            return None
-        item_iid = selection[0]
-        parent_iid = self.parent(item_iid)
-        if parent_iid:
-            return self.item(parent_iid, option="text")
-        return None
+                self.insert(entry, "end", text=layout.name)
 
     def get_selected_room(self):
         selection = self.selection()
         if len(selection) == 0:
-            return None
+            return None, None
         item_iid = selection[0]
         parent_iid = self.parent(item_iid)
         if parent_iid:
-            room_name = self.item(item_iid, option="text")
-            room_rows = self.item(item_iid, option="values")
-            return LevelsTreeRoom(room_name, room_rows)
-        return None
-
-    def replace_selected_room(self, replacement):
-        item_iid = self.selection()[0]
-        parent_iid = self.parent(item_iid)
-        if parent_iid:
-            edited = self.insert(
-                parent_iid,
-                self.index(item_iid),
-                text=replacement.name,
-                values=replacement.rows,
-            )
-            self.delete(item_iid)
-            self.selection_set(edited)
-
-    def get_level_templates(self):
-        level_templates = LevelTemplates()
-        for room_parent in self.get_children():
-            template_chunks = []
-            room_list_name = self.item(room_parent)["text"].split(" ", 1)[0]
-            room_list_comment = ""
-            if len(self.item(room_parent)["text"].split("//", 1)) > 1:
-                room_list_comment = self.item(room_parent)["text"].split("//", 1)[1]
-            for room in self.get_children(room_parent):
-                room_data = self.item(room, option="values")
-                room_name = self.item(room)["text"]
-                room_foreground = []
-                room_background = []
-                room_settings = []
-
-                for line in room_data:
-                    row = []
-                    back_row = []
-                    tag_found = False
-                    background_found = False
-                    for tag in TAGS:
-                        if str(line) == str(tag):  # This line is a tag.
-                            tag_found = True
-                            break
-                    if not tag_found:
-                        for char in str(line):
-                            if not background_found and str(char) != " ":
-                                row.append(str(char))
-                            elif background_found and str(char) != " ":
-                                back_row.append(str(char))
-                            elif char == " ":
-                                background_found = True
-                    else:
-                        room_settings.append(
-                            TemplateSetting(str(line.split("!", 1)[1]))
-                        )
-                        logger.debug("FOUND %s", line.split("!", 1)[1])
-
-                    if not tag_found:
-                        room_foreground.append(row)
-                        if back_row != []:
-                            room_background.append(back_row)
-
-                template_chunks.append(
-                    Chunk(
-                        comment=room_name,
-                        settings=room_settings,
-                        foreground=room_foreground,
-                        background=room_background,
-                    )
-                )
-            level_templates.set_obj(
-                LevelTemplate(
-                    name=room_list_name,
-                    comment=room_list_comment,
-                    chunks=template_chunks,
-                )
-            )
-
-        return level_templates
-
-    def get_setrooms(self):
-        setrooms = []
-        for room_template in self.get_children():
-            matched_template = Setroom.find_vanilla_setroom(
-                self.item(room_template, option="text").split("//")[0].strip()
-            )
-            if not matched_template:
-                continue
-
-            setrooms.append(
-                LevelsTreeSetroom(
-                    template=self.__get_room_template(room_template),
-                    setroom=matched_template,
-                )
-            )
-        return setrooms
+            return self.index(parent_iid), self.index(item_iid)
+        return None, None
