@@ -22,7 +22,17 @@ class LevelListPanel(ttk.Frame):
     ):
         super().__init__(parent, *args, **kwargs)
         self.levels_tree = LevelsTree(
-            self, on_edit, on_reset_canvas, on_add_room, on_delete_room, on_duplicate_room, on_copy_room, on_paste_room, on_rename_room, modlunky_config, selectmode="browse"
+            self,
+            on_edit,
+            on_reset_canvas,
+            on_add_room,
+            on_delete_room,
+            on_duplicate_room,
+            on_copy_room,
+            on_paste_room,
+            on_rename_room,
+            modlunky_config,
+            selectmode="browse",
         )
         self.vsb = ttk.Scrollbar(
             self, orient="vertical", command=self.levels_tree.yview

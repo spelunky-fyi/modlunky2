@@ -53,22 +53,26 @@ class RoomInstance:
     front: List[List[str]]
     back: List[List[str]]
 
+
 @dataclass
 class RoomTemplate:
     name: str
     comment: Optional[str]
     rooms: List[RoomInstance]
 
+
 @dataclass
 class MatchedSetroomTemplate:
     template: RoomTemplate
     setroom: MatchedSetroom
+
 
 @dataclass
 class RoomType:
     name: str
     x_size: int
     y_size: int
+
 
 ROOM_TYPES = {
     f"{room_type.name}: {room_type.x_size}x{room_type.y_size}": room_type
@@ -87,6 +91,7 @@ ROOM_TYPES = {
     ]
 }
 DEFAULT_ROOM_TYPE = "normal"
+
 
 class VanillaLevelEditor(ttk.Frame):
     def __init__(
@@ -319,9 +324,7 @@ class VanillaLevelEditor(ttk.Frame):
         )
         self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
-        self.level_settings_bar = LevelSettingsBar(
-            self.editor_tab, self.setting_flip
-        )
+        self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.setting_flip)
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
 
     def read_lvl_file(self, lvl):
@@ -448,7 +451,9 @@ class VanillaLevelEditor(ttk.Frame):
             data_rooms = []
             for room in template.chunks:
                 data_rooms.append(self.convert_from_chunk(room))
-            self.template_list.append(RoomTemplate(template.name, template.comment, data_rooms))
+            self.template_list.append(
+                RoomTemplate(template.name, template.comment, data_rooms)
+            )
         self.level_list_panel.set_rooms(self.template_list)
 
     def load_full_preview(self):
@@ -499,7 +504,9 @@ class VanillaLevelEditor(ttk.Frame):
             if len(room_instances) != 0:
                 room_instance = room_instances[0]
 
-                for layer_index, layer in enumerate([room_instance.front, room_instance.back]):
+                for layer_index, layer in enumerate(
+                    [room_instance.front, room_instance.back]
+                ):
                     for currow, room_row in enumerate(layer):
                         tile_image_full = None
                         logger.debug("Room row: %s", room_row)
@@ -582,20 +589,26 @@ class VanillaLevelEditor(ttk.Frame):
         settings = list(map(lambda setting: setting, chunk.settings))
 
         i = 0
+
         def map_layer(layer):
             return list(map(lambda line: list(map(lambda tile: tile, line)), layer))
+
         foreground_tiles = map_layer(chunk.foreground)
         if len(chunk.background) > 0:
             background_tiles = map_layer(chunk.background)
         else:
-            background_tiles = [["0" for _ in range(len(row))] for row in foreground_tiles]
+            background_tiles = [
+                ["0" for _ in range(len(row))] for row in foreground_tiles
+            ]
 
         room_name = "room"
         comment = str(chunk.comment).lstrip("/ ").strip()
         if comment:
             room_name = comment
 
-        return RoomInstance(str(room_name), settings, foreground_tiles, background_tiles)
+        return RoomInstance(
+            str(room_name), settings, foreground_tiles, background_tiles
+        )
 
     def convert_to_chunk(self, room_instance):
         return Chunk(
@@ -607,11 +620,12 @@ class VanillaLevelEditor(ttk.Frame):
 
     def get_level_templates(self):
         level_templates = LevelTemplates()
+
         def convert_level_template(template):
             return LevelTemplate(
                 name=template.name,
                 comment=template.comment,
-                chunks=list(map(self.convert_to_chunk, template.rooms))
+                chunks=list(map(self.convert_to_chunk, template.rooms)),
             )
 
         for template in self.template_list:
@@ -824,7 +838,6 @@ class VanillaLevelEditor(ttk.Frame):
                         if tile_code == tile:
                             row_codes[column] = new_tile
 
-
         if replace_where == "all rooms":
             for template in self.template_list:
                 for room_instance in template.rooms:
@@ -857,7 +870,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.clear()
             self.canvas.hide_intro()
 
-            selected_room = self.template_list[template_index].rooms[room_instance_index]
+            selected_room = self.template_list[template_index].rooms[
+                room_instance_index
+            ]
             self.current_selected_room = selected_room
             current_settings = []
 
@@ -866,14 +881,22 @@ class VanillaLevelEditor(ttk.Frame):
             self.level_settings_bar.set_dual(dual_mode)
             self.level_settings_bar.set_flip(TemplateSetting.FLIP in current_settings)
             self.level_settings_bar.set_purge(TemplateSetting.PURGE in current_settings)
-            self.level_settings_bar.set_only_flip(TemplateSetting.ONLYFLIP in current_settings)
-            self.level_settings_bar.set_ignore(TemplateSetting.IGNORE in current_settings)
+            self.level_settings_bar.set_only_flip(
+                TemplateSetting.ONLYFLIP in current_settings
+            )
+            self.level_settings_bar.set_ignore(
+                TemplateSetting.IGNORE in current_settings
+            )
             self.level_settings_bar.set_rare(TemplateSetting.RARE in current_settings)
             self.level_settings_bar.set_hard(TemplateSetting.HARD in current_settings)
-            self.level_settings_bar.set_liquid(TemplateSetting.LIQUID in current_settings)
+            self.level_settings_bar.set_liquid(
+                TemplateSetting.LIQUID in current_settings
+            )
 
-
-            self.canvas.configure_size(int(math.ceil(len(selected_room.front[0]) / 10)), int(math.ceil(len(selected_room.front) / 8)))
+            self.canvas.configure_size(
+                int(math.ceil(len(selected_room.front[0]) / 10)),
+                int(math.ceil(len(selected_room.front) / 8)),
+            )
 
             # Draw lines to fill the size of the level.
             self.canvas.draw_background(self.lvl_biome)
@@ -1058,12 +1081,14 @@ class VanillaLevelEditor(ttk.Frame):
                 break
 
         room_type = ROOM_TYPES[roomsize_key]
-        front_layer = [["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)]
-        back_layer = [["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)]
+        front_layer = [
+            ["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)
+        ]
+        back_layer = [
+            ["0" for _ in range(room_type.x_size)] for _ in range(room_type.y_size)
+        ]
         new_room = RoomInstance("new room", [], front_layer, back_layer)
-        room_template.rooms.append(
-            new_room
-        )
+        room_template.rooms.append(new_room)
         self.changes_made()
         return new_room
 
@@ -1071,9 +1096,16 @@ class VanillaLevelEditor(ttk.Frame):
         room_template = self.template_list[parent_index]
         room_instance = room_template.rooms[room_index]
         new_settings = list(map(lambda setting: setting, room_instance.settings))
+
         def map_layer(layer):
             return [[t for t in row] for row in layer]
-        new_room = RoomInstance(room_instance.name + " COPY", new_settings, map_layer(room_instance.front), map_layer(room_instance.back))
+
+        new_room = RoomInstance(
+            room_instance.name + " COPY",
+            new_settings,
+            map_layer(room_instance.front),
+            map_layer(room_instance.back),
+        )
         room_template.rooms.append(new_room)
         self.changes_made()
         return new_room
