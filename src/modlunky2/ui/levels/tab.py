@@ -120,7 +120,7 @@ class LevelsTab(Tab):
         def tab_selected(event):
             if tabs[event.widget.index("current")] == self.last_selected_editor_tab:
                 return
-            if self.last_selected_editor_tab.save_needed:
+            if self.save_needed:
                 msg_box = tk.messagebox.askquestion(
                     "Continue?",
                     "You have unsaved changes.\nContinue without saving?",
@@ -154,6 +154,10 @@ class LevelsTab(Tab):
     # Called whenever CTRL+S is pressed, saves depending on editor tab
     def save_changes_shortcut(self):
         self.last_selected_editor_tab.save_changes()
+
+    @property
+    def save_needed(self):
+        return self.last_selected_editor_tab.save_needed
 
     def go_back(self):
         msg_box = tk.messagebox.askquestion(
