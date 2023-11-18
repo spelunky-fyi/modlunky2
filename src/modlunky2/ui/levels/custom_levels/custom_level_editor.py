@@ -23,6 +23,11 @@ from modlunky2.utils import tb_info
 logger = logging.getLogger(__name__)
 
 
+class LAYER:
+    FRONT = 0
+    BACK = 1
+
+
 class CustomLevelEditor(ttk.Frame):
     def __init__(
         self,
@@ -200,8 +205,8 @@ class CustomLevelEditor(ttk.Frame):
             old_level_file.level_settings,
             old_level_file.monster_chances,
             self.tile_palette_ref_in_use,
-            self.tile_codes[0],
-            self.tile_codes[1],
+            self.tile_codes[LAYER.FRONT],
+            self.tile_codes[LAYER.BACK],
         ):
             self.reset_save_button()
             logger.debug("Saved")
@@ -775,8 +780,8 @@ class CustomLevelEditor(ttk.Frame):
             )[1]
 
         self.tile_codes = [
-            fill_to_size_with_tile(self.tile_codes[0], empty, width, height),
-            fill_to_size_with_tile(self.tile_codes[1], hard_floor, width, height),
+            fill_to_size_with_tile(self.tile_codes[LAYER.FRONT], empty, width, height),
+            fill_to_size_with_tile(self.tile_codes[LAYER.BACK], hard_floor, width, height),
         ]
 
         self.lvl_width = width
