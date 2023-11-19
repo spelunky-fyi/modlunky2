@@ -1,3 +1,5 @@
+import math
+
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
     RoomInstance,
@@ -7,7 +9,6 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
 from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
-
 
 def find_roommap(templates):
     setrooms = {}
@@ -19,10 +20,6 @@ def find_roommap(templates):
             setrooms[matched_template.name].append(
                 MatchedSetroomTemplate(room_template, matched_template)
             )
-        # if not matched_template:
-        #     continue
-
-        # setrooms.append(MatchedSetroomTemplate(room_template, matched_template))
 
     def expand_to_height_if_necessary(room_map, height):
         if len(room_map) < height:
@@ -38,48 +35,106 @@ def find_roommap(templates):
                 for _ in range(width - len(row)):
                     row.append(None)
 
+    def set_room(room_map, x, y, room):
+        expand_to_height_if_necessary(room_map, y + room.height_in_rooms)
+        expand_to_width_if_necessary(room_map, x + room.width_in_rooms)
+        room_map[y][x] = room
+
     room_map = []
     setroom_start = 0
+
+    def get_template_draw_item(room_template, index):
+        chunk_index = 0
+        if len(room_template.rooms) == 0:
+            return None
+        chunk = room_template.rooms[chunk_index]
+        if chunk is None or len(chunk.front) == 0:
+            return None
+        return TemplateDrawItem(
+            room_template,
+            index,
+            chunk,
+            chunk_index,
+            int(math.ceil(len(chunk.front[0]) / 10)),
+            int(math.ceil(len(chunk.front) / 8)),
+        )
+
 
     for _, setroomtype in setrooms.items():
         for matchedtemplate in setroomtype:
             match = matchedtemplate.setroom
             x, y = match.coords.x, match.coords.y
 
-            expand_to_height_if_necessary(room_map, y + setroom_start + 1)
-            expand_to_width_if_necessary(room_map, x + 1)
-
-            room_map[setroom_start + y][x] = TemplateDrawItem(
-                matchedtemplate.template,
-                templates.index(matchedtemplate.template),
-                matchedtemplate.template.rooms[0],
-                0,
-            )
+            template_item = get_template_draw_item(matchedtemplate.template, templates.index(matchedtemplate.template))
+            if template_item:
+                set_room(room_map, x, setroom_start + y, template_item)
 
         setroom_start = len(room_map)
 
-    for template_index, room_template in enumerate(templates):
-        if room_template.name == "machine_bigroom_path":
-            expand_to_height_if_necessary(room_map, setroom_start + 2)
-            expand_to_width_if_necessary(room_map, 2)
-            room_map[setroom_start][0] = TemplateDrawItem(
-                room_template,
-                template_index,
-                room_template.rooms[0],
-                0,
-                2,
-                2,
-            )
-        elif room_template.name == "machine_bigroom_side":
-            expand_to_height_if_necessary(room_map, setroom_start + 2)
-            expand_to_width_if_necessary(room_map, 4)
-            room_map[setroom_start][2] = TemplateDrawItem(
-                room_template,
-                template_index,
-                room_template.rooms[0],
-                0,
-                2,
-                2,
-            )
+    template_map = {}
+    for index, room_template in enumerate(templates):
+        template_item = get_template_draw_item(room_template, index)
+        if template_item:
+            template_map[room_template.name] = template_item
+
+    path_start = setroom_start
+    entrance = template_map.get("entrance")
+    entrance_drop = template_map.get("entrance_drop")
+    path = template_map.get("path_normal")
+    path_drop = template_map.get("path_drop")
+    path_notop = template_map.get("path_notop")
+    path_drop_notop = template_map.get("path_drop_notop")
+    path_exit = template_map.get("exit")
+    path_exit_notop = template_map.get("exit_notop")
+    path_wide = template_map.get("machine_wideroom_path")
+    path_tall = template_map.get("machine_tallroom_path")
+    path_big = template_map.get("machine_bigroom_path")
+
+    more_rooms_start = path_start
+
+    if entrance:
+        set_room(room_map, 0, path_start, entrance)
+        more_rooms_start = path_start + 1
+    if path is None:
+        if entrance_drop:
+            set_room(room_map, 1, path_start, entrance_drop)
+            more_rooms_start = path_start + 1
+        if path_exit:
+            set_room(room_map, 2, path_start, path_exit)
+            more_rooms_start = path_start + 1
+        if path_exit_notop:
+            set_room(room_map, 3, path_start, path_exit_notop)
+            more_rooms_start = path_start + 1
+    else:
+        cw = 1
+        set_room(room_map, 1, path_start, path)
+        if path_drop:
+            cw = 2
+            set_room(room_map, 2, path_start, path_drop)
+        if entrance_drop:
+            set_room(room_map, cw + 1, path_start, entrance_drop)
+        big_top = 1
+        if path_wide:
+            big_top = 2
+            set_room(room_map, 0, path_start + 1, path_wide)
+        has_big = False
+        if path_big:
+            has_big = True
+            set_room(room_map, 0, path_start + big_top, path_big)
+        if path_drop_notop:
+            set_room(room_map, 2, path_start + 1, path_drop_notop)
+        if path_notop:
+            set_room(room_map, 2, path_start + 2, path_notop)
+        if path_tall:
+            set_room(room_map, 3, path_start + 1, path_tall)
+        er, ec = 3, 2
+        if not has_big:
+            er, ec = 2, 0
+        if path_exit:
+            set_room(room_map, ec, path_start + er, path_exit)
+            ec += 1
+        if path_exit_notop:
+            set_room(room_map, ec, path_start + er, path_exit_notop)
+        more_rooms_start = path_start + er + 1
 
     return room_map
