@@ -1,5 +1,6 @@
 import math
 
+from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
     RoomInstance,
@@ -44,9 +45,17 @@ def find_roommap(templates):
     setroom_start = 0
 
     def get_template_draw_item(room_template, index):
-        chunk_index = 0
+        chunk_index = None
         if len(room_template.rooms) == 0:
             return None
+        for i, c in enumerate(room_template.rooms):
+            if TemplateSetting.IGNORE not in c.settings:
+                chunk_index = i
+                break
+
+        if chunk_index is None:
+            return None
+
         chunk = room_template.rooms[chunk_index]
         if chunk is None or len(chunk.front) == 0:
             return None
