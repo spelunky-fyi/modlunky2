@@ -157,6 +157,9 @@ class LevelsTab(Tab):
 
     @property
     def save_needed(self):
+        if self.last_selected_editor_tab is None:
+            return False
+
         return self.last_selected_editor_tab.save_needed
 
     def go_back(self):
