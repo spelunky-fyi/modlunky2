@@ -1,12 +1,10 @@
 import logging
+import math
 import tkinter as tk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.ui.levels.shared.biomes import BIOME
 
-import logging
-
-logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +111,10 @@ class LevelCanvas(tk.Canvas):
     def configure_size(self, width, height):
         self.width = width
         self.height = height
-        self["width"] = (self.zoom_level * width * 10) - 3
-        self["height"] = (self.zoom_level * height * 8) - 3
+        self["width"] = (self.zoom_level * width) - 3
+        self["height"] = (self.zoom_level * height) - 3
         self.tile_images = [
-            [None for _ in range(width * 10)] for _ in range(height * 8)
+            [None for _ in range(width)] for _ in range(height)
         ]
 
     def draw_background(self, theme):
@@ -132,8 +130,8 @@ class LevelCanvas(tk.Canvas):
             bg_img = ImageTk.PhotoImage(im_output)
             self.cached_bgs[theme] = bg_img
 
-        for x in range(0, self.width):
-            for y in range(0, self.height):
+        for x in range(0, int(math.ceil(self.width / 10))):
+            for y in range(0, int(math.ceil(self.height / 8))):
                 self.create_image(
                     x * self.zoom_level * 10,
                     y * self.zoom_level * 8,
@@ -147,19 +145,19 @@ class LevelCanvas(tk.Canvas):
                 i * self.zoom_level,
                 0,
                 i * self.zoom_level,
-                self.height * 8 * self.zoom_level,
+                self.height * self.zoom_level,
                 fill="#F0F0F0",
             )
-            for i in range(0, self.width * 10 + 2)
+            for i in range(0, self.width + 2)
         ] + [
             self.create_line(
                 0,
                 i * self.zoom_level,
-                self.zoom_level * (self.width * 10 + 2),
+                self.zoom_level * (self.width+ 2),
                 i * self.zoom_level,
                 fill="#F0F0F0",
             )
-            for i in range(0, self.height * 8)
+            for i in range(0, self.height)
         ]
         self.hide_grid_lines(self.grid_hidden)
 
@@ -169,20 +167,20 @@ class LevelCanvas(tk.Canvas):
                 i * 10 * self.zoom_level,
                 0,
                 i * 10 * self.zoom_level,
-                self.height * 8 * self.zoom_level,
+                self.height * self.zoom_level,
                 fill="#30F030",
             )
-            for i in range(0, self.width)
+            for i in range(0, int(self.width / 10))
         ] + [
             # for i in range(0, rows * 8):
             self.create_line(
                 0,
                 i * 8 * self.zoom_level,
-                self.zoom_level * (self.width * 10),
+                self.zoom_level * self.width,
                 i * 8 * self.zoom_level,
                 fill="#30F030",
             )
-            for i in range(0, self.height)
+            for i in range(0, int(self.height / 8))
         ]
         self.hide_room_lines(self.rooms_hidden)
 

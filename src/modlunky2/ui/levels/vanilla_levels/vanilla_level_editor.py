@@ -474,7 +474,7 @@ class VanillaLevelEditor(ttk.Frame):
                 logger.debug("Size found: %s", full_size)
                 level_height = int(full_size.split(", ")[1])
                 level_width = int(full_size.split(", ")[0])
-            self.full_level_preview_canvas.configure_size(level_width, level_height)
+            self.full_level_preview_canvas.configure_size(level_width * 10, level_height * 8)
             self.full_level_preview_canvas.draw_background(self.lvl_biome)
             self.full_level_preview_canvas.draw_grid()
         else:
@@ -894,8 +894,8 @@ class VanillaLevelEditor(ttk.Frame):
             )
 
             self.canvas.configure_size(
-                int(math.ceil(len(selected_room.front[0]) / 10)),
-                int(math.ceil(len(selected_room.front) / 8)),
+                len(selected_room.front[0]),
+                len(selected_room.front),
             )
 
             # Draw lines to fill the size of the level.
