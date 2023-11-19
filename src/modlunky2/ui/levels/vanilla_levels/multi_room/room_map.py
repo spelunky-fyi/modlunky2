@@ -221,4 +221,102 @@ def find_roommap(templates):
 
     more_rooms_start += highest_room
 
+    other_vertical_paired_rooms_to_add = [
+        ["idol_top", "idol"],
+        ["udjattop", "udjatentrance"],
+        ["machine_keyroom", "machine_rewardroom"],
+        ["cog_altar_top", "altar"],
+        ["oldhunter_keyroom", "oldhunter_rewardroom"],
+    ]
+
+    vertical_room_column = 0
+    vertical_max_height = 0
+    for room_pair in other_vertical_paired_rooms_to_add:
+        top_room = template_map.get(room_pair[0])
+        r = 0
+        if top_room:
+            set_room(room_map, vertical_room_column, more_rooms_start, top_room)
+            r = 1
+            if vertical_max_height == 0:
+                vertical_max_height = 1
+        bottom_room = template_map.get(room_pair[1])
+        if bottom_room:
+            if vertical_max_height < r + 1:
+                vertical_max_height = r + 1
+            set_room(room_map, vertical_room_column, more_rooms_start + r, bottom_room)
+        if top_room is not None or bottom_room is not None:
+            vertical_room_column += 1
+
+    more_rooms_bottom = more_rooms_start + vertical_max_height - 1
+
+    other_rooms_to_add = [
+        "abzu_backdoor",
+        "lake_normal",
+        "lake_notop",
+        "lake_exit",
+        "lakeoffire_back_entrance",
+        "lakeoffire_back_exit",
+        "mothership_entrance",
+        "mothership_exit",
+        "mothership_coffin",
+        "storage_room",
+        "moai",
+        "coffin_unlockable",
+        "coffin_player",
+        "coffin_player_vertical",
+        "quest_thief2",
+        "beehive",
+        "beehive_entrance",
+        "blackmarket_entrance",
+        "blackmarket_exit",
+        "blackmarket_coffin",
+        "apep",
+        "pen_room",
+        "ghistshop",
+        "empress_grave",
+        "vault",
+        "shop_entrance_up",
+        "shop_entrance_down",
+        "diceshop",
+        "curioshop",
+        "cavemanshop",
+        "posse",
+        "quest_thief1",
+        "room2",
+        "passage_horz",
+        "passage_vert",
+        "passage_turn",
+        "ushabti_entrance",
+        "ushabti_room",
+        "sisters_room",
+        "motherstatue_room",
+        "crashedship_entrance",
+        "crashedship_entrance_notop",
+        "anubis_room",
+        "oldhunter_cursedroom",
+    ]
+
+    for room_name in other_rooms_to_add:
+        room = template_map.get(room_name)
+        added_room = False
+        if room:
+            for row in range(more_rooms_start, more_rooms_bottom+1):
+                if added_room:
+                    break
+                if len(room_map) <= row:
+                    break
+                for col, template_item in enumerate(room_map[row]):
+                    if template_item is None:
+                        set_room(room_map, col, row, room)
+                        added_room = True
+                        break
+
+            if not added_room:
+                if len(room_map) > 0 and len(room_map[0]) < 3:
+                    set_room(room_map, len(room_map[0]), more_rooms_start, room)
+                else:
+                    more_rooms_start = more_rooms_bottom + 1
+                    more_rooms_bottom = more_rooms_start
+                    set_room(room_map, 0, more_rooms_start, room)
+
     return room_map
