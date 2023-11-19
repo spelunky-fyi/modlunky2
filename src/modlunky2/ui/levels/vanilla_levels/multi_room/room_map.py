@@ -222,6 +222,8 @@ def find_roommap(templates):
     more_rooms_start += highest_room
 
     other_vertical_paired_rooms_to_add = [
+        ["shop_attic", "shop_entrance_up"],
+        ["shop_entrance_down", "shop_basement"],
         ["idol_top", "idol"],
         ["udjattop", "udjatentrance"],
         ["machine_keyroom", "machine_rewardroom"],
@@ -274,9 +276,8 @@ def find_roommap(templates):
         "pen_room",
         "ghistshop",
         "empress_grave",
+        "shop",
         "vault",
-        "shop_entrance_up",
-        "shop_entrance_down",
         "diceshop",
         "curioshop",
         "cavemanshop",
