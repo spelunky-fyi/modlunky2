@@ -13,7 +13,7 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomT
 
 
 class MultiRoomEditorTab(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, texture_fetcher, textures_dir, on_add_tilecode, on_delete_tilecode, on_select_palette_tile, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, texture_fetcher, textures_dir, on_add_tilecode, on_delete_tilecode, on_select_palette_tile, on_modify_room, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
@@ -22,6 +22,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
         self.on_select_palette_tile = on_select_palette_tile
+        self.on_modify_room = on_modify_room
 
         self.lvl = None
         self.lvl_biome = None
@@ -115,6 +116,11 @@ class MultiRoomEditorTab(ttk.Frame):
         self.template_draw_map = find_roommap(room_templates)
         self.draw_canvas()
 
+    def redraw(self):
+        self.canvas.clear()
+        self.show_intro()
+        self.draw_canvas()
+
     def populate_tilecode_palette(self, tile_palette, suggestions):
         self.palette_panel.update_with_palette(
             tile_palette,
@@ -130,15 +136,12 @@ class MultiRoomEditorTab(ttk.Frame):
         self.palette_panel.select_tile(tile_name, image, is_primary)
 
     def add_tilecode(self, tile, percent, alt_tile):
-        print("Add")
         self.on_add_tilecode(tile, percent, alt_tile)
 
     def delete_tilecode(self, tile_name, tile_code):
-        print("Delete")
         self.on_delete_tilecode(tile_name, tile_code)
 
     def canvas_click(self, canvas_index, row, column, is_primary):
-        print("canvas click")
         tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
         x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, 50)
 
@@ -160,9 +163,9 @@ class MultiRoomEditorTab(ttk.Frame):
         if TemplateSetting.ONLYFLIP in chunk.settings:
             tile_col = 9 - tile_col
         layer[tile_row][tile_col] = tile_code
+        self.on_modify_room(template_draw_item)
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
-        print("canvas shiftclick")
         room_row, room_col = row // 8, column // 10
         template_draw_item = self.template_draw_map[room_row][room_col]
         chunk = template_draw_item.room_chunk
