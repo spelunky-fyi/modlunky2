@@ -13,3 +13,5 @@ class TemplateDrawItem:
     template_index: int
     room_chunk: RoomInstance
     room_index: int
+    width_in_rooms: int = 1
+    height_in_rooms: int = 1

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import math
 import tkinter as tk
@@ -8,6 +9,13 @@ from modlunky2.ui.levels.shared.biomes import BIOME
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass
+class GridRoom:
+    row: int
+    column: int
+    width: int
+    height: int
 
 class LevelCanvas(tk.Canvas):
     def __init__(
@@ -184,29 +192,25 @@ class LevelCanvas(tk.Canvas):
         ]
         self.hide_grid_lines(self.grid_hidden)
 
-    def draw_room_grid(self, width=1):
-        self.room_lines = [
-            self.create_line(
-                i * 10 * self.zoom_level,
-                0,
-                i * 10 * self.zoom_level,
-                self.height * self.zoom_level,
-                fill="#30F030",
+    def draw_room_grid(self, width=1, special_room_sizes: GridRoom=None):
+        def create_room_boundary_box(row, col, w, h):
+            self.create_rectangle(
+                col * 10 * self.zoom_level,
+                row * 8 * self.zoom_level,
+                (col + w) * 10 * self.zoom_level - 1 + (width - 1),
+                (row + h) * 8 * self.zoom_level - 1 + (width - 1),
+                outline="#30F030",
                 width=width,
             )
-            for i in range(0, int(self.width / 10))
-        ] + [
-            # for i in range(0, rows * 8):
-            self.create_line(
-                0,
-                i * 8 * self.zoom_level,
-                self.zoom_level * self.width,
-                i * 8 * self.zoom_level,
-                fill="#30F030",
-                width=width,
-            )
-            for i in range(0, int(self.height / 8))
-        ]
+        if special_room_sizes is not None:
+            self.room_lines = [
+                create_room_boundary_box(r.row, r.column, r.width, r.height) for r in special_room_sizes
+            ]
+        else:
+            self.room_lines = [
+                create_room_boundary_box(row, col, 1, 1)
+                for row in range(0, int(self.height / 8)) for col in range(0, int(self.width / 10))
+            ]
         self.hide_room_lines(self.rooms_hidden)
 
     def hide_grid_lines(self, hide):
