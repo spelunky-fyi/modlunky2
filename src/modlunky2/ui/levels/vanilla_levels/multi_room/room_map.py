@@ -11,6 +11,30 @@ from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
 
+def get_template_draw_item(room_template, index):
+    chunk_index = None
+    if len(room_template.rooms) == 0:
+        return None
+    for i, c in enumerate(room_template.rooms):
+        if TemplateSetting.IGNORE not in c.settings:
+            chunk_index = i
+            break
+
+    if chunk_index is None:
+        return None
+
+    chunk = room_template.rooms[chunk_index]
+    if chunk is None or len(chunk.front) == 0:
+        return None
+    return TemplateDrawItem(
+        room_template,
+        index,
+        chunk,
+        chunk_index,
+        int(math.ceil(len(chunk.front[0]) / 10)),
+        int(math.ceil(len(chunk.front) / 8)),
+    )
+
 def find_roommap(templates):
     setrooms = {}
     for room_template in templates:
@@ -43,31 +67,6 @@ def find_roommap(templates):
 
     room_map = []
     setroom_start = 0
-
-    def get_template_draw_item(room_template, index):
-        chunk_index = None
-        if len(room_template.rooms) == 0:
-            return None
-        for i, c in enumerate(room_template.rooms):
-            if TemplateSetting.IGNORE not in c.settings:
-                chunk_index = i
-                break
-
-        if chunk_index is None:
-            return None
-
-        chunk = room_template.rooms[chunk_index]
-        if chunk is None or len(chunk.front) == 0:
-            return None
-        return TemplateDrawItem(
-            room_template,
-            index,
-            chunk,
-            chunk_index,
-            int(math.ceil(len(chunk.front[0]) / 10)),
-            int(math.ceil(len(chunk.front) / 8)),
-        )
-
 
     for _, setroomtype in setrooms.items():
         for matchedtemplate in setroomtype:

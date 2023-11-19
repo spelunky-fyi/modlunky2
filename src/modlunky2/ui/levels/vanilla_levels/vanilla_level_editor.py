@@ -1157,6 +1157,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.show_intro()
         del room_template.rooms[room_index]
         self.changes_made()
+        self.multi_room_editor_tab.room_was_deleted(parent_index, room_index)
 
     def on_copy_room(self, parent_index, room_index):
         room_template = self.template_list[parent_index]
