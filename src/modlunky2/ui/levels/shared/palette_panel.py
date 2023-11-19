@@ -308,7 +308,9 @@ class PalettePanel(ttk.Frame):
             return
         selected_tile = self.palette.scrollable_frame.grid_slaves(row, col)[0]
         is_primary = (event.num == 1) or (event.state & 0x20000 == 0)
-        self.select_tile(selected_tile["text"], selected_tile["image"], is_primary, True)
+        self.select_tile(
+            selected_tile["text"], selected_tile["image"], is_primary, True
+        )
 
     def suggested_tile_pick(self, event, suggested_tile, tile_image):
         tile = self.on_add_tilecode(suggested_tile, 100, "empty")
@@ -316,7 +318,7 @@ class PalettePanel(ttk.Frame):
             return
         self.select_tile(tile[0], tile_image, event.num == 1, True)
 
-    def select_tile(self, tile_name, tile_image, is_primary, tell_delegate = False):
+    def select_tile(self, tile_name, tile_image, is_primary, tell_delegate=False):
         tile_view = self.primary_tile_view
         if not is_primary:
             tile_view = self.secondary_tile_view

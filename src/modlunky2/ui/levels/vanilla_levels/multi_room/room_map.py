@@ -1,6 +1,13 @@
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
-from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomTemplate, MatchedSetroomTemplate
-from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import TemplateDrawItem
+from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
+    RoomInstance,
+    RoomTemplate,
+    MatchedSetroomTemplate,
+)
+from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
+    TemplateDrawItem,
+)
+
 
 def find_roommap(templates):
     setrooms = {}
@@ -9,12 +16,13 @@ def find_roommap(templates):
         if matched_template:
             if matched_template.name not in setrooms:
                 setrooms[matched_template.name] = []
-            setrooms[matched_template.name].append(MatchedSetroomTemplate(room_template, matched_template))
+            setrooms[matched_template.name].append(
+                MatchedSetroomTemplate(room_template, matched_template)
+            )
         # if not matched_template:
         #     continue
 
         # setrooms.append(MatchedSetroomTemplate(room_template, matched_template))
-
 
     def expand_to_height_if_necessary(room_map, height):
         if len(room_map) < height:
@@ -41,7 +49,12 @@ def find_roommap(templates):
             expand_to_height_if_necessary(room_map, y + setroom_start + 1)
             expand_to_width_if_necessary(room_map, x + 1)
 
-            room_map[setroom_start + y][x] = TemplateDrawItem(matchedtemplate.template, templates.index(matchedtemplate.template), matchedtemplate.template.rooms[0], 0)
+            room_map[setroom_start + y][x] = TemplateDrawItem(
+                matchedtemplate.template,
+                templates.index(matchedtemplate.template),
+                matchedtemplate.template.rooms[0],
+                0,
+            )
 
         setroom_start = len(room_map)
 
