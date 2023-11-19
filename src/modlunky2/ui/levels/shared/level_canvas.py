@@ -28,6 +28,7 @@ class LevelCanvas(tk.Canvas):
         self.room_lines = []
 
         self.cached_bgs = {}
+        self.cached_bg_overs = {}
 
         self.width = 0
         self.height = 0
@@ -93,6 +94,7 @@ class LevelCanvas(tk.Canvas):
     def set_zoom(self, zoom_level):
         self.zoom_level = zoom_level
         self.cached_bgs = {}
+        self.cached_bg_overs = {}
 
     def replace_tile_at(self, row, column, image, offset_x=0, offset_y=0):
         if len(self.tile_images) <= row or len(self.tile_images[row]) <= column:
@@ -137,7 +139,28 @@ class LevelCanvas(tk.Canvas):
                     anchor="nw",
                 )
 
-    def draw_grid(self):
+    def draw_background_over_room(self, theme, row, col):
+        bg_img = self.cached_bg_overs.get(theme)
+        if not bg_img:
+            background = self.background_for_theme(theme)
+            image = Image.open(background).convert("RGBA")
+            image = image.resize(
+                (self.zoom_level * 10, self.zoom_level * 8), Image.BILINEAR
+            )
+            enhancer = ImageEnhance.Brightness(image)
+            im_output = enhancer.enhance(0.2)
+            bg_img = ImageTk.PhotoImage(im_output)
+            self.cached_bg_overs[theme] = bg_img
+
+        self.create_image(
+            col * self.zoom_level * 10,
+            row * self.zoom_level * 8,
+            image=bg_img,
+            anchor="nw",
+        )
+
+
+    def draw_grid(self, width=1):
         self.grid_lines = [
             self.create_line(
                 i * self.zoom_level,
@@ -145,21 +168,23 @@ class LevelCanvas(tk.Canvas):
                 i * self.zoom_level,
                 self.height * self.zoom_level,
                 fill="#F0F0F0",
+                width=width,
             )
             for i in range(0, self.width + 2)
         ] + [
             self.create_line(
                 0,
-                i * self.zoom_level,
+                i * self.zoom_level - 1,
                 self.zoom_level * (self.width + 2),
                 i * self.zoom_level,
                 fill="#F0F0F0",
+                width=width,
             )
             for i in range(0, self.height)
         ]
         self.hide_grid_lines(self.grid_hidden)
 
-    def draw_room_grid(self):
+    def draw_room_grid(self, width=1):
         self.room_lines = [
             self.create_line(
                 i * 10 * self.zoom_level,
@@ -167,6 +192,7 @@ class LevelCanvas(tk.Canvas):
                 i * 10 * self.zoom_level,
                 self.height * self.zoom_level,
                 fill="#30F030",
+                width=width,
             )
             for i in range(0, int(self.width / 10))
         ] + [
@@ -177,6 +203,7 @@ class LevelCanvas(tk.Canvas):
                 self.zoom_level * self.width,
                 i * 8 * self.zoom_level,
                 fill="#30F030",
+                width=width,
             )
             for i in range(0, int(self.height / 8))
         ]
