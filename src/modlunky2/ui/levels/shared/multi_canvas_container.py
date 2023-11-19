@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from modlunky2.ui.levels.shared.level_canvas import LevelCanvas
+from modlunky2.ui.levels.shared.level_canvas import LevelCanvas, GridRoom
 from modlunky2.utils import is_windows
 
 
@@ -259,9 +259,9 @@ class MultiCanvasContainer(tk.Frame):
         for canvas in self.canvases:
             canvas.draw_grid(width)
 
-    def draw_room_grid(self, width=None):
+    def draw_room_grid(self, width=1, special_room_sizes: GridRoom=None):
         for canvas in self.canvases:
-            canvas.draw_room_grid(width)
+            canvas.draw_room_grid(width, special_room_sizes)
 
     def show_intro(self):
         if self.intro:
