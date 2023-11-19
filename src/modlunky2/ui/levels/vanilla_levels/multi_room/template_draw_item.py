@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 
-from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomTemplate, MatchedSetroomTemplate
+from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
+    RoomInstance,
+    RoomTemplate,
+    MatchedSetroomTemplate,
+)
+
 
 @dataclass
 class TemplateDrawItem:

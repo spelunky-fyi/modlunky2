@@ -8,17 +8,35 @@ from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContain
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.multi_room.room_map import find_roommap
-from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import TemplateDrawItem
-from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomTemplate, MatchedSetroomTemplate
+from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
+    TemplateDrawItem,
+)
+from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
+    RoomInstance,
+    RoomTemplate,
+    MatchedSetroomTemplate,
+)
 
 
 class MultiRoomEditorTab(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, texture_fetcher, textures_dir, on_add_tilecode, on_delete_tilecode, on_select_palette_tile, on_modify_room, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        modlunky_config: Config,
+        texture_fetcher,
+        textures_dir,
+        on_add_tilecode,
+        on_delete_tilecode,
+        on_select_palette_tile,
+        on_modify_room,
+        *args,
+        **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
 
-     #   self.on_edit_room = on_edit_room
+        #   self.on_edit_room = on_edit_room
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
         self.on_select_palette_tile = on_select_palette_tile
@@ -151,7 +169,7 @@ class MultiRoomEditorTab(ttk.Frame):
             column,
             self.tile_palette_map[tile_code][1],
             x_offset,
-            y_offset
+            y_offset,
         )
 
         room_row, room_col = row // 8, column // 10
@@ -233,7 +251,7 @@ class MultiRoomEditorTab(ttk.Frame):
                         tile_image.width(),
                         tile_image.height(),
                         tile_name,
-                        50 ,# self.zoom_level
+                        50,  # self.zoom_level
                     )
                     self.canvas.replace_tile_at(
                         canvas_index,

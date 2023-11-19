@@ -29,9 +29,15 @@ from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
-from modlunky2.ui.levels.vanilla_levels.multi_room.multi_room_editor_tab import MultiRoomEditorTab
+from modlunky2.ui.levels.vanilla_levels.multi_room.multi_room_editor_tab import (
+    MultiRoomEditorTab,
+)
 from modlunky2.ui.levels.vanilla_levels.rules.rules_tab import RulesTab
-from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomTemplate, MatchedSetroomTemplate
+from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
+    RoomInstance,
+    RoomTemplate,
+    MatchedSetroomTemplate,
+)
 from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import (
     LevelDependencies,
 )
@@ -45,6 +51,7 @@ logger = logging.getLogger(__name__)
 class LAYER:
     FRONT = 0
     BACK = 1
+
 
 @dataclass
 class RoomType:
@@ -387,8 +394,12 @@ class VanillaLevelEditor(ttk.Frame):
                     tilecode_item[0], tilecode_item[2], False
                 )
 
-                self.multi_room_editor_tab.select_tile(tilecode_item[0], tilecode_item[2], True)
-                self.multi_room_editor_tab.select_tile(tilecode_item[0], tilecode_item[2], False)
+                self.multi_room_editor_tab.select_tile(
+                    tilecode_item[0], tilecode_item[2], True
+                )
+                self.multi_room_editor_tab.select_tile(
+                    tilecode_item[0], tilecode_item[2], False
+                )
 
                 for i in self.tile_palette_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -453,7 +464,9 @@ class VanillaLevelEditor(ttk.Frame):
                 RoomTemplate(template.name, template.comment, data_rooms)
             )
         self.level_list_panel.set_rooms(self.template_list)
-        self.multi_room_editor_tab.open_lvl(self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list)
+        self.multi_room_editor_tab.open_lvl(
+            self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
+        )
 
     def load_full_preview(self):
         self.list_preview_tiles_ref = []
@@ -564,7 +577,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.lvl_biome,
             self.lvl,
         )
-        self.multi_room_editor_tab.populate_tilecode_palette(self.tile_palette_ref_in_use, None)
+        self.multi_room_editor_tab.populate_tilecode_palette(
+            self.tile_palette_ref_in_use, None
+        )
 
     def palette_selected_tile(self, tile_name, image, is_primary):
         self.multi_room_editor_tab.select_tile(tile_name, image, is_primary)
