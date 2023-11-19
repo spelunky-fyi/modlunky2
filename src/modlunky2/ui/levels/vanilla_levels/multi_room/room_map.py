@@ -58,4 +58,28 @@ def find_roommap(templates):
 
         setroom_start = len(room_map)
 
+    for template_index, room_template in enumerate(templates):
+        if room_template.name == "machine_bigroom_path":
+            expand_to_height_if_necessary(room_map, setroom_start + 2)
+            expand_to_width_if_necessary(room_map, 2)
+            room_map[setroom_start][0] = TemplateDrawItem(
+                room_template,
+                template_index,
+                room_template.rooms[0],
+                0,
+                2,
+                2,
+            )
+        elif room_template.name == "machine_bigroom_side":
+            expand_to_height_if_necessary(room_map, setroom_start + 2)
+            expand_to_width_if_necessary(room_map, 4)
+            room_map[setroom_start][2] = TemplateDrawItem(
+                room_template,
+                template_index,
+                room_template.rooms[0],
+                0,
+                2,
+                2,
+            )
+
     return room_map

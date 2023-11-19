@@ -194,7 +194,8 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def canvas_click(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        template_draw_item = self.template_draw_map[room_row][room_col]
+        # template_draw_item = self.template_draw_map[room_row][room_col]
+        template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
 
         if template_draw_item is None:
             # Do not draw on empty room.
@@ -228,7 +229,8 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        template_draw_item = self.template_draw_map[room_row][room_col]
+        # template_draw_item = self.template_draw_map[room_row][room_col]
+        template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
 
         if template_draw_item is None:
             # Do not attempt to pull tile from empty room.
@@ -293,6 +295,8 @@ class MultiRoomEditorTab(ttk.Frame):
         grid_sizes = []
         for room_row_index, room_row in enumerate(self.template_draw_map):
             for room_column_index, template_draw_item in enumerate(room_row):
+                if template_draw_item is None:
+                    continue
                 grid_sizes.append(GridRoom(
                     room_row_index,
                     room_column_index,
@@ -344,7 +348,23 @@ class MultiRoomEditorTab(ttk.Frame):
                     if TemplateSetting.DUAL in chunk.settings:
                         draw_chunk(1, room_column_index * 10, room_row_index * 8, back)
                     else:
-                        self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
+                        for r in range(template_draw_item.height_in_rooms):
+                            for c in range(template_draw_item.width_in_rooms):
+                                self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index + r, room_column_index + c)
                 else:
-                    self.canvas.draw_background_over_room(0, self.lvl_biome, room_row_index, room_column_index)
-                    self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
+                    template, _, _ = self.template_item_at(room_row_index, room_column_index)
+                    if template is None:
+                        self.canvas.draw_background_over_room(0, self.lvl_biome, room_row_index, room_column_index)
+                        self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
+
+    def template_item_at(self, row, col):
+        for room_row_index, room_row in enumerate(self.template_draw_map):
+            if room_row_index > row:
+                return None
+            for room_column_index, template_draw_item in enumerate(room_row):
+                if room_column_index > col:
+                    break
+                if template_draw_item is None:
+                    continue
+                if room_row_index + template_draw_item.height_in_rooms - 1 >= row and room_column_index + template_draw_item.width_in_rooms - 1 >= col:
+                    return template_draw_item, room_row_index, room_column_index
