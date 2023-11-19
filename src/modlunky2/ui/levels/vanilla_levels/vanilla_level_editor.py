@@ -511,7 +511,7 @@ class VanillaLevelEditor(ttk.Frame):
                         tile_image_full = None
                         logger.debug("Room row: %s", room_row)
                         if TemplateSetting.ONLYFLIP in room_instance.settings:
-                            room_row = room_row.reverse()
+                            room_row = room_row[::-1]
                         for curcol, tile in enumerate(room_row):
                             tile_name = ""
                             tiles = [
