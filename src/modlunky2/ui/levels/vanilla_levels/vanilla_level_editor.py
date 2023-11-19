@@ -136,6 +136,8 @@ class VanillaLevelEditor(ttk.Frame):
             self.last_selected_tab = str(tab)
             if str(tab) == "Full Level View":
                 self.load_full_preview()
+            if str(tab) == "Full Level Editor":
+                self.multi_room_editor_tab.redraw()
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
 
@@ -156,6 +158,7 @@ class VanillaLevelEditor(ttk.Frame):
             ),
             self.delete_tilecode,
             self.multiroom_editor_selected_tile,
+            self.multiroom_editor_modified_room,
         )
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -508,7 +511,6 @@ class VanillaLevelEditor(ttk.Frame):
                     for currow, room_row in enumerate(layer):
                         tile_image_full = None
                         logger.debug("Room row: %s", room_row)
-                        print("Room row: ", room_row)
                         if TemplateSetting.ONLYFLIP in room_instance.settings:
                             room_row = room_row[::-1]
                         for curcol, tile in enumerate(room_row):
@@ -569,6 +571,11 @@ class VanillaLevelEditor(ttk.Frame):
 
     def multiroom_editor_selected_tile(self, tile_name, image, is_primary):
         self.palette_panel.select_tile(tile_name, image, is_primary)
+
+    def multiroom_editor_modified_room(self, template_draw_item):
+        if template_draw_item.room_chunk == self.current_selected_room:
+            self.room_select(None)
+            self.changes_made()
 
     def save_requested(self):
         if self.save_needed:
