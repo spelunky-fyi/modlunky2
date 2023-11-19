@@ -159,6 +159,7 @@ class CustomLevelEditor(ttk.Frame):
             side_panel_tab_control,
             self.delete_tilecode,
             self.add_tilecode,
+            None,
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
