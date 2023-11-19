@@ -185,4 +185,40 @@ def find_roommap(templates):
             set_room(room_map, 0, more_rooms_start, challenge_special)
             more_rooms_start += 1
 
+    bigroom_side = template_map.get("machine_bigroom_side")
+    wideroom_side = template_map.get("machine_wideroom_side")
+    tallroom_side = template_map.get("machine_tallroom_side")
+    side = template_map.get("side")
+
+    sideroomsc, sideroomsr = 0, 0
+    sider, sidec = 0, 0
+    highest_room = 0
+    if bigroom_side:
+        set_room(room_map, 0, more_rooms_start, bigroom_side)
+        sideroomsc = 2
+        sideroomsr = 2
+        sider, sidec = 0, 2
+        highest_room = 2
+    if tallroom_side:
+        set_room(room_map, sideroomsc, more_rooms_start, tallroom_side)
+        sideroomsr = 2
+        sideroomsc += 1
+        sider, sidec = 0, sideroomsc
+        highest_room = 2
+    if wideroom_side:
+        wider, widec = sideroomsr, 0
+        sider, sidec = wider, widec + 2
+        if sideroomsc <= 2:
+            wider, widec = 0, sideroomsc
+            sider, sidec = wider + 1, widec
+        if wider + 1 > highest_room:
+            highest_room = wider + 1
+        set_room(room_map, widec, more_rooms_start + wider, wideroom_side)
+    if side:
+        set_room(room_map, sidec, more_rooms_start + sider, side)
+        if sider + 1 > highest_room:
+            highest_room = sider + 1
+
+    more_rooms_start += highest_room
+
     return room_map
