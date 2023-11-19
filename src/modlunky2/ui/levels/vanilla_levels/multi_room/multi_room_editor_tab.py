@@ -161,7 +161,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
         self.canvas.clear()
         self.hide_intro()
-        self.canvas.configure_size(width, height)
+        self.canvas.configure_size(width * 10, height * 8)
 
         self.canvas.draw_background(self.lvl_biome)
         self.canvas.draw_grid()
