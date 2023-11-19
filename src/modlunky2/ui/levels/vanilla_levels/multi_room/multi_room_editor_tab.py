@@ -231,8 +231,8 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.configure_size(width * 10, height * 8)
 
         self.canvas.draw_background(self.lvl_biome)
-        self.canvas.draw_grid()
-        self.canvas.draw_room_grid()
+        self.canvas.draw_grid(2)
+        self.canvas.draw_room_grid(2)
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
@@ -272,4 +272,10 @@ class MultiRoomEditorTab(ttk.Frame):
                         front = list(map(lambda row: row[::-1], front))
                         back = list(map(lambda row: row[::-1], back))
                     draw_chunk(0, room_column_index * 10, room_row_index * 8, front)
-                    draw_chunk(1, room_column_index * 10, room_row_index * 8, back)
+                    if TemplateSetting.DUAL in chunk.settings:
+                        draw_chunk(1, room_column_index * 10, room_row_index * 8, back)
+                    else:
+                        self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
+                else:
+                    self.canvas.draw_background_over_room(0, self.lvl_biome, room_row_index, room_column_index)
+                    self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
