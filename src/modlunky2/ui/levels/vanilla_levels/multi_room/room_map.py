@@ -137,4 +137,52 @@ def find_roommap(templates):
             set_room(room_map, ec, path_start + er, path_exit_notop)
         more_rooms_start = path_start + er + 1
 
+    olmecship_room = template_map.get("olmecship_room")
+    if olmecship_room:
+        for i, room in enumerate(room_map[more_rooms_start - 1]):
+            if room is None:
+                set_room(room_map, i, more_rooms_start - 1, olmecship_room)
+                break
+
+    challenge_entrance = template_map.get("challenge_entrance")
+    challenge_special = template_map.get("challenge_special")
+    challenge_bottom = template_map.get("challenge_bottom")
+    entrancer, entrancec = None, None
+    if challenge_entrance:
+        for i, room in enumerate(room_map[more_rooms_start - 1]):
+            if room is None:
+                entrancer, entrancec = more_rooms_start - 1, i
+                set_room(room_map, i, more_rooms_start - 1, challenge_entrance)
+                break
+        if entrancer is None:
+            entrancer, entrancec = more_rooms_start, 0
+            set_room(room_map, 0, more_rooms_start, challenge_entrance)
+            more_rooms_start += 1
+
+    bottomr, bottomc = None, None
+    if challenge_bottom:
+        if entrancer is not None and entrancec is not None:
+            set_room(room_map, entrancec, entrancer + 1, challenge_bottom)
+            bottomr, bottomc = entrancer + 1, entrancec
+            more_rooms_start += 1
+        else:
+            set_room(room_map, 0, more_rooms_start, challenge_bottom)
+            bottomr, bottomc = more_rooms_start, 0
+            more_rooms_start += 1
+
+    if challenge_special:
+        if bottomc is not None and bottomr is not None:
+            set_room(room_map, bottomc < len(room_map[0]) and bottomc + 1 or bottomc - 1, bottomr, challenge_special)
+        elif entrancer is not None and entrancec is not None:
+            cr, cc = entrancer + 1, entrancec
+            if entrancec < len(room_map[entrancer]) and room_map[entrancer][entrancec + 1] is None:
+                cr, cc = entrancer, entrancec + 1
+            elif entrancec > 0 and room_map[entrancer][entrancec - 1] is None:
+                cr, cc = entrancer, entrancec - 1
+            set_room(room_map, cc, cr, challenge_special)
+            more_rooms_start = cr + 1
+        else:
+            set_room(room_map, 0, more_rooms_start, challenge_special)
+            more_rooms_start += 1
+
     return room_map
