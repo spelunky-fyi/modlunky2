@@ -139,9 +139,55 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def canvas_click(self, canvas_index, row, column, is_primary):
         print("canvas click")
+        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, 50)
+
+        self.canvas.replace_tile_at(
+            canvas_index,
+            row,
+            column,
+            self.tile_palette_map[tile_code][1],
+            x_offset,
+            y_offset
+        )
+
+        room_row, room_col = row // 8, column // 10
+        template_draw_item = self.template_draw_map[room_row][room_col]
+        chunk = template_draw_item.room_chunk
+        layer = [chunk.front, chunk.back][canvas_index]
+        tile_row = row - room_row * 8
+        tile_col = column - room_col * 10
+        if TemplateSetting.ONLYFLIP in chunk.settings:
+            tile_col = 9 - tile_col
+        layer[tile_row][tile_col] = tile_code
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         print("canvas shiftclick")
+        room_row, room_col = row // 8, column // 10
+        template_draw_item = self.template_draw_map[room_row][room_col]
+        chunk = template_draw_item.room_chunk
+        layer = [chunk.front, chunk.back][canvas_index]
+        tile_row = row - room_row * 8
+        tile_col = column - room_col * 10
+        if TemplateSetting.ONLYFLIP in chunk.settings:
+            tile_col = 9 - tile_col
+
+        tile_code = layer[tile_row][tile_col]
+        tile = self.tile_palette_map[tile_code]
+
+        self.palette_panel.select_tile(tile[0], tile[2], is_primary)
+        self.on_select_palette_tile(tile[0], tile[2], is_primary)
+
+    # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
+    def offset_for_tile(self, tile_name, tile_code, tile_size):
+        tile_ref = self.tile_palette_map[tile_code]
+        if tile_ref:
+            img = tile_ref[1]
+            return self.texture_fetcher.adjust_texture_xy(
+                img.width(), img.height(), tile_name, tile_size
+            )
+
+        return 0, 0
 
     def show_intro(self):
         self.canvas.show_intro()
