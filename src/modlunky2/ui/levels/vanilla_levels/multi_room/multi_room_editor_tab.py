@@ -360,7 +360,7 @@ class MultiRoomEditorTab(ttk.Frame):
     def template_item_at(self, row, col):
         for room_row_index, room_row in enumerate(self.template_draw_map):
             if room_row_index > row:
-                return None
+                return None, None, None
             for room_column_index, template_draw_item in enumerate(room_row):
                 if room_column_index > col:
                     break
@@ -368,3 +368,5 @@ class MultiRoomEditorTab(ttk.Frame):
                     continue
                 if room_row_index + template_draw_item.height_in_rooms - 1 >= row and room_column_index + template_draw_item.width_in_rooms - 1 >= col:
                     return template_draw_item, room_row_index, room_column_index
+
+        return None, None, None
