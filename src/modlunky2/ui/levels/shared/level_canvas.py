@@ -194,7 +194,7 @@ class LevelCanvas(tk.Canvas):
 
     def draw_room_grid(self, width=1, special_room_sizes: GridRoom=None):
         def create_room_boundary_box(row, col, w, h):
-            self.create_rectangle(
+            return self.create_rectangle(
                 col * 10 * self.zoom_level,
                 row * 8 * self.zoom_level,
                 (col + w) * 10 * self.zoom_level - 1 + (width - 1),
