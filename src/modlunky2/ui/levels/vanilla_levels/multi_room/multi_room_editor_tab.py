@@ -13,7 +13,7 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import RoomInstance, RoomT
 
 
 class MultiRoomEditorTab(ttk.Frame):
-    def __init__(self, parent, modlunky_config: Config, texture_fetcher, textures_dir, on_add_tilecode, on_delete_tilecode, *args, **kwargs):
+    def __init__(self, parent, modlunky_config: Config, texture_fetcher, textures_dir, on_add_tilecode, on_delete_tilecode, on_select_palette_tile, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
@@ -21,6 +21,7 @@ class MultiRoomEditorTab(ttk.Frame):
      #   self.on_edit_room = on_edit_room
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
+        self.on_select_palette_tile = on_select_palette_tile
 
         self.lvl = None
         self.lvl_biome = None
@@ -85,6 +86,7 @@ class MultiRoomEditorTab(ttk.Frame):
             side_panel_tab_control,
             self.delete_tilecode,
             self.add_tilecode,
+            self.palette_selected_tile,
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
@@ -120,6 +122,12 @@ class MultiRoomEditorTab(ttk.Frame):
             self.lvl_biome,
             self.lvl,
         )
+
+    def palette_selected_tile(self, tile_name, image, is_primary):
+        self.on_select_palette_tile(tile_name, image, is_primary)
+
+    def select_tile(self, tile_name, image, is_primary):
+        self.palette_panel.select_tile(tile_name, image, is_primary)
 
     def add_tilecode(self, tile, percent, alt_tile):
         print("Add")

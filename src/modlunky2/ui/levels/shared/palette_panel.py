@@ -160,6 +160,7 @@ class PalettePanel(ttk.Frame):
         parent,
         on_delete_tilecode,
         on_add_tilecode,
+        on_select_tile,
         texture_fetcher,
         sprite_fetcher,
         *args,
@@ -170,6 +171,7 @@ class PalettePanel(ttk.Frame):
         self.texture_fetcher = texture_fetcher
         self.on_delete_tilecode = on_delete_tilecode
         self.on_add_tilecode = on_add_tilecode
+        self.on_select_tile = on_select_tile
 
         # The tile palettes are loaded into here as buttons with their image
         # as a tile and text as their value to grab when needed.
@@ -283,19 +285,22 @@ class PalettePanel(ttk.Frame):
 
     def tile_pick(self, event, row, col):
         selected_tile = self.palette.scrollable_frame.grid_slaves(row, col)[0]
-        self.select_tile(selected_tile["text"], selected_tile["image"], event.num == 1)
+        self.select_tile(selected_tile["text"], selected_tile["image"], event.num == 1, True)
 
     def suggested_tile_pick(self, event, suggested_tile, tile_image):
         tile = self.on_add_tilecode(suggested_tile, 100, "empty")
         if not tile:
             return
-        self.select_tile(tile[0], tile_image, event.num == 1)
+        self.select_tile(tile[0], tile_image, event.num == 1, True)
 
-    def select_tile(self, tile_name, tile_image, is_primary):
+    def select_tile(self, tile_name, tile_image, is_primary, tell_delegate = False):
         tile_view = self.primary_tile_view
         if not is_primary:
             tile_view = self.secondary_tile_view
         tile_view.select_tile(tile_name, tile_image)
+
+        if tell_delegate and self.on_select_tile:
+            self.on_select_tile(tile_name, tile_image, is_primary)
 
     def reset(self):
         for widget in self.palette.scrollable_frame.winfo_children():

@@ -155,6 +155,7 @@ class VanillaLevelEditor(ttk.Frame):
                 tile, percent, alt_tile, self.palette_panel, self.mag
             ),
             self.delete_tilecode,
+            self.multiroom_editor_selected_tile,
         )
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -309,6 +310,7 @@ class VanillaLevelEditor(ttk.Frame):
             lambda tile, percent, alt_tile: self.add_tilecode(
                 tile, percent, alt_tile, self.palette_panel, self.mag
             ),
+            self.palette_selected_tile,
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
@@ -381,6 +383,9 @@ class VanillaLevelEditor(ttk.Frame):
                 self.palette_panel.select_tile(
                     tilecode_item[0], tilecode_item[2], False
                 )
+
+                self.multi_room_editor_tab.select_tile(tilecode_item[0], tilecode_item[2], True)
+                self.multi_room_editor_tab.select_tile(tilecode_item[0], tilecode_item[2], False)
 
                 for i in self.tile_palette_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -559,6 +564,12 @@ class VanillaLevelEditor(ttk.Frame):
         )
         self.multi_room_editor_tab.populate_tilecode_palette(self.tile_palette_ref_in_use, None)
 
+    def palette_selected_tile(self, tile_name, image, is_primary):
+        self.multi_room_editor_tab.select_tile(tile_name, image, is_primary)
+
+    def multiroom_editor_selected_tile(self, tile_name, image, is_primary):
+        self.palette_panel.select_tile(tile_name, image, is_primary)
+
     def save_requested(self):
         if self.save_needed:
             msg_box = tk.messagebox.askquestion(
@@ -721,6 +732,7 @@ class VanillaLevelEditor(ttk.Frame):
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
+        self.multi_room_editor_tab.select_tile(tile[0], tile[2], is_primary)
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
     def offset_for_tile(self, tile_name, tile_code, tile_size):
