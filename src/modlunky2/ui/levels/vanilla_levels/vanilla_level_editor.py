@@ -112,6 +112,8 @@ class VanillaLevelEditor(ttk.Frame):
         self.tile_codes = []
         self.template_list = []
 
+        self.mag_full = 30
+
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -155,11 +157,18 @@ class VanillaLevelEditor(ttk.Frame):
             self.tab_control
         )  # Tab 2 is the actual level editor.
         self.preview_tab = ttk.Frame(self.tab_control)
+
+        def multiroom_zoom_change(new_zoom):
+            self.mag_full = new_zoom
+            self.current_value_full.set(new_zoom)
+
         self.multi_room_editor_tab = MultiRoomEditorTab(
             self.tab_control,
             self.modlunky_config,
             self.texture_fetcher,
             textures_dir,
+            self.mag_full,
+            multiroom_zoom_change,
             lambda tile, percent, alt_tile: self.add_tilecode(
                 tile, percent, alt_tile, self.palette_panel, self.mag
             ),
@@ -197,7 +206,9 @@ class VanillaLevelEditor(ttk.Frame):
         self.current_value_full = tk.DoubleVar()
 
         def slider_changed(_event):
+            self.mag_full = int(self.current_value_full.get())
             self.load_full_preview()
+            self.multi_room_editor_tab.update_zoom_level(self.mag_full)
 
         config_container = tk.Frame(self.preview_tab)
         config_container.grid(row=0, column=0, columnspan=2, sticky="nw")
@@ -211,7 +222,7 @@ class VanillaLevelEditor(ttk.Frame):
             variable=self.current_value_full,
             command=slider_changed,
         )
-        self.slider_zoom_full.set(50)
+        self.slider_zoom_full.set(self.mag_full)
         self.slider_zoom_full.grid(row=0, column=0, sticky="nw")
 
         # Checkbox to toggle the visibility of the grid lines.
@@ -239,7 +250,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.preview_tab,
             textures_dir,
             ["Foreground", "Background"],
-            50,
+            self.mag_full,
             intro_text="Select a level file to begin viewing",
         )
         self.full_level_preview_canvas.grid(
@@ -475,9 +486,9 @@ class VanillaLevelEditor(ttk.Frame):
         level_height = 8
         level_width = 8
 
-        mag_full = int(self.slider_zoom_full.get() / 2)
+        # mag_full = int(self.slider_zoom_full.get())
         self.full_level_preview_canvas.clear()
-        self.full_level_preview_canvas.set_zoom(mag_full)
+        self.full_level_preview_canvas.set_zoom(self.mag_full)
 
         full_size = None
         if self.files_tree.has_selected_file():
@@ -546,7 +557,7 @@ class VanillaLevelEditor(ttk.Frame):
                                     tile_image = ImageTk.PhotoImage(
                                         ImageTk.getimage(tiles[-1][1])
                                         .resize(
-                                            (mag_full, mag_full),
+                                            (self.mag_full, self.mag_full),
                                             Image.Resampling.LANCZOS,
                                         )
                                         .convert("RGBA")
