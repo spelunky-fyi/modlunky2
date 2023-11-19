@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from modlunky2.config import Config
 from modlunky2.levels.level_templates import TemplateSetting
+from modlunky2.ui.levels.shared.level_canvas import GridRoom
 from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
@@ -137,15 +138,6 @@ class MultiRoomEditorTab(ttk.Frame):
             tile_name, self.lvl_biome, self.lvl, self.zoom_level
         ))
 
-        # original_size_tile = self.tile_palette_map[tile_code][1]
-        # new_tile_image = ImageTk.PhotoImage(
-        #     ImageTk.getimage(original_size_tile)
-        #     .resize(
-        #         (self.zoom_level, self.zoom_level),
-        #         Image.Resampling.LANCZOS,
-        #     )
-        #     .convert("RGBA")
-        # )
         self.tile_image_map[tile_name] = new_tile_image
         return new_tile_image
 
@@ -296,8 +288,19 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.configure_size(width * 10, height * 8)
 
         self.canvas.draw_background(self.lvl_biome)
-        self.canvas.draw_grid(2)
-        self.canvas.draw_room_grid(2)
+        self.canvas.draw_grid()
+
+        grid_sizes = []
+        for room_row_index, room_row in enumerate(self.template_draw_map):
+            for room_column_index, template_draw_item in enumerate(room_row):
+                grid_sizes.append(GridRoom(
+                    room_row_index,
+                    room_column_index,
+                    template_draw_item.width_in_rooms,
+                    template_draw_item.height_in_rooms,
+                ))
+
+        self.canvas.draw_room_grid(2, grid_sizes)
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
