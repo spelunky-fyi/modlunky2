@@ -252,13 +252,16 @@ class MultiCanvasContainer(tk.Frame):
         for canvas in self.canvases:
             canvas.draw_background(theme)
 
-    def draw_grid(self):
-        for canvas in self.canvases:
-            canvas.draw_grid()
+    def draw_background_over_room(self, canvas_index, theme, row, col):
+        self.canvases[canvas_index].draw_background_over_room(theme, row, col)
 
-    def draw_room_grid(self):
+    def draw_grid(self, width=None):
         for canvas in self.canvases:
-            canvas.draw_room_grid()
+            canvas.draw_grid(width)
+
+    def draw_room_grid(self, width=None):
+        for canvas in self.canvases:
+            canvas.draw_room_grid(width)
 
     def show_intro(self):
         if self.intro:
