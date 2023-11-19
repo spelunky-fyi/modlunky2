@@ -601,7 +601,7 @@ class VanillaLevelEditor(ttk.Frame):
     def multiroom_editor_modified_room(self, template_draw_item):
         if template_draw_item.room_chunk == self.current_selected_room:
             self.room_select(None)
-            self.changes_made()
+        self.changes_made()
 
     def save_requested(self):
         if self.save_needed:
