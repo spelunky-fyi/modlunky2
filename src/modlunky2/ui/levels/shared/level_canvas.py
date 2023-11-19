@@ -113,9 +113,7 @@ class LevelCanvas(tk.Canvas):
         self.height = height
         self["width"] = (self.zoom_level * width) - 3
         self["height"] = (self.zoom_level * height) - 3
-        self.tile_images = [
-            [None for _ in range(width)] for _ in range(height)
-        ]
+        self.tile_images = [[None for _ in range(width)] for _ in range(height)]
 
     def draw_background(self, theme):
         bg_img = self.cached_bgs.get(theme)
@@ -153,7 +151,7 @@ class LevelCanvas(tk.Canvas):
             self.create_line(
                 0,
                 i * self.zoom_level,
-                self.zoom_level * (self.width+ 2),
+                self.zoom_level * (self.width + 2),
                 i * self.zoom_level,
                 fill="#F0F0F0",
             )
