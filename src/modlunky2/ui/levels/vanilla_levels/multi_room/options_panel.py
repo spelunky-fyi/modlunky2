@@ -20,14 +20,10 @@ class OptionsPanel(ttk.Frame):
         self.on_update_hide_room_lines = on_update_hide_room_lines
         self.on_update_zoom_level = on_update_zoom_level
 
-
-        # self.rowconfigure(2, minsize=20)
-        # self.rowconfigure(4, minsize=20)
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, minsize=10)
 
-        # right_padding = 10
         settings_row = 0
 
 

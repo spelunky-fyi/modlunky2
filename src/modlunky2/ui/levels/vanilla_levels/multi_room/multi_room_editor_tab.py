@@ -194,7 +194,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def room_was_deleted(self, template_index, chunk_index):
         replaced = False
-        for row, template_row in enumerate(self.template_draw_map):
+        for _, template_row in enumerate(self.template_draw_map):
             for col, template in enumerate(template_row):
                 if template is None:
                     continue
@@ -202,28 +202,6 @@ class MultiRoomEditorTab(ttk.Frame):
                     new_draw_item = get_template_draw_item(template.template, template_index)
                     template_row[col] = new_draw_item
                     replaced = True
-                    # new_chunk_index = None
-                    # if len(template.rooms) == 0:
-                    #     return None
-                    # for i, c in enumerate(room_template.rooms):
-                    #     if TemplateSetting.IGNORE not in c.settings:
-                    #         chunk_index = i
-                    #         break
-
-                    # if chunk_index is None:
-                    #     return None
-
-                    # chunk = room_template.rooms[chunk_index]
-                    # if chunk is None or len(chunk.front) == 0:
-                    #     return None
-                    # return TemplateDrawItem(
-                    #     room_template,
-                    #     index,
-                    #     chunk,
-                    #     chunk_index,
-                    #     int(math.ceil(len(chunk.front[0]) / 10)),
-                    #     int(math.ceil(len(chunk.front) / 8)),
-                    # )
         if replaced:
             self.redraw()
 
