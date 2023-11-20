@@ -151,6 +151,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.clear()
         self.show_intro()
         self.template_draw_map = find_roommap(room_templates)
+        self.options_panel.set_templates(self.template_draw_map)
         self.draw_canvas()
 
     def redraw(self):
@@ -203,12 +204,12 @@ class MultiRoomEditorTab(ttk.Frame):
                     template_row[col] = new_draw_item
                     replaced = True
         if replaced:
+            self.options_panel.set_templates(self.template_draw_map)
             self.redraw()
 
 
     def canvas_click(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        # template_draw_item = self.template_draw_map[room_row][room_col]
         template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
 
         if template_draw_item is None:
@@ -243,7 +244,6 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        # template_draw_item = self.template_draw_map[room_row][room_col]
         template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
 
         if template_draw_item is None:

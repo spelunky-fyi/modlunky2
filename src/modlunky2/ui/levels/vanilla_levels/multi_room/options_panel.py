@@ -24,6 +24,8 @@ class OptionsPanel(ttk.Frame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, minsize=10)
 
+        self.templates = []
+
         settings_row = 0
 
 
@@ -95,5 +97,124 @@ class OptionsPanel(ttk.Frame):
         grid_size_scale["command"] = update_grid_size
         self.grid_size_var = grid_size_var
 
+        settings_row += 1
+
+        self.room_type_frame = tk.Frame(self)
+        self.room_type_frame.grid(row=settings_row, column=1, sticky="news", padx=10, pady=10)
+
+        self.room_view_size = 30
+        self.room_view_padding = 5
+
+        for n in range(8):
+            # self.room_type_frame.columnconfigure(n * 2 + 2, minsize=10)
+            self.room_type_frame.columnconfigure(n * 2, minsize=self.room_view_size)
+            if n != 0:
+                self.room_type_frame.columnconfigure(n * 2 - 1, minsize=self.room_view_padding)
+
+        self.room_buttons = []
+        self.edge_frames = []
+
+        # s1 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
+        # s1.grid(row=0, column=0, sticky="news")
+        # s2 = tk.Button(self.room_type_frame, bg="#3A403A", activebackground="#3A403A", relief=tk.GROOVE)
+        # s2.grid(row=2, column=0, sticky="news")
+        # s3 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
+        # s3.grid(row=0, column=2, rowspan=3, columnspan=3, sticky="news")
+        # s4 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
+        # s4.grid(row=0, column=6, rowspan=1, columnspan=3, sticky="news")
+
+    def set_templates(self, templates):
+        if self.templates is not None:
+            for row_index in range(len(self.templates) + 1):
+                self.room_type_frame.rowconfigure(row_index * 2, minsize=0)
+                if row_index != 0:
+                    self.room_type_frame.rowconfigure(row_index * 2 - 1, minsize=0)
+
+        self.templates = templates
+
+        if templates is not None:
+            for row_index in range(len(templates) + 1):
+                self.room_type_frame.rowconfigure(row_index * 2, minsize=self.room_view_size)
+                if row_index != 0:
+                    self.room_type_frame.rowconfigure(row_index * 2 - 1, minsize=self.room_view_padding)
+
+        for button in self.room_buttons:
+            button.grid_remove()
+
+        for frame in self.edge_frames:
+            frame.grid_remove()
+
+        self.room_buttons = []
+        self.edge_frames = []
+
+        for row_index, template_row in enumerate(templates):
+            for col_index, template in enumerate(template_row):
+                new_button = None
+                if template is None:
+                    overlapping_template, _, _ = self.template_item_at(templates, row_index, col_index)
+                    if overlapping_template is None:
+                        new_button = tk.Button(self.room_type_frame, bg="#3A403A", activebackground="#3A403A", relief=tk.GROOVE)
+                        new_button.grid(row=row_index * 2, column=col_index * 2, sticky="news")
+                else:
+                    new_button = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
+                    new_button.grid(
+                        row=row_index * 2,
+                        column=col_index * 2,
+                        rowspan=template.height_in_rooms * 2 - 1,
+                        columnspan=template.width_in_rooms * 2 - 1,
+                        sticky="news",
+                    )
+                if new_button is not None:
+                    self.room_buttons.append(new_button)
+
+            if len(template_row) < 10:
+                edge_frame = tk.Frame(self.room_type_frame)
+                edge_frame.grid(row=row_index * 2, column=len(template_row) * 2, sticky="news")
+                edge_frame.columnconfigure(0, weight=1)
+                edge_frame.rowconfigure(0, weight=1)
+
+                edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
+                edge_button.grid(row=0, column=0, sticky="news")
+                edge_button.grid_remove()
+
+
+                edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
+                edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
+                self.edge_frames.append(edge_frame)
+
+        if len(templates) > 0:
+            row = len(templates) * 2
+            for col in range(len(templates[0])):
+                edge_frame = tk.Frame(self.room_type_frame)
+                edge_frame.grid(row=row, column=col * 2, sticky="news")
+                edge_frame.columnconfigure(0, weight=1)
+                edge_frame.rowconfigure(0, weight=1)
+
+                edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
+                edge_button.grid(row=0, column=0, sticky="news")
+                edge_button.grid_remove()
+
+
+                edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
+                edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
+                self.edge_frames.append(edge_frame)
+
+
+
+
     def update_zoom_level(self, zoom_level):
         self.grid_size_var.set(zoom_level)
+
+    def template_item_at(self, templates, row, col):
+        for room_row_index, room_row in enumerate(templates):
+            if room_row_index > row:
+                return None, None, None
+            for room_column_index, template_draw_item in enumerate(room_row):
+                if room_column_index > col:
+                    break
+                if template_draw_item is None:
+                    continue
+                if room_row_index + template_draw_item.height_in_rooms - 1 >= row and room_column_index + template_draw_item.width_in_rooms - 1 >= col:
+                    return template_draw_item, room_row_index, room_column_index
+
+        return None, None, None
