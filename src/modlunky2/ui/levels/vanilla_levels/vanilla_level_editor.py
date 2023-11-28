@@ -613,11 +613,15 @@ class VanillaLevelEditor(ttk.Frame):
         )
 
     def convert_to_chunk(self, room_instance):
+        bg = []
+        if TemplateSetting.DUAL in room_instance.settings:
+            bg = room_instance.back
+
         return Chunk(
             comment=room_instance.name,
             settings=room_instance.settings,
             foreground=room_instance.front,
-            background=room_instance.back,
+            background=bg,
         )
 
     def get_level_templates(self):
