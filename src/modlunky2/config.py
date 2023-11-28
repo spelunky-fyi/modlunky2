@@ -159,10 +159,21 @@ class TimerTrackerConfig(CommonTrackerConfig):
 @serialize(rename_all="kebabcase")
 @deserialize(rename_all="kebabcase")
 @dataclass
+class GemTrackerConfig(CommonTrackerConfig):
+    show_total_gem_count: bool = field(default=True, skip_if_default=True)
+    show_colored_gem_count: bool = field(default=True, skip_if_default=True)
+    show_diamond_count: bool = field(default=True, skip_if_default=True)
+    show_diamond_percentage: bool = field(default=True, skip_if_default=True)
+
+
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
+@dataclass
 class TrackersConfig:
     category: CategoryTrackerConfig = field(default_factory=CategoryTrackerConfig)
     pacifist: PacifistTrackerConfig = field(default_factory=PacifistTrackerConfig)
     timer: TimerTrackerConfig = field(default_factory=TimerTrackerConfig)
+    gem: GemTrackerConfig = field(default_factory=GemTrackerConfig)
 
 
 @serialize  # Note: these fields aren't renamed for historical reasons
