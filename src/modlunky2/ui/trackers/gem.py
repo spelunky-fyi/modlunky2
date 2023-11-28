@@ -33,7 +33,7 @@ class GemModifiers(ttk.LabelFrame):
         self.show_total_gem_count.set(self.gem_tracker_config.show_total_gem_count)
         self.show_gem_count_checkbox = ttk.Checkbutton(
             self,
-            text="Show Total Gem Count",
+            text="Total Gem Count",
             variable=self.show_total_gem_count,
             onvalue=True,
             offvalue=False,
@@ -45,7 +45,7 @@ class GemModifiers(ttk.LabelFrame):
         self.show_colored_gem_count.set(self.gem_tracker_config.show_colored_gem_count)
         self.show_colored_gem_count_checkbox = ttk.Checkbutton(
             self,
-            text="Show Colored Gem Count",
+            text="Colored Gem Count",
             variable=self.show_colored_gem_count,
             onvalue=True,
             offvalue=False,
@@ -59,7 +59,7 @@ class GemModifiers(ttk.LabelFrame):
         self.show_diamond_count.set(self.gem_tracker_config.show_diamond_count)
         self.show_diamond_count_checkbox = ttk.Checkbutton(
             self,
-            text="Show Diamond Count",
+            text="Diamond Count",
             variable=self.show_diamond_count,
             onvalue=True,
             offvalue=False,
@@ -75,7 +75,7 @@ class GemModifiers(ttk.LabelFrame):
         )
         self.show_diamond_percentage_checkbox = ttk.Checkbutton(
             self,
-            text="Show Diamond Percentage",
+            text="Diamond Percentage",
             variable=self.show_diamond_percentage,
             onvalue=True,
             offvalue=False,
@@ -139,7 +139,9 @@ class GemButtons(ttk.Frame):
         self.disable_button()
         self.window = TrackerWindow(
             title="Gem Tracker",
-            color_key=color_key,
+            color_key=self.modlunky_config.tracker_color_key,
+            font_size=self.modlunky_config.tracker_font_size,
+            font_family=self.modlunky_config.tracker_font_family,
             on_close=self.window_closed,
             file_name="gem.txt",
             tracker=GemTracker(),
