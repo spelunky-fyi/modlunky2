@@ -86,7 +86,7 @@ class GemModifiers(ttk.LabelFrame):
         )
 
     def toggle_show_total_gem_count(self):
-        self.gem_tracker_config.show_gem_count = self.show_total_gem_count.get()
+        self.gem_tracker_config.show_total_gem_count = self.show_total_gem_count.get()
         self.parent.config_update_callback()
 
     def toggle_show_colored_gem_count(self):
