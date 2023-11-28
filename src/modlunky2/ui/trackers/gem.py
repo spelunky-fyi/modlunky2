@@ -135,7 +135,6 @@ class GemButtons(ttk.Frame):
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
     def launch(self):
-        color_key = self.modlunky_config.tracker_color_key
         self.disable_button()
         self.window = TrackerWindow(
             title="Gem Tracker",

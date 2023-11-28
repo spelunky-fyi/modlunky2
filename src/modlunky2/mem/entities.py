@@ -2,7 +2,7 @@ from __future__ import annotations  # PEP 563
 from dataclasses import dataclass
 import json
 from enum import IntEnum
-from typing import ClassVar, Optional, Tuple, FrozenSet
+from typing import ClassVar, Optional, Tuple
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem.memrauder.dsl import (
