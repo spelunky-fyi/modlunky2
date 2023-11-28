@@ -2,13 +2,14 @@ from __future__ import annotations  # PEP 563
 from dataclasses import dataclass
 import json
 from enum import IntEnum
-from typing import ClassVar, Optional, Tuple
+from typing import ClassVar, Optional, Tuple, FrozenSet
 
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem.memrauder.dsl import (
     poly_pointer,
     struct_field,
     dc_struct,
+    array,
     pointer,
     sc_uint8,
     sc_uint32,
@@ -119,6 +120,14 @@ NON_CHAIN_POWERUP_ENTITIES = {
     EntityType.ITEM_POWERUP_TRUECROWN,
 }
 
+GEMS = {
+    EntityType.ITEM_RUBY,
+    EntityType.ITEM_EMERALD,
+    EntityType.ITEM_SAPPHIRE,
+    EntityType.ITEM_DIAMOND,
+}
+DIAMOND = EntityType.ITEM_DIAMOND
+
 
 class Layer(IntEnum):
     FRONT = 0
@@ -210,6 +219,9 @@ class Inventory:
     ropes: int = struct_field(0x05, sc_uint8, default=4)
     poison_tick_timer: int = struct_field(0x06, sc_int16, default=-1)
     cursed: bool = struct_field(0x08, sc_bool, default=False)
+    collected_money: Tuple[EntityType, ...] = struct_field(
+        0x20, array(sc_uint32, 512), default=tuple()
+    )
     kills_level: int = struct_field(0x1424, sc_uint32, default=0)
     kills_total: int = struct_field(0x1428, sc_uint32, default=0)
     collected_money_total: int = struct_field(0x1520, sc_uint32, default=0)

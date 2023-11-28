@@ -1,0 +1,238 @@
+import logging
+import tkinter as tk
+from tkinter import ttk
+
+from PIL import Image, ImageTk
+
+from modlunky2.config import Config, GemTrackerConfig
+from modlunky2.constants import BASE_DIR
+from modlunky2.mem import Spel2Process
+
+from modlunky2.mem.entities import GEMS, DIAMOND
+
+from modlunky2.ui.trackers.common import (
+    Tracker,
+    TrackerWindow,
+    WindowData,
+)
+
+logger = logging.getLogger(__name__)
+
+
+ICON_PATH = BASE_DIR / "static/images"
+
+
+class GemModifiers(ttk.LabelFrame):
+    def __init__(self, parent, gem_tracker_config: GemTrackerConfig, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+
+        self.gem_tracker_config = gem_tracker_config
+
+        self.show_total_gem_count = tk.BooleanVar()
+        self.show_total_gem_count.set(self.gem_tracker_config.show_total_gem_count)
+        self.show_gem_count_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Total Gem Count",
+            variable=self.show_total_gem_count,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_total_gem_count,
+        )
+        self.show_gem_count_checkbox.grid(row=0, column=1, pady=5, padx=5, sticky="w")
+
+        self.show_colored_gem_count = tk.BooleanVar()
+        self.show_colored_gem_count.set(self.gem_tracker_config.show_colored_gem_count)
+        self.show_colored_gem_count_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Colored Gem Count",
+            variable=self.show_colored_gem_count,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_colored_gem_count,
+        )
+        self.show_colored_gem_count_checkbox.grid(
+            row=0, column=2, pady=5, padx=5, sticky="w"
+        )
+
+        self.show_diamond_count = tk.BooleanVar()
+        self.show_diamond_count.set(self.gem_tracker_config.show_diamond_count)
+        self.show_diamond_count_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Diamond Count",
+            variable=self.show_diamond_count,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_diamond_count,
+        )
+        self.show_diamond_count_checkbox.grid(
+            row=0, column=3, pady=5, padx=5, sticky="w"
+        )
+
+        self.show_diamond_percentage = tk.BooleanVar()
+        self.show_diamond_percentage.set(
+            self.gem_tracker_config.show_diamond_percentage
+        )
+        self.show_diamond_percentage_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Diamond Percentage",
+            variable=self.show_diamond_percentage,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_diamond_percentage,
+        )
+        self.show_diamond_percentage_checkbox.grid(
+            row=0, column=4, pady=5, padx=5, sticky="w"
+        )
+
+    def toggle_show_total_gem_count(self):
+        self.gem_tracker_config.show_gem_count = self.show_total_gem_count.get()
+        self.parent.config_update_callback()
+
+    def toggle_show_colored_gem_count(self):
+        self.gem_tracker_config.show_colored_gem_count = (
+            self.show_colored_gem_count.get()
+        )
+        self.parent.config_update_callback()
+
+    def toggle_show_diamond_count(self):
+        self.gem_tracker_config.show_diamond_count = self.show_diamond_count.get()
+        self.parent.config_update_callback()
+
+    def toggle_show_diamond_percentage(self):
+        self.gem_tracker_config.show_diamond_percentage = (
+            self.show_diamond_percentage.get()
+        )
+        self.parent.config_update_callback()
+
+
+class GemButtons(ttk.Frame):
+    def __init__(self, parent, modlunky_config: Config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.modlunky_config = modlunky_config
+        self.columnconfigure(0, weight=1, minsize=200)
+        self.columnconfigure(1, weight=10000)
+        self.rowconfigure(0, minsize=60)
+        self.window = None
+
+        self.gem_icon = ImageTk.PhotoImage(
+            Image.open(ICON_PATH / "gem.png").resize((24, 24), Image.Resampling.LANCZOS)
+        )
+
+        self.gem_button = ttk.Button(
+            self,
+            text="Gem",
+            image=self.gem_icon,
+            compound="left",
+            command=self.launch,
+            width=1,
+        )
+        self.gem_button.grid(row=0, column=0, pady=5, padx=5, sticky="nswe")
+
+        self.modifiers = GemModifiers(
+            self, self.modlunky_config.trackers.gem, text="Gem Tracker Options"
+        )
+        self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
+
+    def launch(self):
+        color_key = self.modlunky_config.tracker_color_key
+        self.disable_button()
+        self.window = TrackerWindow(
+            title="Gem Tracker",
+            color_key=color_key,
+            on_close=self.window_closed,
+            file_name="gem.txt",
+            tracker=GemTracker(),
+            config=self.modlunky_config.trackers.gem,
+        )
+
+    def config_update_callback(self):
+        self.modlunky_config.save()
+        if self.window:
+            self.window.update_config(self.modlunky_config.trackers.gem)
+
+    def window_closed(self):
+        self.window = None
+        # If we're in the midst of destroy() the button might not exist
+        if self.gem_button.winfo_exists():
+            self.gem_button["state"] = tk.NORMAL
+
+    def disable_button(self):
+        self.gem_button["state"] = tk.DISABLED
+
+
+class GemTracker(Tracker[GemTrackerConfig, WindowData]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gems_total = 0
+        self.gems_level = 0
+        self.diamonds_total = 0
+        self.diamonds_level = 0
+
+        self.world = 0
+        self.level = 0
+
+    def initialize(self):
+        self.gems_total = 0
+        self.gems_level = 0
+        self.diamonds_total = 0
+        self.diamonds_level = 0
+
+        self.world = 0
+        self.level = 0
+
+    def poll(self, proc: Spel2Process, config: GemTrackerConfig) -> WindowData:
+        game_state = proc.get_state()
+        if game_state is None:
+            return None
+
+        world = game_state.world
+        level = game_state.level
+
+        # Save gems on level change
+        if world != self.world or level != self.level:
+            self.world = world
+            self.level = level
+            self.gems_total += self.gems_level
+            self.diamonds_total += self.diamonds_level
+
+        # Reset gem count on restart
+        if world == game_state.world_start and level == game_state.level_start:
+            self.gems_total = 0
+            self.diamonds_total = 0
+
+        # Count gems in current level
+        if game_state.items is not None:
+            player = game_state.items.players[0]
+            if player is not None and player.inventory is not None:
+                gems = 0
+                diamonds = 0
+
+                collected_money = player.inventory.collected_money
+                for entity in collected_money:
+                    if entity in GEMS:
+                        gems += 1
+                        if entity == DIAMOND:
+                            diamonds += 1
+
+                self.gems_level = gems
+                self.diamonds_level = diamonds
+
+        label = self.get_text(config)
+        return WindowData(label)
+
+    def get_text(self, config: GemTrackerConfig):
+        gems = self.gems_total + self.gems_level
+        diamonds = self.diamonds_total + self.diamonds_level
+        out = []
+        if config.show_total_gem_count:
+            out.append(f"{'Total gems': >13}: {gems : <4}")
+        if config.show_colored_gem_count:
+            out.append(f"{'Colorful gems': >13}: {gems-diamonds: <4}")
+        if config.show_diamond_count:
+            out.append(f"{'Diamonds': >13}: {diamonds: <4}")
+        if config.show_diamond_percentage:
+            diamond_rate = str(round(diamonds / gems * 100) if gems > 0 else 0) + "%"
+            out.append(f"{'Diamond rate': >13}: {diamond_rate: <4}")
+
+        return "\n".join(out)

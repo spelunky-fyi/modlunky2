@@ -8,6 +8,7 @@ from modlunky2.ui.widgets import Tab
 from .options import OptionsFrame
 from .pacifist import PacifistButtons
 from .timer import TimerButtons
+from .gem import GemButtons
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class TrackersFrame(ttk.LabelFrame):
         self.add_button(PacifistButtons(self, self.ml_config))
         self.add_button(CategoryButtons(self, self.ml_config))
         self.add_button(TimerButtons(self, self.ml_config))
+        self.add_button(GemButtons(self, self.ml_config))
 
         self.rowconfigure(self.button_index, weight=1)
 
