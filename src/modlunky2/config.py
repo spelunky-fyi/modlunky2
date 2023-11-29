@@ -160,9 +160,10 @@ class TimerTrackerConfig(CommonTrackerConfig):
 @deserialize(rename_all="kebabcase")
 @dataclass
 class GemTrackerConfig(CommonTrackerConfig):
-    show_total_gem_count: bool = field(default=True, skip_if_default=True)
-    show_colored_gem_count: bool = field(default=True, skip_if_default=True)
+    show_total_gem_count: bool = field(default=False, skip_if_default=True)
+    show_colored_gem_count: bool = field(default=False, skip_if_default=True)
     show_diamond_count: bool = field(default=True, skip_if_default=True)
+    show_yem_count: bool = field(default=True, skip_if_default=True)
     show_diamond_percentage: bool = field(default=True, skip_if_default=True)
 
 
