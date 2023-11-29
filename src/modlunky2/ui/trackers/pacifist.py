@@ -120,11 +120,12 @@ class PacifistTracker(Tracker[PacifistTrackerConfig, WindowData]):
 
         run_recap_flags = game_state.run_recap_flags
 
-        player = None
         if game_state.items is not None:
-            player = game_state.items.players[0]
-        if player is not None and player.inventory is not None:
-            self.kills_total = player.inventory.kills_total
+            total_kills = 0
+            for inventory in game_state.items.player_inventory:
+                if inventory is not None:
+                    total_kills += inventory.kills_total
+            self.kills_total = total_kills
 
         is_pacifist = bool(run_recap_flags & RunRecapFlags.PACIFIST)
         label = self.get_text(is_pacifist, config)
