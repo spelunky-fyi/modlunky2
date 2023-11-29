@@ -250,9 +250,9 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
             diamonds = 0
             yems = 0
 
-            for player in game_state.items.players:
-                if player is not None and player.inventory is not None:
-                    collected_money = player.inventory.collected_money
+            for inventory in game_state.items.player_inventory:
+                if inventory is not None:
+                    collected_money = inventory.collected_money
                     for entity in collected_money:
                         if entity in GEMS:
                             gems += 1

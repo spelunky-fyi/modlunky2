@@ -213,6 +213,7 @@ class Mount(Movable):
 
 @dataclass(frozen=True)
 class Inventory:
+    _size_as_element_: ClassVar[int] = 5412
     # Amount of money collected in the current level
     money: int = struct_field(0x00, sc_uint32, default=0)
     bombs: int = struct_field(0x04, sc_uint8, default=4)
