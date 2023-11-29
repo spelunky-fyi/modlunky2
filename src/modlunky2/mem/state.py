@@ -142,7 +142,9 @@ class Items:
     players: Tuple[Optional[Player], ...] = struct_field(
         0x08, array(pointer(dc_struct), 4)
     )
-    player_inventory: Tuple[Inventory, ...] = struct_field(0x28, array(dc_struct, 4))
+    player_inventory: Tuple[Inventory, ...] = struct_field(
+        0x28, array(dc_struct, 4), default_factory=lambda: (Inventory,) * 4
+    )
 
 
 @dataclass(frozen=True)
