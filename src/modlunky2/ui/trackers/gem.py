@@ -9,6 +9,7 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 
 from modlunky2.mem.entities import GEMS, DIAMOND
+from modlunky2.mem.state import Theme
 
 from modlunky2.ui.trackers.common import (
     Tracker,
@@ -69,6 +70,19 @@ class GemModifiers(ttk.LabelFrame):
             row=0, column=3, pady=5, padx=5, sticky="w"
         )
 
+        # Yems are gems that should have been ghosted (colorful gems picked up on non-boss-levels)
+        self.show_yem_count = tk.BooleanVar()
+        self.show_yem_count.set(self.gem_tracker_config.show_yem_count)
+        self.show_yem_count_checkbox = ttk.Checkbutton(
+            self,
+            text="Yem Count",
+            variable=self.show_yem_count,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_yem_count,
+        )
+        self.show_yem_count_checkbox.grid(row=0, column=4, pady=5, padx=5, sticky="w")
+
         self.show_diamond_percentage = tk.BooleanVar()
         self.show_diamond_percentage.set(
             self.gem_tracker_config.show_diamond_percentage
@@ -82,7 +96,7 @@ class GemModifiers(ttk.LabelFrame):
             command=self.toggle_show_diamond_percentage,
         )
         self.show_diamond_percentage_checkbox.grid(
-            row=0, column=4, pady=5, padx=5, sticky="w"
+            row=0, column=5, pady=5, padx=5, sticky="w"
         )
 
     def toggle_show_total_gem_count(self):
@@ -97,6 +111,10 @@ class GemModifiers(ttk.LabelFrame):
 
     def toggle_show_diamond_count(self):
         self.gem_tracker_config.show_diamond_count = self.show_diamond_count.get()
+        self.parent.config_update_callback()
+
+    def toggle_show_yem_count(self):
+        self.gem_tracker_config.show_yem_count = self.show_yem_count.get()
         self.parent.config_update_callback()
 
     def toggle_show_diamond_percentage(self):
@@ -169,6 +187,8 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
         self.gems_level = 0
         self.diamonds_total = 0
         self.diamonds_level = 0
+        self.yems_total = 0
+        self.yems_level = 0
 
         self.world = 0
         self.level = 0
@@ -178,6 +198,8 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
         self.gems_level = 0
         self.diamonds_total = 0
         self.diamonds_level = 0
+        self.yems_total = 0
+        self.yems_level = 0
 
         self.world = 0
         self.level = 0
@@ -187,37 +209,61 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
         if game_state is None:
             return None
 
+        level_has_ghost = game_state.theme not in [
+            Theme.OLMEC,
+            Theme.ABZU,
+            Theme.DUAT,
+            Theme.TIAMAT,
+            Theme.EGGPLANT_WORLD,
+            Theme.HUNDUN,
+            Theme.COSMIC_OCEAN,
+        ]
+
         world = game_state.world
         level = game_state.level
 
-        # Save gems on level change
+        # On level change
         if world != self.world or level != self.level:
+            # Update world and level
             self.world = world
             self.level = level
+
+            # Add gems from previous level to total
             self.gems_total += self.gems_level
             self.diamonds_total += self.diamonds_level
+            self.yems_total += self.yems_level
+
+            # Reset gems for new level (without this, tracker will be wrong for first frame of new level)
+            self.gems_level = 0
+            self.diamonds_level = 0
+            self.yems_level = 0
 
         # Reset gem count on restart
         if world == game_state.world_start and level == game_state.level_start:
             self.gems_total = 0
             self.diamonds_total = 0
+            self.yems_total = 0
 
         # Count gems in current level
         if game_state.items is not None:
-            player = game_state.items.players[0]
-            if player is not None and player.inventory is not None:
-                gems = 0
-                diamonds = 0
+            gems = 0
+            diamonds = 0
+            yems = 0
 
-                collected_money = player.inventory.collected_money
-                for entity in collected_money:
-                    if entity in GEMS:
-                        gems += 1
-                        if entity == DIAMOND:
-                            diamonds += 1
+            for player in game_state.items.players:
+                if player is not None and player.inventory is not None:
+                    collected_money = player.inventory.collected_money
+                    for entity in collected_money:
+                        if entity in GEMS:
+                            gems += 1
+                            if entity == DIAMOND:
+                                diamonds += 1
+                            elif level_has_ghost:
+                                yems += 1
 
-                self.gems_level = gems
-                self.diamonds_level = diamonds
+            self.gems_level = gems
+            self.diamonds_level = diamonds
+            self.yems_level = yems
 
         label = self.get_text(config)
         return WindowData(label)
@@ -225,6 +271,7 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
     def get_text(self, config: GemTrackerConfig):
         gems = self.gems_total + self.gems_level
         diamonds = self.diamonds_total + self.diamonds_level
+        yems = self.yems_total + self.yems_level
         out = []
         if config.show_total_gem_count:
             out.append(f"{'Total gems': >13}: {gems : <4}")
@@ -232,8 +279,17 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
             out.append(f"{'Colorful gems': >13}: {gems-diamonds: <4}")
         if config.show_diamond_count:
             out.append(f"{'Diamonds': >13}: {diamonds: <4}")
+        if config.show_yem_count:
+            out.append(f"{'Yems': >13}: {yems: <4}")
         if config.show_diamond_percentage:
-            diamond_rate = str(round(diamonds / gems * 100) if gems > 0 else 0) + "%"
+            diamond_rate = (
+                str(
+                    round(diamonds / (yems + diamonds) * 100)
+                    if (yems + diamonds) > 0
+                    else 0
+                )
+                + "%"
+            )
             out.append(f"{'Diamond rate': >13}: {diamond_rate: <4}")
 
         return "\n".join(out)
