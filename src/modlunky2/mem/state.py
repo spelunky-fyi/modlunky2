@@ -3,7 +3,7 @@ import enum
 from typing import FrozenSet, Optional, Tuple
 from modlunky2.mem.arena_state import ArenaState
 
-from modlunky2.mem.entities import EntityType, Player
+from modlunky2.mem.entities import EntityType, Player, Inventory
 
 from modlunky2.mem.memrauder.dsl import (
     array,
@@ -141,6 +141,9 @@ class FeedcodeNotFound(Exception):
 class Items:
     players: Tuple[Optional[Player], ...] = struct_field(
         0x08, array(pointer(dc_struct), 4)
+    )
+    player_inventory: Tuple[Optional[Inventory], ...] = struct_field(
+        0x28, array(dc_struct, 4)
     )
 
 
