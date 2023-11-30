@@ -170,11 +170,24 @@ class GemTrackerConfig(CommonTrackerConfig):
 @serialize(rename_all="kebabcase")
 @deserialize(rename_all="kebabcase")
 @dataclass
+class PacinoGolfTrackerConfig(CommonTrackerConfig):
+    show_total_strokes: bool = field(default=True, skip_if_default=True)
+    show_resource_strokes: bool = field(default=False, skip_if_default=True)
+    show_treasure_strokes: bool = field(default=False, skip_if_default=True)
+    show_pacifist_strokes: bool = field(default=False, skip_if_default=True)
+
+
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
+@dataclass
 class TrackersConfig:
     category: CategoryTrackerConfig = field(default_factory=CategoryTrackerConfig)
     pacifist: PacifistTrackerConfig = field(default_factory=PacifistTrackerConfig)
     timer: TimerTrackerConfig = field(default_factory=TimerTrackerConfig)
     gem: GemTrackerConfig = field(default_factory=GemTrackerConfig)
+    pacino_golf: PacinoGolfTrackerConfig = field(
+        default_factory=PacinoGolfTrackerConfig
+    )
 
 
 @serialize  # Note: these fields aren't renamed for historical reasons
