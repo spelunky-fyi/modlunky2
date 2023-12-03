@@ -14,6 +14,7 @@ from modlunky2.ui.trackers.common import (
     TrackerWindow,
     WindowData,
 )
+from modlunky2.ui.trackers.runstate import RunState
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +25,11 @@ ICON_PATH = BASE_DIR / "static/images"
 """
 Notes:
     - The tracker does not work in multiplayer
-    - Treasure collected in previous levels is not counted if the tracker wasn't open at the time
-    - The tracker does not check for Low% violations
+    - Treasure collected in levels where the tracker wasn't open is not counted
 
 Pacifist issues:
-    - You can violate pacifist without a kill, thereby not gaining a stroke (Red Skeleton, Skull)
-    - You can get a kill without violating pacifist, thereby gaining a stroke when you should (Hundun)
+    - You can violate pacifist without a kill, thereby not gaining a stroke when you should (Red Skeleton, Witch Doctor Skull)
+    - You can get a kill without violating pacifist, thereby gaining a stroke when you shouldn't (Hundun)
 """
 
 
@@ -161,7 +161,7 @@ class PacinoGolfButtons(ttk.Frame):
         self.modifiers = PacinoGolfModifiers(
             self,
             self.modlunky_config.trackers.pacino_golf,
-            text=r"Pacifino Golf Tracker",
+            text=r"Pacino Golf Tracker Options",
         )
         self.modifiers.grid(row=0, column=1, pady=5, padx=5, sticky="nswe")
 
@@ -208,6 +208,10 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
         self.bombs = 4
         self.ropes = 4
 
+        self.time_total = None
+        self.run_state = None
+        self.is_low = True
+
     def initialize(self):
         self.total_strokes = 0
         self.resource_strokes = 0
@@ -221,10 +225,24 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
         self.bombs = 4
         self.ropes = 4
 
+        self.time_total = 0
+        self.run_state = RunState()
+        self.is_low = True
+
     def poll(self, proc: Spel2Process, config: PacinoGolfTrackerConfig) -> WindowData:
         game_state = proc.get_state()
         if game_state is None:
             return None
+
+        # Check if we've reset, if so, reinitialize
+        new_time_total = game_state.time_total
+        if new_time_total < self.time_total:
+            self.initialize()
+        self.time_total = new_time_total
+
+        # Update run state and check low%
+        self.run_state.update(game_state)
+        self.is_low = self.run_state.is_low_percent
 
         world = game_state.world
         level = game_state.level
@@ -286,7 +304,10 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
     def get_text(self, config: PacinoGolfTrackerConfig):
         out = []
         if config.show_total_strokes:
-            out.append(f"Strokes: {self.total_strokes}")
+            if self.is_low:
+                out.append(f"Strokes: {self.total_strokes}")
+            else:
+                out.append(f"Strokes: ∞")
         if config.show_resource_strokes:
             out.append(f"Resources used: {self.resource_strokes}")
         if config.show_treasure_strokes:
