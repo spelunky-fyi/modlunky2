@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import Config, PacinoGolfTrackerConfig
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
-from modlunky2.mem.state import WinState
+from modlunky2.mem.state import Theme, WinState
 
 from modlunky2.ui.trackers.common import (
     Tracker,
@@ -22,15 +22,10 @@ ICON_PATH = BASE_DIR / "static/images"
 
 
 """
-Issues:
-    - Basecamp shows 8 strokes because you have 0 bombs/ropes
+Notes:
+    - The tracker does not work in multiplayer
     - Treasure collected in previous levels is not counted if the tracker wasn't open at the time
-    - When the player stops existing, the tracker doesn't update (e.g. when getting crushed)
     - The tracker does not check for Low% violations
-    => The tracker info is only correct if:
-        1) The run is Low%,
-        2) The player is alive, and
-        3) The tracker was open since the first level
 
 Pacifist issues:
     - You can violate pacifist without a kill, thereby not gaining a stroke (Red Skeleton, Skull)
@@ -210,6 +205,9 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
         self.world = 0
         self.level = 0
 
+        self.bombs = 4
+        self.ropes = 4
+
     def initialize(self):
         self.total_strokes = 0
         self.resource_strokes = 0
@@ -219,6 +217,9 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
 
         self.world = 0
         self.level = 0
+
+        self.bombs = 4
+        self.ropes = 4
 
     def poll(self, proc: Spel2Process, config: PacinoGolfTrackerConfig) -> WindowData:
         game_state = proc.get_state()
@@ -245,23 +246,37 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
 
         # Count strokes
         if game_state.items is not None:
-            player = game_state.items.players[0]
-            if player is not None and player.inventory is not None:
-                self.resource_strokes = (
-                    (4 - player.health)
-                    + (4 - player.inventory.bombs)
-                    + (4 - player.inventory.ropes)
-                )
-                collected_money = player.inventory.collected_money
-                self.treasure_strokes_level = sum(
-                    [1 for x in collected_money if x != 0]
-                )
-                self.pacifist_strokes = player.inventory.kills_total
+            # Counts resources (health, bombs, ropes) (only works in singleplayer)
+            resources_used = 0
+            if game_state.theme not in [Theme.BEFORE_FIRST_RUN, Theme.BASE_CAMP]:
+                player = game_state.items.players[0]
+                STARTING_RESOURCES = 12
+                if player is not None:
+                    self.bombs = player.inventory.bombs
+                    self.ropes = player.inventory.ropes
+                    resources_used = (
+                        STARTING_RESOURCES - self.bombs - self.ropes - player.health
+                    )
+                else:
+                    resources_used = STARTING_RESOURCES - self.bombs - self.ropes - 0
+
+            # Counts treasure and kills (works in co-op)
+            treasure_collected = 0
+            kills = 0
+            for inventory in game_state.items.player_inventory:
+                if inventory is not None:
+                    treasure_collected += sum(
+                        [1 for x in inventory.collected_money if x != 0]
+                    )
+                    kills += inventory.kills_total
+
+            self.resource_strokes = resources_used
+            self.treasure_strokes_level = treasure_collected
+            self.pacifist_strokes = kills
 
         self.total_strokes = (
             self.resource_strokes
-            + self.treasure_strokes
-            + self.treasure_strokes_level
+            + (self.treasure_strokes + self.treasure_strokes_level)
             + self.pacifist_strokes
         )
 
