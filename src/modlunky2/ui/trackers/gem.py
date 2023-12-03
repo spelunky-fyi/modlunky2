@@ -9,7 +9,7 @@ from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
 
 from modlunky2.mem.entities import GEMS, DIAMOND
-from modlunky2.mem.state import Theme
+from modlunky2.mem.state import Theme, WinState
 
 from modlunky2.ui.trackers.common import (
     Tracker,
@@ -239,7 +239,11 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
             self.yems_level = 0
 
         # Reset gem count on restart
-        if world == game_state.world_start and level == game_state.level_start:
+        if (
+            world == game_state.world_start
+            and level == game_state.level_start
+            and game_state.win_state is WinState.NO_WIN
+        ):
             self.gems_total = 0
             self.diamonds_total = 0
             self.yems_total = 0

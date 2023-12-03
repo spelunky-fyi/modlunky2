@@ -7,6 +7,7 @@ from PIL import Image, ImageTk
 from modlunky2.config import Config, PacinoGolfTrackerConfig
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
+from modlunky2.mem.state import WinState
 
 from modlunky2.ui.trackers.common import (
     Tracker,
@@ -235,7 +236,11 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
             self.treasure_strokes_level = 0
 
         # Reset strokes on restart
-        if world == game_state.world_start and level == game_state.level_start:
+        if (
+            world == game_state.world_start
+            and level == game_state.level_start
+            and game_state.win_state is WinState.NO_WIN
+        ):
             self.treasure_strokes = 0
 
         # Count strokes
