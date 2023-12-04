@@ -307,7 +307,7 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
             if self.is_low:
                 out.append(f"Strokes: {self.total_strokes}")
             else:
-                out.append(f"Strokes: ∞")
+                out.append("Strokes: ∞")
         if config.show_resource_strokes:
             out.append(f"Resources used: {self.resource_strokes}")
         if config.show_treasure_strokes:
