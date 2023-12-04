@@ -102,7 +102,7 @@ class SelectedTilecodeView(ttk.Frame):
 
         self.delete_button = tk.Button(
             self,
-            text="Del",
+            text="Delete",
             bg="red",
             fg="white",
             width=10,
@@ -143,9 +143,10 @@ class SelectedTilecodeView(ttk.Frame):
     def tile_code(self):
         return self.name.split(" ", 1)[1]
 
-    def reset(self):
+    def reset(self, disable=True):
         self.select_tile("empty 0", None)
-        self.disable()
+        if disable:
+            self.disable()
 
     def enable(self):
         self.delete_button["state"] = tk.NORMAL
@@ -193,11 +194,12 @@ class PalettePanel(ttk.Frame):
         self.new_tile_panel.grid(row=3, column=0, sticky="swne")
 
     def delete_tilecode(self, tile_name, tile_code):
-        self.on_delete_tilecode(tile_name, tile_code)
-        if self.primary_tile_view.tile_code() == tile_code:
-            self.primary_tile_view.reset()
-        if self.secondary_tile_view.tile_code() == tile_code:
-            self.secondary_tile_view.reset()
+        deleted = self.on_delete_tilecode(tile_name, tile_code)
+        if deleted:
+            if self.primary_tile_view.tile_code() == tile_code:
+                self.primary_tile_view.reset(disable=False)
+            if self.secondary_tile_view.tile_code() == tile_code:
+                self.secondary_tile_view.reset(disable=False)
 
     def update_with_palette(self, new_palette, suggestions, biome, lvl):
         for widget in self.palette.scrollable_frame.winfo_children():
