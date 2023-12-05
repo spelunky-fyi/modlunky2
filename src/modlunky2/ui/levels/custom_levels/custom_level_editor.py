@@ -689,7 +689,7 @@ class CustomLevelEditor(ttk.Frame):
 
             self.log_codes_left()
             self.changes_made()
-            
+
             return True
         else:
             return False

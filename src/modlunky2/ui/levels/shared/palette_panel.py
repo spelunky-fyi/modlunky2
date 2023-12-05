@@ -164,7 +164,7 @@ class PalettePanel(ttk.Frame):
         texture_fetcher,
         sprite_fetcher,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(parent, *args, **kwargs)
 
@@ -205,15 +205,19 @@ class PalettePanel(ttk.Frame):
         for widget in self.palette.scrollable_frame.winfo_children():
             widget.destroy()
 
+        TILES_PER_ROW = 8
+
         count_row = 0
         count_col = -1
         self.tile_images = []
         used_tile_names = []
+
         for tile_keep in new_palette:
-            if count_col == 7:
-                count_col = -1
+            count_col += 1
+            if count_col == TILES_PER_ROW:
+                count_col = 0
                 count_row = count_row + 1
-            count_col = count_col + 1
+
             tile_name = tile_keep[0].split(" ", 2)[0]
             used_tile_names.append(tile_name)
 
@@ -236,6 +240,18 @@ class PalettePanel(ttk.Frame):
                 lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
             )
 
+            # Bind first ten tiles to number keys
+            tile_index = count_col + (count_row * TILES_PER_ROW) + 1
+            if tile_index <= 10:
+                self.bind_all(
+                    f"{tile_index%10}",
+                    lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                )
+                self.bind_all(
+                    f"<Alt-Key-{tile_index%10}>",
+                    lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                )
+
         if suggestions and len(suggestions):
             count_col = -1
             self.palette.scrollable_frame.rowconfigure(count_row + 1, minsize=15)
@@ -250,10 +266,12 @@ class PalettePanel(ttk.Frame):
                 if suggestion in used_tile_names:
                     # Do not suggest a tile that already exists in the palette.
                     continue
-                if count_col == 7:
-                    count_col = -1
+
+                count_col += 1
+                if count_col == TILES_PER_ROW:
+                    count_col = 0
                     count_row = count_row + 1
-                count_col = count_col + 1
+
                 tile_image = ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(suggestion, biome, lvl, 40)
                 )
@@ -284,8 +302,11 @@ class PalettePanel(ttk.Frame):
         self.new_tile_panel.enable()
 
     def tile_pick(self, event, row, col):
+        if not self.palette.scrollable_frame.grid_slaves(row, col):
+            return
         selected_tile = self.palette.scrollable_frame.grid_slaves(row, col)[0]
-        self.select_tile(selected_tile["text"], selected_tile["image"], event.num == 1)
+        is_primary = (event.num == 1) or (event.state & 0x20000 == 0)
+        self.select_tile(selected_tile["text"], selected_tile["image"], is_primary)
 
     def suggested_tile_pick(self, event, suggested_tile, tile_image):
         tile = self.on_add_tilecode(suggested_tile, 100, "empty")
