@@ -248,7 +248,9 @@ class PacinoGolfTracker(Tracker[PacinoGolfTrackerConfig, WindowData]):
         level = game_state.level
 
         # Save treasure strokes on level change
-        if world != self.world or level != self.level:
+        if (
+            world != self.world or level != self.level
+        ) and game_state.theme != Theme.BASE_CAMP:
             self.world = world
             self.level = level
             self.treasure_strokes += self.treasure_strokes_level
