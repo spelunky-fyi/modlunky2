@@ -210,6 +210,7 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
             return None
 
         level_has_ghost = game_state.theme not in [
+            Theme.BASE_CAMP,
             Theme.OLMEC,
             Theme.ABZU,
             Theme.DUAT,
@@ -223,7 +224,9 @@ class GemTracker(Tracker[GemTrackerConfig, WindowData]):
         level = game_state.level
 
         # On level change
-        if world != self.world or level != self.level:
+        if (
+            world != self.world or level != self.level
+        ) and game_state.theme != Theme.BASE_CAMP:
             # Update world and level
             self.world = world
             self.level = level
