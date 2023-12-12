@@ -1,6 +1,52 @@
 import tkinter as tk
 from tkinter import ttk
 
+class RoomOptions(ttk.Frame):
+    def __init__(
+        self,
+        parent,
+        on_select_template,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(parent, *args, **kwargs)
+
+        setting_row = 0
+
+        self.on_select_template = on_select_template
+
+        self.current_template_row = None
+        self.current_template_column = None
+        self.current_template_item = None
+
+        self.columnconfigure(0, weight=1)
+
+        template_label = tk.Label(self, text="Room Type:")
+        template_label.grid(row=setting_row, column=0, sticky="w")
+
+        setting_row += 1
+
+        self.template_combobox = ttk.Combobox(self, height=25)
+        self.template_combobox.grid(row=setting_row, column=0, sticky="nsw")
+        self.template_combobox["state"] = "readonly"
+        self.template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
+
+    def select_template(self):
+        template_index = self.template_combobox.current()
+
+        self.on_select_template(template_index, self.current_template_row, self.current_template_column)
+
+    def set_templates(self, templates):
+        self.template_combobox["values"] = [template.name for template in templates]
+        self.current_template_item = None
+
+    def set_current_template(self, template, row, column):
+        self.current_template_item = template
+        self.current_template_row = row
+        self.current_template_column = column
+        if template:
+            self.template_combobox.set(template.template.name)
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,
@@ -10,6 +56,7 @@ class OptionsPanel(ttk.Frame):
         on_update_hide_grid_lines,
         on_update_hide_room_lines,
         on_update_zoom_level,
+        on_change_template_at,
         *args,
         **kwargs
     ):
@@ -19,12 +66,16 @@ class OptionsPanel(ttk.Frame):
         self.on_update_hide_grid_lines = on_update_hide_grid_lines
         self.on_update_hide_room_lines = on_update_hide_room_lines
         self.on_update_zoom_level = on_update_zoom_level
+        self.on_change_template_at = on_change_template_at
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, minsize=10)
 
+        self.room_map = []
         self.templates = []
+
+        self.button_for_selected_room = None
 
         settings_row = 0
 
@@ -106,7 +157,6 @@ class OptionsPanel(ttk.Frame):
         self.room_view_padding = 5
 
         for n in range(8):
-            # self.room_type_frame.columnconfigure(n * 2 + 2, minsize=10)
             self.room_type_frame.columnconfigure(n * 2, minsize=self.room_view_size)
             if n != 0:
                 self.room_type_frame.columnconfigure(n * 2 - 1, minsize=self.room_view_padding)
@@ -114,26 +164,30 @@ class OptionsPanel(ttk.Frame):
         self.room_buttons = []
         self.edge_frames = []
 
-        # s1 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
-        # s1.grid(row=0, column=0, sticky="news")
-        # s2 = tk.Button(self.room_type_frame, bg="#3A403A", activebackground="#3A403A", relief=tk.GROOVE)
-        # s2.grid(row=2, column=0, sticky="news")
-        # s3 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
-        # s3.grid(row=0, column=2, rowspan=3, columnspan=3, sticky="news")
-        # s4 = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
-        # s4.grid(row=0, column=6, rowspan=1, columnspan=3, sticky="news")
+        settings_row += 1
 
-    def set_templates(self, templates):
-        if self.templates is not None:
-            for row_index in range(len(self.templates) + 1):
+        self.room_options = RoomOptions(self, self.update_room_map_template)
+        self.room_options.grid(row=settings_row, column=1, sticky="news")
+
+    def update_room_map_template(self, template_index, row, column):
+        template = self.templates[template_index]
+        self.on_change_template_at(row, column, template, template_index)
+
+    def set_templates(self, room_map, templates):
+        # self.room_options.grid_remove()
+        if self.room_map is not None:
+            for row_index in range(len(self.room_map) + 1):
                 self.room_type_frame.rowconfigure(row_index * 2, minsize=0)
                 if row_index != 0:
                     self.room_type_frame.rowconfigure(row_index * 2 - 1, minsize=0)
 
+        self.room_map = room_map
         self.templates = templates
 
-        if templates is not None:
-            for row_index in range(len(templates) + 1):
+        self.room_options.set_templates(templates)
+
+        if room_map is not None:
+            for row_index in range(len(room_map) + 1):
                 self.room_type_frame.rowconfigure(row_index * 2, minsize=self.room_view_size)
                 if row_index != 0:
                     self.room_type_frame.rowconfigure(row_index * 2 - 1, minsize=self.room_view_padding)
@@ -147,16 +201,24 @@ class OptionsPanel(ttk.Frame):
         self.room_buttons = []
         self.edge_frames = []
 
-        for row_index, template_row in enumerate(templates):
+        for row_index, template_row in enumerate(room_map):
             for col_index, template in enumerate(template_row):
                 new_button = None
                 if template is None:
-                    overlapping_template, _, _ = self.template_item_at(templates, row_index, col_index)
+                    overlapping_template, _, _ = self.template_item_at(room_map, row_index, col_index)
                     if overlapping_template is None:
                         new_button = tk.Button(self.room_type_frame, bg="#3A403A", activebackground="#3A403A", relief=tk.GROOVE)
                         new_button.grid(row=row_index * 2, column=col_index * 2, sticky="news")
                 else:
-                    new_button = tk.Button(self.room_type_frame, bg="#30F030", activebackground="#30F030", relief=tk.GROOVE)
+                    new_button = tk.Button(
+                        self.room_type_frame,
+                        bg="#30F030",
+                        activebackground="#30F030",
+                        relief=tk.GROOVE,
+                    )
+                    new_button.configure(
+                        command=lambda t=template, nb=new_button, r=row_index, c=col_index: self.select_template_item(t, nb, r, c)
+                    )
                     new_button.grid(
                         row=row_index * 2,
                         column=col_index * 2,
@@ -182,9 +244,9 @@ class OptionsPanel(ttk.Frame):
                 edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
                 self.edge_frames.append(edge_frame)
 
-        if len(templates) > 0:
-            row = len(templates) * 2
-            for col in range(len(templates[0])):
+        if len(room_map) > 0:
+            row = len(room_map) * 2
+            for col in range(len(room_map[0])):
                 edge_frame = tk.Frame(self.room_type_frame)
                 edge_frame.grid(row=row, column=col * 2, sticky="news")
                 edge_frame.columnconfigure(0, weight=1)
@@ -199,14 +261,22 @@ class OptionsPanel(ttk.Frame):
                 edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
                 self.edge_frames.append(edge_frame)
 
+    def reset_selected_button(self):
+        if self.button_for_selected_room is not None:
+            self.button_for_selected_room.configure(bg="#30F030", activebackground="#30F030")
+            self.button_for_selected_room = None
 
-
+    def select_template_item(self, template_item, button, row, column):
+        self.reset_selected_button()
+        self.button_for_selected_room = button
+        button.configure(bg="#228B22", activebackground="#228B22")
+        self.room_options.set_current_template(template_item, row, column)
 
     def update_zoom_level(self, zoom_level):
         self.grid_size_var.set(zoom_level)
 
-    def template_item_at(self, templates, row, col):
-        for room_row_index, room_row in enumerate(templates):
+    def template_item_at(self, room_map, row, col):
+        for room_row_index, room_row in enumerate(room_map):
             if room_row_index > row:
                 return None, None, None
             for room_column_index, template_draw_item in enumerate(room_row):
