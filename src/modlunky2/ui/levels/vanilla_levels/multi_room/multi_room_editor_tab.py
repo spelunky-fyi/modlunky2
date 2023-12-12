@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import math
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
@@ -124,6 +125,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.canvas.hide_grid_lines,
             self.canvas.hide_room_lines,
             self.__update_zoom_internal,
+            self.change_template_at,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -151,7 +153,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.clear()
         self.show_intro()
         self.template_draw_map = find_roommap(room_templates)
-        self.options_panel.set_templates(self.template_draw_map)
+        self.options_panel.set_templates(self.template_draw_map, room_templates)
         self.draw_canvas()
 
     def redraw(self):
@@ -172,6 +174,37 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.set_zoom(zoom)
         self.tile_image_map = {}
         self.redraw()
+
+    def __get_template_draw_item(self, template, template_index):
+        chunk_index = None
+        if len(template.rooms) == 0:
+            return None
+        for i, c in enumerate(template.rooms):
+            if TemplateSetting.IGNORE not in c.settings:
+                chunk_index = i
+                break
+
+        if chunk_index is None:
+            return None
+
+        chunk = template.rooms[chunk_index]
+        if chunk is None or len(chunk.front) == 0:
+            return None
+        return TemplateDrawItem(
+            template,
+            template_index,
+            chunk,
+            chunk_index,
+            int(math.ceil(len(chunk.front[0]) / 10)),
+            int(math.ceil(len(chunk.front) / 8)),
+        )
+
+    def change_template_at(self, row, col, template, template_index):
+        template_draw_item = self.__get_template_draw_item(template, template_index)
+        if template_draw_item:
+            self.template_draw_map[row][col] = template_draw_item
+            self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+            self.redraw()
 
     def populate_tilecode_palette(self, tile_palette, suggestions):
         self.palette_panel.update_with_palette(
