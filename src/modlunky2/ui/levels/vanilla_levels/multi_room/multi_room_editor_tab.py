@@ -175,17 +175,36 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.redraw()
 
-    def __get_template_draw_item(self, template, template_index):
+    def __get_template_draw_item(self, template, template_index, row, column):
         chunk_index = None
         if len(template.rooms) == 0:
             return None
-        for i, c in enumerate(template.rooms):
-            if TemplateSetting.IGNORE not in c.settings:
-                chunk_index = i
-                break
+        valid_rooms = [index for index, room in enumerate(template.rooms) if TemplateSetting.IGNORE not in room.settings]
+
+        if row is not None and column is not None:
+            for i in valid_rooms:
+                room_used = False
+                for r, room_row in enumerate(self.template_draw_map):
+                    for c, room in enumerate(room_row):
+                        if room is None:
+                            continue
+                        if r == row and c == column:
+                            continue
+                        if room.template_index == template_index and room.room_index == i:
+                            room_used = True
+                            break
+                    if room_used:
+                        break
+
+                if not room_used:
+                    chunk_index = i
+                    break
 
         if chunk_index is None:
-            return None
+            if len(valid_rooms) > 0:
+                chunk_index = valid_rooms[0]
+            else:
+                return None
 
         chunk = template.rooms[chunk_index]
         if chunk is None or len(chunk.front) == 0:
@@ -200,7 +219,7 @@ class MultiRoomEditorTab(ttk.Frame):
         )
 
     def change_template_at(self, row, col, template, template_index):
-        template_draw_item = self.__get_template_draw_item(template, template_index)
+        template_draw_item = self.__get_template_draw_item(template, template_index, row, col)
         if template_draw_item:
             self.template_draw_map[row][col] = template_draw_item
             self.options_panel.set_templates(self.template_draw_map, self.room_templates)
@@ -266,14 +285,19 @@ class MultiRoomEditorTab(ttk.Frame):
         layer[tile_row][tile_col] = tile_code
         self.on_modify_room(template_draw_item)
 
-        self.canvas.replace_tile_at(
-            canvas_index,
-            row,
-            column,
-            self.image_for_tile_code(tile_code),
-            x_offset,
-            y_offset,
-        )
+        for r, room_rows in enumerate(self.template_draw_map):
+            for c, other_template_draw_item in enumerate(room_rows):
+                if other_template_draw_item is None:
+                    continue
+                if template_draw_item.template_index == other_template_draw_item.template_index and template_draw_item.room_index == other_template_draw_item.room_index:
+                    self.canvas.replace_tile_at(
+                        canvas_index,
+                        tile_row + r * 8,
+                        tile_col + c * 10,
+                        self.image_for_tile_code(tile_code),
+                        x_offset,
+                        y_offset,
+                    )
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
