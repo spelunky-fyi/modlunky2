@@ -356,13 +356,10 @@ class OptionsPanel(ttk.Frame):
         template_combobox = ttk.Combobox(win, height=25)
         template_combobox.grid(row=1, column=0, sticky="nsw")
         template_combobox["values"] = [template.name for template in self.templates]
-        # template_combobox.set("")
         template_combobox["state"] = "readonly"
-        # template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
 
         def add_then_destroy():
             template_index = template_combobox.current()
-            print(template_index)
             if template_index is None or template_index == -1:
                 warning_label["text"] = "Select a room template"
                 warning_label.grid()
