@@ -127,6 +127,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.canvas.hide_room_lines,
             self.__update_zoom_internal,
             self.change_template_at,
+            self.clear_template_at,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -296,6 +297,10 @@ class MultiRoomEditorTab(ttk.Frame):
             else:
                 update_template()
 
+    def clear_template_at(self, row, col):
+        self.template_draw_map[row][col] = None
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+        self.redraw()
 
     def populate_tilecode_palette(self, tile_palette, suggestions):
         self.palette_panel.update_with_palette(
