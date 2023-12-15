@@ -11,7 +11,10 @@ from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContain
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.multi_room.options_panel import OptionsPanel
-from modlunky2.ui.levels.vanilla_levels.multi_room.room_map import find_roommap, get_template_draw_item
+from modlunky2.ui.levels.vanilla_levels.multi_room.room_map import (
+    find_roommap,
+    get_template_draw_item,
+)
 from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
@@ -138,9 +141,11 @@ class MultiRoomEditorTab(ttk.Frame):
         if tile_name in self.tile_image_map:
             return self.tile_image_map[tile_name]
 
-        new_tile_image = ImageTk.PhotoImage(self.texture_fetcher.get_texture(
-            tile_name, self.lvl_biome, self.lvl, self.zoom_level
-        ))
+        new_tile_image = ImageTk.PhotoImage(
+            self.texture_fetcher.get_texture(
+                tile_name, self.lvl_biome, self.lvl, self.zoom_level
+            )
+        )
 
         self.tile_image_map[tile_name] = new_tile_image
         return new_tile_image
@@ -181,7 +186,11 @@ class MultiRoomEditorTab(ttk.Frame):
         chunk_index = None
         if len(template.rooms) == 0:
             return None
-        valid_rooms = [index for index, room in enumerate(template.rooms) if TemplateSetting.IGNORE not in room.settings]
+        valid_rooms = [
+            index
+            for index, room in enumerate(template.rooms)
+            if TemplateSetting.IGNORE not in room.settings
+        ]
 
         if row is not None and column is not None:
             for i in valid_rooms:
@@ -192,7 +201,10 @@ class MultiRoomEditorTab(ttk.Frame):
                             continue
                         if r == row and c == column:
                             continue
-                        if room.template_index == template_index and room.room_index == i:
+                        if (
+                            room.template_index == template_index
+                            and room.room_index == i
+                        ):
                             room_used = True
                             break
                     if room_used:
@@ -221,12 +233,17 @@ class MultiRoomEditorTab(ttk.Frame):
         )
 
     def change_template_at(self, row, col, template, template_index):
-        template_draw_item = self.__get_template_draw_item(template, template_index, row, col)
+        template_draw_item = self.__get_template_draw_item(
+            template, template_index, row, col
+        )
         if template_draw_item:
             if template_draw_item.width_in_rooms + col > 10:
                 # TODO: add error dialog.
                 win = PopupWindow("Cannot use this room template", self.modlunky_config)
-                lbl = ttk.Label(win, text="Using this template here will result in the map exceeding the maximum width.")
+                lbl = ttk.Label(
+                    win,
+                    text="Using this template here will result in the map exceeding the maximum width.",
+                )
                 lbl.grid(row=0, column=0)
 
                 ok_button = ttk.Button(win, text="OK", command=win.destroy)
@@ -238,8 +255,14 @@ class MultiRoomEditorTab(ttk.Frame):
                 for col_offset in range(template_draw_item.width_in_rooms):
                     if row_offset == 0 and col_offset == 0:
                         continue
-                    template, overlapping_row, overlapping_column = self.template_item_at(row + row_offset, col + col_offset)
-                    if template is not None and (overlapping_row != row or overlapping_column != col):
+                    (
+                        template,
+                        overlapping_row,
+                        overlapping_column,
+                    ) = self.template_item_at(row + row_offset, col + col_offset)
+                    if template is not None and (
+                        overlapping_row != row or overlapping_column != col
+                    ):
                         overlaps_room = True
 
             def update_template():
@@ -257,16 +280,24 @@ class MultiRoomEditorTab(ttk.Frame):
                             for _ in range(width - len(row)):
                                 row.append(None)
 
-                expand_to_height_if_necessary(self.template_draw_map, row + template_draw_item.height_in_rooms)
-                expand_to_width_if_necessary(self.template_draw_map, col + template_draw_item.width_in_rooms)
+                expand_to_height_if_necessary(
+                    self.template_draw_map, row + template_draw_item.height_in_rooms
+                )
+                expand_to_width_if_necessary(
+                    self.template_draw_map, col + template_draw_item.width_in_rooms
+                )
                 for row_offset in range(template_draw_item.height_in_rooms):
                     for col_offset in range(template_draw_item.width_in_rooms):
                         if row_offset == 0 and col_offset == 0:
                             continue
-                        _, overlapping_row, overlapping_column = self.template_item_at(row + row_offset, col + col_offset)
+                        _, overlapping_row, overlapping_column = self.template_item_at(
+                            row + row_offset, col + col_offset
+                        )
                         if overlapping_row is None or overlapping_column is None:
                             continue
-                        self.template_draw_map[overlapping_row][overlapping_column] = None
+                        self.template_draw_map[overlapping_row][
+                            overlapping_column
+                        ] = None
 
                 self.template_draw_map[row][col] = template_draw_item
                 while len(self.template_draw_map) > 0:
@@ -282,7 +313,10 @@ class MultiRoomEditorTab(ttk.Frame):
 
                     self.template_draw_map.pop()
 
-                while len(self.template_draw_map) > 0 and len(self.template_draw_map[0]) > 0:
+                while (
+                    len(self.template_draw_map) > 0
+                    and len(self.template_draw_map[0]) > 0
+                ):
                     has_room = False
                     for r in range(len(self.template_draw_map)):
                         c = len(self.template_draw_map[r]) - 1
@@ -296,18 +330,22 @@ class MultiRoomEditorTab(ttk.Frame):
                     for r in self.template_draw_map:
                         r.pop()
 
-
-                self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+                self.options_panel.set_templates(
+                    self.template_draw_map, self.room_templates
+                )
                 self.redraw()
-
 
             if overlaps_room:
                 win = PopupWindow("Warning", self.modlunky_config)
+
                 def update_then_destroy():
                     update_template()
                     win.destroy()
 
-                lbl = ttk.Label(win, text="Using this template here will remove some other templates.")
+                lbl = ttk.Label(
+                    win,
+                    text="Using this template here will remove some other templates.",
+                )
                 lbl.grid(row=0, column=0)
                 lbl2 = ttk.Label(win, text="Proceed anyway?")
                 lbl2.grid(row=1, column=0)
@@ -320,7 +358,9 @@ class MultiRoomEditorTab(ttk.Frame):
                 buttons.columnconfigure(0, weight=1)
                 buttons.columnconfigure(1, weight=1)
 
-                ok_button = ttk.Button(buttons, text="Proceed", command=update_then_destroy)
+                ok_button = ttk.Button(
+                    buttons, text="Proceed", command=update_then_destroy
+                )
                 ok_button.grid(row=0, column=0, pady=5, sticky="news")
 
                 cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
@@ -388,18 +428,24 @@ class MultiRoomEditorTab(ttk.Frame):
             for col, template in enumerate(template_row):
                 if template is None:
                     continue
-                if template.template_index == template_index and template.room_index == chunk_index:
-                    new_draw_item = get_template_draw_item(template.template, template_index)
+                if (
+                    template.template_index == template_index
+                    and template.room_index == chunk_index
+                ):
+                    new_draw_item = get_template_draw_item(
+                        template.template, template_index
+                    )
                     template_row[col] = new_draw_item
                     replaced = True
         if replaced:
             self.options_panel.set_templates(self.template_draw_map)
             self.redraw()
 
-
     def canvas_click(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
+        template_draw_item, room_row, room_col = self.template_item_at(
+            room_row, room_col
+        )
 
         if template_draw_item is None:
             # Do not draw on empty room.
@@ -426,7 +472,12 @@ class MultiRoomEditorTab(ttk.Frame):
             for c, other_template_draw_item in enumerate(room_rows):
                 if other_template_draw_item is None:
                     continue
-                if template_draw_item.template_index == other_template_draw_item.template_index and template_draw_item.room_index == other_template_draw_item.room_index:
+                if (
+                    template_draw_item.template_index
+                    == other_template_draw_item.template_index
+                    and template_draw_item.room_index
+                    == other_template_draw_item.room_index
+                ):
                     self.canvas.replace_tile_at(
                         canvas_index,
                         tile_row + r * 8,
@@ -438,7 +489,9 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
-        template_draw_item, room_row, room_col = self.template_item_at(room_row, room_col)
+        template_draw_item, room_row, room_col = self.template_item_at(
+            room_row, room_col
+        )
 
         if template_draw_item is None:
             # Do not attempt to pull tile from empty room.
@@ -456,8 +509,6 @@ class MultiRoomEditorTab(ttk.Frame):
         if TemplateSetting.ONLYFLIP in chunk.settings:
             tile_col = 9 - tile_col
 
-
-
         tile_code = layer[tile_row][tile_col]
         tile = self.tile_palette_map[tile_code]
 
@@ -469,7 +520,7 @@ class MultiRoomEditorTab(ttk.Frame):
         # tile_ref = self.tile_palette_map[tile_code]
         img = self.image_for_tile_code(tile_code)
         # if tile_ref:
-            # img = tile_ref[1]
+        # img = tile_ref[1]
         if img:
             return self.texture_fetcher.adjust_texture_xy(
                 img.width(), img.height(), tile_name, tile_size
@@ -505,12 +556,14 @@ class MultiRoomEditorTab(ttk.Frame):
             for room_column_index, template_draw_item in enumerate(room_row):
                 if template_draw_item is None:
                     continue
-                grid_sizes.append(GridRoom(
-                    room_row_index,
-                    room_column_index,
-                    template_draw_item.width_in_rooms,
-                    template_draw_item.height_in_rooms,
-                ))
+                grid_sizes.append(
+                    GridRoom(
+                        room_row_index,
+                        room_column_index,
+                        template_draw_item.width_in_rooms,
+                        template_draw_item.height_in_rooms,
+                    )
+                )
 
         self.canvas.draw_room_grid(2, grid_sizes)
 
@@ -558,12 +611,23 @@ class MultiRoomEditorTab(ttk.Frame):
                     else:
                         for r in range(template_draw_item.height_in_rooms):
                             for c in range(template_draw_item.width_in_rooms):
-                                self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index + r, room_column_index + c)
+                                self.canvas.draw_background_over_room(
+                                    1,
+                                    self.lvl_biome,
+                                    room_row_index + r,
+                                    room_column_index + c,
+                                )
                 else:
-                    template, _, _ = self.template_item_at(room_row_index, room_column_index)
+                    template, _, _ = self.template_item_at(
+                        room_row_index, room_column_index
+                    )
                     if template is None:
-                        self.canvas.draw_background_over_room(0, self.lvl_biome, room_row_index, room_column_index)
-                        self.canvas.draw_background_over_room(1, self.lvl_biome, room_row_index, room_column_index)
+                        self.canvas.draw_background_over_room(
+                            0, self.lvl_biome, room_row_index, room_column_index
+                        )
+                        self.canvas.draw_background_over_room(
+                            1, self.lvl_biome, room_row_index, room_column_index
+                        )
 
     def template_item_at(self, row, col):
         for room_row_index, room_row in enumerate(self.template_draw_map):
@@ -574,7 +638,10 @@ class MultiRoomEditorTab(ttk.Frame):
                     break
                 if template_draw_item is None:
                     continue
-                if room_row_index + template_draw_item.height_in_rooms - 1 >= row and room_column_index + template_draw_item.width_in_rooms - 1 >= col:
+                if (
+                    room_row_index + template_draw_item.height_in_rooms - 1 >= row
+                    and room_column_index + template_draw_item.width_in_rooms - 1 >= col
+                ):
                     return template_draw_item, room_row_index, room_column_index
 
         return None, None, None

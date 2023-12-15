@@ -17,6 +17,7 @@ class GridRoom:
     width: int
     height: int
 
+
 class LevelCanvas(tk.Canvas):
     def __init__(
         self, parent, textures_dir, zoom_level, on_click, on_pull_tile, *args, **kwargs
@@ -167,7 +168,6 @@ class LevelCanvas(tk.Canvas):
             anchor="nw",
         )
 
-
     def draw_grid(self, width=1):
         self.grid_lines = [
             self.create_line(
@@ -192,7 +192,7 @@ class LevelCanvas(tk.Canvas):
         ]
         self.hide_grid_lines(self.grid_hidden)
 
-    def draw_room_grid(self, width=1, special_room_sizes: GridRoom=None):
+    def draw_room_grid(self, width=1, special_room_sizes: GridRoom = None):
         def create_room_boundary_box(row, col, w, h):
             return self.create_rectangle(
                 col * 10 * self.zoom_level,
@@ -202,14 +202,17 @@ class LevelCanvas(tk.Canvas):
                 outline="#30F030",
                 width=width,
             )
+
         if special_room_sizes is not None:
             self.room_lines = [
-                create_room_boundary_box(r.row, r.column, r.width, r.height) for r in special_room_sizes
+                create_room_boundary_box(r.row, r.column, r.width, r.height)
+                for r in special_room_sizes
             ]
         else:
             self.room_lines = [
                 create_room_boundary_box(row, col, 1, 1)
-                for row in range(0, int(self.height / 8)) for col in range(0, int(self.width / 10))
+                for row in range(0, int(self.height / 8))
+                for col in range(0, int(self.width / 10))
             ]
         self.hide_room_lines(self.rooms_hidden)
 

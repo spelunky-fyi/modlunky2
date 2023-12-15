@@ -11,6 +11,7 @@ from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
 
+
 def get_template_draw_item(room_template, index):
     chunk_index = None
     if len(room_template.rooms) == 0:
@@ -34,6 +35,7 @@ def get_template_draw_item(room_template, index):
         int(math.ceil(len(chunk.front[0]) / 10)),
         int(math.ceil(len(chunk.front) / 8)),
     )
+
 
 def find_roommap(templates):
     setrooms = {}
@@ -73,7 +75,9 @@ def find_roommap(templates):
             match = matchedtemplate.setroom
             x, y = match.coords.x, match.coords.y
 
-            template_item = get_template_draw_item(matchedtemplate.template, templates.index(matchedtemplate.template))
+            template_item = get_template_draw_item(
+                matchedtemplate.template, templates.index(matchedtemplate.template)
+            )
             if template_item:
                 set_room(room_map, x, setroom_start + y, template_item)
 
@@ -180,10 +184,18 @@ def find_roommap(templates):
 
     if challenge_special:
         if bottomc is not None and bottomr is not None:
-            set_room(room_map, bottomc < len(room_map[0]) and bottomc + 1 or bottomc - 1, bottomr, challenge_special)
+            set_room(
+                room_map,
+                bottomc < len(room_map[0]) and bottomc + 1 or bottomc - 1,
+                bottomr,
+                challenge_special,
+            )
         elif entrancer is not None and entrancec is not None:
             cr, cc = entrancer + 1, entrancec
-            if entrancec < len(room_map[entrancer]) and room_map[entrancer][entrancec + 1] is None:
+            if (
+                entrancec < len(room_map[entrancer])
+                and room_map[entrancer][entrancec + 1] is None
+            ):
                 cr, cc = entrancer, entrancec + 1
             elif entrancec > 0 and room_map[entrancer][entrancec - 1] is None:
                 cr, cc = entrancer, entrancec - 1
@@ -309,7 +321,7 @@ def find_roommap(templates):
         room = template_map.get(room_name)
         added_room = False
         if room:
-            for row in range(more_rooms_start, more_rooms_bottom+1):
+            for row in range(more_rooms_start, more_rooms_bottom + 1):
                 if added_room:
                     break
                 if len(room_map) <= row:
