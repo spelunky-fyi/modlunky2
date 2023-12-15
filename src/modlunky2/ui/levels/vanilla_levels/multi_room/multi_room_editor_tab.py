@@ -20,6 +20,7 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
     RoomTemplate,
     MatchedSetroomTemplate,
 )
+from modlunky2.ui.widgets import PopupWindow
 
 
 class MultiRoomEditorTab(ttk.Frame):
@@ -221,9 +222,80 @@ class MultiRoomEditorTab(ttk.Frame):
     def change_template_at(self, row, col, template, template_index):
         template_draw_item = self.__get_template_draw_item(template, template_index, row, col)
         if template_draw_item:
-            self.template_draw_map[row][col] = template_draw_item
-            self.options_panel.set_templates(self.template_draw_map, self.room_templates)
-            self.redraw()
+            if template_draw_item.width_in_rooms + col > 8:
+                # TODO: add error dialog.
+                win = PopupWindow("Cannot use this room template", self.modlunky_config)
+                lbl = ttk.Label(win, text="Using this template here will result in the map exceeding the maximum width.")
+                lbl.grid(row=0, column=0)
+
+                ok_button = ttk.Button(win, text="OK", command=win.destroy)
+                ok_button.grid(row=1, column=0, pady=5, sticky="news")
+                return
+
+            overlaps_room = False
+            for row_offset in range(template_draw_item.height_in_rooms):
+                for col_offset in range(template_draw_item.width_in_rooms):
+                    if row_offset == 0 and col_offset == 0:
+                        continue
+                    template, overlapping_row, overlapping_column = self.template_item_at(row + row_offset, col + col_offset)
+                    if template is not None and (overlapping_row != row or overlapping_column != col):
+                        overlaps_room = True
+
+            def update_template():
+                self.template_draw_map[row][col] = template_draw_item
+                def expand_to_height_if_necessary(room_map, height):
+                    if len(room_map) < height:
+                        for _ in range(height - len(room_map)):
+                            if len(room_map) == 0:
+                                room_map.append([None])
+                            else:
+                                room_map.append([None for _ in range(len(room_map[0]))])
+
+                def expand_to_width_if_necessary(room_map, width):
+                    for row in room_map:
+                        if len(row) < width:
+                            for _ in range(width - len(row)):
+                                row.append(None)
+
+                expand_to_height_if_necessary(self.template_draw_map, row + template_draw_item.height_in_rooms)
+                expand_to_width_if_necessary(self.template_draw_map, col + template_draw_item.width_in_rooms)
+                for row_offset in range(template_draw_item.height_in_rooms):
+                    for col_offset in range(template_draw_item.width_in_rooms):
+                        if row_offset == 0 and col_offset == 0:
+                            continue
+                        self.template_draw_map[row + row_offset][col + col_offset] = None
+                self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+                self.redraw()
+
+
+            if overlaps_room:
+                win = PopupWindow("Warning", self.modlunky_config)
+                def update_then_destroy():
+                    update_template()
+                    win.destroy()
+
+                lbl = ttk.Label(win, text="Using this template here will remove some other templates.")
+                lbl.grid(row=0, column=0)
+                lbl2 = ttk.Label(win, text="Proceed anyway?")
+                lbl2.grid(row=1, column=0)
+
+                separator = ttk.Separator(win)
+                separator.grid(row=2, column=0, columnspan=3, pady=5, sticky="nsew")
+
+                buttons = ttk.Frame(win)
+                buttons.grid(row=3, column=0, columnspan=2, sticky="nsew")
+                buttons.columnconfigure(0, weight=1)
+                buttons.columnconfigure(1, weight=1)
+
+                ok_button = ttk.Button(buttons, text="Proceed", command=update_then_destroy)
+                ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+
+                cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+                cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+
+            else:
+                update_template()
+
 
     def populate_tilecode_palette(self, tile_palette, suggestions):
         self.palette_panel.update_with_palette(
