@@ -59,6 +59,11 @@ class RoomOptions(ttk.Frame):
         if template:
             self.template_combobox.set(template.template.name)
 
+    def set_empty_cell(self, row, column):
+        self.current_template_row = row
+        self.current_template_column = column
+        self.template_combobox.set("None")
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,
@@ -90,6 +95,7 @@ class OptionsPanel(ttk.Frame):
         self.templates = []
 
         self.button_for_selected_room = None
+        self.button_for_selected_empty_room = None
 
         settings_row = 0
 
@@ -170,7 +176,7 @@ class OptionsPanel(ttk.Frame):
         self.room_view_size = 30
         self.room_view_padding = 5
 
-        for n in range(8):
+        for n in range(10):
             self.room_type_frame.columnconfigure(n * 2, minsize=self.room_view_size)
             if n != 0:
                 self.room_type_frame.columnconfigure(n * 2 - 1, minsize=self.room_view_padding)
@@ -191,6 +197,8 @@ class OptionsPanel(ttk.Frame):
         self.on_clear_template(row, column)
 
     def set_templates(self, room_map, templates):
+        self.button_for_selected_room = None
+        self.button_for_selected_empty_room = None
         # self.room_options.grid_remove()
         if self.room_map is not None:
             for row_index in range(len(self.room_map) + 1):
@@ -224,8 +232,14 @@ class OptionsPanel(ttk.Frame):
                 if template is None:
                     overlapping_template, _, _ = self.template_item_at(room_map, row_index, col_index)
                     if overlapping_template is None:
-                        new_button = tk.Button(self.room_type_frame, bg="#3A403A", activebackground="#3A403A", relief=tk.GROOVE)
+                        new_button = tk.Button(self.room_type_frame, bg="#5A605A", activebackground="#5A605A", relief=tk.GROOVE)
+                        new_button.configure(
+                            command=lambda nb=new_button, r=row_index, c=col_index: self.select_empty_cell(nb, r, c)
+                        )
                         new_button.grid(row=row_index * 2, column=col_index * 2, sticky="news")
+                        if row_index == self.room_options.current_template_row and col_index == self.room_options.current_template_column:
+                            self.button_for_selected_empty_room = new_button
+                            self.room_options.set_empty_cell(row_index, col_index)
                 else:
                     new_button = tk.Button(
                         self.room_type_frame,
@@ -243,6 +257,9 @@ class OptionsPanel(ttk.Frame):
                         columnspan=template.width_in_rooms * 2 - 1,
                         sticky="news",
                     )
+                    if row_index == self.room_options.current_template_row and col_index == self.room_options.current_template_column:
+                        self.button_for_selected_room = new_button
+                        self.room_options.set_current_template(template, row_index, col_index)
                 if new_button is not None:
                     self.room_buttons.append(new_button)
 
@@ -277,17 +294,35 @@ class OptionsPanel(ttk.Frame):
                 edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
                 edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
                 self.edge_frames.append(edge_frame)
+        self.highlight_selected_button()
 
     def reset_selected_button(self):
         if self.button_for_selected_room is not None:
             self.button_for_selected_room.configure(bg="#30F030", activebackground="#30F030")
             self.button_for_selected_room = None
+        if self.button_for_selected_empty_room is not None:
+            self.button_for_selected_empty_room.configure(bg="#5A605A", activebackground="#5A605A")
+            self.button_for_selected_empty_room = None
+
+    def highlight_selected_button(self):
+        if self.button_for_selected_room is not None:
+            self.button_for_selected_room.configure(bg="#228B22", activebackground="#228B22")
+            self.button_for_selected_room = None
+        if self.button_for_selected_empty_room is not None:
+            self.button_for_selected_empty_room.configure(bg="#1A201A", activebackground="#1A201A")
+            self.button_for_selected_empty_room = None
 
     def select_template_item(self, template_item, button, row, column):
         self.reset_selected_button()
         self.button_for_selected_room = button
-        button.configure(bg="#228B22", activebackground="#228B22")
+        self.highlight_selected_button()
         self.room_options.set_current_template(template_item, row, column)
+
+    def select_empty_cell(self, button, row, column):
+        self.reset_selected_button()
+        self.button_for_selected_empty_room = button
+        self.highlight_selected_button()
+        self.room_options.set_empty_cell(row, column)
 
     def update_zoom_level(self, zoom_level):
         self.grid_size_var.set(zoom_level)

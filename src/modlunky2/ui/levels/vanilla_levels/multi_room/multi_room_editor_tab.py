@@ -223,7 +223,7 @@ class MultiRoomEditorTab(ttk.Frame):
     def change_template_at(self, row, col, template, template_index):
         template_draw_item = self.__get_template_draw_item(template, template_index, row, col)
         if template_draw_item:
-            if template_draw_item.width_in_rooms + col > 8:
+            if template_draw_item.width_in_rooms + col > 10:
                 # TODO: add error dialog.
                 win = PopupWindow("Cannot use this room template", self.modlunky_config)
                 lbl = ttk.Label(win, text="Using this template here will result in the map exceeding the maximum width.")
@@ -264,6 +264,8 @@ class MultiRoomEditorTab(ttk.Frame):
                         if row_offset == 0 and col_offset == 0:
                             continue
                         _, overlapping_row, overlapping_column = self.template_item_at(row + row_offset, col + col_offset)
+                        if overlapping_row is None or overlapping_column is None:
+                            continue
                         self.template_draw_map[overlapping_row][overlapping_column] = None
                 self.template_draw_map[row][col] = template_draw_item
                 self.options_panel.set_templates(self.template_draw_map, self.room_templates)
