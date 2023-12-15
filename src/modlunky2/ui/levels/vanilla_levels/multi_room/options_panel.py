@@ -225,7 +225,6 @@ class OptionsPanel(ttk.Frame):
         self.on_clear_template(row, column)
 
     def reset(self):
-        print("reset")
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
         self.room_options.grid_remove()
