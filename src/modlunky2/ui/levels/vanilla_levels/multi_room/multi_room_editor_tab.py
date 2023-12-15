@@ -243,7 +243,6 @@ class MultiRoomEditorTab(ttk.Frame):
                         overlaps_room = True
 
             def update_template():
-                self.template_draw_map[row][col] = template_draw_item
                 def expand_to_height_if_necessary(room_map, height):
                     if len(room_map) < height:
                         for _ in range(height - len(room_map)):
@@ -264,7 +263,9 @@ class MultiRoomEditorTab(ttk.Frame):
                     for col_offset in range(template_draw_item.width_in_rooms):
                         if row_offset == 0 and col_offset == 0:
                             continue
-                        self.template_draw_map[row + row_offset][col + col_offset] = None
+                        _, overlapping_row, overlapping_column = self.template_item_at(row + row_offset, col + col_offset)
+                        self.template_draw_map[overlapping_row][overlapping_column] = None
+                self.template_draw_map[row][col] = template_draw_item
                 self.options_panel.set_templates(self.template_draw_map, self.room_templates)
                 self.redraw()
 
