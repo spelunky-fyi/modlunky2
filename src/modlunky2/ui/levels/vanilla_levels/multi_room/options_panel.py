@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.config import Config
+from modlunky2.ui.widgets import PopupWindow
+
 class RoomOptions(ttk.Frame):
     def __init__(
         self,
@@ -68,7 +71,7 @@ class OptionsPanel(ttk.Frame):
     def __init__(
         self,
         parent,
-        modlunky_config,
+        modlunky_config: Config,
         zoom_level,
         on_update_hide_grid_lines,
         on_update_hide_room_lines,
@@ -272,6 +275,9 @@ class OptionsPanel(ttk.Frame):
                 edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
                 edge_button.grid(row=0, column=0, sticky="news")
                 edge_button.grid_remove()
+                edge_button.configure(
+                    command=lambda r=row_index, c=len(template_row): self.show_create_new_dialog(r, c)
+                )
 
 
                 edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
@@ -289,6 +295,9 @@ class OptionsPanel(ttk.Frame):
                 edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
                 edge_button.grid(row=0, column=0, sticky="news")
                 edge_button.grid_remove()
+                edge_button.configure(
+                    command=lambda r=len(room_map), c=col: self.show_create_new_dialog(r, c)
+                )
 
 
                 edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
@@ -323,6 +332,52 @@ class OptionsPanel(ttk.Frame):
         self.button_for_selected_empty_room = button
         self.highlight_selected_button()
         self.room_options.set_empty_cell(row, column)
+
+    def show_create_new_dialog(self, row, column):
+        win = PopupWindow("Add room", self.modlunky_config)
+
+        lbl = ttk.Label(win, text="Select a template to add.")
+        lbl.grid(row=0, column=0)
+
+        warning_label = tk.Label(
+            win, text="", foreground="red", wraplength=200, justify=tk.LEFT
+        )
+        warning_label.grid(row=2, column=0, sticky="nw", pady=(10, 0))
+        warning_label.grid_remove()
+
+        separator = ttk.Separator(win)
+        separator.grid(row=3, column=0, columnspan=3, pady=5, sticky="news")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="news")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        template_combobox = ttk.Combobox(win, height=25)
+        template_combobox.grid(row=1, column=0, sticky="nsw")
+        template_combobox["values"] = [template.name for template in self.templates]
+        # template_combobox.set("")
+        template_combobox["state"] = "readonly"
+        # template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
+
+        def add_then_destroy():
+            template_index = template_combobox.current()
+            print(template_index)
+            if template_index is None or template_index == -1:
+                warning_label["text"] = "Select a room template"
+                warning_label.grid()
+                return
+
+            self.room_options.set_empty_cell(row, column)
+            self.update_room_map_template(template_index, row, column)
+            win.destroy()
+
+        ok_button = ttk.Button(buttons, text="Add", command=add_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="news")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="news")
+
 
     def update_zoom_level(self, zoom_level):
         self.grid_size_var.set(zoom_level)
