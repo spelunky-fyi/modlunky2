@@ -160,6 +160,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.clear()
         self.show_intro()
         self.template_draw_map = find_roommap(room_templates)
+        self.options_panel.reset()
         self.options_panel.set_templates(self.template_draw_map, room_templates)
         self.draw_canvas()
 
