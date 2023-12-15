@@ -259,7 +259,7 @@ class MultiCanvasContainer(tk.Frame):
         for canvas in self.canvases:
             canvas.draw_grid(width)
 
-    def draw_room_grid(self, width=1, special_room_sizes: GridRoom=None):
+    def draw_room_grid(self, width=1, special_room_sizes: GridRoom = None):
         for canvas in self.canvases:
             canvas.draw_room_grid(width, special_room_sizes)
 

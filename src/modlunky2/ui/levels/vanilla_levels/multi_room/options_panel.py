@@ -4,6 +4,7 @@ from tkinter import ttk
 from modlunky2.config import Config
 from modlunky2.ui.widgets import PopupWindow
 
+
 class RoomOptions(ttk.Frame):
     def __init__(
         self,
@@ -36,23 +37,33 @@ class RoomOptions(ttk.Frame):
         self.template_combobox["values"] = ["None"]
         self.template_combobox.set("None")
         self.template_combobox["state"] = "readonly"
-        self.template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
+        self.template_combobox.bind(
+            "<<ComboboxSelected>>", lambda _: self.select_template()
+        )
 
     def select_template(self):
         template_index = self.template_combobox.current()
 
         if template_index == 0:
             self.clear_templates()
-            self.on_clear_template(self.current_template_row, self.current_template_column)
+            self.on_clear_template(
+                self.current_template_row, self.current_template_column
+            )
         else:
-            self.on_select_template(template_index - 1, self.current_template_row, self.current_template_column)
+            self.on_select_template(
+                template_index - 1,
+                self.current_template_row,
+                self.current_template_column,
+            )
 
     def clear_templates(self):
         self.template_combobox["values"] = ["None"]
         self.template_combobox.set("None")
 
     def set_templates(self, templates):
-        self.template_combobox["values"] = ["None"] + [template.name for template in templates]
+        self.template_combobox["values"] = ["None"] + [
+            template.name for template in templates
+        ]
         self.current_template_item = None
 
     def set_current_template(self, template, row, column):
@@ -67,6 +78,7 @@ class RoomOptions(ttk.Frame):
         self.current_template_column = column
         self.template_combobox.set("None")
 
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,
@@ -79,7 +91,7 @@ class OptionsPanel(ttk.Frame):
         on_change_template_at,
         on_clear_template,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(parent, *args, **kwargs)
 
@@ -101,7 +113,6 @@ class OptionsPanel(ttk.Frame):
         self.button_for_selected_empty_room = None
 
         settings_row = 0
-
 
         # Checkbox to toggle the visibility of the grid lines.
         hide_grid_var = tk.IntVar()
@@ -174,7 +185,9 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.room_type_frame = tk.Frame(self)
-        self.room_type_frame.grid(row=settings_row, column=1, sticky="news", padx=10, pady=10)
+        self.room_type_frame.grid(
+            row=settings_row, column=1, sticky="news", padx=10, pady=10
+        )
 
         self.room_view_size = 30
         self.room_view_padding = 5
@@ -182,14 +195,18 @@ class OptionsPanel(ttk.Frame):
         for n in range(10):
             self.room_type_frame.columnconfigure(n * 2, minsize=self.room_view_size)
             if n != 0:
-                self.room_type_frame.columnconfigure(n * 2 - 1, minsize=self.room_view_padding)
+                self.room_type_frame.columnconfigure(
+                    n * 2 - 1, minsize=self.room_view_padding
+                )
 
         self.room_buttons = []
         self.edge_frames = []
 
         settings_row += 1
 
-        self.room_options = RoomOptions(self, self.update_room_map_template, self.clear_template)
+        self.room_options = RoomOptions(
+            self, self.update_room_map_template, self.clear_template
+        )
         self.room_options.grid(row=settings_row, column=1, sticky="news")
 
     def update_room_map_template(self, template_index, row, column):
@@ -216,9 +233,13 @@ class OptionsPanel(ttk.Frame):
 
         if room_map is not None:
             for row_index in range(len(room_map) + 1):
-                self.room_type_frame.rowconfigure(row_index * 2, minsize=self.room_view_size)
+                self.room_type_frame.rowconfigure(
+                    row_index * 2, minsize=self.room_view_size
+                )
                 if row_index != 0:
-                    self.room_type_frame.rowconfigure(row_index * 2 - 1, minsize=self.room_view_padding)
+                    self.room_type_frame.rowconfigure(
+                        row_index * 2 - 1, minsize=self.room_view_padding
+                    )
 
         for button in self.room_buttons:
             button.grid_remove()
@@ -233,14 +254,28 @@ class OptionsPanel(ttk.Frame):
             for col_index, template in enumerate(template_row):
                 new_button = None
                 if template is None:
-                    overlapping_template, _, _ = self.template_item_at(room_map, row_index, col_index)
+                    overlapping_template, _, _ = self.template_item_at(
+                        room_map, row_index, col_index
+                    )
                     if overlapping_template is None:
-                        new_button = tk.Button(self.room_type_frame, bg="#5A605A", activebackground="#5A605A", relief=tk.GROOVE)
-                        new_button.configure(
-                            command=lambda nb=new_button, r=row_index, c=col_index: self.select_empty_cell(nb, r, c)
+                        new_button = tk.Button(
+                            self.room_type_frame,
+                            bg="#5A605A",
+                            activebackground="#5A605A",
+                            relief=tk.GROOVE,
                         )
-                        new_button.grid(row=row_index * 2, column=col_index * 2, sticky="news")
-                        if row_index == self.room_options.current_template_row and col_index == self.room_options.current_template_column:
+                        new_button.configure(
+                            command=lambda nb=new_button, r=row_index, c=col_index: self.select_empty_cell(
+                                nb, r, c
+                            )
+                        )
+                        new_button.grid(
+                            row=row_index * 2, column=col_index * 2, sticky="news"
+                        )
+                        if (
+                            row_index == self.room_options.current_template_row
+                            and col_index == self.room_options.current_template_column
+                        ):
                             self.button_for_selected_empty_room = new_button
                             self.room_options.set_empty_cell(row_index, col_index)
                 else:
@@ -251,7 +286,9 @@ class OptionsPanel(ttk.Frame):
                         relief=tk.GROOVE,
                     )
                     new_button.configure(
-                        command=lambda t=template, nb=new_button, r=row_index, c=col_index: self.select_template_item(t, nb, r, c)
+                        command=lambda t=template, nb=new_button, r=row_index, c=col_index: self.select_template_item(
+                            t, nb, r, c
+                        )
                     )
                     new_button.grid(
                         row=row_index * 2,
@@ -260,25 +297,39 @@ class OptionsPanel(ttk.Frame):
                         columnspan=template.width_in_rooms * 2 - 1,
                         sticky="news",
                     )
-                    if row_index == self.room_options.current_template_row and col_index == self.room_options.current_template_column:
+                    if (
+                        row_index == self.room_options.current_template_row
+                        and col_index == self.room_options.current_template_column
+                    ):
                         self.button_for_selected_room = new_button
-                        self.room_options.set_current_template(template, row_index, col_index)
+                        self.room_options.set_current_template(
+                            template, row_index, col_index
+                        )
                 if new_button is not None:
                     self.room_buttons.append(new_button)
 
             if len(template_row) < 10:
                 edge_frame = tk.Frame(self.room_type_frame)
-                edge_frame.grid(row=row_index * 2, column=len(template_row) * 2, sticky="news")
+                edge_frame.grid(
+                    row=row_index * 2, column=len(template_row) * 2, sticky="news"
+                )
                 edge_frame.columnconfigure(0, weight=1)
                 edge_frame.rowconfigure(0, weight=1)
 
-                edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
+                edge_button = tk.Button(
+                    edge_frame,
+                    text="+",
+                    bg="#A0C0A6",
+                    activebackground="#A0C0A6",
+                    relief=tk.GROOVE,
+                )
                 edge_button.grid(row=0, column=0, sticky="news")
                 edge_button.grid_remove()
                 edge_button.configure(
-                    command=lambda r=row_index, c=len(template_row): self.show_create_new_dialog(r, c)
+                    command=lambda r=row_index, c=len(
+                        template_row
+                    ): self.show_create_new_dialog(r, c)
                 )
-
 
                 edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
                 edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
@@ -292,13 +343,20 @@ class OptionsPanel(ttk.Frame):
                 edge_frame.columnconfigure(0, weight=1)
                 edge_frame.rowconfigure(0, weight=1)
 
-                edge_button = tk.Button(edge_frame, text="+", bg="#A0C0A6", activebackground="#A0C0A6", relief=tk.GROOVE)
+                edge_button = tk.Button(
+                    edge_frame,
+                    text="+",
+                    bg="#A0C0A6",
+                    activebackground="#A0C0A6",
+                    relief=tk.GROOVE,
+                )
                 edge_button.grid(row=0, column=0, sticky="news")
                 edge_button.grid_remove()
                 edge_button.configure(
-                    command=lambda r=len(room_map), c=col: self.show_create_new_dialog(r, c)
+                    command=lambda r=len(room_map), c=col: self.show_create_new_dialog(
+                        r, c
+                    )
                 )
-
 
                 edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
                 edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
@@ -307,18 +365,26 @@ class OptionsPanel(ttk.Frame):
 
     def reset_selected_button(self):
         if self.button_for_selected_room is not None:
-            self.button_for_selected_room.configure(bg="#30F030", activebackground="#30F030")
+            self.button_for_selected_room.configure(
+                bg="#30F030", activebackground="#30F030"
+            )
             self.button_for_selected_room = None
         if self.button_for_selected_empty_room is not None:
-            self.button_for_selected_empty_room.configure(bg="#5A605A", activebackground="#5A605A")
+            self.button_for_selected_empty_room.configure(
+                bg="#5A605A", activebackground="#5A605A"
+            )
             self.button_for_selected_empty_room = None
 
     def highlight_selected_button(self):
         if self.button_for_selected_room is not None:
-            self.button_for_selected_room.configure(bg="#228B22", activebackground="#228B22")
+            self.button_for_selected_room.configure(
+                bg="#228B22", activebackground="#228B22"
+            )
             self.button_for_selected_room = None
         if self.button_for_selected_empty_room is not None:
-            self.button_for_selected_empty_room.configure(bg="#1A201A", activebackground="#1A201A")
+            self.button_for_selected_empty_room.configure(
+                bg="#1A201A", activebackground="#1A201A"
+            )
             self.button_for_selected_empty_room = None
 
     def select_template_item(self, template_item, button, row, column):
@@ -375,7 +441,6 @@ class OptionsPanel(ttk.Frame):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="news")
 
-
     def update_zoom_level(self, zoom_level):
         self.grid_size_var.set(zoom_level)
 
@@ -388,7 +453,10 @@ class OptionsPanel(ttk.Frame):
                     break
                 if template_draw_item is None:
                     continue
-                if room_row_index + template_draw_item.height_in_rooms - 1 >= row and room_column_index + template_draw_item.width_in_rooms - 1 >= col:
+                if (
+                    room_row_index + template_draw_item.height_in_rooms - 1 >= row
+                    and room_column_index + template_draw_item.width_in_rooms - 1 >= col
+                ):
                     return template_draw_item, room_row_index, room_column_index
 
         return None, None, None
