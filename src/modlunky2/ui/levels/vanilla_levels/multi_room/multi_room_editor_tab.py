@@ -284,18 +284,18 @@ class MultiRoomEditorTab(ttk.Frame):
                 lbl2.grid(row=1, column=0)
 
                 separator = ttk.Separator(win)
-                separator.grid(row=2, column=0, columnspan=3, pady=5, sticky="nsew")
+                separator.grid(row=2, column=0, columnspan=3, pady=5, sticky="news")
 
                 buttons = ttk.Frame(win)
-                buttons.grid(row=3, column=0, columnspan=2, sticky="nsew")
+                buttons.grid(row=3, column=0, columnspan=2, sticky="news")
                 buttons.columnconfigure(0, weight=1)
                 buttons.columnconfigure(1, weight=1)
 
                 ok_button = ttk.Button(buttons, text="Proceed", command=update_then_destroy)
-                ok_button.grid(row=0, column=0, pady=5, sticky="nsew")
+                ok_button.grid(row=0, column=0, pady=5, sticky="news")
 
                 cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
-                cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
+                cancel_button.grid(row=0, column=1, pady=5, sticky="news")
 
             else:
                 update_template()
