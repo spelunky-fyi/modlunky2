@@ -41,6 +41,13 @@ class RoomOptions(ttk.Frame):
             "<<ComboboxSelected>>", lambda _: self.select_template()
         )
 
+    def reset(self):
+        self.current_template_row = None
+        self.current_template_column = None
+        self.current_template_item = None
+        self.template_combobox["values"] = ["None"]
+        self.template_combobox.set("None")
+
     def select_template(self):
         template_index = self.template_combobox.current()
 
@@ -208,6 +215,7 @@ class OptionsPanel(ttk.Frame):
             self, self.update_room_map_template, self.clear_template
         )
         self.room_options.grid(row=settings_row, column=1, sticky="news")
+        self.room_options.grid_remove()
 
     def update_room_map_template(self, template_index, row, column):
         template = self.templates[template_index]
@@ -216,9 +224,17 @@ class OptionsPanel(ttk.Frame):
     def clear_template(self, row, column):
         self.on_clear_template(row, column)
 
+    def reset(self):
+        print("reset")
+        self.button_for_selected_room = None
+        self.button_for_selected_empty_room = None
+        self.room_options.grid_remove()
+        self.room_options.reset()
+
     def set_templates(self, room_map, templates):
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
+        self.room_options.grid_remove()
         # self.room_options.grid_remove()
         if self.room_map is not None:
             for row_index in range(len(self.room_map) + 1):
@@ -380,24 +396,26 @@ class OptionsPanel(ttk.Frame):
             self.button_for_selected_room.configure(
                 bg="#228B22", activebackground="#228B22"
             )
-            self.button_for_selected_room = None
+            self.room_options.grid()
         if self.button_for_selected_empty_room is not None:
             self.button_for_selected_empty_room.configure(
                 bg="#1A201A", activebackground="#1A201A"
             )
-            self.button_for_selected_empty_room = None
+            self.room_options.grid()
 
     def select_template_item(self, template_item, button, row, column):
         self.reset_selected_button()
         self.button_for_selected_room = button
         self.highlight_selected_button()
         self.room_options.set_current_template(template_item, row, column)
+        self.room_options.grid()
 
     def select_empty_cell(self, button, row, column):
         self.reset_selected_button()
         self.button_for_selected_empty_room = button
         self.highlight_selected_button()
         self.room_options.set_empty_cell(row, column)
+        self.room_options.grid()
 
     def show_create_new_dialog(self, row, column):
         win = PopupWindow("Add room", self.modlunky_config)
