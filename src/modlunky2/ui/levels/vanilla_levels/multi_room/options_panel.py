@@ -6,6 +6,7 @@ class RoomOptions(ttk.Frame):
         self,
         parent,
         on_select_template,
+        on_clear_template,
         *args,
         **kwargs,
     ):
@@ -14,6 +15,7 @@ class RoomOptions(ttk.Frame):
         setting_row = 0
 
         self.on_select_template = on_select_template
+        self.on_clear_template = on_clear_template
 
         self.current_template_row = None
         self.current_template_column = None
@@ -28,16 +30,26 @@ class RoomOptions(ttk.Frame):
 
         self.template_combobox = ttk.Combobox(self, height=25)
         self.template_combobox.grid(row=setting_row, column=0, sticky="nsw")
+        self.template_combobox["values"] = ["None"]
+        self.template_combobox.set("None")
         self.template_combobox["state"] = "readonly"
         self.template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
 
     def select_template(self):
         template_index = self.template_combobox.current()
 
-        self.on_select_template(template_index, self.current_template_row, self.current_template_column)
+        if template_index == 0:
+            self.clear_templates()
+            self.on_clear_template(self.current_template_row, self.current_template_column)
+        else:
+            self.on_select_template(template_index - 1, self.current_template_row, self.current_template_column)
+
+    def clear_templates(self):
+        self.template_combobox["values"] = ["None"]
+        self.template_combobox.set("None")
 
     def set_templates(self, templates):
-        self.template_combobox["values"] = [template.name for template in templates]
+        self.template_combobox["values"] = ["None"] + [template.name for template in templates]
         self.current_template_item = None
 
     def set_current_template(self, template, row, column):
@@ -57,6 +69,7 @@ class OptionsPanel(ttk.Frame):
         on_update_hide_room_lines,
         on_update_zoom_level,
         on_change_template_at,
+        on_clear_template,
         *args,
         **kwargs
     ):
@@ -67,6 +80,7 @@ class OptionsPanel(ttk.Frame):
         self.on_update_hide_room_lines = on_update_hide_room_lines
         self.on_update_zoom_level = on_update_zoom_level
         self.on_change_template_at = on_change_template_at
+        self.on_clear_template = on_clear_template
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
@@ -166,12 +180,15 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
 
-        self.room_options = RoomOptions(self, self.update_room_map_template)
+        self.room_options = RoomOptions(self, self.update_room_map_template, self.clear_template)
         self.room_options.grid(row=settings_row, column=1, sticky="news")
 
     def update_room_map_template(self, template_index, row, column):
         template = self.templates[template_index]
         self.on_change_template_at(row, column, template, template_index)
+
+    def clear_template(self, row, column):
+        self.on_clear_template(row, column)
 
     def set_templates(self, room_map, templates):
         # self.room_options.grid_remove()
