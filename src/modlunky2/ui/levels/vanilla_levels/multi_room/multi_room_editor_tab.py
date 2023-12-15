@@ -267,7 +267,36 @@ class MultiRoomEditorTab(ttk.Frame):
                         if overlapping_row is None or overlapping_column is None:
                             continue
                         self.template_draw_map[overlapping_row][overlapping_column] = None
+
                 self.template_draw_map[row][col] = template_draw_item
+                while len(self.template_draw_map) > 0:
+                    has_room = False
+                    r = len(self.template_draw_map) - 1
+                    for c in range(len(self.template_draw_map[r])):
+                        t, _, _ = self.template_item_at(r, c)
+                        if t is not None:
+                            has_room = True
+                            break
+                    if has_room:
+                        break
+
+                    self.template_draw_map.pop()
+
+                while len(self.template_draw_map) > 0 and len(self.template_draw_map[0]) > 0:
+                    has_room = False
+                    for r in range(len(self.template_draw_map)):
+                        c = len(self.template_draw_map[r]) - 1
+                        t, _, _ = self.template_item_at(r, c)
+                        if t is not None:
+                            has_room = True
+                            break
+                    if has_room:
+                        break
+
+                    for r in self.template_draw_map:
+                        r.pop()
+
+
                 self.options_panel.set_templates(self.template_draw_map, self.room_templates)
                 self.redraw()
 
@@ -302,6 +331,34 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def clear_template_at(self, row, col):
         self.template_draw_map[row][col] = None
+
+        while len(self.template_draw_map) > 0:
+            has_room = False
+            r = len(self.template_draw_map) - 1
+            for c in range(len(self.template_draw_map[r])):
+                t, _, _ = self.template_item_at(r, c)
+                if t is not None:
+                    has_room = True
+                    break
+            if has_room:
+                break
+
+            self.template_draw_map.pop()
+
+        while len(self.template_draw_map) > 0 and len(self.template_draw_map[0]) > 0:
+            has_room = False
+            for r in range(len(self.template_draw_map)):
+                c = len(self.template_draw_map[r]) - 1
+                t, _, _ = self.template_item_at(r, c)
+                if t is not None:
+                    has_room = True
+                    break
+            if has_room:
+                break
+
+            for r in self.template_draw_map:
+                r.pop()
+
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
 
