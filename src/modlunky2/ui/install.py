@@ -100,6 +100,11 @@ class DestinationChooser(ttk.Frame):
         file_chooser_entry = ttk.Entry(
             self,
             textvariable=self.file_chooser_var,
+            validate="all",
+        )
+        file_chooser_entry["validatecommand"] = (
+            file_chooser_entry.register(self.changed),
+            "%P",
         )
         file_chooser_entry.columnconfigure(0, weight=1)
         file_chooser_entry.columnconfigure(1, weight=1)
@@ -110,6 +115,10 @@ class DestinationChooser(ttk.Frame):
 
         file_chooser_browse = ttk.Button(self, text="Browse", command=self.browse)
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
+
+    def changed(self, val):
+        self.master.master.check_exists(val)
+        return True
 
     def browse(self):
         if not self.modlunky_config.install_dir:
@@ -244,16 +253,26 @@ class LocalInstall(ttk.LabelFrame):
             pack=pack,
         )
 
+    def check_exists(self, dest):
+        dest_path = self.modlunky_config.install_dir / "Mods/Packs" / Path(dest).stem
+        if not dest:
+            self.button_install["state"] = tk.DISABLED
+            return
+        self.button_install["state"] = tk.NORMAL
+        if dest_path.exists():
+            self.button_install["text"] = "Install selected file to existing pack"
+        else:
+            self.button_install["text"] = "Install selected file as new pack"
+
     def render(self):
         source = self.file_chooser_frame.file_chooser_var.get()
         dest = self.file_chooser_frame2.file_chooser_var.get()
+        if source and not dest:
+            self.file_chooser_frame2.file_chooser_var.set(Path(source).stem)
+            dest = self.file_chooser_frame2.file_chooser_var.get()
         if source and dest:
             self.button_install["state"] = tk.NORMAL
-            self.button_install["text"] = "Install selected file to existing pack"
-        elif source:
-            self.file_chooser_frame2.file_chooser_var.set(Path(source).stem)
-            self.button_install["state"] = tk.NORMAL
-            self.button_install["text"] = "Install selected file as new pack"
+            self.check_exists(dest)
         else:
             self.button_install["state"] = tk.DISABLED
             self.button_install[
@@ -269,8 +288,7 @@ class LocalInstall(ttk.LabelFrame):
             )
             self.file_chooser_frame.file_chooser_var.set(Path(files[0]))
             self.file_chooser_frame2.file_chooser_var.set(Path(files[0]).stem)
-            self.button_install["state"] = tk.NORMAL
-            self.button_install["text"] = "Install dropped file as new pack"
+            self.render()
 
 
 def write_manifest(dest_dir: Path, mod_details, mod_file, logo=None):
