@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from modlunky2.config import Config
+from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.widgets import PopupWindow
 
 
@@ -12,6 +13,7 @@ class RoomOptions(ttk.Frame):
         on_select_template,
         on_clear_template,
         on_select_room,
+        on_flip_setting,
         *args,
         **kwargs,
     ):
@@ -22,6 +24,7 @@ class RoomOptions(ttk.Frame):
         self.on_select_template = on_select_template
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
+        self.on_flip_setting = on_flip_setting
 
         self.current_template_row = None
         self.current_template_column = None
@@ -55,6 +58,112 @@ class RoomOptions(ttk.Frame):
         self.room_combobox.set("")
         self.room_combobox["state"] = "readonly"
         self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
+
+        self.room_settings_container = tk.Frame(self.template_container)
+        self.room_settings_container.grid(row=2, column=0, sticky="news")
+
+        self.var_ignore = tk.IntVar()
+        self.var_flip = tk.IntVar()
+        self.var_only_flip = tk.IntVar()
+        self.var_dual = tk.IntVar()
+        self.var_rare = tk.IntVar()
+        self.var_hard = tk.IntVar()
+        self.var_liquid = tk.IntVar()
+        self.var_purge = tk.IntVar()
+        self.checkbox_ignore = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Ignore",
+            var=self.var_ignore,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_ignore,
+        )
+        self.checkbox_flip = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Flip",
+            var=self.var_flip,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_flip,
+        )
+        self.checkbox_only_flip = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Only Flip",
+            var=self.var_only_flip,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_only_flip,
+        )
+        self.checkbox_rare = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Rare",
+            var=self.var_rare,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_rare,
+        )
+        self.checkbox_hard = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Hard",
+            var=self.var_hard,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_hard,
+        )
+        self.checkbox_liquid = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Optimize Liquids",
+            var=self.var_liquid,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_liquid,
+        )
+        self.checkbox_purge = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Purge",
+            var=self.var_purge,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_purge,
+        )
+        self.checkbox_dual = ttk.Checkbutton(
+            self.room_settings_container,
+            text="Dual",
+            var=self.var_dual,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_dual,
+        )
+
+        wrap = 400
+        label_dual = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Whether this room has a backlayer.")
+        label_ignore = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room will never appear in-game.")
+        label_purge = tk.Label (self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, other rooms of this same template which were already loaded (eg, loaded from another file or appear first in this file) will not appear in-game when this room's file is loaded.")
+        label_rare = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room has a 5% chance of being used.")
+        label_hard = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room only appears in X-3 and X-4.")
+        label_liquid = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Mark this room as containing liquid to optimize the liquid engine.")
+        label_flip = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Creates two rooms, one which is horizontally flipped from the original.")
+        label_only_flip = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Like flip, but the original room is ignored.")
+
+        self.checkbox_dual.grid(row=0, column=0, sticky="w")
+        label_dual.grid(row=1, column=0, sticky="nws")
+        self.checkbox_ignore.grid(row=2, column=0, sticky="w")
+        label_ignore.grid(row=3, column=0, sticky="nws")
+        self.checkbox_purge.grid(row=4, column=0, sticky="w")
+        label_purge.grid(row=5, column=0, sticky="nws")
+        self.checkbox_rare.grid(row=6, column=0, sticky="w")
+        label_rare.grid(row=7, column=0, sticky="nws")
+        self.checkbox_hard.grid(row=8, column=0, sticky="w")
+        label_hard.grid(row=9, column=0, sticky="nws")
+        self.checkbox_liquid.grid(row=10, column=0, sticky="w")
+        label_liquid.grid(row=11, column=0, sticky="nws")
+        self.checkbox_flip.grid(row=12, column=0, sticky="w")
+        label_flip.grid(row=12, column=0, sticky="nws")
+        self.checkbox_only_flip.grid(row=14, column=0, sticky="w")
+        label_only_flip.grid(row=15, column=0, sticky="nws")
+
+        self.columnconfigure(0, weight=1)
+
 
     def reset(self):
         self.current_template_row = None
@@ -106,6 +215,22 @@ class RoomOptions(ttk.Frame):
             self.room_combobox.set(template.room_chunk.name or "room " + (template.room_index + 1))
             self.room_combobox.current(template.room_index)
             self.template_container.grid()
+
+            current_settings = template.room_chunk.settings
+            self.set_dual(TemplateSetting.DUAL in current_settings)
+            self.set_flip(TemplateSetting.FLIP in current_settings)
+            self.set_purge(TemplateSetting.PURGE in current_settings)
+            self.set_only_flip(
+                TemplateSetting.ONLYFLIP in current_settings
+            )
+            self.set_ignore(
+                TemplateSetting.IGNORE in current_settings
+            )
+            self.set_rare(TemplateSetting.RARE in current_settings)
+            self.set_hard(TemplateSetting.HARD in current_settings)
+            self.set_liquid(
+                TemplateSetting.LIQUID in current_settings
+            )
         else:
             self.set_empty_cell(row, column)
 
@@ -115,6 +240,80 @@ class RoomOptions(ttk.Frame):
         self.template_combobox.set("None")
         self.template_container.grid_remove()
 
+    def flip_setting(self, setting, value):
+        self.on_flip_setting(setting, value, self.current_template_row, self.current_template_column)
+
+    def on_flip_ignore(self):
+        self.flip_setting(TemplateSetting.IGNORE, self.ignore())
+
+    def on_flip_liquid(self):
+        self.flip_setting(TemplateSetting.LIQUID, self.liquid())
+
+    def on_flip_hard(self):
+        self.flip_setting(TemplateSetting.HARD, self.hard())
+
+    def on_flip_rare(self):
+        self.flip_setting(TemplateSetting.RARE, self.rare())
+
+    def on_flip_flip(self):
+        self.flip_setting(TemplateSetting.FLIP, self.flip())
+
+    def on_flip_only_flip(self):
+        self.flip_setting(TemplateSetting.ONLYFLIP, self.only_flip())
+
+    def on_flip_purge(self):
+        self.flip_setting(TemplateSetting.PURGE, self.purge())
+
+    def on_flip_dual(self):
+        self.flip_setting(TemplateSetting.DUAL, self.dual())
+
+    def ignore(self):
+        return int(self.var_ignore.get()) == 1
+
+    def liquid(self):
+        return int(self.var_liquid.get()) == 1
+
+    def hard(self):
+        return int(self.var_hard.get()) == 1
+
+    def rare(self):
+        return int(self.var_rare.get()) == 1
+
+    def flip(self):
+        return int(self.var_flip.get()) == 1
+
+    def only_flip(self):
+        return int(self.var_only_flip.get()) == 1
+
+    def purge(self):
+        return int(self.var_purge.get()) == 1
+
+    def dual(self):
+        return int(self.var_dual.get()) == 1
+
+    def set_ignore(self, ignore):
+        self.var_ignore.set(ignore and 1 or 0)
+
+    def set_liquid(self, liquid):
+        self.var_liquid.set(liquid and 1 or 0)
+
+    def set_hard(self, hard):
+        self.var_hard.set(hard and 1 or 0)
+
+    def set_rare(self, rare):
+        self.var_rare.set(rare and 1 or 0)
+
+    def set_flip(self, flip):
+        self.var_flip.set(flip and 1 or 0)
+
+    def set_only_flip(self, only_flip):
+        self.var_only_flip.set(only_flip and 1 or 0)
+
+    def set_purge(self, purge):
+        self.var_purge.set(purge and 1 or 0)
+
+    def set_dual(self, dual):
+        self.var_dual.set(dual and 1 or 0)
 
 class OptionsPanel(ttk.Frame):
     def __init__(
@@ -128,6 +327,7 @@ class OptionsPanel(ttk.Frame):
         on_change_template_at,
         on_clear_template,
         on_select_room,
+        on_flip_setting,
         *args,
         **kwargs,
     ):
@@ -140,6 +340,7 @@ class OptionsPanel(ttk.Frame):
         self.on_change_template_at = on_change_template_at
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
+        self.on_flip_setting = on_flip_setting
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
@@ -244,7 +445,7 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.room_options = RoomOptions(
-            self, self.update_room_map_template, self.clear_template, self.on_select_room
+            self, self.update_room_map_template, self.clear_template, self.on_select_room, self.on_flip_setting
         )
         self.room_options.grid(row=settings_row, column=1, sticky="news")
         self.room_options.grid_remove()
