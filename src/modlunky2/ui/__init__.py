@@ -266,8 +266,8 @@ class ModlunkyUI:
         self.check_requirements()
 
     def drop(self, event):
-        self.tabs["Install Mods"].local_install.drop_file(event.data)
         self.tab_control.select(1)
+        self.tabs["Install Mods"].local_install.drop_file(event.data)
 
     def check_for_updates(self):
         if self.needs_update:
