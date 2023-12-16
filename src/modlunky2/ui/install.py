@@ -117,7 +117,9 @@ class DestinationChooser(ttk.Frame):
         file_chooser_browse.grid(row=3, column=0, pady=5, padx=5, sticky="nsew")
 
     def changed(self, val):
-        self.master.master.check_exists(val)
+        self.master.master.check_exists(
+            self.master.master.file_chooser_frame.file_chooser_var.get(), val
+        )
         return True
 
     def browse(self):
@@ -253,9 +255,15 @@ class LocalInstall(ttk.LabelFrame):
             pack=pack,
         )
 
-    def check_exists(self, dest):
+    def check_exists(self, source, dest):
+        source_path = Path(source)
         dest_path = self.modlunky_config.install_dir / "Mods/Packs" / Path(dest).stem
-        if not dest:
+        if (
+            not dest
+            or not source
+            or not source_path.exists()
+            or not source_path.is_file()
+        ):
             self.button_install["state"] = tk.DISABLED
             return
         self.button_install["state"] = tk.NORMAL
@@ -272,7 +280,7 @@ class LocalInstall(ttk.LabelFrame):
             dest = self.file_chooser_frame2.file_chooser_var.get()
         if source and dest:
             self.button_install["state"] = tk.NORMAL
-            self.check_exists(dest)
+            self.check_exists(source, dest)
         else:
             self.button_install["state"] = tk.DISABLED
             self.button_install[
