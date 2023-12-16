@@ -146,6 +146,7 @@ class VanillaLevelEditor(ttk.Frame):
             if str(tab) == "Full Level View":
                 self.load_full_preview()
             if str(tab) == "Full Level Editor":
+                self.multi_room_editor_tab.update_templates()
                 self.multi_room_editor_tab.redraw()
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
