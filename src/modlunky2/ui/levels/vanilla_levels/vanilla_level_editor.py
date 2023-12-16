@@ -177,6 +177,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.multiroom_editor_selected_tile,
             self.multiroom_editor_modified_room,
             self.on_insert_room,
+            self.on_duplicate_room,
+            self.on_rename_room,
+            self.on_delete_room,
         )
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -1112,7 +1115,7 @@ class VanillaLevelEditor(ttk.Frame):
         if self.last_selected_tab == "Full Level View":
             self.load_full_preview()
 
-    def on_insert_room(self, parent_index, name = None):
+    def on_insert_room(self, parent_index, name=None):
         room_template = self.template_list[parent_index]
         # Set default prompt based on parent name
         roomsize_key = "normal: 10x8"
