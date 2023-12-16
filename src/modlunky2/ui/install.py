@@ -33,7 +33,9 @@ class SourceChooser(ttk.Frame):
             font="sans 11 bold",
         ).grid(row=0, column=0, padx=5, sticky="ew")
 
-        file_chooser_label = ttk.Label(self, text="Choose the file you want to install")
+        file_chooser_label = ttk.Label(
+            self, text="Choose the file you want to install (.zip, .lua, .png...)"
+        )
         file_chooser_label.grid(
             row=1, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
@@ -84,7 +86,10 @@ class DestinationChooser(ttk.Frame):
             text="Destination",
             font="sans 11 bold",
         ).grid(row=0, column=0, padx=5, sticky="ew")
-        file_chooser_label = ttk.Label(self, text="Choose or Create a Pack")
+        file_chooser_label = ttk.Label(
+            self,
+            text="Choose or create a new folder for the pack (defaults to source file name)",
+        )
         file_chooser_label.grid(
             row=1, column=0, padx=5, pady=(2, 0), columnspan=3, sticky="w"
         )
@@ -238,6 +243,9 @@ class LocalInstall(ttk.LabelFrame):
         source = self.file_chooser_frame.file_chooser_var.get()
         dest = self.file_chooser_frame2.file_chooser_var.get()
         if source and dest:
+            self.button_install["state"] = tk.NORMAL
+        elif source:
+            self.file_chooser_frame2.file_chooser_var.set(Path(source).stem)
             self.button_install["state"] = tk.NORMAL
         else:
             self.button_install["state"] = tk.DISABLED
