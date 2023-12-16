@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from modlunky2.config import Config
 from modlunky2.levels.level_templates import TemplateSetting
-from modlunky2.ui.widgets import PopupWindow
+from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy
 
 
 class RoomOptions(ttk.Frame):
@@ -135,7 +135,7 @@ class RoomOptions(ttk.Frame):
             command=self.on_flip_dual,
         )
 
-        wrap = 400
+        wrap = 350
         label_dual = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Whether this room has a backlayer.")
         label_ignore = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room will never appear in-game.")
         label_purge = tk.Label (self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, other rooms of this same template which were already loaded (eg, loaded from another file or appear first in this file) will not appear in-game when this room's file is loaded.")
@@ -345,12 +345,21 @@ class OptionsPanel(ttk.Frame):
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, minsize=10)
+        self.rowconfigure(0, weight=1)
 
         self.room_map = []
         self.templates = []
 
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
+
+
+
+        # The tile palettes are loaded into here as buttons with their image
+        # as a tile and text as their value to grab when needed.
+        self.scrollview = ScrollableFrameLegacy(self, text="", width=50)
+        self.scrollview.scrollable_frame["width"] = 50
+        self.scrollview.grid(row=0, column=1, sticky="news")
 
         settings_row = 0
 
@@ -365,13 +374,13 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
         tk.Checkbutton(
-            self,
+            self.scrollview.scrollable_frame,
             text="Hide grid lines",
             variable=hide_grid_var,
             onvalue=True,
             offvalue=False,
             command=toggle_hide_grid,
-        ).grid(row=settings_row, column=1, sticky="nw", pady=5)
+        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
 
         # Checkbox to toggle the visibility of the grid lines on room boundaries.
         hide_room_grid_var = tk.IntVar()
@@ -383,17 +392,17 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
         tk.Checkbutton(
-            self,
+            self.scrollview.scrollable_frame,
             text="Hide room lines",
             variable=hide_room_grid_var,
             onvalue=True,
             offvalue=False,
             command=toggle_hide_room_grid,
-        ).grid(row=settings_row, column=1, sticky="nw", pady=5)
+        ).grid(row=settings_row, column=0, sticky="nw", pady=5)
 
         settings_row += 1
-        grid_size_frame = tk.Frame(self)
-        grid_size_frame.grid(row=settings_row, column=1, sticky="nw", pady=5)
+        grid_size_frame = tk.Frame(self.scrollview.scrollable_frame)
+        grid_size_frame.grid(row=settings_row, column=0, sticky="nw", pady=5)
         grid_size_frame.columnconfigure(0, weight=1)
         grid_size_var = tk.StringVar()
         grid_size_var.set(str(zoom_level))
@@ -411,7 +420,7 @@ class OptionsPanel(ttk.Frame):
             to=200,
             orient=tk.HORIZONTAL,
             variable=grid_size_var,
-            length=390,
+            length=370,
             showvalue=False,
         )
         grid_size_scale.grid(row=1, column=0, sticky="nwe")
@@ -424,9 +433,9 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
 
-        self.room_type_frame = tk.Frame(self)
+        self.room_type_frame = tk.Frame(self.scrollview.scrollable_frame)
         self.room_type_frame.grid(
-            row=settings_row, column=1, sticky="news", padx=10, pady=10
+            row=settings_row, column=0, sticky="news", padx=10, pady=10
         )
 
         self.room_view_size = 30
@@ -445,9 +454,9 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.room_options = RoomOptions(
-            self, self.update_room_map_template, self.clear_template, self.on_select_room, self.on_flip_setting
+            self.scrollview.scrollable_frame, self.update_room_map_template, self.clear_template, self.on_select_room, self.on_flip_setting
         )
-        self.room_options.grid(row=settings_row, column=1, sticky="news")
+        self.room_options.grid(row=settings_row, column=0, sticky="news")
         self.room_options.grid_remove()
 
     def update_room_map_template(self, template_index, row, column):
