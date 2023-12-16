@@ -11,6 +11,7 @@ class RoomOptions(ttk.Frame):
         parent,
         on_select_template,
         on_clear_template,
+        on_select_room,
         *args,
         **kwargs,
     ):
@@ -20,6 +21,7 @@ class RoomOptions(ttk.Frame):
 
         self.on_select_template = on_select_template
         self.on_clear_template = on_clear_template
+        self.on_select_room = on_select_room
 
         self.current_template_row = None
         self.current_template_column = None
@@ -37,16 +39,29 @@ class RoomOptions(ttk.Frame):
         self.template_combobox["values"] = ["None"]
         self.template_combobox.set("None")
         self.template_combobox["state"] = "readonly"
-        self.template_combobox.bind(
-            "<<ComboboxSelected>>", lambda _: self.select_template()
-        )
+        self.template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
+
+        setting_row += 1
+
+        self.template_container = tk.Frame(self)
+        self.template_container.grid(row=setting_row, column=0, sticky="news")
+
+        room_label = tk.Label(self.template_container, text="Room:")
+        room_label.grid(row=0, column=0, sticky="w")
+
+        self.room_combobox = ttk.Combobox(self.template_container, height=25)
+        self.room_combobox.grid(row=1, column=0, sticky="nsw")
+        self.room_combobox["values"] = []
+        self.room_combobox.set("")
+        self.room_combobox["state"] = "readonly"
+        self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
 
     def reset(self):
         self.current_template_row = None
         self.current_template_column = None
         self.current_template_item = None
-        self.template_combobox["values"] = ["None"]
-        self.template_combobox.set("None")
+        self.template_container.grid_remove()
+        self.clear_templates()
 
     def select_template(self):
         template_index = self.template_combobox.current()
@@ -63,9 +78,15 @@ class RoomOptions(ttk.Frame):
                 self.current_template_column,
             )
 
+    def select_room(self):
+        room_index = self.room_combobox.current()
+        self.on_select_room(room_index, self.current_template_row, self.current_template_column)
+
     def clear_templates(self):
         self.template_combobox["values"] = ["None"]
         self.template_combobox.set("None")
+        self.room_combobox["values"] = []
+        self.room_combobox.set("")
 
     def set_templates(self, templates):
         self.template_combobox["values"] = ["None"] + [
@@ -79,11 +100,20 @@ class RoomOptions(ttk.Frame):
         self.current_template_column = column
         if template:
             self.template_combobox.set(template.template.name)
+            self.room_combobox["values"] = [
+                room.name or "room " + (index + 1) for index, room in enumerate(template.template.rooms)
+            ]
+            self.room_combobox.set(template.room_chunk.name or "room " + (template.room_index + 1))
+            self.room_combobox.current(template.room_index)
+            self.template_container.grid()
+        else:
+            self.set_empty_cell(row, column)
 
     def set_empty_cell(self, row, column):
         self.current_template_row = row
         self.current_template_column = column
         self.template_combobox.set("None")
+        self.template_container.grid_remove()
 
 
 class OptionsPanel(ttk.Frame):
@@ -97,6 +127,7 @@ class OptionsPanel(ttk.Frame):
         on_update_zoom_level,
         on_change_template_at,
         on_clear_template,
+        on_select_room,
         *args,
         **kwargs,
     ):
@@ -108,6 +139,7 @@ class OptionsPanel(ttk.Frame):
         self.on_update_zoom_level = on_update_zoom_level
         self.on_change_template_at = on_change_template_at
         self.on_clear_template = on_clear_template
+        self.on_select_room = on_select_room
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
@@ -212,7 +244,7 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.room_options = RoomOptions(
-            self, self.update_room_map_template, self.clear_template
+            self, self.update_room_map_template, self.clear_template, self.on_select_room
         )
         self.room_options.grid(row=settings_row, column=1, sticky="news")
         self.room_options.grid_remove()
