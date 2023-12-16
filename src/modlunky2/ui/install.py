@@ -262,7 +262,7 @@ class LocalInstall(ttk.LabelFrame):
 
     def drop_file(self, data):
         files = self.file_chooser_frame.tk.splitlist(data)
-        if files[0] and Path(files[0]).exists():
+        if files[0] and Path(files[0]).exists() and Path(files[0]).is_file():
             logger.info(
                 "Click 'Install' in the right column to complete installation of %s",
                 Path(files[0]).name,
