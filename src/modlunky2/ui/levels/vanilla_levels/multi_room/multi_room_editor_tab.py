@@ -39,6 +39,7 @@ class MultiRoomEditorTab(ttk.Frame):
         on_delete_tilecode,
         on_select_palette_tile,
         on_modify_room,
+        on_change_filetree,
         on_add_room,
         on_duplicate_room,
         on_rename_room,
@@ -55,6 +56,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.on_delete_tilecode = on_delete_tilecode
         self.on_select_palette_tile = on_select_palette_tile
         self.on_modify_room = on_modify_room
+        self.on_change_filetree = on_change_filetree
         self.on_add_room = on_add_room
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
@@ -497,6 +499,8 @@ class MultiRoomEditorTab(ttk.Frame):
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
 
+        self.on_change_filetree()
+
     def rename_room(self, row, col):
         win = PopupWindow("Edit Name", self.modlunky_config)
 
@@ -522,6 +526,8 @@ class MultiRoomEditorTab(ttk.Frame):
                     self.template_draw_map, self.room_templates
                 )
 
+                self.on_change_filetree()
+
                 win.destroy()
 
         separator = ttk.Separator(win)
@@ -546,16 +552,8 @@ class MultiRoomEditorTab(ttk.Frame):
         def delete_then_destroy():
             self.on_delete_room(template_item.template_index, template_item.room_index)
 
-            # chunk_index, chunk = self.__get_chunk_for_template_draw_item(template_item.template, template_item.template_index, row, col)
+            self.on_change_filetree()
 
-            # if chunk_index is not None and chunk is not None:
-            #     template_item.chunk_index = chunk_index
-            #     template_item.chunk = chunk
-
-            #     self.options_panel.set_templates(self.template_draw_map, self.room_templates)
-            #     self.redraw()
-            # else:
-            #     self.clear_template_at(row, col)
             win.destroy()
 
         lbl2 = ttk.Label(win, text="Are you sure you want to delete this room?")
