@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from modlunky2.config import Config
 from modlunky2.levels.level_templates import TemplateSetting
+from modlunky2.ui.levels.vanilla_levels.multi_room.reversed_rooms import REVERSED_ROOMS
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy
 
 
@@ -17,6 +18,7 @@ class RoomOptions(ttk.Frame):
         on_duplicate_room,
         on_rename_room,
         on_delete_room,
+        on_update_reverse_layers,
         *args,
         **kwargs,
     ):
@@ -31,6 +33,7 @@ class RoomOptions(ttk.Frame):
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
         self.on_delete_room = on_delete_room
+        self.on_update_reverse_layers = on_update_reverse_layers
 
         self.current_template_row = None
         self.current_template_column = None
@@ -57,18 +60,64 @@ class RoomOptions(ttk.Frame):
         self.template_container = tk.Frame(self)
         self.template_container.grid(row=setting_row, column=0, sticky="news")
 
+        template_setting_row = 0
+
         room_label = tk.Label(self.template_container, text="Room:")
-        room_label.grid(row=0, column=0, sticky="w")
+        room_label.grid(row=template_setting_row, column=0, sticky="w")
+
+        template_setting_row += 1
 
         self.room_combobox = ttk.Combobox(self.template_container, height=25)
-        self.room_combobox.grid(row=1, column=0, sticky="nsw")
+        self.room_combobox.grid(row=template_setting_row, column=0, sticky="nsw")
         self.room_combobox["values"] = []
         self.room_combobox.set("")
         self.room_combobox["state"] = "readonly"
         self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
 
+        template_setting_row += 1
+
+        self.reverse_layers_container = tk.Frame(self.template_container)
+        self.reverse_layers_container.grid(
+            row=template_setting_row, column=0, sticky="news"
+        )
+
+        template_setting_row += 1
+
+        self.var_reverse_layers = tk.IntVar()
+        self.var_reverse_layers.set(True)
+        self.checkbox_reverse_layers = ttk.Checkbutton(
+            self.reverse_layers_container,
+            text="Reverse Layers",
+            var=self.var_reverse_layers,
+            onvalue=1,
+            offvalue=0,
+            command=self.on_flip_reverse_layers,
+        )
+
+        self.checkbox_reverse_layers.grid(row=0, column=0, sticky="news")
+
+        wrap = 350
+        self.reverse_layers_description_on = tk.Label(
+            self.reverse_layers_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="The layers of this room are being reversed to match with the setrooms connected to it. Turn this off to disable this behavior.",
+        )
+        self.reverse_layers_description_off = tk.Label(
+            self.reverse_layers_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="The layers of this room can be reversed to match with the setrooms connected to it. Turn this on to enable this behavior.",
+        )
+        self.reverse_layers_description_on.grid(row=1, column=0, sticky="nws")
+        self.reverse_layers_description_off.grid(row=2, column=0, sticky="nws")
+
         buttons_container = tk.Frame(self.template_container)
-        buttons_container.grid(row=2, column=0, sticky="news")
+        buttons_container.grid(row=template_setting_row, column=0, sticky="news")
+
+        self.configure_reverse_rooms_description()
+
+        template_setting_row += 1
 
         duplicate_button = ttk.Button(
             buttons_container, text="Duplicate", command=self.duplicate_room
@@ -86,7 +135,11 @@ class RoomOptions(ttk.Frame):
         delete_button.grid(row=0, column=2, pady=5, sticky="news")
 
         self.room_settings_container = tk.Frame(self.template_container)
-        self.room_settings_container.grid(row=3, column=0, sticky="news")
+        self.room_settings_container.grid(
+            row=template_setting_row, column=0, sticky="news"
+        )
+
+        template_setting_row += 1
 
         self.var_ignore = tk.IntVar()
         self.var_flip = tk.IntVar()
@@ -161,7 +214,6 @@ class RoomOptions(ttk.Frame):
             command=self.on_flip_dual,
         )
 
-        wrap = 350
         label_dual = tk.Label(
             self.room_settings_container,
             wraplength=wrap,
@@ -237,6 +289,26 @@ class RoomOptions(ttk.Frame):
         self.template_container.grid_remove()
         self.clear_templates()
 
+    def configure_reverse_rooms_container(self):
+        if self.current_template_item is None:
+            return
+        if self.current_template_item.template.name in REVERSED_ROOMS:
+            self.reverse_layers_container.grid()
+        else:
+            self.reverse_layers_container.grid_remove()
+
+    def configure_reverse_rooms_description(self):
+        if self.reverse_layers():
+            self.reverse_layers_description_on.grid()
+            self.reverse_layers_description_off.grid_remove()
+        else:
+            self.reverse_layers_description_on.grid_remove()
+            self.reverse_layers_description_off.grid()
+
+    def on_flip_reverse_layers(self):
+        self.configure_reverse_rooms_description()
+        self.on_update_reverse_layers(self.reverse_layers())
+
     def select_template(self):
         template_index = self.template_combobox.current()
 
@@ -278,12 +350,14 @@ class RoomOptions(ttk.Frame):
             template.name for template in templates
         ]
         self.current_template_item = None
+        self.configure_reverse_rooms_container()
 
     def set_current_template(self, template, row, column):
         self.current_template_item = template
         self.current_template_row = row
         self.current_template_column = column
         if template:
+            self.configure_reverse_rooms_container()
             self.template_combobox.set(template.template.name)
             self.room_combobox["values"] = [
                 room.name or "room " + (index + 1)
@@ -341,6 +415,9 @@ class RoomOptions(ttk.Frame):
 
     def on_flip_dual(self):
         self.flip_setting(TemplateSetting.DUAL, self.dual())
+
+    def reverse_layers(self):
+        return int(self.var_reverse_layers.get()) == 1
 
     def ignore(self):
         return int(self.var_ignore.get()) == 1
@@ -407,6 +484,7 @@ class OptionsPanel(ttk.Frame):
         on_duplicate_room,
         on_rename_room,
         on_delete_room,
+        on_update_reverse_layers,
         *args,
         **kwargs,
     ):
@@ -423,6 +501,7 @@ class OptionsPanel(ttk.Frame):
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
         self.on_delete_room = on_delete_room
+        self.on_update_reverse_layers = on_update_reverse_layers
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
@@ -542,6 +621,7 @@ class OptionsPanel(ttk.Frame):
             self.on_duplicate_room,
             self.on_rename_room,
             self.on_delete_room,
+            self.on_update_reverse_layers,
         )
         self.room_options.grid(row=settings_row, column=0, sticky="news")
         self.room_options.grid_remove()
