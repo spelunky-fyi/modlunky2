@@ -39,6 +39,7 @@ class MultiRoomEditorTab(ttk.Frame):
         on_delete_tilecode,
         on_select_palette_tile,
         on_modify_room,
+        on_add_room,
         *args,
         **kwargs
     ):
@@ -51,6 +52,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.on_delete_tilecode = on_delete_tilecode
         self.on_select_palette_tile = on_select_palette_tile
         self.on_modify_room = on_modify_room
+        self.on_add_room = on_add_room
 
         self.lvl = None
         self.lvl_biome = None
@@ -244,7 +246,6 @@ class MultiRoomEditorTab(ttk.Frame):
         )
         if template_draw_item:
             if template_draw_item.width_in_rooms + col > 10:
-                # TODO: add error dialog.
                 win = PopupWindow("Cannot use this room template", self.modlunky_config)
                 lbl = ttk.Label(
                     win,
@@ -412,6 +413,55 @@ class MultiRoomEditorTab(ttk.Frame):
         template_item = self.template_draw_map[row][col]
 
         if template_item is None:
+            return
+
+        if room_index >= len(template_item.template.rooms):
+
+            win = PopupWindow("Add Room", self.modlunky_config)
+
+
+            lbl = ttk.Label(
+                win,
+                text="Create a new room in " + template_item.template.name + ".",
+            )
+            lbl.grid(row=0, column=0)
+
+            values_frame = tk.Frame(win)
+            values_frame.grid(row=1, column=0, sticky="nw")
+
+            name_label = tk.Label(values_frame, text="Name: ")
+            name_label.grid(row=0, column=0, sticky="ne", pady=2)
+
+            name_entry = tk.Entry(values_frame)
+            name_entry.grid(row=0, column=1, sticky="nwe", pady=2)
+
+            separator = ttk.Separator(win)
+            separator.grid(row=2, column=0, columnspan=3, pady=5, sticky="news")
+
+            buttons = ttk.Frame(win)
+            buttons.grid(row=3, column=0, columnspan=2, sticky="news")
+            buttons.columnconfigure(0, weight=1)
+            buttons.columnconfigure(1, weight=1)
+
+            def insert_then_destroy():
+                name = name_entry.get()
+                new_room = self.on_add_room(template_item.template_index, None if name == "" else name)
+
+                template_item.room_index = room_index
+                template_item.room_chunk = new_room
+
+                self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+                self.redraw()
+                win.destroy()
+
+            ok_button = ttk.Button(
+                buttons, text="Create", command=insert_then_destroy
+            )
+            ok_button.grid(row=0, column=0, pady=5, sticky="news")
+
+            cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+            cancel_button.grid(row=0, column=1, pady=5, sticky="news")
+
             return
 
         template_item.room_index = room_index
