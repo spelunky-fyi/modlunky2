@@ -131,6 +131,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.__update_zoom_internal,
             self.change_template_at,
             self.clear_template_at,
+            self.change_room_at,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -399,6 +400,18 @@ class MultiRoomEditorTab(ttk.Frame):
 
             for r in self.template_draw_map:
                 r.pop()
+
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+        self.redraw()
+
+    def change_room_at(self, room_index, row, col):
+        template_item = self.template_draw_map[row][col]
+
+        if template_item is None:
+            return
+
+        template_item.room_index = room_index
+        template_item.room_chunk = template_item.template.rooms[room_index]
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
