@@ -132,6 +132,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.change_template_at,
             self.clear_template_at,
             self.change_room_at,
+            self.room_setting_change_at,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -169,6 +170,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.clear()
         self.show_intro()
         self.draw_canvas()
+
+    def update_templates(self):
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
 
     def update_zoom_level(self, zoom):
         self.options_panel.update_zoom_level(zoom)
@@ -415,6 +419,22 @@ class MultiRoomEditorTab(ttk.Frame):
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
+
+    def room_setting_change_at(self, setting, value, row, col):
+        template_item = self.template_draw_map[row][col]
+
+        if template_item is None:
+            return
+
+        room = template_item.room_chunk
+        if value and not setting in room.settings:
+            room.settings.append(setting)
+        elif not value and setting in room.settings:
+            room.settings.remove(setting)
+
+        self.on_modify_room(template_item)
+        if setting == TemplateSetting.DUAL or setting == TemplateSetting.ONLYFLIP:
+            self.redraw()
 
     def populate_tilecode_palette(self, tile_palette, suggestions):
         self.palette_panel.update_with_palette(
