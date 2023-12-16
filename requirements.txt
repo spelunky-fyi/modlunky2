@@ -14,3 +14,4 @@ starlette==0.31.1
 typing_extensions==4.8.0
 websockets==11.0.3
 zstandard==0.21.0
+python-tkdnd==0.2.1
