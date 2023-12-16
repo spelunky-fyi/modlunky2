@@ -224,7 +224,7 @@ class RoomOptions(ttk.Frame):
         self.checkbox_liquid.grid(row=10, column=0, sticky="w")
         label_liquid.grid(row=11, column=0, sticky="nws")
         self.checkbox_flip.grid(row=12, column=0, sticky="w")
-        label_flip.grid(row=12, column=0, sticky="nws")
+        label_flip.grid(row=13, column=0, sticky="nws")
         self.checkbox_only_flip.grid(row=14, column=0, sticky="w")
         label_only_flip.grid(row=15, column=0, sticky="nws")
 
