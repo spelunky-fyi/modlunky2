@@ -40,6 +40,9 @@ class MultiRoomEditorTab(ttk.Frame):
         on_select_palette_tile,
         on_modify_room,
         on_add_room,
+        on_duplicate_room,
+        on_rename_room,
+        on_delete_room,
         *args,
         **kwargs
     ):
@@ -53,6 +56,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.on_select_palette_tile = on_select_palette_tile
         self.on_modify_room = on_modify_room
         self.on_add_room = on_add_room
+        self.on_duplicate_room = on_duplicate_room
+        self.on_rename_room = on_rename_room
+        self.on_delete_room = on_delete_room
 
         self.lvl = None
         self.lvl_biome = None
@@ -135,6 +141,9 @@ class MultiRoomEditorTab(ttk.Frame):
             self.clear_template_at,
             self.change_room_at,
             self.room_setting_change_at,
+            self.duplicate_room,
+            self.rename_room,
+            self.delete_room,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -190,10 +199,10 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.redraw()
 
-    def __get_template_draw_item(self, template, template_index, row, column):
+    def __get_chunk_for_template_draw_item(self, template, template_index, row, column):
         chunk_index = None
         if len(template.rooms) == 0:
-            return None
+            return None, None
         valid_rooms = [
             index
             for index, room in enumerate(template.rooms)
@@ -226,9 +235,15 @@ class MultiRoomEditorTab(ttk.Frame):
             if len(valid_rooms) > 0:
                 chunk_index = valid_rooms[0]
             else:
-                return None
+                return None, None
 
         chunk = template.rooms[chunk_index]
+        return chunk_index, chunk
+
+    def __get_template_draw_item(self, template, template_index, row, column):
+        chunk_index, chunk = self.__get_chunk_for_template_draw_item(
+            template, template_index, row, column
+        )
         if chunk is None or len(chunk.front) == 0:
             return None
         return TemplateDrawItem(
@@ -416,9 +431,7 @@ class MultiRoomEditorTab(ttk.Frame):
             return
 
         if room_index >= len(template_item.template.rooms):
-
             win = PopupWindow("Add Room", self.modlunky_config)
-
 
             lbl = ttk.Label(
                 win,
@@ -445,18 +458,20 @@ class MultiRoomEditorTab(ttk.Frame):
 
             def insert_then_destroy():
                 name = name_entry.get()
-                new_room = self.on_add_room(template_item.template_index, None if name == "" else name)
+                new_room = self.on_add_room(
+                    template_item.template_index, None if name == "" else name
+                )
 
                 template_item.room_index = room_index
                 template_item.room_chunk = new_room
 
-                self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+                self.options_panel.set_templates(
+                    self.template_draw_map, self.room_templates
+                )
                 self.redraw()
                 win.destroy()
 
-            ok_button = ttk.Button(
-                buttons, text="Create", command=insert_then_destroy
-            )
+            ok_button = ttk.Button(buttons, text="Create", command=insert_then_destroy)
             ok_button.grid(row=0, column=0, pady=5, sticky="news")
 
             cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
@@ -469,6 +484,96 @@ class MultiRoomEditorTab(ttk.Frame):
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
+
+    def duplicate_room(self, row, col):
+        template_item = self.template_draw_map[row][col]
+        new_room = self.on_duplicate_room(
+            template_item.template_index, template_item.room_index
+        )
+
+        template_item.room_index = len(template_item.template.rooms) - 1
+        template_item.room_chunk = new_room
+
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+        self.redraw()
+
+    def rename_room(self, row, col):
+        win = PopupWindow("Edit Name", self.modlunky_config)
+
+        template_item = self.template_draw_map[row][col]
+
+        item_name = ""
+        item_name = template_item.room_chunk.name or ""
+
+        col1_lbl = ttk.Label(win, text="Name: ")
+        col1_ent = ttk.Entry(win)
+        col1_ent.insert(0, item_name)  # Default to rooms current name
+        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="news")
+
+        def update_then_destroy():
+            if col1_ent.get() != "":
+                self.on_rename_room(
+                    template_item.template_index,
+                    template_item.room_index,
+                    col1_ent.get(),
+                )
+                self.options_panel.set_templates(
+                    self.template_draw_map, self.room_templates
+                )
+
+                win.destroy()
+
+        separator = ttk.Separator(win)
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="news")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=2, column=0, columnspan=2, sticky="news")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Rename", command=update_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="news")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="news")
+
+    def delete_room(self, row, col):
+        template_item = self.template_draw_map[row][col]
+
+        win = PopupWindow("Delete Room", self.modlunky_config)
+
+        def delete_then_destroy():
+            self.on_delete_room(template_item.template_index, template_item.room_index)
+
+            # chunk_index, chunk = self.__get_chunk_for_template_draw_item(template_item.template, template_item.template_index, row, col)
+
+            # if chunk_index is not None and chunk is not None:
+            #     template_item.chunk_index = chunk_index
+            #     template_item.chunk = chunk
+
+            #     self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+            #     self.redraw()
+            # else:
+            #     self.clear_template_at(row, col)
+            win.destroy()
+
+        lbl2 = ttk.Label(win, text="Are you sure you want to delete this room?")
+        lbl2.grid(row=0, column=0)
+
+        separator = ttk.Separator(win)
+        separator.grid(row=1, column=0, columnspan=3, pady=5, sticky="news")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=2, column=0, columnspan=2, sticky="news")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Delete", command=delete_then_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="news")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="news")
 
     def room_setting_change_at(self, setting, value, row, col):
         template_item = self.template_draw_map[row][col]
@@ -508,7 +613,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def room_was_deleted(self, template_index, chunk_index):
         replaced = False
-        for _, template_row in enumerate(self.template_draw_map):
+        for row, template_row in enumerate(self.template_draw_map):
             for col, template in enumerate(template_row):
                 if template is None:
                     continue
@@ -516,13 +621,20 @@ class MultiRoomEditorTab(ttk.Frame):
                     template.template_index == template_index
                     and template.room_index == chunk_index
                 ):
-                    new_draw_item = get_template_draw_item(
-                        template.template, template_index
+                    new_draw_item = self.__get_template_draw_item(
+                        template.template, template_index, row, col
                     )
                     template_row[col] = new_draw_item
                     replaced = True
+                elif (
+                    template.template_index == template_index
+                    and template.room_index > chunk_index
+                ):
+                    template.room_index -= 1
         if replaced:
-            self.options_panel.set_templates(self.template_draw_map)
+            self.options_panel.set_templates(
+                self.template_draw_map, self.room_templates
+            )
             self.redraw()
 
     def canvas_click(self, canvas_index, row, column, is_primary):
