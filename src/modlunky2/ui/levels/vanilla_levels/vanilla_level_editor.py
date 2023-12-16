@@ -176,6 +176,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.delete_tilecode,
             self.multiroom_editor_selected_tile,
             self.multiroom_editor_modified_room,
+            self.multiroom_editor_changed_filetree,
             self.on_insert_room,
             self.on_duplicate_room,
             self.on_rename_room,
@@ -607,6 +608,11 @@ class VanillaLevelEditor(ttk.Frame):
         if template_draw_item.room_chunk == self.current_selected_room:
             self.room_select(None)
         self.changes_made()
+
+    def multiroom_editor_changed_filetree(self):
+        self.level_list_panel.reset()
+        self.level_list_panel.set_rooms(self.template_list)
+        self.room_select(None)
 
     def save_requested(self):
         if self.save_needed:
