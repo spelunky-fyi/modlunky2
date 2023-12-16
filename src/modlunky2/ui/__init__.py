@@ -4,8 +4,10 @@ import threading
 import time
 import tkinter as tk
 import traceback
+import tkinterDnD
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
+from pathlib import Path
 
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
@@ -103,7 +105,8 @@ class ModlunkyUI:
             "modlunky2:latest_version", self.handle_modlunky_latest_version
         )
 
-        self.root = tk.Tk(className="Modlunky2")
+        self.root = tkinterDnD.Tk(className="Modlunky2")
+
         self.load_themes()
         style = ttk.Style(self.root)
         self.root.default_theme = style.theme_use()
@@ -170,7 +173,7 @@ class ModlunkyUI:
         self.root.bind("<Escape>", self.quit)
 
         self.tabs = {}
-        self.tab_control = ttk.Notebook(self.top_frame)
+        self.tab_control = ttk.Notebook(self.top_frame, onfiledrop=self.drop)
 
         logger.debug("Registering Tabs")
         self.register_tab(
@@ -261,6 +264,10 @@ class ModlunkyUI:
         self.root.after(1000, self.after_record_win)
         self.check_for_updates()
         self.check_requirements()
+
+    def drop(self, event):
+        self.tabs["Install Mods"].local_install.drop_file(event.data)
+        self.tab_control.select(1)
 
     def check_for_updates(self):
         if self.needs_update:
