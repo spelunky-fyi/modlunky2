@@ -14,6 +14,9 @@ class RoomOptions(ttk.Frame):
         on_clear_template,
         on_select_room,
         on_flip_setting,
+        on_duplicate_room,
+        on_rename_room,
+        on_delete_room,
         *args,
         **kwargs,
     ):
@@ -25,6 +28,9 @@ class RoomOptions(ttk.Frame):
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
         self.on_flip_setting = on_flip_setting
+        self.on_duplicate_room = on_duplicate_room
+        self.on_rename_room = on_rename_room
+        self.on_delete_room = on_delete_room
 
         self.current_template_row = None
         self.current_template_column = None
@@ -42,7 +48,9 @@ class RoomOptions(ttk.Frame):
         self.template_combobox["values"] = ["None"]
         self.template_combobox.set("None")
         self.template_combobox["state"] = "readonly"
-        self.template_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_template())
+        self.template_combobox.bind(
+            "<<ComboboxSelected>>", lambda _: self.select_template()
+        )
 
         setting_row += 1
 
@@ -59,8 +67,26 @@ class RoomOptions(ttk.Frame):
         self.room_combobox["state"] = "readonly"
         self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
 
+        buttons_container = tk.Frame(self.template_container)
+        buttons_container.grid(row=2, column=0, sticky="news")
+
+        duplicate_button = ttk.Button(
+            buttons_container, text="Duplicate", command=self.duplicate_room
+        )
+        duplicate_button.grid(row=0, column=1, pady=5, sticky="news")
+
+        rename_button = ttk.Button(
+            buttons_container, text="Rename", command=self.rename_room
+        )
+        rename_button.grid(row=0, column=0, pady=5, sticky="news")
+
+        delete_button = ttk.Button(
+            buttons_container, text="Delete", command=self.delete_room
+        )
+        delete_button.grid(row=0, column=2, pady=5, sticky="news")
+
         self.room_settings_container = tk.Frame(self.template_container)
-        self.room_settings_container.grid(row=2, column=0, sticky="news")
+        self.room_settings_container.grid(row=3, column=0, sticky="news")
 
         self.var_ignore = tk.IntVar()
         self.var_flip = tk.IntVar()
@@ -136,14 +162,54 @@ class RoomOptions(ttk.Frame):
         )
 
         wrap = 350
-        label_dual = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Whether this room has a backlayer.")
-        label_ignore = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room will never appear in-game.")
-        label_purge = tk.Label (self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, other rooms of this same template which were already loaded (eg, loaded from another file or appear first in this file) will not appear in-game when this room's file is loaded.")
-        label_rare = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room has a 5% chance of being used.")
-        label_hard = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="If checked, this room only appears in X-3 and X-4.")
-        label_liquid = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Mark this room as containing liquid to optimize the liquid engine.")
-        label_flip = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Creates two rooms, one which is horizontally flipped from the original.")
-        label_only_flip = tk.Label(self.room_settings_container, wraplength=wrap, justify=tk.LEFT, text="Like flip, but the original room is ignored.")
+        label_dual = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="Whether this room has a backlayer.",
+        )
+        label_ignore = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="If checked, this room will never appear in-game.",
+        )
+        label_purge = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="If checked, other rooms of this same template which were already loaded (eg, loaded from another file or appear first in this file) will not appear in-game when this room's file is loaded.",
+        )
+        label_rare = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="If checked, this room has a 5% chance of being used.",
+        )
+        label_hard = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="If checked, this room only appears in X-3 and X-4.",
+        )
+        label_liquid = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="Mark this room as containing liquid to optimize the liquid engine.",
+        )
+        label_flip = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="Creates two rooms, one which is horizontally flipped from the original.",
+        )
+        label_only_flip = tk.Label(
+            self.room_settings_container,
+            wraplength=wrap,
+            justify=tk.LEFT,
+            text="Like flip, but the original room is ignored.",
+        )
 
         self.checkbox_dual.grid(row=0, column=0, sticky="w")
         label_dual.grid(row=1, column=0, sticky="nws")
@@ -163,7 +229,6 @@ class RoomOptions(ttk.Frame):
         label_only_flip.grid(row=15, column=0, sticky="nws")
 
         self.columnconfigure(0, weight=1)
-
 
     def reset(self):
         self.current_template_row = None
@@ -189,7 +254,18 @@ class RoomOptions(ttk.Frame):
 
     def select_room(self):
         room_index = self.room_combobox.current()
-        self.on_select_room(room_index, self.current_template_row, self.current_template_column)
+        self.on_select_room(
+            room_index, self.current_template_row, self.current_template_column
+        )
+
+    def duplicate_room(self):
+        self.on_duplicate_room(self.current_template_row, self.current_template_column)
+
+    def rename_room(self):
+        self.on_rename_room(self.current_template_row, self.current_template_column)
+
+    def delete_room(self):
+        self.on_delete_room(self.current_template_row, self.current_template_column)
 
     def clear_templates(self):
         self.template_combobox["values"] = ["None"]
@@ -210,9 +286,12 @@ class RoomOptions(ttk.Frame):
         if template:
             self.template_combobox.set(template.template.name)
             self.room_combobox["values"] = [
-                room.name or "room " + (index + 1) for index, room in enumerate(template.template.rooms)
+                room.name or "room " + (index + 1)
+                for index, room in enumerate(template.template.rooms)
             ] + ["Create New"]
-            self.room_combobox.set(template.room_chunk.name or "room " + (template.room_index + 1))
+            self.room_combobox.set(
+                template.room_chunk.name or "room " + (template.room_index + 1)
+            )
             self.room_combobox.current(template.room_index)
             self.template_container.grid()
 
@@ -220,17 +299,11 @@ class RoomOptions(ttk.Frame):
             self.set_dual(TemplateSetting.DUAL in current_settings)
             self.set_flip(TemplateSetting.FLIP in current_settings)
             self.set_purge(TemplateSetting.PURGE in current_settings)
-            self.set_only_flip(
-                TemplateSetting.ONLYFLIP in current_settings
-            )
-            self.set_ignore(
-                TemplateSetting.IGNORE in current_settings
-            )
+            self.set_only_flip(TemplateSetting.ONLYFLIP in current_settings)
+            self.set_ignore(TemplateSetting.IGNORE in current_settings)
             self.set_rare(TemplateSetting.RARE in current_settings)
             self.set_hard(TemplateSetting.HARD in current_settings)
-            self.set_liquid(
-                TemplateSetting.LIQUID in current_settings
-            )
+            self.set_liquid(TemplateSetting.LIQUID in current_settings)
         else:
             self.set_empty_cell(row, column)
 
@@ -241,7 +314,9 @@ class RoomOptions(ttk.Frame):
         self.template_container.grid_remove()
 
     def flip_setting(self, setting, value):
-        self.on_flip_setting(setting, value, self.current_template_row, self.current_template_column)
+        self.on_flip_setting(
+            setting, value, self.current_template_row, self.current_template_column
+        )
 
     def on_flip_ignore(self):
         self.flip_setting(TemplateSetting.IGNORE, self.ignore())
@@ -315,6 +390,7 @@ class RoomOptions(ttk.Frame):
     def set_dual(self, dual):
         self.var_dual.set(dual and 1 or 0)
 
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,
@@ -328,6 +404,9 @@ class OptionsPanel(ttk.Frame):
         on_clear_template,
         on_select_room,
         on_flip_setting,
+        on_duplicate_room,
+        on_rename_room,
+        on_delete_room,
         *args,
         **kwargs,
     ):
@@ -341,6 +420,9 @@ class OptionsPanel(ttk.Frame):
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
         self.on_flip_setting = on_flip_setting
+        self.on_duplicate_room = on_duplicate_room
+        self.on_rename_room = on_rename_room
+        self.on_delete_room = on_delete_room
 
         self.columnconfigure(0, minsize=10)
         self.columnconfigure(1, weight=1)
@@ -352,8 +434,6 @@ class OptionsPanel(ttk.Frame):
 
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
-
-
 
         # The tile palettes are loaded into here as buttons with their image
         # as a tile and text as their value to grab when needed.
@@ -454,7 +534,14 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.room_options = RoomOptions(
-            self.scrollview.scrollable_frame, self.update_room_map_template, self.clear_template, self.on_select_room, self.on_flip_setting
+            self.scrollview.scrollable_frame,
+            self.update_room_map_template,
+            self.clear_template,
+            self.on_select_room,
+            self.on_flip_setting,
+            self.on_duplicate_room,
+            self.on_rename_room,
+            self.on_delete_room,
         )
         self.room_options.grid(row=settings_row, column=0, sticky="news")
         self.room_options.grid_remove()
