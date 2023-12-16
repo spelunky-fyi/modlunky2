@@ -4,10 +4,10 @@ import threading
 import time
 import tkinter as tk
 import traceback
-import tkinterDnD
 from tkinter import PhotoImage, ttk
 from multiprocessing import Queue
-from pathlib import Path
+
+import tkinterDnD
 
 from modlunky2.constants import BASE_DIR, IS_EXE
 from modlunky2.updater import self_update
