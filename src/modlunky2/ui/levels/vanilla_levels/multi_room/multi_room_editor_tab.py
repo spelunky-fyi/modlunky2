@@ -193,6 +193,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.canvas_click,
             self.canvas_shiftclick,
             intro_text="Select a level file to begin viewing",
+            vertical = True,
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
         self.canvas.show_intro()

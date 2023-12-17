@@ -24,6 +24,7 @@ class MultiCanvasContainer(tk.Frame):
         on_click=None,
         on_shiftclick=None,
         intro_text=None,
+        vertical = False,
         *args,
         **kwargs
     ):
@@ -62,14 +63,20 @@ class MultiCanvasContainer(tk.Frame):
         scrollable_frame.columnconfigure(1, weight=1)
         canvas_gaps = len(canvas_titles) - 1
         for column in range(canvas_gaps):
-            scrollable_frame.columnconfigure((column + 1) * 2, minsize=50)
+            if vertical:
+                scrollable_frame.rowconfigure((column + 1) * 2, minsize=50)
+            else:
+                scrollable_frame.columnconfigure((column + 1) * 2, minsize=50)
         scrollable_frame.columnconfigure(
-            (canvas_gaps + 1) * 2, minsize=int(int(width) / 2)
+            (canvas_gaps + 1) * 2 if not vertical else 4, minsize=int(int(width) / 2)
         )
         scrollable_frame.rowconfigure(0, minsize=int(int(height) / 2))
         scrollable_frame.rowconfigure(1, weight=1)
-        scrollable_frame.rowconfigure(2, minsize=100)
-        scrollable_frame.rowconfigure(4, minsize=int(int(height) / 2))
+        if not vertical:
+            scrollable_frame.rowconfigure(2, minsize=100)
+        if vertical:
+            scrollable_frame.rowconfigure((canvas_gaps + 1) * 2, minsize=50)
+        scrollable_frame.rowconfigure((canvas_gaps + 1) * 2 + 1 if vertical else 4, minsize=int(int(height) / 2))
 
         # Scroll bars for scrolling the canvases.
         hbar = ttk.Scrollbar(self, orient="horizontal", command=scrollable_canvas.xview)
@@ -145,7 +152,10 @@ class MultiCanvasContainer(tk.Frame):
                     ),
                     bg="#343434",
                 )
-                new_canvas.grid(row=1, column=index * 2 + 1)
+                if vertical:
+                    new_canvas.grid(row=index * 2 + 1, column=1, sticky="sw")
+                else:
+                    new_canvas.grid(row=1, column=index * 2 + 1, sticky="sw")
                 if tab_index != 0:
                     new_canvas.grid_remove()
                 tab_canvases.append(new_canvas)
@@ -157,7 +167,10 @@ class MultiCanvasContainer(tk.Frame):
                         fg="white",
                         bg="#343434",
                     )
-                    label.grid(row=2, column=index * 2 + 1, sticky="news")
+                    if vertical:
+                        label.grid(row=(index + 1) * 2, column=1, sticky="nw")
+                    else:
+                        label.grid(row=2, column=index * 2 + 1, sticky="news")
                     # label.grid_remove()
                     self.labels.append(label)
 
