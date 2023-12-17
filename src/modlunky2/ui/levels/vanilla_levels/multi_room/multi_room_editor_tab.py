@@ -678,9 +678,10 @@ class MultiRoomEditorTab(ttk.Frame):
         layer = layers[canvas_index.tab_index]
         tile_row = row - room_row * 8
         tile_col = column - room_col * 10
+        data_tile_col = tile_col
         if TemplateSetting.ONLYFLIP in chunk.settings:
-            tile_col = 9 - tile_col
-        layer[tile_row][tile_col] = tile_code
+            data_tile_col = template_draw_item.width_in_rooms * 10 - 1 - tile_col
+        layer[tile_row][data_tile_col] = tile_code
         self.on_modify_room(template_draw_item)
 
         for r, room_rows in enumerate(self.template_draw_map):
@@ -732,7 +733,7 @@ class MultiRoomEditorTab(ttk.Frame):
         tile_row = row - room_row * 8
         tile_col = column - room_col * 10
         if TemplateSetting.ONLYFLIP in chunk.settings:
-            tile_col = 9 - tile_col
+            tile_col = template_draw_item.width_in_rooms * 10 - 1 - tile_col
 
         tile_code = layer[tile_row][tile_col]
         tile = self.tile_palette_map[tile_code]
