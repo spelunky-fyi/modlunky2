@@ -90,7 +90,7 @@ class LevelsTree(ttk.Treeview):
             item_index = self.index(item_iid)
             parent_index = self.index(parent_iid)
             new_room = self.on_duplicate_room(parent_index, item_index)
-            self.insert(parent_iid, "end", text=new_room.name)
+            self.insert(parent_iid, "end", text=new_room.name or "room")
 
     def copy(self):
         item_iid = self.selection()[0]
@@ -109,7 +109,7 @@ class LevelsTree(ttk.Treeview):
                 item_index = self.index(parent_iid)
                 item_iid = parent_iid
             new_room = self.on_paste_room(item_index)
-            self.insert(item_iid, "end", text=new_room.name)
+            self.insert(item_iid, "end", text=new_room.name or "room")
 
     def delete_selected(self):
         item_iid = self.selection()[0]
@@ -145,7 +145,7 @@ class LevelsTree(ttk.Treeview):
             return
 
         new_room = self.on_add_room(self.index(parent))
-        self.insert(parent, "end", text=new_room.name)
+        self.insert(parent, "end", text=new_room.name or "room")
 
     def rename_dialog(self):
         item_iid = self.selection()[0]
@@ -211,7 +211,7 @@ class LevelsTree(ttk.Treeview):
                 room_display_name += "   // " + room.comment
             entry = self.insert("", "end", text=room_display_name)
             for layout in room.rooms:
-                self.insert(entry, "end", text=layout.name)
+                self.insert(entry, "end", text=layout.name or "room")
 
     def get_selected_room(self):
         selection = self.selection()
