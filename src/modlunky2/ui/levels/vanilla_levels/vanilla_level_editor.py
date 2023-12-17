@@ -668,8 +668,6 @@ class VanillaLevelEditor(ttk.Frame):
     def convert_from_chunk(self, chunk):
         settings = list(map(lambda setting: setting, chunk.settings))
 
-        i = 0
-
         def map_layer(layer):
             return list(map(lambda line: list(map(lambda tile: tile, line)), layer))
 
@@ -681,13 +679,10 @@ class VanillaLevelEditor(ttk.Frame):
                 ["0" for _ in range(len(row))] for row in foreground_tiles
             ]
 
-        room_name = "room"
         comment = str(chunk.comment).lstrip("/ ").strip()
-        if comment:
-            room_name = comment
 
         return RoomInstance(
-            str(room_name), settings, foreground_tiles, background_tiles
+            comment, settings, foreground_tiles, background_tiles
         )
 
     def convert_to_chunk(self, room_instance):
@@ -1182,7 +1177,7 @@ class VanillaLevelEditor(ttk.Frame):
             return [[t for t in row] for row in layer]
 
         new_room = RoomInstance(
-            room_instance.name + " COPY",
+            (room_instance.name or "room") + " COPY",
             new_settings,
             map_layer(room_instance.front),
             map_layer(room_instance.back),

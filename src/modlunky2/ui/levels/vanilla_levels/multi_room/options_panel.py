@@ -381,11 +381,11 @@ class RoomOptions(ttk.Frame):
             self.configure_reverse_rooms_container()
             self.template_combobox.set(template.template.name)
             self.room_combobox["values"] = [
-                room.name or "room " + (index + 1)
+                room.name or "room " + str(index + 1)
                 for index, room in enumerate(template.template.rooms)
             ] + ["Create New"]
             self.room_combobox.set(
-                template.room_chunk.name or "room " + (template.room_index + 1)
+                template.room_chunk.name or "room " + str(template.room_index + 1)
             )
             self.room_combobox.current(template.room_index)
             self.template_container.grid()
