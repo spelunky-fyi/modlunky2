@@ -23,7 +23,10 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, S
 from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
 from modlunky2.ui.levels.shared.make_backup import make_backup
-from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
+from modlunky2.ui.levels.shared.multi_canvas_container import (
+    MultiCanvasContainer,
+    CanvasIndex,
+)
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
@@ -256,6 +259,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.preview_tab,
             textures_dir,
             ["Foreground", "Background"],
+            [],
             self.mag_full,
             intro_text="Select a level file to begin viewing",
         )
@@ -302,12 +306,12 @@ class VanillaLevelEditor(ttk.Frame):
         self.canvas = MultiCanvasContainer(
             vanilla_editor_container,
             textures_dir,
+            [],
             ["Foreground Area", "Background Area"],
             self.mag,
             self.canvas_click,
             self.canvas_shiftclick,
             "Select a room to begin editing",
-            side_by_side=True,
         )
         self.canvas.grid(row=0, column=0, rowspan=4, columnspan=8, sticky="news")
 
@@ -579,7 +583,7 @@ class VanillaLevelEditor(ttk.Frame):
                                 logger.debug("%s Not Found", tile)
 
                             self.full_level_preview_canvas.replace_tile_at(
-                                layer_index,
+                                CanvasIndex(layer_index, 0),
                                 room_y * 8 + currow,
                                 room_x * 10 + curcol,
                                 tile_image_full,
@@ -772,11 +776,11 @@ class VanillaLevelEditor(ttk.Frame):
             y_offset,
         )
 
-        self.tile_codes[canvas_index][row][column] = tile_code
+        self.tile_codes[canvas_index.canvas_index][row][column] = tile_code
         self.changes_made()
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
-        tile_code = self.tile_codes[canvas_index][row][column]
+        tile_code = self.tile_codes[canvas_index.canvas_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
@@ -985,7 +989,7 @@ class VanillaLevelEditor(ttk.Frame):
                             tile_name,
                         )
                         self.canvas.replace_tile_at(
-                            canvas_index,
+                            CanvasIndex(0, canvas_index),
                             row_index,
                             column_index,
                             tile_image,

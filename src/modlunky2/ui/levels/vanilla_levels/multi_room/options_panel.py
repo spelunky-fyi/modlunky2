@@ -62,26 +62,10 @@ class RoomOptions(ttk.Frame):
 
         template_setting_row = 0
 
-        room_label = tk.Label(self.template_container, text="Room:")
-        room_label.grid(row=template_setting_row, column=0, sticky="w")
-
-        template_setting_row += 1
-
-        self.room_combobox = ttk.Combobox(self.template_container, height=25)
-        self.room_combobox.grid(row=template_setting_row, column=0, sticky="nsw")
-        self.room_combobox["values"] = []
-        self.room_combobox.set("")
-        self.room_combobox["state"] = "readonly"
-        self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
-
-        template_setting_row += 1
-
         self.reverse_layers_container = tk.Frame(self.template_container)
         self.reverse_layers_container.grid(
             row=template_setting_row, column=0, sticky="news"
         )
-
-        template_setting_row += 1
 
         self.var_reverse_layers = tk.IntVar()
         self.var_reverse_layers.set(True)
@@ -111,6 +95,22 @@ class RoomOptions(ttk.Frame):
         )
         self.reverse_layers_description_on.grid(row=1, column=0, sticky="nws")
         self.reverse_layers_description_off.grid(row=2, column=0, sticky="nws")
+
+        template_setting_row += 1
+
+        room_label = tk.Label(self.template_container, text="Room:")
+        room_label.grid(row=template_setting_row, column=0, sticky="w")
+
+        template_setting_row += 1
+
+        self.room_combobox = ttk.Combobox(self.template_container, height=25)
+        self.room_combobox.grid(row=template_setting_row, column=0, sticky="nsw")
+        self.room_combobox["values"] = []
+        self.room_combobox.set("")
+        self.room_combobox["state"] = "readonly"
+        self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
+
+        template_setting_row += 1
 
         buttons_container = tk.Frame(self.template_container)
         buttons_container.grid(row=template_setting_row, column=0, sticky="news")

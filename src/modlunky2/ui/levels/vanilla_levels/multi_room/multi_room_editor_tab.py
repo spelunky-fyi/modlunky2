@@ -7,7 +7,10 @@ from tkinter import ttk
 from modlunky2.config import Config
 from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.levels.shared.level_canvas import GridRoom
-from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
+from modlunky2.ui.levels.shared.multi_canvas_container import (
+    MultiCanvasContainer,
+    CanvasIndex,
+)
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
 from modlunky2.ui.levels.vanilla_levels.multi_room.options_panel import OptionsPanel
@@ -90,6 +93,7 @@ class MultiRoomEditorTab(ttk.Frame):
             editor_view,
             textures_dir,
             ["Foreground", "Background"],
+            [],
             self.zoom_level,
             self.canvas_click,
             self.canvas_shiftclick,
@@ -659,7 +663,7 @@ class MultiRoomEditorTab(ttk.Frame):
             backlayer_canvas = 0
 
         if (
-            canvas_index == backlayer_canvas
+            canvas_index.tab_index == backlayer_canvas
             and TemplateSetting.DUAL not in chunk.settings
         ):
             # Do not draw on backlayer of non-dual room.
@@ -671,7 +675,7 @@ class MultiRoomEditorTab(ttk.Frame):
         layers = [chunk.front, chunk.back]
         if self.reverse_layers and template_draw_item.template.name in REVERSED_ROOMS:
             layers = [chunk.back, chunk.front]
-        layer = layers[canvas_index]
+        layer = layers[canvas_index.tab_index]
         tile_row = row - room_row * 8
         tile_col = column - room_col * 10
         if TemplateSetting.ONLYFLIP in chunk.settings:
@@ -715,7 +719,7 @@ class MultiRoomEditorTab(ttk.Frame):
             backlayer_canvas = 0
 
         if (
-            canvas_index == backlayer_canvas
+            canvas_index.tab_index == backlayer_canvas
             and TemplateSetting.DUAL not in chunk.settings
         ):
             # Do not attempt to pull tile from backlayer of non-dual room.
@@ -724,7 +728,7 @@ class MultiRoomEditorTab(ttk.Frame):
         layers = [chunk.front, chunk.back]
         if self.reverse_layers and template_draw_item.template.name in REVERSED_ROOMS:
             layers = [chunk.back, chunk.front]
-        layer = layers[canvas_index]
+        layer = layers[canvas_index.tab_index]
         tile_row = row - room_row * 8
         tile_col = column - room_col * 10
         if TemplateSetting.ONLYFLIP in chunk.settings:
@@ -786,7 +790,7 @@ class MultiRoomEditorTab(ttk.Frame):
                     )
                 )
 
-        self.canvas.draw_room_grid(2, grid_sizes)
+        self.canvas.draw_room_grid(2, [grid_sizes])
 
         # Draws all of the images of a layer on its canvas, and stores the images in
         # the proper index of tile_images so they can be removed from the grid when
@@ -835,14 +839,14 @@ class MultiRoomEditorTab(ttk.Frame):
                         front = list(map(lambda row: row[::-1], front))
                         back = list(map(lambda row: row[::-1], back))
                     draw_chunk(
-                        frontlayer_canvas,
+                        CanvasIndex(frontlayer_canvas, 0),
                         room_column_index * 10,
                         room_row_index * 8,
                         front,
                     )
                     if TemplateSetting.DUAL in chunk.settings:
                         draw_chunk(
-                            backlayer_canvas,
+                            CanvasIndex(backlayer_canvas, 0),
                             room_column_index * 10,
                             room_row_index * 8,
                             back,
@@ -851,7 +855,7 @@ class MultiRoomEditorTab(ttk.Frame):
                         for r in range(template_draw_item.height_in_rooms):
                             for c in range(template_draw_item.width_in_rooms):
                                 self.canvas.draw_background_over_room(
-                                    backlayer_canvas,
+                                    CanvasIndex(backlayer_canvas, 0),
                                     self.lvl_biome,
                                     room_row_index + r,
                                     room_column_index + c,
@@ -862,10 +866,16 @@ class MultiRoomEditorTab(ttk.Frame):
                     )
                     if template is None:
                         self.canvas.draw_background_over_room(
-                            0, self.lvl_biome, room_row_index, room_column_index
+                            CanvasIndex(0, 0),
+                            self.lvl_biome,
+                            room_row_index,
+                            room_column_index,
                         )
                         self.canvas.draw_background_over_room(
-                            1, self.lvl_biome, room_row_index, room_column_index
+                            CanvasIndex(1, 0),
+                            self.lvl_biome,
+                            room_row_index,
+                            room_column_index,
                         )
 
     def template_item_at(self, row, col):
