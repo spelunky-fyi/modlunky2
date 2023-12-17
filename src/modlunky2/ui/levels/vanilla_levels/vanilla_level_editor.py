@@ -270,7 +270,6 @@ class VanillaLevelEditor(ttk.Frame):
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
         self.tab_control.add(self.rules_tab, text="Rules")
-        self.tab_control.add(self.preview_tab, text="Full Level View")
         self.tab_control.add(self.multi_room_editor_tab, text="Full Level Editor")
         self.tab_control.add(self.variables_tab, text="Variables (Experimental)")
 
