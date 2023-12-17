@@ -6,10 +6,12 @@ import re
 RoomCoords = namedtuple("RoomCoords", ["x", "y"])
 MatchedSetroom = namedtuple("MatchedSetroom", ["name", "template", "coords"])
 
+
 @dataclass
 class BaseTemplateData:
     name: str
     template: str
+
 
 class VANILLA_SETROOM_TYPE(Enum):
     NONE = "none"
