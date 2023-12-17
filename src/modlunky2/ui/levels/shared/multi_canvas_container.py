@@ -24,7 +24,7 @@ class MultiCanvasContainer(tk.Frame):
         on_click=None,
         on_shiftclick=None,
         intro_text=None,
-        vertical = False,
+        vertical=False,
         *args,
         **kwargs
     ):
@@ -76,7 +76,9 @@ class MultiCanvasContainer(tk.Frame):
             scrollable_frame.rowconfigure(2, minsize=100)
         if vertical:
             scrollable_frame.rowconfigure((canvas_gaps + 1) * 2, minsize=50)
-        scrollable_frame.rowconfigure((canvas_gaps + 1) * 2 + 1 if vertical else 4, minsize=int(int(height) / 2))
+        scrollable_frame.rowconfigure(
+            (canvas_gaps + 1) * 2 + 1 if vertical else 4, minsize=int(int(height) / 2)
+        )
 
         # Scroll bars for scrolling the canvases.
         hbar = ttk.Scrollbar(self, orient="horizontal", command=scrollable_canvas.xview)
@@ -205,7 +207,6 @@ class MultiCanvasContainer(tk.Frame):
             )
             intro_label.place(relx=0.5, rely=0.5, anchor="center")
 
-
     def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
         if event.num == 5 or event.delta == -120:
@@ -285,7 +286,7 @@ class MultiCanvasContainer(tk.Frame):
             for canvas in tab_of_canvases:
                 canvas.hide_room_lines(hide_room_lines)
 
-    def draw_background(self, theme, index = None):
+    def draw_background(self, theme, index=None):
         if index is None:
             for tab_of_canvases in self.canvases:
                 for canvas in tab_of_canvases:
@@ -315,7 +316,10 @@ class MultiCanvasContainer(tk.Frame):
                     if special_room_sizes is None
                     else special_room_sizes[canvas_index],
                 )
-    def draw_canvas_room_grid(self, canvas_index, width=1, special_room_sizes: GridRoom = None):
+
+    def draw_canvas_room_grid(
+        self, canvas_index, width=1, special_room_sizes: GridRoom = None
+    ):
         canvas = self.canvases[canvas_index.tab_index][canvas_index.canvas_index]
         canvas.draw_room_grid(width, special_room_sizes)
 
