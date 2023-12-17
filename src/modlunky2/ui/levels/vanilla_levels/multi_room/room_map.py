@@ -13,6 +13,7 @@ from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
 
+
 @dataclass
 class RoomMap:
     name: str
@@ -167,11 +168,10 @@ def find_roommap(templates):
 
     olmecship_room = template_map.get("olmecship_room")
     if olmecship_room:
-        for i, room in enumerate(room_map[more_rooms_start - 1]):
+        for i, room in enumerate(path_map[more_rooms_start - 1]):
             if room is None:
                 set_room(path_map, i, more_rooms_start - 1, olmecship_room)
                 break
-
 
     challenge_entrance = template_map.get("challenge_entrance")
     challenge_special = template_map.get("challenge_special")
@@ -228,7 +228,6 @@ def find_roommap(templates):
 
     if len(path_map) > 0:
         room_map.append(RoomMap("path", path_map))
-
 
     other_rooms_map = []
 
@@ -294,11 +293,15 @@ def find_roommap(templates):
         if bottom_room:
             if vertical_max_height < r + 1:
                 vertical_max_height = r + 1
-            set_room(other_rooms_map, vertical_room_column, more_rooms_start + r, bottom_room)
+            set_room(
+                other_rooms_map, vertical_room_column, more_rooms_start + r, bottom_room
+            )
         if top_room is not None or bottom_room is not None:
             vertical_room_column += 1
 
-    more_rooms_bottom = more_rooms_start + vertical_max_height - 1
+    more_rooms_bottom = max(
+        more_rooms_start, more_rooms_start + vertical_max_height - 1
+    )
 
     other_rooms_to_add = [
         "abzu_backdoor",
@@ -363,7 +366,9 @@ def find_roommap(templates):
 
             if not added_room:
                 if len(other_rooms_map) > 0 and len(other_rooms_map[0]) < 3:
-                    set_room(other_rooms_map, len(other_rooms_map[0]), more_rooms_start, room)
+                    set_room(
+                        other_rooms_map, len(other_rooms_map[0]), more_rooms_start, room
+                    )
                 else:
                     more_rooms_start = more_rooms_bottom + 1
                     more_rooms_bottom = more_rooms_start

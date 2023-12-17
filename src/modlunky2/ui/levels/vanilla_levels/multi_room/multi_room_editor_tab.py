@@ -183,7 +183,6 @@ class MultiRoomEditorTab(ttk.Frame):
         self.template_draw_map = find_roommap(room_templates)
         self.canvas.grid_remove()
 
-
         self.canvas = MultiCanvasContainer(
             self.editor_container,
             self.textures_dir,
@@ -193,7 +192,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.canvas_click,
             self.canvas_shiftclick,
             intro_text="Select a level file to begin viewing",
-            vertical = True,
+            vertical=True,
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
         self.canvas.show_intro()
@@ -230,7 +229,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.redraw()
 
-    def __get_chunk_for_template_draw_item(self, template, template_index, map_index, row, column):
+    def __get_chunk_for_template_draw_item(
+        self, template, template_index, map_index, row, column
+    ):
         chunk_index = None
         if len(template.rooms) == 0:
             return None, None
@@ -272,7 +273,9 @@ class MultiRoomEditorTab(ttk.Frame):
         chunk = template.rooms[chunk_index]
         return chunk_index, chunk
 
-    def __get_template_draw_item(self, template, template_index, map_index, row, column):
+    def __get_template_draw_item(
+        self, template, template_index, map_index, row, column
+    ):
         chunk_index, chunk = self.__get_chunk_for_template_draw_item(
             template, template_index, map_index, row, column
         )
@@ -313,7 +316,9 @@ class MultiRoomEditorTab(ttk.Frame):
                         template,
                         overlapping_row,
                         overlapping_column,
-                    ) = self.template_item_at(map_index, row + row_offset, col + col_offset)
+                    ) = self.template_item_at(
+                        map_index, row + row_offset, col + col_offset
+                    )
                     if template is not None and (
                         overlapping_row != row or overlapping_column != col
                     ):
@@ -335,10 +340,12 @@ class MultiRoomEditorTab(ttk.Frame):
                                 row.append(None)
 
                 expand_to_height_if_necessary(
-                    self.template_draw_map[map_index].rooms, row + template_draw_item.height_in_rooms
+                    self.template_draw_map[map_index].rooms,
+                    row + template_draw_item.height_in_rooms,
                 )
                 expand_to_width_if_necessary(
-                    self.template_draw_map[map_index].rooms, col + template_draw_item.width_in_rooms
+                    self.template_draw_map[map_index].rooms,
+                    col + template_draw_item.width_in_rooms,
                 )
                 for row_offset in range(template_draw_item.height_in_rooms):
                     for col_offset in range(template_draw_item.width_in_rooms):
@@ -796,8 +803,12 @@ class MultiRoomEditorTab(ttk.Frame):
             height = len(draw_rooms)
             width = len(draw_rooms[0])
 
-            self.canvas.configure_size(width * 10, height * 8, CanvasIndex(0, map_index))
-            self.canvas.configure_size(width * 10, height * 8, CanvasIndex(1, map_index))
+            self.canvas.configure_size(
+                width * 10, height * 8, CanvasIndex(0, map_index)
+            )
+            self.canvas.configure_size(
+                width * 10, height * 8, CanvasIndex(1, map_index)
+            )
 
             self.canvas.draw_background(self.lvl_biome, CanvasIndex(0, map_index))
             self.canvas.draw_background(self.lvl_biome, CanvasIndex(1, map_index))
@@ -909,7 +920,9 @@ class MultiRoomEditorTab(ttk.Frame):
                             )
 
     def template_item_at(self, map_index, row, col):
-        for room_row_index, room_row in enumerate(self.template_draw_map[map_index].rooms):
+        for room_row_index, room_row in enumerate(
+            self.template_draw_map[map_index].rooms
+        ):
             if room_row_index > row:
                 return None, None, None
             for room_column_index, template_draw_item in enumerate(room_row):

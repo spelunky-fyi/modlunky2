@@ -317,7 +317,9 @@ class RoomOptions(ttk.Frame):
         if template_index == 0:
             self.clear_templates()
             self.on_clear_template(
-                self.current_template_map_index, self.current_template_row, self.current_template_column
+                self.current_template_map_index,
+                self.current_template_row,
+                self.current_template_column,
             )
         else:
             self.on_select_template(
@@ -330,17 +332,32 @@ class RoomOptions(ttk.Frame):
     def select_room(self):
         room_index = self.room_combobox.current()
         self.on_select_room(
-            room_index, self.current_template_map_index, self.current_template_row, self.current_template_column
+            room_index,
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
         )
 
     def duplicate_room(self):
-        self.on_duplicate_room(self.current_template_map_index, self.current_template_row, self.current_template_column)
+        self.on_duplicate_room(
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
+        )
 
     def rename_room(self):
-        self.on_rename_room(self.current_template_map_index, self.current_template_row, self.current_template_column)
+        self.on_rename_room(
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
+        )
 
     def delete_room(self):
-        self.on_delete_room(self.current_template_map_index, self.current_template_row, self.current_template_column)
+        self.on_delete_room(
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
+        )
 
     def clear_templates(self):
         self.template_combobox["values"] = ["None"]
@@ -394,7 +411,11 @@ class RoomOptions(ttk.Frame):
 
     def flip_setting(self, setting, value):
         self.on_flip_setting(
-            setting, value, self.current_template_map_index, self.current_template_row, self.current_template_column
+            setting,
+            value,
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
         )
 
     def on_flip_ignore(self):
@@ -652,14 +673,16 @@ class OptionsPanel(ttk.Frame):
         room_row_start = 0
         if self.room_map is not None:
             for template_map in self.room_map:
-
                 for row_index in range(len(template_map.rooms) + 1):
-                    self.room_type_frame.rowconfigure(room_row_start + row_index * 2, minsize=0)
+                    self.room_type_frame.rowconfigure(
+                        room_row_start + row_index * 2, minsize=0
+                    )
                     if row_index + room_row_start != 0:
-                        self.room_type_frame.rowconfigure(room_row_start + row_index * 2 - 1, minsize=0)
+                        self.room_type_frame.rowconfigure(
+                            room_row_start + row_index * 2 - 1, minsize=0
+                        )
 
                 room_row_start += (len(template_map.rooms) + 1) * 2
-
 
         self.room_map = room_map
         self.templates = templates
@@ -675,10 +698,14 @@ class OptionsPanel(ttk.Frame):
                     )
                     if row_index != 0:
                         self.room_type_frame.rowconfigure(
-                            room_row_start + row_index * 2 - 1, minsize=self.room_view_padding
+                            room_row_start + row_index * 2 - 1,
+                            minsize=self.room_view_padding,
                         )
                     elif room_row_start != 0:
-                        self.room_type_frame.rowconfigure(room_row_start + row_index * 2 - 1, minsize=self.room_view_size)
+                        self.room_type_frame.rowconfigure(
+                            room_row_start + row_index * 2 - 1,
+                            minsize=self.room_view_size,
+                        )
                 room_row_start += (len(template_map.rooms) + 1) * 2
 
         for button in self.room_buttons:
@@ -712,15 +739,21 @@ class OptionsPanel(ttk.Frame):
                                 )
                             )
                             new_button.grid(
-                                row=room_row_start + row_index * 2, column=col_index * 2, sticky="news"
+                                row=room_row_start + row_index * 2,
+                                column=col_index * 2,
+                                sticky="news",
                             )
                             if (
-                                map_index == self.room_options.current_template_map_index and
-                                row_index == self.room_options.current_template_row
-                                and col_index == self.room_options.current_template_column
+                                map_index
+                                == self.room_options.current_template_map_index
+                                and row_index == self.room_options.current_template_row
+                                and col_index
+                                == self.room_options.current_template_column
                             ):
                                 self.button_for_selected_empty_room = new_button
-                                self.room_options.set_empty_cell(map_index, row_index, col_index)
+                                self.room_options.set_empty_cell(
+                                    map_index, row_index, col_index
+                                )
                     else:
                         new_button = tk.Button(
                             self.room_type_frame,
@@ -741,8 +774,8 @@ class OptionsPanel(ttk.Frame):
                             sticky="news",
                         )
                         if (
-                            map_index == self.room_options.current_template_map_index and
-                            row_index == self.room_options.current_template_row
+                            map_index == self.room_options.current_template_map_index
+                            and row_index == self.room_options.current_template_row
                             and col_index == self.room_options.current_template_column
                         ):
                             self.button_for_selected_room = new_button
@@ -755,7 +788,9 @@ class OptionsPanel(ttk.Frame):
                 if len(template_row) < 10:
                     edge_frame = tk.Frame(self.room_type_frame)
                     edge_frame.grid(
-                        row=room_row_start + row_index * 2, column=len(template_row) * 2, sticky="news"
+                        row=room_row_start + row_index * 2,
+                        column=len(template_row) * 2,
+                        sticky="news",
                     )
                     edge_frame.columnconfigure(0, weight=1)
                     edge_frame.rowconfigure(0, weight=1)
@@ -776,7 +811,9 @@ class OptionsPanel(ttk.Frame):
                     )
 
                     edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
-                    edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
+                    edge_frame.bind(
+                        "<Leave>", lambda _, eb=edge_button: eb.grid_remove()
+                    )
                     self.edge_frames.append(edge_frame)
 
             rooms = template_map.rooms
@@ -798,13 +835,15 @@ class OptionsPanel(ttk.Frame):
                     edge_button.grid(row=0, column=0, sticky="news")
                     edge_button.grid_remove()
                     edge_button.configure(
-                        command=lambda r=len(rooms), c=col, m=map_index: self.show_create_new_dialog(
-                            m, r, c
-                        )
+                        command=lambda r=len(
+                            rooms
+                        ), c=col, m=map_index: self.show_create_new_dialog(m, r, c)
                     )
 
                     edge_frame.bind("<Enter>", lambda _, eb=edge_button: eb.grid())
-                    edge_frame.bind("<Leave>", lambda _, eb=edge_button: eb.grid_remove())
+                    edge_frame.bind(
+                        "<Leave>", lambda _, eb=edge_button: eb.grid_remove()
+                    )
                     self.edge_frames.append(edge_frame)
             room_row_start += (len(template_map.rooms) + 1) * 2
         self.highlight_selected_button()
