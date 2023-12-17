@@ -15,7 +15,10 @@ from modlunky2.ui.levels.custom_levels.save_level import save_level
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import BIOME
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
-from modlunky2.ui.levels.shared.multi_canvas_container import MultiCanvasContainer
+from modlunky2.ui.levels.shared.multi_canvas_container import (
+    MultiCanvasContainer,
+    CanvasIndex,
+)
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom
 from modlunky2.utils import tb_info
@@ -120,6 +123,7 @@ class CustomLevelEditor(ttk.Frame):
             editor_view,
             textures_dir,
             ["Foreground", "Background"],
+            [],
             self.zoom_level,
             self.canvas_click,
             self.canvas_shiftclick,
@@ -549,7 +553,7 @@ class CustomLevelEditor(ttk.Frame):
                     )
 
         for index, tileset in enumerate(self.tile_codes):
-            draw_layer(index, tileset)
+            draw_layer(CanvasIndex(index, 0), tileset)
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
@@ -565,11 +569,11 @@ class CustomLevelEditor(ttk.Frame):
             x_offset,
             y_offset,
         )
-        self.tile_codes[canvas_index][row][column] = tile_code
+        self.tile_codes[canvas_index.tab_index][row][column] = tile_code
         self.changes_made()
 
     def canvas_shiftclick(self, index, row, column, is_primary):
-        tile_code = self.tile_codes[index][row][column]
+        tile_code = self.tile_codes[index.tab_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
@@ -674,7 +678,7 @@ class CustomLevelEditor(ttk.Frame):
                     for column in range(len(tile_code_matrix[row])):
                         if str(tile_code_matrix[row][column]) == str(tile_code):
                             self.canvas.replace_tile_at(
-                                matrix_index, row, column, new_tile[1]
+                                CanvasIndex(matrix_index, 0), row, column, new_tile[1]
                             )
                             tile_code_matrix[row][column] = "0"
             self.usable_codes.append(str(tile_code))
