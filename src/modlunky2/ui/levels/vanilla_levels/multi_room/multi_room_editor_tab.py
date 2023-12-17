@@ -54,6 +54,7 @@ class MultiRoomEditorTab(ttk.Frame):
         super().__init__(parent, *args, **kwargs)
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
+        self.textures_dir = textures_dir
 
         self.on_zoom_change = on_zoom_change
         self.on_add_tilecode = on_add_tilecode
@@ -179,9 +180,25 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.room_templates = room_templates
 
+        self.template_draw_map = find_roommap(room_templates)
+        self.canvas.grid_remove()
+
+
+        self.canvas = MultiCanvasContainer(
+            self.editor_container,
+            self.textures_dir,
+            ["Foreground", "Background"],
+            [room.name for room in self.template_draw_map],
+            self.zoom_level,
+            self.canvas_click,
+            self.canvas_shiftclick,
+            intro_text="Select a level file to begin viewing",
+        )
+        self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
+        self.canvas.show_intro()
         self.canvas.clear()
         self.show_intro()
-        self.template_draw_map = find_roommap(room_templates)
+
         self.options_panel.reset()
         self.options_panel.set_templates(self.template_draw_map, room_templates)
         self.draw_canvas()
@@ -212,7 +229,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.redraw()
 
-    def __get_chunk_for_template_draw_item(self, template, template_index, row, column):
+    def __get_chunk_for_template_draw_item(self, template, template_index, map_index, row, column):
         chunk_index = None
         if len(template.rooms) == 0:
             return None, None
@@ -225,20 +242,21 @@ class MultiRoomEditorTab(ttk.Frame):
         if row is not None and column is not None:
             for i in valid_rooms:
                 room_used = False
-                for r, room_row in enumerate(self.template_draw_map):
-                    for c, room in enumerate(room_row):
-                        if room is None:
-                            continue
-                        if r == row and c == column:
-                            continue
-                        if (
-                            room.template_index == template_index
-                            and room.room_index == i
-                        ):
-                            room_used = True
+                for m, draw_map in enumerate(self.template_draw_map):
+                    for r, room_row in enumerate(draw_map.rooms):
+                        for c, room in enumerate(room_row):
+                            if room is None:
+                                continue
+                            if r == row and c == column and m == map_index:
+                                continue
+                            if (
+                                room.template_index == template_index
+                                and room.room_index == i
+                            ):
+                                room_used = True
+                                break
+                        if room_used:
                             break
-                    if room_used:
-                        break
 
                 if not room_used:
                     chunk_index = i
@@ -253,9 +271,9 @@ class MultiRoomEditorTab(ttk.Frame):
         chunk = template.rooms[chunk_index]
         return chunk_index, chunk
 
-    def __get_template_draw_item(self, template, template_index, row, column):
+    def __get_template_draw_item(self, template, template_index, map_index, row, column):
         chunk_index, chunk = self.__get_chunk_for_template_draw_item(
-            template, template_index, row, column
+            template, template_index, map_index, row, column
         )
         if chunk is None or len(chunk.front) == 0:
             return None
@@ -268,9 +286,9 @@ class MultiRoomEditorTab(ttk.Frame):
             int(math.ceil(len(chunk.front) / 8)),
         )
 
-    def change_template_at(self, row, col, template, template_index):
+    def change_template_at(self, map_index, row, col, template, template_index):
         template_draw_item = self.__get_template_draw_item(
-            template, template_index, row, col
+            template, template_index, map_index, row, col
         )
         if template_draw_item:
             if template_draw_item.width_in_rooms + col > 10:
@@ -294,7 +312,7 @@ class MultiRoomEditorTab(ttk.Frame):
                         template,
                         overlapping_row,
                         overlapping_column,
-                    ) = self.template_item_at(row + row_offset, col + col_offset)
+                    ) = self.template_item_at(map_index, row + row_offset, col + col_offset)
                     if template is not None and (
                         overlapping_row != row or overlapping_column != col
                     ):
@@ -316,53 +334,53 @@ class MultiRoomEditorTab(ttk.Frame):
                                 row.append(None)
 
                 expand_to_height_if_necessary(
-                    self.template_draw_map, row + template_draw_item.height_in_rooms
+                    self.template_draw_map[map_index].rooms, row + template_draw_item.height_in_rooms
                 )
                 expand_to_width_if_necessary(
-                    self.template_draw_map, col + template_draw_item.width_in_rooms
+                    self.template_draw_map[map_index].rooms, col + template_draw_item.width_in_rooms
                 )
                 for row_offset in range(template_draw_item.height_in_rooms):
                     for col_offset in range(template_draw_item.width_in_rooms):
                         if row_offset == 0 and col_offset == 0:
                             continue
                         _, overlapping_row, overlapping_column = self.template_item_at(
-                            row + row_offset, col + col_offset
+                            map_index, row + row_offset, col + col_offset
                         )
                         if overlapping_row is None or overlapping_column is None:
                             continue
-                        self.template_draw_map[overlapping_row][
+                        self.template_draw_map[map_index].rooms[overlapping_row][
                             overlapping_column
                         ] = None
 
-                self.template_draw_map[row][col] = template_draw_item
-                while len(self.template_draw_map) > 0:
+                self.template_draw_map[map_index].rooms[row][col] = template_draw_item
+                while len(self.template_draw_map[map_index].rooms) > 0:
                     has_room = False
-                    r = len(self.template_draw_map) - 1
-                    for c in range(len(self.template_draw_map[r])):
-                        t, _, _ = self.template_item_at(r, c)
+                    r = len(self.template_draw_map[map_index].rooms) - 1
+                    for c in range(len(self.template_draw_map[map_index].rooms[r])):
+                        t, _, _ = self.template_item_at(map_index, r, c)
                         if t is not None:
                             has_room = True
                             break
                     if has_room:
                         break
 
-                    self.template_draw_map.pop()
+                    self.template_draw_map[map_index].rooms.pop()
 
                 while (
-                    len(self.template_draw_map) > 0
-                    and len(self.template_draw_map[0]) > 0
+                    len(self.template_draw_map[map_index].rooms) > 0
+                    and len(self.template_draw_map[map_index].rooms[0]) > 0
                 ):
                     has_room = False
-                    for r in range(len(self.template_draw_map)):
-                        c = len(self.template_draw_map[r]) - 1
-                        t, _, _ = self.template_item_at(r, c)
+                    for r in range(len(self.template_draw_map[map_index].rooms)):
+                        c = len(self.template_draw_map[map_index].rooms[r]) - 1
+                        t, _, _ = self.template_item_at(map_index, r, c)
                         if t is not None:
                             has_room = True
                             break
                     if has_room:
                         break
 
-                    for r in self.template_draw_map:
+                    for r in self.template_draw_map[map_index].rooms:
                         r.pop()
 
                 self.options_panel.set_templates(
@@ -404,41 +422,42 @@ class MultiRoomEditorTab(ttk.Frame):
             else:
                 update_template()
 
-    def clear_template_at(self, row, col):
-        self.template_draw_map[row][col] = None
+    def clear_template_at(self, map_index, row, col):
+        current_map = self.template_draw_map[map_index].rooms
+        current_map[row][col] = None
 
-        while len(self.template_draw_map) > 0:
+        while len(current_map) > 0:
             has_room = False
-            r = len(self.template_draw_map) - 1
-            for c in range(len(self.template_draw_map[r])):
-                t, _, _ = self.template_item_at(r, c)
+            r = len(current_map) - 1
+            for c in range(len(current_map[r])):
+                t, _, _ = self.template_item_at(map_index, r, c)
                 if t is not None:
                     has_room = True
                     break
             if has_room:
                 break
 
-            self.template_draw_map.pop()
+            current_map.pop()
 
-        while len(self.template_draw_map) > 0 and len(self.template_draw_map[0]) > 0:
+        while len(current_map) > 0 and len(current_map[0]) > 0:
             has_room = False
-            for r in range(len(self.template_draw_map)):
-                c = len(self.template_draw_map[r]) - 1
-                t, _, _ = self.template_item_at(r, c)
+            for r in range(len(current_map)):
+                c = len(current_map[r]) - 1
+                t, _, _ = self.template_item_at(map_index, r, c)
                 if t is not None:
                     has_room = True
                     break
             if has_room:
                 break
 
-            for r in self.template_draw_map:
+            for r in current_map:
                 r.pop()
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
 
-    def change_room_at(self, room_index, row, col):
-        template_item = self.template_draw_map[row][col]
+    def change_room_at(self, room_index, map_index, row, col):
+        template_item = self.template_draw_map[map_index].rooms[row][col]
 
         if template_item is None:
             return
@@ -498,8 +517,8 @@ class MultiRoomEditorTab(ttk.Frame):
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
 
-    def duplicate_room(self, row, col):
-        template_item = self.template_draw_map[row][col]
+    def duplicate_room(self, map_index, row, col):
+        template_item = self.template_draw_map[map_index].rooms[row][col]
         new_room = self.on_duplicate_room(
             template_item.template_index, template_item.room_index
         )
@@ -512,10 +531,10 @@ class MultiRoomEditorTab(ttk.Frame):
 
         self.on_change_filetree()
 
-    def rename_room(self, row, col):
+    def rename_room(self, map_index, row, col):
         win = PopupWindow("Edit Name", self.modlunky_config)
 
-        template_item = self.template_draw_map[row][col]
+        template_item = self.template_draw_map[map_index].rooms[row][col]
 
         item_name = ""
         item_name = template_item.room_chunk.name or ""
@@ -555,8 +574,8 @@ class MultiRoomEditorTab(ttk.Frame):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="news")
 
-    def delete_room(self, row, col):
-        template_item = self.template_draw_map[row][col]
+    def delete_room(self, map_index, row, col):
+        template_item = self.template_draw_map[map_index].rooms[row][col]
 
         win = PopupWindow("Delete Room", self.modlunky_config)
 
@@ -584,8 +603,8 @@ class MultiRoomEditorTab(ttk.Frame):
         cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
         cancel_button.grid(row=0, column=1, pady=5, sticky="news")
 
-    def room_setting_change_at(self, setting, value, row, col):
-        template_item = self.template_draw_map[row][col]
+    def room_setting_change_at(self, setting, value, map_index, row, col):
+        template_item = self.template_draw_map[map_index].rooms[row][col]
 
         if template_item is None:
             return
@@ -622,24 +641,25 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def room_was_deleted(self, template_index, chunk_index):
         replaced = False
-        for row, template_row in enumerate(self.template_draw_map):
-            for col, template in enumerate(template_row):
-                if template is None:
-                    continue
-                if (
-                    template.template_index == template_index
-                    and template.room_index == chunk_index
-                ):
-                    new_draw_item = self.__get_template_draw_item(
-                        template.template, template_index, row, col
-                    )
-                    template_row[col] = new_draw_item
-                    replaced = True
-                elif (
-                    template.template_index == template_index
-                    and template.room_index > chunk_index
-                ):
-                    template.room_index -= 1
+        for map_index, template_map in enumerate(self.template_draw_map):
+            for row, template_row in enumerate(template_map.rooms):
+                for col, template in enumerate(template_row):
+                    if template is None:
+                        continue
+                    if (
+                        template.template_index == template_index
+                        and template.room_index == chunk_index
+                    ):
+                        new_draw_item = self.__get_template_draw_item(
+                            template.template, template_index, map_index, row, col
+                        )
+                        template_row[col] = new_draw_item
+                        replaced = True
+                    elif (
+                        template.template_index == template_index
+                        and template.room_index > chunk_index
+                    ):
+                        template.room_index -= 1
         if replaced:
             self.options_panel.set_templates(
                 self.template_draw_map, self.room_templates
@@ -649,7 +669,7 @@ class MultiRoomEditorTab(ttk.Frame):
     def canvas_click(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
         template_draw_item, room_row, room_col = self.template_item_at(
-            room_row, room_col
+            canvas_index.canvas_index, room_row, room_col
         )
 
         if template_draw_item is None:
@@ -684,29 +704,30 @@ class MultiRoomEditorTab(ttk.Frame):
         layer[tile_row][data_tile_col] = tile_code
         self.on_modify_room(template_draw_item)
 
-        for r, room_rows in enumerate(self.template_draw_map):
-            for c, other_template_draw_item in enumerate(room_rows):
-                if other_template_draw_item is None:
-                    continue
-                if (
-                    template_draw_item.template_index
-                    == other_template_draw_item.template_index
-                    and template_draw_item.room_index
-                    == other_template_draw_item.room_index
-                ):
-                    self.canvas.replace_tile_at(
-                        canvas_index,
-                        tile_row + r * 8,
-                        tile_col + c * 10,
-                        self.image_for_tile_code(tile_code),
-                        x_offset,
-                        y_offset,
-                    )
+        for map_index, template_map in enumerate(self.template_draw_map):
+            for r, room_rows in enumerate(template_map.rooms):
+                for c, other_template_draw_item in enumerate(room_rows):
+                    if other_template_draw_item is None:
+                        continue
+                    if (
+                        template_draw_item.template_index
+                        == other_template_draw_item.template_index
+                        and template_draw_item.room_index
+                        == other_template_draw_item.room_index
+                    ):
+                        self.canvas.replace_tile_at(
+                            CanvasIndex(canvas_index.tab_index, map_index),
+                            tile_row + r * 8,
+                            tile_col + c * 10,
+                            self.image_for_tile_code(tile_code),
+                            x_offset,
+                            y_offset,
+                        )
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
         room_row, room_col = row // 8, column // 10
         template_draw_item, room_row, room_col = self.template_item_at(
-            room_row, room_col
+            canvas_index.canvas_index, room_row, room_col
         )
 
         if template_draw_item is None:
@@ -743,10 +764,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
     def offset_for_tile(self, tile_name, tile_code, tile_size):
-        # tile_ref = self.tile_palette_map[tile_code]
         img = self.image_for_tile_code(tile_code)
-        # if tile_ref:
-        # img = tile_ref[1]
         if img:
             return self.texture_fetcher.adjust_texture_xy(
                 img.width(), img.height(), tile_name, tile_size
@@ -765,122 +783,132 @@ class MultiRoomEditorTab(ttk.Frame):
     def draw_canvas(self):
         if len(self.template_draw_map) == 0:
             return
-        if len(self.template_draw_map[0]) == 0:
-            return
-        height = len(self.template_draw_map)
-        width = len(self.template_draw_map[0])
 
         self.canvas.clear()
         self.hide_intro()
-        self.canvas.configure_size(width * 10, height * 8)
+        for map_index, draw_map in enumerate(self.template_draw_map):
+            draw_rooms = draw_map.rooms
+            if len(draw_rooms) == 0:
+                continue
+            if len(draw_rooms[0]) == 0:
+                continue
+            height = len(draw_rooms)
+            width = len(draw_rooms[0])
 
-        self.canvas.draw_background(self.lvl_biome)
-        self.canvas.draw_grid()
+            self.canvas.configure_size(width * 10, height * 8, CanvasIndex(0, map_index))
+            self.canvas.configure_size(width * 10, height * 8, CanvasIndex(1, map_index))
 
-        grid_sizes = []
-        for room_row_index, room_row in enumerate(self.template_draw_map):
-            for room_column_index, template_draw_item in enumerate(room_row):
-                if template_draw_item is None:
-                    continue
-                grid_sizes.append(
-                    GridRoom(
-                        room_row_index,
-                        room_column_index,
-                        template_draw_item.width_in_rooms,
-                        template_draw_item.height_in_rooms,
-                    )
-                )
+            self.canvas.draw_background(self.lvl_biome, CanvasIndex(0, map_index))
+            self.canvas.draw_background(self.lvl_biome, CanvasIndex(1, map_index))
+            self.canvas.draw_grid(index=CanvasIndex(0, map_index))
+            self.canvas.draw_grid(index=CanvasIndex(1, map_index))
 
-        self.canvas.draw_room_grid(2, [grid_sizes])
-
-        # Draws all of the images of a layer on its canvas, and stores the images in
-        # the proper index of tile_images so they can be removed from the grid when
-        # replaced with another tile.
-        def draw_chunk(canvas_index, chunk_start_x, chunk_start_y, tile_codes):
-            for row_index, room_row in enumerate(tile_codes):
-                if row_index + chunk_start_y >= height * 8:
-                    continue
-                for tile_index, tile in enumerate(room_row):
-                    if tile_index + chunk_start_x >= width * 10:
+            grid_sizes = []
+            for room_row_index, room_row in enumerate(draw_rooms):
+                for room_column_index, template_draw_item in enumerate(room_row):
+                    if template_draw_item is None:
                         continue
-                    tilecode = self.tile_palette_map[tile]
-                    tile_name = tilecode[0].split(" ", 1)[0]
-                    # tile_image = tilecode[1]
-                    tile_image = self.image_for_tile_code(tile)
-                    x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
-                        tile_image.width(),
-                        tile_image.height(),
-                        tile_name,
-                        self.zoom_level,
-                    )
-                    self.canvas.replace_tile_at(
-                        canvas_index,
-                        row_index + chunk_start_y,
-                        tile_index + chunk_start_x,
-                        tile_image,
-                        x_offset,
-                        y_offset,
+                    grid_sizes.append(
+                        GridRoom(
+                            room_row_index,
+                            room_column_index,
+                            template_draw_item.width_in_rooms,
+                            template_draw_item.height_in_rooms,
+                        )
                     )
 
-        for room_row_index, room_row in enumerate(self.template_draw_map):
-            for room_column_index, template_draw_item in enumerate(room_row):
-                if template_draw_item:
-                    chunk = template_draw_item.room_chunk
-                    front = chunk.front
-                    back = chunk.back
-                    frontlayer_canvas = 0
-                    backlayer_canvas = 1
-                    if (
-                        self.reverse_layers
-                        and template_draw_item.template.name in REVERSED_ROOMS
-                    ):
-                        frontlayer_canvas = 1
-                        backlayer_canvas = 0
-                    if TemplateSetting.ONLYFLIP in chunk.settings:
-                        front = list(map(lambda row: row[::-1], front))
-                        back = list(map(lambda row: row[::-1], back))
-                    draw_chunk(
-                        CanvasIndex(frontlayer_canvas, 0),
-                        room_column_index * 10,
-                        room_row_index * 8,
-                        front,
-                    )
-                    if TemplateSetting.DUAL in chunk.settings:
+            # self.canvas.draw_room_grid(2, [grid_sizes])
+            self.canvas.draw_canvas_room_grid(CanvasIndex(0, map_index), 2, grid_sizes)
+            self.canvas.draw_canvas_room_grid(CanvasIndex(1, map_index), 2, grid_sizes)
+
+            # Draws all of the images of a layer on its canvas, and stores the images in
+            # the proper index of tile_images so they can be removed from the grid when
+            # replaced with another tile.
+            def draw_chunk(canvas_index, chunk_start_x, chunk_start_y, tile_codes):
+                for row_index, room_row in enumerate(tile_codes):
+                    if row_index + chunk_start_y >= height * 8:
+                        continue
+                    for tile_index, tile in enumerate(room_row):
+                        if tile_index + chunk_start_x >= width * 10:
+                            continue
+                        tilecode = self.tile_palette_map[tile]
+                        tile_name = tilecode[0].split(" ", 1)[0]
+                        # tile_image = tilecode[1]
+                        tile_image = self.image_for_tile_code(tile)
+                        x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
+                            tile_image.width(),
+                            tile_image.height(),
+                            tile_name,
+                            self.zoom_level,
+                        )
+                        self.canvas.replace_tile_at(
+                            canvas_index,
+                            row_index + chunk_start_y,
+                            tile_index + chunk_start_x,
+                            tile_image,
+                            x_offset,
+                            y_offset,
+                        )
+
+            for room_row_index, room_row in enumerate(draw_rooms):
+                for room_column_index, template_draw_item in enumerate(room_row):
+                    if template_draw_item:
+                        chunk = template_draw_item.room_chunk
+                        front = chunk.front
+                        back = chunk.back
+                        frontlayer_canvas = 0
+                        backlayer_canvas = 1
+                        if (
+                            self.reverse_layers
+                            and template_draw_item.template.name in REVERSED_ROOMS
+                        ):
+                            frontlayer_canvas = 1
+                            backlayer_canvas = 0
+                        if TemplateSetting.ONLYFLIP in chunk.settings:
+                            front = list(map(lambda row: row[::-1], front))
+                            back = list(map(lambda row: row[::-1], back))
                         draw_chunk(
-                            CanvasIndex(backlayer_canvas, 0),
+                            CanvasIndex(frontlayer_canvas, map_index),
                             room_column_index * 10,
                             room_row_index * 8,
-                            back,
+                            front,
                         )
+                        if TemplateSetting.DUAL in chunk.settings:
+                            draw_chunk(
+                                CanvasIndex(backlayer_canvas, map_index),
+                                room_column_index * 10,
+                                room_row_index * 8,
+                                back,
+                            )
+                        else:
+                            for r in range(template_draw_item.height_in_rooms):
+                                for c in range(template_draw_item.width_in_rooms):
+                                    self.canvas.draw_background_over_room(
+                                        CanvasIndex(backlayer_canvas, map_index),
+                                        self.lvl_biome,
+                                        room_row_index + r,
+                                        room_column_index + c,
+                                    )
                     else:
-                        for r in range(template_draw_item.height_in_rooms):
-                            for c in range(template_draw_item.width_in_rooms):
-                                self.canvas.draw_background_over_room(
-                                    CanvasIndex(backlayer_canvas, 0),
-                                    self.lvl_biome,
-                                    room_row_index + r,
-                                    room_column_index + c,
-                                )
-                else:
-                    template, _, _ = self.template_item_at(
-                        room_row_index, room_column_index
-                    )
-                    if template is None:
-                        self.canvas.draw_background_over_room(
-                            CanvasIndex(0, 0),
-                            self.lvl_biome,
-                            room_row_index,
-                            room_column_index,
+                        template, _, _ = self.template_item_at(
+                            map_index, room_row_index, room_column_index
                         )
-                        self.canvas.draw_background_over_room(
-                            CanvasIndex(1, 0),
-                            self.lvl_biome,
-                            room_row_index,
-                            room_column_index,
-                        )
+                        if template is None:
+                            self.canvas.draw_background_over_room(
+                                CanvasIndex(0, map_index),
+                                self.lvl_biome,
+                                room_row_index,
+                                room_column_index,
+                            )
+                            self.canvas.draw_background_over_room(
+                                CanvasIndex(1, map_index),
+                                self.lvl_biome,
+                                room_row_index,
+                                room_column_index,
+                            )
 
-    def template_item_at(self, row, col):
-        for room_row_index, room_row in enumerate(self.template_draw_map):
+    def template_item_at(self, map_index, row, col):
+        for room_row_index, room_row in enumerate(self.template_draw_map[map_index].rooms):
             if room_row_index > row:
                 return None, None, None
             for room_column_index, template_draw_item in enumerate(room_row):
