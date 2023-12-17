@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 import math
+from typing import List
 
 from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
@@ -10,6 +12,11 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
 from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
 )
+
+@dataclass
+class RoomMap:
+    name: str
+    rooms: List[List[TemplateDrawItem]]
 
 
 def get_template_draw_item(room_template, index):
@@ -68,9 +75,16 @@ def find_roommap(templates):
         room_map[y][x] = room
 
     room_map = []
+
     setroom_start = 0
 
-    for _, setroomtype in setrooms.items():
+    challenge_map = None
+
+    for name, setroomtype in setrooms.items():
+        setroom_map = []
+        room_map.append(RoomMap(name, setroom_map))
+        if challenge_map is None or name == "challenge":
+            challenge_map = setroom_map
         for matchedtemplate in setroomtype:
             match = matchedtemplate.setroom
             x, y = match.coords.x, match.coords.y
@@ -79,9 +93,9 @@ def find_roommap(templates):
                 matchedtemplate.template, templates.index(matchedtemplate.template)
             )
             if template_item:
-                set_room(room_map, x, setroom_start + y, template_item)
+                set_room(setroom_map, x, setroom_start + y, template_item)
 
-        setroom_start = len(room_map)
+        # setroom_start = len(setroom_map)
 
     template_map = {}
     for index, room_template in enumerate(templates):
@@ -89,7 +103,7 @@ def find_roommap(templates):
         if template_item:
             template_map[room_template.name] = template_item
 
-    path_start = setroom_start
+    path_start = 0
     entrance = template_map.get("entrance")
     entrance_drop = template_map.get("entrance_drop")
     path = template_map.get("path_normal")
@@ -102,125 +116,140 @@ def find_roommap(templates):
     path_tall = template_map.get("machine_tallroom_path")
     path_big = template_map.get("machine_bigroom_path")
 
-    more_rooms_start = path_start
+    more_rooms_start = 0
+
+    path_map = []
 
     if entrance:
-        set_room(room_map, 0, path_start, entrance)
+        set_room(path_map, 0, path_start, entrance)
         more_rooms_start = path_start + 1
     if path is None:
         if entrance_drop:
-            set_room(room_map, 1, path_start, entrance_drop)
+            set_room(path_map, 1, path_start, entrance_drop)
             more_rooms_start = path_start + 1
         if path_exit:
-            set_room(room_map, 2, path_start, path_exit)
+            set_room(path_map, 2, path_start, path_exit)
             more_rooms_start = path_start + 1
         if path_exit_notop:
-            set_room(room_map, 3, path_start, path_exit_notop)
+            set_room(path_map, 3, path_start, path_exit_notop)
             more_rooms_start = path_start + 1
     else:
         cw = 1
-        set_room(room_map, 1, path_start, path)
+        set_room(path_map, 1, path_start, path)
         if path_drop:
             cw = 2
-            set_room(room_map, 2, path_start, path_drop)
+            set_room(path_map, 2, path_start, path_drop)
         if entrance_drop:
-            set_room(room_map, cw + 1, path_start, entrance_drop)
+            set_room(path_map, cw + 1, path_start, entrance_drop)
         big_top = 1
         if path_wide:
             big_top = 2
-            set_room(room_map, 0, path_start + 1, path_wide)
+            set_room(path_map, 0, path_start + 1, path_wide)
         has_big = False
         if path_big:
             has_big = True
-            set_room(room_map, 0, path_start + big_top, path_big)
+            set_room(path_map, 0, path_start + big_top, path_big)
         if path_drop_notop:
-            set_room(room_map, 2, path_start + 1, path_drop_notop)
+            set_room(path_map, 2, path_start + 1, path_drop_notop)
         if path_notop:
-            set_room(room_map, 2, path_start + 2, path_notop)
+            set_room(path_map, 2, path_start + 2, path_notop)
         if path_tall:
-            set_room(room_map, 3, path_start + 1, path_tall)
+            set_room(path_map, 3, path_start + 1, path_tall)
         er, ec = 3, 2
         if not has_big:
             er, ec = 2, 0
         if path_exit:
-            set_room(room_map, ec, path_start + er, path_exit)
+            set_room(path_map, ec, path_start + er, path_exit)
             ec += 1
         if path_exit_notop:
-            set_room(room_map, ec, path_start + er, path_exit_notop)
+            set_room(path_map, ec, path_start + er, path_exit_notop)
         more_rooms_start = path_start + er + 1
 
     olmecship_room = template_map.get("olmecship_room")
     if olmecship_room:
         for i, room in enumerate(room_map[more_rooms_start - 1]):
             if room is None:
-                set_room(room_map, i, more_rooms_start - 1, olmecship_room)
+                set_room(path_map, i, more_rooms_start - 1, olmecship_room)
                 break
+
 
     challenge_entrance = template_map.get("challenge_entrance")
     challenge_special = template_map.get("challenge_special")
     challenge_bottom = template_map.get("challenge_bottom")
     entrancer, entrancec = None, None
+
+    if challenge_map is None:
+        challenge_map = path_map
+    more_rooms_start = len(challenge_map)
     if challenge_entrance:
-        for i, room in enumerate(room_map[more_rooms_start - 1]):
+        for i, room in enumerate(challenge_map[more_rooms_start - 1]):
             if room is None:
                 entrancer, entrancec = more_rooms_start - 1, i
-                set_room(room_map, i, more_rooms_start - 1, challenge_entrance)
+                set_room(challenge_map, i, more_rooms_start - 1, challenge_entrance)
                 break
         if entrancer is None:
             entrancer, entrancec = more_rooms_start, 0
-            set_room(room_map, 0, more_rooms_start, challenge_entrance)
+            set_room(challenge_map, 0, more_rooms_start, challenge_entrance)
             more_rooms_start += 1
 
     bottomr, bottomc = None, None
     if challenge_bottom:
         if entrancer is not None and entrancec is not None:
-            set_room(room_map, entrancec, entrancer + 1, challenge_bottom)
+            set_room(challenge_map, entrancec, entrancer + 1, challenge_bottom)
             bottomr, bottomc = entrancer + 1, entrancec
             more_rooms_start += 1
         else:
-            set_room(room_map, 0, more_rooms_start, challenge_bottom)
+            set_room(challenge_map, 0, more_rooms_start, challenge_bottom)
             bottomr, bottomc = more_rooms_start, 0
             more_rooms_start += 1
 
     if challenge_special:
         if bottomc is not None and bottomr is not None:
             set_room(
-                room_map,
-                bottomc < len(room_map[0]) and bottomc + 1 or bottomc - 1,
+                challenge_map,
+                bottomc < len(challenge_map[0]) and bottomc + 1 or bottomc - 1,
                 bottomr,
                 challenge_special,
             )
         elif entrancer is not None and entrancec is not None:
             cr, cc = entrancer + 1, entrancec
             if (
-                entrancec < len(room_map[entrancer])
-                and room_map[entrancer][entrancec + 1] is None
+                entrancec < len(challenge_map[entrancer])
+                and challenge_map[entrancer][entrancec + 1] is None
             ):
                 cr, cc = entrancer, entrancec + 1
-            elif entrancec > 0 and room_map[entrancer][entrancec - 1] is None:
+            elif entrancec > 0 and challenge_map[entrancer][entrancec - 1] is None:
                 cr, cc = entrancer, entrancec - 1
-            set_room(room_map, cc, cr, challenge_special)
+            set_room(challenge_map, cc, cr, challenge_special)
             more_rooms_start = cr + 1
         else:
-            set_room(room_map, 0, more_rooms_start, challenge_special)
+            set_room(challenge_map, 0, more_rooms_start, challenge_special)
             more_rooms_start += 1
+
+    if len(path_map) > 0:
+        room_map.append(RoomMap("path", path_map))
+
+
+    other_rooms_map = []
 
     bigroom_side = template_map.get("machine_bigroom_side")
     wideroom_side = template_map.get("machine_wideroom_side")
     tallroom_side = template_map.get("machine_tallroom_side")
     side = template_map.get("side")
 
+    more_rooms_start = 0
+
     sideroomsc, sideroomsr = 0, 0
     sider, sidec = 0, 0
     highest_room = 0
     if bigroom_side:
-        set_room(room_map, 0, more_rooms_start, bigroom_side)
+        set_room(other_rooms_map, 0, more_rooms_start, bigroom_side)
         sideroomsc = 2
         sideroomsr = 2
         sider, sidec = 0, 2
         highest_room = 2
     if tallroom_side:
-        set_room(room_map, sideroomsc, more_rooms_start, tallroom_side)
+        set_room(other_rooms_map, sideroomsc, more_rooms_start, tallroom_side)
         sideroomsr = 2
         sideroomsc += 1
         sider, sidec = 0, sideroomsc
@@ -233,9 +262,9 @@ def find_roommap(templates):
             sider, sidec = wider + 1, widec
         if wider + 1 > highest_room:
             highest_room = wider + 1
-        set_room(room_map, widec, more_rooms_start + wider, wideroom_side)
+        set_room(other_rooms_map, widec, more_rooms_start + wider, wideroom_side)
     if side:
-        set_room(room_map, sidec, more_rooms_start + sider, side)
+        set_room(other_rooms_map, sidec, more_rooms_start + sider, side)
         if sider + 1 > highest_room:
             highest_room = sider + 1
 
@@ -257,7 +286,7 @@ def find_roommap(templates):
         top_room = template_map.get(room_pair[0])
         r = 0
         if top_room:
-            set_room(room_map, vertical_room_column, more_rooms_start, top_room)
+            set_room(other_rooms_map, vertical_room_column, more_rooms_start, top_room)
             r = 1
             if vertical_max_height == 0:
                 vertical_max_height = 1
@@ -265,7 +294,7 @@ def find_roommap(templates):
         if bottom_room:
             if vertical_max_height < r + 1:
                 vertical_max_height = r + 1
-            set_room(room_map, vertical_room_column, more_rooms_start + r, bottom_room)
+            set_room(other_rooms_map, vertical_room_column, more_rooms_start + r, bottom_room)
         if top_room is not None or bottom_room is not None:
             vertical_room_column += 1
 
@@ -324,20 +353,23 @@ def find_roommap(templates):
             for row in range(more_rooms_start, more_rooms_bottom + 1):
                 if added_room:
                     break
-                if len(room_map) <= row:
+                if len(other_rooms_map) <= row:
                     break
-                for col, template_item in enumerate(room_map[row]):
+                for col, template_item in enumerate(other_rooms_map[row]):
                     if template_item is None:
-                        set_room(room_map, col, row, room)
+                        set_room(other_rooms_map, col, row, room)
                         added_room = True
                         break
 
             if not added_room:
-                if len(room_map) > 0 and len(room_map[0]) < 3:
-                    set_room(room_map, len(room_map[0]), more_rooms_start, room)
+                if len(other_rooms_map) > 0 and len(other_rooms_map[0]) < 3:
+                    set_room(other_rooms_map, len(other_rooms_map[0]), more_rooms_start, room)
                 else:
                     more_rooms_start = more_rooms_bottom + 1
                     more_rooms_bottom = more_rooms_start
-                    set_room(room_map, 0, more_rooms_start, room)
+                    set_room(other_rooms_map, 0, more_rooms_start, room)
+
+    if len(other_rooms_map) > 0:
+        room_map.append(RoomMap("other", other_rooms_map))
 
     return room_map

@@ -1,10 +1,15 @@
+from dataclasses import dataclass
 from collections import namedtuple
 from enum import Enum
 import re
 
 RoomCoords = namedtuple("RoomCoords", ["x", "y"])
-MatchedSetroom = namedtuple("MatchedSetroom", ["name", "coords"])
+MatchedSetroom = namedtuple("MatchedSetroom", ["name", "template", "coords"])
 
+@dataclass
+class BaseTemplateData:
+    name: str
+    template: str
 
 class VANILLA_SETROOM_TYPE(Enum):
     NONE = "none"
@@ -14,9 +19,12 @@ class VANILLA_SETROOM_TYPE(Enum):
 
 
 class BaseTemplate:
-    setroom = "setroom{y}-{x}"
-    challenge = "challenge_{y}-{x}"
-    palace = "palaceofpleasure_{y}-{x}"
+    setroom = BaseTemplateData("setroom", "setroom{y}-{x}")
+    challenge = BaseTemplateData("challenge", "challenge_{y}-{x}")
+    palace = BaseTemplateData("palace of pleasure", "palaceofpleasure_{y}-{x}")
+    # setroom = {"name":"setroom", "template":"setroom{y}-{x}"}
+    # challenge = {"name":"challenge", "template":"challenge_{y}-{x}"}
+    # palace = {"name":"palace of pleasure", "template":"palaceofpleasure_{y}-{x}"}
 
 
 class Setroom:
@@ -36,9 +44,9 @@ class Setroom:
     @staticmethod
     def find_setroom_in_list(template_list, room):
         for setroom in template_list:
-            match = Setroom.match_setroom(setroom, room)
+            match = Setroom.match_setroom(setroom.template, room)
             if match:
-                return MatchedSetroom(setroom, match)
+                return MatchedSetroom(setroom.name, setroom.template, match)
         return None
 
     @staticmethod
