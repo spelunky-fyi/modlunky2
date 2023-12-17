@@ -432,6 +432,33 @@ class VanillaLevelEditor(ttk.Frame):
                 self.tile_palette_ref_in_use.append(tilecode_item)
                 self.tile_palette_map[tilecode.value] = tilecode_item
 
+        # Populate the default tile code for left clicks.
+        if "1" in self.tile_palette_map:
+            # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
+            tile = self.tile_palette_map["1"]
+            self.palette_panel.select_tile(tile[0], tile[2], True)
+        elif len(self.tile_palette_ref_in_use) > 0:
+            # If there is no "1" tile, just populate with the first tile.
+            tile = self.tile_palette_ref_in_use[0]
+            self.palette_panel.select_tile(tile[0], tile[2], True)
+            secondary_backup_index = 1
+
+        # Populate the default tile code for right clicks.
+        if "0" in self.tile_palette_map:
+            # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
+            tile = self.tile_palette_map["0"]
+            self.palette_panel.select_tile(tile[0], tile[2], False)
+        elif len(self.tile_palette_ref_in_use) > secondary_backup_index:
+            # If there is not a "0" tile code, populate with the second tile code if the
+            # primary tile code was populated from the first one.
+            tile = self.tile_palette_ref_in_use[secondary_backup_index]
+            self.palette_panel.select_tile(tile[0], tile[2], False)
+        elif len(self.tile_palette_ref_in_use) > 0:
+            # If there are only one tile code available, populate both right and
+            # left click with it.
+            tile = self.tile_palette_ref_in_use[0]
+            self.palette_panel.select_tile(tile[0], tile[2], False)
+
         if level is None:
             return
 
