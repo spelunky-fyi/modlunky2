@@ -195,7 +195,13 @@ class MultiRoomEditorTab(ttk.Frame):
                 mappy.append(
                     RoomMap(
                         segment.name,
-                        [[get_template_draw_item_named(template_name) for template_name in row] for row in segment.templates]
+                        [
+                            [
+                                get_template_draw_item_named(template_name)
+                                for template_name in row
+                            ]
+                            for row in segment.templates
+                        ],
                     )
                 )
             return mappy

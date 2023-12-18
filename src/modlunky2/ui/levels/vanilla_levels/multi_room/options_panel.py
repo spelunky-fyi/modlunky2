@@ -622,11 +622,12 @@ class OptionsPanel(ttk.Frame):
         settings_row += 1
 
         self.layout_frame = tk.Frame(self.scrollview.scrollable_frame)
-        self.layout_frame.grid(row=settings_row, column=0, sticky="news", padx=10, pady=10)
+        self.layout_frame.grid(
+            row=settings_row, column=0, sticky="news", padx=10, pady=10
+        )
 
         self.layout_label = tk.Label(self.layout_frame, text="Layout:")
         self.layout_label.grid(row=0, column=0, sticky="w")
-
 
         self.layout_combobox = ttk.Combobox(self.layout_frame, height=25)
         self.layout_combobox.grid(row=0, column=1, sticky="nsw", padx=(0, 10))
@@ -640,7 +641,9 @@ class OptionsPanel(ttk.Frame):
         self.layout_combobox.grid_remove()
         self.layout_label.grid_remove()
 
-        self.save_layout_button = tk.Button(self.layout_frame, text="Save layout", command=self.save_room_map)
+        self.save_layout_button = tk.Button(
+            self.layout_frame, text="Save layout", command=self.save_room_map
+        )
         self.save_layout_button.grid(row=0, column=2, sticky="w")
         self.save_layout_button.grid_remove()
         self.layout_frame.grid_remove()
@@ -681,7 +684,6 @@ class OptionsPanel(ttk.Frame):
         self.room_options.grid(row=settings_row, column=0, sticky="news")
         self.room_options.grid_remove()
 
-
     def save_room_map(self):
         win = PopupWindow("Save Layout", self.modlunky_config)
 
@@ -700,7 +702,10 @@ class OptionsPanel(ttk.Frame):
             for template_map in self.room_map:
                 segment = CustomRoomMapSegment(
                     template_map.name,
-                    [[room.template.name if room else "" for room in row] for row in template_map.rooms]
+                    [
+                        [room.template.name if room else "" for room in row]
+                        for row in template_map.rooms
+                    ],
                 )
                 segments.append(segment)
             room_map = CustomRoomMap(col1_ent.get(), segments)
@@ -709,7 +714,9 @@ class OptionsPanel(ttk.Frame):
                 level_room_maps = []
             level_room_maps.append(room_map)
             self.modlunky_config.custom_room_maps[self.lvl] = level_room_maps
-            self.modlunky_config.default_custom_room_maps[self.lvl] = len(level_room_maps) - 1
+            self.modlunky_config.default_custom_room_maps[self.lvl] = (
+                len(level_room_maps) - 1
+            )
             self.modlunky_config.save()
             self.update_layouts()
 
@@ -763,7 +770,9 @@ class OptionsPanel(ttk.Frame):
             self.layout_combobox.grid()
             self.layout_label.grid()
             self.layout_frame.grid()
-            self.layout_combobox["values"] = ["Default"] + [map.name for map in level_room_maps]
+            self.layout_combobox["values"] = ["Default"] + [
+                map.name for map in level_room_maps
+            ]
             default_layout = self.modlunky_config.default_custom_room_maps.get(self.lvl)
             layout_index = default_layout + 1 if default_layout is not None else 0
             self.layout_combobox.current(layout_index)
