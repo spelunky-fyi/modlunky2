@@ -206,6 +206,7 @@ class CustomLevelSaveFormat:
     def vanilla(cls):
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
+
 @serialize(rename_all="kebabcase")
 @deserialize(rename_all="kebabcase")
 @dataclass
