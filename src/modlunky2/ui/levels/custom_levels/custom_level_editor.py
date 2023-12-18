@@ -664,16 +664,16 @@ class CustomLevelEditor(ttk.Frame):
         return ref_tile
 
     def delete_tilecode(self, tile_name, tile_code):
+        if tile_name == r"empty":
+            tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
+            return False
+
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air.",
             icon="warning",
         )
         if msg_box == "yes":
-            if tile_name == r"empty":
-                tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
-                return
-
             new_tile = self.tile_palette_map["0"]
             for matrix_index, tile_code_matrix in enumerate(self.tile_codes):
                 for row in range(len(tile_code_matrix)):
@@ -696,6 +696,10 @@ class CustomLevelEditor(ttk.Frame):
 
             self.log_codes_left()
             self.changes_made()
+
+            return True
+        else:
+            return False
 
     def log_codes_left(self):
         codes = ""
