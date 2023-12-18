@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from modlunky2.config import Config
+from modlunky2.config import Config, CustomRoomMap, CustomRoomMapSegment
 from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.levels.vanilla_levels.multi_room.reversed_rooms import REVERSED_ROOMS
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy
@@ -503,6 +503,7 @@ class OptionsPanel(ttk.Frame):
         on_update_hide_grid_lines,
         on_update_hide_room_lines,
         on_update_zoom_level,
+        on_select_layout,
         on_change_template_at,
         on_clear_template,
         on_select_room,
@@ -520,6 +521,7 @@ class OptionsPanel(ttk.Frame):
         self.on_update_hide_grid_lines = on_update_hide_grid_lines
         self.on_update_hide_room_lines = on_update_hide_room_lines
         self.on_update_zoom_level = on_update_zoom_level
+        self.on_select_layout = on_select_layout
         self.on_change_template_at = on_change_template_at
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
@@ -536,6 +538,7 @@ class OptionsPanel(ttk.Frame):
 
         self.room_map = []
         self.templates = []
+        self.lvl = None
 
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
@@ -618,6 +621,32 @@ class OptionsPanel(ttk.Frame):
 
         settings_row += 1
 
+        self.layout_frame = tk.Frame(self.scrollview.scrollable_frame)
+        self.layout_frame.grid(row=settings_row, column=0, sticky="news", padx=10, pady=10)
+
+        self.layout_label = tk.Label(self.layout_frame, text="Layout:")
+        self.layout_label.grid(row=0, column=0, sticky="w")
+
+
+        self.layout_combobox = ttk.Combobox(self.layout_frame, height=25)
+        self.layout_combobox.grid(row=0, column=1, sticky="nsw", padx=(0, 10))
+        self.layout_combobox["values"] = ["Default"]
+        self.layout_combobox.set("Default")
+        self.layout_combobox["state"] = "readonly"
+        self.layout_combobox.bind(
+            "<<ComboboxSelected>>", lambda _: self.select_layout()
+        )
+
+        self.layout_combobox.grid_remove()
+        self.layout_label.grid_remove()
+
+        self.save_layout_button = tk.Button(self.layout_frame, text="Save layout", command=self.save_room_map)
+        self.save_layout_button.grid(row=0, column=2, sticky="w")
+        self.save_layout_button.grid_remove()
+        self.layout_frame.grid_remove()
+
+        settings_row += 1
+
         self.room_type_frame = tk.Frame(self.scrollview.scrollable_frame)
         self.room_type_frame.grid(
             row=settings_row, column=0, sticky="news", padx=10, pady=10
@@ -652,18 +681,105 @@ class OptionsPanel(ttk.Frame):
         self.room_options.grid(row=settings_row, column=0, sticky="news")
         self.room_options.grid_remove()
 
+
+    def save_room_map(self):
+        win = PopupWindow("Save Layout", self.modlunky_config)
+
+        item_name = ""
+
+        col1_lbl = ttk.Label(win, text="Name: ")
+        col1_ent = ttk.Entry(win)
+        col1_ent.insert(0, item_name)  # Default to rooms current name
+        col1_lbl.grid(row=0, column=0, padx=2, pady=2, sticky="nse")
+        col1_ent.grid(row=0, column=1, padx=2, pady=2, sticky="news")
+
+        def save_and_destroy():
+            if col1_ent.get() == "":
+                return
+            segments = []
+            for template_map in self.room_map:
+                segment = CustomRoomMapSegment(
+                    template_map.name,
+                    [[room.template.name if room else "" for room in row] for row in template_map.rooms]
+                )
+                segments.append(segment)
+            room_map = CustomRoomMap(col1_ent.get(), segments)
+            level_room_maps = self.modlunky_config.custom_room_maps.get(self.lvl)
+            if level_room_maps is None:
+                level_room_maps = []
+            level_room_maps.append(room_map)
+            self.modlunky_config.custom_room_maps[self.lvl] = level_room_maps
+            self.modlunky_config.default_custom_room_maps[self.lvl] = len(level_room_maps) - 1
+            self.modlunky_config.save()
+            self.update_layouts()
+
+            win.destroy()
+
+        separator = ttk.Separator(win)
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="news")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=2, column=0, columnspan=2, sticky="news")
+        buttons.columnconfigure(0, weight=1)
+        buttons.columnconfigure(1, weight=1)
+
+        ok_button = ttk.Button(buttons, text="Save", command=save_and_destroy)
+        ok_button.grid(row=0, column=0, pady=5, sticky="news")
+
+        cancel_button = ttk.Button(buttons, text="Cancel", command=win.destroy)
+        cancel_button.grid(row=0, column=1, pady=5, sticky="news")
+
     def update_room_map_template(self, template_index, map_index, row, column):
         template = self.templates[template_index]
         self.on_change_template_at(map_index, row, column, template, template_index)
+        self.layout_frame.grid()
+        self.save_layout_button.grid()
 
     def clear_template(self, map_index, row, column):
         self.on_clear_template(map_index, row, column)
+        self.layout_frame.grid()
+        self.save_layout_button.grid()
 
     def reset(self):
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
         self.room_options.grid_remove()
         self.room_options.reset()
+        self.layout_frame.grid_remove()
+        self.save_layout_button.grid_remove()
+
+    def select_layout(self):
+        selected_layout = self.layout_combobox.current()
+        if selected_layout is None:
+            selected_layout = 0
+
+        self.modlunky_config.default_custom_room_maps[self.lvl] = selected_layout - 1
+        self.on_select_layout(selected_layout - 1)
+        self.modlunky_config.save()
+
+    def update_layouts(self):
+        level_room_maps = self.modlunky_config.custom_room_maps.get(self.lvl)
+        if level_room_maps is not None and len(level_room_maps) > 0:
+            self.layout_combobox.grid()
+            self.layout_label.grid()
+            self.layout_frame.grid()
+            self.layout_combobox["values"] = ["Default"] + [map.name for map in level_room_maps]
+            default_layout = self.modlunky_config.default_custom_room_maps.get(self.lvl)
+            layout_index = default_layout + 1 if default_layout is not None else 0
+            self.layout_combobox.current(layout_index)
+            self.layout_combobox.set(self.layout_combobox["values"][layout_index])
+        else:
+            self.layout_combobox.grid_remove()
+            self.layout_label.grid_remove()
+
+    def set_lvl(self, lvl):
+        self.lvl = lvl
+        self.layout_frame.grid_remove()
+        self.save_layout_button.grid_remove()
+        self.layout_combobox.grid_remove()
+        self.layout_label.grid_remove()
+
+        self.update_layouts()
 
     def set_templates(self, room_map, templates):
         self.button_for_selected_room = None
