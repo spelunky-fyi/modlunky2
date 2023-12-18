@@ -919,6 +919,8 @@ class MultiRoomEditorTab(ttk.Frame):
                                 room_column_index,
                             )
 
+        self.canvas.update_scroll_region()
+
     def template_item_at(self, map_index, row, col):
         for room_row_index, room_row in enumerate(
             self.template_draw_map[map_index].rooms
