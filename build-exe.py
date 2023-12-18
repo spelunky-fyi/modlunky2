@@ -36,6 +36,7 @@ def run_pyinstaller(debug):
         [
             "--name=modlunky2",
             f"--icon={BASE_DIR / 'src/modlunky2/static/images/icon.ico'}",
+            "--collect-all", "tkinterDnD",
             "--clean",
             "--onedir",
             "--noconfirm",
