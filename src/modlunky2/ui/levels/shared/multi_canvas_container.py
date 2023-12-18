@@ -212,8 +212,8 @@ class MultiCanvasContainer(tk.Frame):
         self.scrollable_canvas.update_idletasks()
         self.scrollable_canvas.config(scrollregion=self.scrollable_frame.bbox("all"))
 
-        self.scrollable_canvas.xview_moveto(.5)
-        self.scrollable_canvas.yview_moveto(.2)
+        self.scrollable_canvas.xview_moveto(0.5)
+        self.scrollable_canvas.yview_moveto(0.2)
 
     def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
