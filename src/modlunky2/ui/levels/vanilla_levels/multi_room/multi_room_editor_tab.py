@@ -18,6 +18,7 @@ from modlunky2.ui.levels.vanilla_levels.multi_room.reversed_rooms import REVERSE
 from modlunky2.ui.levels.vanilla_levels.multi_room.room_map import (
     find_roommap,
     get_template_draw_item,
+    RoomMap,
 )
 from modlunky2.ui.levels.vanilla_levels.multi_room.template_draw_item import (
     TemplateDrawItem,
@@ -73,6 +74,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map = {}
         self.room_templates = []
         self.template_draw_map = []
+        self.default_draw_map = None
         self.reverse_layers = True
 
         self.zoom_level = zoom
@@ -146,6 +148,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.canvas.hide_grid_lines,
             self.canvas.hide_room_lines,
             self.__update_zoom_internal,
+            self.use_roommap_at,
             self.change_template_at,
             self.clear_template_at,
             self.change_room_at,
@@ -173,14 +176,36 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map[tile_name] = new_tile_image
         return new_tile_image
 
-    def open_lvl(self, lvl, biome, tile_palette_map, room_templates):
-        self.lvl = lvl
-        self.lvl_biome = biome
-        self.tile_palette_map = tile_palette_map
-        self.tile_image_map = {}
-        self.room_templates = room_templates
+    def use_roommap_at(self, index):
+        if self.lvl is None:
+            return
 
-        self.template_draw_map = find_roommap(room_templates)
+        def template_draw_map_for_roommap(room_map):
+            def get_template_draw_item_named(template_name):
+                if template_name is None:
+                    return None
+                for index, template in enumerate(self.room_templates):
+                    if template_name == template.name:
+                        return get_template_draw_item(template, index)
+
+                return None
+
+            mappy = []
+            for segment in room_map.segments:
+                mappy.append(
+                    RoomMap(
+                        segment.name,
+                        [[get_template_draw_item_named(template_name) for template_name in row] for row in segment.templates]
+                    )
+                )
+            return mappy
+
+        room_maps = self.modlunky_config.custom_room_maps.get(self.lvl)
+        if index is None or index == -1 or index >= len(room_maps):
+            self.template_draw_map = self.default_draw_map
+        else:
+            self.template_draw_map = template_draw_map_for_roommap(room_maps[index])
+
         self.canvas.grid_remove()
 
         self.canvas = MultiCanvasContainer(
@@ -200,8 +225,21 @@ class MultiRoomEditorTab(ttk.Frame):
         self.show_intro()
 
         self.options_panel.reset()
-        self.options_panel.set_templates(self.template_draw_map, room_templates)
+        self.options_panel.set_lvl(self.lvl)
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.draw_canvas()
+
+    def open_lvl(self, lvl, biome, tile_palette_map, room_templates):
+        self.lvl = lvl
+        self.lvl_biome = biome
+        self.tile_palette_map = tile_palette_map
+        self.tile_image_map = {}
+        self.room_templates = room_templates
+
+        self.default_draw_map = find_roommap(room_templates)
+        # self.template_draw_map = find_roommap(room_templates)
+
+        self.use_roommap_at(self.modlunky_config.default_custom_room_maps.get(self.lvl))
 
     def redraw(self):
         self.canvas.clear()
