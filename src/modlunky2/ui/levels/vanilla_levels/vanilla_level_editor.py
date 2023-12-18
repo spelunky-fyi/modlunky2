@@ -681,9 +681,7 @@ class VanillaLevelEditor(ttk.Frame):
 
         comment = str(chunk.comment).lstrip("/ ").strip()
 
-        return RoomInstance(
-            comment, settings, foreground_tiles, background_tiles
-        )
+        return RoomInstance(comment, settings, foreground_tiles, background_tiles)
 
     def convert_to_chunk(self, room_instance):
         bg = []
@@ -1017,7 +1015,7 @@ class VanillaLevelEditor(ttk.Frame):
                             x_coord,
                             y_coord,
                         )
-
+            self.canvas.update_scroll_region()
         else:
             self.canvas.clear()
             self.canvas.hide_canvas(1, True)

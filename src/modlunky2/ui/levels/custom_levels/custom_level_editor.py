@@ -555,6 +555,8 @@ class CustomLevelEditor(ttk.Frame):
         for index, tileset in enumerate(self.tile_codes):
             draw_layer(CanvasIndex(index, 0), tileset)
 
+        self.canvas.update_scroll_region()
+
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
     def canvas_click(self, canvas_index, row, column, is_primary):
