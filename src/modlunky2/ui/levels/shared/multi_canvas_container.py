@@ -48,6 +48,7 @@ class MultiCanvasContainer(tk.Frame):
 
         scrollable_frame = tk.Frame(scrollable_canvas, bg="#343434")
         scrollable_frame.grid(row=0, column=0, sticky="nswe")
+        self.scrollable_frame = scrollable_frame
 
         width = scrollable_canvas.winfo_screenwidth()
         height = scrollable_canvas.winfo_screenheight()
@@ -206,6 +207,10 @@ class MultiCanvasContainer(tk.Frame):
                 wraplength=600,
             )
             intro_label.place(relx=0.5, rely=0.5, anchor="center")
+
+    def update_scroll_region(self):
+        self.scrollable_canvas.update_idletasks()
+        self.scrollable_canvas.config(scrollregion=self.scrollable_frame.bbox("all"))
 
     def _on_mousewheel(self, event, hbar, vbar, canvas):
         scroll_dir = None
