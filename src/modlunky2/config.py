@@ -7,7 +7,7 @@ import logging
 import shutil
 import time
 from enum import Enum
-from typing import List, Optional, TypeVar, Set
+from typing import Dict, List, Optional, TypeVar, Set
 
 try:
     import winreg
@@ -181,6 +181,21 @@ class CustomLevelSaveFormat:
     def vanilla(cls):
         return cls("Vanilla setroom [warning]", "setroom{y}-{x}", False)
 
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
+@dataclass
+class CustomRoomMapSegment:
+    name: str
+    templates: List[List[str]]
+
+
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
+@dataclass
+class CustomRoomMap:
+    name: str
+    segments: List[CustomRoomMapSegment]
+
 
 @serialize(rename_all="kebabcase")
 @deserialize(rename_all="kebabcase")
@@ -222,6 +237,12 @@ class Config:
     )
     custom_level_editor_default_save_format: Optional[CustomLevelSaveFormat] = field(
         default=None, skip_if_default=True
+    )
+    custom_room_maps: Dict[str, List[CustomRoomMap]] = field(
+        default_factory=dict, skip_if_default=True
+    )
+    default_custom_room_maps: Dict[str, int] = field(
+        default_factory=dict, skip_if_default=True
     )
     command_prefix: Optional[List[str]] = field(default=None, skip_if_default=True)
     api_port: int = field(default=9526)
