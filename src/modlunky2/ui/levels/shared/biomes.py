@@ -75,6 +75,20 @@ class Biomes:
             return BIOME.VOLCANA
         elif lvl.startswith("volcano") or lvl.endswith("_volcano.lvl"):
             return BIOME.VOLCANA
+
+        dm_themes = [
+            BIOME.DWELLING,
+            BIOME.JUNGLE,
+            BIOME.VOLCANA,
+            BIOME.TIDE_POOL,
+            BIOME.TEMPLE,
+            BIOME.ICE_CAVES,
+            BIOME.NEO_BABYLON,
+            BIOME.SUNKEN_CITY,
+        ]
+        for x, themeselect in enumerate(dm_themes):
+            if lvl.startswith("dm" + str(x + 1)):
+                return themeselect
         return BIOME.DWELLING
 
     # Used for selecting a theme to get the theme code that
