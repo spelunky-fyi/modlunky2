@@ -409,17 +409,8 @@ class VanillaLevelEditor(ttk.Frame):
                 tilecode_item.append(ImageTk.PhotoImage(img))
                 tilecode_item.append(ImageTk.PhotoImage(selection_img))
 
-                self.palette_panel.select_tile(tilecode_item[0], tilecode_item[2], True)
-                self.palette_panel.select_tile(
-                    tilecode_item[0], tilecode_item[2], False
-                )
-
-                self.multi_room_editor_tab.select_tile(
-                    tilecode_item[0], tilecode_item[2], True
-                )
-                self.multi_room_editor_tab.select_tile(
-                    tilecode_item[0], tilecode_item[2], False
-                )
+                self.select_palette_tile(tilecode_item, True)
+                self.select_palette_tile(tilecode_item, False)
 
                 for i in self.tile_palette_ref_in_use:
                     if str(i[0]).split(" ", 1)[1] == str(tilecode.value):
@@ -435,28 +426,28 @@ class VanillaLevelEditor(ttk.Frame):
         if "1" in self.tile_palette_map:
             # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
             tile = self.tile_palette_map["1"]
-            self.palette_panel.select_tile(tile[0], tile[2], True)
+            self.select_palette_tile(tile, True)
         elif len(self.tile_palette_ref_in_use) > 0:
             # If there is no "1" tile, just populate with the first tile.
             tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel.select_tile(tile[0], tile[2], True)
+            self.select_palette_tile(tile, True)
             secondary_backup_index = 1
 
         # Populate the default tile code for right clicks.
         if "0" in self.tile_palette_map:
             # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
             tile = self.tile_palette_map["0"]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.select_palette_tile(tile, False)
         elif len(self.tile_palette_ref_in_use) > secondary_backup_index:
             # If there is not a "0" tile code, populate with the second tile code if the
             # primary tile code was populated from the first one.
             tile = self.tile_palette_ref_in_use[secondary_backup_index]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.select_palette_tile(tile, False)
         elif len(self.tile_palette_ref_in_use) > 0:
             # If there are only one tile code available, populate both right and
             # left click with it.
             tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.select_palette_tile(tile, False)
 
         if level is None:
             return
@@ -802,6 +793,9 @@ class VanillaLevelEditor(ttk.Frame):
         tile_code = self.tile_codes[canvas_index.canvas_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
+        self.select_palette_tile(tile, is_primary)
+
+    def select_palette_tile(self, tile, is_primary):
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
         self.multi_room_editor_tab.select_tile(tile[0], tile[2], is_primary)
 
