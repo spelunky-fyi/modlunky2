@@ -235,11 +235,15 @@ class PalettePanel(ttk.Frame):
             new_tile.grid(row=count_row, column=count_col)
             new_tile.bind(
                 "<Button-1>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                lambda event, r=count_row, c=count_col: self.tile_pick(
+                    event, r, c, True
+                ),
             )
             new_tile.bind(
                 "<Button-3>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                lambda event, r=count_row, c=count_col: self.tile_pick(
+                    event, r, c, False
+                ),
             )
 
             # Bind first ten tiles to number keys
@@ -247,11 +251,15 @@ class PalettePanel(ttk.Frame):
             if tile_index <= 10:
                 self.bind_all(
                     f"{tile_index%10}",
-                    lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                    lambda event, r=count_row, c=count_col: self.tile_pick(
+                        event, r, c, True
+                    ),
                 )
                 self.bind_all(
                     f"<Alt-Key-{tile_index%10}>",
-                    lambda event, r=count_row, c=count_col: self.tile_pick(event, r, c),
+                    lambda event, r=count_row, c=count_col: self.tile_pick(
+                        event, r, c, False
+                    ),
                 )
 
         if suggestions and len(suggestions):
@@ -303,11 +311,10 @@ class PalettePanel(ttk.Frame):
         self.new_tile_panel.reset()
         self.new_tile_panel.enable()
 
-    def tile_pick(self, event, row, col):
+    def tile_pick(self, event, row, col, is_primary):
         if not self.palette.scrollable_frame.grid_slaves(row, col):
             return
         selected_tile = self.palette.scrollable_frame.grid_slaves(row, col)[0]
-        is_primary = (event.num == 1) or (event.state & 0x20000 == 0)
         self.select_tile(
             selected_tile["text"], selected_tile["image"], is_primary, True
         )
