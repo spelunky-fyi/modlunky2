@@ -101,6 +101,7 @@ class VanillaLevelEditor(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
 
+        self.room_has_been_selected = False
         self.save_needed = False
         self.extracts_path = extracts_path
         self.packs_path = packs_path
@@ -1009,7 +1010,8 @@ class VanillaLevelEditor(ttk.Frame):
                             x_coord,
                             y_coord,
                         )
-            self.canvas.update_scroll_region()
+            self.canvas.update_scroll_region(not self.room_has_been_selected)
+            self.room_has_been_selected = True
         else:
             self.canvas.clear()
             self.canvas.hide_canvas(1, True)

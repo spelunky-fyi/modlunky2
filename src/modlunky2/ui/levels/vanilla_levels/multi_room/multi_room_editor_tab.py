@@ -176,7 +176,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map[tile_name] = new_tile_image
         return new_tile_image
 
-    def use_roommap_at(self, index):
+    def use_roommap_at(self, index, fresh = False):
         if self.lvl is None:
             return
 
@@ -233,7 +233,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.options_panel.reset()
         self.options_panel.set_lvl(self.lvl)
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
-        self.draw_canvas()
+        self.draw_canvas(fresh)
 
     def open_lvl(self, lvl, biome, tile_palette_map, room_templates):
         self.lvl = lvl
@@ -245,12 +245,12 @@ class MultiRoomEditorTab(ttk.Frame):
         self.default_draw_map = find_roommap(room_templates)
         # self.template_draw_map = find_roommap(room_templates)
 
-        self.use_roommap_at(self.modlunky_config.default_custom_room_maps.get(self.lvl))
+        self.use_roommap_at(self.modlunky_config.default_custom_room_maps.get(self.lvl), True)
 
     def redraw(self):
         self.canvas.clear()
         self.show_intro()
-        self.draw_canvas()
+        self.draw_canvas(False)
 
     def toggle_reverse_layers(self, reverse):
         self.reverse_layers = reverse
@@ -832,7 +832,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.hide_intro()
         self.editor_container.columnconfigure(2, minsize=17)
 
-    def draw_canvas(self):
+    def draw_canvas(self, fresh):
         if len(self.template_draw_map) == 0:
             return
 
@@ -963,7 +963,7 @@ class MultiRoomEditorTab(ttk.Frame):
                                 room_column_index,
                             )
 
-        self.canvas.update_scroll_region()
+        self.canvas.update_scroll_region(fresh)
 
     def template_item_at(self, map_index, row, col):
         for room_row_index, room_row in enumerate(
