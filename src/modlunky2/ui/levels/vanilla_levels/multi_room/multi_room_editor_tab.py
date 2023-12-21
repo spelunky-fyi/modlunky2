@@ -145,8 +145,8 @@ class MultiRoomEditorTab(ttk.Frame):
             side_panel_tab_control,
             modlunky_config,
             self.zoom_level,
-            self.canvas.hide_grid_lines,
-            self.canvas.hide_room_lines,
+            self.hide_grid_lines,
+            self.hide_room_lines,
             self.__update_zoom_internal,
             self.use_roommap_at,
             self.change_template_at,
@@ -258,6 +258,12 @@ class MultiRoomEditorTab(ttk.Frame):
 
     def update_templates(self):
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+
+    def hide_grid_lines(self, hide_grid_lines):
+        self.canvas.hide_grid_lines(hide_grid_lines)
+
+    def hide_room_lines(self, hide_room_lines):
+        self.canvas.hide_room_lines(hide_room_lines)
 
     def update_zoom_level(self, zoom):
         self.options_panel.update_zoom_level(zoom)
