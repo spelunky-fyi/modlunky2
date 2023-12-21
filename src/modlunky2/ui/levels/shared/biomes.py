@@ -70,7 +70,7 @@ class Biomes:
         elif lvl.startswith("ice") or lvl.endswith("_icecavesarea.lvl"):
             return BIOME.ICE_CAVES
         elif lvl.startswith("olmec"):
-            return BIOME.JUNGLE
+            return BIOME.OLMEC
         elif lvl.startswith("vlad"):
             return BIOME.VOLCANA
         elif lvl.startswith("volcano") or lvl.endswith("_volcano.lvl"):
