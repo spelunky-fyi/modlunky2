@@ -14,6 +14,7 @@ class RoomOptions(ttk.Frame):
         on_select_template,
         on_clear_template,
         on_select_room,
+        on_select_random_room,
         on_flip_setting,
         on_duplicate_room,
         on_rename_room,
@@ -29,6 +30,7 @@ class RoomOptions(ttk.Frame):
         self.on_select_template = on_select_template
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
+        self.on_select_random_room = on_select_random_room
         self.on_flip_setting = on_flip_setting
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
@@ -104,12 +106,23 @@ class RoomOptions(ttk.Frame):
 
         template_setting_row += 1
 
-        self.room_combobox = ttk.Combobox(self.template_container, height=25)
-        self.room_combobox.grid(row=template_setting_row, column=0, sticky="nsw")
+        room_combo_container = tk.Frame(self.template_container)
+        room_combo_container.grid(row=template_setting_row, column=0, sticky="news")
+
+        self.room_combobox = ttk.Combobox(room_combo_container, height=25)
+        self.room_combobox.grid(row=0, column=0, sticky="nsw")
         self.room_combobox["values"] = []
         self.room_combobox.set("")
         self.room_combobox["state"] = "readonly"
         self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
+
+        randomize_room_button = ttk.Button(room_combo_container, text="Random", command=self.random_room)
+        randomize_room_button.grid(row=0, column=1, sticky="w")
+
+        template_setting_row += 1
+
+        randomize_all_button = ttk.Button(self.template_container, text="Randomize All", command=self.randomize_all)
+        randomize_all_button.grid(row=template_setting_row, column=0, sticky="w")
 
         template_setting_row += 1
 
@@ -338,6 +351,12 @@ class RoomOptions(ttk.Frame):
             self.current_template_column,
         )
 
+    def random_room(self):
+        self.on_select_random_room(self.current_template_map_index, self.current_template_row, self.current_template_column)
+
+    def randomize_all(self):
+        self.on_select_random_room()
+
     def duplicate_room(self):
         self.on_duplicate_room(
             self.current_template_map_index,
@@ -507,6 +526,7 @@ class OptionsPanel(ttk.Frame):
         on_change_template_at,
         on_clear_template,
         on_select_room,
+        on_select_random_room,
         on_flip_setting,
         on_duplicate_room,
         on_rename_room,
@@ -525,6 +545,7 @@ class OptionsPanel(ttk.Frame):
         self.on_change_template_at = on_change_template_at
         self.on_clear_template = on_clear_template
         self.on_select_room = on_select_room
+        self.on_select_random_room = on_select_random_room
         self.on_flip_setting = on_flip_setting
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
@@ -675,6 +696,7 @@ class OptionsPanel(ttk.Frame):
             self.update_room_map_template,
             self.clear_template,
             self.on_select_room,
+            self.on_select_random_room,
             self.on_flip_setting,
             self.on_duplicate_room,
             self.on_rename_room,

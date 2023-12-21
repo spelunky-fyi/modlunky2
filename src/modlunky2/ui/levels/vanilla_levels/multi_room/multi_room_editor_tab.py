@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import math
 from PIL import Image, ImageTk
+import random
 import tkinter as tk
 from tkinter import ttk
 
@@ -152,6 +153,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.change_template_at,
             self.clear_template_at,
             self.change_room_at,
+            self.select_random_room,
             self.room_setting_change_at,
             self.duplicate_room,
             self.rename_room,
@@ -510,6 +512,42 @@ class MultiRoomEditorTab(ttk.Frame):
 
             for r in current_map:
                 r.pop()
+
+        self.options_panel.set_templates(self.template_draw_map, self.room_templates)
+        self.redraw()
+
+    def select_random_room(self, map_index=None, row=None, col=None):
+        def select_random_room_at(mi, r, c):
+            template_item = self.template_draw_map[mi].rooms[r][c]
+            if template_item is None:
+                return
+
+
+            valid_rooms = [
+                index
+                for index, room in enumerate(template_item.template.rooms)
+                if TemplateSetting.IGNORE not in room.settings
+            ]
+
+            if len(valid_rooms) == 0:
+                return
+
+            chunk_index = random.choice(valid_rooms)
+            chunk = template_item.template.rooms[chunk_index]
+
+            if chunk is not None:
+                template_item.room_index = chunk_index
+                template_item.room_chunk = chunk
+
+        if map_index is None or row is None or col is None:
+            for mi, tmap in enumerate(self.template_draw_map):
+                for r, row in enumerate(tmap.rooms):
+                    for c, room in enumerate(row):
+                        select_random_room_at(mi, r, c)
+        else:
+            select_random_room_at(map_index, row, col)
+
+
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
