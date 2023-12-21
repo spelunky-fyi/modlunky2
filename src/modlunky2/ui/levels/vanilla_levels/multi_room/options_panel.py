@@ -116,13 +116,19 @@ class RoomOptions(ttk.Frame):
         self.room_combobox["state"] = "readonly"
         self.room_combobox.bind("<<ComboboxSelected>>", lambda _: self.select_room())
 
-        randomize_room_button = ttk.Button(room_combo_container, text="Random", command=self.random_room)
-        randomize_room_button.grid(row=0, column=1, sticky="w")
+        randomize_room_button = ttk.Button(
+            room_combo_container, text="Random", command=self.random_room
+        )
+        randomize_room_button.grid(row=0, column=1, sticky="w", padx=10)
 
         template_setting_row += 1
 
-        randomize_all_button = ttk.Button(self.template_container, text="Randomize All", command=self.randomize_all)
-        randomize_all_button.grid(row=template_setting_row, column=0, sticky="w")
+        randomize_all_button = ttk.Button(
+            self.template_container, text="Randomize All", command=self.randomize_all
+        )
+        randomize_all_button.grid(
+            row=template_setting_row, column=0, sticky="w", pady=10
+        )
 
         template_setting_row += 1
 
@@ -352,7 +358,11 @@ class RoomOptions(ttk.Frame):
         )
 
     def random_room(self):
-        self.on_select_random_room(self.current_template_map_index, self.current_template_row, self.current_template_column)
+        self.on_select_random_room(
+            self.current_template_map_index,
+            self.current_template_row,
+            self.current_template_column,
+        )
 
     def randomize_all(self):
         self.on_select_random_room()

@@ -178,7 +178,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.tile_image_map[tile_name] = new_tile_image
         return new_tile_image
 
-    def use_roommap_at(self, index, fresh = False):
+    def use_roommap_at(self, index, fresh=False):
         if self.lvl is None:
             return
 
@@ -247,7 +247,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.default_draw_map = find_roommap(room_templates)
         # self.template_draw_map = find_roommap(room_templates)
 
-        self.use_roommap_at(self.modlunky_config.default_custom_room_maps.get(self.lvl), True)
+        self.use_roommap_at(
+            self.modlunky_config.default_custom_room_maps.get(self.lvl), True
+        )
 
     def redraw(self):
         self.canvas.clear()
@@ -522,7 +524,6 @@ class MultiRoomEditorTab(ttk.Frame):
             if template_item is None:
                 return
 
-
             valid_rooms = [
                 index
                 for index, room in enumerate(template_item.template.rooms)
@@ -546,8 +547,6 @@ class MultiRoomEditorTab(ttk.Frame):
                         select_random_room_at(mi, r, c)
         else:
             select_random_room_at(map_index, row, col)
-
-
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
