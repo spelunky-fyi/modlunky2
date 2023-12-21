@@ -439,7 +439,7 @@ class CustomLevelEditor(ttk.Frame):
         ]
 
         # Fetch the images for each tile and draw them in the canvases.
-        self.draw_canvas()
+        self.draw_canvas(True)
 
     def populate_tilecode_palette(self):
         self.palette_panel.update_with_palette(
@@ -510,7 +510,7 @@ class CustomLevelEditor(ttk.Frame):
                 ending = match.group("end")
                 return begin + "{y}" + mid + "{x}" + ending
 
-    def draw_canvas(self):
+    def draw_canvas(self, fresh):
         width = self.lvl_width
         height = self.lvl_height
         theme = self.lvl_biome
@@ -555,7 +555,7 @@ class CustomLevelEditor(ttk.Frame):
         for index, tileset in enumerate(self.tile_codes):
             draw_layer(CanvasIndex(index, 0), tileset)
 
-        self.canvas.update_scroll_region()
+        self.canvas.update_scroll_region(fresh)
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
@@ -727,7 +727,7 @@ class CustomLevelEditor(ttk.Frame):
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
         self.populate_tilecode_palette()
         # Draw the grid now that we have the newly textured tiles.
-        self.draw_canvas()
+        self.draw_canvas(False)
 
         self.changes_made()
 
@@ -800,7 +800,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_width = width
         self.lvl_height = height
         self.changes_made()
-        self.draw_canvas()
+        self.draw_canvas(False)
 
     def update_zoom(self, zoom):
         self.zoom_level = zoom
@@ -816,7 +816,7 @@ class CustomLevelEditor(ttk.Frame):
                     )
                 )
             self.canvas.set_zoom(zoom)
-            self.draw_canvas()
+            self.draw_canvas(False)
 
     def set_current_save_format(self, save_format):
         self.current_save_format = save_format
