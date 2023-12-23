@@ -132,6 +132,7 @@ class CustomLevelEditor(ttk.Frame):
             self.canvas_shiftclick,
             self.canvas_fill,
             self.canvas_fill_type,
+            self.canvas_move,
             "Select a level file to begin editing",
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
@@ -613,6 +614,53 @@ class CustomLevelEditor(ttk.Frame):
                         y_offset,
                     )
                     self.tile_codes[canvas_index.tab_index][r][c] = tile_code
+        self.changes_made()
+
+    def canvas_move(self, canvas_index, tiles, dist_x, dist_y):
+        replacement_tiles = [
+            (tile.x, tile.y, self.tile_codes[canvas_index.tab_index][tile.y][tile.x])
+            for tile in tiles
+        ]
+        empty = None
+        for tile_ref in self.tile_palette_ref_in_use:
+            tile_name = str(tile_ref[0].split(" ", 2)[0])
+            tile_code = str(tile_ref[0].split(" ", 2)[1])
+            if tile_name == "empty":
+                empty = tile_code
+
+        # If we didn't find an "empty" tile code, create one and use it.
+        if not empty:
+            empty = self.add_tilecode(
+                "empty",
+                "100",
+                "empty",
+            )[0].split(
+                " ", 2
+            )[1]
+
+        for origin_x, origin_y, tile_code in replacement_tiles:
+            self.canvas.replace_tile_at(
+                canvas_index, origin_y, origin_x, self.tile_palette_map[empty][1]
+            )
+            self.tile_codes[canvas_index.tab_index][origin_y][origin_x] = empty
+
+        for origin_x, origin_y, tile_code in replacement_tiles:
+            new_x = origin_x + dist_x
+            new_y = origin_y + dist_y
+            tile = self.tile_palette_map[tile_code]
+            x_offset, y_offset = self.offset_for_tile(
+                tile[0].split(" ", 2)[0], tile_code, self.zoom_level
+            )
+
+            self.canvas.replace_tile_at(
+                canvas_index,
+                new_y,
+                new_x,
+                tile[1],
+                x_offset,
+                y_offset,
+            )
+            self.tile_codes[canvas_index.tab_index][new_y][new_x] = tile_code
         self.changes_made()
 
     def select_tool(self, tool):

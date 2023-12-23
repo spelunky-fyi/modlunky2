@@ -25,6 +25,7 @@ class MultiCanvasContainer(tk.Frame):
         on_shiftclick=None,
         on_fill=None,
         on_fill_type=None,
+        on_move=None,
         intro_text=None,
         vertical=False,
         *args,
@@ -36,6 +37,7 @@ class MultiCanvasContainer(tk.Frame):
         self.on_shiftclick = on_shiftclick
         self.on_fill = on_fill
         self.on_fill_type = on_fill_type
+        self.on_move = on_move
 
         self.columnconfigure(1, weight=1)
         self.rowconfigure(1, weight=1)
@@ -168,6 +170,12 @@ class MultiCanvasContainer(tk.Frame):
                         lambda row, column, is_primary, i=CanvasIndex(
                             tab_index, index
                         ): self.on_fill_type(i, row, column, is_primary)
+                    ),
+                    on_move
+                    and (
+                        lambda tiles, dist_x, dist_y, i=CanvasIndex(
+                            tab_index, index
+                        ): self.on_move(i, tiles, dist_x, dist_y)
                     ),
                     bg="#343434",
                 )

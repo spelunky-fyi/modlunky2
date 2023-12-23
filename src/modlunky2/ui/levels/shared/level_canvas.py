@@ -4,6 +4,7 @@ import logging
 import math
 import tkinter as tk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
+from typing import List
 
 from modlunky2.ui.levels.shared.biomes import BIOME
 
@@ -23,6 +24,7 @@ class CANVAS_MODE(Enum):
     DRAW = 1
     SELECT = 2
     FILL = 3
+    MOVE = 4
 
 
 @dataclass
@@ -40,11 +42,32 @@ class TileIndex:
 
 
 @dataclass
+class Pos:
+    x: int
+    y: int
+
+
+@dataclass
 class Selection:
     pos: SelectRect
     rect: int
     first_tile: TileIndex
     last_tile: TileIndex
+
+
+@dataclass
+class MoveTile:
+    index: TileIndex
+    image: int
+
+
+@dataclass
+class ActiveMove:
+    tiles: List[MoveTile]
+    # tiles: List[TileIndex]
+    # tile_images: List[any]
+    start_pos: Pos
+    last_event_pos: Pos
 
 
 class LevelCanvas(tk.Canvas):
@@ -57,6 +80,7 @@ class LevelCanvas(tk.Canvas):
         on_pull_tile,
         on_fill,
         on_fill_type,
+        on_move,
         *args,
         **kwargs
     ):
@@ -68,6 +92,7 @@ class LevelCanvas(tk.Canvas):
         self.on_click = on_click
         self.on_fill = on_fill
         self.on_fill_type = on_fill_type
+        self.on_move = on_move
 
         self.mode = CANVAS_MODE.DRAW
 
@@ -129,6 +154,15 @@ class LevelCanvas(tk.Canvas):
             self.bind("<Button-1>", self.click_fill, add="+")
             self.bind("<Button-3>", self.click_fill, add="+")
 
+        if on_move:
+            # Click actions performed when selecting a region.
+            self.bind("<Button-1>", self.move_click, add="+")
+            self.bind("<B1-Motion>", self.move_drag, add="+")
+            self.bind("<ButtonRelease-1>", self.move_release, add="+")
+            self.bind("<Shift-Button-1>", self.move_click, add="+")
+            self.bind("<Shift-B1-Motion>", self.move_drag, add="+")
+            self.bind("<Shift-ButtonRelease-1>", self.move_release, add="+")
+
         if on_pull_tile:
             # Click actions performed when holding shift to select the tile at the cursor's
             # location.
@@ -153,6 +187,10 @@ class LevelCanvas(tk.Canvas):
             self.config(cursor="pencil")
         elif mode == CANVAS_MODE.FILL:
             self.config(cursor="spraycan")
+        elif mode == CANVAS_MODE.SELECT:
+            self.config(cursor="cross")
+        elif mode == CANVAS_MODE.MOVE:
+            self.config(cursor="fleur")
         else:
             self.config(cursor="")
 
@@ -338,6 +376,67 @@ class LevelCanvas(tk.Canvas):
             self.coords(self.current_select_rect.rect, pos.x0, pos.y0, pos.x1, pos.y1)
 
         self.current_select_rect = None
+
+    def move_click(self, event):
+        if self.mode != CANVAS_MODE.MOVE:
+            return
+
+        column = int(event.x // self.zoom_level)
+        row = int(event.y // self.zoom_level)
+        if column < 0 or event.x > int(self["width"]):
+            return
+        if row < 0 or event.y > int(self["height"]):
+            return
+
+        tiles = []
+        # tile_images = []
+
+        if len(self.select_rects) > 0 and self.pos_in_selection(row, column):
+            for c in range(self.width):
+                for r in range(self.height):
+                    if self.pos_in_selection(r, c):
+                        image = self.tile_images[r][c]
+                        self.tag_raise(image)
+                        tiles.append(MoveTile(TileIndex(x=c, y=r), image))
+        else:
+            tiles = [
+                MoveTile(TileIndex(x=column, y=row), self.tile_images[row][column])
+            ]
+
+        if len(tiles) == 0:
+            return
+
+        pos = Pos(event.x, event.y)
+        self.active_move = ActiveMove(tiles, pos, pos)
+
+        self.bring_selections_to_front()
+
+    def move_drag(self, event):
+        if self.mode != CANVAS_MODE.MOVE:
+            return
+
+        last_pos = self.active_move.last_event_pos
+        new_pos = Pos(event.x, event.y)
+        self.active_move.last_event_pos = new_pos
+        for tile in self.active_move.tiles:
+            self.move(tile.image, new_pos.x - last_pos.x, new_pos.y - last_pos.y)
+
+    def move_release(self, event):
+        if self.mode != CANVAS_MODE.MOVE:
+            return
+
+        last_pos = self.active_move.last_event_pos
+        start_pos = self.active_move.start_pos
+
+        for tile in self.active_move.tiles:
+            self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
+
+        tiles = [tile.index for tile in self.active_move.tiles]
+
+        dist_x = last_pos.x // self.zoom_level - start_pos.x // self.zoom_level
+        dist_y = last_pos.y // self.zoom_level - start_pos.y // self.zoom_level
+
+        self.on_move(tiles, dist_x, dist_y)
 
     def set_zoom(self, zoom_level):
         self.zoom_level = zoom_level
