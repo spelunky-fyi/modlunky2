@@ -116,8 +116,6 @@ class VanillaLevelEditor(ttk.Frame):
         self.tile_codes = []
         self.template_list = []
 
-        self.mag_full = 30
-
         self.columnconfigure(0, minsize=200)  # Column 0 = Level List
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)  # Column 1 = Everything Else
@@ -147,8 +145,6 @@ class VanillaLevelEditor(ttk.Frame):
             selection = event.widget.select()
             tab = event.widget.tab(selection, "text")
             self.last_selected_tab = str(tab)
-            if str(tab) == "Full Level View":
-                self.load_full_preview()
             if str(tab) == "Full Level Editor":
                 self.multi_room_editor_tab.update_templates()
                 self.multi_room_editor_tab.redraw()
@@ -161,19 +157,12 @@ class VanillaLevelEditor(ttk.Frame):
         self.editor_tab = ttk.Frame(
             self.tab_control
         )  # Tab 2 is the actual level editor.
-        self.preview_tab = ttk.Frame(self.tab_control)
-
-        def multiroom_zoom_change(new_zoom):
-            self.mag_full = new_zoom
-            self.current_value_full.set(new_zoom)
 
         self.multi_room_editor_tab = MultiRoomEditorTab(
             self.tab_control,
             self.modlunky_config,
             self.texture_fetcher,
             textures_dir,
-            self.mag_full,
-            multiroom_zoom_change,
             lambda tile, percent, alt_tile: self.add_tilecode(
                 tile, percent, alt_tile, self.palette_panel, self.mag
             ),
@@ -210,63 +199,6 @@ class VanillaLevelEditor(ttk.Frame):
         )
         self.save_button.grid(row=2, column=0, sticky="nswe")
         self.save_button["state"] = tk.DISABLED
-
-        #  View Tab
-
-        self.current_value_full = tk.DoubleVar()
-
-        def slider_changed(_event):
-            self.mag_full = int(self.current_value_full.get())
-            self.load_full_preview()
-            self.multi_room_editor_tab.update_zoom_level(self.mag_full)
-
-        config_container = tk.Frame(self.preview_tab)
-        config_container.grid(row=0, column=0, columnspan=2, sticky="nw")
-
-        self.slider_zoom_full = tk.Scale(
-            config_container,
-            from_=2,
-            to=100,
-            length=300,
-            orient="horizontal",
-            variable=self.current_value_full,
-            command=slider_changed,
-        )
-        self.slider_zoom_full.set(self.mag_full)
-        self.slider_zoom_full.grid(row=0, column=0, sticky="nw")
-
-        # Checkbox to toggle the visibility of the grid lines.
-        hide_grid_var = tk.IntVar()
-        hide_grid_var.set(False)
-
-        def toggle_hide_grid():
-            nonlocal hide_grid_var
-
-            self.full_level_preview_canvas.hide_grid_lines(hide_grid_var.get())
-
-        tk.Checkbutton(
-            config_container,
-            text="Hide grid lines",
-            variable=hide_grid_var,
-            onvalue=True,
-            offvalue=False,
-            command=toggle_hide_grid,
-        ).grid(row=0, column=1, sticky="sw", pady=5)
-
-        self.preview_tab.columnconfigure(1, weight=1)  # Column 1 = Everything Else
-        self.preview_tab.rowconfigure(1, weight=1)  # Row 0 = List box / Label
-
-        self.full_level_preview_canvas = MultiCanvasContainer(
-            self.preview_tab,
-            textures_dir,
-            ["Foreground", "Background"],
-            [],
-            self.mag_full,
-            intro_text="Select a level file to begin viewing",
-        )
-        self.full_level_preview_canvas.grid(
-            row=1, column=0, columnspan=2, rowspan=2, sticky="nw"
-        )
 
         # Level Editor Tab
         self.tab_control.add(self.editor_tab, text="Level Editor")
@@ -558,108 +490,6 @@ class VanillaLevelEditor(ttk.Frame):
         self.multi_room_editor_tab.open_lvl(
             self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
         )
-
-    def load_full_preview(self):
-        self.list_preview_tiles_ref = []
-        # Sets default level size for levels that might not have a size variable like the challenge levels.
-        # 8x8 is what I went with.
-        level_height = 8
-        level_width = 8
-
-        # mag_full = int(self.slider_zoom_full.get())
-        self.full_level_preview_canvas.clear()
-        self.full_level_preview_canvas.set_zoom(self.mag_full)
-
-        full_size = None
-        if self.files_tree.has_selected_file():
-            full_size = self.rules_tab.get_full_size()
-            if full_size is not None:
-                logger.debug("Size found: %s", full_size)
-                level_height = int(full_size.split(", ")[1])
-                level_width = int(full_size.split(", ")[0])
-            self.full_level_preview_canvas.configure_size(
-                level_width * 10, level_height * 8
-            )
-            self.full_level_preview_canvas.draw_background(self.lvl_biome)
-            self.full_level_preview_canvas.draw_grid()
-        else:
-            self.full_level_preview_canvas.show_intro()
-            return
-
-        self.full_level_preview_canvas.hide_intro()
-
-        def get_setrooms():
-            setrooms = []
-            for room_template in self.template_list:
-                matched_template = Setroom.find_vanilla_setroom(room_template.name)
-                if not matched_template:
-                    continue
-
-                setrooms.append(MatchedSetroomTemplate(room_template, matched_template))
-            return setrooms
-
-        for setroom_template in get_setrooms():
-            room_x = setroom_template.setroom.coords.x
-            room_y = setroom_template.setroom.coords.y
-
-            logger.debug("%s", setroom_template.template.name)
-            logger.debug("Room pos: %sx%s", room_x, room_y)
-
-            room_instances = setroom_template.template.rooms
-            if len(room_instances) != 0:
-                room_instance = room_instances[0]
-
-                for layer_index, layer in enumerate(
-                    [room_instance.front, room_instance.back]
-                ):
-                    for currow, room_row in enumerate(layer):
-                        tile_image_full = None
-                        logger.debug("Room row: %s", room_row)
-                        if TemplateSetting.ONLYFLIP in room_instance.settings:
-                            room_row = room_row[::-1]
-                        for curcol, tile in enumerate(room_row):
-                            tile_name = ""
-                            tiles = [
-                                c
-                                for c in self.tile_palette_ref_in_use
-                                if str(" " + tile) in str(c[0])
-                            ]
-                            if tiles:
-                                tile_name = str(tiles[-1][0]).split(" ", 1)[0]
-                                new_ref = True
-                                for preview_tile_ref in self.list_preview_tiles_ref:
-                                    if tile_name == str(preview_tile_ref[0]):
-                                        new_ref = False
-                                        tile_image_full = preview_tile_ref[1]
-
-                                if new_ref:
-                                    tile_ref = []
-                                    tile_image = ImageTk.PhotoImage(
-                                        ImageTk.getimage(tiles[-1][1])
-                                        .resize(
-                                            (self.mag_full, self.mag_full),
-                                            Image.Resampling.LANCZOS,
-                                        )
-                                        .convert("RGBA")
-                                    )
-                                    tile_ref.append(tile_name)
-                                    tile_ref.append(tile_image)
-                                    self.list_preview_tiles_ref.append(tile_ref)
-                                    tile_image_full = self.list_preview_tiles_ref[
-                                        len(self.list_preview_tiles_ref) - 1
-                                    ][1]
-                            else:
-                                # There's a missing tile id somehow
-                                logger.debug("%s Not Found", tile)
-
-                            self.full_level_preview_canvas.replace_tile_at(
-                                CanvasIndex(layer_index, 0),
-                                room_y * 8 + currow,
-                                room_x * 10 + curcol,
-                                tile_image_full,
-                                0,
-                                0,
-                            )
 
     def populate_tilecode_palette(self):
         self.palette_panel.update_with_palette(
@@ -1193,9 +1023,6 @@ class VanillaLevelEditor(ttk.Frame):
         self.reset()
         self.read_lvl_file(lvl)
 
-        if self.last_selected_tab == "Full Level View":
-            self.load_full_preview()
-
     def on_insert_room(self, parent_index, name=None):
         room_template = self.template_list[parent_index]
         # Set default prompt based on parent name
@@ -1291,15 +1118,12 @@ class VanillaLevelEditor(ttk.Frame):
         self.level_list_panel.reset()
         try:
             self.palette_panel.reset()
-            self.full_level_preview_canvas.show_intro()
-            self.full_level_preview_canvas.clear()
             self.show_intro()
             self.canvas.clear()
             self.tile_palette_map = {}
             self.tile_palette_ref_in_use = None
             self.lvl = None
             self.lvl_biome = None
-            self.full_level_preview_canvas.clear()
             self.reset_save_button()
         except Exception:  # pylint: disable=broad-except
             logger.debug("canvas does not exist yet")

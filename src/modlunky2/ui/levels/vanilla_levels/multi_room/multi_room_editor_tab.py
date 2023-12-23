@@ -39,8 +39,6 @@ class MultiRoomEditorTab(ttk.Frame):
         modlunky_config: Config,
         texture_fetcher,
         textures_dir,
-        zoom,
-        on_zoom_change,
         on_add_tilecode,
         on_delete_tilecode,
         on_select_palette_tile,
@@ -58,7 +56,6 @@ class MultiRoomEditorTab(ttk.Frame):
         self.texture_fetcher = texture_fetcher
         self.textures_dir = textures_dir
 
-        self.on_zoom_change = on_zoom_change
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
         self.on_select_palette_tile = on_select_palette_tile
@@ -78,7 +75,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.default_draw_map = None
         self.reverse_layers = True
 
-        self.zoom_level = zoom
+        self.zoom_level = 30 # Sensible default.
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -276,7 +273,6 @@ class MultiRoomEditorTab(ttk.Frame):
         self.__set_zoom(zoom)
 
     def __update_zoom_internal(self, zoom):
-        self.on_zoom_change(zoom)
         self.__set_zoom(zoom)
 
     def __set_zoom(self, zoom):
