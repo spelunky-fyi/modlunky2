@@ -59,6 +59,7 @@ class Selection:
 class MoveTile:
     index: TileIndex
     image: int
+    bg: int
 
 
 @dataclass
@@ -409,11 +410,35 @@ class LevelCanvas(tk.Canvas):
                 for r in range(self.height):
                     if self.pos_in_selection(r, c):
                         image = self.tile_images[r][c]
-                        self.tag_raise(image)
-                        tiles.append(MoveTile(TileIndex(x=c, y=r), image))
+                        rectangle = self.create_rectangle(
+                            c * self.zoom_level,
+                            r * self.zoom_level,
+                            (c + 1) * self.zoom_level,
+                            (r + 1) * self.zoom_level,
+                            fill="#343434",
+                            outline="white",
+                            width=0,
+                            state="normal",
+                        )
+
+                        tiles.append(MoveTile(TileIndex(x=c, y=r), image, rectangle))
+            for tile in tiles:
+                self.tag_raise(tile.image)
         else:
+            rectangle = self.create_rectangle(
+                column * self.zoom_level,
+                row * self.zoom_level,
+                (column + 1) * self.zoom_level,
+                (row + 1) * self.zoom_level,
+                fill="#343434",
+                outline="white",
+                width=0,
+                state="normal",
+            )
+            image = self.tile_images[row][column]
+            self.tag_raise(image)
             tiles = [
-                MoveTile(TileIndex(x=column, y=row), self.tile_images[row][column])
+                MoveTile(TileIndex(x=column, y=row), image, rectangle)
             ]
 
         if len(tiles) == 0:
@@ -435,6 +460,7 @@ class LevelCanvas(tk.Canvas):
         new_pos = Pos(event.x, event.y)
         self.active_move.last_event_pos = new_pos
         for tile in self.active_move.tiles:
+            self.move(tile.bg, new_pos.x - last_pos.x, new_pos.y - last_pos.y)
             self.move(tile.image, new_pos.x - last_pos.x, new_pos.y - last_pos.y)
 
     def move_release(self, event):
@@ -449,6 +475,7 @@ class LevelCanvas(tk.Canvas):
 
         for tile in self.active_move.tiles:
             self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
+            self.delete(tile.bg)
 
         tiles = [tile.index for tile in self.active_move.tiles]
 
@@ -469,6 +496,7 @@ class LevelCanvas(tk.Canvas):
 
         for tile in self.active_move.tiles:
             self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
+            self.delete(tile.bg)
 
         self.active_move = None
 
