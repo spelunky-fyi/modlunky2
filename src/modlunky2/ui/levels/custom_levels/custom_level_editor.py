@@ -647,6 +647,8 @@ class CustomLevelEditor(ttk.Frame):
         for origin_x, origin_y, tile_code in replacement_tiles:
             new_x = origin_x + dist_x
             new_y = origin_y + dist_y
+            if new_x < 0 or new_x >= self.lvl_width * 10 or new_y < 0 or new_y >= self.lvl_height * 8:
+                continue
             tile = self.tile_palette_map[tile_code]
             x_offset, y_offset = self.offset_for_tile(
                 tile[0].split(" ", 2)[0], tile_code, self.zoom_level
