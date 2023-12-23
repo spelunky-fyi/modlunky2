@@ -170,7 +170,7 @@ class ModlunkyUI:
 
         # Handle shutting down cleanly
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
-        self.root.bind("<Escape>", self.quit)
+        # self.root.bind("<Escape>", self.quit)
 
         self.tabs = {}
         self.tab_control = ttk.Notebook(self.top_frame, onfiledrop=self.drop)
