@@ -3,6 +3,9 @@ from tkinter import ttk
 
 from modlunky2.config import Config, CustomRoomMap, CustomRoomMapSegment
 from modlunky2.levels.level_templates import TemplateSetting
+from modlunky2.ui.levels.shared.create_template_dialog import (
+    present_create_template_dialog,
+)
 from modlunky2.ui.levels.vanilla_levels.multi_room.reversed_rooms import REVERSED_ROOMS
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy
 
@@ -11,8 +14,10 @@ class RoomOptions(ttk.Frame):
     def __init__(
         self,
         parent,
+        modlunky_config: Config,
         on_select_template,
         on_clear_template,
+        on_create_template,
         on_select_room,
         on_select_random_room,
         on_flip_setting,
@@ -27,8 +32,11 @@ class RoomOptions(ttk.Frame):
 
         setting_row = 0
 
+        self.modlunky_config = modlunky_config
+
         self.on_select_template = on_select_template
         self.on_clear_template = on_clear_template
+        self.on_create_template = on_create_template
         self.on_select_room = on_select_room
         self.on_select_random_room = on_select_random_room
         self.on_flip_setting = on_flip_setting
@@ -37,6 +45,7 @@ class RoomOptions(ttk.Frame):
         self.on_delete_room = on_delete_room
         self.on_update_reverse_layers = on_update_reverse_layers
 
+        self.templates = []
         self.current_template_map_index = None
         self.current_template_row = None
         self.current_template_column = None
@@ -340,6 +349,8 @@ class RoomOptions(ttk.Frame):
                 self.current_template_row,
                 self.current_template_column,
             )
+        elif template_index == len(self.templates) + 1:
+            present_create_template_dialog(self.modlunky_config, self.create_template)
         else:
             self.on_select_template(
                 template_index - 1,
@@ -347,6 +358,28 @@ class RoomOptions(ttk.Frame):
                 self.current_template_row,
                 self.current_template_column,
             )
+
+    def create_template(self, name, comment, width, height):
+        success, error_message, new_room = self.on_create_template(
+            name, comment, width, height
+        )
+        if success:
+            self.templates.append(new_room)
+            self.template_combobox["values"] = (
+                ["None"]
+                + [template.name for template in self.templates]
+                + ["Create New"]
+            )
+            self.template_combobox.set(new_room.name)
+            self.on_select_template(
+                len(self.templates) - 1,
+                # self.template_combobox.current() - 1,
+                self.current_template_map_index,
+                self.current_template_row,
+                self.current_template_column,
+            )
+
+        return success, error_message
 
     def select_room(self):
         room_index = self.room_combobox.current()
@@ -395,9 +428,10 @@ class RoomOptions(ttk.Frame):
         self.room_combobox.set("")
 
     def set_templates(self, templates):
-        self.template_combobox["values"] = ["None"] + [
-            template.name for template in templates
-        ]
+        self.templates = templates
+        self.template_combobox["values"] = (
+            ["None"] + [template.name for template in templates] + ["Create New"]
+        )
         self.current_template_item = None
         self.configure_reverse_rooms_container()
 
@@ -535,6 +569,7 @@ class OptionsPanel(ttk.Frame):
         on_select_layout,
         on_change_template_at,
         on_clear_template,
+        on_create_template,
         on_select_room,
         on_select_random_room,
         on_flip_setting,
@@ -554,6 +589,7 @@ class OptionsPanel(ttk.Frame):
         self.on_select_layout = on_select_layout
         self.on_change_template_at = on_change_template_at
         self.on_clear_template = on_clear_template
+        self.on_create_template = on_create_template
         self.on_select_room = on_select_room
         self.on_select_random_room = on_select_random_room
         self.on_flip_setting = on_flip_setting
@@ -703,8 +739,10 @@ class OptionsPanel(ttk.Frame):
 
         self.room_options = RoomOptions(
             self.scrollview.scrollable_frame,
+            modlunky_config,
             self.update_room_map_template,
             self.clear_template,
+            self.create_template,
             self.on_select_room,
             self.on_select_random_room,
             self.on_flip_setting,
@@ -779,6 +817,16 @@ class OptionsPanel(ttk.Frame):
         self.layout_frame.grid()
         self.save_layout_button.grid()
 
+    def create_template(self, name, comment, width, height):
+        success, error_message, new_room = self.on_create_template(
+            name, comment, width, height
+        )
+
+        # if success:
+        #     self.templates.append(new_room)
+
+        return success, error_message, new_room
+
     def reset(self):
         self.button_for_selected_room = None
         self.button_for_selected_empty_room = None
@@ -842,9 +890,9 @@ class OptionsPanel(ttk.Frame):
                 room_row_start += (len(template_map.rooms) + 1) * 2
 
         self.room_map = room_map
-        self.templates = templates
+        self.templates = [template for template in templates]
 
-        self.room_options.set_templates(templates)
+        self.room_options.set_templates(self.templates)
 
         room_row_start = 0
         if room_map is not None:

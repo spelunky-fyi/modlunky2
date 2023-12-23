@@ -48,6 +48,7 @@ class MultiRoomEditorTab(ttk.Frame):
         on_duplicate_room,
         on_rename_room,
         on_delete_room,
+        on_create_template,
         *args,
         **kwargs
     ):
@@ -65,6 +66,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.on_duplicate_room = on_duplicate_room
         self.on_rename_room = on_rename_room
         self.on_delete_room = on_delete_room
+        self.on_create_template = on_create_template
 
         self.lvl = None
         self.lvl_biome = None
@@ -150,6 +152,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.use_roommap_at,
             self.change_template_at,
             self.clear_template_at,
+            self.create_new_template,
             self.change_room_at,
             self.select_random_room,
             self.room_setting_change_at,
@@ -515,6 +518,9 @@ class MultiRoomEditorTab(ttk.Frame):
 
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
         self.redraw()
+
+    def create_new_template(self, name, comment, width, height):
+        return self.on_create_template(name, comment, width, height)
 
     def select_random_room(self, map_index=None, row=None, col=None):
         def select_random_room_at(mi, r, c):

@@ -174,6 +174,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.on_duplicate_room,
             self.on_rename_room,
             self.on_delete_room,
+            self.on_create_template,
         )
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -1116,9 +1117,9 @@ class VanillaLevelEditor(ttk.Frame):
         self.template_list.append(new_template)
         self.changes_made()
         # self.level_list_panel.set_rooms(self.template_list)
-        self.multi_room_editor_tab.open_lvl(
-            self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
-        )
+        # self.multi_room_editor_tab.open_lvl(
+        #     self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
+        # )
         return True, None, new_template
 
     def reset_canvas(self):
