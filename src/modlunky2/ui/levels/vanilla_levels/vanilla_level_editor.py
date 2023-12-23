@@ -322,8 +322,8 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.slider_zoom = tk.Scale(
             self.editor_tab,
-            from_=2,
-            to=100,
+            from_=10,
+            to=200,
             length=300,
             orient="horizontal",
             variable=self.current_zoom_value,
