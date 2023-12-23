@@ -432,9 +432,7 @@ class LevelCanvas(tk.Canvas):
             )
             image = self.tile_images[row][column]
             self.tag_raise(image)
-            tiles = [
-                MoveTile(TileIndex(x=column, y=row), image, rectangle)
-            ]
+            tiles = [MoveTile(TileIndex(x=column, y=row), image, rectangle)]
 
         if len(tiles) == 0:
             return
@@ -480,7 +478,6 @@ class LevelCanvas(tk.Canvas):
             self.move(tile.image, distx, disty)
             if tile.bg:
                 self.delete(tile.bg)
-
 
         tiles = [tile.index for tile in self.active_move.tiles]
 
