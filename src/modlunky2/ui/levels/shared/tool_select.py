@@ -24,6 +24,10 @@ class ToolSelect(tk.Frame):
             Image.open(BASE_DIR / "static/images/bucket.png").resize((20, 20))
         )
 
+        self.icon_move = ImageTk.PhotoImage(
+            Image.open(BASE_DIR / "static/images/move.png").resize((20, 20))
+        )
+
         self.draw_button = tk.Button(
             self, image=self.icon_draw, command=self.select_draw
         )
@@ -39,15 +43,22 @@ class ToolSelect(tk.Frame):
         )
         self.fill_button.grid(row=2, column=0, sticky="e")
 
+        self.move_button = tk.Button(
+            self, image=self.icon_move, command=self.select_move
+        )
+        self.move_button.grid(row=3, column=0, sticky="e")
+
         self.select_draw()
 
     def reset_button_colors(self):
         self.draw_button.configure(bg="SystemButtonFace")
         self.select_button.configure(bg="SystemButtonFace")
         self.fill_button.configure(bg="SystemButtonFace")
+        self.move_button.configure(bg="SystemButtonFace")
         self.draw_button.configure(relief=tk.RAISED)
         self.select_button.configure(relief=tk.RAISED)
         self.fill_button.configure(relief=tk.RAISED)
+        self.move_button.configure(relief=tk.RAISED)
 
     def select_draw(self):
         self.on_select_tool(CANVAS_MODE.DRAW)
@@ -66,3 +77,9 @@ class ToolSelect(tk.Frame):
         self.reset_button_colors()
         self.fill_button.configure(bg="white")
         self.fill_button.configure(relief=tk.SUNKEN)
+
+    def select_move(self):
+        self.on_select_tool(CANVAS_MODE.MOVE)
+        self.reset_button_colors()
+        self.move_button.configure(bg="white")
+        self.move_button.configure(relief=tk.SUNKEN)
