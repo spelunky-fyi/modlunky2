@@ -365,7 +365,9 @@ def find_roommap(templates):
                         break
 
             if not added_room:
-                if len(other_rooms_map) > 0 and len(other_rooms_map[0]) < 3:
+                if len(other_rooms_map) == 0:
+                    set_room(other_rooms_map, 0, 0, room)
+                elif len(other_rooms_map[0]) < 3:
                     set_room(
                         other_rooms_map, len(other_rooms_map[0]), more_rooms_start, room
                     )
