@@ -67,6 +67,7 @@ class ActiveMove:
     tiles: List[MoveTile]
     start_pos: Pos
     last_event_pos: Pos
+    grabbing_selections: bool
 
 
 class LevelCanvas(tk.Canvas):
@@ -200,6 +201,8 @@ class LevelCanvas(tk.Canvas):
         for selection in self.select_rects:
             first_tile = selection.first_tile
             last_tile = selection.last_tile
+            if not first_tile or not last_tile:
+                continue
             if (
                 column >= first_tile.x
                 and column <= last_tile.x
@@ -375,9 +378,9 @@ class LevelCanvas(tk.Canvas):
                 first_tile.x * self.zoom_level,
                 first_tile.y * self.zoom_level,
             )
-            pos.x1, pos.y1 = (last_tile.x + 1) * self.zoom_level, (
+            pos.x1, pos.y1 = (last_tile.x + 1) * self.zoom_level - 1, (
                 last_tile.y + 1
-            ) * self.zoom_level
+            ) * self.zoom_level - 1
             self.coords(self.current_select_rect.rect, pos.x0, pos.y0, pos.x1, pos.y1)
 
         self.current_select_rect = None
@@ -405,23 +408,15 @@ class LevelCanvas(tk.Canvas):
 
         tiles = []
 
+        grabbing_selections = False
         if len(self.select_rects) > 0 and self.pos_in_selection(row, column):
+            grabbing_selections = True
             for c in range(self.width):
                 for r in range(self.height):
                     if self.pos_in_selection(r, c):
                         image = self.tile_images[r][c]
-                        rectangle = self.create_rectangle(
-                            c * self.zoom_level,
-                            r * self.zoom_level,
-                            (c + 1) * self.zoom_level,
-                            (r + 1) * self.zoom_level,
-                            fill="#343434",
-                            outline="white",
-                            width=0,
-                            state="normal",
-                        )
 
-                        tiles.append(MoveTile(TileIndex(x=c, y=r), image, rectangle))
+                        tiles.append(MoveTile(TileIndex(x=c, y=r), image, None))
             for tile in tiles:
                 self.tag_raise(tile.image)
         else:
@@ -445,7 +440,7 @@ class LevelCanvas(tk.Canvas):
             return
 
         pos = Pos(event.x, event.y)
-        self.active_move = ActiveMove(tiles, pos, pos)
+        self.active_move = ActiveMove(tiles, pos, pos, grabbing_selections)
 
         self.bring_selections_to_front()
 
@@ -459,9 +454,16 @@ class LevelCanvas(tk.Canvas):
         last_pos = self.active_move.last_event_pos
         new_pos = Pos(event.x, event.y)
         self.active_move.last_event_pos = new_pos
+        distx = new_pos.x - last_pos.x
+        disty = new_pos.y - last_pos.y
         for tile in self.active_move.tiles:
-            self.move(tile.bg, new_pos.x - last_pos.x, new_pos.y - last_pos.y)
-            self.move(tile.image, new_pos.x - last_pos.x, new_pos.y - last_pos.y)
+            if tile.bg:
+                self.move(tile.bg, distx, disty)
+            self.move(tile.image, distx, disty)
+
+        if self.active_move.grabbing_selections:
+            for selection in self.select_rects:
+                self.move(selection.rect, distx, disty)
 
     def move_release(self, event):
         if self.mode != CANVAS_MODE.MOVE:
@@ -473,14 +475,27 @@ class LevelCanvas(tk.Canvas):
         last_pos = self.active_move.last_event_pos
         start_pos = self.active_move.start_pos
 
+        distx, disty = start_pos.x - last_pos.x, start_pos.y - last_pos.y
         for tile in self.active_move.tiles:
-            self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
-            self.delete(tile.bg)
+            self.move(tile.image, distx, disty)
+            if tile.bg:
+                self.delete(tile.bg)
+
 
         tiles = [tile.index for tile in self.active_move.tiles]
 
         dist_x = last_pos.x // self.zoom_level - start_pos.x // self.zoom_level
         dist_y = last_pos.y // self.zoom_level - start_pos.y // self.zoom_level
+
+        if self.active_move.grabbing_selections:
+            for selection in self.select_rects:
+                pos = selection.pos
+                pos.x0 += dist_x * self.zoom_level
+                pos.x1 += dist_x * self.zoom_level
+                pos.y0 += dist_y * self.zoom_level
+                pos.y1 += dist_y * self.zoom_level
+                self.coords(selection.rect, pos.x0, pos.y0, pos.x1, pos.y1)
+                self.update_selection_tiles(selection)
 
         self.on_move(tiles, dist_x, dist_y)
 
@@ -493,11 +508,15 @@ class LevelCanvas(tk.Canvas):
 
         last_pos = self.active_move.last_event_pos
         start_pos = self.active_move.start_pos
-
+        distx, disty = start_pos.x - last_pos.x, start_pos.y - last_pos.y
         for tile in self.active_move.tiles:
-            self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
-            self.delete(tile.bg)
+            self.move(tile.image, distx, disty)
+            if tile.bg:
+                self.delete(tile.bg)
 
+        if self.active_move.grabbing_selections:
+            for selection in self.select_rects:
+                self.move(selection.rect, distx, disty)
         self.active_move = None
 
     def set_zoom(self, zoom_level):
