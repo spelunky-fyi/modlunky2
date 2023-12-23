@@ -269,8 +269,15 @@ class VanillaLevelEditor(ttk.Frame):
         self.button_clear.grid(row=0, column=2, sticky="nw")
         self.button_clear["state"] = tk.DISABLED
 
+        side_panel_container = tk.Frame(self.editor_tab)
+        side_panel_container.grid(
+            row=0, column=9, rowspan=4, columnspan=4, sticky="news"
+        )
+        side_panel_container.rowconfigure(1, weight=1)
+        side_panel_container.columnconfigure(0, weight=1)
+
         self.palette_panel = PalettePanel(
-            self.editor_tab,
+            side_panel_container,
             self.delete_tilecode,
             lambda tile, percent, alt_tile: self.add_tilecode(
                 tile, percent, alt_tile, self.palette_panel, self.mag
@@ -279,7 +286,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
-        self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
+        self.palette_panel.grid(row=1, column=0, sticky="news")
 
         # Allow hiding the side panel so more level can be seen.
         side_panel_hidden = False
@@ -289,10 +296,12 @@ class VanillaLevelEditor(ttk.Frame):
             nonlocal side_panel_hidden
             side_panel_hidden = not side_panel_hidden
             if side_panel_hidden:
-                self.palette_panel.grid_remove()
+                # self.palette_panel.grid_remove()
+                side_panel_container.grid_remove()
                 side_panel_hide_button.configure(text="<<")
             else:
-                self.palette_panel.grid()
+                # self.palette_panel.grid()
+                side_panel_container.grid()
                 side_panel_hide_button.configure(text=">>")
 
         side_panel_hide_button.configure(
@@ -321,18 +330,19 @@ class VanillaLevelEditor(ttk.Frame):
                 self.room_select()
 
         self.slider_zoom = tk.Scale(
-            self.editor_tab,
+            side_panel_container,
             from_=10,
             to=200,
             length=300,
             orient="horizontal",
             variable=self.current_zoom_value,
             command=zoom_changed,
-            showvalue=0,
+            showvalue=False,
+            label="Zoom:",
             width=17,
         )
         self.slider_zoom.set(self.mag)
-        self.slider_zoom.grid(row=0, column=6, sticky="nw", padx=2)
+        self.slider_zoom.grid(row=0, column=0, sticky="news")
 
         self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.setting_flip)
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
@@ -378,7 +388,6 @@ class VanillaLevelEditor(ttk.Frame):
             )
         levels.append(LevelFile.from_path(Path(lvl_path)))
 
-        print(self.mag)
         level = None
         for level in levels:
             logger.debug("%s loaded.", level.comment)
