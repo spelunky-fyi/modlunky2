@@ -174,7 +174,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.on_duplicate_room,
             self.on_rename_room,
             self.on_delete_room,
-            self.on_create_template,
+            self.on_create_template_multi,
         )
         self.variables_tab = VariablesTab(
             self.tab_control,
@@ -222,7 +222,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.on_paste_room,
             self.on_rename_room,
             self.room_select,
-            self.on_create_template,
+            self.on_create_template_single,
             self.modlunky_config,
         )
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
@@ -1100,6 +1100,25 @@ class VanillaLevelEditor(ttk.Frame):
         room_instance = room_template.rooms[room_index]
         room_instance.name = new_name
 
+    def on_create_template_multi(self, template_name, comment, width, height):
+        success, error_message, new_room = self.on_create_template(
+            template_name, comment, width, height
+        )
+
+        if success:
+            self.level_list_panel.add_room(new_room)
+
+        return success, error_message, new_room
+
+    def on_create_template_single(self, template_name, comment, width, height):
+        success, error_message, new_room = self.on_create_template(
+            template_name, comment, width, height
+        )
+        if success:
+            self.multi_room_editor_tab.update_templates()
+
+        return success, error_message, new_room
+
     def on_create_template(self, template_name, comment, width, height):
         for template in self.template_list:
             if template.name == template_name:
@@ -1116,10 +1135,6 @@ class VanillaLevelEditor(ttk.Frame):
         new_template = RoomTemplate(template_name, comment, [initial_room])
         self.template_list.append(new_template)
         self.changes_made()
-        # self.level_list_panel.set_rooms(self.template_list)
-        # self.multi_room_editor_tab.open_lvl(
-        #     self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
-        # )
         return True, None, new_template
 
     def reset_canvas(self):

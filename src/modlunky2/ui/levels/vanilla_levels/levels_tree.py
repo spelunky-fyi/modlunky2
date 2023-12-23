@@ -257,13 +257,23 @@ class LevelsTree(ttk.Treeview):
         self.rooms = [room for room in rooms]
         for room in rooms:
             room_display_name = str(room.name)
-            if len(str(room.comment)) > 0:
+            if room.comment is not None and len(str(room.comment)) > 0:
                 room_display_name += "   // " + room.comment
             entry = self.insert("", "end", text=room_display_name)
             for layout in room.rooms:
                 self.insert(entry, "end", text=layout.name or "room")
 
         self.insert("", "end", text="Create new template", image=self.icon_add)
+
+    def add_room(self, room):
+        room_display_name = str(room.name)
+        if room.comment is not None and len(str(room.comment)) > 0:
+            room_display_name += "   // " + room.comment
+        new_template_item = self.insert("", len(self.rooms), text=room_display_name)
+        for room in room.rooms:
+            child_id = self.insert(new_template_item, "end", text=room.name or "room")
+
+        self.rooms.append(room)
 
     def get_selected_room(self):
         selection = self.selection()

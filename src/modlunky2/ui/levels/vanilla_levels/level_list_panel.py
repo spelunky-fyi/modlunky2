@@ -48,6 +48,9 @@ class LevelListPanel(ttk.Frame):
     def reset(self):
         self.levels_tree.reset()
 
+    def add_room(self, new_room):
+        self.levels_tree.add_room(new_room)
+
     def set_rooms(self, new_rooms):
         self.levels_tree.set_rooms(new_rooms)
 
