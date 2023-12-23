@@ -373,7 +373,6 @@ class RoomOptions(ttk.Frame):
             self.template_combobox.set(new_room.name)
             self.on_select_template(
                 len(self.templates) - 1,
-                # self.template_combobox.current() - 1,
                 self.current_template_map_index,
                 self.current_template_row,
                 self.current_template_column,
@@ -821,9 +820,6 @@ class OptionsPanel(ttk.Frame):
         success, error_message, new_room = self.on_create_template(
             name, comment, width, height
         )
-
-        # if success:
-        #     self.templates.append(new_room)
 
         return success, error_message, new_room
 
