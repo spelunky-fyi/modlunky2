@@ -26,6 +26,11 @@ class LEVEL_TYPE(Enum):
     CUSTOM = 3
 
 
+class LIST_MODE(Enum):
+    PACKS = 1
+    LEVELS = 2
+
+
 class PACK_LIST_TYPE(Enum):
     VANILLA_ROOMS = "single_room"
     CUSTOM_LEVELS = "custom_levels"
@@ -69,6 +74,11 @@ class FilesTree(ttk.Frame):
         self.last_selected_file = None
         self.lvls_path = None
 
+        self.pack_names = []
+        self.level_names = []
+        self.mode = LIST_MODE.PACKS
+        self.in_arena_folder = False
+
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -110,16 +120,23 @@ class FilesTree(ttk.Frame):
             self.tree.delete(i)
         self.tree.heading("#0", text="Select Pack")
         i = 0
+        self.mode = LIST_MODE.PACKS
+        self.level_names = []
+        self.pack_names = []
+        self.in_arena_folder = False
         for filepath in glob.iglob(str(self.packs_path) + "/*/"):
             # Convert the filepath to a string.
             path_in_str = str(filepath)
             pack_name = os.path.basename(os.path.normpath(path_in_str))
+            self.pack_names.append(pack_name)
             # Add the file to the tree with the folder icon.
             self.tree.insert("", "end", text=str(pack_name), image=self.icon_folder)
             i = i + 1
-        self.tree.insert("", "end", text=str("[Create_New_Pack]"), image=self.icon_add)
+        self.tree.insert("", "end", text=str("Create New Pack"), image=self.icon_add)
 
     def load_pack_lvls(self, lvl_dir):
+        self.level_names = []
+        self.mode = LIST_MODE.LEVELS
         if self.pack_list_type == PACK_LIST_TYPE.VANILLA_ROOMS:
             self.load_pack_vanilla_lvls(lvl_dir)
         else:
@@ -131,15 +148,16 @@ class FilesTree(ttk.Frame):
         logger.debug("lvls_path = %s", lvl_dir)
         self.reset_tree()
 
-        self.tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+        self.tree.insert("", "end", values=str("<< Back"), text=str("<< Back"))
 
         loaded_pack = self.get_loaded_pack()
         root = Path(self.packs_path / loaded_pack) / "Data/Levels"
 
         in_arena_folder = str(lvl_dir).endswith("Arena")
+        self.in_arena_folder = in_arena_folder
         if not in_arena_folder:
             defaults_path = self.extracts_path
-            self.tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
+            self.tree.insert("", "end", text=str("Arena"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
             root = root / "Arena"
@@ -164,6 +182,8 @@ class FilesTree(ttk.Frame):
             lvl_name for lvl_name in custom_levels if lvl_name not in modded_levels
         ]
 
+        self.level_names = custom_levels + vanilla_levels
+
         for lvl_name in custom_levels:
             self.tree.insert(
                 "", "end", text=lvl_name, image=self.lvl_icon(LEVEL_TYPE.CUSTOM)
@@ -184,7 +204,7 @@ class FilesTree(ttk.Frame):
         defaults_path = self.extracts_path
         self.reset_tree()
 
-        self.tree.insert("", "end", values=str("<<BACK"), text=str("<<BACK"))
+        self.tree.insert("", "end", values=str("<< Back"), text=str("<< Back"))
 
         level_files = [
             os.path.basename(os.path.normpath(i))
@@ -193,7 +213,7 @@ class FilesTree(ttk.Frame):
         mod_files = level_files
         is_arenas = False
         if not str(lvl_dir).endswith("Arena"):
-            self.tree.insert("", "end", text=str("ARENA"), image=self.icon_folder)
+            self.tree.insert("", "end", text=str("Arena"), image=self.icon_folder)
         else:
             defaults_path = self.extracts_path / "Arena"
             extracts_files = [
@@ -202,6 +222,9 @@ class FilesTree(ttk.Frame):
             ]
             level_files = sorted(list(set(level_files).union(set(extracts_files))))
             is_arenas = True
+        self.in_arena_folder = is_arenas
+
+        self.level_names = level_files
 
         for lvl_name in level_files:
             if is_arenas or not (defaults_path / lvl_name).exists():
@@ -227,13 +250,14 @@ class FilesTree(ttk.Frame):
                     self.tree.selection_set(item)
                     self.last_selected_file = item
 
-        self.tree.insert("", "end", text=str("[Create_New_Level]"), image=self.icon_add)
+        self.tree.insert("", "end", text=str("Create New Level"), image=self.icon_add)
 
     def on_click(self, _event):
-        if (
-            self.tree.heading("#0")["text"] != "Select Pack"
-            and self.last_selected_file is not None
-        ):
+        selection = self.tree.selection()
+        if len(selection) == 0:
+            return
+
+        if self.mode == LIST_MODE.LEVELS and self.last_selected_file is not None:
             if self.is_save_required():
                 msg_box = tk.messagebox.askquestion(
                     "Continue?",
@@ -249,45 +273,55 @@ class FilesTree(ttk.Frame):
                     self.tree.selection_set(self.last_selected_file)
                     return
 
-        item_text = ""
-        for item in self.tree.selection():
-            item_text = self.tree.item(item, "text")
+        item_iid = selection[0]
+        item_index = self.tree.index(item_iid)
 
-        if item_text == "<<BACK":
-            if self.tree.heading("#0")["text"].endswith("Arena"):
-                self.tree.heading("#0", text=self.get_loaded_pack())
-                loaded_pack = self.get_loaded_pack()
-                self.load_pack_lvls(
-                    Path(self.packs_path / loaded_pack / "Data" / "Levels"),
-                )
+        if self.mode == LIST_MODE.PACKS:
+            if item_index == len(self.pack_names):
+                logger.debug("Creating new pack")
+                self.create_pack_dialog()
             else:
-                self.load_packs()
-        elif item_text == "ARENA" and self.tree.heading("#0")["text"] != "Select Pack":
-            self.tree.heading("#0", text=self.tree.heading("#0")["text"] + "/Arena")
-            loaded_pack = self.get_loaded_pack()
-            self.load_pack_lvls(
-                Path(self.packs_path / loaded_pack / "Data" / "Levels" / "Arena"),
-            )
-        elif item_text == "[Create_New_Pack]":
-            logger.debug("Creating new pack")
-            self.create_pack_dialog()
-        elif item_text == "[Create_New_Level]":
-            logger.debug("Creating new level")
-            self.create_level_dialog()
-        elif self.tree.heading("#0")["text"] == "Select Pack":
-            for item in self.tree.selection():
-                self.last_selected_file = item
-                item_text = self.tree.item(item, "text")
+                self.last_selected_file = item_iid
+                item_text = self.pack_names[item_index]
                 self.tree.heading("#0", text=item_text)
                 loaded_pack = self.get_loaded_pack()
                 self.load_pack_lvls(
                     Path(self.packs_path / loaded_pack) / "Data" / "Levels",
                 )
         else:
-            for item in self.tree.selection():
-                self.last_selected_file = item
-                item_text = self.tree.item(item, "text")
-                self.on_select_file(item_text)
+            level_start_index = 2
+            if self.in_arena_folder:
+                level_start_index = 1
+            else:
+                if item_index == 1:
+                    self.tree.heading(
+                        "#0", text=self.tree.heading("#0")["text"] + "/Arena"
+                    )
+                    loaded_pack = self.get_loaded_pack()
+                    self.load_pack_lvls(
+                        Path(
+                            self.packs_path / loaded_pack / "Data" / "Levels" / "Arena"
+                        ),
+                    )
+                    return
+
+            if item_index == 0:
+                if self.in_arena_folder:
+                    self.tree.heading("#0", text=self.get_loaded_pack())
+                    loaded_pack = self.get_loaded_pack()
+                    self.load_pack_lvls(
+                        Path(self.packs_path / loaded_pack / "Data" / "Levels"),
+                    )
+                else:
+                    self.load_packs()
+            elif item_index == level_start_index + len(self.level_names):
+                logger.debug("Creating new level")
+                self.create_level_dialog()
+            elif item_index >= level_start_index:
+                for item in self.tree.selection():
+                    self.last_selected_file = item
+                    item_text = self.tree.item(item, "text")
+                    self.on_select_file(item_text)
 
     def organize_pack(self):
         loaded_pack = self.get_loaded_pack()
@@ -444,4 +478,4 @@ class FilesTree(ttk.Frame):
         return len(self.tree.selection()) > 0
 
     def selected_file_is_arena(self):
-        return self.tree.heading("#0")["text"].endswith("Arena")
+        return self.in_arena_folder
