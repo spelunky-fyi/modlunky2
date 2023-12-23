@@ -306,18 +306,19 @@ class VanillaLevelEditor(ttk.Frame):
 
         def zoom_changed(_):
             self.mag = int(self.current_zoom_value.get())
-            for tile in self.tile_palette_ref_in_use:
-                tile_name = tile[0].split(" ", 2)[0]
-                tile[1] = ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(
-                        tile_name,
-                        self.lvl_biome,
-                        self.lvl,
-                        self.mag,
+            if self.tile_palette_ref_in_use:
+                for tile in self.tile_palette_ref_in_use:
+                    tile_name = tile[0].split(" ", 2)[0]
+                    tile[1] = ImageTk.PhotoImage(
+                        self.texture_fetcher.get_texture(
+                            tile_name,
+                            self.lvl_biome,
+                            self.lvl,
+                            self.mag,
+                        )
                     )
-                )
-            self.canvas.set_zoom(self.mag)
-            self.room_select()
+                self.canvas.set_zoom(self.mag)
+                self.room_select()
 
         self.slider_zoom = tk.Scale(
             self.editor_tab,
