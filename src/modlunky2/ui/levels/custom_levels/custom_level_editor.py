@@ -15,12 +15,14 @@ from modlunky2.ui.levels.custom_levels.save_level import save_level
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import BIOME
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
+from modlunky2.ui.levels.shared.level_canvas import CANVAS_MODE
 from modlunky2.ui.levels.shared.multi_canvas_container import (
     MultiCanvasContainer,
     CanvasIndex,
 )
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom
+from modlunky2.ui.levels.shared.tool_select import ToolSelect
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
@@ -66,6 +68,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_height = None
 
         self.zoom_level = 30
+        self.tool = CANVAS_MODE.DRAW
 
         self.save_needed = False
 
@@ -127,6 +130,8 @@ class CustomLevelEditor(ttk.Frame):
             self.zoom_level,
             self.canvas_click,
             self.canvas_shiftclick,
+            self.canvas_fill,
+            self.canvas_fill_type,
             "Select a level file to begin editing",
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
@@ -155,6 +160,9 @@ class CustomLevelEditor(ttk.Frame):
             command=toggle_panel_hidden,
         )
         side_panel_hide_button.grid(column=1, row=0, sticky="nwe")
+
+        self.tool_select_bar = ToolSelect(editor_view, self.select_tool)
+        self.tool_select_bar.grid(row=1, column=1, sticky="ne", pady=10)
 
         side_panel_tab_control = ttk.Notebook(side_panel)
         side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
@@ -556,6 +564,7 @@ class CustomLevelEditor(ttk.Frame):
             draw_layer(CanvasIndex(index, 0), tileset)
 
         self.canvas.update_scroll_region(fresh)
+        self.canvas.set_mode(self.tool)
 
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
@@ -579,6 +588,36 @@ class CustomLevelEditor(ttk.Frame):
         tile = self.tile_palette_map[tile_code]
 
         self.palette_panel.select_tile(tile[0], tile[2], is_primary)
+
+    def canvas_fill(self, canvas_index, tiles, is_primary):
+        for tile in tiles:
+            self.canvas_click(canvas_index, tile.y, tile.x, is_primary)
+
+    def canvas_fill_type(self, canvas_index, row, column, is_primary):
+        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
+
+        replace_code = self.tile_codes[canvas_index.tab_index][row][column]
+
+        layer = self.tile_codes[canvas_index.tab_index]
+
+        for r, tilerow in enumerate(layer):
+            for c, tc in enumerate(tilerow):
+                if tc == replace_code:
+                    self.canvas.replace_tile_at(
+                        canvas_index,
+                        r,
+                        c,
+                        self.tile_palette_map[tile_code][1],
+                        x_offset,
+                        y_offset,
+                    )
+                    self.tile_codes[canvas_index.tab_index][r][c] = tile_code
+        self.changes_made()
+
+    def select_tool(self, tool):
+        self.tool = tool
+        self.canvas.set_mode(tool)
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
     def offset_for_tile(self, tile_name, tile_code, tile_size):
