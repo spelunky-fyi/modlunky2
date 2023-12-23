@@ -393,7 +393,6 @@ class LevelCanvas(tk.Canvas):
         self.select_rects.remove(self.current_select_rect)
         self.current_select_rect = None
 
-
     def move_click(self, event):
         if self.mode != CANVAS_MODE.MOVE:
             return
