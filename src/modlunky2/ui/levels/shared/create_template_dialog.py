@@ -72,8 +72,6 @@ def present_create_template_dialog(modlunky_config, callback):
                 template_name += "_"
 
         comment = comment_ent.get()
-        if len(comment) == 0:
-            comment = None
 
         width_str = width_ent.get()
         height_str = height_ent.get()

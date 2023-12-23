@@ -262,7 +262,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.reverse_layers = reverse
         self.redraw()
 
-    def update_templates(self):
+    def update_templates(self, templates=None):
+        # if templates is not None:
+        #     self.room_templates = templates
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
 
     def hide_grid_lines(self, hide_grid_lines):
