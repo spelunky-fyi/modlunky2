@@ -23,6 +23,8 @@ class MultiCanvasContainer(tk.Frame):
         zoom_level,
         on_click=None,
         on_shiftclick=None,
+        on_fill=None,
+        on_fill_type=None,
         intro_text=None,
         vertical=False,
         *args,
@@ -32,6 +34,8 @@ class MultiCanvasContainer(tk.Frame):
 
         self.on_click = on_click
         self.on_shiftclick = on_shiftclick
+        self.on_fill = on_fill
+        self.on_fill_type = on_fill_type
 
         self.columnconfigure(1, weight=1)
         self.rowconfigure(1, weight=1)
@@ -153,6 +157,8 @@ class MultiCanvasContainer(tk.Frame):
                             tab_index, index
                         ): self.on_shiftclick(i, row, column, is_primary)
                     ),
+                    on_fill and (lambda tiles, is_primary, i=CanvasIndex(tab_index, index): self.on_fill(i, tiles, is_primary)),
+                    on_fill_type and (lambda row, column, is_primary, i=CanvasIndex(tab_index, index): self.on_fill_type(i, row, column, is_primary)),
                     bg="#343434",
                 )
                 if vertical:
@@ -207,6 +213,7 @@ class MultiCanvasContainer(tk.Frame):
                 wraplength=600,
             )
             intro_label.place(relx=0.5, rely=0.5, anchor="center")
+
 
     def update_scroll_region(self, attempt_to_center):
         self.scrollable_canvas.update_idletasks()
@@ -274,6 +281,11 @@ class MultiCanvasContainer(tk.Frame):
             self.canvases[index.tab_index][index.canvas_index].configure_size(
                 width, height
             )
+
+    def set_mode(self, mode):
+        for tab_of_canvases in self.canvases:
+            for canvas in tab_of_canvases:
+                canvas.set_mode(mode)
 
     def set_zoom(self, zoom_level):
         for tab_of_canvases in self.canvases:
