@@ -18,6 +18,7 @@ class GridRoom:
     width: int
     height: int
 
+
 class CANVAS_MODE(Enum):
     DRAW = 1
     SELECT = 2
@@ -31,10 +32,12 @@ class SelectRect:
     x1: int
     y1: int
 
+
 @dataclass
 class TileIndex:
     x: int
     y: int
+
 
 @dataclass
 class Selection:
@@ -43,9 +46,19 @@ class Selection:
     first_tile: TileIndex
     last_tile: TileIndex
 
+
 class LevelCanvas(tk.Canvas):
     def __init__(
-        self, parent, textures_dir, zoom_level, on_click, on_pull_tile, on_fill, on_fill_type, *args, **kwargs
+        self,
+        parent,
+        textures_dir,
+        zoom_level,
+        on_click,
+        on_pull_tile,
+        on_fill,
+        on_fill_type,
+        *args,
+        **kwargs
     ):
         super().__init__(parent, *args, **kwargs)
         self.textures_dir = textures_dir
@@ -92,6 +105,7 @@ class LevelCanvas(tk.Canvas):
         self.bind_all("<KeyRelease-Shift_L>", shift_up, add="+")
 
         self.space_down = False
+
         def holding_space(_):
             self.space_down = True
 
@@ -111,7 +125,6 @@ class LevelCanvas(tk.Canvas):
             self.bind("<Shift-Button-1>", self.select_click, add="+")
             self.bind("<Shift-B1-Motion>", self.select_drag, add="+")
             self.bind("<Shift-ButtonRelease-1>", self.select_release, add="+")
-
 
             self.bind("<Button-1>", self.click_fill, add="+")
             self.bind("<Button-3>", self.click_fill, add="+")
@@ -134,19 +147,25 @@ class LevelCanvas(tk.Canvas):
 
     def set_mode(self, mode):
         self.mode = mode
-        if self.shift_down and (self.mode == CANVAS_MODE.DRAW or self.mode == CANVAS_MODE.FILL):
+        if self.shift_down and (
+            self.mode == CANVAS_MODE.DRAW or self.mode == CANVAS_MODE.FILL
+        ):
             self.config(cursor="pencil")
         elif mode == CANVAS_MODE.FILL:
             self.config(cursor="spraycan")
         else:
             self.config(cursor="")
 
-
     def pos_in_selection(self, row, column):
         for selection in self.select_rects:
             first_tile = selection.first_tile
             last_tile = selection.last_tile
-            if column >= first_tile.x and column <= last_tile.x and row >= first_tile.y and row <= last_tile.y:
+            if (
+                column >= first_tile.x
+                and column <= last_tile.x
+                and row >= first_tile.y
+                and row <= last_tile.y
+            ):
                 return True
 
         return False
@@ -177,7 +196,6 @@ class LevelCanvas(tk.Canvas):
 
             self.on_pull_tile(row, column, is_primary)
 
-
     def click_fill(self, event):
         if self.mode != CANVAS_MODE.FILL:
             return
@@ -190,7 +208,6 @@ class LevelCanvas(tk.Canvas):
             return
 
         tiles = []
-
 
         if len(self.select_rects) > 0:
             if not self.pos_in_selection(row, column):
@@ -214,8 +231,12 @@ class LevelCanvas(tk.Canvas):
         miny = minposy // self.zoom_level
         maxy = maxposy // self.zoom_level
 
-
-        if (minx < 0 and maxx < 0) or (minx >= self.width and maxx >= self.width) or (miny < 0 and maxy < 0) or (miny >= self.height and maxy >= self.height):
+        if (
+            (minx < 0 and maxx < 0)
+            or (minx >= self.width and maxx >= self.width)
+            or (miny < 0 and maxy < 0)
+            or (miny >= self.height and maxy >= self.height)
+        ):
             min_tile = None
             max_tile = None
         elif (maxposx - minposx < 2) and (maxposy - minposy < 2):
@@ -277,13 +298,11 @@ class LevelCanvas(tk.Canvas):
         self.select_rects.append(self.current_select_rect)
         self.update_selection_tiles(self.current_select_rect)
 
-
     def select_drag(self, event):
         if self.mode != CANVAS_MODE.SELECT:
             return
         if self.current_select_rect == None:
             return
-
 
         pos = self.current_select_rect.pos
         if self.space_down:
@@ -309,8 +328,13 @@ class LevelCanvas(tk.Canvas):
             self.delete(self.current_select_rect.rect)
             self.select_rects.remove(self.current_select_rect)
         else:
-            pos.x0, pos.y0 = first_tile.x * self.zoom_level, first_tile.y * self.zoom_level
-            pos.x1, pos.y1 = (last_tile.x + 1) * self.zoom_level, (last_tile.y + 1) * self.zoom_level
+            pos.x0, pos.y0 = (
+                first_tile.x * self.zoom_level,
+                first_tile.y * self.zoom_level,
+            )
+            pos.x1, pos.y1 = (last_tile.x + 1) * self.zoom_level, (
+                last_tile.y + 1
+            ) * self.zoom_level
             self.coords(self.current_select_rect.rect, pos.x0, pos.y0, pos.x1, pos.y1)
 
         self.current_select_rect = None

@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from modlunky2.ui.levels.shared.level_canvas import CANVAS_MODE
 
+
 class ToolSelect(tk.Frame):
     def __init__(self, parent, on_select_tool, *args, **kwargs):
         super().__init__(parent, bg="#343434", *args, **kwargs)
