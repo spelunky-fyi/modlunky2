@@ -129,10 +129,11 @@ class MultiRoomEditorTab(ttk.Frame):
         side_panel_hide_button.configure(
             command=toggle_panel_hidden,
         )
-        side_panel_hide_button.grid(column=1, row=0, sticky="nwe")
+        side_panel_hide_button.grid(column=1, row=0, sticky="new")
+        self.side_panel_hide_button = side_panel_hide_button
 
         side_panel_tab_control = ttk.Notebook(side_panel)
-        side_panel_tab_control.grid(row=0, column=0, sticky="nswe")
+        side_panel_tab_control.grid(row=0, column=0, sticky="news")
 
         self.palette_panel = PalettePanel(
             side_panel_tab_control,
@@ -228,6 +229,7 @@ class MultiRoomEditorTab(ttk.Frame):
             vertical=True,
         )
         self.canvas.grid(row=0, column=0, columnspan=3, rowspan=2, sticky="news")
+        self.side_panel_hide_button.tkraise()
         self.canvas.show_intro()
         self.canvas.clear()
         self.show_intro()
@@ -573,7 +575,7 @@ class MultiRoomEditorTab(ttk.Frame):
             name_label.grid(row=0, column=0, sticky="ne", pady=2)
 
             name_entry = tk.Entry(values_frame)
-            name_entry.grid(row=0, column=1, sticky="nwe", pady=2)
+            name_entry.grid(row=0, column=1, sticky="new", pady=2)
 
             separator = ttk.Separator(win)
             separator.grid(row=2, column=0, columnspan=3, pady=5, sticky="news")
