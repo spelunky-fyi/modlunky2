@@ -150,10 +150,12 @@ class LevelCanvas(tk.Canvas):
             self.bind("<Shift-Button-1>", self.select_click, add="+")
             self.bind("<Shift-B1-Motion>", self.select_drag, add="+")
             self.bind("<Shift-ButtonRelease-1>", self.select_release, add="+")
+            self.bind_all("<Escape>", self.cancel_select, add="+")
 
             self.bind("<Button-1>", self.click_fill, add="+")
             self.bind("<Button-3>", self.click_fill, add="+")
 
+        self.active_move = None
         if on_move:
             # Click actions performed when selecting a region.
             self.bind("<Button-1>", self.move_click, add="+")
@@ -162,6 +164,7 @@ class LevelCanvas(tk.Canvas):
             self.bind("<Shift-Button-1>", self.move_click, add="+")
             self.bind("<Shift-B1-Motion>", self.move_drag, add="+")
             self.bind("<Shift-ButtonRelease-1>", self.move_release, add="+")
+            self.bind_all("<Escape>", self.cancel_move, add="+")
 
         if on_pull_tile:
             # Click actions performed when holding shift to select the tile at the cursor's
@@ -358,6 +361,9 @@ class LevelCanvas(tk.Canvas):
         if self.mode != CANVAS_MODE.SELECT:
             return
 
+        if self.current_select_rect == None:
+            return
+
         pos = self.current_select_rect.pos
         first_tile = self.current_select_rect.first_tile
         last_tile = self.current_select_rect.last_tile
@@ -376,6 +382,17 @@ class LevelCanvas(tk.Canvas):
             self.coords(self.current_select_rect.rect, pos.x0, pos.y0, pos.x1, pos.y1)
 
         self.current_select_rect = None
+
+    def cancel_select(self, event):
+        if self.mode != CANVAS_MODE.SELECT:
+            return
+        if self.current_select_rect == None:
+            return
+
+        self.delete(self.current_select_rect.rect)
+        self.select_rects.remove(self.current_select_rect)
+        self.current_select_rect = None
+
 
     def move_click(self, event):
         if self.mode != CANVAS_MODE.MOVE:
@@ -415,6 +432,9 @@ class LevelCanvas(tk.Canvas):
         if self.mode != CANVAS_MODE.MOVE:
             return
 
+        if self.active_move is None:
+            return
+
         last_pos = self.active_move.last_event_pos
         new_pos = Pos(event.x, event.y)
         self.active_move.last_event_pos = new_pos
@@ -423,6 +443,9 @@ class LevelCanvas(tk.Canvas):
 
     def move_release(self, event):
         if self.mode != CANVAS_MODE.MOVE:
+            return
+
+        if self.active_move is None:
             return
 
         last_pos = self.active_move.last_event_pos
@@ -437,6 +460,21 @@ class LevelCanvas(tk.Canvas):
         dist_y = last_pos.y // self.zoom_level - start_pos.y // self.zoom_level
 
         self.on_move(tiles, dist_x, dist_y)
+
+    def cancel_move(self, event):
+        if self.mode != CANVAS_MODE.MOVE:
+            return
+
+        if self.active_move is None:
+            return
+
+        last_pos = self.active_move.last_event_pos
+        start_pos = self.active_move.start_pos
+
+        for tile in self.active_move.tiles:
+            self.move(tile.image, start_pos.x - last_pos.x, start_pos.y - last_pos.y)
+
+        self.active_move = None
 
     def set_zoom(self, zoom_level):
         self.zoom_level = zoom_level
