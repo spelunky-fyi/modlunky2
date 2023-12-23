@@ -48,6 +48,11 @@ class ToolSelect(tk.Frame):
         )
         self.move_button.grid(row=3, column=0, sticky="e")
 
+        self.bind_all("d", self.select_draw_binding)
+        self.bind_all("s", self.select_select_binding)
+        self.bind_all("f", self.select_fill_binding)
+        self.bind_all("m", self.select_move_binding)
+
         self.select_draw()
 
     def reset_button_colors(self):
@@ -60,26 +65,46 @@ class ToolSelect(tk.Frame):
         self.fill_button.configure(relief=tk.RAISED)
         self.move_button.configure(relief=tk.RAISED)
 
-    def select_draw(self):
+    def select_draw(self, _=None):
         self.on_select_tool(CANVAS_MODE.DRAW)
         self.reset_button_colors()
         self.draw_button.configure(bg="white")
         self.draw_button.configure(relief=tk.SUNKEN)
 
-    def select_select(self):
+    def select_select(self, _=None):
         self.on_select_tool(CANVAS_MODE.SELECT)
         self.reset_button_colors()
         self.select_button.configure(bg="white")
         self.select_button.configure(relief=tk.SUNKEN)
 
-    def select_fill(self):
+    def select_fill(self, _=None):
         self.on_select_tool(CANVAS_MODE.FILL)
         self.reset_button_colors()
         self.fill_button.configure(bg="white")
         self.fill_button.configure(relief=tk.SUNKEN)
 
-    def select_move(self):
+    def select_move(self, _=None):
         self.on_select_tool(CANVAS_MODE.MOVE)
         self.reset_button_colors()
         self.move_button.configure(bg="white")
         self.move_button.configure(relief=tk.SUNKEN)
+
+    def select_draw_binding(self, _):
+        if not self.winfo_ismapped():
+            return
+        self.select_draw()
+
+    def select_select_binding(self, _):
+        if not self.winfo_ismapped():
+            return
+        self.select_select()
+
+    def select_fill_binding(self, _):
+        if not self.winfo_ismapped():
+            return
+        self.select_fill()
+
+    def select_move_binding(self, _):
+        if not self.winfo_ismapped():
+            return
+        self.select_move()
