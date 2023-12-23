@@ -16,6 +16,7 @@ class LevelListPanel(ttk.Frame):
         on_paste_room,
         on_rename_room,
         on_room_select,
+        on_create_template,
         modlunky_config,
         *args,
         **kwargs
@@ -31,6 +32,8 @@ class LevelListPanel(ttk.Frame):
             on_copy_room,
             on_paste_room,
             on_rename_room,
+            on_room_select,
+            on_create_template,
             modlunky_config,
             selectmode="browse",
         )
@@ -41,8 +44,6 @@ class LevelListPanel(ttk.Frame):
         self.levels_tree.configure(yscrollcommand=self.vsb.set)
         self.levels_tree.grid(row=0, column=0, sticky="nswe")
         self.vsb.grid(row=0, column=0, sticky="nse")
-
-        self.levels_tree.bind("<ButtonRelease-1>", on_room_select)
 
     def reset(self):
         self.levels_tree.reset()

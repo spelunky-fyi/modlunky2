@@ -75,7 +75,7 @@ class MultiRoomEditorTab(ttk.Frame):
         self.default_draw_map = None
         self.reverse_layers = True
 
-        self.zoom_level = 30 # Sensible default.
+        self.zoom_level = 30  # Sensible default.
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
