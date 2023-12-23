@@ -311,7 +311,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.mag,
             self.canvas_click,
             self.canvas_shiftclick,
-            "Select a room to begin editing",
+            intro_text="Select a room to begin editing",
         )
         self.canvas.grid(row=0, column=0, rowspan=4, columnspan=8, sticky="news")
 
