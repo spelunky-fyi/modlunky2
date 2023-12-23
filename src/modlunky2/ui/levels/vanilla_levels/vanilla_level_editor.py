@@ -221,6 +221,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.on_paste_room,
             self.on_rename_room,
             self.room_select,
+            self.on_create_template,
             self.modlunky_config,
         )
         self.level_list_panel.grid(row=0, column=0, rowspan=5, sticky="nswe")
@@ -315,7 +316,7 @@ class VanillaLevelEditor(ttk.Frame):
                     )
                 )
             self.canvas.set_zoom(self.mag)
-            self.room_select(None)
+            self.room_select()
 
         self.slider_zoom = tk.Scale(
             self.editor_tab,
@@ -510,13 +511,13 @@ class VanillaLevelEditor(ttk.Frame):
 
     def multiroom_editor_modified_room(self, template_draw_item):
         if template_draw_item.room_chunk == self.current_selected_room:
-            self.room_select(None)
+            self.room_select()
         self.changes_made()
 
     def multiroom_editor_changed_filetree(self):
         self.level_list_panel.reset()
         self.level_list_panel.set_rooms(self.template_list)
-        self.room_select(None)
+        self.room_select()
 
     def save_requested(self):
         if self.save_needed:
@@ -799,7 +800,7 @@ class VanillaLevelEditor(ttk.Frame):
                     replace_room_chunk([room_instance.front, room_instance.back])
         else:
             replace_room_chunk(self.tile_codes)
-        self.room_select(None)
+        self.room_select()
         self.changes_made()
 
     def clear_canvas(self):
@@ -818,7 +819,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.draw_grid()
             self.changes_made()
 
-    def room_select(self, _event):  # Loads room when click if not parent node.
+    def room_select(self):  # Loads room when click if not parent node.
         dual_mode = False
         template_index, room_instance_index = self.level_list_panel.get_selected_room()
         if template_index is not None and room_instance_index is not None:
@@ -1097,6 +1098,28 @@ class VanillaLevelEditor(ttk.Frame):
         room_template = self.template_list[parent_index]
         room_instance = room_template.rooms[room_index]
         room_instance.name = new_name
+
+    def on_create_template(self, template_name, comment, width, height):
+        for template in self.template_list:
+            if template.name == template_name:
+                return (
+                    False,
+                    "Template named " + template_name + " already exists.",
+                    None,
+                )
+
+        front_layer = [["0" for _ in range(width)] for _ in range(height)]
+        back_layer = [["0" for _ in range(width)] for _ in range(height)]
+        initial_room = RoomInstance(None, [], front_layer, back_layer)
+
+        new_template = RoomTemplate(template_name, comment, [initial_room])
+        self.template_list.append(new_template)
+        self.changes_made()
+        # self.level_list_panel.set_rooms(self.template_list)
+        self.multi_room_editor_tab.open_lvl(
+            self.lvl, self.lvl_biome, self.tile_palette_map, self.template_list
+        )
+        return True, None, new_template
 
     def reset_canvas(self):
         self.canvas.clear()
