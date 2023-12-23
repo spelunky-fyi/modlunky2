@@ -64,8 +64,6 @@ class MoveTile:
 @dataclass
 class ActiveMove:
     tiles: List[MoveTile]
-    # tiles: List[TileIndex]
-    # tile_images: List[any]
     start_pos: Pos
     last_event_pos: Pos
 
@@ -405,7 +403,6 @@ class LevelCanvas(tk.Canvas):
             return
 
         tiles = []
-        # tile_images = []
 
         if len(self.select_rects) > 0 and self.pos_in_selection(row, column):
             for c in range(self.width):
