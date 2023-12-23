@@ -469,9 +469,10 @@ class LevelCanvas(tk.Canvas):
 
     def clear(self):
         self.delete("all")
-        # self.tile_images = []
-        # self.grid_lines = []
-        # self.room_lines = []
+        self.clear_selections()
+        self.tile_images = []
+        self.grid_lines = []
+        self.room_lines = []
 
     # Path to the background image that will be shown behind the grid.
     def background_for_theme(self, theme):
