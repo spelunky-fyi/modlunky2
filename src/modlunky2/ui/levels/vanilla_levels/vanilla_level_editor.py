@@ -347,6 +347,27 @@ class VanillaLevelEditor(ttk.Frame):
         )
         self.palette_panel.grid(row=0, column=9, rowspan=5, columnspan=4, sticky="nwse")
 
+        # Allow hiding the side panel so more level can be seen.
+        side_panel_hidden = False
+        side_panel_hide_button = tk.Button(self.editor_tab, text=">>")
+
+        def toggle_panel_hidden():
+            nonlocal side_panel_hidden
+            side_panel_hidden = not side_panel_hidden
+            if side_panel_hidden:
+                self.palette_panel.grid_remove()
+                side_panel_hide_button.configure(text="<<")
+            else:
+                self.palette_panel.grid()
+                side_panel_hide_button.configure(text=">>")
+
+        side_panel_hide_button.configure(
+            command=toggle_panel_hidden,
+        )
+        side_panel_hide_button.grid(column=7, row=0, sticky="nwe")
+        self.editor_tab.columnconfigure(7, minsize=50)
+        self.editor_tab.columnconfigure(8, minsize=0)
+
         self.level_settings_bar = LevelSettingsBar(self.editor_tab, self.setting_flip)
         self.level_settings_bar.grid(row=4, column=1, columnspan=8, sticky="news")
 
@@ -941,7 +962,7 @@ class VanillaLevelEditor(ttk.Frame):
         template_index, room_instance_index = self.level_list_panel.get_selected_room()
         if template_index is not None and room_instance_index is not None:
             self.canvas.clear()
-            self.canvas.hide_intro()
+            self.hide_intro()
 
             selected_room = self.template_list[template_index].rooms[
                 room_instance_index
@@ -1015,7 +1036,7 @@ class VanillaLevelEditor(ttk.Frame):
         else:
             self.canvas.clear()
             self.canvas.hide_canvas(1, True)
-            self.canvas.show_intro()
+            self.show_intro()
         self.button_clear["state"] = tk.NORMAL
 
     def delete_tilecode(self, tile_name, tile_code):
@@ -1188,7 +1209,7 @@ class VanillaLevelEditor(ttk.Frame):
         room_template = self.template_list[parent_index]
         if room_template.rooms[room_index] == self.current_selected_room:
             self.canvas.clear()
-            self.canvas.show_intro()
+            self.show_intro()
         del room_template.rooms[room_index]
         self.changes_made()
         self.multi_room_editor_tab.room_was_deleted(parent_index, room_index)
@@ -1226,6 +1247,14 @@ class VanillaLevelEditor(ttk.Frame):
         self.reset()
         self.files_tree.load_packs()
 
+    def show_intro(self):
+        self.canvas.show_intro()
+        self.editor_tab.columnconfigure(8, minsize=0)
+
+    def hide_intro(self):
+        self.canvas.hide_intro()
+        self.editor_tab.columnconfigure(8, minsize=17)
+
     def reset(self):
         logger.debug("Resetting...")
         self.level_list_panel.reset()
@@ -1233,7 +1262,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.palette_panel.reset()
             self.full_level_preview_canvas.show_intro()
             self.full_level_preview_canvas.clear()
-            self.canvas.show_intro()
+            self.show_intro()
             self.canvas.clear()
             self.tile_palette_map = {}
             self.tile_palette_ref_in_use = None
