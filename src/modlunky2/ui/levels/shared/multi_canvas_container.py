@@ -47,7 +47,7 @@ class MultiCanvasContainer(tk.Frame):
         if canvas_titles is None or len(canvas_titles) == 0:
             canvas_titles = [""]
 
-        scrollable_canvas = tk.Canvas(self, bg="#292929")
+        scrollable_canvas = tk.Canvas(self, bg="#292929", highlightthickness=0)
         scrollable_canvas.grid(row=0, column=0, rowspan=2, columnspan=2, sticky="news")
         scrollable_canvas.columnconfigure(0, weight=1)
         scrollable_canvas.rowconfigure(0, weight=1)
