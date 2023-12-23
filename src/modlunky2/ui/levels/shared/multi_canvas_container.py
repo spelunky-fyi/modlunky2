@@ -157,8 +157,18 @@ class MultiCanvasContainer(tk.Frame):
                             tab_index, index
                         ): self.on_shiftclick(i, row, column, is_primary)
                     ),
-                    on_fill and (lambda tiles, is_primary, i=CanvasIndex(tab_index, index): self.on_fill(i, tiles, is_primary)),
-                    on_fill_type and (lambda row, column, is_primary, i=CanvasIndex(tab_index, index): self.on_fill_type(i, row, column, is_primary)),
+                    on_fill
+                    and (
+                        lambda tiles, is_primary, i=CanvasIndex(
+                            tab_index, index
+                        ): self.on_fill(i, tiles, is_primary)
+                    ),
+                    on_fill_type
+                    and (
+                        lambda row, column, is_primary, i=CanvasIndex(
+                            tab_index, index
+                        ): self.on_fill_type(i, row, column, is_primary)
+                    ),
                     bg="#343434",
                 )
                 if vertical:
@@ -213,7 +223,6 @@ class MultiCanvasContainer(tk.Frame):
                 wraplength=600,
             )
             intro_label.place(relx=0.5, rely=0.5, anchor="center")
-
 
     def update_scroll_region(self, attempt_to_center):
         self.scrollable_canvas.update_idletasks()
