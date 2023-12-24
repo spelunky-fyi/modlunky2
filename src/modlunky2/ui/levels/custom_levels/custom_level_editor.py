@@ -16,6 +16,7 @@ from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_them
 from modlunky2.ui.levels.shared.biomes import BIOME
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
 from modlunky2.ui.levels.shared.level_canvas import CANVAS_MODE
+from modlunky2.ui.levels.shared.tile import Tile
 from modlunky2.ui.levels.shared.multi_canvas_container import (
     MultiCanvasContainer,
     CanvasIndex,
@@ -299,17 +300,17 @@ class CustomLevelEditor(ttk.Frame):
         hard_floor_code = None
         # Populate the tile palette from the tile codes listed in the level file.
         for tilecode in level.tile_codes.all():
-            tilecode_item = []
-            tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
-
             img = self.texture_fetcher.get_texture(
                 tilecode.name, theme, lvl, self.zoom_level
             )
             img_select = self.texture_fetcher.get_texture(tilecode.name, theme, lvl, 40)
 
-            tilecode_item.append(ImageTk.PhotoImage(img))
-            tilecode_item.append(ImageTk.PhotoImage(img_select))
-
+            tilecode_item = Tile(
+                tilecode.name,
+                tilecode.value,
+                ImageTk.PhotoImage(img),
+                ImageTk.PhotoImage(img_select),
+            )
             if tilecode.value in self.usable_codes:
                 self.usable_codes.remove(tilecode.value)
             self.tile_palette_ref_in_use.append(tilecode_item)
@@ -329,8 +330,9 @@ class CustomLevelEditor(ttk.Frame):
             else:
                 hard_floor_code = self.usable_codes[0]
             self.usable_codes.remove(hard_floor_code)
-            tilecode_item = [
-                "floor_hard " + str(hard_floor_code),
+            tilecode_item = Tile(
+                "floor_hard",
+                str(hard_floor_code),
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
                         "floor_hard", theme, lvl, self.zoom_level
@@ -339,7 +341,7 @@ class CustomLevelEditor(ttk.Frame):
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture("floor_hard", theme, lvl, 40)
                 ),
-            ]
+            )
             self.tile_palette_ref_in_use.append(tilecode_item)
             self.tile_palette_map[hard_floor_code] = tilecode_item
 
@@ -349,28 +351,28 @@ class CustomLevelEditor(ttk.Frame):
         if "1" in self.tile_palette_map:
             # If there is a "1" tile code, guess it is a good default tile since it is often the floor.
             tile = self.tile_palette_map["1"]
-            self.palette_panel.select_tile(tile[0], tile[2], True)
+            self.palette_panel.select_tile(tile, True)
         elif len(self.tile_palette_ref_in_use) > 0:
             # If there is no "1" tile, just populate with the first tile.
             tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel.select_tile(tile[0], tile[2], True)
+            self.palette_panel.select_tile(tile, True)
             secondary_backup_index = 1
 
         # Populate the default tile code for right clicks.
         if "0" in self.tile_palette_map:
             # If there is a "0" tile code, guess it is a good default secondary tile since it is often the empty tile.
             tile = self.tile_palette_map["0"]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.palette_panel.select_tile(tile, False)
         elif len(self.tile_palette_ref_in_use) > secondary_backup_index:
             # If there is not a "0" tile code, populate with the second tile code if the
             # primary tile code was populated from the first one.
             tile = self.tile_palette_ref_in_use[secondary_backup_index]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.palette_panel.select_tile(tile, False)
         elif len(self.tile_palette_ref_in_use) > 0:
             # If there are only one tile code available, populate both right and
             # left click with it.
             tile = self.tile_palette_ref_in_use[0]
-            self.palette_panel.select_tile(tile[0], tile[2], False)
+            self.palette_panel.select_tile(tile, False)
 
         # Populate the list of suggested tiles based on the current theme.
         self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
@@ -546,12 +548,11 @@ class CustomLevelEditor(ttk.Frame):
                     if tile_index >= self.lvl_width * 10:
                         continue
                     tilecode = self.tile_palette_map[tile]
-                    tile_name = tilecode[0].split(" ", 1)[0]
-                    tile_image = tilecode[1]
+                    tile_image = tilecode.image
                     x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
                         tile_image.width(),
                         tile_image.height(),
-                        tile_name,
+                        tilecode.name,
                         self.zoom_level,
                     )
                     self.canvas.replace_tile_at(
@@ -572,33 +573,33 @@ class CustomLevelEditor(ttk.Frame):
     # Click event on a canvas for either left or right click to replace the tile at the cursor's position with
     # the selected tile.
     def canvas_click(self, canvas_index, row, column, is_primary):
-        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
-        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
+        tile = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile, self.zoom_level)
 
         self.canvas.replace_tile_at(
             canvas_index,
             row,
             column,
-            self.tile_palette_map[tile_code][1],
+            self.tile_palette_map[tile.code].image,
             x_offset,
             y_offset,
         )
-        self.tile_codes[canvas_index.tab_index][row][column] = tile_code
+        self.tile_codes[canvas_index.tab_index][row][column] = tile.code
         self.changes_made()
 
     def canvas_shiftclick(self, index, row, column, is_primary):
         tile_code = self.tile_codes[index.tab_index][row][column]
         tile = self.tile_palette_map[tile_code]
 
-        self.palette_panel.select_tile(tile[0], tile[2], is_primary)
+        self.palette_panel.select_tile(tile, is_primary)
 
     def canvas_fill(self, canvas_index, tiles, is_primary):
         for tile in tiles:
             self.canvas_click(canvas_index, tile.y, tile.x, is_primary)
 
     def canvas_fill_type(self, canvas_index, row, column, is_primary):
-        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
-        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
+        tile = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile, self.zoom_level)
 
         replace_code = self.tile_codes[canvas_index.tab_index][row][column]
 
@@ -611,11 +612,11 @@ class CustomLevelEditor(ttk.Frame):
                         canvas_index,
                         r,
                         c,
-                        self.tile_palette_map[tile_code][1],
+                        self.tile_palette_map[tile.code].image,
                         x_offset,
                         y_offset,
                     )
-                    self.tile_codes[canvas_index.tab_index][r][c] = tile_code
+                    self.tile_codes[canvas_index.tab_index][r][c] = tile.code
         self.changes_made()
 
     def canvas_move(self, canvas_index, tiles, dist_x, dist_y):
@@ -625,10 +626,8 @@ class CustomLevelEditor(ttk.Frame):
         ]
         empty = None
         for tile_ref in self.tile_palette_ref_in_use:
-            tile_name = str(tile_ref[0].split(" ", 2)[0])
-            tile_code = str(tile_ref[0].split(" ", 2)[1])
-            if tile_name == "empty":
-                empty = tile_code
+            if tile_ref.name == "empty":
+                empty = tile_ref
 
         # If we didn't find an "empty" tile code, create one and use it.
         if not empty:
@@ -636,15 +635,11 @@ class CustomLevelEditor(ttk.Frame):
                 "empty",
                 "100",
                 "empty",
-            )[0].split(
-                " ", 2
-            )[1]
+            )
 
         for origin_x, origin_y, tile_code in replacement_tiles:
-            self.canvas.replace_tile_at(
-                canvas_index, origin_y, origin_x, self.tile_palette_map[empty][1]
-            )
-            self.tile_codes[canvas_index.tab_index][origin_y][origin_x] = empty
+            self.canvas.replace_tile_at(canvas_index, origin_y, origin_x, empty.image)
+            self.tile_codes[canvas_index.tab_index][origin_y][origin_x] = empty.code
 
         for origin_x, origin_y, tile_code in replacement_tiles:
             new_x = origin_x + dist_x
@@ -657,15 +652,13 @@ class CustomLevelEditor(ttk.Frame):
             ):
                 continue
             tile = self.tile_palette_map[tile_code]
-            x_offset, y_offset = self.offset_for_tile(
-                tile[0].split(" ", 2)[0], tile_code, self.zoom_level
-            )
+            x_offset, y_offset = self.offset_for_tile(tile, self.zoom_level)
 
             self.canvas.replace_tile_at(
                 canvas_index,
                 new_y,
                 new_x,
-                tile[1],
+                tile.image,
                 x_offset,
                 y_offset,
             )
@@ -677,17 +670,17 @@ class CustomLevelEditor(ttk.Frame):
         self.canvas.set_mode(tool)
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
-    def offset_for_tile(self, tile_name, tile_code, tile_size):
-        logger.debug("Applying custom anchor for %s", tile_name)
-        tile_ref = self.tile_palette_map[tile_code]
-        if tile_ref:
-            logger.debug("Found %s", tile_ref[0])
-            img = tile_ref[1]
-            return self.texture_fetcher.adjust_texture_xy(
-                img.width(), img.height(), tile_name, tile_size
-            )
+    def offset_for_tile(self, tile, tile_size):
+        if tile is None:
+            return
 
-        return 0, 0
+        logger.debug("Applying custom anchor for %s", tile.name)
+
+        logger.debug("Found %s", tile.name)
+        img = tile.image
+        return self.texture_fetcher.adjust_texture_xy(
+            img.width(), img.height(), tile.name, tile_size
+        )
 
     def add_tilecode(self, tile, percent, alt_tile):
         usable_code = None
@@ -731,7 +724,7 @@ class CustomLevelEditor(ttk.Frame):
 
         # compares tile id to tile ids in palette list
         for palette_tile in self.tile_palette_ref_in_use:
-            palette_tile = palette_tile[0].split()[0].strip()
+            palette_tile = palette_tile.name
             if new_tile_code == palette_tile:
                 tkMessageBox.showinfo("Uh Oh!", "You already have that!")
                 return
@@ -747,10 +740,7 @@ class CustomLevelEditor(ttk.Frame):
             )
             return
 
-        ref_tile = []
-        ref_tile.append(new_tile_code + " " + str(usable_code))
-        ref_tile.append(tile_image)
-        ref_tile.append(tile_image_picker)
+        ref_tile = Tile(new_tile_code, str(usable_code), tile_image, tile_image_picker)
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
@@ -759,8 +749,8 @@ class CustomLevelEditor(ttk.Frame):
         self.changes_made()
         return ref_tile
 
-    def delete_tilecode(self, tile_name, tile_code):
-        if tile_name == r"empty":
+    def delete_tilecode(self, tile):
+        if tile.name == r"empty":
             tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
             return False
 
@@ -774,19 +764,22 @@ class CustomLevelEditor(ttk.Frame):
             for matrix_index, tile_code_matrix in enumerate(self.tile_codes):
                 for row in range(len(tile_code_matrix)):
                     for column in range(len(tile_code_matrix[row])):
-                        if str(tile_code_matrix[row][column]) == str(tile_code):
+                        if str(tile_code_matrix[row][column]) == tile.code:
                             self.canvas.replace_tile_at(
-                                CanvasIndex(matrix_index, 0), row, column, new_tile[1]
+                                CanvasIndex(matrix_index, 0),
+                                row,
+                                column,
+                                new_tile.image,
                             )
                             tile_code_matrix[row][column] = "0"
-            self.usable_codes.append(str(tile_code))
-            logger.debug("%s is now available for use.", tile_code)
+            self.usable_codes.append(tile.code)
+            logger.debug("%s is now available for use.", tile.code)
 
             # Adds tilecode back to list to be reused.
             for id_ in self.tile_palette_ref_in_use:
-                if str(tile_code) == str(id_[0].split(" ", 2)[1]):
+                if tile.code == id_.code:
                     self.tile_palette_ref_in_use.remove(id_)
-                    logger.debug("Deleted %s", tile_name)
+                    logger.debug("Deleted %s", tile.name)
 
             self.populate_tilecode_palette()
 
@@ -812,11 +805,15 @@ class CustomLevelEditor(ttk.Frame):
 
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_palette_ref_in_use:
-            tile_name = tilecode_item[0].split(" ", 2)[0]
+            tile_name = tilecode_item.name
             img = self.texture_fetcher.get_texture(
                 tile_name, theme, self.lvl, self.zoom_level
             )
-            tilecode_item[1] = ImageTk.PhotoImage(img)
+            img_select = self.texture_fetcher.get_texture(
+                tile_name, theme, self.lvl, 40
+            )
+            tilecode_item.image = ImageTk.PhotoImage(img)
+            tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
 
         # Load suggested tiles for the new theme.
         self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
@@ -860,12 +857,10 @@ class CustomLevelEditor(ttk.Frame):
         # Try to find a tile code for the empty tile and the hard floor to use as the
         # default tile codes of the front and back layers, respectively.
         for tile_ref in self.tile_palette_ref_in_use:
-            tile_name = str(tile_ref[0].split(" ", 2)[0])
-            tile_code = str(tile_ref[0].split(" ", 2)[1])
-            if tile_name == "empty":
-                empty = tile_code
-            elif tile_name == "floor_hard":
-                hard_floor = tile_code
+            if tile_ref.name == "empty":
+                empty = tile_ref.code
+            elif tile_ref.name == "floor_hard":
+                hard_floor = tile_ref.code
 
         # If we didn't find an "empty" tile code, create one and use it.
         if not empty:
@@ -873,18 +868,14 @@ class CustomLevelEditor(ttk.Frame):
                 "empty",
                 "100",
                 "empty",
-            )[0].split(
-                " ", 2
-            )[1]
+            ).code
         # If we did not find a "hard_floor" tile code, create one and use it.
         if not hard_floor:
             hard_floor = self.add_tilecode(
                 "hard_floor",
                 "100",
                 "empty",
-            )[0].split(
-                " ", 2
-            )[1]
+            ).code
 
         self.tile_codes = [
             fill_to_size_with_tile(self.tile_codes[LAYER.FRONT], empty, width, height),
@@ -902,8 +893,8 @@ class CustomLevelEditor(ttk.Frame):
         self.zoom_level = zoom
         if self.lvl:
             for tile in self.tile_palette_ref_in_use:
-                tile_name = tile[0].split(" ", 2)[0]
-                tile[1] = ImageTk.PhotoImage(
+                tile_name = tile.name
+                tile.image = ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
                         tile_name,
                         self.lvl_biome,

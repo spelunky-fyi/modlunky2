@@ -3,6 +3,7 @@ from tkinter import ttk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.levels.tile_codes import VALID_TILE_CODES
+from modlunky2.ui.levels.shared.tile import Tile
 from modlunky2.ui.widgets import PopupWindow, ScrollableFrameLegacy, Tab
 
 
@@ -98,7 +99,6 @@ class SelectedTilecodeView(ttk.Frame):
 
         self.sprite_fetcher = sprite_fetcher
         self.title_prefix = title_prefix
-        self.name = None
 
         self.delete_button = tk.Button(
             self,
@@ -106,18 +106,20 @@ class SelectedTilecodeView(ttk.Frame):
             bg="red",
             fg="white",
             width=10,
-            command=lambda: on_delete(self.tile_name(), self.tile_code()),
+            command=lambda: on_delete(self.tile),
         )
 
         # Shows selected tile. Important because this is used for more than just user
         # convenience; we can grab the currently used tile here
         self.title_label = ttk.Label(self, text=title_prefix + " empty 0")
 
-        self.img = None
+        self.tile = None
         self.img_empty = ImageTk.PhotoImage(
             sprite_fetcher.get("empty").resize((40, 40), Image.Resampling.LANCZOS)
         )
         self.img_view = ttk.Label(self, image=self.img_empty, width=50)
+
+        self.img = None
 
         self.columnconfigure(0, minsize=8)
         self.columnconfigure(2, weight=1)
@@ -128,23 +130,26 @@ class SelectedTilecodeView(ttk.Frame):
 
         self.reset()
 
-    def select_tile(self, name, image):
-        self.title_label["text"] = self.title_prefix + " " + name
-        if image:
-            self.img_view["image"] = image
+    def select_tile(self, tile):
+        self.tile = tile
+        self.refresh()
+
+    def refresh(self):
+        tile = self.tile
+        if tile is None:
+            self.title_label["text"] = self.title_prefix
+        else:
+            self.title_label["text"] = (
+                self.title_prefix + " " + tile.name + " " + tile.code
+            )
+        if tile is not None and tile.image:
+            self.img_view["image"] = tile.picker_image
+            self.img = tile.picker_image
         else:
             self.img_view["image"] = self.img_empty
-        self.img = image
-        self.name = name
-
-    def tile_name(self):
-        return self.name.split(" ", 1)[0]
-
-    def tile_code(self):
-        return self.name.split(" ", 1)[1]
 
     def reset(self, disable=True):
-        self.select_tile("empty 0", None)
+        self.select_tile(Tile("empty", "0", self.img_empty, self.img_empty))
         if disable:
             self.disable()
 
@@ -197,12 +202,12 @@ class PalettePanel(ttk.Frame):
         self.palette.grid(row=2, column=0, sticky="swne")
         self.new_tile_panel.grid(row=3, column=0, sticky="swne")
 
-    def delete_tilecode(self, tile_name, tile_code):
-        deleted = self.on_delete_tilecode(tile_name, tile_code)
+    def delete_tilecode(self, tile):
+        deleted = self.on_delete_tilecode(tile)
         if deleted:
-            if self.primary_tile_view.tile_code() == tile_code:
+            if self.primary_tile_view.tile.code == tile.code:
                 self.primary_tile_view.reset(disable=False)
-            if self.secondary_tile_view.tile_code() == tile_code:
+            if self.secondary_tile_view.tile.code == tile.code:
                 self.secondary_tile_view.reset(disable=False)
 
     def update_with_palette(
@@ -224,30 +229,24 @@ class PalettePanel(ttk.Frame):
                 count_col = 0
                 count_row = count_row + 1
 
-            tile_name = tile_keep[0].split(" ", 2)[0]
-            used_tile_names.append(tile_name)
+            used_tile_names.append(tile_keep.name)
 
-            self.tile_images.append(tile_keep[2])
+            self.tile_images.append(tile_keep.picker_image)
             new_tile = tk.Button(
                 self.palette.scrollable_frame,
-                text=tile_keep[0],
+                text=tile_keep.name,
                 width=40,
                 height=40,
-                # image=tile_image,
-                image=tile_keep[2],
+                image=tile_keep.picker_image,
             )
             new_tile.grid(row=count_row, column=count_col)
             new_tile.bind(
                 "<Button-1>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(
-                    event, r, c, True
-                ),
+                lambda event, t=tile_keep: self.tile_pick(event, t, True),
             )
             new_tile.bind(
                 "<Button-3>",
-                lambda event, r=count_row, c=count_col: self.tile_pick(
-                    event, r, c, False
-                ),
+                lambda event, t=tile_keep: self.tile_pick(event, t, False),
             )
 
             # Bind first ten tiles to number keys
@@ -255,15 +254,11 @@ class PalettePanel(ttk.Frame):
             if tile_index <= 10:
                 self.bind_all(
                     f"{tile_index%10}",
-                    lambda event, r=count_row, c=count_col: self.tile_pick(
-                        event, r, c, True
-                    ),
+                    lambda event, t=tile_keep: self.tile_pick(event, t, True),
                 )
                 self.bind_all(
                     f"<Alt-Key-{tile_index%10}>",
-                    lambda event, r=count_row, c=count_col: self.tile_pick(
-                        event, r, c, False
-                    ),
+                    lambda event, t=tile_keep: self.tile_pick(event, t, False),
                 )
 
         if suggestions and len(suggestions):
@@ -300,15 +295,11 @@ class PalettePanel(ttk.Frame):
                 new_tile.grid(row=count_row, column=count_col)
                 new_tile.bind(
                     "<Button-1>",
-                    lambda event, ts=suggestion, ti=tile_image: self.suggested_tile_pick(
-                        event, ts, ti
-                    ),
+                    lambda event, ts=suggestion: self.suggested_tile_pick(event, ts),
                 )
                 new_tile.bind(
                     "<Button-3>",
-                    lambda event, ts=suggestion, ti=tile_image: self.suggested_tile_pick(
-                        event, ts, ti
-                    ),
+                    lambda event, ts=suggestion: self.suggested_tile_pick(event, ts),
                 )
 
         if dependency_tiles and len(dependency_tiles):
@@ -332,12 +323,12 @@ class PalettePanel(ttk.Frame):
                         count_col = 0
                         count_row += 1
 
-                    tile_image = tile[2]
+                    tile_image = tile.picker_image
                     self.tile_images.append(tile_image)
 
                     new_tile = tk.Button(
                         self.palette.scrollable_frame,
-                        text=tile[0],
+                        text=tile.name,
                         width=40,
                         height=40,
                         image=tile_image,
@@ -358,37 +349,34 @@ class PalettePanel(ttk.Frame):
 
         self.primary_tile_view.enable()
         self.secondary_tile_view.enable()
+        self.primary_tile_view.refresh()
+        self.secondary_tile_view.refresh()
         self.new_tile_panel.reset()
         self.new_tile_panel.enable()
 
-    def tile_pick(self, event, row, col, is_primary):
-        if not self.palette.scrollable_frame.grid_slaves(row, col):
-            return
-        selected_tile = self.palette.scrollable_frame.grid_slaves(row, col)[0]
-        self.select_tile(
-            selected_tile["text"], selected_tile["image"], is_primary, True
-        )
+    def tile_pick(self, event, tile, is_primary):
+        self.select_tile(tile, is_primary, True)
 
-    def suggested_tile_pick(self, event, suggested_tile, tile_image):
+    def suggested_tile_pick(self, event, suggested_tile):
         tile = self.on_add_tilecode(suggested_tile, 100, "empty")
         if not tile:
             return
-        self.select_tile(tile[0], tile_image, event.num == 1, True)
+        self.select_tile(tile, event.num == 1, True)
 
     def dependency_tile_pick(self, event, tile, dependency):
         if self.on_use_dependency_tile:
             self.on_use_dependency_tile(tile, dependency)
 
-            self.select_tile(tile[0], tile[2], event.num == 1, True)
+            self.select_tile(tile, event.num == 1, True)
 
-    def select_tile(self, tile_name, tile_image, is_primary, tell_delegate=False):
+    def select_tile(self, tile, is_primary, tell_delegate=False):
         tile_view = self.primary_tile_view
         if not is_primary:
             tile_view = self.secondary_tile_view
-        tile_view.select_tile(tile_name, tile_image)
+        tile_view.select_tile(tile)
 
         if tell_delegate and self.on_select_tile:
-            self.on_select_tile(tile_name, tile_image, is_primary)
+            self.on_select_tile(tile, is_primary)
 
     def reset(self):
         for widget in self.palette.scrollable_frame.winfo_children():
@@ -402,10 +390,7 @@ class PalettePanel(ttk.Frame):
         return self.primary_tile() if is_primary else self.secondary_tile()
 
     def primary_tile(self):
-        return self.primary_tile_view.tile_name(), self.primary_tile_view.tile_code()
+        return self.primary_tile_view.tile
 
     def secondary_tile(self):
-        return (
-            self.secondary_tile_view.tile_name(),
-            self.secondary_tile_view.tile_code(),
-        )
+        return self.secondary_tile_view.tile

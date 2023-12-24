@@ -29,7 +29,7 @@ from modlunky2.ui.levels.shared.multi_canvas_container import (
 )
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom, MatchedSetroom
-from modlunky2.ui.levels.shared.tile import DependencyPalette
+from modlunky2.ui.levels.shared.tile import Tile, DependencyPalette
 from modlunky2.ui.levels.vanilla_levels.dual_util import make_dual, remove_dual
 from modlunky2.ui.levels.vanilla_levels.level_list_panel import LevelListPanel
 from modlunky2.ui.levels.vanilla_levels.level_settings_bar import LevelSettingsBar
@@ -300,11 +300,9 @@ class VanillaLevelEditor(ttk.Frame):
             nonlocal side_panel_hidden
             side_panel_hidden = not side_panel_hidden
             if side_panel_hidden:
-                # self.palette_panel.grid_remove()
                 side_panel_container.grid_remove()
                 side_panel_hide_button.configure(text="<<")
             else:
-                # self.palette_panel.grid()
                 side_panel_container.grid()
                 side_panel_hide_button.configure(text=">>")
 
@@ -322,10 +320,9 @@ class VanillaLevelEditor(ttk.Frame):
             self.canvas.set_zoom(self.mag)
             if self.tile_palette_ref_in_use:
                 for tile in self.tile_palette_ref_in_use:
-                    tile_name = tile[0].split(" ", 2)[0]
-                    tile[1] = ImageTk.PhotoImage(
+                    tile.image = ImageTk.PhotoImage(
                         self.texture_fetcher.get_texture(
-                            tile_name,
+                            tile.name,
                             self.lvl_biome,
                             self.lvl,
                             self.mag,
@@ -335,10 +332,9 @@ class VanillaLevelEditor(ttk.Frame):
             if self.dependency_tile_palette_ref_in_use:
                 for palette in self.dependency_tile_palette_ref_in_use:
                     for tile in palette.tiles:
-                        tile_name = tile[0].split(" ", 2)[0]
-                        tile[1] = ImageTk.PhotoImage(
+                        tile.image = ImageTk.PhotoImage(
                             self.texture_fetcher.get_texture(
-                                tile_name,
+                                tile.name,
                                 self.lvl_biome,
                                 self.lvl,
                                 self.mag,
@@ -400,9 +396,6 @@ class VanillaLevelEditor(ttk.Frame):
             level_tilecodes = level.tile_codes.all()
 
             def tilecode_item(tilecode):
-                tilecode_item = []
-                tilecode_item.append(str(tilecode.name) + " " + str(tilecode.value))
-
                 img = self.texture_fetcher.get_texture(
                     tilecode.name, self.lvl_biome, lvl, self.mag
                 )
@@ -410,27 +403,28 @@ class VanillaLevelEditor(ttk.Frame):
                     tilecode.name, self.lvl_biome, lvl, 40
                 )
 
-                tilecode_item.append(ImageTk.PhotoImage(img))
-                tilecode_item.append(ImageTk.PhotoImage(selection_img))
-
-                return tilecode_item
+                return Tile(
+                    str(tilecode.name),
+                    str(tilecode.value),
+                    ImageTk.PhotoImage(img),
+                    ImageTk.PhotoImage(selection_img),
+                )
 
             return [tilecode_item(tc) for tc in level_tilecodes]
 
         def clear_tile_from_dependencies(tile):
             for palette in self.dependency_tile_palette_ref_in_use:
                 for i in palette.tiles:
-                    if str(i[0]).split(" ", 1)[1] == str(tile[0]).split(" ", 1)[1]:
+                    if i.code == tile.code:
                         palette.tiles.remove(i)
 
         def register_tile_code(tile):
             self.select_palette_tile(tile, True)
             self.select_palette_tile(tile, False)
-            code = tile[0].split(" ", 1)[1]
-            if code in self.usable_codes:
-                self.usable_codes.remove(code)
+            if tile.code in self.usable_codes:
+                self.usable_codes.remove(tile.code)
 
-            self.tile_palette_map[code] = tile
+            self.tile_palette_map[tile.code] = tile
 
         level_dependencies = LevelDependencies.dependencies_for_level(lvl)
 
@@ -498,14 +492,12 @@ class VanillaLevelEditor(ttk.Frame):
             for need in generic_needs:
                 for code in self.usable_codes:
                     if str(code) == need[0] and not any(
-                        need[0] in str(code_in_use[0].split(" ", 3)[1])
+                        need[0] in code_in_use.code
                         for code_in_use in self.tile_palette_ref_in_use
                     ):
                         for i in self.usable_codes:
                             if str(i) == str(need[0]):
                                 self.usable_codes.remove(i)
-                        tilecode_item = []
-                        tilecode_item.append(str(need[1]) + " " + str(need[0]))
 
                         img = self.texture_fetcher.get_texture(
                             str(need[1]), self.lvl_biome, lvl, self.mag
@@ -514,10 +506,14 @@ class VanillaLevelEditor(ttk.Frame):
                             str(need[1]), self.lvl_biome, lvl, 40
                         )
 
-                        tilecode_item.append(ImageTk.PhotoImage(img))
-                        tilecode_item.append(ImageTk.PhotoImage(img_select))
-                        self.tile_palette_ref_in_use.append(tilecode_item)
-                        self.tile_palette_map[need[0]] = tilecode_item
+                        tile = Tile(
+                            str(need[1]),
+                            str(need[0]),
+                            ImageTk.PhotoImage(img),
+                            ImageTk.PhotoImage(img_select),
+                        )
+                        self.tile_palette_ref_in_use.append(tile)
+                        self.tile_palette_map[need[0]] = tile
         self.populate_tilecode_palette()
 
         self.rules_tab.load_level_settings(level.level_settings)
@@ -551,11 +547,11 @@ class VanillaLevelEditor(ttk.Frame):
             self.tile_palette_ref_in_use, None, self.dependency_tile_palette_ref_in_use
         )
 
-    def palette_selected_tile(self, tile_name, image, is_primary):
-        self.multi_room_editor_tab.select_tile(tile_name, image, is_primary)
+    def palette_selected_tile(self, tile, is_primary):
+        self.multi_room_editor_tab.select_tile(tile, is_primary)
 
-    def multiroom_editor_selected_tile(self, tile_name, image, is_primary):
-        self.palette_panel.select_tile(tile_name, image, is_primary)
+    def multiroom_editor_selected_tile(self, tile, is_primary):
+        self.palette_panel.select_tile(tile, is_primary)
 
     def multiroom_editor_modified_room(self, template_draw_item):
         if template_draw_item.room_chunk == self.current_selected_room:
@@ -645,8 +641,8 @@ class VanillaLevelEditor(ttk.Frame):
                 for tilecode in self.tile_palette_ref_in_use:
                     tile_codes.set_obj(
                         TileCode(
-                            name=tilecode[0].split(" ", 1)[0],
-                            value=tilecode[0].split(" ", 1)[1],
+                            name=tilecode.name,
+                            value=tilecode.code,
                             comment="",
                         )
                     )
@@ -706,19 +702,19 @@ class VanillaLevelEditor(ttk.Frame):
         column,
         is_primary,
     ):
-        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
-        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.mag)
+        tile = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile, self.mag)
 
         self.canvas.replace_tile_at(
             canvas_index,
             row,
             column,
-            self.tile_palette_map[tile_code][1],
+            self.tile_palette_map[tile.code].image,
             x_offset,
             y_offset,
         )
 
-        self.tile_codes[canvas_index.canvas_index][row][column] = tile_code
+        self.tile_codes[canvas_index.canvas_index][row][column] = tile.code
         self.changes_made()
 
     def canvas_shiftclick(self, canvas_index, row, column, is_primary):
@@ -728,21 +724,18 @@ class VanillaLevelEditor(ttk.Frame):
         self.select_palette_tile(tile, is_primary)
 
     def select_palette_tile(self, tile, is_primary):
-        self.palette_panel.select_tile(tile[0], tile[2], is_primary)
-        self.multi_room_editor_tab.select_tile(tile[0], tile[2], is_primary)
+        self.palette_panel.select_tile(tile, is_primary)
+        self.multi_room_editor_tab.select_tile(tile, is_primary)
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
-    def offset_for_tile(self, tile_name, tile_code, tile_size):
-        logger.debug("Applying custom anchor for %s", tile_name)
-        tile_ref = self.tile_palette_map[tile_code]
-        if tile_ref:
-            logger.debug("Found %s", tile_ref[0])
-            img = tile_ref[1]
-            return self.texture_fetcher.adjust_texture_xy(
-                img.width(), img.height(), tile_name, tile_size
-            )
-
-        return 0, 0
+    def offset_for_tile(self, tile, tile_size):
+        if not tile:
+            return 0, 0
+        logger.debug("Applying custom anchor for %s", tile.name)
+        img = tile.image
+        return self.texture_fetcher.adjust_texture_xy(
+            img.width(), img.height(), tile.name, tile_size
+        )
 
     def toggle_list_hide(self):
         if self.button_hide_tree["text"] == "<<":
@@ -760,7 +753,7 @@ class VanillaLevelEditor(ttk.Frame):
 
         replacees = []
         for tile in self.tile_palette_ref_in_use:
-            replacees.append(str(tile[0]))
+            replacees.append(tile.name)
 
         col1_lbl = ttk.Label(win, text="Replace all ")
         col1_lbl.grid(row=0, column=0)
@@ -787,7 +780,7 @@ class VanillaLevelEditor(ttk.Frame):
 
         def update_then_destroy():
             if (
-                str(combo_replace.get().split(" ", 1)[0]) != "empty"
+                str(combo_replace.get()) != "empty"
                 and combo_replace.get() != ""
                 and combo_replacer.get() != ""
             ):
@@ -795,17 +788,22 @@ class VanillaLevelEditor(ttk.Frame):
                     error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
-                valid_1 = False
-                valid_2 = False
-                for valid_tile in replacees:
-                    if str(combo_replace.get()) == valid_tile:
-                        valid_1 = True
-                    if str(combo_replacer.get()) == valid_tile:
-                        valid_2 = True
-                if valid_1 is False or valid_2 is False:
+                replace_index = combo_replace.current()
+                replacer_index = combo_replacer.current()
+                valid_1 = replace_index != -1 and replace_index < len(
+                    self.tile_palette_ref_in_use
+                )
+                valid_2 = replacer_index != -1 and replacer_index < len(
+                    self.tile_palette_ref_in_use
+                )
+
+                if not valid_1 or not valid_2:
                     error_lbl["text"] = "Invalid parameter"
                     error_lbl.grid()
                     return
+
+                replacee_tile = self.tile_palette_ref_in_use[replace_index]
+                replacer_tile = self.tile_palette_ref_in_use[replacer_index]
                 if (
                     str(combo_where.get()) == "current room"
                     and self.current_selected_room is None
@@ -814,8 +812,8 @@ class VanillaLevelEditor(ttk.Frame):
                     error_lbl.grid()
                     return
                 self.replace_tiles(
-                    str(combo_replace.get().split(" ", 1)[1]),
-                    str(combo_replacer.get().split(" ", 1)[1]),
+                    replacee_tile.code,
+                    replacer_tile.code,
                     str(combo_where.get()),
                 )
                 win.destroy()
@@ -917,12 +915,11 @@ class VanillaLevelEditor(ttk.Frame):
                 for row_index, row in enumerate(layer_tile_codes):
                     for column_index, tile_code in enumerate(row):
                         tile = self.tile_palette_map[tile_code]
-                        tile_name = str(tile[0]).split(" ", 1)[0]
-                        tile_image = tile[1]
+                        tile_image = tile.image
                         x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
                             tile_image.width(),
                             tile_image.height(),
-                            tile_name,
+                            tile.name,
                         )
                         self.canvas.replace_tile_at(
                             CanvasIndex(0, canvas_index),
@@ -940,34 +937,37 @@ class VanillaLevelEditor(ttk.Frame):
             self.show_intro()
         self.button_clear["state"] = tk.NORMAL
 
-    def delete_tilecode(self, tile_name, tile_code):
+    def delete_tilecode(self, tile):
         msg_box = tk.messagebox.askquestion(
             "Delete Tilecode?",
             "Are you sure you want to delete this Tilecode?\nAll of its placements will be replaced with air.",
             icon="warning",
         )
         if msg_box == "yes":
-            if tile_name == r"empty":
+            if tile.name == r"empty":
                 tkMessageBox.showinfo("Uh Oh!", "Can't delete empty!")
                 return
 
-            self.replace_tiles(tile_code, "0", "all rooms")
-            logger.debug("Replaced %s in all rooms with air/empty", tile_name)
+            self.replace_tiles(tile.code, "0", "all rooms")
+            logger.debug("Replaced %s in all rooms with air/empty", tile.name)
 
-            self.usable_codes.append(str(tile_code))
-            logger.debug("%s is now available for use.", tile_code)
+            self.usable_codes.append(str(tile.code))
+            logger.debug("%s is now available for use.", tile.code)
 
             # Adds tilecode back to list to be reused.
             for id_ in self.tile_palette_ref_in_use:
-                if str(tile_code) == str(id_[0].split(" ", 2)[1]):
+                if tile.code == id_.code:
                     self.tile_palette_ref_in_use.remove(id_)
-                    logger.debug("Deleted %s", tile_name)
+                    logger.debug("Deleted %s", tile.name)
 
             self.populate_tilecode_palette()
 
             self.log_codes_left()
             self.changes_made()
             self.variables_tab.check_dependencies()
+            return True
+        else:
+            return False
 
     def log_codes_left(self):
         codes = ""
@@ -1031,8 +1031,7 @@ class VanillaLevelEditor(ttk.Frame):
 
         # Compares tile id to tile ids in palette list.
         for _, palette_tile in self.tile_palette_map.items():
-            palette_tile = palette_tile[0].split()[0].strip()
-            print(palette_tile)
+            palette_tile = palette_tile.name
             if new_tile_code == palette_tile:
                 tkMessageBox.showinfo("Uh Oh!", "You already have that!")
                 return
@@ -1048,10 +1047,7 @@ class VanillaLevelEditor(ttk.Frame):
             )
             return
 
-        ref_tile = []
-        ref_tile.append(new_tile_code + " " + str(usable_code))
-        ref_tile.append(tile_image)
-        ref_tile.append(tile_image_picker)
+        ref_tile = Tile(new_tile_code, str(usable_code), tile_image, tile_image_picker)
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
