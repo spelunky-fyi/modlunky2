@@ -42,6 +42,7 @@ class MultiRoomEditorTab(ttk.Frame):
         on_add_tilecode,
         on_delete_tilecode,
         on_select_palette_tile,
+        on_use_dependency_tile,
         on_modify_room,
         on_change_filetree,
         on_add_room,
@@ -139,6 +140,7 @@ class MultiRoomEditorTab(ttk.Frame):
             self.delete_tilecode,
             self.add_tilecode,
             self.palette_selected_tile,
+            on_use_dependency_tile,
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
@@ -720,10 +722,11 @@ class MultiRoomEditorTab(ttk.Frame):
         if setting == TemplateSetting.DUAL or setting == TemplateSetting.ONLYFLIP:
             self.redraw()
 
-    def populate_tilecode_palette(self, tile_palette, suggestions):
+    def populate_tilecode_palette(self, tile_palette, suggestions, dependency_tiles):
         self.palette_panel.update_with_palette(
             tile_palette,
             suggestions,
+            dependency_tiles,
             self.lvl_biome,
             self.lvl,
         )

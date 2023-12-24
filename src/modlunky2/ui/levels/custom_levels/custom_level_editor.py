@@ -173,6 +173,7 @@ class CustomLevelEditor(ttk.Frame):
             self.delete_tilecode,
             self.add_tilecode,
             None,
+            None,
             self.texture_fetcher,
             self.texture_fetcher.sprite_fetcher,
         )
@@ -454,6 +455,7 @@ class CustomLevelEditor(ttk.Frame):
         self.palette_panel.update_with_palette(
             self.tile_palette_ref_in_use,
             self.tile_palette_suggestions,
+            None,
             self.lvl_biome,
             self.lvl,
         )
