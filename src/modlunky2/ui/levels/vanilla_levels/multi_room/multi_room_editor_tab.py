@@ -167,7 +167,7 @@ class MultiRoomEditorTab(ttk.Frame):
         side_panel_tab_control.add(self.options_panel, text="Settings")
 
     def image_for_tile_code(self, tile_code):
-        tile_name = self.tile_palette_map[tile_code][0].split(" ", 2)[0]
+        tile_name = self.tile_palette_map[tile_code].name
 
         if tile_name in self.tile_image_map:
             return self.tile_image_map[tile_name]
@@ -249,7 +249,6 @@ class MultiRoomEditorTab(ttk.Frame):
         self.room_templates = room_templates
 
         self.default_draw_map = find_roommap(room_templates)
-        # self.template_draw_map = find_roommap(room_templates)
 
         self.use_roommap_at(
             self.modlunky_config.default_custom_room_maps.get(self.lvl), True
@@ -265,8 +264,6 @@ class MultiRoomEditorTab(ttk.Frame):
         self.redraw()
 
     def update_templates(self, templates=None):
-        # if templates is not None:
-        #     self.room_templates = templates
         self.options_panel.set_templates(self.template_draw_map, self.room_templates)
 
     def hide_grid_lines(self, hide_grid_lines):
@@ -731,17 +728,20 @@ class MultiRoomEditorTab(ttk.Frame):
             self.lvl,
         )
 
-    def palette_selected_tile(self, tile_name, image, is_primary):
-        self.on_select_palette_tile(tile_name, image, is_primary)
+    def palette_selected_tile(self, tile, is_primary):
+        self.on_select_palette_tile(tile, is_primary)
 
-    def select_tile(self, tile_name, image, is_primary):
-        self.palette_panel.select_tile(tile_name, image, is_primary)
+    def select_tile(self, tile, is_primary):
+        self.palette_panel.select_tile(tile, is_primary)
 
     def add_tilecode(self, tile, percent, alt_tile):
         self.on_add_tilecode(tile, percent, alt_tile)
 
-    def delete_tilecode(self, tile_name, tile_code):
-        self.on_delete_tilecode(tile_name, tile_code)
+    def delete_tilecode(self, tile):
+        deleted = self.on_delete_tilecode(tile)
+        if deleted:
+            self.redraw()
+        return deleted
 
     def room_was_deleted(self, template_index, chunk_index):
         replaced = False
@@ -793,8 +793,8 @@ class MultiRoomEditorTab(ttk.Frame):
             # Do not draw on backlayer of non-dual room.
             return
 
-        tile_name, tile_code = self.palette_panel.selected_tile(is_primary)
-        x_offset, y_offset = self.offset_for_tile(tile_name, tile_code, self.zoom_level)
+        tile = self.palette_panel.selected_tile(is_primary)
+        x_offset, y_offset = self.offset_for_tile(tile, self.zoom_level)
 
         layers = [chunk.front, chunk.back]
         if self.reverse_layers and template_draw_item.template.name in REVERSED_ROOMS:
@@ -805,7 +805,7 @@ class MultiRoomEditorTab(ttk.Frame):
         data_tile_col = tile_col
         if TemplateSetting.ONLYFLIP in chunk.settings:
             data_tile_col = template_draw_item.width_in_rooms * 10 - 1 - tile_col
-        layer[tile_row][data_tile_col] = tile_code
+        layer[tile_row][data_tile_col] = tile.code
         self.on_modify_room(template_draw_item)
 
         for map_index, template_map in enumerate(self.template_draw_map):
@@ -823,7 +823,7 @@ class MultiRoomEditorTab(ttk.Frame):
                             CanvasIndex(canvas_index.tab_index, map_index),
                             tile_row + r * 8,
                             tile_col + c * 10,
-                            self.image_for_tile_code(tile_code),
+                            self.image_for_tile_code(tile.code),
                             x_offset,
                             y_offset,
                         )
@@ -863,15 +863,15 @@ class MultiRoomEditorTab(ttk.Frame):
         tile_code = layer[tile_row][tile_col]
         tile = self.tile_palette_map[tile_code]
 
-        self.palette_panel.select_tile(tile[0], tile[2], is_primary)
-        self.on_select_palette_tile(tile[0], tile[2], is_primary)
+        self.palette_panel.select_tile(tile, is_primary)
+        self.on_select_palette_tile(tile, is_primary)
 
     # Looks up the expected offset type and tile image size and computes the offset of the tile's anchor in the grid.
-    def offset_for_tile(self, tile_name, tile_code, tile_size):
-        img = self.image_for_tile_code(tile_code)
+    def offset_for_tile(self, tile, tile_size):
+        img = self.image_for_tile_code(tile.code)
         if img:
             return self.texture_fetcher.adjust_texture_xy(
-                img.width(), img.height(), tile_name, tile_size
+                img.width(), img.height(), tile.name, tile_size
             )
 
         return 0, 0
@@ -925,7 +925,6 @@ class MultiRoomEditorTab(ttk.Frame):
                         )
                     )
 
-            # self.canvas.draw_room_grid(2, [grid_sizes])
             self.canvas.draw_canvas_room_grid(CanvasIndex(0, map_index), 2, grid_sizes)
             self.canvas.draw_canvas_room_grid(CanvasIndex(1, map_index), 2, grid_sizes)
 
@@ -940,13 +939,11 @@ class MultiRoomEditorTab(ttk.Frame):
                         if tile_index + chunk_start_x >= width * 10:
                             continue
                         tilecode = self.tile_palette_map[tile]
-                        tile_name = tilecode[0].split(" ", 1)[0]
-                        # tile_image = tilecode[1]
                         tile_image = self.image_for_tile_code(tile)
                         x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
                             tile_image.width(),
                             tile_image.height(),
-                            tile_name,
+                            tilecode.name,
                             self.zoom_level,
                         )
                         self.canvas.replace_tile_at(

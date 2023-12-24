@@ -1,8 +1,14 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
+from PIL import ImageTk
 
-from modlunky2.levels.level_templates import TemplateSetting
-from modlunky2.ui.levels.shared.setrooms import MatchedSetroom
+
+@dataclass
+class Tile:
+    name: str
+    code: str
+    image: ImageTk.PhotoImage
+    picker_image: ImageTk.PhotoImage
 
 
 @dataclass

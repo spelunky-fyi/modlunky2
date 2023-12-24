@@ -80,15 +80,15 @@ def save_level(
         for tilecode in used_tiles:
             tile_codes.set_obj(
                 TileCode(
-                    name=tilecode[0].split(" ", 1)[0],
-                    value=tilecode[0].split(" ", 1)[1],
+                    name=tilecode.name,
+                    value=tilecode.code,
                     comment="",
                 )
             )
-            if tilecode[0].split(" ", 1)[0] == "floor_hard":
-                hard_floor_code = tilecode[0].split(" ", 1)[1]
-            elif tilecode[0].split(" ", 1)[0] == "empty":
-                air_code = tilecode[0].split(" ", 1)[1]
+            if tilecode.name == "floor_hard":
+                hard_floor_code = tilecode.code
+            elif tilecode.name == "empty":
+                air_code = tilecode.code
 
         def write_vanilla_room(
             x,
