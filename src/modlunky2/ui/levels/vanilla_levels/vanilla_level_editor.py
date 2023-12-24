@@ -416,6 +416,7 @@ class VanillaLevelEditor(ttk.Frame):
                 return tilecode_item
 
             return [tilecode_item(tc) for tc in level_tilecodes]
+
         def clear_tile_from_dependencies(tile):
             for palette in self.dependency_tile_palette_ref_in_use:
                 for i in palette.tiles:
@@ -443,7 +444,9 @@ class VanillaLevelEditor(ttk.Frame):
                 clear_tile_from_dependencies(tile)
                 register_tile_code(tile)
 
-            self.dependency_tile_palette_ref_in_use.insert(0, DependencyPalette("From " + dependency, tiles))
+            self.dependency_tile_palette_ref_in_use.insert(
+                0, DependencyPalette("From " + dependency, tiles)
+            )
 
         level = LevelFile.from_path(Path(lvl_path))
         tiles = get_level_tilecodes(level)
@@ -978,7 +981,6 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.populate_tilecode_palette()
         self.changes_made()
-
 
     def add_tilecode(
         self,

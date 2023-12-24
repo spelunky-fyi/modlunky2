@@ -205,7 +205,9 @@ class PalettePanel(ttk.Frame):
             if self.secondary_tile_view.tile_code() == tile_code:
                 self.secondary_tile_view.reset(disable=False)
 
-    def update_with_palette(self, new_palette, suggestions, dependency_tiles, biome, lvl):
+    def update_with_palette(
+        self, new_palette, suggestions, dependency_tiles, biome, lvl
+    ):
         for widget in self.palette.scrollable_frame.winfo_children():
             widget.destroy()
 
@@ -316,8 +318,12 @@ class PalettePanel(ttk.Frame):
                 count_col = -1
                 self.palette.scrollable_frame.rowconfigure(count_row + 1, minsize=15)
                 count_row += 2
-                dependency_label = ttk.Label(self.palette.scrollable_frame, text=str(dependency.name) + ":")
-                dependency_label.grid(row=count_row, column=0, columnspan=5, sticky="nw")
+                dependency_label = ttk.Label(
+                    self.palette.scrollable_frame, text=str(dependency.name) + ":"
+                )
+                dependency_label.grid(
+                    row=count_row, column=0, columnspan=5, sticky="nw"
+                )
                 count_row += 1
 
                 for tile in dependency.tiles:
@@ -349,7 +355,6 @@ class PalettePanel(ttk.Frame):
                             event, t, d
                         ),
                     )
-
 
         self.primary_tile_view.enable()
         self.secondary_tile_view.enable()
