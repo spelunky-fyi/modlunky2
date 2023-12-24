@@ -162,6 +162,7 @@ class PalettePanel(ttk.Frame):
         on_delete_tilecode,
         on_add_tilecode,
         on_select_tile,
+        on_use_dependency_tile,
         texture_fetcher,
         sprite_fetcher,
         *args,
@@ -173,6 +174,7 @@ class PalettePanel(ttk.Frame):
         self.on_delete_tilecode = on_delete_tilecode
         self.on_add_tilecode = on_add_tilecode
         self.on_select_tile = on_select_tile
+        self.on_use_dependency_tile = on_use_dependency_tile
 
         # The tile palettes are loaded into here as buttons with their image
         # as a tile and text as their value to grab when needed.
@@ -203,7 +205,7 @@ class PalettePanel(ttk.Frame):
             if self.secondary_tile_view.tile_code() == tile_code:
                 self.secondary_tile_view.reset(disable=False)
 
-    def update_with_palette(self, new_palette, suggestions, biome, lvl):
+    def update_with_palette(self, new_palette, suggestions, dependency_tiles, biome, lvl):
         for widget in self.palette.scrollable_frame.winfo_children():
             widget.destroy()
 
@@ -306,6 +308,49 @@ class PalettePanel(ttk.Frame):
                         event, ts, ti
                     ),
                 )
+
+        if dependency_tiles and len(dependency_tiles):
+            for dependency in dependency_tiles:
+                if len(dependency.tiles) == 0:
+                    continue
+                count_col = -1
+                self.palette.scrollable_frame.rowconfigure(count_row + 1, minsize=15)
+                count_row += 2
+                dependency_label = ttk.Label(self.palette.scrollable_frame, text=str(dependency.name) + ":")
+                dependency_label.grid(row=count_row, column=0, columnspan=5, sticky="nw")
+                count_row += 1
+
+                for tile in dependency.tiles:
+                    count_col += 1
+                    if count_col == TILES_PER_ROW:
+                        count_col = 0
+                        count_row += 1
+
+                    tile_image = tile[2]
+                    self.tile_images.append(tile_image)
+
+                    new_tile = tk.Button(
+                        self.palette.scrollable_frame,
+                        text=tile[0],
+                        width=40,
+                        height=40,
+                        image=tile_image,
+                    )
+                    new_tile.grid(row=count_row, column=count_col)
+                    new_tile.bind(
+                        "<Button-1>",
+                        lambda event, t=tile, d=dependency: self.dependency_tile_pick(
+                            event, t, d
+                        ),
+                    )
+                    new_tile.bind(
+                        "<Button-3>",
+                        lambda event, t=tile, d=dependency: self.dependency_tile_pick(
+                            event, t, d
+                        ),
+                    )
+
+
         self.primary_tile_view.enable()
         self.secondary_tile_view.enable()
         self.new_tile_panel.reset()
@@ -324,6 +369,12 @@ class PalettePanel(ttk.Frame):
         if not tile:
             return
         self.select_tile(tile[0], tile_image, event.num == 1, True)
+
+    def dependency_tile_pick(self, event, tile, dependency):
+        if self.on_use_dependency_tile:
+            self.on_use_dependency_tile(tile, dependency)
+
+            self.select_tile(tile[0], tile[2], event.num == 1, True)
 
     def select_tile(self, tile_name, tile_image, is_primary, tell_delegate=False):
         tile_view = self.primary_tile_view
