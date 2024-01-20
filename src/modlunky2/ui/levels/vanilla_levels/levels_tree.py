@@ -30,7 +30,7 @@ class LevelsTree(ttk.Treeview):
         parent,
         on_edit,
         reset_canvas,
-        on_add_room,
+        on_insert_room,
         on_delete_room,
         on_duplicate_room,
         on_copy_room,
@@ -46,7 +46,7 @@ class LevelsTree(ttk.Treeview):
         self.config = config
         self.on_edit = on_edit
         self.reset_canvas = reset_canvas
-        self.on_add_room = on_add_room
+        self.on_insert_room = on_insert_room
         self.on_delete_room = on_delete_room
         self.on_duplicate_room = on_duplicate_room
         self.on_copy_room = on_copy_room
@@ -74,8 +74,8 @@ class LevelsTree(ttk.Treeview):
         self.popup_menu_child.add_command(
             label="Delete Room", command=self.delete_selected
         )
-        self.popup_menu_child.add_command(label="Add Room", command=self.add_room)
-        self.popup_menu_parent.add_command(label="Add Room", command=self.add_room)
+        self.popup_menu_child.add_command(label="Add Room", command=self.insert_room)
+        self.popup_menu_parent.add_command(label="Add Room", command=self.insert_room)
         self.popup_menu_parent.add_command(label="Paste Room", command=self.paste)
 
         self.bind("<Button-3>", self.popup)  # Button-2 on Aqua
@@ -179,7 +179,7 @@ class LevelsTree(ttk.Treeview):
                 self.delete(item_iid)
                 self.reset_canvas()
 
-    def add_room(self):
+    def insert_room(self):
         item_iid = self.selection()[0]
         parent_iid = self.parent(item_iid)  # gets selected room
         parent = None
@@ -193,7 +193,7 @@ class LevelsTree(ttk.Treeview):
         if entry_index == "":
             return
 
-        new_room = self.on_add_room(self.index(parent))
+        new_room = self.on_insert_room(self.index(parent))
         self.insert(parent, "end", text=new_room.name or "room")
 
     def rename_dialog(self):
