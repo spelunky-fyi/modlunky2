@@ -940,14 +940,14 @@ def test_attacked_with_hou_yi(layer, world, level, presence_flags, expected_low)
             CharState.STANDING,
             {EntityType.ITEM_LIGHT_ARROW},
             set(),
-            False,
+            True,
         ),
         (
             CharState.STANDING,
             CharState.THROWING,
             set(),
             {EntityType.ITEM_LIGHT_ARROW},
-            False,
+            True,
         ),
         (
             CharState.THROWING,
