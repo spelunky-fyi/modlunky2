@@ -1,6 +1,6 @@
 black==23.9.1
 flake8==6.1.0
 pylint==3.0.1
-pytest==7.4.2
+pytest==8.1.1
 pip-api==0.0.30
 pyinstaller==5.13.2
