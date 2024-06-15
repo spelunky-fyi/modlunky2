@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-from PIL import ImageTk
+from PIL import Image, ImageTk
 import re
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as tkMessageBox
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.levels import LevelFile
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, ShortCode
@@ -70,6 +71,9 @@ class CustomLevelEditor(ttk.Frame):
 
         self.zoom_level = 30
         self.tool = CANVAS_MODE.DRAW
+
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((self.zoom_level, self.zoom_level)))
 
         self.save_needed = False
 
@@ -544,17 +548,22 @@ class CustomLevelEditor(ttk.Frame):
             for row_index, room_row in enumerate(tile_codes):
                 if row_index >= self.lvl_height * 8:
                     continue
-                for tile_index, tile in enumerate(room_row):
+                for tile_index, tilecode in enumerate(room_row):
                     if tile_index >= self.lvl_width * 10:
                         continue
-                    tilecode = self.tile_palette_map[tile]
-                    tile_image = tilecode.image
-                    x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
-                        tile_image.width(),
-                        tile_image.height(),
-                        tilecode.name,
-                        self.zoom_level,
-                    )
+                    tile = self.tile_palette_map.get(tilecode)
+                    if tile:
+                        tile_image = tile.image
+                        x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
+                            tile_image.width(),
+                            tile_image.height(),
+                            tile.name,
+                            self.zoom_level,
+                        )
+                    else:
+                        logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tilecode)
+                        tile_image = self.error_image
+                        x_offset, y_offset = 0, 0
                     self.canvas.replace_tile_at(
                         canvas_index,
                         row_index,
@@ -891,6 +900,8 @@ class CustomLevelEditor(ttk.Frame):
 
     def update_zoom(self, zoom):
         self.zoom_level = zoom
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((zoom, zoom)))
         if self.lvl:
             for tile in self.tile_palette_ref_in_use:
                 tile_name = tile.name

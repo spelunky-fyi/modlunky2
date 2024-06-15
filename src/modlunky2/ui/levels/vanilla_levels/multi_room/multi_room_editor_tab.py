@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import math
 from PIL import Image, ImageTk
 import random
@@ -6,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from modlunky2.config import Config
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels.level_templates import TemplateSetting
 from modlunky2.ui.levels.shared.level_canvas import GridRoom
 from modlunky2.ui.levels.shared.multi_canvas_container import (
@@ -30,6 +32,8 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
     MatchedSetroomTemplate,
 )
 from modlunky2.ui.widgets import PopupWindow
+
+logger = logging.getLogger(__name__)
 
 
 class MultiRoomEditorTab(ttk.Frame):
@@ -57,6 +61,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
         self.textures_dir = textures_dir
+
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((30, 30)))
 
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
@@ -283,6 +290,8 @@ class MultiRoomEditorTab(ttk.Frame):
         self.zoom_level = zoom
         self.canvas.set_zoom(zoom)
         self.tile_image_map = {}
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((zoom, zoom)))
         self.redraw()
 
     def __get_chunk_for_template_draw_item(
@@ -935,17 +944,22 @@ class MultiRoomEditorTab(ttk.Frame):
                 for row_index, room_row in enumerate(tile_codes):
                     if row_index + chunk_start_y >= height * 8:
                         continue
-                    for tile_index, tile in enumerate(room_row):
+                    for tile_index, tilecode in enumerate(room_row):
                         if tile_index + chunk_start_x >= width * 10:
                             continue
-                        tilecode = self.tile_palette_map[tile]
-                        tile_image = self.image_for_tile_code(tile)
-                        x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
-                            tile_image.width(),
-                            tile_image.height(),
-                            tilecode.name,
-                            self.zoom_level,
-                        )
+                        tile = self.tile_palette_map.get(tilecode)
+                        if tile:
+                            tile_image = self.image_for_tile_code(tilecode)
+                            x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile.name,
+                                self.zoom_level,
+                            )
+                        else:
+                            logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tilecode)
+                            tile_image = self.error_image
+                            x_offset, y_offset = 0, 0
                         self.canvas.replace_tile_at(
                             canvas_index,
                             row_index + chunk_start_y,
