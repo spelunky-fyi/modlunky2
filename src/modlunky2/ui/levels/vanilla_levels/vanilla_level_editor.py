@@ -926,7 +926,10 @@ class VanillaLevelEditor(ttk.Frame):
                                 tile.name,
                             )
                         else:
-                            logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tile_code)
+                            logger.warning(
+                                "Tile code %s found in room, but does not map to a valid tile code.",
+                                tile_code,
+                            )
                             tile_image = self.error_image
                             x_coord, y_coord = 0, 0
                         self.canvas.replace_tile_at(

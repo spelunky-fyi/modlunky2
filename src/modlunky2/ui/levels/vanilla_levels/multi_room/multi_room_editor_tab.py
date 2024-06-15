@@ -291,7 +291,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.canvas.set_zoom(zoom)
         self.tile_image_map = {}
         image_path = BASE_DIR / "static/images/help.png"
-        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((zoom, zoom)))
+        self.error_image = ImageTk.PhotoImage(
+            Image.open(image_path).resize((zoom, zoom))
+        )
         self.redraw()
 
     def __get_chunk_for_template_draw_item(
@@ -957,7 +959,10 @@ class MultiRoomEditorTab(ttk.Frame):
                                 self.zoom_level,
                             )
                         else:
-                            logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tilecode)
+                            logger.warning(
+                                "Tile code %s found in room, but does not map to a valid tile code.",
+                                tilecode,
+                            )
                             tile_image = self.error_image
                             x_offset, y_offset = 0, 0
                         self.canvas.replace_tile_at(
