@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import io
 import logging
-import math
 import os
 import os.path
 from pathlib import Path
@@ -12,6 +11,7 @@ from tkinter import ttk
 import tkinter.messagebox as tkMessageBox
 from typing import List, Optional
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_templates import (
     Chunk,
@@ -101,6 +101,9 @@ class VanillaLevelEditor(ttk.Frame):
 
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
+
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path))
 
         self.room_has_been_selected = False
         self.save_needed = False
@@ -914,13 +917,18 @@ class VanillaLevelEditor(ttk.Frame):
             for canvas_index, layer_tile_codes in enumerate(self.tile_codes):
                 for row_index, row in enumerate(layer_tile_codes):
                     for column_index, tile_code in enumerate(row):
-                        tile = self.tile_palette_map[tile_code]
-                        tile_image = tile.image
-                        x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
-                            tile_image.width(),
-                            tile_image.height(),
-                            tile.name,
-                        )
+                        tile = self.tile_palette_map.get(tile_code)
+                        if tile:
+                            tile_image = tile.image
+                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile.name,
+                            )
+                        else:
+                            logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tile_code)
+                            tile_image = self.error_image
+                            x_coord, y_coord = 0, 0
                         self.canvas.replace_tile_at(
                             CanvasIndex(0, canvas_index),
                             row_index,
