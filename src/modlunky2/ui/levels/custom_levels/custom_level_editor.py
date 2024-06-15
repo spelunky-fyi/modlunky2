@@ -73,7 +73,9 @@ class CustomLevelEditor(ttk.Frame):
         self.tool = CANVAS_MODE.DRAW
 
         image_path = BASE_DIR / "static/images/help.png"
-        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((self.zoom_level, self.zoom_level)))
+        self.error_image = ImageTk.PhotoImage(
+            Image.open(image_path).resize((self.zoom_level, self.zoom_level))
+        )
 
         self.save_needed = False
 
@@ -561,7 +563,10 @@ class CustomLevelEditor(ttk.Frame):
                             self.zoom_level,
                         )
                     else:
-                        logger.warning("Tile code %s found in room, but does not map to a valid tile code.", tilecode)
+                        logger.warning(
+                            "Tile code %s found in room, but does not map to a valid tile code.",
+                            tilecode,
+                        )
                         tile_image = self.error_image
                         x_offset, y_offset = 0, 0
                     self.canvas.replace_tile_at(
@@ -901,7 +906,9 @@ class CustomLevelEditor(ttk.Frame):
     def update_zoom(self, zoom):
         self.zoom_level = zoom
         image_path = BASE_DIR / "static/images/help.png"
-        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((zoom, zoom)))
+        self.error_image = ImageTk.PhotoImage(
+            Image.open(image_path).resize((zoom, zoom))
+        )
         if self.lvl:
             for tile in self.tile_palette_ref_in_use:
                 tile_name = tile.name
