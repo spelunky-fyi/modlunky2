@@ -46,7 +46,7 @@ impl StringHasher {
 
     pub fn merge_hashes<W: Write>(
         &self,
-        lines: &Vec<String>,
+        lines: &[String],
         writer: &mut W,
     ) -> Result<(), std::io::Error> {
         assert!(lines.len() == self.hashes.len());
