@@ -27,7 +27,7 @@
     "prettier": "^3.0.3",
     "svelte": "^3.59.2",
     "svelte-awesome": "^3.2.1",
-    "svelte-check": "^3.5.2",
+    "svelte-check": "^3.8.2",
     "svelte-dnd-action": "^0.9.31",
     "svelte-preprocess": "^5.0.4",
     "tslib": "^2.6.2",
