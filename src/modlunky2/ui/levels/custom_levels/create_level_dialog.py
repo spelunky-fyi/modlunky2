@@ -1,15 +1,18 @@
 import logging
 from pathlib import Path
+from PIL import Image, ImageTk
 import re
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels.level_chances import LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
 from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.ui.levels.custom_levels.save_level import save_level
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.shared.biomes import Biomes
+from modlunky2.ui.levels.shared.tile import Tile
 from modlunky2.ui.widgets import PopupWindow
 
 logger = logging.getLogger(__name__)
@@ -147,10 +150,13 @@ def present_create_level_dialog(
                 )
                 warning_label.grid()
                 return
+            img = ImageTk.PhotoImage(
+                Image.open(BASE_DIR / "static/images/help.png").resize((20, 20))
+            )
             tiles = [
-                ["floor 1"],
-                ["empty 0"],
-                ["floor_hard X"],
+                Tile("floor", "1", img, img),
+                Tile("empty", "0", img, img),
+                Tile("floor_hard", "X", img, img),
             ]
             # Fill in the level with empty tiles in the foreground and hard floor in the background.
             foreground = [["0" for _ in range(width * 10)] for _ in range(height * 8)]
