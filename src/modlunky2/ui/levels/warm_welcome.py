@@ -22,9 +22,7 @@ class WarmWelcome(tk.Frame):
         self.img = Image.open(IMAGE_PATH / "leveleditor.png")
         self.background_image = ImageTk.PhotoImage(self.img)
 
-        self.background_image_label = tk.Label(
-            main_frame, image=self.background_image
-        )
+        self.background_image_label = tk.Label(main_frame, image=self.background_image)
 
         def resize_image(event):
             new_width = event.width
@@ -37,7 +35,7 @@ class WarmWelcome(tk.Frame):
             self.background_image_label.image = background_image
 
         self.background_image_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.background_image_label.bind('<Configure>', resize_image)
+        self.background_image_label.bind("<Configure>", resize_image)
 
         self.button_open = ttk.Button(main_frame, text="Open Editor", command=on_open)
         self.button_open.grid(
