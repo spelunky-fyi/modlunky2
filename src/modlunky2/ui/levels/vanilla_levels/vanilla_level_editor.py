@@ -997,7 +997,34 @@ class VanillaLevelEditor(ttk.Frame):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def use_dependency_tile(self, tile, dependency):
-        self.tile_palette_ref_in_use.append(tile)
+        new_tile = tile
+        def tile_will_conflict():
+            sister_locations = LevelDependencies.sister_locations_for_level(self.lvl, self.lvls_path, self.extracts_path)
+            for sister_location_path in sister_locations:
+                for level in sister_location_path:
+                    for tilecode in level.level.tile_codes.all():
+                        if tilecode.value == tile.code and tilecode.name != tile.name:
+                            return True
+            return False
+
+        if tile_will_conflict():
+            if len(self.usable_codes) > 0:
+                usable_code = self.usable_codes[0]
+                self.usable_codes.remove(usable_code)
+            else:
+                tkMessageBox.showinfo(
+                    "Uh Oh!", "This tile has a conflict, and you've reached the tilecode limit; delete some to add more"
+                )
+                return
+            new_tile = Tile(
+                tile.name,
+                str(usable_code),
+                tile.comment,
+                tile.image,
+                tile.picker_image,
+            )
+
+        self.tile_palette_ref_in_use.append(new_tile)
         dependency.tiles.remove(tile)
 
         self.populate_tilecode_palette()
