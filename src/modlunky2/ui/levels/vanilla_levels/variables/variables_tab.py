@@ -75,6 +75,7 @@ class VariablesTab(ttk.Frame):
         if not self.request_save():
             return
 
+        self.check_dependencies()
         self.tree_depend.resolve_conflicts()
         self.on_conflicts_resolved()
         self.check_dependencies()
@@ -98,21 +99,26 @@ class VariablesTab(ttk.Frame):
         levels = LevelDependencies.sister_locations_for_level(
             self.current_level_name, self.lvls_path, self.extracts_path
         )
-        self.tree_depend.update_dependencies(levels)
+        current_level = LevelDependencies.get_loaded_level(
+            self.current_level_name, self.lvls_path, self.extracts_path
+        )
+        self.tree_depend.update_dependencies(levels, current_level)
 
         if len(self.tree_depend.get_children()) == 0:
-            self.depend_order_label.grid_remove()
             self.tree_depend.grid_remove()
             self.button_resolve_variables.grid_remove()
             self.no_conflicts_label.grid()
         else:
-            self.depend_order_label["text"] = " -> ".join(
-                [level[0] for level in levels]
-            )
-            self.depend_order_label.grid()
             self.tree_depend.grid()
             self.button_resolve_variables.grid()
             self.no_conflicts_label.grid_remove()
+        delimiter = ", "
+        if len(levels) <= 4:
+            delimiter = "\n"
+        self.depend_order_label["text"] = delimiter.join([" -> ".join(
+            [level.level_name for level in level_path]
+        ) for level_path in levels])
+        self.depend_order_label.grid()
 
     def update_lvls_path(self, new_path):
         self.lvls_path = new_path

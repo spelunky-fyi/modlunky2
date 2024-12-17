@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from functools import lru_cache
 import logging
 import os
 import os.path
@@ -7,6 +9,11 @@ from modlunky2.levels import LevelFile
 
 logger = logging.getLogger(__name__)
 
+@dataclass
+class SisterLocation:
+    level_name: str
+    level: LevelFile
+    location: str
 
 class LevelDependencies:
     @staticmethod
@@ -42,98 +49,6 @@ class LevelDependencies:
         return levels
 
     @staticmethod
-    def sister_locations_for_level(lvl_name, lvls_path, extracts_path):
-        levels = []
-
-        if not lvls_path:
-            return []
-
-        def append_level(item):
-            # self.depend_order_label["text"] += " -> " + item
-            if os.path.exists(Path(lvls_path / item)):
-                levels.append(
-                    [
-                        item,
-                        LevelFile.from_path(Path(lvls_path / item)),
-                        "custom",
-                    ]
-                )
-            else:
-                logger.debug(
-                    "local dependency lvl not found, attempting load from extracts"
-                )
-                levels.append(
-                    [
-                        item,
-                        LevelFile.from_path(Path(extracts_path) / item),
-                        "extracts",
-                    ]
-                )
-
-        # self.depend_order_label["text"] = ""
-        if lvl_name.startswith("basecamp"):
-            for file in LevelDependencies.dependencies()[0]:
-                append_level(file)
-        elif lvl_name.startswith("generic.lvl"):
-            # for file in LevelDependencies.dependencies()[10]:
-            #    append_level(file)
-            # removed for now
-            # self.depend_order_label.grid_remove()
-            # self.tree_depend.grid_remove()
-            # self.button_resolve_variables.grid_remove()
-            # self.no_conflicts_label.grid()
-            return []
-        else:
-            append_level("generic.lvl")  # adds generic for all other files
-        if lvl_name.startswith("challenge_moon.lvl"):
-            for file in LevelDependencies.dependencies()[8]:
-                append_level(file)
-        elif lvl_name.startswith("challenge_star.lvl"):
-            for file in LevelDependencies.dependencies()[9]:
-                append_level(file)
-        elif lvl_name.startswith("junglearea.lvl"):
-            for file in LevelDependencies.dependencies()[1]:
-                append_level(file)
-        elif lvl_name.startswith("volcanoarea.lvl"):
-            for file in LevelDependencies.dependencies()[2]:
-                append_level(file)
-        elif lvl_name.startswith("tidepoolarea.lvl"):
-            for file in LevelDependencies.dependencies()[3]:
-                append_level(file)
-        elif lvl_name.startswith("templearea.lvl"):
-            for file in LevelDependencies.dependencies()[4]:
-                append_level(file)
-        else:
-            i = 0
-            # each 'depend' = list of files that depend on each other
-            for depend in LevelDependencies.dependencies():
-                if i == 9:
-                    break
-                for file in depend:
-                    # makes sure opened level file match 1 dependency entry
-                    if lvl_name.startswith(file):
-                        # makes sure this level isn't being tracked from the generic file
-                        if depend != LevelDependencies.dependencies()[10]:
-                            logger.debug("checking dependencies of %s", file)
-                            for item in depend:
-                                append_level(item)
-                            break
-                i = i + 1
-        level = None
-        tilecode_compare = []
-        for level in levels:
-            logger.debug("getting tilecodes from %s", level[0])
-            tilecodes = []
-            tilecodes.append(str(level[0]) + " file")
-            level_tilecodes = level[1].tile_codes.all()
-
-            for tilecode in level_tilecodes:
-                tilecodes.append(str(tilecode.name) + " " + str(tilecode.value))
-            tilecode_compare.append(tilecodes)
-
-        return levels
-
-    @staticmethod
     def loaded_level_file_for_path(lvl, levels_path, extracts_path):
         if Path(levels_path / lvl).exists():
             return LevelFile.from_path(Path(levels_path / lvl))
@@ -145,52 +60,53 @@ class LevelDependencies:
             return LevelFile.from_path(Path(extracts_path) / lvl)
 
     @staticmethod
-    def dependencies():
-        dependencies = []
-        dependencies.append(
-            [
-                "basecamp.lvl",
-                "basecamp_garden.lvl",
-                "basecamp_shortcut_discovered.lvl",
-                "basecamp_shortcut_undiscovered.lvl",
-                "basecamp_shortcut_unlocked.lvl",
-                "basecamp_surface.lvl",
-                "basecamp_tutorial.lvl",
-                "basecamp_tv_room_locked.lvl",
-                "basecamp_tv_room_unlocked.lvl",
-            ]
-        )
-        dependencies.append(
-            ["junglearea.lvl", "blackmarket.lvl", "beehive.lvl", "challenge_moon.lvl"]
-        )  # 1
-        dependencies.append(
-            ["volcanoarea.lvl", "vladscastle.lvl", "challenge_moon.lvl"]
-        )  # 2
-        dependencies.append(
-            ["tidepoolarea.lvl", "lake.lvl", "lakeoffire.lvl", "challenge_star.lvl"]
-        )  # 3
-        dependencies.append(
-            ["templearea.lvl", "beehive.lvl", "challenge_star.lvl"]
-        )  # 4
-        dependencies.append(
-            [
-                "babylonarea.lvl",
-                "babylonarea_1-1.lvl",
-                "hallofushabti.lvl",
-                "palaceofpleasure.lvl",
-            ]
-        )  # 5
-        dependencies.append(["sunkencityarea.lvl", "challenge_sun.lvl"])  # 6
-        dependencies.append(["ending.lvl", "ending_hard.lvl"])  # 7
-        dependencies.append(
-            ["challenge_moon.lvl", "junglearea.lvl", "volcanoarea.lvl"]
-        )  # 8
-        dependencies.append(
-            ["challenge_star.lvl", "tidepoolarea.lvl", "templearea.lvl"]
-        )  # 9
-        dependencies.append(
-            [
-                "generic.lvl",
+    def get_loaded_level(item, lvls_path, extracts_path):
+        if os.path.exists(Path(lvls_path / item)):
+            return SisterLocation(
+                item,
+                LevelFile.from_path(Path(lvls_path / item)),
+                "custom",
+            )
+
+        else:
+            logger.debug(
+                "local dependency lvl not found, attempting load from extracts"
+            )
+            return SisterLocation(
+                item,
+                LevelFile.from_path(Path(extracts_path) / item),
+                "extracts",
+            )
+
+    @staticmethod
+    def sister_locations_for_level(lvl_name, lvls_path, extracts_path):
+        levels = []
+
+        if not lvls_path:
+            return []
+
+        def get_loaded_level(item):
+            return LevelDependencies.get_loaded_level(item, lvls_path, extracts_path)
+
+        for depend in LevelDependencies.dependency_map():
+            if lvl_name in depend:
+                levels.append([get_loaded_level(dep) for dep in depend])
+
+        if len(levels) == 0:
+            levels.append([get_loaded_level(lvl_name)])
+
+        if lvl_name.startswith("generic.lvl"):
+            return [[get_loaded_level(dep)] for dep in LevelDependencies.generic_dependencies()]
+        elif not lvl_name.startswith("basecamp"):
+            for dependencies in levels:
+                dependencies.append(get_loaded_level("generic.lvl"))
+
+        return levels
+
+    @staticmethod
+    @lru_cache
+    def generic_dependencies():
+         return [
                 "dwellingarea.lvl",
                 "cavebossarea.lvl",
                 "junglearea.lvl",
@@ -232,5 +148,32 @@ class LevelDependencies:
                 "cosmicocean_tidepool.lvl",
                 "cosmicocean_volcano.lvl",
             ]
-        )  # 10
-        return dependencies
+
+    @staticmethod
+    @lru_cache
+    def dependency_map():
+        return [
+            [
+                "basecamp.lvl",
+                "basecamp_garden.lvl",
+                "basecamp_shortcut_discovered.lvl",
+                "basecamp_shortcut_undiscovered.lvl",
+                "basecamp_shortcut_unlocked.lvl",
+                "basecamp_surface.lvl",
+                "basecamp_tutorial.lvl",
+                "basecamp_tv_room_locked.lvl",
+                "basecamp_tv_room_unlocked.lvl",
+            ],
+            ["junglearea.lvl", "blackmarket.lvl", "beehive.lvl"],
+            ["junglearea.lvl", "challenge_moon.lvl", "beehive.lvl"],
+            ["volcanoarea.lvl", "vladscastle.lvl"],
+            ["volcanoarea.lvl", "challenge_moon.lvl"],
+            ["tidepoolarea.lvl", "challenge_star.lvl", "lake.lvl"],
+            ["tidepoolarea.lvl", "lakeoffire.lvl"],
+            ["templearea.lvl", "challenge_star.lvl", "beehive.lvl"],
+            ["babylonarea.lvl", "babylonarea_1-1.lvl"],
+            ["babylonarea.lvl", "hallofushabti.lvl"],
+            ["babylonarea.lvl", "palaceofpleasure.lvl"],
+            ["sunkencityarea.lvl", "challenge_sun.lvl"],
+            ["ending.lvl", "ending_hard.lvl"],
+        ]

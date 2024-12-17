@@ -314,6 +314,7 @@ class CustomLevelEditor(ttk.Frame):
             tilecode_item = Tile(
                 tilecode.name,
                 tilecode.value,
+                tilecode.comment,
                 ImageTk.PhotoImage(img),
                 ImageTk.PhotoImage(img_select),
             )
@@ -339,6 +340,7 @@ class CustomLevelEditor(ttk.Frame):
             tilecode_item = Tile(
                 "floor_hard",
                 str(hard_floor_code),
+                "",
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
                         "floor_hard", theme, lvl, self.zoom_level
@@ -754,7 +756,7 @@ class CustomLevelEditor(ttk.Frame):
             )
             return
 
-        ref_tile = Tile(new_tile_code, str(usable_code), tile_image, tile_image_picker)
+        ref_tile = Tile(new_tile_code, str(usable_code), "", tile_image, tile_image_picker)
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 

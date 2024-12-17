@@ -409,6 +409,7 @@ class VanillaLevelEditor(ttk.Frame):
                 return Tile(
                     str(tilecode.name),
                     str(tilecode.value),
+                    str(tilecode.comment),
                     ImageTk.PhotoImage(img),
                     ImageTk.PhotoImage(selection_img),
                 )
@@ -512,6 +513,7 @@ class VanillaLevelEditor(ttk.Frame):
                         tile = Tile(
                             str(need[1]),
                             str(need[0]),
+                            "",
                             ImageTk.PhotoImage(img),
                             ImageTk.PhotoImage(img_select),
                         )
@@ -646,7 +648,7 @@ class VanillaLevelEditor(ttk.Frame):
                         TileCode(
                             name=tilecode.name,
                             value=tilecode.code,
-                            comment="",
+                            comment=tilecode.comment,
                         )
                     )
 
@@ -1058,7 +1060,7 @@ class VanillaLevelEditor(ttk.Frame):
             )
             return
 
-        ref_tile = Tile(new_tile_code, str(usable_code), tile_image, tile_image_picker)
+        ref_tile = Tile(new_tile_code, str(usable_code), "", tile_image, tile_image_picker)
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
