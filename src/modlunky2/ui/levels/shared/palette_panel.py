@@ -365,9 +365,9 @@ class PalettePanel(ttk.Frame):
 
     def dependency_tile_pick(self, event, tile, dependency):
         if self.on_use_dependency_tile:
-            self.on_use_dependency_tile(tile, dependency)
+            new_tile = self.on_use_dependency_tile(tile, dependency)
 
-            self.select_tile(tile, event.num == 1, True)
+            self.select_tile(new_tile, event.num == 1, True)
 
     def select_tile(self, tile, is_primary, tell_delegate=False):
         tile_view = self.primary_tile_view
