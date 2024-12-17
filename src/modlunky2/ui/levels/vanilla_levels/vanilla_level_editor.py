@@ -449,7 +449,9 @@ class VanillaLevelEditor(ttk.Frame):
             )
 
         # Clear tilecodes from all sister locations so they do not get reused.
-        sister_locations = LevelDependencies.sister_locations_for_level(lvl, self.lvls_path, self.extracts_path)
+        sister_locations = LevelDependencies.sister_locations_for_level(
+            lvl, self.lvls_path, self.extracts_path
+        )
         for sister_location_path in sister_locations:
             for level in sister_location_path:
                 for tilecode in level.level.tile_codes.all():
@@ -1000,8 +1002,11 @@ class VanillaLevelEditor(ttk.Frame):
 
     def use_dependency_tile(self, tile, dependency):
         new_tile = tile
+
         def tile_will_conflict():
-            sister_locations = LevelDependencies.sister_locations_for_level(self.lvl, self.lvls_path, self.extracts_path)
+            sister_locations = LevelDependencies.sister_locations_for_level(
+                self.lvl, self.lvls_path, self.extracts_path
+            )
             for sister_location_path in sister_locations:
                 for level in sister_location_path:
                     for tilecode in level.level.tile_codes.all():
@@ -1015,7 +1020,8 @@ class VanillaLevelEditor(ttk.Frame):
                 self.usable_codes.remove(usable_code)
             else:
                 tkMessageBox.showinfo(
-                    "Uh Oh!", "This tile has a conflict, and you've reached the tilecode limit; delete some to add more"
+                    "Uh Oh!",
+                    "This tile has a conflict, and you've reached the tilecode limit; delete some to add more",
                 )
                 return
             new_tile = Tile(
@@ -1100,7 +1106,9 @@ class VanillaLevelEditor(ttk.Frame):
             )
             return
 
-        ref_tile = Tile(new_tile_code, str(usable_code), "", tile_image, tile_image_picker)
+        ref_tile = Tile(
+            new_tile_code, str(usable_code), "", tile_image, tile_image_picker
+        )
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
