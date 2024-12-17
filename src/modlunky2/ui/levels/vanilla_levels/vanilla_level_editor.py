@@ -153,6 +153,8 @@ class VanillaLevelEditor(ttk.Frame):
             if str(tab) == "Full Level Editor":
                 self.multi_room_editor_tab.update_templates()
                 self.multi_room_editor_tab.redraw()
+            if str(tab) == "Variables (Experimental)":
+                self.variables_tab.check_dependencies()
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
 
