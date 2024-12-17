@@ -421,7 +421,7 @@ class VanillaLevelEditor(ttk.Frame):
         def clear_tile_from_dependencies(tile):
             for palette in self.dependency_tile_palette_ref_in_use:
                 for i in palette.tiles:
-                    if i.code == tile.code:
+                    if i.name == tile.name:
                         palette.tiles.remove(i)
 
         def register_tile_code(tile):
