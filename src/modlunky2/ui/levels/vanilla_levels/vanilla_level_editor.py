@@ -446,6 +446,14 @@ class VanillaLevelEditor(ttk.Frame):
                 0, DependencyPalette("From " + dependency, tiles)
             )
 
+        # Clear tilecodes from all sister locations so they do not get reused.
+        sister_locations = LevelDependencies.sister_locations_for_level(lvl, self.lvls_path, self.extracts_path)
+        for sister_location_path in sister_locations:
+            for level in sister_location_path:
+                for tilecode in level.level.tile_codes.all():
+                    if tilecode.value in self.usable_codes:
+                        self.usable_codes.remove(tilecode.value)
+
         level = LevelFile.from_path(Path(lvl_path))
         tiles = get_level_tilecodes(level)
         self.tile_palette_ref_in_use = tiles

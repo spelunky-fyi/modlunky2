@@ -23,21 +23,23 @@ class LevelDependencies:
             levels.append("generic.lvl")
         if lvl.startswith("base"):
             levels.append("basecamp.lvl")
-        elif lvl.startswith("cave"):
-            levels.append("dwellingarea.lvl")
-        elif (
-            lvl.startswith("blackmark")
-            or lvl.startswith("beehive")
-            or lvl.startswith("challenge_moon")
-        ):
+        elif lvl.startswith("blackmark"):
+            levels.append("junglearea.lvl")
+        elif lvl.startswith("beehive"):
+            levels.append("templearea.lvl")
             levels.append("junglearea.lvl")
         elif lvl.startswith("vlads"):
             levels.append("volcanoarea.lvl")
-        elif lvl.startswith("lake") or lvl.startswith("challenge_star"):
+        elif lvl.startswith("challenge_moon"):
+            levels.append("junglearea.lvl")
+            levels.append("volcanoarea.lvl")
+        elif lvl.startswith("lake"):
             levels.append("tidepoolarea.lvl")
+        elif lvl.startswith("challenge_star"):
+            levels.append("tidepoolarea.lvl")
+            levels.append("templearea.lvl")
         elif (
             lvl.startswith("hallofush")
-            or lvl.startswith("challenge_star")
             or lvl.startswith("babylonarea_1")
             or lvl.startswith("palace")
         ):
