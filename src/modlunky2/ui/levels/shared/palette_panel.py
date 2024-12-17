@@ -149,7 +149,7 @@ class SelectedTilecodeView(ttk.Frame):
             self.img_view["image"] = self.img_empty
 
     def reset(self, disable=True):
-        self.select_tile(Tile("empty", "0", self.img_empty, self.img_empty))
+        self.select_tile(Tile("empty", "0", "", self.img_empty, self.img_empty))
         if disable:
             self.disable()
 

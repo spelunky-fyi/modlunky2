@@ -154,9 +154,9 @@ def present_create_level_dialog(
                 Image.open(BASE_DIR / "static/images/help.png").resize((20, 20))
             )
             tiles = [
-                Tile("floor", "1", img, img),
-                Tile("empty", "0", img, img),
-                Tile("floor_hard", "X", img, img),
+                Tile("floor", "1", "", img, img),
+                Tile("empty", "0", "", img, img),
+                Tile("floor_hard", "X", "", img, img),
             ]
             # Fill in the level with empty tiles in the foreground and hard floor in the background.
             foreground = [["0" for _ in range(width * 10)] for _ in range(height * 8)]

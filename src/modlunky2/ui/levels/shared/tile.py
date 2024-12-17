@@ -7,6 +7,7 @@ from PIL import ImageTk
 class Tile:
     name: str
     code: str
+    comment: str
     image: ImageTk.PhotoImage
     picker_image: ImageTk.PhotoImage
 
