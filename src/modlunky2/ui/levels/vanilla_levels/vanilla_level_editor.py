@@ -1026,11 +1026,14 @@ class VanillaLevelEditor(ttk.Frame):
                 tile.picker_image,
             )
 
+        self.tile_palette_map[new_tile.code] = new_tile
         self.tile_palette_ref_in_use.append(new_tile)
         dependency.tiles.remove(tile)
 
         self.populate_tilecode_palette()
         self.changes_made()
+
+        return new_tile
 
     def add_tilecode(
         self,
