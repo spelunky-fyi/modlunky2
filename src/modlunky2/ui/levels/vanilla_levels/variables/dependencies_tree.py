@@ -27,8 +27,6 @@ class DependenciesTree(ttk.Treeview):
         self.extracts_path = extracts_path
         self.sister_locations = []
         self.current_location = None
-        self.broken_tiles = []
-        self.current_level_broken_tiles = []
 
         self["columns"] = ("1", "2", "3")
         self["show"] = "headings"
@@ -38,6 +36,44 @@ class DependenciesTree(ttk.Treeview):
         self.heading("1", text="Tile Id")
         self.heading("2", text="Tilecode")
         self.heading("3", text="File")
+
+    def find_broken_tiles(self):
+        broken_tiles = []
+
+        for tilecode in self.current_location.level.tile_codes.all():
+            checked_levels = [self.current_location.level_name]
+            added_code = False
+            for level_path in self.sister_locations:
+                for other_location in level_path:
+                    if other_location.level_name in checked_levels:
+                        continue
+
+                    checked_levels.append(other_location.level_name)
+                    for othertilecode in other_location.level.tile_codes.all():
+                        if tilecode.value == othertilecode.value and tilecode.name != othertilecode.name:
+                            if not added_code:
+                                added_code = True
+                                broken_tiles.append(
+                                    BrokenTile(self.current_location, tilecode)
+                                )
+                            broken_tiles.append(BrokenTile(other_location, othertilecode))
+                            logger.debug(
+                                "tilecode conflict: %s",
+                                tilecode.value,
+                            )
+                            logger.debug(
+                                "in %s %s file and %s %s file",
+                                self.current_location.level_name,
+                                self.current_location.location,
+                                other_location.level_name,
+                                other_location.location,
+                            )
+                            logger.debug(
+                                "comparing tileids %s to %s",
+                                tilecode.name,
+                                othertilecode.name,
+                            )
+        return broken_tiles
 
     def resolve_conflicts(self):
         usable_codes = ShortCode.usable_codes()
@@ -50,7 +86,7 @@ class DependenciesTree(ttk.Treeview):
                     if code.value in usable_codes:
                         usable_codes.remove(code.value)
 
-        for broken_tile in self.broken_tiles:
+        for broken_tile in self.find_broken_tiles():
             if broken_tile.level.level != self.current_location.level:
                 continue
 
@@ -101,43 +137,7 @@ class DependenciesTree(ttk.Treeview):
     def update_dependencies(self, level_paths, current_location):
         self.sister_locations = level_paths
         self.current_location = current_location
-        broken_tiles = []
-
-        for tilecode in current_location.level.tile_codes.all():
-            checked_levels = [current_location.level_name]
-            added_code = False
-            for level_path in level_paths:
-                for other_location in level_path:
-                    if other_location.level_name in checked_levels:
-                        continue
-
-                    checked_levels.append(other_location.level_name)
-                    for othertilecode in other_location.level.tile_codes.all():
-                        if tilecode.value == othertilecode.value and tilecode.name != othertilecode.name:
-                            if not added_code:
-                                added_code = True
-                                broken_tiles.append(
-                                    BrokenTile(current_location, tilecode)
-                                )
-                            broken_tiles.append(BrokenTile(other_location, othertilecode))
-                            logger.debug(
-                                "tilecode conflict: %s",
-                                tilecode.value,
-                            )
-                            logger.debug(
-                                "in %s %s file and %s %s file",
-                                current_location.level_name,
-                                current_location.location,
-                                other_location.level_name,
-                                other_location.location,
-                            )
-                            logger.debug(
-                                "comparing tileids %s to %s",
-                                tilecode.name,
-                                othertilecode.name,
-                            )
-
-        self.broken_tiles = broken_tiles
+        broken_tiles = self.find_broken_tiles()
 
         for broken_tile in broken_tiles:
             self.insert(
