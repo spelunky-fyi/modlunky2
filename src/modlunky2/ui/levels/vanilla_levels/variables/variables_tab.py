@@ -115,9 +115,12 @@ class VariablesTab(ttk.Frame):
         delimiter = ", "
         if len(levels) <= 4:
             delimiter = "\n"
-        self.depend_order_label["text"] = delimiter.join([" -> ".join(
-            [level.level_name for level in level_path]
-        ) for level_path in levels])
+        self.depend_order_label["text"] = delimiter.join(
+            [
+                " -> ".join([level.level_name for level in level_path])
+                for level_path in levels
+            ]
+        )
         self.depend_order_label.grid()
 
     def update_lvls_path(self, new_path):

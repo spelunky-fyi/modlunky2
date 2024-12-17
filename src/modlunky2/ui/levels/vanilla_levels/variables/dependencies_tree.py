@@ -10,14 +10,18 @@ from modlunky2.levels import LevelFile
 from modlunky2.levels.level_templates import Chunk
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, TileCode, TileCodes, ShortCode
 from modlunky2.utils import tb_info
-from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import SisterLocation
+from modlunky2.ui.levels.vanilla_levels.variables.level_dependencies import (
+    SisterLocation,
+)
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class BrokenTile:
     level: SisterLocation
     tile: TileCode
+
 
 class DependenciesTree(ttk.Treeview):
     def __init__(self, parent, lvls_path, extracts_path, *args, **kwargs):
@@ -50,13 +54,18 @@ class DependenciesTree(ttk.Treeview):
 
                     checked_levels.append(other_location.level_name)
                     for othertilecode in other_location.level.tile_codes.all():
-                        if tilecode.value == othertilecode.value and tilecode.name != othertilecode.name:
+                        if (
+                            tilecode.value == othertilecode.value
+                            and tilecode.name != othertilecode.name
+                        ):
                             if not added_code:
                                 added_code = True
                                 broken_tiles.append(
                                     BrokenTile(self.current_location, tilecode)
                                 )
-                            broken_tiles.append(BrokenTile(other_location, othertilecode))
+                            broken_tiles.append(
+                                BrokenTile(other_location, othertilecode)
+                            )
                             logger.debug(
                                 "tilecode conflict: %s",
                                 tilecode.value,
@@ -99,9 +108,7 @@ class DependenciesTree(ttk.Treeview):
                 usable_codes.remove(new_code)
                 level.tile_codes.set_obj(
                     TileCode(
-                        name = old_tile.name,
-                        value = new_code,
-                        comment = old_tile.comment
+                        name=old_tile.name, value=new_code, comment=old_tile.comment
                     )
                 )  # adds new tile to database with new code
             else:
@@ -111,14 +118,30 @@ class DependenciesTree(ttk.Treeview):
             for template in level.level_templates.all():
                 new_chunks = []
                 for room in template.chunks:
-                    foreground = [ [ str(new_code) if str(code) == str(old_tile_code) else str(code) for code in row] for row in room.foreground]
-                    background = [ [ str(new_code) if str(code) == str(old_tile_code) else str(code) for code in row] for row in room.background]
+                    foreground = [
+                        [
+                            str(new_code)
+                            if str(code) == str(old_tile_code)
+                            else str(code)
+                            for code in row
+                        ]
+                        for row in room.foreground
+                    ]
+                    background = [
+                        [
+                            str(new_code)
+                            if str(code) == str(old_tile_code)
+                            else str(code)
+                            for code in row
+                        ]
+                        for row in room.background
+                    ]
                     new_chunks.append(
                         Chunk(
-                            comment = room.comment,
-                            settings = room.settings,
-                            foreground = foreground,
-                            background = background,
+                            comment=room.comment,
+                            settings=room.settings,
+                            foreground=foreground,
+                            background=background,
                         )
                     )
                 template.chunks = new_chunks
@@ -147,7 +170,10 @@ class DependenciesTree(ttk.Treeview):
                 values=(
                     str(broken_tile.tile.name),
                     str(broken_tile.tile.value),
-                    str(broken_tile.level.level_name) + " " + str(broken_tile.level.location) + " file",
+                    str(broken_tile.level.level_name)
+                    + " "
+                    + str(broken_tile.level.location)
+                    + " file",
                 ),
             )
 

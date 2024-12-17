@@ -9,11 +9,13 @@ from modlunky2.levels import LevelFile
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class SisterLocation:
     level_name: str
     level: LevelFile
     location: str
+
 
 class LevelDependencies:
     @staticmethod
@@ -98,7 +100,10 @@ class LevelDependencies:
             levels.append([get_loaded_level(lvl_name)])
 
         if lvl_name.startswith("generic.lvl"):
-            return [[get_loaded_level(dep)] for dep in LevelDependencies.generic_dependencies()]
+            return [
+                [get_loaded_level(dep)]
+                for dep in LevelDependencies.generic_dependencies()
+            ]
         elif not lvl_name.startswith("basecamp"):
             for dependencies in levels:
                 dependencies.append(get_loaded_level("generic.lvl"))
@@ -108,48 +113,48 @@ class LevelDependencies:
     @staticmethod
     @lru_cache
     def generic_dependencies():
-         return [
-                "dwellingarea.lvl",
-                "cavebossarea.lvl",
-                "junglearea.lvl",
-                "blackmarket.lvl",
-                "beehive.lvl",
-                "challenge_moon.lvl",
-                "volcanoarea.lvl",
-                "vladscastle.lvl",
-                "challenge_moon.lvl",
-                "olmecarea.lvl",
-                "tidepoolarea.lvl",
-                "lake.lvl",
-                "lakeoffire.lvl",
-                "challenge_star.lvl",
-                "abzu.lvl",
-                "templearea.lvl",
-                "beehive.lvl",
-                "challenge_star.lvl",
-                "cityofgold.lvl",
-                "duat.lvl",
-                "icecavesarea.lvl",
-                "babylonarea.lvl",
-                "babylonarea_1-1.lvl",
-                "hallofushabti.lvl",
-                "palaceofpleasure.lvl",
-                "tiamat.lvl",
-                "sunkencityarea.lvl",
-                "challenge_sun.lvl",
-                "eggplantarea.lvl",
-                "hundun.lvl",
-                "ending.lvl",
-                "ending_hard.lvl",
-                "cosmicocean_babylon.lvl",
-                "cosmicocean_dwelling.lvl",
-                "cosmicocean_icecavesarea.lvl",
-                "cosmicocean_jungle.lvl",
-                "cosmicocean_sunkencity.lvl",
-                "cosmicocean_temple.lvl",
-                "cosmicocean_tidepool.lvl",
-                "cosmicocean_volcano.lvl",
-            ]
+        return [
+            "dwellingarea.lvl",
+            "cavebossarea.lvl",
+            "junglearea.lvl",
+            "blackmarket.lvl",
+            "beehive.lvl",
+            "challenge_moon.lvl",
+            "volcanoarea.lvl",
+            "vladscastle.lvl",
+            "challenge_moon.lvl",
+            "olmecarea.lvl",
+            "tidepoolarea.lvl",
+            "lake.lvl",
+            "lakeoffire.lvl",
+            "challenge_star.lvl",
+            "abzu.lvl",
+            "templearea.lvl",
+            "beehive.lvl",
+            "challenge_star.lvl",
+            "cityofgold.lvl",
+            "duat.lvl",
+            "icecavesarea.lvl",
+            "babylonarea.lvl",
+            "babylonarea_1-1.lvl",
+            "hallofushabti.lvl",
+            "palaceofpleasure.lvl",
+            "tiamat.lvl",
+            "sunkencityarea.lvl",
+            "challenge_sun.lvl",
+            "eggplantarea.lvl",
+            "hundun.lvl",
+            "ending.lvl",
+            "ending_hard.lvl",
+            "cosmicocean_babylon.lvl",
+            "cosmicocean_dwelling.lvl",
+            "cosmicocean_icecavesarea.lvl",
+            "cosmicocean_jungle.lvl",
+            "cosmicocean_sunkencity.lvl",
+            "cosmicocean_temple.lvl",
+            "cosmicocean_tidepool.lvl",
+            "cosmicocean_volcano.lvl",
+        ]
 
     @staticmethod
     @lru_cache
