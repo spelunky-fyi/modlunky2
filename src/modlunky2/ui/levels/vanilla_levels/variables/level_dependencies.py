@@ -88,7 +88,7 @@ class LevelDependencies:
         def get_loaded_level(item):
             return LevelDependencies.get_loaded_level(item, lvls_path, extracts_path)
 
-        for depend in LevelDependencies.dependency_map():
+        for depend in LevelDependencies.dependencies():
             if lvl_name in depend:
                 levels.append([get_loaded_level(dep) for dep in depend])
 
@@ -151,7 +151,7 @@ class LevelDependencies:
 
     @staticmethod
     @lru_cache
-    def dependency_map():
+    def dependencies():
         return [
             [
                 "basecamp.lvl",
