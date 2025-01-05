@@ -45,7 +45,6 @@ class LevelConfigurations:
     def save(self, lvl_path: Path):
         level_configuration_path = lvl_path / LEVEL_CONFIGURATION_FILE_NAME
 
-        print(level_configuration_path.suffix)
         tmp_path = level_configuration_path.with_suffix(
             f"{level_configuration_path.suffix}.tmp"
         )
