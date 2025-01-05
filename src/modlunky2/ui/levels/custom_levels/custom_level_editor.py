@@ -327,7 +327,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_subtheme = subtheme
         biome = Biomes.biome_for_theme(theme, subtheme)
 
-        self.level_configuration_panel.update_theme(theme)
+        self.level_configuration_panel.update_theme(theme, subtheme)
         self.options_panel.enable_controls()
         self.level_configuration_panel.enable_controls()
 
@@ -857,12 +857,13 @@ class CustomLevelEditor(ttk.Frame):
 
     # Selects a new theme, updating the grid to theme tiles and backgrounds for the
     # new theme.
-    def select_theme(self, theme):
-        if theme == self.lvl_theme:
+    def select_theme(self, theme, subtheme):
+        if theme == self.lvl_theme and subtheme == self.lvl_subtheme:
             return
         self.lvl_theme = theme
+        self.lvl_subtheme = subtheme
 
-        biome = Biomes.biome_for_theme(theme, self.lvl_subtheme)
+        biome = Biomes.biome_for_theme(theme, subtheme)
 
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_palette_ref_in_use:
