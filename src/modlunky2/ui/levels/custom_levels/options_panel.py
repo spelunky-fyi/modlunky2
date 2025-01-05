@@ -2,12 +2,85 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
+from modlunky2.mem.state import Theme
 from modlunky2.config import CustomLevelSaveFormat
 from modlunky2.levels.tile_codes import VALID_TILE_CODES
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
-from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
 from modlunky2.ui.widgets import PopupWindow, Tab
 
+def name_of_theme(theme):
+    if theme == Theme.DWELLING:
+        return "Dwelling"
+    elif theme == Theme.TIDE_POOL:
+        return "Tide Pool"
+    elif theme == Theme.NEO_BABYLON:
+        return "Neo Babylon"
+    elif theme == Theme.JUNGLE:
+        return "Jungle"
+    elif theme == Theme.TEMPLE:
+        return "Temple"
+    elif theme == Theme.SUNKEN_CITY:
+        return "Sunken City"
+    elif theme == Theme.COSMIC_OCEAN:
+        return "Cosmic Ocean"
+    elif theme == Theme.CITY_OF_GOLD:
+        return "City of Gold"
+    elif theme == Theme.DUAT:
+        return "Duat"
+    elif theme == Theme.ABZU:
+        return "Abzu"
+    elif theme == Theme.EGGPLANT_WORLD:
+        return "Eggplant World"
+    elif theme == Theme.ICE_CAVES:
+        return "Ice Caves"
+    elif theme == Theme.OLMEC:
+        return "Olmec"
+    elif theme == Theme.VOLCANA:
+        return "Volcana"
+    elif theme == Theme.TIAMAT:
+        return "Tiamat"
+    elif theme == Theme.HUNDUN:
+        return "Hundun"
+    elif theme == Theme.BASE_CAMP:
+        return "Surface"
+    return "Unknown"
+
+def theme_for_name(name):
+    if name == "Dwelling":
+        return Theme.DWELLING
+    elif name == "Jungle":
+        return Theme.JUNGLE
+    elif name == "Volcana":
+        return Theme.VOLCANA
+    elif name == "Olmec":
+        return Theme.OLMEC
+    elif name == "Tide Pool":
+        return Theme.TIDE_POOL
+    elif name == "Temple":
+        return Theme.TEMPLE
+    elif name == "Ice Caves":
+        return Theme.ICE_CAVES
+    elif name == "Neo Babylon":
+        return Theme.NEO_BABYLON
+    elif name == "Sunken City":
+        return Theme.SUNKEN_CITY
+    elif name == "Cosmic Ocean":
+        return Theme.COSMIC_OCEAN
+    elif name == "City of Gold":
+        return Theme.CITY_OF_GOLD
+    elif name == "Duat":
+        return Theme.DUAT
+    elif name == "Abzu":
+        return Theme.ABZU
+    elif name == "Tiamat":
+        return Theme.TIAMAT
+    elif name == "Eggplant World":
+        return Theme.EGGPLANT_WORLD
+    elif name == "Hundun":
+        return Theme.HUNDUN
+    elif name == "Surface":
+        return Theme.BASE_CAMP
+    return None
 
 class OptionsPanel(ttk.Frame):
     def __init__(
@@ -72,18 +145,23 @@ class OptionsPanel(ttk.Frame):
             "Ice Caves",
             "Neo Babylon",
             "Sunken City",
+            "Cosmic Ocean",
             "City of Gold",
             "Duat",
+            "Abzu",
+            "Tiamat",
             "Eggplant World",
+            "Hundun",
             "Surface",
         ]
 
+
         def update_theme():
             theme_name = str(self.theme_combobox.get())
-            biome = Biomes.biome_for_name(theme_name)
+            theme = theme_for_name(theme_name)
             self.theme_select_button["state"] = tk.DISABLED
-            self.theme_label["text"] = "Level Theme: " + Biomes().name_of_biome(biome)
-            self.on_select_theme(biome)
+            self.theme_label["text"] = "Level Theme: " + theme_name
+            self.on_select_theme(theme)
 
         self.theme_select_button = tk.Button(
             theme_container,
@@ -287,7 +365,7 @@ class OptionsPanel(ttk.Frame):
         )
 
     def update_theme(self, theme):
-        theme_name = Biomes.name_of_biome(theme)
+        theme_name = name_of_theme(theme)
         self.theme_combobox.set(theme_name)
         self.theme_label["text"] = "Level Theme: " + theme_name
 
