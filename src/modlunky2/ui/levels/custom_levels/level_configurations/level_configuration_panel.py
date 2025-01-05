@@ -136,12 +136,40 @@ class LevelConfigurationPanel(ttk.Frame):
             "Surface",
         ]
 
+        self.subtheme_combobox = ttk.Combobox(theme_container, height=25)
+        self.subtheme_combobox.grid(row=1, column=0, sticky="nsw")
+        self.subtheme_combobox["state"] = tk.DISABLED
+        self.subtheme_combobox.grid_remove()
+        self.subtheme_combobox["values"] = [
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "City of Gold",
+            "Duat",
+            "Abzu",
+            "Tiamat",
+            "Eggplant World",
+            "Hundun",
+            "Surface",
+        ]
+
         def update_theme():
             theme_name = str(self.theme_combobox.get())
             theme = theme_for_name(theme_name)
+            if theme == Theme.COSMIC_OCEAN:
+                subtheme_name = str(self.subtheme_combobox.get())
+                subtheme = theme_for_name(subtheme_name)
+            else:
+                subtheme = None
             self.theme_select_button["state"] = tk.DISABLED
-            self.theme_label["text"] = "Level Theme: " + theme_name
-            self.on_select_theme(theme)
+            self.update_theme_label()
+            self.on_select_theme(theme, subtheme)
 
         self.theme_select_button = tk.Button(
             theme_container,
@@ -152,23 +180,70 @@ class LevelConfigurationPanel(ttk.Frame):
         self.theme_select_button["state"] = tk.DISABLED
         self.theme_select_button.grid(row=0, column=2, sticky="nse")
 
+        self.selected_theme = None
+        self.selected_subtheme = None
         def theme_selected(_):
+            theme_name = str(self.theme_combobox.get())
+            theme = theme_for_name(theme_name)
+
+            if theme == Theme.COSMIC_OCEAN:
+                if self.selected_subtheme is None and self.selected_theme is not None:
+                    self.subtheme_combobox.set(name_of_theme(self.selected_theme))
+
+            self.selected_theme = theme
+
+            self.theme_select_button["state"] = tk.NORMAL
+            self.update_theme_controls()
+
+        def subtheme_selected(_):
+            subtheme_name = str(self.subtheme_combobox.get())
+            subtheme = theme_for_name(subtheme_name)
+            self.selected_subtheme = subtheme
             self.theme_select_button["state"] = tk.NORMAL
 
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
+        self.subtheme_combobox.bind("<<ComboboxSelected>>", subtheme_selected)
 
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
-    def update_theme(self, theme):
+    def update_theme(self, theme, subtheme):
+        self.selected_theme = theme
+        self.selected_subtheme = subtheme
         theme_name = name_of_theme(theme)
         self.theme_combobox.set(theme_name)
-        self.theme_label["text"] = "Level Theme: " + theme_name
+        if subtheme is not None:
+            subtheme_name = name_of_theme(subtheme)
+            self.subtheme_combobox.set(subtheme_name)
+        self.update_theme_controls()
+        self.update_theme_label()
+
+    def update_theme_label(self):
+        theme_name = str(self.theme_combobox.get())
+        theme = theme_for_name(theme_name)
+        subtheme_name = str(self.subtheme_combobox.get())
+        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name is not "":
+            theme_description = theme_name + " (" + subtheme_name + ")"
+        else:
+            theme_description = theme_name
+        self.theme_label["text"] = "Level Theme: " + theme_description
+
+    def update_theme_controls(self):
+        theme_name = str(self.theme_combobox.get())
+        theme = theme_for_name(theme_name)
+        if theme == Theme.COSMIC_OCEAN:
+            self.subtheme_combobox.grid()
+            self.theme_select_button.grid(row=1)
+        else:
+            self.subtheme_combobox.grid_remove()
+            self.theme_select_button.grid(row=0)
 
     def enable_controls(self):
         self.theme_combobox["state"] = "readonly"
+        self.subtheme_combobox["state"] = "readonly"
 
     def disable_controls(self):
         self.theme_combobox["state"] = tk.DISABLED
+        self.subtheme_combobox["state"] = tk.DISABLED
         self.theme_select_button["state"] = tk.DISABLED
