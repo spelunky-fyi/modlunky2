@@ -1,5 +1,8 @@
 import logging
+import os
+import os.path
 from pathlib import Path
+import glob
 from PIL import Image, ImageTk
 import re
 import tkinter as tk
@@ -14,6 +17,13 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES, ShortCode
 from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.custom_levels.save_level import save_level
+from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration import (
+    LevelConfiguration,
+)
+from modlunky2.ui.levels.custom_levels.level_configurations.level_configurations import (
+    LevelConfigurations,
+)
+from modlunky2.ui.levels.custom_levels.sequence_panel import SequencePanel
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import BIOME, Biomes
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
@@ -70,6 +80,8 @@ class CustomLevelEditor(ttk.Frame):
         self.tile_palette_suggestions = []
         self.lvl_width = None
         self.lvl_height = None
+        self.level_configurations = None
+        self.sequence = None
 
         self.zoom_level = 30
         self.tool = CANVAS_MODE.DRAW
@@ -197,8 +209,12 @@ class CustomLevelEditor(ttk.Frame):
             self.canvas.hide_room_lines,
             self.update_zoom,
         )
+        self.sequence_panel = SequencePanel(
+            side_panel_tab_control, self.update_level_sequence
+        )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
+        side_panel_tab_control.add(self.sequence_panel, text="Level Sequence")
 
     def reset_save_button(self):
         self.save_needed = False
@@ -951,9 +967,72 @@ class CustomLevelEditor(ttk.Frame):
         self.current_save_format = save_format
         self.files_tree.current_save_format = save_format
 
+    def update_level_sequence(self, new_sequence):
+        self.sequence = new_sequence
+        self.save_level_sequence()
+
+    def save_level_sequence(self):
+        configuration_sequence = [
+            self.configuration_for_level(level) for level in self.sequence
+        ]
+
+        level_configurations = LevelConfigurations(
+            configuration_sequence, self.level_configurations
+        )
+        loaded_pack = Path(self.packs_path / self.files_tree.get_loaded_pack())
+        level_configurations.save(loaded_pack)
+
+    def configuration_for_level(self, level_name):
+        if level_name in self.level_configurations:
+            return self.level_configurations[level_name]
+
+        level = self.read_custom_level_file(level_name)
+        level_path = Path(level_name)
+        save_format = self.read_save_format(level)
+        if save_format is not None:
+            theme = self.read_theme(level, save_format)
+        else:
+            theme = Theme.DWELLING
+
+        configuration = LevelConfiguration(
+            level_path.stem, level_path.stem.capitalize(), level_name, theme
+        )
+
+        self.level_configurations[level_name] = configuration
+
+        return configuration
+
+    def read_custom_level_file(self, lvl_name):
+        return LevelFile.from_path(self.lvls_path / lvl_name)
+
+    def list_custom_level_file_names(self):
+        print(self.lvls_path)
+        level_files = [
+            os.path.basename(os.path.normpath(i))
+            for i in glob.iglob(str(self.lvls_path) + "/***.lvl")
+        ]
+
+        def is_custom(lvl):
+            return not (self.extracts_path / lvl).exists()
+
+        level_files = filter(is_custom, level_files)
+
+        return list(level_files)
+
     def update_lvls_path(self, new_path):
         self.reset()
         self.lvls_path = new_path
+
+        loaded_pack = Path(self.packs_path / self.files_tree.get_loaded_pack())
+        level_configurations = LevelConfigurations.from_path(loaded_pack)
+        self.sequence = [
+            sequence_configuration.file_name
+            for sequence_configuration in level_configurations.sequence
+        ]
+        self.level_configurations = level_configurations.all_configurations
+        self.sequence_panel.update_pack(
+            self.lvls_path, self.sequence, self.list_custom_level_file_names()
+        )
 
     def show_intro(self):
         self.canvas.show_intro()
