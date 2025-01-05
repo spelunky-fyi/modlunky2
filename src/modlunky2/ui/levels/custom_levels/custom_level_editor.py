@@ -388,7 +388,7 @@ class CustomLevelEditor(ttk.Frame):
             self.palette_panel.select_tile(tile, False)
 
         # Populate the list of suggested tiles based on the current theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(biome)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(theme, subtheme)
         # Load images and create buttons for all of the tile codes and suggestions that
         # we populated.
         self.populate_tilecode_palette()
@@ -852,7 +852,7 @@ class CustomLevelEditor(ttk.Frame):
             tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
 
         # Load suggested tiles for the new theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(biome)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(self.lvl_theme, self.lvl_subtheme)
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
         self.populate_tilecode_palette()
         # Draw the grid now that we have the newly textured tiles.
