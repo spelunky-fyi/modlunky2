@@ -12,5 +12,5 @@ class LevelConfiguration:
     identifier: str
     name: str
     file_name: str
-    theme: str  # CHANGE TO INT
+    theme: int
     subtheme: Optional[int] = field(default=None, skip_if_default=True)
