@@ -249,6 +249,7 @@ class CustomLevelEditor(ttk.Frame):
             self.tile_codes[LAYER.FRONT],
             self.tile_codes[LAYER.BACK],
         ):
+            self.write_current_level_configuration()
             self.reset_save_button()
             logger.debug("Saved")
             self.files_tree.update_selected_file_icon(LEVEL_TYPE.MODDED)
@@ -1008,6 +1009,13 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configurations[level_name] = configuration
 
         return configuration
+
+    def write_current_level_configuration(self):
+        configuration = self.configuration_for_level(self.lvl)
+        configuration.theme = self.lvl_theme
+        configuration.subtheme = self.lvl_subtheme
+        self.level_configurations[self.lvl] = configuration
+        self.save_level_sequence()
 
     def read_custom_level_file(self, lvl_name):
         return LevelFile.from_path(self.lvls_path / lvl_name)
