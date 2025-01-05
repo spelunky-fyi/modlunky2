@@ -1,5 +1,6 @@
 from modlunky2.mem.state import Theme
 
+
 # List of tiles that will be included in the tile palette even if they do not already
 # exist in the level file, since they are likely options to be used for the current theme.
 def suggested_tiles_for_theme(theme, subtheme, include_common=True):

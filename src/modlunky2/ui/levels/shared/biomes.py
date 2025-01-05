@@ -1,5 +1,6 @@
 from modlunky2.mem.state import Theme
 
+
 class BIOME:
     DWELLING = "cave"
     JUNGLE = "jungle"

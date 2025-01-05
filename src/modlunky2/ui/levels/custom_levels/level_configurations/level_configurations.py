@@ -46,7 +46,9 @@ class LevelConfigurations:
         level_configuration_path = lvl_path / LEVEL_CONFIGURATION_FILE_NAME
 
         print(level_configuration_path.suffix)
-        tmp_path = level_configuration_path.with_suffix(f"{level_configuration_path.suffix}.tmp")
+        tmp_path = level_configuration_path.with_suffix(
+            f"{level_configuration_path.suffix}.tmp"
+        )
         with tmp_path.open("w", encoding="utf-8") as tmp_file:
             file_content = serde.json.to_json(self, indent=2)
             tmp_file.write(file_content)
