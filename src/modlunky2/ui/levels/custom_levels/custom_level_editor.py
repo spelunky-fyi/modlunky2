@@ -7,6 +7,7 @@ from tkinter import ttk
 import tkinter.messagebox as tkMessageBox
 
 from modlunky2.constants import BASE_DIR
+from modlunky2.mem.state import Theme
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.levels import LevelFile
 from modlunky2.levels.tile_codes import VALID_TILE_CODES, ShortCode
@@ -14,7 +15,7 @@ from modlunky2.ui.levels.custom_levels.options_panel import OptionsPanel
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.custom_levels.save_level import save_level
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
-from modlunky2.ui.levels.shared.biomes import BIOME
+from modlunky2.ui.levels.shared.biomes import BIOME, Biomes
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
 from modlunky2.ui.levels.shared.level_canvas import CANVAS_MODE
 from modlunky2.ui.levels.shared.tile import Tile
@@ -60,7 +61,8 @@ class CustomLevelEditor(ttk.Frame):
         self.tile_codes = None
         self.usable_codes = ShortCode.usable_codes()
         self.lvl = None
-        self.lvl_biome = None
+        self.lvl_theme = None
+        self.lvl_subtheme = None
         self.current_level = None
         self.current_level_path = None
         self.tile_palette_ref_in_use = []
@@ -220,7 +222,7 @@ class CustomLevelEditor(ttk.Frame):
             backup_dir,
             self.lvl_width,
             self.lvl_height,
-            self.lvl_biome,
+            self.lvl_biome(),
             self.current_save_format,
             old_level_file.comment,
             old_level_file.level_chances,
@@ -278,25 +280,28 @@ class CustomLevelEditor(ttk.Frame):
 
         self.set_current_save_format(save_format)
 
-        # Attempt to read the theme from the level file. The theme will be saved in
+        # Attempt to read the theme from the level configuration. If it does not exist
+        # there, attempt to read it from the level file. The theme will be saved in
         # a comment in each room.
-        theme = self.read_theme(level, self.current_save_format)
+        theme, subtheme = self.find_theme(lvl, level, self.current_save_format)
         # if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
         if not theme and self.files_tree.selected_file_is_arena():
             themes = [
-                BIOME.DWELLING,
-                BIOME.JUNGLE,
-                BIOME.VOLCANA,
-                BIOME.TIDE_POOL,
-                BIOME.TEMPLE,
-                BIOME.ICE_CAVES,
-                BIOME.NEO_BABYLON,
-                BIOME.SUNKEN_CITY,
+                Theme.DWELLING,
+                Theme.JUNGLE,
+                Theme.VOLCANA,
+                Theme.TIDE_POOL,
+                Theme.TEMPLE,
+                Theme.ICE_CAVES,
+                Theme.NEO_BABYLON,
+                Theme.SUNKEN_CITY,
             ]
             for x, themeselect in enumerate(themes):
                 if lvl.startswith("dm" + str(x + 1)):
                     theme = themeselect
-        self.lvl_biome = theme or BIOME.DWELLING
+        self.lvl_theme = theme or Theme.DWELLING
+        self.lvl_subtheme = subtheme
+        biome = Biomes.biome_for_theme(theme, subtheme)
 
         self.options_panel.update_theme(theme)
         self.options_panel.enable_controls()
@@ -307,9 +312,9 @@ class CustomLevelEditor(ttk.Frame):
         # Populate the tile palette from the tile codes listed in the level file.
         for tilecode in level.tile_codes.all():
             img = self.texture_fetcher.get_texture(
-                tilecode.name, theme, lvl, self.zoom_level
+                tilecode.name, biome, lvl, self.zoom_level
             )
-            img_select = self.texture_fetcher.get_texture(tilecode.name, theme, lvl, 40)
+            img_select = self.texture_fetcher.get_texture(tilecode.name, biome, lvl, 40)
 
             tilecode_item = Tile(
                 tilecode.name,
@@ -343,11 +348,11 @@ class CustomLevelEditor(ttk.Frame):
                 "",
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
-                        "floor_hard", theme, lvl, self.zoom_level
+                        "floor_hard", biome, lvl, self.zoom_level
                     )
                 ),
                 ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture("floor_hard", theme, lvl, 40)
+                    self.texture_fetcher.get_texture("floor_hard", biome, lvl, 40)
                 ),
             )
             self.tile_palette_ref_in_use.append(tilecode_item)
@@ -383,7 +388,7 @@ class CustomLevelEditor(ttk.Frame):
             self.palette_panel.select_tile(tile, False)
 
         # Populate the list of suggested tiles based on the current theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(biome)
         # Load images and create buttons for all of the tile codes and suggestions that
         # we populated.
         self.populate_tilecode_palette()
@@ -466,15 +471,23 @@ class CustomLevelEditor(ttk.Frame):
             self.tile_palette_ref_in_use,
             self.tile_palette_suggestions,
             None,
-            self.lvl_biome,
+            self.lvl_biome(),
             self.lvl,
         )
+
+    # Find the theme of a level from the level configurations, or read it from the level file if
+    # there is no level configuration for the level.
+    def find_theme(self, level_file, level, save_format):
+        if level_file in self.level_configurations:
+            configuration = self.level_configurations[level_file]
+            return configuration.theme, configuration.subtheme
+        return self.read_theme(level, save_format), None
 
     # Read the comment of the template at room (0, 0) to extract the theme, defaulting to dwelling.
     def read_theme(self, level, save_format):
         for template in level.level_templates.all():
             if template.name == save_format.room_template_format.format(y=0, x=0):
-                return template.comment
+                return Biomes.theme_for_biome(template.comment)
         return None
 
     # Look through the level templates and try to find one that matches an existing save
@@ -534,7 +547,7 @@ class CustomLevelEditor(ttk.Frame):
     def draw_canvas(self, fresh):
         width = self.lvl_width
         height = self.lvl_height
-        theme = self.lvl_biome
+        theme = self.lvl_biome()
 
         # Clear all existing images from the canvas before drawing the new images.
         self.canvas.clear()
@@ -729,12 +742,12 @@ class CustomLevelEditor(ttk.Frame):
 
         tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, self.zoom_level
+                new_tile_code, self.lvl_biome(), self.lvl, self.zoom_level
             )
         )
         tile_image_picker = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, 40
+                new_tile_code, self.lvl_biome(), self.lvl, 40
             )
         )
 
@@ -814,27 +827,32 @@ class CustomLevelEditor(ttk.Frame):
             codes += str(code)
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
+    def lvl_biome(self):
+        return Biomes.biome_for_theme(self.lvl_theme, self.lvl_subtheme)
+
     # Selects a new theme, updating the grid to theme tiles and backgrounds for the
     # new theme.
     def select_theme(self, theme):
-        if theme == self.lvl_biome:
+        if theme == self.lvl_theme:
             return
-        self.lvl_biome = theme
+        self.lvl_theme = theme
+
+        biome = Biomes.biome_for_theme(theme, self.lvl_subtheme)
 
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_palette_ref_in_use:
             tile_name = tilecode_item.name
             img = self.texture_fetcher.get_texture(
-                tile_name, theme, self.lvl, self.zoom_level
+                tile_name, biome, self.lvl, self.zoom_level
             )
             img_select = self.texture_fetcher.get_texture(
-                tile_name, theme, self.lvl, 40
+                tile_name, biome, self.lvl, 40
             )
             tilecode_item.image = ImageTk.PhotoImage(img)
             tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
 
         # Load suggested tiles for the new theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(theme)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(biome)
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
         self.populate_tilecode_palette()
         # Draw the grid now that we have the newly textured tiles.
@@ -919,7 +937,7 @@ class CustomLevelEditor(ttk.Frame):
                 tile.image = ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
                         tile_name,
-                        self.lvl_biome,
+                        self.lvl_biome(),
                         self.lvl,
                         self.zoom_level,
                     )
@@ -958,7 +976,8 @@ class CustomLevelEditor(ttk.Frame):
             self.tile_palette_ref_in_use = None
             self.tile_palette_suggestions = None
             self.lvl = None
-            self.lvl_biome = None
+            self.lvl_theme = None
+            self.lvl_subtheme = None
             self.tile_codes = None
             self.reset_save_button()
         except Exception:  # pylint: disable=broad-except
