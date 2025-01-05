@@ -1,3 +1,5 @@
+from modlunky2.mem.state import Theme
+
 class BIOME:
     DWELLING = "cave"
     JUNGLE = "jungle"
@@ -153,3 +155,66 @@ class Biomes:
         elif theme == BIOME.SURFACE:
             return "Surface"
         return "Unknown"
+
+    @staticmethod
+    def theme_for_biome(biome):
+        if biome == BIOME.DWELLING:
+            return Theme.DWELLING
+        elif biome == BIOME.JUNGLE:
+            return Theme.JUNGLE
+        elif biome == BIOME.VOLCANA:
+            return Theme.VOLCANA
+        elif biome == BIOME.OLMEC:
+            return Theme.OLMEC
+        elif biome == BIOME.TIDE_POOL:
+            return Theme.TIDE_POOL
+        elif biome == BIOME.TEMPLE:
+            return Theme.TEMPLE
+        elif biome == BIOME.ICE_CAVES:
+            return Theme.ICE_CAVES
+        elif biome == BIOME.NEO_BABYLON:
+            return Theme.NEO_BABYLON
+        elif biome == BIOME.SUNKEN_CITY:
+            return Theme.SUNKEN_CITY
+        elif biome == BIOME.CITY_OF_GOLD:
+            return Theme.CITY_OF_GOLD
+        elif biome == BIOME.DUAT:
+            return Theme.DUAT
+        elif biome == BIOME.EGGPLANT_WORLD:
+            return Theme.EGGPLANT_WORLD
+        elif biome == BIOME.SURFACE:
+            return Theme.BASE_CAMP
+        return Theme.DWELLING
+
+    @staticmethod
+    def biome_for_theme(theme, subtheme):
+        if theme == Theme.DWELLING:
+            return BIOME.DWELLING
+        elif theme == Theme.JUNGLE:
+            return BIOME.JUNGLE
+        elif theme == Theme.VOLCANA:
+            return BIOME.VOLCANA
+        elif theme == Theme.OLMEC:
+            return BIOME.OLMEC
+        elif theme == Theme.TIDE_POOL or theme == Theme.ABZU:
+            return BIOME.TIDE_POOL
+        elif theme == Theme.TEMPLE:
+            return BIOME.TEMPLE
+        elif theme == Theme.ICE_CAVES:
+            return BIOME.ICE_CAVES
+        elif theme == Theme.NEO_BABYLON or theme == Theme.TIAMAT:
+            return BIOME.NEO_BABYLON
+        elif theme == Theme.SUNKEN_CITY or theme == Theme.HUNDUN:
+            return BIOME.SUNKEN_CITY
+        elif theme == Theme.CITY_OF_GOLD:
+            return BIOME.CITY_OF_GOLD
+        elif theme == Theme.DUAT:
+            return BIOME.DUAT
+        elif theme == Theme.EGGPLANT_WORLD:
+            return BIOME.EGGPLANT_WORLD
+        elif theme == Theme.BASE_CAMP:
+            return BIOME.SURFACE
+        elif theme == Theme.ARENA or theme == Theme.COSMIC_OCEAN:
+            if subtheme is not None:
+                return Biomes.biome_for_theme(subtheme, None)
+        return BIOME.DWELLING
