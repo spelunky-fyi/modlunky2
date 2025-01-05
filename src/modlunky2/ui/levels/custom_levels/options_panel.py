@@ -8,6 +8,7 @@ from modlunky2.levels.tile_codes import VALID_TILE_CODES
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.widgets import PopupWindow, Tab
 
+
 def name_of_theme(theme):
     if theme == Theme.DWELLING:
         return "Dwelling"
@@ -45,6 +46,7 @@ def name_of_theme(theme):
         return "Surface"
     return "Unknown"
 
+
 def theme_for_name(name):
     if name == "Dwelling":
         return Theme.DWELLING
@@ -81,6 +83,7 @@ def theme_for_name(name):
     elif name == "Surface":
         return Theme.BASE_CAMP
     return None
+
 
 class OptionsPanel(ttk.Frame):
     def __init__(
@@ -154,7 +157,6 @@ class OptionsPanel(ttk.Frame):
             "Hundun",
             "Surface",
         ]
-
 
         def update_theme():
             theme_name = str(self.theme_combobox.get())

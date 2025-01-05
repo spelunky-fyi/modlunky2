@@ -852,7 +852,9 @@ class CustomLevelEditor(ttk.Frame):
             tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
 
         # Load suggested tiles for the new theme.
-        self.tile_palette_suggestions = suggested_tiles_for_theme(self.lvl_theme, self.lvl_subtheme)
+        self.tile_palette_suggestions = suggested_tiles_for_theme(
+            self.lvl_theme, self.lvl_subtheme
+        )
         # Redraw the tilecode palette with the new textures of tiles and the new suggestions.
         self.populate_tilecode_palette()
         # Draw the grid now that we have the newly textured tiles.
