@@ -82,6 +82,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_height = None
         self.level_configurations = None
         self.sequence = None
+        self.has_sequence = False
 
         self.zoom_level = 30
         self.tool = CANVAS_MODE.DRAW
@@ -968,10 +969,16 @@ class CustomLevelEditor(ttk.Frame):
         self.files_tree.current_save_format = save_format
 
     def update_level_sequence(self, new_sequence):
+        if len(new_sequence) > 0:
+            self.has_sequence = True
+
         self.sequence = new_sequence
         self.save_level_sequence()
 
     def save_level_sequence(self):
+        if not self.has_sequence:
+            return  # Do not attempt to save level configurations if a sequence hasn't been created.
+
         configuration_sequence = [
             self.configuration_for_level(level) for level in self.sequence
         ]
@@ -1032,6 +1039,10 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configurations = level_configurations.all_configurations
         self.sequence_panel.update_pack(
             self.lvls_path, self.sequence, self.list_custom_level_file_names()
+        )
+        self.has_sequence = (
+            len(level_configurations.sequence) > 0
+            or len(level_configurations.all_configurations) > 0
         )
 
     def show_intro(self):
