@@ -23,6 +23,7 @@ from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration 
 from modlunky2.ui.levels.custom_levels.level_configurations.level_configurations import (
     LevelConfigurations,
 )
+from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration_panel import LevelConfigurationPanel
 from modlunky2.ui.levels.custom_levels.sequence_panel import SequencePanel
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import BIOME, Biomes
@@ -203,18 +204,23 @@ class CustomLevelEditor(ttk.Frame):
             side_panel_tab_control,
             modlunky_config,
             self.zoom_level,
-            self.select_theme,
             self.update_level_size,
             self.set_current_save_format,
             self.canvas.hide_grid_lines,
             self.canvas.hide_room_lines,
             self.update_zoom,
         )
+        self.level_configuration_panel = LevelConfigurationPanel(
+            side_panel_tab_control,
+            modlunky_config,
+            self.select_theme
+        )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
+        side_panel_tab_control.add(self.level_configuration_panel, text="Configure Level")
         side_panel_tab_control.add(self.sequence_panel, text="Level Sequence")
 
     def reset_save_button(self):
@@ -321,8 +327,9 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_subtheme = subtheme
         biome = Biomes.biome_for_theme(theme, subtheme)
 
-        self.options_panel.update_theme(theme)
+        self.level_configuration_panel.update_theme(theme)
         self.options_panel.enable_controls()
+        self.level_configuration_panel.enable_controls()
 
         self.tile_palette_ref_in_use = []
         self.tile_palette_map = {}
@@ -1069,6 +1076,7 @@ class CustomLevelEditor(ttk.Frame):
         try:
             self.palette_panel.reset()
             self.options_panel.disable_controls()
+            self.level_configuration_panel.disable_controls()
             self.show_intro()
             self.canvas.clear()
             self.tile_palette_map = {}
