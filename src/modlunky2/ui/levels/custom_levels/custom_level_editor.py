@@ -1013,7 +1013,6 @@ class CustomLevelEditor(ttk.Frame):
         return LevelFile.from_path(self.lvls_path / lvl_name)
 
     def list_custom_level_file_names(self):
-        print(self.lvls_path)
         level_files = [
             os.path.basename(os.path.normpath(i))
             for i in glob.iglob(str(self.lvls_path) + "/***.lvl")
