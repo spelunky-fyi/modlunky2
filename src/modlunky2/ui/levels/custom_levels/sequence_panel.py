@@ -86,10 +86,6 @@ class SequencePanel(ttk.Frame):
         self.update_sequence()
 
     def add_level(self, index):
-        print(index)
-        print(self.unused_levels)
-        print(self.all_levels)
-        print(self.level_order)
         self.level_order.append(self.unused_levels[index])
         self.update_sequence()
 
