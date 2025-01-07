@@ -224,31 +224,31 @@ class FilesTree(ttk.Frame):
             is_arenas = True
         self.in_arena_folder = is_arenas
 
-        self.level_names = level_files
+        self.level_names = list(filter(lambda lvl_name: is_arenas or not (defaults_path / lvl_name).exists(), level_files))
 
-        for lvl_name in level_files:
-            if is_arenas or not (defaults_path / lvl_name).exists():
-                item = None
-                lvl_in_use = False
-                for name in mod_files:
-                    if name == lvl_name:
-                        lvl_in_use = True
-                        item = self.tree.insert(
-                            "",
-                            "end",
-                            text=str(lvl_name),
-                            image=self.lvl_icon(LEVEL_TYPE.MODDED),
-                        )
-                if not lvl_in_use:
+
+        for lvl_name in self.level_names:
+            item = None
+            lvl_in_use = False
+            for name in mod_files:
+                if name == lvl_name:
+                    lvl_in_use = True
                     item = self.tree.insert(
                         "",
                         "end",
                         text=str(lvl_name),
-                        image=self.lvl_icon(LEVEL_TYPE.VANILLA),
+                        image=self.lvl_icon(LEVEL_TYPE.MODDED),
                     )
-                if item != None and lvl_name == selected_lvl:
-                    self.tree.selection_set(item)
-                    self.last_selected_file = item
+            if not lvl_in_use:
+                item = self.tree.insert(
+                    "",
+                    "end",
+                    text=str(lvl_name),
+                    image=self.lvl_icon(LEVEL_TYPE.VANILLA),
+                )
+            if item != None and lvl_name == selected_lvl:
+                self.tree.selection_set(item)
+                self.last_selected_file = item
 
         self.tree.insert("", "end", text=str("Create New Level"), image=self.icon_add)
 
