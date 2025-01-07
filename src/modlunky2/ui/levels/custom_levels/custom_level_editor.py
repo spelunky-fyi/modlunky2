@@ -228,7 +228,7 @@ class CustomLevelEditor(ttk.Frame):
             self.select_border_entity_theme,
             self.select_background_theme,
             self.select_floor_theme,
-            self.select_music_theme
+            self.select_music_theme,
         )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
@@ -942,11 +942,11 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_background_theme = background_theme
         self.lvl_background_subtheme = background_subtheme
         self.changes_made()
-        
+
     def select_floor_theme(self, floor_theme):
         self.lvl_floor_theme = floor_theme
         self.changes_made()
-        
+
     def select_music_theme(self, music_theme):
         self.lvl_music_theme = music_theme
         self.changes_made()
