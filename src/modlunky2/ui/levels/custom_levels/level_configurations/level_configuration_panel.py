@@ -360,7 +360,10 @@ class LevelConfigurationPanel(ttk.Frame):
             theme = border_theme_for_name(border_theme_name)
             self.border_theme_select_button["state"] = tk.DISABLED
             self.update_border_theme_label()
-            self.on_select_border_theme(theme)
+            loop = None
+            if self.loop_manually_toggled:
+                loop = self.loop_var.get()
+            self.on_select_border_theme(theme, loop)
 
         self.border_theme_select_button = tk.Button(
             border_theme_container,
@@ -375,6 +378,23 @@ class LevelConfigurationPanel(ttk.Frame):
             self.border_theme_select_button["state"] = tk.NORMAL
 
         self.border_theme_combobox.bind("<<ComboboxSelected>>", border_theme_selected)
+
+        self.loop_manually_toggled = False
+        self.loop_var = tk.IntVar()
+        self.loop_var.set(False)
+
+        def toggle_loop():
+            self.loop_manually_toggled = True
+            self.border_theme_select_button["state"] = tk.NORMAL
+
+        self.border_loops_checkbox = tk.Checkbutton(
+            border_theme_container,
+            text="Loop",
+            variable=self.loop_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_loop
+        ).grid(row=0, column=1, sticky="nws")
 
         settings_row += 1
 
@@ -499,25 +519,11 @@ class LevelConfigurationPanel(ttk.Frame):
         self.background_theme_select_button["state"] = tk.DISABLED
         self.background_theme_select_button.grid(row=0, column=2, sticky="nse")
 
-        # self.selected_background_theme = None
-        # self.selected_background_subtheme = None
         def background_theme_selected(_):
-            # theme_name = str(self.background_theme_combobox.get())
-            # theme = theme_for_name(theme_name)
-
-            # if theme == Theme.COSMIC_OCEAN:
-            #     if self.selected_background_subtheme is None and self.selected_background_theme is not None:
-            #         self.subtheme_combobox.set(name_of_theme(self.selected_background_theme))
-
-            # self.selected_background_theme = theme
-
             self.background_theme_select_button["state"] = tk.NORMAL
             self.update_background_theme_controls()
 
         def background_subtheme_selected(_):
-            # subtheme_name = str(self.subtheme_combobox.get())
-            # subtheme = theme_for_name(subtheme_name)
-            # self.selected_subtheme = subtheme
             self.background_theme_select_button["state"] = tk.NORMAL
 
         self.background_theme_combobox.bind("<<ComboboxSelected>>", background_theme_selected)
@@ -599,9 +605,14 @@ class LevelConfigurationPanel(ttk.Frame):
             width=width, height=height
         )
 
-    def update_border_theme(self, theme):
+    def update_border_theme(self, theme, loop):
         theme_name = name_of_border_theme(theme)
         self.border_theme_combobox.set(theme_name)
+        self.loop_manually_toggled = False
+        self.loop_var.set(False)
+        if loop is not None:
+            self.loop_manually_toggled = True
+            self.loop_var.set(loop)
         self.update_border_theme_label()
 
     def update_border_entity_theme(self, theme):
@@ -611,7 +622,15 @@ class LevelConfigurationPanel(ttk.Frame):
 
     def update_border_theme_label(self):
         theme_name = str(self.border_theme_combobox.get())
-        self.border_theme_label["text"] = "Border Type: " + theme_name
+        if self.loop_manually_toggled:
+            loops = self.loop_var.get()
+            if loops:
+                theme_description = theme_name + " (Loops)"
+            else:
+                theme_description = theme_name + " (Doesn't Loop)"
+        else:
+            theme_description = theme_name
+        self.border_theme_label["text"] = "Border Type: " + theme_description
 
     def update_border_entity_theme_label(self):
         theme_name = str(self.border_entity_theme_combobox.get())
