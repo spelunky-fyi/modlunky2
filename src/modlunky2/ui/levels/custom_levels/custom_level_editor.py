@@ -75,6 +75,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_theme = None
         self.lvl_subtheme = None
         self.lvl_border_theme = None
+        self.lvl_loop = None
         self.lvl_border_entity_theme = None
         self.lvl_background_theme = None
         self.lvl_background_subtheme = None
@@ -319,6 +320,11 @@ class CustomLevelEditor(ttk.Frame):
         configuration = self.configuration_for_level(lvl)
         border_theme = configuration.border_theme
         border_entity_theme = configuration.border_entity_theme
+        loop = None
+        if configuration.loop:
+            loop = True
+        if configuration.dont_loop:
+            loop = False
         # if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
         if not theme and self.files_tree.selected_file_is_arena():
             themes = [
@@ -337,13 +343,14 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
         self.lvl_border_theme = border_theme
+        self.lvl_loop = loop
         self.lvl_border_entity_theme = border_entity_theme
         self.lvl_background_theme = configuration.background_theme
         self.lvl_background_subtheme = configuration.background_texture_theme
         biome = Biomes.biome_for_theme(theme, subtheme)
 
         self.level_configuration_panel.update_theme(theme, subtheme)
-        self.level_configuration_panel.update_border_theme(border_theme)
+        self.level_configuration_panel.update_border_theme(border_theme, loop)
         self.level_configuration_panel.update_border_entity_theme(border_entity_theme)
         self.level_configuration_panel.update_background_theme(configuration.background_theme, configuration.background_texture_theme)
         self.options_panel.enable_controls()
@@ -906,8 +913,9 @@ class CustomLevelEditor(ttk.Frame):
 
         self.changes_made()
 
-    def select_border_theme(self, border_theme):
+    def select_border_theme(self, border_theme, loop):
         self.lvl_border_theme = border_theme
+        self.lvl_loop = loop
         self.changes_made()
 
     def select_border_entity_theme(self, border_entity_theme):
@@ -1054,6 +1062,13 @@ class CustomLevelEditor(ttk.Frame):
         configuration.theme = self.lvl_theme
         configuration.subtheme = self.lvl_subtheme
         configuration.border_theme = self.lvl_border_theme
+        configuration.loop = None
+        configuration.dont_loop = None
+        if self.lvl_loop is not None:
+            if self.lvl_loop:
+                configuration.loop = True
+            else:
+                configuration.dont_loop = True
         configuration.border_entity_theme = self.lvl_border_entity_theme
         if self.lvl_border_entity_theme is None and self.lvl_border_theme is not None:
             # Set the default border entity to the proper entity type for the border theme.
