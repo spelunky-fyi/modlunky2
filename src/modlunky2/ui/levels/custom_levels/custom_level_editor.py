@@ -81,6 +81,8 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_border_entity_theme = None
         self.lvl_background_theme = None
         self.lvl_background_subtheme = None
+        self.lvl_floor_theme = None
+        self.lvl_music_theme = None
 
         self.current_level = None
         self.current_level_path = None
@@ -225,6 +227,8 @@ class CustomLevelEditor(ttk.Frame):
             self.select_border_theme,
             self.select_border_entity_theme,
             self.select_background_theme,
+            self.select_floor_theme,
+            self.select_music_theme
         )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
@@ -351,6 +355,9 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_border_entity_theme = border_entity_theme
         self.lvl_background_theme = configuration.background_theme
         self.lvl_background_subtheme = configuration.background_texture_theme
+        self.lvl_floor_theme = configuration.floor_theme
+        self.lvl_music_theme = configuration.music_theme
+
         biome = Biomes.biome_for_theme(theme, subtheme)
 
         self.level_configuration_panel.update_theme(theme, subtheme)
@@ -359,6 +366,9 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configuration_panel.update_background_theme(
             configuration.background_theme, configuration.background_texture_theme
         )
+        self.level_configuration_panel.update_floor_theme(configuration.floor_theme)
+        self.level_configuration_panel.update_music_theme(configuration.music_theme)
+
         self.options_panel.enable_controls()
         self.level_configuration_panel.enable_controls()
 
@@ -932,6 +942,14 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_background_theme = background_theme
         self.lvl_background_subtheme = background_subtheme
         self.changes_made()
+        
+    def select_floor_theme(self, floor_theme):
+        self.lvl_floor_theme = floor_theme
+        self.changes_made()
+        
+    def select_music_theme(self, music_theme):
+        self.lvl_music_theme = music_theme
+        self.changes_made()
 
     # Updates the level size from the options menu.
     def update_level_size(self, width, height):
@@ -1103,7 +1121,8 @@ class CustomLevelEditor(ttk.Frame):
             # With no subtheme configured, the game will crash, so configure the texture by the theme as a fallback to attempt to avoid this.
             if self.lvl_background_subtheme is None and self.lvl_subtheme is None:
                 configuration.background_texture_theme = self.lvl_theme
-
+        configuration.floor_theme = self.lvl_floor_theme
+        configuration.music_theme = self.lvl_music_theme
         configuration.width = self.lvl_width
         configuration.height = self.lvl_height
         self.level_configurations[self.lvl] = configuration

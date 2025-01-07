@@ -174,6 +174,8 @@ class LevelConfigurationPanel(ttk.Frame):
         on_select_border_theme,
         on_select_border_entity_theme,
         on_select_background_theme,
+        on_select_floor_theme,
+        on_select_music_theme,
         *args,
         **kwargs
     ):
@@ -185,6 +187,8 @@ class LevelConfigurationPanel(ttk.Frame):
         self.on_select_border_theme = on_select_border_theme
         self.on_select_border_entity_theme = on_select_border_entity_theme
         self.on_select_background_theme = on_select_background_theme
+        self.on_select_floor_theme = on_select_floor_theme
+        self.on_select_music_theme = on_select_music_theme
 
         self.lvl_width = None
         self.lvl_height = None
@@ -582,6 +586,122 @@ class LevelConfigurationPanel(ttk.Frame):
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
+        floor_theme_label = tk.Label(self, text="Floor Theme:")
+        floor_theme_label.grid(row=settings_row, column=0, sticky="nsw")
+        self.floor_theme_label = floor_theme_label
+
+        settings_row += 1
+
+        floor_theme_container = ttk.Frame(self)
+        floor_theme_container.grid(row=settings_row, column=0, sticky="nwse")
+        floor_theme_container.columnconfigure(1, weight=1)
+
+        self.floor_theme_combobox = ttk.Combobox(floor_theme_container, height=25)
+        self.floor_theme_combobox.grid(row=0, column=0, sticky="nsw")
+        self.floor_theme_combobox["state"] = tk.DISABLED
+        self.floor_theme_combobox["values"] = [
+            "Default",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "City of Gold",
+            "Duat",
+            "Abzu",
+            "Tiamat",
+            "Eggplant World",
+            "Hundun",
+            "Surface",
+        ]
+
+        def update_floor_theme():
+            theme_name = str(self.floor_theme_combobox.get())
+            theme = theme_for_name(theme_name)
+            self.floor_theme_select_button["state"] = tk.DISABLED
+            self.update_floor_theme_label()
+            self.on_select_floor_theme(theme)
+
+        self.floor_theme_select_button = tk.Button(
+            floor_theme_container,
+            text="Update Floor",
+            bg="yellow",
+            command=update_floor_theme,
+        )
+        self.floor_theme_select_button["state"] = tk.DISABLED
+        self.floor_theme_select_button.grid(row=0, column=2, sticky="nse")
+
+        def floor_theme_selected(_):
+            self.floor_theme_select_button["state"] = tk.NORMAL
+
+        self.floor_theme_combobox.bind("<<ComboboxSelected>>", floor_theme_selected)
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
+        music_theme_label = tk.Label(self, text="Level Music:")
+        music_theme_label.grid(row=settings_row, column=0, sticky="nsw")
+        self.music_theme_label = music_theme_label
+
+        settings_row += 1
+
+        music_theme_container = ttk.Frame(self)
+        music_theme_container.grid(row=settings_row, column=0, sticky="nwse")
+        music_theme_container.columnconfigure(1, weight=1)
+
+        self.music_theme_combobox = ttk.Combobox(music_theme_container, height=25)
+        self.music_theme_combobox.grid(row=0, column=0, sticky="nsw")
+        self.music_theme_combobox["state"] = tk.DISABLED
+        self.music_theme_combobox["values"] = [
+            "Default",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "City of Gold",
+            "Duat",
+            "Abzu",
+            "Tiamat",
+            "Eggplant World",
+            "Hundun",
+            "Surface",
+        ]
+
+        def update_music_theme():
+            theme_name = str(self.music_theme_combobox.get())
+            theme = theme_for_name(theme_name)
+            self.music_theme_select_button["state"] = tk.DISABLED
+            self.update_music_theme_label()
+            self.on_select_music_theme(theme)
+
+        self.music_theme_select_button = tk.Button(
+            music_theme_container,
+            text="Update Music",
+            bg="yellow",
+            command=update_music_theme,
+        )
+        self.music_theme_select_button["state"] = tk.DISABLED
+        self.music_theme_select_button.grid(row=0, column=2, sticky="nse")
+
+        def music_theme_selected(_):
+            self.music_theme_select_button["state"] = tk.NORMAL
+
+        self.music_theme_combobox.bind("<<ComboboxSelected>>", music_theme_selected)
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
     def update_theme(self, theme, subtheme):
         self.selected_theme = theme
         self.selected_subtheme = subtheme
@@ -677,6 +797,16 @@ class LevelConfigurationPanel(ttk.Frame):
         self.border_entity_theme_combobox.set(theme_name)
         self.update_border_entity_theme_label()
 
+    def update_floor_theme(self, theme):
+        theme_name = name_of_theme(theme)
+        self.floor_theme_combobox.set(theme_name)
+        self.update_floor_theme_label()
+
+    def update_music_theme(self, theme):
+        theme_name = name_of_theme(theme)
+        self.music_theme_combobox.set(theme_name)
+        self.update_music_theme_label()
+
     def update_border_theme_label(self):
         theme_name = str(self.border_theme_combobox.get())
         if self.loop_manually_toggled:
@@ -693,6 +823,14 @@ class LevelConfigurationPanel(ttk.Frame):
         theme_name = str(self.border_entity_theme_combobox.get())
         self.border_entity_theme_label["text"] = "Border Entity: " + theme_name
 
+    def update_floor_theme_label(self):
+        theme_name = str(self.floor_theme_combobox.get())
+        self.floor_theme_label["text"] = "Floor Theme: " + theme_name
+
+    def update_music_theme_label(self):
+        theme_name = str(self.music_theme_combobox.get())
+        self.music_theme_label["text"] = "Music Theme: " + theme_name
+
     def enable_controls(self):
         self.theme_combobox["state"] = "readonly"
         self.subtheme_combobox["state"] = "readonly"
@@ -702,6 +840,8 @@ class LevelConfigurationPanel(ttk.Frame):
         self.height_combobox["state"] = "readonly"
         self.background_theme_combobox["state"] = "readonly"
         self.background_subtheme_combobox["state"] = "readonly"
+        self.floor_theme_combobox["state"] = "readonly"
+        self.music_theme_combobox["state"] = "readonly"
 
     def disable_controls(self):
         self.theme_combobox["state"] = tk.DISABLED
@@ -717,3 +857,7 @@ class LevelConfigurationPanel(ttk.Frame):
         self.background_theme_combobox["state"] = tk.DISABLED
         self.background_subtheme_combobox["state"] = tk.DISABLED
         self.background_theme_select_button["state"] = tk.DISABLED
+        self.floor_theme_combobox["state"] == tk.DISABLED
+        self.floor_theme_select_button["state"] = tk.DISABLED
+        self.music_theme_combobox["state"] = tk.DISABLED
+        self.music_theme_select_button["state"] = tk.DISABLED
