@@ -469,7 +469,7 @@ class LevelConfigurationPanel(ttk.Frame):
         self.border_theme_label["text"] = "Border Type: " + theme_name
 
     def update_border_entity_theme_label(self):
-        theme_name = str(self.border_theme_combobox.get())
+        theme_name = str(self.border_entity_theme_combobox.get())
         self.border_entity_theme_label["text"] = "Border Entity: " + theme_name
 
     def enable_controls(self):
