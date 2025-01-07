@@ -1090,9 +1090,8 @@ class CustomLevelEditor(ttk.Frame):
             if self.lvl_background_subtheme is None and self.lvl_subtheme is None:
                 configuration.background_texture_theme = self.lvl_theme
 
-        if self.lvl_theme == Theme.COSMIC_OCEAN:
-            configuration.width = self.lvl_width
-            configuration.height = self.lvl_height
+        configuration.width = self.lvl_width
+        configuration.height = self.lvl_height
         self.level_configurations[self.lvl] = configuration
         self.save_level_sequence()
 
