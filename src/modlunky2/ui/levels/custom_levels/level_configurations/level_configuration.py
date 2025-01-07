@@ -14,8 +14,12 @@ class LevelConfiguration:
     file_name: str
     theme: int
     subtheme: Optional[int] = field(default=None, skip_if_default=True)
-    width: Optional[int] = field(default=None, skip_if_default=True) # Required only for Cosmic Ocean levels.
-    height: Optional[int] = field(default=None, skip_if_default=True) # Required only for Cosmic Ocean levels.
+    width: Optional[int] = field(
+        default=None, skip_if_default=True
+    )  # Required only for Cosmic Ocean levels.
+    height: Optional[int] = field(
+        default=None, skip_if_default=True
+    )  # Required only for Cosmic Ocean levels.
     border_theme: Optional[int] = field(default=None, skip_if_default=True)
     loop: Optional[bool] = field(default=None, skip_if_default=True)
     dont_loop: Optional[bool] = field(default=None, skip_if_default=True)
