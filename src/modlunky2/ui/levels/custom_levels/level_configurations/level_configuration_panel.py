@@ -135,6 +135,7 @@ class LevelConfigurationPanel(ttk.Frame):
         self,
         parent,
         modlunky_config,
+        on_update_level_size,
         on_select_theme,
         on_select_border_theme,
         on_select_border_entity_theme,
@@ -144,9 +145,13 @@ class LevelConfigurationPanel(ttk.Frame):
         super().__init__(parent, *args, **kwargs)
 
         self.modlunky_config = modlunky_config
+        self.on_update_level_size = on_update_level_size
         self.on_select_theme = on_select_theme
         self.on_select_border_theme = on_select_border_theme
         self.on_select_border_entity_theme = on_select_border_entity_theme
+
+        self.lvl_width = None
+        self.lvl_height = None
 
         self.columnconfigure(0, weight=1)
         right_padding = 10
@@ -258,6 +263,62 @@ class LevelConfigurationPanel(ttk.Frame):
 
         self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
         self.subtheme_combobox.bind("<<ComboboxSelected>>", subtheme_selected)
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
+        # Comboboxes to change the size of the level. If the size is decreased, the
+        # tiles in the missing space are still cached and restored if the size is
+        # increased again. This cache is cleared if another level is loaded or the
+        # level editor is closed.
+        size_frame = tk.Frame(self)
+        size_frame.grid(column=0, row=settings_row, sticky="news")
+        size_frame.columnconfigure(2, weight=1)
+        self.size_label = tk.Label(size_frame, text="Level size:")
+        self.size_label.grid(column=0, row=0, columnspan=4, sticky="nsw")
+
+        tk.Label(size_frame, text="Width: ").grid(row=1, column=0, sticky="nsw")
+
+        self.width_combobox = ttk.Combobox(size_frame, height=25)
+        self.width_combobox.grid(row=1, column=1, sticky="nswe")
+        self.width_combobox["state"] = tk.DISABLED
+        self.width_combobox["values"] = list(range(1, 9))
+
+        tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
+
+        self.height_combobox = ttk.Combobox(size_frame, height=25)
+        self.height_combobox.grid(row=2, column=1, sticky="nswe")
+        self.height_combobox["state"] = tk.DISABLED
+        self.height_combobox["values"] = list(range(1, 16))
+
+        def update_size():
+            width = int(self.width_combobox.get())
+            height = int(self.height_combobox.get())
+            self.size_select_button["state"] = tk.DISABLED
+            self.update_level_size(width, height)
+            self.on_update_level_size(width, height)
+
+        self.size_select_button = tk.Button(
+            size_frame,
+            text="Update Size",
+            bg="yellow",
+            command=update_size,
+        )
+        self.size_select_button["state"] = tk.DISABLED
+        self.size_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
+
+        def size_selected(_):
+            width = int(self.width_combobox.get())
+            height = int(self.height_combobox.get())
+            self.size_select_button["state"] = (
+                tk.DISABLED
+                if (width == self.lvl_width and height == self.lvl_height)
+                else tk.NORMAL
+            )
+
+        self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
+        self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
 
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
@@ -384,6 +445,14 @@ class LevelConfigurationPanel(ttk.Frame):
             self.subtheme_combobox.grid_remove()
             self.theme_select_button.grid(row=0)
 
+    def update_level_size(self, width, height):
+        self.lvl_width = width
+        self.lvl_height = height
+        self.width_combobox.set(width)
+        self.height_combobox.set(height)
+        self.size_label["text"] = "Level size: {width} x {height}".format(
+            width=width, height=height
+        )
 
     def update_border_theme(self, theme):
         theme_name = name_of_border_theme(theme)
@@ -408,6 +477,8 @@ class LevelConfigurationPanel(ttk.Frame):
         self.subtheme_combobox["state"] = "readonly"
         self.border_theme_combobox["state"] = "readonly"
         self.border_entity_theme_combobox["state"] = "readonly"
+        self.width_combobox["state"] = "readonly"
+        self.height_combobox["state"] = "readonly"
 
     def disable_controls(self):
         self.theme_combobox["state"] = tk.DISABLED
@@ -417,3 +488,6 @@ class LevelConfigurationPanel(ttk.Frame):
         self.border_theme_select_button["state"] = tk.DISABLED
         self.border_entity_theme_combobox["state"] = tk.DISABLED
         self.border_entity_theme_select_button["state"] = tk.DISABLED
+        self.width_combobox["state"] = tk.DISABLED
+        self.height_combobox["state"] = tk.DISABLED
+        self.size_select_button["state"] = tk.DISABLED
