@@ -206,7 +206,6 @@ class CustomLevelEditor(ttk.Frame):
             side_panel_tab_control,
             modlunky_config,
             self.zoom_level,
-            self.update_level_size,
             self.set_current_save_format,
             self.canvas.hide_grid_lines,
             self.canvas.hide_room_lines,
@@ -215,6 +214,7 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configuration_panel = LevelConfigurationPanel(
             side_panel_tab_control,
             modlunky_config,
+            self.update_level_size,
             self.select_theme,
             self.select_border_theme,
             self.select_border_entity_theme
@@ -459,7 +459,7 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_width = width
         self.lvl_height = height
 
-        self.options_panel.update_level_size(width, height)
+        self.level_configuration_panel.update_level_size(width, height)
 
         foreground_tiles = ["" for _ in range(height * 8)]
         background_tiles = ["" for _ in range(height * 8)]
