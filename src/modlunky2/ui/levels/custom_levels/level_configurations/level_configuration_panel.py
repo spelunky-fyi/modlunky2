@@ -139,6 +139,7 @@ class LevelConfigurationPanel(ttk.Frame):
         on_select_theme,
         on_select_border_theme,
         on_select_border_entity_theme,
+        on_select_background_theme,
         *args,
         **kwargs
     ):
@@ -149,6 +150,7 @@ class LevelConfigurationPanel(ttk.Frame):
         self.on_select_theme = on_select_theme
         self.on_select_border_theme = on_select_border_theme
         self.on_select_border_entity_theme = on_select_border_entity_theme
+        self.on_select_background_theme = on_select_background_theme
 
         self.lvl_width = None
         self.lvl_height = None
@@ -324,6 +326,13 @@ class LevelConfigurationPanel(ttk.Frame):
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
+        advanced_settings_label = tk.Label(self, text="Advanced Configuration:", font=("TkDefaultFont", 17))
+        advanced_settings_label.grid(row=settings_row, column=0, sticky="nsw")
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
         border_theme_label = tk.Label(self, text="Border Type:")
         border_theme_label.grid(row=settings_row, column=0, sticky="nsw")
         self.border_theme_label = border_theme_label
@@ -412,6 +421,111 @@ class LevelConfigurationPanel(ttk.Frame):
         self.border_entity_theme_combobox.bind("<<ComboboxSelected>>", border_entity_theme_selected)
 
         settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
+        background_theme_label = tk.Label(self, text="Background Theme:")
+        background_theme_label.grid(row=settings_row, column=0, sticky="nsw")
+        self.background_theme_label = background_theme_label
+
+        settings_row += 1
+
+        background_theme_container = ttk.Frame(self)
+        background_theme_container.grid(row=settings_row, column=0, sticky="nwse")
+        background_theme_container.columnconfigure(1, weight=1)
+
+        # Combobox for selecting the level theme. The theme affects the texture used to
+        # display many tiles and the level background; the suggested tiles in the tile
+        # palette; and the additional vanilla setrooms that are saved into the level
+        # file.
+        self.background_theme_combobox = ttk.Combobox(background_theme_container, height=25)
+        self.background_theme_combobox.grid(row=0, column=0, sticky="nsw")
+        self.background_theme_combobox["state"] = tk.DISABLED
+        self.background_theme_combobox["values"] = [
+            "Default",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Olmec",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+            "Cosmic Ocean",
+            "City of Gold",
+            "Duat",
+            "Abzu",
+            "Tiamat",
+            "Eggplant World",
+            "Hundun",
+            "Surface",
+        ]
+
+        self.background_subtheme_combobox = ttk.Combobox(background_theme_container, height=25)
+        self.background_subtheme_combobox.grid(row=1, column=0, sticky="nsw")
+        self.background_subtheme_combobox["state"] = tk.DISABLED
+        self.background_subtheme_combobox.grid_remove()
+        self.background_subtheme_combobox["values"] = [
+            "Default",
+            "Dwelling",
+            "Jungle",
+            "Volcana",
+            "Tide Pool",
+            "Temple",
+            "Ice Caves",
+            "Neo Babylon",
+            "Sunken City",
+        ]
+
+        def update_background_theme():
+            theme_name = str(self.background_theme_combobox.get())
+            theme = theme_for_name(theme_name)
+            if theme == Theme.COSMIC_OCEAN:
+                subtheme_name = str(self.background_subtheme_combobox.get())
+                subtheme = theme_for_name(subtheme_name)
+            else:
+                subtheme = None
+            self.background_theme_select_button["state"] = tk.DISABLED
+            self.update_background_theme_label()
+            self.on_select_background_theme(theme, subtheme)
+
+        self.background_theme_select_button = tk.Button(
+            background_theme_container,
+            text="Update Background",
+            bg="yellow",
+            command=update_background_theme,
+        )
+        self.background_theme_select_button["state"] = tk.DISABLED
+        self.background_theme_select_button.grid(row=0, column=2, sticky="nse")
+
+        # self.selected_background_theme = None
+        # self.selected_background_subtheme = None
+        def background_theme_selected(_):
+            # theme_name = str(self.background_theme_combobox.get())
+            # theme = theme_for_name(theme_name)
+
+            # if theme == Theme.COSMIC_OCEAN:
+            #     if self.selected_background_subtheme is None and self.selected_background_theme is not None:
+            #         self.subtheme_combobox.set(name_of_theme(self.selected_background_theme))
+
+            # self.selected_background_theme = theme
+
+            self.background_theme_select_button["state"] = tk.NORMAL
+            self.update_background_theme_controls()
+
+        def background_subtheme_selected(_):
+            # subtheme_name = str(self.subtheme_combobox.get())
+            # subtheme = theme_for_name(subtheme_name)
+            # self.selected_subtheme = subtheme
+            self.background_theme_select_button["state"] = tk.NORMAL
+
+        self.background_theme_combobox.bind("<<ComboboxSelected>>", background_theme_selected)
+        self.background_subtheme_combobox.bind("<<ComboboxSelected>>", background_subtheme_selected)
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
 
 
     def update_theme(self, theme, subtheme):
@@ -444,6 +558,37 @@ class LevelConfigurationPanel(ttk.Frame):
         else:
             self.subtheme_combobox.grid_remove()
             self.theme_select_button.grid(row=0)
+
+    def update_background_theme(self, theme, subtheme):
+        # self.selected_theme = theme
+        # self.selected_subtheme = subtheme
+        theme_name = name_of_theme(theme)
+        self.background_theme_combobox.set(theme_name)
+        if subtheme is not None:
+            subtheme_name = name_of_theme(subtheme)
+            self.background_subtheme_combobox.set(subtheme_name)
+        self.update_background_theme_controls()
+        self.update_background_theme_label()
+
+    def update_background_theme_label(self):
+        theme_name = str(self.background_theme_combobox.get())
+        theme = theme_for_name(theme_name)
+        subtheme_name = str(self.background_subtheme_combobox.get())
+        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name is not "" and subtheme_name is not "Default":
+            theme_description = theme_name + " (" + subtheme_name + ")"
+        else:
+            theme_description = theme_name
+        self.background_theme_label["text"] = "Background Theme: " + theme_description
+
+    def update_background_theme_controls(self):
+        theme_name = str(self.background_theme_combobox.get())
+        theme = theme_for_name(theme_name)
+        if theme == Theme.COSMIC_OCEAN:
+            self.background_subtheme_combobox.grid()
+            self.background_theme_select_button.grid(row=1)
+        else:
+            self.background_subtheme_combobox.grid_remove()
+            self.background_theme_select_button.grid(row=0)
 
     def update_level_size(self, width, height):
         self.lvl_width = width
@@ -479,6 +624,8 @@ class LevelConfigurationPanel(ttk.Frame):
         self.border_entity_theme_combobox["state"] = "readonly"
         self.width_combobox["state"] = "readonly"
         self.height_combobox["state"] = "readonly"
+        self.background_theme_combobox["state"] = "readonly"
+        self.background_subtheme_combobox["state"] = "readonly"
 
     def disable_controls(self):
         self.theme_combobox["state"] = tk.DISABLED
@@ -491,3 +638,6 @@ class LevelConfigurationPanel(ttk.Frame):
         self.width_combobox["state"] = tk.DISABLED
         self.height_combobox["state"] = tk.DISABLED
         self.size_select_button["state"] = tk.DISABLED
+        self.background_theme_combobox["state"] = tk.DISABLED
+        self.background_subtheme_combobox["state"] = tk.DISABLED
+        self.background_theme_select_button["state"] = tk.DISABLED
