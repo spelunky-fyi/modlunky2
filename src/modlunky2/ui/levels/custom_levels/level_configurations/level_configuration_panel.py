@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from modlunky2.mem.state import Theme
 
+
 def name_of_theme(theme):
     if theme is None:
         return "Default"
@@ -82,7 +83,23 @@ def theme_for_name(name):
 
 
 def name_of_border_entity_theme(theme):
-    if theme == Theme.DWELLING or theme == Theme.TIDE_POOL or theme == Theme.JUNGLE or theme == Theme.TEMPLE or theme == Theme.COSMIC_OCEAN or theme == Theme.CITY_OF_GOLD or theme == Theme.DUAT or theme == Theme.ABZU or theme == Theme.EGGPLANT_WORLD or theme == Theme.ICE_CAVES or theme == Theme.OLMEC or theme == Theme.VOLCANA or theme == Theme.TIAMAT or theme == Theme.HUNDUN or theme == Theme.BASE_CAMP:
+    if (
+        theme == Theme.DWELLING
+        or theme == Theme.TIDE_POOL
+        or theme == Theme.JUNGLE
+        or theme == Theme.TEMPLE
+        or theme == Theme.COSMIC_OCEAN
+        or theme == Theme.CITY_OF_GOLD
+        or theme == Theme.DUAT
+        or theme == Theme.ABZU
+        or theme == Theme.EGGPLANT_WORLD
+        or theme == Theme.ICE_CAVES
+        or theme == Theme.OLMEC
+        or theme == Theme.VOLCANA
+        or theme == Theme.TIAMAT
+        or theme == Theme.HUNDUN
+        or theme == Theme.BASE_CAMP
+    ):
         return "Hard"
     elif theme == Theme.NEO_BABYLON:
         return "Metal"
@@ -104,8 +121,23 @@ def border_entity_theme_for_name(name):
         return Theme.DUAT
     return None
 
+
 def name_of_border_theme(theme):
-    if theme == Theme.DWELLING or theme == Theme.NEO_BABYLON or theme == Theme.SUNKEN_CITY or theme == Theme.TIDE_POOL or theme == Theme.JUNGLE or theme == Theme.TEMPLE or theme == Theme.CITY_OF_GOLD or theme == Theme.ABZU or theme == Theme.EGGPLANT_WORLD or theme == Theme.OLMEC or theme == Theme.VOLCANA or theme == Theme.HUNDUN or theme == Theme.BASE_CAMP:
+    if (
+        theme == Theme.DWELLING
+        or theme == Theme.NEO_BABYLON
+        or theme == Theme.SUNKEN_CITY
+        or theme == Theme.TIDE_POOL
+        or theme == Theme.JUNGLE
+        or theme == Theme.TEMPLE
+        or theme == Theme.CITY_OF_GOLD
+        or theme == Theme.ABZU
+        or theme == Theme.EGGPLANT_WORLD
+        or theme == Theme.OLMEC
+        or theme == Theme.VOLCANA
+        or theme == Theme.HUNDUN
+        or theme == Theme.BASE_CAMP
+    ):
         return "Normal"
     elif theme == Theme.ICE_CAVES:
         return "Ice Caves"
@@ -116,6 +148,7 @@ def name_of_border_theme(theme):
     elif theme == Theme.COSMIC_OCEAN:
         return "Cosmic Ocean"
     return "Default"
+
 
 def border_theme_for_name(name):
     if name == "Normal":
@@ -129,6 +162,7 @@ def border_theme_for_name(name):
     elif name == "Cosmic Ocean":
         return Theme.COSMIC_OCEAN
     return None
+
 
 class LevelConfigurationPanel(ttk.Frame):
     def __init__(
@@ -244,6 +278,7 @@ class LevelConfigurationPanel(ttk.Frame):
 
         self.selected_theme = None
         self.selected_subtheme = None
+
         def theme_selected(_):
             theme_name = str(self.theme_combobox.get())
             theme = theme_for_name(theme_name)
@@ -326,7 +361,9 @@ class LevelConfigurationPanel(ttk.Frame):
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
-        advanced_settings_label = tk.Label(self, text="Advanced Configuration:", font=("TkDefaultFont", 17))
+        advanced_settings_label = tk.Label(
+            self, text="Advanced Configuration:", font=("TkDefaultFont", 17)
+        )
         advanced_settings_label.grid(row=settings_row, column=0, sticky="nsw")
 
         settings_row += 1
@@ -393,7 +430,7 @@ class LevelConfigurationPanel(ttk.Frame):
             variable=self.loop_var,
             onvalue=True,
             offvalue=False,
-            command=toggle_loop
+            command=toggle_loop,
         ).grid(row=0, column=1, sticky="nws")
 
         settings_row += 1
@@ -408,7 +445,9 @@ class LevelConfigurationPanel(ttk.Frame):
         border_entity_theme_container.grid(row=settings_row, column=0, sticky="news")
         border_entity_theme_container.columnconfigure(1, weight=1)
 
-        self.border_entity_theme_combobox = ttk.Combobox(border_entity_theme_container, height=25)
+        self.border_entity_theme_combobox = ttk.Combobox(
+            border_entity_theme_container, height=25
+        )
         self.border_entity_theme_combobox.grid(row=0, column=0, sticky="nsw")
         self.border_entity_theme_combobox["state"] = tk.DISABLED
         self.border_entity_theme_combobox["values"] = [
@@ -438,7 +477,9 @@ class LevelConfigurationPanel(ttk.Frame):
         def border_entity_theme_selected(_):
             self.border_entity_theme_select_button["state"] = tk.NORMAL
 
-        self.border_entity_theme_combobox.bind("<<ComboboxSelected>>", border_entity_theme_selected)
+        self.border_entity_theme_combobox.bind(
+            "<<ComboboxSelected>>", border_entity_theme_selected
+        )
 
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
@@ -458,7 +499,9 @@ class LevelConfigurationPanel(ttk.Frame):
         # display many tiles and the level background; the suggested tiles in the tile
         # palette; and the additional vanilla setrooms that are saved into the level
         # file.
-        self.background_theme_combobox = ttk.Combobox(background_theme_container, height=25)
+        self.background_theme_combobox = ttk.Combobox(
+            background_theme_container, height=25
+        )
         self.background_theme_combobox.grid(row=0, column=0, sticky="nsw")
         self.background_theme_combobox["state"] = tk.DISABLED
         self.background_theme_combobox["values"] = [
@@ -482,7 +525,9 @@ class LevelConfigurationPanel(ttk.Frame):
             "Surface",
         ]
 
-        self.background_subtheme_combobox = ttk.Combobox(background_theme_container, height=25)
+        self.background_subtheme_combobox = ttk.Combobox(
+            background_theme_container, height=25
+        )
         self.background_subtheme_combobox.grid(row=1, column=0, sticky="nsw")
         self.background_subtheme_combobox["state"] = tk.DISABLED
         self.background_subtheme_combobox.grid_remove()
@@ -526,13 +571,16 @@ class LevelConfigurationPanel(ttk.Frame):
         def background_subtheme_selected(_):
             self.background_theme_select_button["state"] = tk.NORMAL
 
-        self.background_theme_combobox.bind("<<ComboboxSelected>>", background_theme_selected)
-        self.background_subtheme_combobox.bind("<<ComboboxSelected>>", background_subtheme_selected)
+        self.background_theme_combobox.bind(
+            "<<ComboboxSelected>>", background_theme_selected
+        )
+        self.background_subtheme_combobox.bind(
+            "<<ComboboxSelected>>", background_subtheme_selected
+        )
 
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
-
 
     def update_theme(self, theme, subtheme):
         self.selected_theme = theme
@@ -549,7 +597,11 @@ class LevelConfigurationPanel(ttk.Frame):
         theme_name = str(self.theme_combobox.get())
         theme = theme_for_name(theme_name)
         subtheme_name = str(self.subtheme_combobox.get())
-        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name != "":
+        if (
+            theme == Theme.COSMIC_OCEAN
+            and subtheme_name is not None
+            and subtheme_name != ""
+        ):
             theme_description = theme_name + " (" + subtheme_name + ")"
         else:
             theme_description = theme_name
@@ -580,7 +632,12 @@ class LevelConfigurationPanel(ttk.Frame):
         theme_name = str(self.background_theme_combobox.get())
         theme = theme_for_name(theme_name)
         subtheme_name = str(self.background_subtheme_combobox.get())
-        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name != "" and subtheme_name != "Default":
+        if (
+            theme == Theme.COSMIC_OCEAN
+            and subtheme_name is not None
+            and subtheme_name != ""
+            and subtheme_name != "Default"
+        ):
             theme_description = theme_name + " (" + subtheme_name + ")"
         else:
             theme_description = theme_name

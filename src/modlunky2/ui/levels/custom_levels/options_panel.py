@@ -4,6 +4,7 @@ from tkinter import ttk
 from modlunky2.config import CustomLevelSaveFormat
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 
+
 class OptionsPanel(ttk.Frame):
     def __init__(
         self,

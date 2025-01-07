@@ -23,7 +23,9 @@ from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration 
 from modlunky2.ui.levels.custom_levels.level_configurations.level_configurations import (
     LevelConfigurations,
 )
-from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration_panel import LevelConfigurationPanel
+from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration_panel import (
+    LevelConfigurationPanel,
+)
 from modlunky2.ui.levels.custom_levels.sequence_panel import SequencePanel
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
 from modlunky2.ui.levels.shared.biomes import BIOME, Biomes
@@ -222,14 +224,16 @@ class CustomLevelEditor(ttk.Frame):
             self.select_theme,
             self.select_border_theme,
             self.select_border_entity_theme,
-            self.select_background_theme
+            self.select_background_theme,
         )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
-        side_panel_tab_control.add(self.level_configuration_panel, text="Configure Level")
+        side_panel_tab_control.add(
+            self.level_configuration_panel, text="Configure Level"
+        )
         side_panel_tab_control.add(self.sequence_panel, text="Level Sequence")
 
     def reset_save_button(self):
@@ -352,7 +356,9 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configuration_panel.update_theme(theme, subtheme)
         self.level_configuration_panel.update_border_theme(border_theme, loop)
         self.level_configuration_panel.update_border_entity_theme(border_entity_theme)
-        self.level_configuration_panel.update_background_theme(configuration.background_theme, configuration.background_texture_theme)
+        self.level_configuration_panel.update_background_theme(
+            configuration.background_theme, configuration.background_texture_theme
+        )
         self.options_panel.enable_controls()
         self.level_configuration_panel.enable_controls()
 
@@ -1073,8 +1079,16 @@ class CustomLevelEditor(ttk.Frame):
         if self.lvl_border_entity_theme is None and self.lvl_border_theme is not None:
             # Set the default border entity to the proper entity type for the border theme.
             def theme_is(theme):
-                return self.lvl_theme == theme or (self.lvl_theme == Theme.COSMIC_OCEAN and self.lvl_subtheme == theme)
-            if self.lvl_border_theme == Theme.DWELLING or self.lvl_border_theme == Theme.TIAMAT or self.lvl_border_theme == Theme.ICE_CAVES or self.lvl_border_theme == Theme.COSMIC_OCEAN:
+                return self.lvl_theme == theme or (
+                    self.lvl_theme == Theme.COSMIC_OCEAN and self.lvl_subtheme == theme
+                )
+
+            if (
+                self.lvl_border_theme == Theme.DWELLING
+                or self.lvl_border_theme == Theme.TIAMAT
+                or self.lvl_border_theme == Theme.ICE_CAVES
+                or self.lvl_border_theme == Theme.COSMIC_OCEAN
+            ):
                 if theme_is(Theme.SUNKEN_CITY) or theme_is(Theme.HUNDUN):
                     configuration.border_entity_theme = Theme.SUNKEN_CITY
                 elif theme_is(Theme.NEO_BABYLON) or theme_is(Theme.TIAMAT):
