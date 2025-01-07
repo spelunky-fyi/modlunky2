@@ -74,6 +74,8 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl = None
         self.lvl_theme = None
         self.lvl_subtheme = None
+        self.lvl_border_theme = None
+        self.lvl_border_entity_theme = None
         self.current_level = None
         self.current_level_path = None
         self.tile_palette_ref_in_use = []
@@ -213,7 +215,9 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configuration_panel = LevelConfigurationPanel(
             side_panel_tab_control,
             modlunky_config,
-            self.select_theme
+            self.select_theme,
+            self.select_border_theme,
+            self.select_border_entity_theme
         )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
@@ -308,6 +312,9 @@ class CustomLevelEditor(ttk.Frame):
         # there, attempt to read it from the level file. The theme will be saved in
         # a comment in each room.
         theme, subtheme = self.find_theme(lvl, level, self.current_save_format)
+        configuration = self.configuration_for_level(lvl)
+        border_theme = configuration.border_theme
+        border_entity_theme = configuration.border_entity_theme
         # if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
         if not theme and self.files_tree.selected_file_is_arena():
             themes = [
@@ -325,9 +332,13 @@ class CustomLevelEditor(ttk.Frame):
                     theme = themeselect
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
+        self.lvl_border_theme = border_theme
+        self.lvl_border_entity_theme = border_entity_theme
         biome = Biomes.biome_for_theme(theme, subtheme)
 
         self.level_configuration_panel.update_theme(theme, subtheme)
+        self.level_configuration_panel.update_border_theme(border_theme)
+        self.level_configuration_panel.update_border_entity_theme(border_entity_theme)
         self.options_panel.enable_controls()
         self.level_configuration_panel.enable_controls()
 
@@ -888,6 +899,14 @@ class CustomLevelEditor(ttk.Frame):
 
         self.changes_made()
 
+    def select_border_theme(self, border_theme):
+        self.lvl_border_theme = border_theme
+        self.changes_made()
+
+    def select_border_entity_theme(self, border_entity_theme):
+        self.lvl_border_entity_theme = border_entity_theme
+        self.changes_made()
+
     # Updates the level size from the options menu.
     def update_level_size(self, width, height):
         if width == self.lvl_width and height == self.lvl_height:
@@ -1022,6 +1041,22 @@ class CustomLevelEditor(ttk.Frame):
         configuration = self.configuration_for_level(self.lvl)
         configuration.theme = self.lvl_theme
         configuration.subtheme = self.lvl_subtheme
+        configuration.border_theme = self.lvl_border_theme
+        configuration.border_entity_theme = self.lvl_border_entity_theme
+        if self.lvl_border_entity_theme is None and self.lvl_border_theme is not None:
+            # Set the default border entity to the proper entity type for the border theme.
+            def theme_is(theme):
+                return self.lvl_theme == theme or (self.lvl_theme == Theme.COSMIC_OCEAN and self.lvl_subtheme == theme)
+            if self.lvl_border_theme == Theme.DWELLING or self.lvl_border_theme == Theme.TIAMAT or self.lvl_border_theme == Theme.ICE_CAVES or self.lvl_border_theme == Theme.COSMIC_OCEAN:
+                if theme_is(Theme.SUNKEN_CITY) or theme_is(Theme.HUNDUN):
+                    configuration.border_entity_theme = Theme.SUNKEN_CITY
+                elif theme_is(Theme.NEO_BABYLON) or theme_is(Theme.TIAMAT):
+                    configuration.border_entity_theme = Theme.NEO_BABYLON
+                else:
+                    configuration.border_entity_theme = Theme.DWELLING
+            elif self.lvl_border_theme == Theme.DUAT:
+                configuration.border_entity_theme = Theme.DUAT
+
         if self.lvl_theme == Theme.COSMIC_OCEAN:
             configuration.width = self.lvl_width
             configuration.height = self.lvl_height
