@@ -304,8 +304,6 @@ def suggested_tiles_for_theme(theme, subtheme, include_common=True):
                 "chain_ceiling",
                 "lava",
                 "ammit%50",
-                "crocman",
-                "snake",
                 "cobra",
                 "osiris",
                 "anubis2",

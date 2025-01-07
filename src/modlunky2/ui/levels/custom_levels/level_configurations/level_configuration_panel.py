@@ -549,7 +549,7 @@ class LevelConfigurationPanel(ttk.Frame):
         theme_name = str(self.theme_combobox.get())
         theme = theme_for_name(theme_name)
         subtheme_name = str(self.subtheme_combobox.get())
-        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name is not "":
+        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name != "":
             theme_description = theme_name + " (" + subtheme_name + ")"
         else:
             theme_description = theme_name
@@ -580,7 +580,7 @@ class LevelConfigurationPanel(ttk.Frame):
         theme_name = str(self.background_theme_combobox.get())
         theme = theme_for_name(theme_name)
         subtheme_name = str(self.background_subtheme_combobox.get())
-        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name is not "" and subtheme_name is not "Default":
+        if theme == Theme.COSMIC_OCEAN and subtheme_name is not None and subtheme_name != "" and subtheme_name != "Default":
             theme_description = theme_name + " (" + subtheme_name + ")"
         else:
             theme_description = theme_name
