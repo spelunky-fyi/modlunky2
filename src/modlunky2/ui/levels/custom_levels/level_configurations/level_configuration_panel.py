@@ -486,8 +486,6 @@ class LevelConfigurationPanel(ttk.Frame):
         )
 
         settings_row += 1
-        self.rowconfigure(settings_row, minsize=20)
-        settings_row += 1
 
         background_theme_label = tk.Label(self, text="Background Theme:")
         background_theme_label.grid(row=settings_row, column=0, sticky="nsw")
@@ -583,8 +581,6 @@ class LevelConfigurationPanel(ttk.Frame):
         )
 
         settings_row += 1
-        self.rowconfigure(settings_row, minsize=20)
-        settings_row += 1
 
         floor_theme_label = tk.Label(self, text="Floor Theme:")
         floor_theme_label.grid(row=settings_row, column=0, sticky="nsw")
@@ -640,8 +636,6 @@ class LevelConfigurationPanel(ttk.Frame):
 
         self.floor_theme_combobox.bind("<<ComboboxSelected>>", floor_theme_selected)
 
-        settings_row += 1
-        self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
         music_theme_label = tk.Label(self, text="Level Music:")
