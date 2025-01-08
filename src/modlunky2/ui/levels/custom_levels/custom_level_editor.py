@@ -1125,6 +1125,7 @@ class CustomLevelEditor(ttk.Frame):
             elif self.lvl_border_theme == Theme.DUAT:
                 configuration.border_entity_theme = Theme.DUAT
         configuration.background_theme = self.lvl_background_theme
+        configuration.background_texture_theme = None
         if self.lvl_background_theme == Theme.COSMIC_OCEAN:
             configuration.background_texture_theme = self.lvl_background_subtheme
             # With no subtheme configured, the game will crash, so configure the texture by the theme as a fallback to attempt to avoid this.
