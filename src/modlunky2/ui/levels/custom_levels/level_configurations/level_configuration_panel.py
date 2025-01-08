@@ -177,6 +177,8 @@ class LevelConfigurationPanel(ttk.Frame):
         on_select_background_theme,
         on_select_floor_theme,
         on_select_music_theme,
+        on_update_co_fix,
+        on_update_spawn_jelly,
         *args,
         **kwargs
     ):
@@ -191,6 +193,8 @@ class LevelConfigurationPanel(ttk.Frame):
         self.on_select_background_theme = on_select_background_theme
         self.on_select_floor_theme = on_select_floor_theme
         self.on_select_music_theme = on_select_music_theme
+        self.on_update_co_fix = on_update_co_fix
+        self.on_update_spawn_jelly = on_update_spawn_jelly
 
         self.lvl_width = None
         self.lvl_height = None
@@ -726,6 +730,42 @@ class LevelConfigurationPanel(ttk.Frame):
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
 
+        self.co_fix_var = tk.IntVar()
+        self.co_fix_var.set(False)
+
+        def toggle_co_fix():
+            self.on_update_co_fix(self.co_fix_var.get())
+
+        self.co_fix_checkbox = tk.Checkbutton(
+            self,
+            text="Disable Jellyfish/Orb fixes",
+            variable=self.co_fix_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_co_fix,
+        ).grid(row=settings_row, column=0, sticky="nws")
+
+        settings_row += 1
+
+        self.jelly_var = tk.IntVar()
+        self.jelly_var.set(False)
+
+        def toggle_jelly():
+            self.on_update_spawn_jelly(self.jelly_var.get())
+
+        self.jelly_checkbox = tk.Checkbutton(
+            self,
+            text="Spawn door Jellyfish",
+            variable=self.jelly_var,
+            onvalue=True,
+            offvalue=False,
+            command=toggle_jelly,
+        ).grid(row=settings_row, column=0, sticky="nws")
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=20)
+        settings_row += 1
+
     def update_level_name(self, level_name):
         self.setting_name = True
         self.name_var.set(level_name)
@@ -859,6 +899,12 @@ class LevelConfigurationPanel(ttk.Frame):
     def update_music_theme_label(self):
         theme_name = str(self.music_theme_combobox.get())
         self.music_theme_label["text"] = "Music Theme: " + theme_name
+
+    def update_skip_co_fix(self, skip_co_fix):
+        self.co_fix_var.set(skip_co_fix)
+
+    def update_spawn_jelly(self, spawn_jelly):
+        self.jelly_var.set(spawn_jelly)
 
     def enable_controls(self):
         self.theme_combobox["state"] = "readonly"

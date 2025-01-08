@@ -83,6 +83,8 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_background_subtheme = None
         self.lvl_floor_theme = None
         self.lvl_music_theme = None
+        self.lvl_skip_co_fixes = None
+        self.lvl_spawn_door_jellyfish = None
 
         self.current_level = None
         self.current_level_path = None
@@ -230,6 +232,8 @@ class CustomLevelEditor(ttk.Frame):
             self.select_background_theme,
             self.select_floor_theme,
             self.select_music_theme,
+            self.select_skip_co_fixes,
+            self.select_spawn_door_jellyfish,
         )
         self.sequence_panel = SequencePanel(
             side_panel_tab_control, self.update_level_sequence
@@ -361,6 +365,8 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_background_subtheme = configuration.background_texture_theme
         self.lvl_floor_theme = configuration.floor_theme
         self.lvl_music_theme = configuration.music_theme
+        self.lvl_skip_co_fixes = configuration.skip_co_fixes
+        self.lvl_spawn_door_jellyfish = configuration.spawn_door_jellyfish
 
         biome = Biomes.biome_for_theme(theme, subtheme)
 
@@ -373,6 +379,8 @@ class CustomLevelEditor(ttk.Frame):
         )
         self.level_configuration_panel.update_floor_theme(configuration.floor_theme)
         self.level_configuration_panel.update_music_theme(configuration.music_theme)
+        self.level_configuration_panel.update_skip_co_fix(self.lvl_skip_co_fixes)
+        self.level_configuration_panel.update_spawn_jelly(self.lvl_spawn_door_jellyfish)
 
         self.options_panel.enable_controls()
         self.level_configuration_panel.enable_controls()
@@ -960,6 +968,14 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_music_theme = music_theme
         self.changes_made()
 
+    def select_skip_co_fixes(self, skip_co_fixes):
+        self.lvl_skip_co_fixes = skip_co_fixes
+        self.changes_made()
+
+    def select_spawn_door_jellyfish(self, spawn_door_jellyfish):
+        self.lvl_spawn_door_jellyfish = spawn_door_jellyfish
+        self.changes_made()
+
     # Updates the level size from the options menu.
     def update_level_size(self, width, height):
         if width == self.lvl_width and height == self.lvl_height:
@@ -1133,6 +1149,8 @@ class CustomLevelEditor(ttk.Frame):
                 configuration.background_texture_theme = self.lvl_theme
         configuration.floor_theme = self.lvl_floor_theme
         configuration.music_theme = self.lvl_music_theme
+        configuration.skip_co_fixes = self.lvl_skip_co_fixes
+        configuration.spawn_door_jellyfish = self.lvl_spawn_door_jellyfish
         configuration.width = self.lvl_width
         configuration.height = self.lvl_height
         if self.lvl_name:
