@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from modlunky2.ui.widgets import PopupWindow
 
-from modlunky2.config import Config, CustomLevelSaveFormat
+from modlunky2.config import CustomLevelSaveFormat
 
 
 class SaveFormats:

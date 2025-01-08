@@ -28,7 +28,7 @@ from modlunky2.ui.levels.custom_levels.level_configurations.level_configuration_
 )
 from modlunky2.ui.levels.custom_levels.sequence_panel import SequencePanel
 from modlunky2.ui.levels.custom_levels.tile_sets import suggested_tiles_for_theme
-from modlunky2.ui.levels.shared.biomes import BIOME, Biomes
+from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.files_tree import FilesTree, PACK_LIST_TYPE, LEVEL_TYPE
 from modlunky2.ui.levels.shared.level_canvas import CANVAS_MODE
 from modlunky2.ui.levels.shared.tile import Tile
@@ -39,7 +39,6 @@ from modlunky2.ui.levels.shared.multi_canvas_container import (
 from modlunky2.ui.levels.shared.palette_panel import PalettePanel
 from modlunky2.ui.levels.shared.setrooms import Setroom
 from modlunky2.ui.levels.shared.tool_select import ToolSelect
-from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
 
