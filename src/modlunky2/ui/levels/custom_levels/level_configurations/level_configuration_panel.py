@@ -170,6 +170,7 @@ class LevelConfigurationPanel(ttk.Frame):
         parent,
         modlunky_config,
         on_update_level_size,
+        on_update_level_name,
         on_select_theme,
         on_select_border_theme,
         on_select_border_entity_theme,
@@ -183,6 +184,7 @@ class LevelConfigurationPanel(ttk.Frame):
 
         self.modlunky_config = modlunky_config
         self.on_update_level_size = on_update_level_size
+        self.on_update_level_name = on_update_level_name
         self.on_select_theme = on_select_theme
         self.on_select_border_theme = on_select_border_theme
         self.on_select_border_entity_theme = on_select_border_entity_theme
@@ -198,6 +200,34 @@ class LevelConfigurationPanel(ttk.Frame):
         self.columnconfigure(1, minsize=right_padding)
 
         settings_row = 0
+
+        self.rowconfigure(settings_row, minsize=10)
+        settings_row += 1
+
+        name_frame = tk.Frame(self)
+        name_frame.grid(column=0, row=settings_row, sticky="news")
+        name_frame.columnconfigure(1, weight=1)
+
+        tk.Label(name_frame, text="Display Name: ").grid(row=0, column=0, sticky="nsw")
+
+        self.setting_name = False
+
+        def update_name():
+            if self.setting_name:
+                return
+            self.on_update_level_name(self.name_var.get())
+
+        self.name_var = tk.StringVar()
+        self.name_var.trace_add(
+            "write",
+            lambda *args: update_name(),
+        )
+        self.name_entry = tk.Entry(name_frame, textvariable=self.name_var)
+        self.name_entry.grid(row=0, column=1, sticky="news")
+
+        settings_row += 1
+        self.rowconfigure(settings_row, minsize=10)
+        settings_row += 1
 
         theme_label = tk.Label(self, text="Level Theme:")
         theme_label.grid(row=settings_row, column=0, sticky="nsw")
@@ -695,6 +725,11 @@ class LevelConfigurationPanel(ttk.Frame):
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
         settings_row += 1
+
+    def update_level_name(self, level_name):
+        self.setting_name = True
+        self.name_var.set(level_name)
+        self.setting_name = False
 
     def update_theme(self, theme, subtheme):
         self.selected_theme = theme
