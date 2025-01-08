@@ -75,6 +75,7 @@ class CustomLevelEditor(ttk.Frame):
         self.usable_codes = ShortCode.usable_codes()
         self.lvl = None
         self.lvl_theme = None
+        self.lvl_name = None
         self.lvl_subtheme = None
         self.lvl_border_theme = None
         self.lvl_loop = None
@@ -223,6 +224,7 @@ class CustomLevelEditor(ttk.Frame):
             side_panel_tab_control,
             modlunky_config,
             self.update_level_size,
+            self.update_level_name,
             self.select_theme,
             self.select_border_theme,
             self.select_border_entity_theme,
@@ -350,6 +352,9 @@ class CustomLevelEditor(ttk.Frame):
                     theme = themeselect
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
+        self.lvl_name = None
+        if configuration.name != Path(configuration.file_name).stem.capitalize():
+            self.lvl_name = configuration.name
         self.lvl_border_theme = border_theme
         self.lvl_loop = loop
         self.lvl_border_entity_theme = border_entity_theme
@@ -360,6 +365,7 @@ class CustomLevelEditor(ttk.Frame):
 
         biome = Biomes.biome_for_theme(theme, subtheme)
 
+        self.level_configuration_panel.update_level_name(configuration.name)
         self.level_configuration_panel.update_theme(theme, subtheme)
         self.level_configuration_panel.update_border_theme(border_theme, loop)
         self.level_configuration_panel.update_border_entity_theme(border_entity_theme)
@@ -929,6 +935,10 @@ class CustomLevelEditor(ttk.Frame):
 
         self.changes_made()
 
+    def update_level_name(self, name):
+        self.lvl_name = name
+        self.changes_made()
+
     def select_border_theme(self, border_theme, loop):
         self.lvl_border_theme = border_theme
         self.lvl_loop = loop
@@ -1125,6 +1135,8 @@ class CustomLevelEditor(ttk.Frame):
         configuration.music_theme = self.lvl_music_theme
         configuration.width = self.lvl_width
         configuration.height = self.lvl_height
+        if self.lvl_name:
+            configuration.name = self.lvl_name
         self.level_configurations[self.lvl] = configuration
         self.save_level_sequence()
 

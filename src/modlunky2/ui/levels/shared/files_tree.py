@@ -224,8 +224,12 @@ class FilesTree(ttk.Frame):
             is_arenas = True
         self.in_arena_folder = is_arenas
 
-        self.level_names = list(filter(lambda lvl_name: is_arenas or not (defaults_path / lvl_name).exists(), level_files))
-
+        self.level_names = list(
+            filter(
+                lambda lvl_name: is_arenas or not (defaults_path / lvl_name).exists(),
+                level_files,
+            )
+        )
 
         for lvl_name in self.level_names:
             item = None
