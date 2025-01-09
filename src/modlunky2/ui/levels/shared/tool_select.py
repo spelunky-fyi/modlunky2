@@ -89,22 +89,30 @@ class ToolSelect(tk.Frame):
         self.move_button.configure(bg="white")
         self.move_button.configure(relief=tk.SUNKEN)
 
-    def select_draw_binding(self, _):
+    def select_draw_binding(self, event):
+        if isinstance(event.widget, tk.Entry):
+            return
         if not self.winfo_ismapped():
             return
         self.select_draw()
 
-    def select_select_binding(self, _):
+    def select_select_binding(self, event):
+        if isinstance(event.widget, tk.Entry):
+            return
         if not self.winfo_ismapped():
             return
         self.select_select()
 
-    def select_fill_binding(self, _):
+    def select_fill_binding(self, event):
+        if isinstance(event.widget, tk.Entry):
+            return
         if not self.winfo_ismapped():
             return
         self.select_fill()
 
-    def select_move_binding(self, _):
+    def select_move_binding(self, event):
+        if isinstance(event.widget, tk.Entry):
+            return
         if not self.winfo_ismapped():
             return
         self.select_move()
