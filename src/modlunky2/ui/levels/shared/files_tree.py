@@ -48,6 +48,7 @@ class FilesTree(ttk.Frame):
         on_level_exited,
         on_update_lvls_path,
         on_select_file,
+        on_create_file,
         *args,
         **kwargs,
     ):
@@ -62,6 +63,7 @@ class FilesTree(ttk.Frame):
         self.on_level_exited = on_level_exited
         self.on_update_lvls_path = on_update_lvls_path
         self.on_select_file = on_select_file
+        self.on_create_file = on_create_file
 
         self.icon_add = ImageTk.PhotoImage(
             Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
@@ -73,6 +75,7 @@ class FilesTree(ttk.Frame):
         self.current_save_format = None
         self.last_selected_file = None
         self.lvls_path = None
+        self.has_sequence = False
 
         self.pack_names = []
         self.level_names = []
@@ -448,11 +451,11 @@ class FilesTree(ttk.Frame):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def create_level_dialog(self):
-        def on_created(lvl_file_name):
+        def on_created(lvl_file_name, add_to_sequence):
             # Reload the file list tree so that the new file shows up, and select it.
             self.load_pack_custom_lvls(self.lvls_path, lvl_file_name)
             # Load the newly created file into the editor.
-            self.on_select_file(lvl_file_name)
+            self.on_create_file(lvl_file_name, add_to_sequence)
 
         loaded_pack = self.get_loaded_pack()
         backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
@@ -461,8 +464,12 @@ class FilesTree(ttk.Frame):
             backup_dir,
             self.lvls_path,
             self.current_save_format,
+            self.has_sequence,
             on_created,
         )
+
+    def update_has_sequence(self, has_sequence):
+        self.has_sequence = has_sequence
 
     def reset_tree(self):
         for i in self.tree.get_children():

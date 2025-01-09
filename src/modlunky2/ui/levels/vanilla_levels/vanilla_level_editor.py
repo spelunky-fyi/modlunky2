@@ -136,6 +136,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.reset_save_button,
             self.update_lvls_path,
             self.on_select_file,
+            self.on_create_file,
         )
         self.files_tree.grid(row=0, column=0, rowspan=1, sticky="news")
         self.files_tree.load_packs()
@@ -1127,6 +1128,9 @@ class VanillaLevelEditor(ttk.Frame):
     def on_select_file(self, lvl):
         self.reset()
         self.read_lvl_file(lvl)
+
+    def on_create_file(self, lvl, _):
+        self.on_select_file(lvl)
 
     def on_insert_room(self, parent_index, name=None):
         room_template = self.template_list[parent_index]
