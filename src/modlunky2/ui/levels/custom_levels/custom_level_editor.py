@@ -130,6 +130,7 @@ class CustomLevelEditor(ttk.Frame):
             self.reset_save_button,
             self.update_lvls_path,
             self.on_select_file,
+            self.on_create_file,
         )
         self.files_tree.grid(row=0, column=0, rowspan=1, sticky="news")
         self.files_tree.load_packs()
@@ -292,6 +293,21 @@ class CustomLevelEditor(ttk.Frame):
 
     def on_select_file(self, lvl):
         self.reset()
+        self.read_lvl_file(lvl)
+
+    def on_create_file(self, lvl, add_to_sequence):
+        self.reset()
+        if add_to_sequence:
+            if self.sequence is None:
+                sequence = [lvl]
+            else:
+                sequence = [existing_lvl for existing_lvl in self.sequence]
+                sequence.append(lvl)
+            self.update_level_sequence(sequence)
+
+            self.sequence_panel.update_pack(
+                self.loaded_pack_path, self.sequence, self.list_custom_level_file_names()
+            )
         self.read_lvl_file(lvl)
 
     def read_lvl_file(self, lvl, theme=None):
@@ -1074,6 +1090,8 @@ class CustomLevelEditor(ttk.Frame):
         if len(new_sequence) > 0:
             self.has_sequence = True
 
+        self.files_tree.update_has_sequence(self.has_sequence)
+
         self.sequence = new_sequence
         self.save_level_sequence()
 
@@ -1198,6 +1216,7 @@ class CustomLevelEditor(ttk.Frame):
             len(level_configurations.sequence) > 0
             or len(level_configurations.all_configurations) > 0
         )
+        self.files_tree.update_has_sequence(self.has_sequence)
 
     def show_intro(self):
         self.canvas.show_intro()
