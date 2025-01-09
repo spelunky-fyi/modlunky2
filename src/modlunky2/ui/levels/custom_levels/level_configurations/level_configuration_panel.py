@@ -415,7 +415,13 @@ class LevelConfigurationPanel(ttk.Frame):
         self.sequence_warning_container.rowconfigure(0, minsize=10)
         self.sequence_warning_container.rowconfigure(2, minsize=10)
 
-        self.sequence_warning_label = tk.Label(self.sequence_warning_container, text="", foreground="red", wraplength=400, justify='left')
+        self.sequence_warning_label = tk.Label(
+            self.sequence_warning_container,
+            text="",
+            foreground="red",
+            wraplength=400,
+            justify="left",
+        )
         self.sequence_warning_label.grid(row=1, column=0, sticky="nsw")
 
         self.update_sequence_warning_message()
@@ -931,12 +937,15 @@ class LevelConfigurationPanel(ttk.Frame):
     def update_sequence_warning_message(self):
         self.sequence_warning_container.grid()
         if not self.sequence_exists:
-            self.sequence_warning_label["text"] = "Warning: This mod is not configured to save a level sequence. Advanced level configuration will be lost."
+            self.sequence_warning_label[
+                "text"
+            ] = "Warning: This mod is not configured to save a level sequence. Advanced level configuration will be lost."
         elif not self.level_in_sequence:
-            self.sequence_warning_label["text"] = "Warning: This level is not in the level sequence. Advanced level configuration will be saved but not used."
+            self.sequence_warning_label[
+                "text"
+            ] = "Warning: This level is not in the level sequence. Advanced level configuration will be saved but not used."
         else:
             self.sequence_warning_container.grid_remove()
-
 
     def enable_controls(self):
         self.theme_combobox["state"] = "readonly"
