@@ -19,7 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 def present_create_level_dialog(
-    modlunky_config, backup_dir, lvls_path, current_save_format, has_sequence, on_level_created
+    modlunky_config,
+    backup_dir,
+    lvls_path,
+    current_save_format,
+    has_sequence,
+    on_level_created,
 ):
     win = PopupWindow("Create Level", modlunky_config)
 
