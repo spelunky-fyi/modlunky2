@@ -954,6 +954,7 @@ class LevelConfigurationPanel(ttk.Frame):
         self.background_subtheme_combobox["state"] = "readonly"
         self.floor_theme_combobox["state"] = "readonly"
         self.music_theme_combobox["state"] = "readonly"
+        self.name_entry["state"] = tk.NORMAL
 
     def disable_controls(self):
         self.theme_combobox["state"] = tk.DISABLED
@@ -973,3 +974,4 @@ class LevelConfigurationPanel(ttk.Frame):
         self.floor_theme_select_button["state"] = tk.DISABLED
         self.music_theme_combobox["state"] = tk.DISABLED
         self.music_theme_select_button["state"] = tk.DISABLED
+        self.name_entry["state"] = tk.DISABLED
