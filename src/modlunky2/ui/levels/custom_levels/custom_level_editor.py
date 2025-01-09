@@ -370,6 +370,8 @@ class CustomLevelEditor(ttk.Frame):
 
         biome = Biomes.biome_for_theme(theme, subtheme)
 
+        self.level_configuration_panel.set_sequence_exists(self.has_sequence)
+        self.level_configuration_panel.set_level_in_sequence(lvl in self.sequence)
         self.level_configuration_panel.update_level_name(configuration.name)
         self.level_configuration_panel.update_theme(theme, subtheme)
         self.level_configuration_panel.update_border_theme(border_theme, loop)

@@ -199,6 +199,9 @@ class LevelConfigurationPanel(ttk.Frame):
         self.lvl_width = None
         self.lvl_height = None
 
+        self.sequence_exists = True
+        self.level_in_sequence = True
+
         self.columnconfigure(0, weight=1)
         right_padding = 10
         self.columnconfigure(1, minsize=right_padding)
@@ -406,6 +409,17 @@ class LevelConfigurationPanel(ttk.Frame):
 
         settings_row += 1
         self.rowconfigure(settings_row, minsize=20)
+
+        self.sequence_warning_container = ttk.Frame(self)
+        self.sequence_warning_container.grid(row=settings_row, column=0, sticky="news")
+        self.sequence_warning_container.rowconfigure(0, minsize=10)
+        self.sequence_warning_container.rowconfigure(2, minsize=10)
+
+        self.sequence_warning_label = tk.Label(self.sequence_warning_container, text="", foreground="red", wraplength=400, justify='left')
+        self.sequence_warning_label.grid(row=1, column=0, sticky="nsw")
+
+        self.update_sequence_warning_message()
+
         settings_row += 1
 
         border_theme_label = tk.Label(self, text="Border Type:")
@@ -905,6 +919,24 @@ class LevelConfigurationPanel(ttk.Frame):
 
     def update_spawn_jelly(self, spawn_jelly):
         self.jelly_var.set(spawn_jelly)
+
+    def set_sequence_exists(self, sequence_exists):
+        self.sequence_exists = sequence_exists
+        self.update_sequence_warning_message()
+
+    def set_level_in_sequence(self, level_in_sequence):
+        self.level_in_sequence = level_in_sequence
+        self.update_sequence_warning_message()
+
+    def update_sequence_warning_message(self):
+        self.sequence_warning_container.grid()
+        if not self.sequence_exists:
+            self.sequence_warning_label["text"] = "Warning: This mod is not configured to save a level sequence. Advanced level configuration will be lost."
+        elif not self.level_in_sequence:
+            self.sequence_warning_label["text"] = "Warning: This level is not in the level sequence. Advanced level configuration will be saved but not used."
+        else:
+            self.sequence_warning_container.grid_remove()
+
 
     def enable_controls(self):
         self.theme_combobox["state"] = "readonly"
