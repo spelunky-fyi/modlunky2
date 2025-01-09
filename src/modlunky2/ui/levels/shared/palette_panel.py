@@ -355,6 +355,10 @@ class PalettePanel(ttk.Frame):
         self.new_tile_panel.enable()
 
     def tile_pick(self, event, tile, is_primary):
+        if event is not None and isinstance(event.widget, tk.Entry):
+            # Do not select a tile when the key was pressed to type into an Entry field.
+            return
+
         self.select_tile(tile, is_primary, True)
 
     def suggested_tile_pick(self, event, suggested_tile):
