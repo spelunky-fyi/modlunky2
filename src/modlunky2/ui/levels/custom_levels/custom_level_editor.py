@@ -69,6 +69,7 @@ class CustomLevelEditor(ttk.Frame):
         self.packs_path = packs_path
         self.extracts_path = extracts_path
         self.lvls_path = None
+        self.loaded_pack_path = None
 
         self.tile_codes = None
         self.usable_codes = ShortCode.usable_codes()
@@ -236,7 +237,9 @@ class CustomLevelEditor(ttk.Frame):
             self.select_spawn_door_jellyfish,
         )
         self.sequence_panel = SequencePanel(
-            side_panel_tab_control, self.update_level_sequence
+            side_panel_tab_control,
+            modlunky_config,
+            self.update_level_sequence,
         )
         side_panel_tab_control.add(self.palette_panel, text="Tiles")
         side_panel_tab_control.add(self.options_panel, text="Settings")
@@ -1085,8 +1088,7 @@ class CustomLevelEditor(ttk.Frame):
         level_configurations = LevelConfigurations(
             configuration_sequence, self.level_configurations
         )
-        loaded_pack = Path(self.packs_path / self.files_tree.get_loaded_pack())
-        level_configurations.save(loaded_pack)
+        level_configurations.save(self.loaded_pack_path)
 
     def configuration_for_level(self, level_name):
         if level_name in self.level_configurations:
@@ -1179,16 +1181,18 @@ class CustomLevelEditor(ttk.Frame):
     def update_lvls_path(self, new_path):
         self.reset()
         self.lvls_path = new_path
+        self.loaded_pack_path = Path(
+            self.packs_path / self.files_tree.get_loaded_pack()
+        )
 
-        loaded_pack = Path(self.packs_path / self.files_tree.get_loaded_pack())
-        level_configurations = LevelConfigurations.from_path(loaded_pack)
+        level_configurations = LevelConfigurations.from_path(self.loaded_pack_path)
         self.sequence = [
             sequence_configuration.file_name
             for sequence_configuration in level_configurations.sequence
         ]
         self.level_configurations = level_configurations.all_configurations
         self.sequence_panel.update_pack(
-            self.lvls_path, self.sequence, self.list_custom_level_file_names()
+            self.loaded_pack_path, self.sequence, self.list_custom_level_file_names()
         )
         self.has_sequence = (
             len(level_configurations.sequence) > 0
