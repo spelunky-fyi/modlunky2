@@ -4,12 +4,14 @@ import shutil
 import tkinter as tk
 import zipfile
 from io import BytesIO
+from shutil import copyfile
 from tkinter import ttk
 
 import requests
 
 from modlunky2.api import SpelunkyFYIClient
 from modlunky2.config import Config
+from modlunky2.constants import BASE_DIR
 from modlunky2.utils import tb_info
 
 logger = logging.getLogger(__name__)
@@ -64,13 +66,36 @@ class SequencePanel(ttk.Frame):
         self.library_install_button["state"] = tk.DISABLED
         self.library_install_button.grid(row=2, column=0, sticky="nsw")
 
+        self.main_frame = tk.Frame(self)
+        self.main_frame.grid(row=3, column=0, sticky="news")
+
+        self.main_label = tk.Label(self.main_frame, text="main.lua file", font=("TkDefaultFont", 12))
+        self.main_label.grid(row=0, column=0, sticky="nsw")
+
+        self.main_status_label = tk.Label(
+            self.main_frame, text="", wraplength=400, justify="left"
+        )
+        self.main_status_label.grid(row=1, column=0, sticky="nsw")
+
+        self.main_install_button = tk.Button(
+            self.main_frame,
+            text="Generate",
+            command=self.generate_main_file_with_confirmation,
+        )
+        self.main_install_button["state"] = tk.DISABLED
+        self.main_install_button.grid(row=2, column=0, sticky="nsw")
+        self.main_created = False
+
+
     def update_pack(self, pack_path, level_order, all_levels):
         self.pack_path = pack_path
         self.level_order = level_order
         self.all_levels = all_levels
+        self.main_created = False
 
         self.refresh_lists()
         self.check_for_updates()
+        self.update_main_file_views()
 
     # Handle the insall button. Ask a user about installing a new version if one exists, or install if none does. Check for updates instead
     # if already on the latest.
@@ -176,7 +201,6 @@ class SequencePanel(ttk.Frame):
             json.dump(current_details, handle)
 
         self.update_level_sequence_views()
-        # self.check_for_updates()
 
     # Update level sequence views with current state based on installed version and latest version.
     def update_level_sequence_views(self):
@@ -290,6 +314,68 @@ class SequencePanel(ttk.Frame):
                 return json.load(handle).get("id")
             except json.JSONDecodeError:
                 return None
+
+    def generate_main_file_with_confirmation(self):
+        if self.main_path.exists():
+            answer = tk.messagebox.askokcancel(
+                title="Overwrite main.lua?",
+                message=(
+                    f"Are you sure you want to overwrite your main.lua file?\n"
+                ),
+                icon=tk.messagebox.INFO,
+            )
+
+            if not answer:
+                return
+
+            answer = tk.messagebox.askokcancel(
+                title="Overwrite main.lua?",
+                message=(
+                    f"Confirm once more: Are you sure you want to overwrite your main.lua file?\n\nIf you have custom logic you rely on, please abort this operation and commit your files into source control before continuing."
+                ),
+                icon=tk.messagebox.INFO,
+            )
+
+            if not answer:
+                return
+        self.generate_main_file()
+
+    def generate_main_file(self):
+        with self.main_template_path.open("r", encoding="utf-8") as template:
+            with self.main_path.open("w", encoding="utf-8") as main:
+                for line in template:
+                    main.write(line.replace("<ModName>", self.pack_path.stem))
+
+        self.main_created = True
+        self.update_main_file_views()
+
+    # Update level sequence views with current state based on installed version and latest version.
+    def update_main_file_views(self):
+        if not self.main_path.exists():
+            self.main_status_label["text"] = "Generate main.lua file with the code required to play levels."
+            self.main_status_label.grid()
+            self.main_install_button["text"] = "Generate"
+            self.main_install_button["state"] = tk.NORMAL
+        elif self.main_created:
+            self.main_status_label["text"] = "File generated!"
+            self.main_status_label.grid()
+            self.main_install_button["text"] = "Generate"
+            self.main_install_button["state"] = tk.DISABLED
+        else:
+            self.main_status_label["text"] = "You already have a main.lua file. Clicking this button will overwrite it with the code required to play levels. This will delete the current contents of main.lua. Only do this if this is what you want."
+            self.main_status_label.grid()
+            self.main_install_button["text"] = "Overwrite"
+            self.main_install_button["state"] = tk.NORMAL
+
+    # Path to mod's main.lua file.
+    @property
+    def main_path(self):
+        return self.pack_path / "main.lua"
+
+    # Path to main.lua template file.
+    @property
+    def main_template_path(self):
+        return BASE_DIR / "static/templates/main.lua.template"
 
     @property
     def unused_levels(self):
