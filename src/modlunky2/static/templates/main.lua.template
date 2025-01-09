@@ -8,6 +8,7 @@ meta = {
 local level_sequence = require("LevelSequence/level_sequence")
 
 level_sequence.load_levels()
+level_sequence.set_show_toast(true)
 
 level_sequence.set_on_win(function(attempts, total_time)
     print("You won!")
