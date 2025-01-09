@@ -9,6 +9,11 @@ local level_sequence = require("LevelSequence/level_sequence")
 
 level_sequence.load_levels()
 
+level_sequence.set_on_win(function(attempts, total_time)
+    print("You won!")
+    warp(1, 1, THEME.BASE_CAMP)
+end)
+
 set_callback(level_sequence.activate, ON.LOAD)
 
 set_callback(level_sequence.activate, ON.SCRIPT_ENABLE)
