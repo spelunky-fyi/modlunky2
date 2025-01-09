@@ -69,7 +69,9 @@ class SequencePanel(ttk.Frame):
         self.main_frame = tk.Frame(self)
         self.main_frame.grid(row=3, column=0, sticky="news")
 
-        self.main_label = tk.Label(self.main_frame, text="main.lua file", font=("TkDefaultFont", 12))
+        self.main_label = tk.Label(
+            self.main_frame, text="main.lua file", font=("TkDefaultFont", 12)
+        )
         self.main_label.grid(row=0, column=0, sticky="nsw")
 
         self.main_status_label = tk.Label(
@@ -85,7 +87,6 @@ class SequencePanel(ttk.Frame):
         self.main_install_button["state"] = tk.DISABLED
         self.main_install_button.grid(row=2, column=0, sticky="nsw")
         self.main_created = False
-
 
     def update_pack(self, pack_path, level_order, all_levels):
         self.pack_path = pack_path
@@ -319,9 +320,7 @@ class SequencePanel(ttk.Frame):
         if self.main_path.exists():
             answer = tk.messagebox.askokcancel(
                 title="Overwrite main.lua?",
-                message=(
-                    f"Are you sure you want to overwrite your main.lua file?\n"
-                ),
+                message=(f"Are you sure you want to overwrite your main.lua file?\n"),
                 icon=tk.messagebox.INFO,
             )
 
@@ -352,7 +351,9 @@ class SequencePanel(ttk.Frame):
     # Update level sequence views with current state based on installed version and latest version.
     def update_main_file_views(self):
         if not self.main_path.exists():
-            self.main_status_label["text"] = "Generate main.lua file with the code required to play levels."
+            self.main_status_label[
+                "text"
+            ] = "Generate main.lua file with the code required to play levels."
             self.main_status_label.grid()
             self.main_install_button["text"] = "Generate"
             self.main_install_button["state"] = tk.NORMAL
@@ -362,7 +363,9 @@ class SequencePanel(ttk.Frame):
             self.main_install_button["text"] = "Generate"
             self.main_install_button["state"] = tk.DISABLED
         else:
-            self.main_status_label["text"] = "You already have a main.lua file. Clicking this button will overwrite it with the code required to play levels. This will delete the current contents of main.lua. Only do this if this is what you want."
+            self.main_status_label[
+                "text"
+            ] = "You already have a main.lua file. Clicking this button will overwrite it with the code required to play levels. This will delete the current contents of main.lua. Only do this if this is what you want."
             self.main_status_label.grid()
             self.main_install_button["text"] = "Overwrite"
             self.main_install_button["state"] = tk.NORMAL

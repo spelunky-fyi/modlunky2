@@ -306,7 +306,9 @@ class CustomLevelEditor(ttk.Frame):
             self.update_level_sequence(sequence)
 
             self.sequence_panel.update_pack(
-                self.loaded_pack_path, self.sequence, self.list_custom_level_file_names()
+                self.loaded_pack_path,
+                self.sequence,
+                self.list_custom_level_file_names(),
             )
         self.read_lvl_file(lvl)
 
