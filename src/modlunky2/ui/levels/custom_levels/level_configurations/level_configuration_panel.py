@@ -551,10 +551,8 @@ class LevelConfigurationPanel(ttk.Frame):
         background_theme_container.grid(row=settings_row, column=0, sticky="nwse")
         background_theme_container.columnconfigure(1, weight=1)
 
-        # Combobox for selecting the level theme. The theme affects the texture used to
-        # display many tiles and the level background; the suggested tiles in the tile
-        # palette; and the additional vanilla setrooms that are saved into the level
-        # file.
+        # Combobox for selecting the background theme. The theme affects the texture
+        # used to display only the level background.
         self.background_theme_combobox = ttk.Combobox(
             background_theme_container, height=25
         )
@@ -827,8 +825,6 @@ class LevelConfigurationPanel(ttk.Frame):
             self.theme_select_button.grid(row=0)
 
     def update_background_theme(self, theme, subtheme):
-        # self.selected_theme = theme
-        # self.selected_subtheme = subtheme
         theme_name = name_of_theme(theme)
         self.background_theme_combobox.set(theme_name)
         if subtheme is not None:

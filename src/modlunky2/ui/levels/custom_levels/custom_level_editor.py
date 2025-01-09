@@ -291,10 +291,12 @@ class CustomLevelEditor(ttk.Frame):
                 "Error saving..",
             )
 
+    # Load selected level file.
     def on_select_file(self, lvl):
         self.reset()
         self.read_lvl_file(lvl)
 
+    # A new level was created. Add it to the sequence if the box was ticked, then load the level.
     def on_create_file(self, lvl, add_to_sequence):
         self.reset()
         if add_to_sequence:
@@ -965,36 +967,44 @@ class CustomLevelEditor(ttk.Frame):
 
         self.changes_made()
 
+    # Store new display name to save in the level sequence.
     def update_level_name(self, name):
         self.lvl_name = name
         self.changes_made()
 
+    # Store new border theme and looping info to save in the level sequence.
     def select_border_theme(self, border_theme, loop):
         self.lvl_border_theme = border_theme
         self.lvl_loop = loop
         self.changes_made()
 
+    # Store new border entity type to save in the level sequence.
     def select_border_entity_theme(self, border_entity_theme):
         self.lvl_border_entity_theme = border_entity_theme
         self.changes_made()
 
+    # Store new background theme to save in the level sequence.
     def select_background_theme(self, background_theme, background_subtheme):
         self.lvl_background_theme = background_theme
         self.lvl_background_subtheme = background_subtheme
         self.changes_made()
 
+    # Store new floor theme to save in the level sequence.
     def select_floor_theme(self, floor_theme):
         self.lvl_floor_theme = floor_theme
         self.changes_made()
 
+    # Store new music theme to save in the level sequence.
     def select_music_theme(self, music_theme):
         self.lvl_music_theme = music_theme
         self.changes_made()
 
+    # Store new value of whether to skip CO fixes for jellyfish and orbs to save in the level sequence.
     def select_skip_co_fixes(self, skip_co_fixes):
         self.lvl_skip_co_fixes = skip_co_fixes
         self.changes_made()
 
+    # Store new value of whether to spawn jellyfish at every exit door to save in the level sequence.
     def select_spawn_door_jellyfish(self, spawn_door_jellyfish):
         self.lvl_spawn_door_jellyfish = spawn_door_jellyfish
         self.changes_made()
@@ -1088,6 +1098,7 @@ class CustomLevelEditor(ttk.Frame):
         self.current_save_format = save_format
         self.files_tree.current_save_format = save_format
 
+    # Updates the list of levels in the sequence, then saves the sequence to a file.
     def update_level_sequence(self, new_sequence):
         if len(new_sequence) > 0:
             self.has_sequence = True
@@ -1097,6 +1108,7 @@ class CustomLevelEditor(ttk.Frame):
         self.sequence = new_sequence
         self.save_level_sequence()
 
+    # Save the current sequence configuration and configurations of all levels to a file.
     def save_level_sequence(self):
         if not self.has_sequence:
             return  # Do not attempt to save level configurations if a sequence hasn't been created.
@@ -1110,6 +1122,8 @@ class CustomLevelEditor(ttk.Frame):
         )
         level_configurations.save(self.loaded_pack_path)
 
+    # Returns the configuration of a level if it exists. If no configuration exists, one is
+    # generated from the information in the lvl file.
     def configuration_for_level(self, level_name):
         if level_name in self.level_configurations:
             return self.level_configurations[level_name]
@@ -1130,6 +1144,8 @@ class CustomLevelEditor(ttk.Frame):
 
         return configuration
 
+    # Updates the configuration of the currently loaded level to the properties that
+    # have been set since the last level save.
     def write_current_level_configuration(self):
         configuration = self.configuration_for_level(self.lvl)
         configuration.theme = self.lvl_theme
@@ -1168,7 +1184,8 @@ class CustomLevelEditor(ttk.Frame):
         configuration.background_texture_theme = None
         if self.lvl_background_theme == Theme.COSMIC_OCEAN:
             configuration.background_texture_theme = self.lvl_background_subtheme
-            # With no subtheme configured, the game will crash, so configure the texture by the theme as a fallback to attempt to avoid this.
+            # With no subtheme configured, the game will crash, so configure the texture
+            # by the theme as a fallback to attempt to avoid this.
             if self.lvl_background_subtheme is None and self.lvl_subtheme is None:
                 configuration.background_texture_theme = self.lvl_theme
         configuration.floor_theme = self.lvl_floor_theme
@@ -1182,9 +1199,12 @@ class CustomLevelEditor(ttk.Frame):
         self.level_configurations[self.lvl] = configuration
         self.save_level_sequence()
 
+    # Parses the level at the path provided and returns an object with the level info.
     def read_custom_level_file(self, lvl_name):
         return LevelFile.from_path(self.lvls_path / lvl_name)
 
+    # Returns the list of all levels in the current selected modpack that do not exist
+    # in the vanilla game.
     def list_custom_level_file_names(self):
         level_files = [
             os.path.basename(os.path.normpath(i))
@@ -1198,6 +1218,8 @@ class CustomLevelEditor(ttk.Frame):
 
         return list(level_files)
 
+    # Updates the path of the pack that has been selected, and extracts some info
+    # about the level sequence in the pack.
     def update_lvls_path(self, new_path):
         self.reset()
         self.lvls_path = new_path
