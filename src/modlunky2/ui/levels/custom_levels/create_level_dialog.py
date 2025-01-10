@@ -24,6 +24,7 @@ def present_create_level_dialog(
     lvls_path,
     current_save_format,
     has_sequence,
+    can_add_to_sequence,
     on_level_created,
 ):
     win = PopupWindow("Create Level", modlunky_config)
@@ -110,19 +111,22 @@ def present_create_level_dialog(
 
     values_row = values_row + 1
 
-    add_to_sequence_var = tk.IntVar()
-    add_to_sequence_var.set(has_sequence)
+    if can_add_to_sequence:
+        add_to_sequence_var = tk.IntVar()
+        add_to_sequence_var.set(has_sequence)
 
-    add_to_sequence_label = tk.Label(values_frame, text="Add to Sequence: ")
-    add_to_sequence_label.grid(row=values_row, column=0, sticky="nes", pady=2)
+        add_to_sequence_label = tk.Label(values_frame, text="Add to Sequence: ")
+        add_to_sequence_label.grid(row=values_row, column=0, sticky="nes", pady=2)
 
-    tk.Checkbutton(
-        values_frame,
-        text="",
-        variable=add_to_sequence_var,
-        onvalue=True,
-        offvalue=False,
-    ).grid(row=values_row, column=1, sticky="nws", pady=2)
+        tk.Checkbutton(
+            values_frame,
+            text="",
+            variable=add_to_sequence_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(row=values_row, column=1, sticky="nws", pady=2)
+
+        values_row = values_row + 1
 
     warning_label = tk.Label(
         win, text="", foreground="red", wraplength=200, justify=tk.LEFT

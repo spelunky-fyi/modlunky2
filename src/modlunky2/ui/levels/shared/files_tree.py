@@ -465,6 +465,7 @@ class FilesTree(ttk.Frame):
             self.lvls_path,
             self.current_save_format,
             self.has_sequence,
+            not self.in_arena_folder,
             on_created,
         )
 

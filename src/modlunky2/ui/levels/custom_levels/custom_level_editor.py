@@ -354,13 +354,36 @@ class CustomLevelEditor(ttk.Frame):
         # a comment in each room.
         theme, subtheme = self.find_theme(lvl, level, self.current_save_format)
         configuration = self.configuration_for_level(lvl)
-        border_theme = configuration.border_theme
-        border_entity_theme = configuration.border_entity_theme
-        loop = None
-        if configuration.loop:
-            loop = True
-        if configuration.dont_loop:
-            loop = False
+
+        self.lvl_border_theme = None
+        self.lvl_border_entity_theme = None
+        self.lvl_loop = None
+        self.lvl_name = None
+        self.lvl_background_theme = None
+        self.lvl_background_subtheme = None
+        self.lvl_floor_theme = None
+        self.lvl_music_theme = None
+        self.lvl_skip_co_fixes = False
+        self.lvl_spawn_door_jellyfish = False
+        self.level_configuration_panel.disable_controls()
+
+        if configuration:
+            self.lvl_border_theme = configuration.border_theme
+            self.lvl_border_entity_theme = configuration.border_entity_theme
+            if configuration.loop:
+                self.lvl_loop = True
+            if configuration.dont_loop:
+                self.lvl_loop = False
+            if configuration.name != Path(configuration.file_name).stem.capitalize():
+                self.lvl_name = configuration.name
+            self.lvl_background_theme = configuration.background_theme
+            self.lvl_background_subtheme = configuration.background_texture_theme
+            self.lvl_floor_theme = configuration.floor_theme
+            self.lvl_music_theme = configuration.music_theme
+            self.lvl_skip_co_fixes = configuration.skip_co_fixes
+            self.lvl_spawn_door_jellyfish = configuration.spawn_door_jellyfish
+            self.level_configuration_panel.enable_controls()
+
         # if not theme and self.tree_files_custom.heading("#0")["text"].endswith("Arena"):
         if not theme and self.files_tree.selected_file_is_arena():
             themes = [
@@ -376,39 +399,30 @@ class CustomLevelEditor(ttk.Frame):
             for x, themeselect in enumerate(themes):
                 if lvl.startswith("dm" + str(x + 1)):
                     theme = themeselect
+
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
-        self.lvl_name = None
-        if configuration.name != Path(configuration.file_name).stem.capitalize():
-            self.lvl_name = configuration.name
-        self.lvl_border_theme = border_theme
-        self.lvl_loop = loop
-        self.lvl_border_entity_theme = border_entity_theme
-        self.lvl_background_theme = configuration.background_theme
-        self.lvl_background_subtheme = configuration.background_texture_theme
-        self.lvl_floor_theme = configuration.floor_theme
-        self.lvl_music_theme = configuration.music_theme
-        self.lvl_skip_co_fixes = configuration.skip_co_fixes
-        self.lvl_spawn_door_jellyfish = configuration.spawn_door_jellyfish
-
         biome = Biomes.biome_for_theme(theme, subtheme)
 
         self.level_configuration_panel.set_sequence_exists(self.has_sequence)
         self.level_configuration_panel.set_level_in_sequence(lvl in self.sequence)
-        self.level_configuration_panel.update_level_name(configuration.name)
+        self.level_configuration_panel.update_level_name(self.lvl_name)
         self.level_configuration_panel.update_theme(theme, subtheme)
-        self.level_configuration_panel.update_border_theme(border_theme, loop)
-        self.level_configuration_panel.update_border_entity_theme(border_entity_theme)
-        self.level_configuration_panel.update_background_theme(
-            configuration.background_theme, configuration.background_texture_theme
+        self.level_configuration_panel.update_border_theme(
+            self.lvl_border_theme, self.lvl_loop
         )
-        self.level_configuration_panel.update_floor_theme(configuration.floor_theme)
-        self.level_configuration_panel.update_music_theme(configuration.music_theme)
+        self.level_configuration_panel.update_border_entity_theme(
+            self.lvl_border_entity_theme
+        )
+        self.level_configuration_panel.update_background_theme(
+            self.lvl_background_theme, self.lvl_background_subtheme
+        )
+        self.level_configuration_panel.update_floor_theme(self.lvl_floor_theme)
+        self.level_configuration_panel.update_music_theme(self.lvl_music_theme)
         self.level_configuration_panel.update_skip_co_fix(self.lvl_skip_co_fixes)
         self.level_configuration_panel.update_spawn_jelly(self.lvl_spawn_door_jellyfish)
 
         self.options_panel.enable_controls()
-        self.level_configuration_panel.enable_controls()
 
         self.tile_palette_ref_in_use = []
         self.tile_palette_map = {}
@@ -589,6 +603,9 @@ class CustomLevelEditor(ttk.Frame):
 
     # Read the comment of the template at room (0, 0) to extract the theme, defaulting to dwelling.
     def read_theme(self, level, save_format):
+        if self.files_tree.selected_file_is_arena():
+            return None
+
         for template in level.level_templates.all():
             if template.name == save_format.room_template_format.format(y=0, x=0):
                 return Biomes.theme_for_biome(template.comment)
@@ -1125,6 +1142,9 @@ class CustomLevelEditor(ttk.Frame):
     # Returns the configuration of a level if it exists. If no configuration exists, one is
     # generated from the information in the lvl file.
     def configuration_for_level(self, level_name):
+        if self.files_tree.selected_file_is_arena():
+            return None
+
         if level_name in self.level_configurations:
             return self.level_configurations[level_name]
 
@@ -1147,6 +1167,9 @@ class CustomLevelEditor(ttk.Frame):
     # Updates the configuration of the currently loaded level to the properties that
     # have been set since the last level save.
     def write_current_level_configuration(self):
+        if self.files_tree.selected_file_is_arena():
+            return
+
         configuration = self.configuration_for_level(self.lvl)
         configuration.theme = self.lvl_theme
         configuration.subtheme = self.lvl_subtheme
