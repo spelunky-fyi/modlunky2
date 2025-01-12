@@ -576,7 +576,11 @@ class LevelCanvas(tk.Canvas):
             if not cosmos_bg:
                 img = Image.open(BASE_DIR / "static/images/cosmos.png").convert("RGBA")
                 img = img.resize(
-                    (round(1194 * self.zoom_level / 30), round(697 * self.zoom_level / 30)), Image.BILINEAR
+                    (
+                        round(1194 * self.zoom_level / 30),
+                        round(697 * self.zoom_level / 30),
+                    ),
+                    Image.BILINEAR,
                 )
                 enhancer = ImageEnhance.Brightness(img)
                 im_output = enhancer.enhance(1.0)
@@ -586,7 +590,8 @@ class LevelCanvas(tk.Canvas):
             for x in range(0, 1 + int(math.ceil(self.width / 10 / 4))):
                 for y in range(0, 1 + int(math.ceil(self.height / 8 / 3))):
                     self.create_image(
-                        x * self.zoom_level * 10 * 4 - (((y ^ 8) * 8) % 30) * self.zoom_level,
+                        x * self.zoom_level * 10 * 4
+                        - (((y ^ 8) * 8) % 30) * self.zoom_level,
                         y * self.zoom_level * 8 * 3,
                         image=cosmos_bg,
                         anchor="nw",
