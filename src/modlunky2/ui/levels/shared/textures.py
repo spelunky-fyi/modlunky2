@@ -180,6 +180,10 @@ class TextureUtil:
                         "duat_coffin",
                     )
             # specific floor hard for this biome
+            if (lvl.startswith("babylon") and border_biome is None) or border_biome == BIOME.NEO_BABYLON:
+                if tile == "floor_hard":
+                    img_spec = self.sprite_fetcher.get("babylon_floor_hard")
+            # specific floor hard for this biome
             if (
                 ((lvl.startswith("sunken")
                 or lvl.startswith("hundun")
