@@ -1005,6 +1005,7 @@ class CustomLevelEditor(ttk.Frame):
     def select_background_theme(self, background_theme, background_subtheme):
         self.lvl_background_theme = background_theme
         self.lvl_background_subtheme = background_subtheme
+        self.draw_canvas(False)
         self.changes_made()
 
     # Store new floor theme to save in the level sequence.
