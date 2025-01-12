@@ -920,8 +920,12 @@ class MultiRoomEditorTab(ttk.Frame):
                 width * 10, height * 8, CanvasIndex(1, map_index)
             )
 
-            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(0, map_index))
-            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(1, map_index))
+            self.canvas.draw_background(
+                Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(0, map_index)
+            )
+            self.canvas.draw_background(
+                Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(1, map_index)
+            )
             self.canvas.draw_grid(index=CanvasIndex(0, map_index))
             self.canvas.draw_grid(index=CanvasIndex(1, map_index))
 

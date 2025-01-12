@@ -211,7 +211,14 @@ class PalettePanel(ttk.Frame):
                 self.secondary_tile_view.reset(disable=False)
 
     def update_with_palette(
-        self, new_palette, suggestions, dependency_tiles, biome, floor_biome, border_biome, lvl
+        self,
+        new_palette,
+        suggestions,
+        dependency_tiles,
+        biome,
+        floor_biome,
+        border_biome,
+        lvl,
     ):
         for widget in self.palette.scrollable_frame.winfo_children():
             widget.destroy()
@@ -282,7 +289,9 @@ class PalettePanel(ttk.Frame):
                     count_row = count_row + 1
 
                 tile_image = ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(suggestion, biome, floor_biome, border_biome, lvl, 40)
+                    self.texture_fetcher.get_texture(
+                        suggestion, biome, floor_biome, border_biome, lvl, 40
+                    )
                 )
                 self.tile_images.append(tile_image)
                 new_tile = tk.Button(

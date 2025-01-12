@@ -344,7 +344,7 @@ class VanillaLevelEditor(ttk.Frame):
                             self.texture_fetcher.get_texture(
                                 tile.name,
                                 self.lvl_biome,
-                                 None,
+                                None,
                                 None,
                                 self.lvl,
                                 self.mag,
@@ -1050,7 +1050,8 @@ class VanillaLevelEditor(ttk.Frame):
                         return
                 else:
                     tkMessageBox.showinfo(
-                        "Uh Oh!", "You've reached the tilecode limit; delete some to add more"
+                        "Uh Oh!",
+                        "You've reached the tilecode limit; delete some to add more",
                     )
                     return
 
@@ -1155,7 +1156,8 @@ class VanillaLevelEditor(ttk.Frame):
                     return
             else:
                 tkMessageBox.showinfo(
-                    "Uh Oh!", "You've reached the tilecode limit; delete some to add more"
+                    "Uh Oh!",
+                    "You've reached the tilecode limit; delete some to add more",
                 )
                 return
 

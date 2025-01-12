@@ -164,7 +164,9 @@ class TextureUtil:
                 or lvl.startswith("palace")
             ):
                 if tile == "floor":
-                    img_spec = self.sprite_fetcher.get("generic_floor", str(floor_biome or biome))
+                    img_spec = self.sprite_fetcher.get(
+                        "generic_floor", str(floor_biome or biome)
+                    )
                 elif tile == "styled_floor":
                     img_spec = self.sprite_fetcher.get(
                         "generic_styled_floor", str(floor_biome or biome)
@@ -173,7 +175,9 @@ class TextureUtil:
             if lvl.startswith("base"):
                 if tile == "floor":
                     img_spec = self.sprite_fetcher.get("floor", "cave")
-            if (lvl.startswith("duat") and hard_floor_biome is None) or hard_floor_biome == BIOME.DUAT:  # specific floor hard for this biome
+            if (
+                lvl.startswith("duat") and hard_floor_biome is None
+            ) or hard_floor_biome == BIOME.DUAT:  # specific floor hard for this biome
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("duat_floor_hard")
             if lvl.startswith("duat"):
@@ -182,16 +186,20 @@ class TextureUtil:
                         "duat_coffin",
                     )
             # specific floor hard for this biome
-            if (lvl.startswith("babylon") and hard_floor_biome is None) or hard_floor_biome == BIOME.NEO_BABYLON:
+            if (
+                lvl.startswith("babylon") and hard_floor_biome is None
+            ) or hard_floor_biome == BIOME.NEO_BABYLON:
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("babylon_floor_hard")
             # specific floor hard for this biome
             if (
-                ((lvl.startswith("sunken")
-                or lvl.startswith("hundun")
-                or lvl.endswith("_sunkencity.lvl")) and hard_floor_biome is None)
-                or hard_floor_biome == BIOME.SUNKEN_CITY
-            ):
+                (
+                    lvl.startswith("sunken")
+                    or lvl.startswith("hundun")
+                    or lvl.endswith("_sunkencity.lvl")
+                )
+                and hard_floor_biome is None
+            ) or hard_floor_biome == BIOME.SUNKEN_CITY:
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("sunken_floor_hard")
             # specific floor styled for this biome
@@ -225,7 +233,12 @@ class TextureUtil:
 
             return img_spec
 
-        img = self.sprite_fetcher.get(str(tile), str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome))
+        img = self.sprite_fetcher.get(
+            str(tile),
+            str(biome),
+            floor_biome and str(floor_biome),
+            border_biome and str(border_biome),
+        )
         if get_specific_tile(str(tile)) is not None:
             img = get_specific_tile(str(tile))
 
@@ -233,8 +246,18 @@ class TextureUtil:
             img1 = self.sprite_fetcher.get("unknown")
             img2 = self.sprite_fetcher.get("unknown")
             primary_tile = tile.split("%", 2)[0]
-            if self.sprite_fetcher.get(primary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome)):
-                img1 = self.sprite_fetcher.get(primary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome))
+            if self.sprite_fetcher.get(
+                primary_tile,
+                str(biome),
+                floor_biome and str(floor_biome),
+                border_biome and str(border_biome),
+            ):
+                img1 = self.sprite_fetcher.get(
+                    primary_tile,
+                    str(biome),
+                    floor_biome and str(floor_biome),
+                    border_biome and str(border_biome),
+                )
                 specific_tile = get_specific_tile(str(primary_tile))
                 if specific_tile is not None:
                     img1 = specific_tile
@@ -243,8 +266,18 @@ class TextureUtil:
             img2 = None
             if len(tile.split("%", 2)) > 2:
                 secondary_tile = tile.split("%", 2)[2]
-                if self.sprite_fetcher.get(secondary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome)):
-                    img2 = self.sprite_fetcher.get(secondary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome))
+                if self.sprite_fetcher.get(
+                    secondary_tile,
+                    str(biome),
+                    floor_biome and str(floor_biome),
+                    border_biome and str(border_biome),
+                ):
+                    img2 = self.sprite_fetcher.get(
+                        secondary_tile,
+                        str(biome),
+                        floor_biome and str(floor_biome),
+                        border_biome and str(border_biome),
+                    )
                     specific_tile = get_specific_tile(str(secondary_tile))
                     if specific_tile is not None:
                         img2 = specific_tile
