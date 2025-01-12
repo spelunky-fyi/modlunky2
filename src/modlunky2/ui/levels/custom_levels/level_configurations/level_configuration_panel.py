@@ -90,7 +90,6 @@ def name_of_border_entity_theme(theme):
         or theme == Theme.TEMPLE
         or theme == Theme.COSMIC_OCEAN
         or theme == Theme.CITY_OF_GOLD
-        or theme == Theme.DUAT
         or theme == Theme.ABZU
         or theme == Theme.EGGPLANT_WORLD
         or theme == Theme.ICE_CAVES
