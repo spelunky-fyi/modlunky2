@@ -229,7 +229,7 @@ class TextureUtil:
             primary_tile = tile.split("%", 2)[0]
             if self.sprite_fetcher.get(primary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome)):
                 img1 = self.sprite_fetcher.get(primary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome))
-                if get_specific_tile(str(tile)) is not None:
+                if get_specific_tile(str(primary_tile)) is not None:
                     img1 = get_specific_tile(str(primary_tile))
             percent = tile.split("%", 2)[1]
             secondary_tile = "empty"
@@ -238,7 +238,7 @@ class TextureUtil:
                 secondary_tile = tile.split("%", 2)[2]
                 if self.sprite_fetcher.get(secondary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome)):
                     img2 = self.sprite_fetcher.get(secondary_tile, str(biome), floor_biome and str(floor_biome), border_biome and str(border_biome))
-                    if get_specific_tile(str(tile)) is not None:
+                    if get_specific_tile(str(secondary_tile)) is not None:
                         img2 = get_specific_tile(str(secondary_tile))
             img = self.get_tilecode_percent_texture(
                 primary_tile, secondary_tile, percent, img1, img2
