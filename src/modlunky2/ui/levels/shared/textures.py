@@ -154,6 +154,8 @@ class TextureUtil:
         def get_specific_tile(tile):
             img_spec = None
 
+            hard_floor_biome = border_biome or biome
+
             if (
                 lvl.startswith("generic")
                 or lvl.startswith("challenge")
@@ -171,7 +173,7 @@ class TextureUtil:
             if lvl.startswith("base"):
                 if tile == "floor":
                     img_spec = self.sprite_fetcher.get("floor", "cave")
-            if (lvl.startswith("duat") and border_biome is None) or border_biome == BIOME.DUAT:  # specific floor hard for this biome
+            if (lvl.startswith("duat") and hard_floor_biome is None) or hard_floor_biome == BIOME.DUAT:  # specific floor hard for this biome
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("duat_floor_hard")
             if lvl.startswith("duat"):
@@ -180,15 +182,15 @@ class TextureUtil:
                         "duat_coffin",
                     )
             # specific floor hard for this biome
-            if (lvl.startswith("babylon") and border_biome is None) or border_biome == BIOME.NEO_BABYLON:
+            if (lvl.startswith("babylon") and hard_floor_biome is None) or hard_floor_biome == BIOME.NEO_BABYLON:
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("babylon_floor_hard")
             # specific floor hard for this biome
             if (
                 ((lvl.startswith("sunken")
                 or lvl.startswith("hundun")
-                or lvl.endswith("_sunkencity.lvl")) and border_biome is None)
-                or border_biome == BIOME.SUNKEN_CITY
+                or lvl.endswith("_sunkencity.lvl")) and hard_floor_biome is None)
+                or hard_floor_biome == BIOME.SUNKEN_CITY
             ):
                 if tile == "floor_hard":
                     img_spec = self.sprite_fetcher.get("sunken_floor_hard")
