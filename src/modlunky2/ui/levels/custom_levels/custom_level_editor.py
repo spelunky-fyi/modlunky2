@@ -403,6 +403,8 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
         biome = Biomes.biome_for_theme(theme, subtheme)
+        floor_biome = self.lvl_floor_theme and Biomes.biome_for_theme(self.lvl_floor_theme, None)
+        border_biome = self.lvl_border_entity_theme and Biomes.biome_for_theme(self.lvl_border_entity_theme, None)
 
         self.level_configuration_panel.set_sequence_exists(self.has_sequence)
         self.level_configuration_panel.set_level_in_sequence(lvl in self.sequence)
@@ -430,9 +432,9 @@ class CustomLevelEditor(ttk.Frame):
         # Populate the tile palette from the tile codes listed in the level file.
         for tilecode in level.tile_codes.all():
             img = self.texture_fetcher.get_texture(
-                tilecode.name, biome, lvl, self.zoom_level
+                tilecode.name, biome, floor_biome, border_biome, lvl, self.zoom_level
             )
-            img_select = self.texture_fetcher.get_texture(tilecode.name, biome, lvl, 40)
+            img_select = self.texture_fetcher.get_texture(tilecode.name, biome, floor_biome, border_biome, lvl, 40)
 
             tilecode_item = Tile(
                 tilecode.name,
@@ -466,11 +468,11 @@ class CustomLevelEditor(ttk.Frame):
                 "",
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
-                        "floor_hard", biome, lvl, self.zoom_level
+                        "floor_hard", biome, floor_biome, border_biome, lvl, self.zoom_level
                     )
                 ),
                 ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture("floor_hard", biome, lvl, 40)
+                    self.texture_fetcher.get_texture("floor_hard", biome, floor_biome, border_biome, lvl, 40)
                 ),
             )
             self.tile_palette_ref_in_use.append(tilecode_item)
@@ -590,6 +592,8 @@ class CustomLevelEditor(ttk.Frame):
             self.tile_palette_suggestions,
             None,
             self.lvl_biome(),
+            self.floor_biome(),
+            self.border_biome(),
             self.lvl,
         )
 
@@ -864,12 +868,12 @@ class CustomLevelEditor(ttk.Frame):
 
         tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome(), self.lvl, self.zoom_level
+                new_tile_code, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, self.zoom_level
             )
         )
         tile_image_picker = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome(), self.lvl, 40
+                new_tile_code, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, 40
             )
         )
 
@@ -952,6 +956,14 @@ class CustomLevelEditor(ttk.Frame):
     def lvl_biome(self):
         return Biomes.biome_for_theme(self.lvl_theme, self.lvl_subtheme)
 
+    def floor_biome(self):
+        if self.lvl_floor_theme is not None:
+            return Biomes.biome_for_theme(self.lvl_floor_theme, None)
+
+    def border_biome(self):
+        if self.lvl_border_entity_theme:
+            return Biomes.biome_for_theme(self.lvl_border_entity_theme, None)
+
     # Selects a new theme, updating the grid to theme tiles and backgrounds for the
     # new theme.
     def select_theme(self, theme, subtheme):
@@ -960,16 +972,17 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_theme = theme
         self.lvl_subtheme = subtheme
 
-        biome = Biomes.biome_for_theme(theme, subtheme)
+        self.update_tiles_for_new_theme()
 
+    def update_tiles_for_new_theme(self):
         # Retexture all of the tiles in use
         for tilecode_item in self.tile_palette_ref_in_use:
             tile_name = tilecode_item.name
             img = self.texture_fetcher.get_texture(
-                tile_name, biome, self.lvl, self.zoom_level
+                tile_name, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, self.zoom_level
             )
             img_select = self.texture_fetcher.get_texture(
-                tile_name, biome, self.lvl, 40
+                tile_name, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, 40
             )
             tilecode_item.image = ImageTk.PhotoImage(img)
             tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
@@ -999,6 +1012,7 @@ class CustomLevelEditor(ttk.Frame):
     # Store new border entity type to save in the level sequence.
     def select_border_entity_theme(self, border_entity_theme):
         self.lvl_border_entity_theme = border_entity_theme
+        self.update_tiles_for_new_theme()
         self.changes_made()
 
     # Store new background theme to save in the level sequence.
@@ -1011,6 +1025,7 @@ class CustomLevelEditor(ttk.Frame):
     # Store new floor theme to save in the level sequence.
     def select_floor_theme(self, floor_theme):
         self.lvl_floor_theme = floor_theme
+        self.update_tiles_for_new_theme()
         self.changes_made()
 
     # Store new music theme to save in the level sequence.
@@ -1106,6 +1121,8 @@ class CustomLevelEditor(ttk.Frame):
                     self.texture_fetcher.get_texture(
                         tile_name,
                         self.lvl_biome(),
+                        self.floor_biome(),
+                        self.border_biome(),
                         self.lvl,
                         self.zoom_level,
                     )

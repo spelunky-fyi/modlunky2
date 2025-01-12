@@ -330,6 +330,8 @@ class VanillaLevelEditor(ttk.Frame):
                         self.texture_fetcher.get_texture(
                             tile.name,
                             self.lvl_biome,
+                            None,
+                            None,
                             self.lvl,
                             self.mag,
                         )
@@ -342,6 +344,8 @@ class VanillaLevelEditor(ttk.Frame):
                             self.texture_fetcher.get_texture(
                                 tile.name,
                                 self.lvl_biome,
+                                 None,
+                                None,
                                 self.lvl,
                                 self.mag,
                             )
@@ -403,10 +407,10 @@ class VanillaLevelEditor(ttk.Frame):
 
             def tilecode_item(tilecode):
                 img = self.texture_fetcher.get_texture(
-                    tilecode.name, self.lvl_biome, lvl, self.mag
+                    tilecode.name, self.lvl_biome, None, None, lvl, self.mag
                 )
                 selection_img = self.texture_fetcher.get_texture(
-                    tilecode.name, self.lvl_biome, lvl, 40
+                    tilecode.name, self.lvl_biome, None, None, lvl, 40
                 )
 
                 return Tile(
@@ -517,10 +521,10 @@ class VanillaLevelEditor(ttk.Frame):
                                 self.usable_codes.remove(i)
 
                         img = self.texture_fetcher.get_texture(
-                            str(need[1]), self.lvl_biome, lvl, self.mag
+                            str(need[1]), self.lvl_biome, None, None, lvl, self.mag
                         )
                         img_select = self.texture_fetcher.get_texture(
-                            str(need[1]), self.lvl_biome, lvl, 40
+                            str(need[1]), self.lvl_biome, None, None, lvl, 40
                         )
 
                         tile = Tile(
@@ -559,6 +563,8 @@ class VanillaLevelEditor(ttk.Frame):
             None,
             self.dependency_tile_palette_ref_in_use,
             self.lvl_biome,
+            None,
+            None,
             self.lvl,
         )
         self.multi_room_editor_tab.populate_tilecode_palette(
@@ -1103,12 +1109,12 @@ class VanillaLevelEditor(ttk.Frame):
 
         tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, scale
+                new_tile_code, self.lvl_biome, None, None, self.lvl, scale
             )
         )
         tile_image_picker = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, 40
+                new_tile_code, self.lvl_biome, None, None, self.lvl, 40
             )
         )
 
