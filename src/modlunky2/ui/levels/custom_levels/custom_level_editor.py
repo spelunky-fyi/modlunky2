@@ -674,7 +674,9 @@ class CustomLevelEditor(ttk.Frame):
         self.canvas.configure_size(width * 10, height * 8)
 
         # Draw lines to fill the size of the level.
-        self.canvas.draw_background(self.lvl_theme, self.lvl_subtheme)
+        bg_theme = self.lvl_background_theme or self.lvl_theme
+        bg_subtheme = self.lvl_background_subtheme or self.lvl_subtheme
+        self.canvas.draw_background(bg_theme, bg_subtheme)
         self.canvas.draw_grid()
         self.canvas.draw_room_grid()
 
