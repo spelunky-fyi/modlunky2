@@ -182,7 +182,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
         new_tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                tile_name, self.lvl_biome, self.lvl, self.zoom_level
+                tile_name, self.lvl_biome, None, None, self.lvl, self.zoom_level
             )
         )
 
@@ -737,6 +737,8 @@ class MultiRoomEditorTab(ttk.Frame):
             suggestions,
             dependency_tiles,
             self.lvl_biome,
+            None,
+            None,
             self.lvl,
         )
 
