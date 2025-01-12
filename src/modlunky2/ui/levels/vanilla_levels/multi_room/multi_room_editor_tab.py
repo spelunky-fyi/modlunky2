@@ -9,6 +9,7 @@ from tkinter import ttk
 from modlunky2.config import Config
 from modlunky2.constants import BASE_DIR
 from modlunky2.levels.level_templates import TemplateSetting
+from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.level_canvas import GridRoom
 from modlunky2.ui.levels.shared.multi_canvas_container import (
     MultiCanvasContainer,
@@ -917,8 +918,8 @@ class MultiRoomEditorTab(ttk.Frame):
                 width * 10, height * 8, CanvasIndex(1, map_index)
             )
 
-            self.canvas.draw_background(self.lvl_biome, CanvasIndex(0, map_index))
-            self.canvas.draw_background(self.lvl_biome, CanvasIndex(1, map_index))
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(0, map_index))
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(1, map_index))
             self.canvas.draw_grid(index=CanvasIndex(0, map_index))
             self.canvas.draw_grid(index=CanvasIndex(1, map_index))
 
@@ -1009,7 +1010,8 @@ class MultiRoomEditorTab(ttk.Frame):
                                 for c in range(template_draw_item.width_in_rooms):
                                     self.canvas.draw_background_over_room(
                                         CanvasIndex(backlayer_canvas, map_index),
-                                        self.lvl_biome,
+                                        Biomes.theme_for_biome(self.lvl_biome),
+                                        None,
                                         room_row_index + r,
                                         room_column_index + c,
                                     )
@@ -1020,13 +1022,15 @@ class MultiRoomEditorTab(ttk.Frame):
                         if template is None:
                             self.canvas.draw_background_over_room(
                                 CanvasIndex(0, map_index),
-                                self.lvl_biome,
+                                Biomes.theme_for_biome(self.lvl_biome),
+                                None,
                                 room_row_index,
                                 room_column_index,
                             )
                             self.canvas.draw_background_over_room(
                                 CanvasIndex(1, map_index),
-                                self.lvl_biome,
+                                Biomes.theme_for_biome(self.lvl_biome),
+                                None,
                                 room_row_index,
                                 room_column_index,
                             )

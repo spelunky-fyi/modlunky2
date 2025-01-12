@@ -668,14 +668,13 @@ class CustomLevelEditor(ttk.Frame):
     def draw_canvas(self, fresh):
         width = self.lvl_width
         height = self.lvl_height
-        theme = self.lvl_biome()
 
         # Clear all existing images from the canvas before drawing the new images.
         self.canvas.clear()
         self.canvas.configure_size(width * 10, height * 8)
 
         # Draw lines to fill the size of the level.
-        self.canvas.draw_background(theme)
+        self.canvas.draw_background(self.lvl_theme, self.lvl_subtheme)
         self.canvas.draw_grid()
         self.canvas.draw_room_grid()
 
