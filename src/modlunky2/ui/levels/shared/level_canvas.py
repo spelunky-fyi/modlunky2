@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 import math
+import random
 import tkinter as tk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from typing import List
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.mem.state import Theme
 from modlunky2.ui.levels.shared.biomes import BIOME
 
@@ -105,6 +107,16 @@ class LevelCanvas(tk.Canvas):
 
         self.cached_bgs = {}
         self.cached_bg_overs = {}
+        self.cached_co_bgs = {}
+        self.cached_co_bg_imgs = []
+        self.cached_cosmos_img = None
+        self.co_bg_locations = [(11, 6, 40, 1)]
+        for _ in range(30):
+            x = random.uniform(0, 80)
+            y = random.uniform(0, 120)
+            rotation = random.uniform(0, 360)
+            size = random.uniform(0.75, 1.25)
+            self.co_bg_locations.append((x, y, rotation, size))
 
         self.width = 0
         self.height = 0
@@ -521,6 +533,9 @@ class LevelCanvas(tk.Canvas):
         self.zoom_level = zoom_level
         self.cached_bgs = {}
         self.cached_bg_overs = {}
+        self.cached_co_bgs = {}
+        self.cached_co_bg_imgs = []
+        self.cached_cosmos_img = None
 
     def replace_tile_at(self, row, column, image, offset_x=0, offset_y=0):
         if len(self.tile_images) <= row or len(self.tile_images[row]) <= column:
@@ -546,28 +561,93 @@ class LevelCanvas(tk.Canvas):
         self.tile_images = [[None for _ in range(width)] for _ in range(height)]
 
     def draw_background(self, theme, subtheme):
-        bg_img = self.cached_bgs.get(theme)
-        if not bg_img:
-            background = self.background_for_theme(theme)
-            image = Image.open(background).convert("RGBA")
-            image = image.resize(
-                (self.zoom_level * 10, self.zoom_level * 8), Image.BILINEAR
+        self.cached_co_bg_imgs = []
+        if theme == Theme.COSMIC_OCEAN:
+            self.create_rectangle(
+                0,
+                0,
+                self.zoom_level * self.width,
+                self.zoom_level * self.height,
+                fill="#000000",
+                state="normal",
             )
-            enhancer = ImageEnhance.Brightness(image)
-            im_output = enhancer.enhance(1.0)
-            bg_img = ImageTk.PhotoImage(im_output)
-            self.cached_bgs[theme] = bg_img
 
-        for x in range(0, int(math.ceil(self.width / 10))):
-            for y in range(0, int(math.ceil(self.height / 8))):
-                self.create_image(
-                    x * self.zoom_level * 10,
-                    y * self.zoom_level * 8,
-                    image=bg_img,
-                    anchor="nw",
+            cosmos_bg = self.cached_cosmos_img
+            if not cosmos_bg:
+                img = Image.open(BASE_DIR / "static/images/cosmos.png").convert("RGBA")
+                enhancer = ImageEnhance.Brightness(img)
+                im_output = enhancer.enhance(1.0)
+                cosmos_bg = ImageTk.PhotoImage(im_output)
+                self.cached_cosmos_img = cosmos_bg
+
+            for x in range(0, 1 + int(math.ceil(self.width / 10 / 4))):
+                for y in range(0, 1 + int(math.ceil(self.height / 8 / 3))):
+                    self.create_image(
+                        x * self.zoom_level * 10 * 4 - (y * self.zoom_level * 8),
+                        y * self.zoom_level * 8 * 3 - (x * self.zoom_level * 8 * 1.5),
+                        image=cosmos_bg,
+                        anchor="nw",
+                    )
+
+            bg = self.cached_co_bgs.get(subtheme)
+            if not bg:
+                background = self.co_background_for_subtheme(subtheme)
+                background = background.resize(
+                    (self.zoom_level * 8, self.zoom_level * 8), Image.BILINEAR
                 )
 
+                enhancer = ImageEnhance.Brightness(background)
+                im_output = enhancer.enhance(1.0)
+                bg = im_output
+                self.cached_co_bgs[subtheme] = bg
+
+            for x, y, rotation, size in self.co_bg_locations:
+                if x - 5 > self.width or y - 5 > self.height:
+                    # Don't attempt drawing if no part will be visible.
+                    continue
+                scaled_bg = bg.resize(
+                    (
+                        round(self.zoom_level * 8 * size),
+                        round(self.zoom_level * 8 * size),
+                    ),
+                    Image.BILINEAR,
+                )
+                rotated_bg = scaled_bg.rotate(rotation, expand=True)
+                bg_img = ImageTk.PhotoImage(rotated_bg)
+                self.cached_co_bg_imgs.append(bg_img)
+                self.create_image(
+                    x * self.zoom_level,
+                    y * self.zoom_level,
+                    image=bg_img,
+                    anchor="center",
+                )
+
+        else:
+            bg_img = self.cached_bgs.get(theme)
+            if not bg_img:
+                background = self.background_for_theme(theme)
+                image = Image.open(background).convert("RGBA")
+                image = image.resize(
+                    (self.zoom_level * 10, self.zoom_level * 8), Image.BILINEAR
+                )
+                enhancer = ImageEnhance.Brightness(image)
+                im_output = enhancer.enhance(1.0)
+                bg_img = ImageTk.PhotoImage(im_output)
+                self.cached_bgs[theme] = bg_img
+
+            for x in range(0, int(math.ceil(self.width / 10))):
+                for y in range(0, int(math.ceil(self.height / 8))):
+                    self.create_image(
+                        x * self.zoom_level * 10,
+                        y * self.zoom_level * 8,
+                        image=bg_img,
+                        anchor="nw",
+                    )
+
     def draw_background_over_room(self, theme, subtheme, row, col):
+        if theme == Theme.COSMIC_OCEAN and subtheme is not None:
+            # Do not show special CO tiles in this context.
+            theme = subtheme
         bg_img = self.cached_bg_overs.get(theme)
         if not bg_img:
             background = self.background_for_theme(theme)
@@ -680,3 +760,44 @@ class LevelCanvas(tk.Canvas):
             return "bg_cave.png"
 
         return self.textures_dir / background_file(theme)
+
+    def co_background_for_subtheme(self, subtheme):
+        file = self.textures_dir / "deco_cosmic.png"
+
+        def coords(subtheme):
+            if subtheme == Theme.DWELLING:
+                return (0, 0)
+            elif subtheme == Theme.JUNGLE or subtheme == Theme.OLMEC:
+                return (0, 1)
+            elif subtheme == Theme.VOLCANA:
+                return (0, 2)
+            elif (
+                subtheme == Theme.TIDE_POOL
+                or subtheme == Theme.ABZU
+                or subtheme == Theme.TIAMAT
+            ):
+                return (0, 3)
+            elif (
+                subtheme == Theme.TEMPLE
+                or subtheme == Theme.DUAT
+                or subtheme == Theme.CITY_OF_GOLD
+            ):
+                return (1, 0)
+            elif subtheme == Theme.ICE_CAVES:
+                return (1, 1)
+            elif subtheme == Theme.NEO_BABYLON:
+                return (1, 2)
+            elif subtheme == Theme.SUNKEN_CITY or subtheme == Theme.HUNDUN:
+                return (1, 3)
+            return (0, 0)
+
+        TEXTURE_SIZE = 512
+        image = Image.open(file).convert("RGBA")
+        row, column = coords(subtheme)
+        bbox = (
+            column * TEXTURE_SIZE,
+            row * TEXTURE_SIZE,
+            (column + 1) * TEXTURE_SIZE,
+            (row + 1) * TEXTURE_SIZE,
+        )
+        return image.crop(bbox)
