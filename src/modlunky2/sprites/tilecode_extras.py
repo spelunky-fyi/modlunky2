@@ -82,6 +82,7 @@ TILENAMES = [
     "apep",
     "apep_left",
     "apep_right",
+    "babylon_floor_hard",
 ]
 
 
