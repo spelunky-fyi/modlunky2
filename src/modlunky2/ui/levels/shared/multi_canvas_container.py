@@ -330,7 +330,9 @@ class MultiCanvasContainer(tk.Frame):
                 for canvas in tab_of_canvases:
                     canvas.draw_background(theme, subtheme)
         else:
-            self.canvases[index.tab_index][index.canvas_index].draw_background(theme, subtheme)
+            self.canvases[index.tab_index][index.canvas_index].draw_background(
+                theme, subtheme
+            )
 
     def draw_background_over_room(self, index, theme, subtheme, row, col):
         self.canvases[index.tab_index][index.canvas_index].draw_background_over_room(

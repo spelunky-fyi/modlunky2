@@ -77,7 +77,13 @@ class SpelunkySpriteFetcher:
         return sheets, key_map
 
     # noinspection PyNoneFunctionAssignment
-    def get(self, name: str, biome: str = "cave", floor_biome: Optional[str] = None, border_biome: Optional[str] = None) -> Optional[Image.Image]:
+    def get(
+        self,
+        name: str,
+        biome: str = "cave",
+        floor_biome: Optional[str] = None,
+        border_biome: Optional[str] = None,
+    ) -> Optional[Image.Image]:
         if name == "floor" or name == "generic_floor":
             if floor_biome is not None:
                 # Use floor biome for regular floors.

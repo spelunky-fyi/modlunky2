@@ -403,8 +403,12 @@ class CustomLevelEditor(ttk.Frame):
         self.lvl_theme = theme or Theme.DWELLING
         self.lvl_subtheme = subtheme
         biome = Biomes.biome_for_theme(theme, subtheme)
-        floor_biome = self.lvl_floor_theme and Biomes.biome_for_theme(self.lvl_floor_theme, None)
-        border_biome = self.lvl_border_entity_theme and Biomes.biome_for_theme(self.lvl_border_entity_theme, None)
+        floor_biome = self.lvl_floor_theme and Biomes.biome_for_theme(
+            self.lvl_floor_theme, None
+        )
+        border_biome = self.lvl_border_entity_theme and Biomes.biome_for_theme(
+            self.lvl_border_entity_theme, None
+        )
 
         self.level_configuration_panel.set_sequence_exists(self.has_sequence)
         self.level_configuration_panel.set_level_in_sequence(lvl in self.sequence)
@@ -434,7 +438,9 @@ class CustomLevelEditor(ttk.Frame):
             img = self.texture_fetcher.get_texture(
                 tilecode.name, biome, floor_biome, border_biome, lvl, self.zoom_level
             )
-            img_select = self.texture_fetcher.get_texture(tilecode.name, biome, floor_biome, border_biome, lvl, 40)
+            img_select = self.texture_fetcher.get_texture(
+                tilecode.name, biome, floor_biome, border_biome, lvl, 40
+            )
 
             tilecode_item = Tile(
                 tilecode.name,
@@ -468,11 +474,18 @@ class CustomLevelEditor(ttk.Frame):
                 "",
                 ImageTk.PhotoImage(
                     self.texture_fetcher.get_texture(
-                        "floor_hard", biome, floor_biome, border_biome, lvl, self.zoom_level
+                        "floor_hard",
+                        biome,
+                        floor_biome,
+                        border_biome,
+                        lvl,
+                        self.zoom_level,
                     )
                 ),
                 ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture("floor_hard", biome, floor_biome, border_biome, lvl, 40)
+                    self.texture_fetcher.get_texture(
+                        "floor_hard", biome, floor_biome, border_biome, lvl, 40
+                    )
                 ),
             )
             self.tile_palette_ref_in_use.append(tilecode_item)
@@ -868,12 +881,22 @@ class CustomLevelEditor(ttk.Frame):
 
         tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, self.zoom_level
+                new_tile_code,
+                self.lvl_biome(),
+                self.floor_biome(),
+                self.border_biome(),
+                self.lvl,
+                self.zoom_level,
             )
         )
         tile_image_picker = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, 40
+                new_tile_code,
+                self.lvl_biome(),
+                self.floor_biome(),
+                self.border_biome(),
+                self.lvl,
+                40,
             )
         )
 
@@ -979,10 +1002,20 @@ class CustomLevelEditor(ttk.Frame):
         for tilecode_item in self.tile_palette_ref_in_use:
             tile_name = tilecode_item.name
             img = self.texture_fetcher.get_texture(
-                tile_name, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, self.zoom_level
+                tile_name,
+                self.lvl_biome(),
+                self.floor_biome(),
+                self.border_biome(),
+                self.lvl,
+                self.zoom_level,
             )
             img_select = self.texture_fetcher.get_texture(
-                tile_name, self.lvl_biome(), self.floor_biome(), self.border_biome(), self.lvl, 40
+                tile_name,
+                self.lvl_biome(),
+                self.floor_biome(),
+                self.border_biome(),
+                self.lvl,
+                40,
             )
             tilecode_item.image = ImageTk.PhotoImage(img)
             tilecode_item.picker_image = ImageTk.PhotoImage(img_select)
