@@ -1020,11 +1020,34 @@ class VanillaLevelEditor(ttk.Frame):
                 usable_code = self.usable_codes[0]
                 self.usable_codes.remove(usable_code)
             else:
-                tkMessageBox.showinfo(
-                    "Uh Oh!",
-                    "This tile has a conflict, and you've reached the tilecode limit; delete some to add more",
-                )
-                return
+                # self.usable_codes removes tilecodes used in any dependency file to avoid tilecode collisions.
+                # When there are no tilecodes left due to many tiles in other files, attempt to find tilecodes
+                # not used in the current file, but warn the user that this could cause an issue before
+                # proceeding.
+                may_collide_codes = ShortCode.usable_codes()
+                for tile in self.tile_palette_ref_in_use:
+                    if tile.code in may_collide_codes:
+                        may_collide_codes.remove(tile.code)
+
+                if len(may_collide_codes) > 0:
+                    answer = tkMessageBox.askokcancel(
+                        "Uh oh!",
+                        "You have run out of non-conflicting tilecodes. Adding this tile may cause conflicts "
+                        "with other level files loaded in at the same time. Would you still like to add this "
+                        "tile? Delete some tiles to add more without encountering this issue.",
+                        icon="warning",
+                    )
+
+                    if answer:
+                        usable_code = may_collide_codes[0]
+                    else:
+                        return
+                else:
+                    tkMessageBox.showinfo(
+                        "Uh Oh!", "You've reached the tilecode limit; delete some to add more"
+                    )
+                    return
+
             new_tile = Tile(
                 tile.name,
                 str(usable_code),
