@@ -575,6 +575,9 @@ class LevelCanvas(tk.Canvas):
             cosmos_bg = self.cached_cosmos_img
             if not cosmos_bg:
                 img = Image.open(BASE_DIR / "static/images/cosmos.png").convert("RGBA")
+                img = img.resize(
+                    (round(1194 * self.zoom_level / 30), round(697 * self.zoom_level / 30)), Image.BILINEAR
+                )
                 enhancer = ImageEnhance.Brightness(img)
                 im_output = enhancer.enhance(1.0)
                 cosmos_bg = ImageTk.PhotoImage(im_output)
