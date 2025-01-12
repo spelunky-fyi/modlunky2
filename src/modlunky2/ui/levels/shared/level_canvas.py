@@ -586,8 +586,8 @@ class LevelCanvas(tk.Canvas):
             for x in range(0, 1 + int(math.ceil(self.width / 10 / 4))):
                 for y in range(0, 1 + int(math.ceil(self.height / 8 / 3))):
                     self.create_image(
-                        x * self.zoom_level * 10 * 4 - (y * self.zoom_level * 8),
-                        y * self.zoom_level * 8 * 3 - (x * self.zoom_level * 8 * 1.5),
+                        x * self.zoom_level * 10 * 4 - (((y ^ 8) * 8) % 30) * self.zoom_level,
+                        y * self.zoom_level * 8 * 3,
                         image=cosmos_bg,
                         anchor="nw",
                     )
