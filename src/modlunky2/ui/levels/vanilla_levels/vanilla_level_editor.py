@@ -879,7 +879,7 @@ class VanillaLevelEditor(ttk.Frame):
                     for column, _ in enumerate(row_codes):
                         row_codes[column] = "0"
             self.canvas.clear()
-            self.canvas.draw_background(self.lvl_biome)
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None)
             self.canvas.draw_grid()
             self.changes_made()
 
@@ -919,7 +919,7 @@ class VanillaLevelEditor(ttk.Frame):
             )
 
             # Draw lines to fill the size of the level.
-            self.canvas.draw_background(self.lvl_biome)
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None)
             self.canvas.draw_grid()
 
             self.canvas.hide_canvas(1, not dual_mode)

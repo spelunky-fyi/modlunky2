@@ -6,6 +6,7 @@ import tkinter as tk
 from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 from typing import List
 
+from modlunky2.mem.state import Theme
 from modlunky2.ui.levels.shared.biomes import BIOME
 
 
@@ -544,7 +545,7 @@ class LevelCanvas(tk.Canvas):
         self["height"] = (self.zoom_level * height) - 3
         self.tile_images = [[None for _ in range(width)] for _ in range(height)]
 
-    def draw_background(self, theme):
+    def draw_background(self, theme, subtheme):
         bg_img = self.cached_bgs.get(theme)
         if not bg_img:
             background = self.background_for_theme(theme)
@@ -566,7 +567,7 @@ class LevelCanvas(tk.Canvas):
                     anchor="nw",
                 )
 
-    def draw_background_over_room(self, theme, row, col):
+    def draw_background_over_room(self, theme, subtheme, row, col):
         bg_img = self.cached_bg_overs.get(theme)
         if not bg_img:
             background = self.background_for_theme(theme)
@@ -654,29 +655,27 @@ class LevelCanvas(tk.Canvas):
     # Path to the background image that will be shown behind the grid.
     def background_for_theme(self, theme):
         def background_file(theme):
-            if theme == BIOME.DWELLING:
+            if theme == Theme.DWELLING:
                 return "bg_cave.png"
-            elif theme == BIOME.TIDE_POOL:
+            elif theme == Theme.TIDE_POOL or theme == Theme.ABZU:
                 return "bg_tidepool.png"
-            elif theme == BIOME.NEO_BABYLON:
+            elif theme == Theme.NEO_BABYLON or theme == Theme.NEO_BABYLON:
                 return "bg_babylon.png"
-            elif theme == BIOME.JUNGLE:
+            elif theme == Theme.JUNGLE:
                 return "bg_jungle.png"
-            elif theme == BIOME.TEMPLE:
+            elif theme == Theme.TEMPLE or theme == Theme.DUAT:
                 return "bg_temple.png"
-            elif theme == BIOME.SUNKEN_CITY:
+            elif theme == Theme.SUNKEN_CITY or theme == Theme.HUNDUN:
                 return "bg_sunken.png"
-            elif theme == BIOME.CITY_OF_GOLD:
+            elif theme == Theme.CITY_OF_GOLD:
                 return "bg_gold.png"
-            elif theme == BIOME.DUAT:
-                return "bg_temple.png"
-            elif theme == BIOME.EGGPLANT_WORLD:
+            elif theme == Theme.EGGPLANT_WORLD:
                 return "bg_eggplant.png"
-            elif theme == BIOME.ICE_CAVES:
+            elif theme == Theme.ICE_CAVES:
                 return "bg_ice.png"
-            elif theme == BIOME.OLMEC:
+            elif theme == Theme.OLMEC:
                 return "bg_stone.png"
-            elif theme == BIOME.VOLCANA:
+            elif theme == Theme.VOLCANA:
                 return "bg_volcano.png"
             return "bg_cave.png"
 
