@@ -1,22 +1,31 @@
 import logging
 from pathlib import Path
+from PIL import Image, ImageTk
 import re
 import tkinter as tk
 from tkinter import ttk
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels.level_chances import LevelChances
 from modlunky2.levels.level_settings import LevelSetting, LevelSettings
 from modlunky2.levels.monster_chances import MonsterChances
 from modlunky2.ui.levels.custom_levels.save_level import save_level
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
 from modlunky2.ui.levels.shared.biomes import Biomes
+from modlunky2.ui.levels.shared.tile import Tile
 from modlunky2.ui.widgets import PopupWindow
 
 logger = logging.getLogger(__name__)
 
 
 def present_create_level_dialog(
-    modlunky_config, backup_dir, lvls_path, current_save_format, on_level_created
+    modlunky_config,
+    backup_dir,
+    lvls_path,
+    current_save_format,
+    has_sequence,
+    can_add_to_sequence,
+    on_level_created,
 ):
     win = PopupWindow("Create Level", modlunky_config)
 
@@ -100,6 +109,25 @@ def present_create_level_dialog(
     if create_save_format:
         save_format_combobox.set(create_save_format.name)
 
+    values_row = values_row + 1
+
+    if can_add_to_sequence:
+        add_to_sequence_var = tk.IntVar()
+        add_to_sequence_var.set(has_sequence)
+
+        add_to_sequence_label = tk.Label(values_frame, text="Add to Sequence: ")
+        add_to_sequence_label.grid(row=values_row, column=0, sticky="nes", pady=2)
+
+        tk.Checkbutton(
+            values_frame,
+            text="",
+            variable=add_to_sequence_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(row=values_row, column=1, sticky="nws", pady=2)
+
+        values_row = values_row + 1
+
     warning_label = tk.Label(
         win, text="", foreground="red", wraplength=200, justify=tk.LEFT
     )
@@ -147,10 +175,13 @@ def present_create_level_dialog(
                 )
                 warning_label.grid()
                 return
+            img = ImageTk.PhotoImage(
+                Image.open(BASE_DIR / "static/images/help.png").resize((20, 20))
+            )
             tiles = [
-                ["floor 1"],
-                ["empty 0"],
-                ["floor_hard X"],
+                Tile("floor", "1", "", img, img),
+                Tile("empty", "0", "", img, img),
+                Tile("floor_hard", "X", "", img, img),
             ]
             # Fill in the level with empty tiles in the foreground and hard floor in the background.
             foreground = [["0" for _ in range(width * 10)] for _ in range(height * 8)]
@@ -201,7 +232,7 @@ def present_create_level_dialog(
                 background,
             )
             if saved:
-                on_level_created(lvl_file_name)
+                on_level_created(lvl_file_name, add_to_sequence_var.get())
             else:
                 logger.debug("error saving lvl file.")
             win.destroy()

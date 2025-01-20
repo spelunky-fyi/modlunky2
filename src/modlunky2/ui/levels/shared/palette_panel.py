@@ -149,7 +149,7 @@ class SelectedTilecodeView(ttk.Frame):
             self.img_view["image"] = self.img_empty
 
     def reset(self, disable=True):
-        self.select_tile(Tile("empty", "0", self.img_empty, self.img_empty))
+        self.select_tile(Tile("empty", "0", "", self.img_empty, self.img_empty))
         if disable:
             self.disable()
 
@@ -211,7 +211,14 @@ class PalettePanel(ttk.Frame):
                 self.secondary_tile_view.reset(disable=False)
 
     def update_with_palette(
-        self, new_palette, suggestions, dependency_tiles, biome, lvl
+        self,
+        new_palette,
+        suggestions,
+        dependency_tiles,
+        biome,
+        floor_biome,
+        border_biome,
+        lvl,
     ):
         for widget in self.palette.scrollable_frame.winfo_children():
             widget.destroy()
@@ -282,7 +289,9 @@ class PalettePanel(ttk.Frame):
                     count_row = count_row + 1
 
                 tile_image = ImageTk.PhotoImage(
-                    self.texture_fetcher.get_texture(suggestion, biome, lvl, 40)
+                    self.texture_fetcher.get_texture(
+                        suggestion, biome, floor_biome, border_biome, lvl, 40
+                    )
                 )
                 self.tile_images.append(tile_image)
                 new_tile = tk.Button(
@@ -355,6 +364,10 @@ class PalettePanel(ttk.Frame):
         self.new_tile_panel.enable()
 
     def tile_pick(self, event, tile, is_primary):
+        if event is not None and isinstance(event.widget, tk.Entry):
+            # Do not select a tile when the key was pressed to type into an Entry field.
+            return
+
         self.select_tile(tile, is_primary, True)
 
     def suggested_tile_pick(self, event, suggested_tile):
@@ -365,9 +378,9 @@ class PalettePanel(ttk.Frame):
 
     def dependency_tile_pick(self, event, tile, dependency):
         if self.on_use_dependency_tile:
-            self.on_use_dependency_tile(tile, dependency)
+            new_tile = self.on_use_dependency_tile(tile, dependency)
 
-            self.select_tile(tile, event.num == 1, True)
+            self.select_tile(new_tile, event.num == 1, True)
 
     def select_tile(self, tile, is_primary, tell_delegate=False):
         tile_view = self.primary_tile_view

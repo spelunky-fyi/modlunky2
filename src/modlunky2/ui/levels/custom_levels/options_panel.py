@@ -1,12 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageDraw, ImageEnhance, ImageTk
 
 from modlunky2.config import CustomLevelSaveFormat
-from modlunky2.levels.tile_codes import VALID_TILE_CODES
 from modlunky2.ui.levels.custom_levels.save_formats import SaveFormats
-from modlunky2.ui.levels.shared.biomes import Biomes, BIOME
-from modlunky2.ui.widgets import PopupWindow, Tab
 
 
 class OptionsPanel(ttk.Frame):
@@ -15,8 +11,6 @@ class OptionsPanel(ttk.Frame):
         parent,
         modlunky_config,
         zoom_level,
-        on_select_theme,
-        on_update_level_size,
         on_update_save_format,
         on_update_hide_grid_lines,
         on_update_hide_room_lines,
@@ -27,135 +21,14 @@ class OptionsPanel(ttk.Frame):
         super().__init__(parent, *args, **kwargs)
 
         self.modlunky_config = modlunky_config
-        self.on_select_theme = on_select_theme
-        self.on_update_level_size = on_update_level_size
         self.on_update_save_format = on_update_save_format
         self.on_update_hide_grid_lines = on_update_hide_grid_lines
         self.on_update_hide_room_lines = on_update_hide_room_lines
         self.on_update_zoom_level = on_update_zoom_level
 
-        self.lvl_width = None
-        self.lvl_height = None
-
-        self.rowconfigure(2, minsize=20)
-        self.rowconfigure(4, minsize=20)
         self.columnconfigure(0, weight=1)
 
-        right_padding = 10
         settings_row = 0
-
-        theme_label = tk.Label(self, text="Level Theme:")
-        theme_label.grid(row=settings_row, column=0, sticky="nsw")
-        self.theme_label = theme_label
-
-        settings_row += 1
-
-        theme_container = ttk.Frame(self)
-        theme_container.grid(row=settings_row, column=0, sticky="nwse")
-        theme_container.columnconfigure(1, weight=1)
-        theme_container.columnconfigure(3, minsize=right_padding)
-
-        # Combobox for selecting the level theme. The theme affects the texture used to
-        # display many tiles and the level background; the suggested tiles in the tile
-        # palette; and the additional vanilla setrooms that are saved into the level
-        # file.
-        self.theme_combobox = ttk.Combobox(theme_container, height=25)
-        self.theme_combobox.grid(row=0, column=0, sticky="nsw")
-        self.theme_combobox["state"] = tk.DISABLED
-        self.theme_combobox["values"] = [
-            "Dwelling",
-            "Jungle",
-            "Volcana",
-            "Olmec",
-            "Tide Pool",
-            "Temple",
-            "Ice Caves",
-            "Neo Babylon",
-            "Sunken City",
-            "City of Gold",
-            "Duat",
-            "Eggplant World",
-            "Surface",
-        ]
-
-        def update_theme():
-            theme_name = str(self.theme_combobox.get())
-            biome = Biomes.biome_for_name(theme_name)
-            self.theme_select_button["state"] = tk.DISABLED
-            self.theme_label["text"] = "Level Theme: " + Biomes().name_of_biome(biome)
-            self.on_select_theme(biome)
-
-        self.theme_select_button = tk.Button(
-            theme_container,
-            text="Update Theme",
-            bg="yellow",
-            command=update_theme,
-        )
-        self.theme_select_button["state"] = tk.DISABLED
-        self.theme_select_button.grid(row=0, column=2, sticky="nse")
-
-        def theme_selected(_):
-            self.theme_select_button["state"] = tk.NORMAL
-
-        self.theme_combobox.bind("<<ComboboxSelected>>", theme_selected)
-
-        settings_row += 1
-        settings_row += 1
-        # Comboboxes to change the size of the level. If the size is decreased, the
-        # tiles in the missing space are still cached and restored if the size is
-        # increased again. This cache is cleared if another level is loaded or the
-        # level editor is closed.
-        size_frame = tk.Frame(self)
-        size_frame.grid(column=0, row=settings_row, sticky="news")
-        size_frame.columnconfigure(2, weight=1)
-        size_frame.columnconfigure(4, minsize=right_padding)
-        self.size_label = tk.Label(size_frame, text="Level size:")
-        self.size_label.grid(column=0, row=0, columnspan=5, sticky="nsw")
-
-        tk.Label(size_frame, text="Width: ").grid(row=1, column=0, sticky="nsw")
-
-        self.width_combobox = ttk.Combobox(size_frame, height=25)
-        self.width_combobox.grid(row=1, column=1, sticky="nswe")
-        self.width_combobox["state"] = tk.DISABLED
-        self.width_combobox["values"] = list(range(1, 9))
-
-        tk.Label(size_frame, text="Height: ").grid(row=2, column=0, sticky="nsw")
-
-        self.height_combobox = ttk.Combobox(size_frame, height=25)
-        self.height_combobox.grid(row=2, column=1, sticky="nswe")
-        self.height_combobox["state"] = tk.DISABLED
-        self.height_combobox["values"] = list(range(1, 16))
-
-        def update_size():
-            width = int(self.width_combobox.get())
-            height = int(self.height_combobox.get())
-            self.size_select_button["state"] = tk.DISABLED
-            self.update_level_size(width, height)
-            self.on_update_level_size(width, height)
-
-        self.size_select_button = tk.Button(
-            size_frame,
-            text="Update Size",
-            bg="yellow",
-            command=update_size,
-        )
-        self.size_select_button["state"] = tk.DISABLED
-        self.size_select_button.grid(row=1, column=3, rowspan=2, sticky="w")
-
-        def size_selected(_):
-            width = int(self.width_combobox.get())
-            height = int(self.height_combobox.get())
-            self.size_select_button["state"] = (
-                tk.DISABLED
-                if (width == self.lvl_width and height == self.lvl_height)
-                else tk.NORMAL
-            )
-
-        self.width_combobox.bind("<<ComboboxSelected>>", size_selected)
-        self.height_combobox.bind("<<ComboboxSelected>>", size_selected)
-
-        settings_row += 1
-        settings_row += 1
 
         option_header = tk.Label(self, text="Save format:")
         option_header.grid(column=0, row=settings_row, sticky="nsw")
@@ -277,31 +150,11 @@ class OptionsPanel(ttk.Frame):
 
         grid_size_scale["command"] = update_grid_size
 
-    def update_level_size(self, width, height):
-        self.lvl_width = width
-        self.lvl_height = height
-        self.width_combobox.set(width)
-        self.height_combobox.set(height)
-        self.size_label["text"] = "Level size: {width} x {height}".format(
-            width=width, height=height
-        )
-
-    def update_theme(self, theme):
-        theme_name = Biomes.name_of_biome(theme)
-        self.theme_combobox.set(theme_name)
-        self.theme_label["text"] = "Level Theme: " + theme_name
-
     def enable_controls(self):
-        self.theme_combobox["state"] = "readonly"
-        self.width_combobox["state"] = "readonly"
-        self.height_combobox["state"] = "readonly"
+        return
 
     def disable_controls(self):
-        self.theme_combobox["state"] = tk.DISABLED
-        self.theme_select_button["state"] = tk.DISABLED
-        self.width_combobox["state"] = tk.DISABLED
-        self.height_combobox["state"] = tk.DISABLED
-        self.size_select_button["state"] = tk.DISABLED
+        return
 
     # Updates the current radio button in the save format select options menu to the
     # proper save format.

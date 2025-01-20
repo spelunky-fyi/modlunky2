@@ -1,6 +1,9 @@
+from modlunky2.mem.state import Theme
+
+
 # List of tiles that will be included in the tile palette even if they do not already
 # exist in the level file, since they are likely options to be used for the current theme.
-def suggested_tiles_for_theme(theme, include_common=True):
+def suggested_tiles_for_theme(theme, subtheme, include_common=True):
     common_tiles = [
         "floor",
         "empty",
@@ -22,7 +25,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
         "treasure_vaultchest",
     ]
 
-    def theme_tiles(theme):
+    def theme_tiles(theme, subtheme=None):
         beehive_tiles = [
             "beehive_floor",
             "beehive_floor%50",
@@ -30,7 +33,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
             "honey_downwards",
             "bee",
         ]
-        if theme == "cave":
+        if theme == Theme.DWELLING:
             return [
                 "bone_block",
                 "platform",
@@ -56,7 +59,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "ghist_shopkeeper",
                 "ghist_door2",
             ]
-        elif theme == "volcano":
+        elif theme == Theme.VOLCANA:
             return [
                 "powder_keg",
                 "timed_powder_keg",
@@ -87,7 +90,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "slidingwall_ceiling",
                 "crown_statue",
             ]
-        elif theme == "jungle":
+        elif theme == Theme.JUNGLE:
             return [
                 "stone_floor",
                 "vine",
@@ -110,7 +113,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "critter_butterfly",
                 "snap_trap",
             ] + beehive_tiles
-        elif theme == "olmec":
+        elif theme == Theme.OLMEC:
             return [
                 "stone_floor",
                 "crate_parachute",
@@ -123,7 +126,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "critter_crab",
                 "critter_locust",
             ]
-        elif theme == "tidepool":
+        elif theme == Theme.TIDE_POOL:
             return [
                 "pagoda_floor",
                 "pagoda_floor%50%floor",
@@ -153,7 +156,9 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "excalibur_stone",
                 "haunted_corpse",
             ]
-        elif theme == "temple":
+        elif theme == Theme.ABZU:
+            return theme_tiles(Theme.TIDE_POOL) + ["kingu"]
+        elif theme == Theme.TEMPLE:
             return [
                 "quicksand",
                 "temple_floor",
@@ -170,7 +175,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "necromancer",
                 "critter_locust",
             ] + beehive_tiles
-        elif theme == "ice":
+        elif theme == Theme.ICE_CAVES:
             return [
                 "minewood_floor",
                 "icefloor",
@@ -204,7 +209,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "critter_penguin",
                 "critter_firefly",
             ]
-        elif theme == "babylon":
+        elif theme == Theme.NEO_BABYLON:
             return [
                 "babylon_floor",
                 "babylon_floor%50%floor",
@@ -237,7 +242,20 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "madametusk",
                 "bodyguard",
             ]
-        elif theme == "sunken":
+        elif theme == Theme.TIAMAT:
+            return [
+                "babylon_floor",
+                "babylon_floor%50%floor",
+                "laser_trap",
+                "spark_trap",
+                "forcefield",
+                "timed_forcefield",
+                "forcefield_top",
+                "elevator",
+                "tiamat",
+                "olmecship",
+            ]
+        elif theme == Theme.SUNKEN_CITY or theme == Theme.HUNDUN:
             return [
                 "sunken_floor",
                 "sunken_floor%50",
@@ -263,7 +281,7 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "skull_drop_trap",
                 "eggsac",
             ]
-        elif theme == "gold":
+        elif theme == Theme.CITY_OF_GOLD:
             return [
                 "quicksand",
                 "cog_floor",
@@ -279,20 +297,18 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "sorceress",
                 "critter_locust",
             ]
-        elif theme == "duat":
+        elif theme == Theme.DUAT:
             return [
                 "duat_floor",
                 "duat_floor%50",
                 "chain_ceiling",
                 "lava",
                 "ammit%50",
-                "crocman",
-                "snake",
                 "cobra",
                 "osiris",
                 "anubis2",
             ]
-        elif theme == "eggplant":
+        elif theme == Theme.EGGPLANT_WORLD:
             return [
                 "pagoda_floor",
                 "pagoda_floor%50",
@@ -309,9 +325,11 @@ def suggested_tiles_for_theme(theme, include_common=True):
                 "yama",
                 "empress_grave",
             ]
+        elif theme == Theme.COSMIC_OCEAN:
+            return theme_tiles(subtheme) + ["cosmic_orb", "cosmic_jelly"]
         return []
 
     if include_common:
-        return common_tiles + theme_tiles(theme)
+        return common_tiles + theme_tiles(theme, subtheme)
     else:
-        return theme_tiles(theme)
+        return theme_tiles(theme, subtheme)

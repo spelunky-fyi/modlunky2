@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import io
 import logging
-import math
 import os
 import os.path
 from pathlib import Path
@@ -12,6 +11,7 @@ from tkinter import ttk
 import tkinter.messagebox as tkMessageBox
 from typing import List, Optional
 
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels import LevelFile
 from modlunky2.levels.level_templates import (
     Chunk,
@@ -102,6 +102,9 @@ class VanillaLevelEditor(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
 
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path))
+
         self.room_has_been_selected = False
         self.save_needed = False
         self.extracts_path = extracts_path
@@ -133,6 +136,7 @@ class VanillaLevelEditor(ttk.Frame):
             self.reset_save_button,
             self.update_lvls_path,
             self.on_select_file,
+            self.on_create_file,
         )
         self.files_tree.grid(row=0, column=0, rowspan=1, sticky="news")
         self.files_tree.load_packs()
@@ -150,6 +154,8 @@ class VanillaLevelEditor(ttk.Frame):
             if str(tab) == "Full Level Editor":
                 self.multi_room_editor_tab.update_templates()
                 self.multi_room_editor_tab.redraw()
+            if str(tab) == "Variables (Experimental)":
+                self.variables_tab.check_dependencies()
 
         self.tab_control.bind("<<NotebookTabChanged>>", tab_selected)
 
@@ -324,6 +330,8 @@ class VanillaLevelEditor(ttk.Frame):
                         self.texture_fetcher.get_texture(
                             tile.name,
                             self.lvl_biome,
+                            None,
+                            None,
                             self.lvl,
                             self.mag,
                         )
@@ -336,6 +344,8 @@ class VanillaLevelEditor(ttk.Frame):
                             self.texture_fetcher.get_texture(
                                 tile.name,
                                 self.lvl_biome,
+                                None,
+                                None,
                                 self.lvl,
                                 self.mag,
                             )
@@ -397,15 +407,16 @@ class VanillaLevelEditor(ttk.Frame):
 
             def tilecode_item(tilecode):
                 img = self.texture_fetcher.get_texture(
-                    tilecode.name, self.lvl_biome, lvl, self.mag
+                    tilecode.name, self.lvl_biome, None, None, lvl, self.mag
                 )
                 selection_img = self.texture_fetcher.get_texture(
-                    tilecode.name, self.lvl_biome, lvl, 40
+                    tilecode.name, self.lvl_biome, None, None, lvl, 40
                 )
 
                 return Tile(
                     str(tilecode.name),
                     str(tilecode.value),
+                    str(tilecode.comment),
                     ImageTk.PhotoImage(img),
                     ImageTk.PhotoImage(selection_img),
                 )
@@ -415,7 +426,7 @@ class VanillaLevelEditor(ttk.Frame):
         def clear_tile_from_dependencies(tile):
             for palette in self.dependency_tile_palette_ref_in_use:
                 for i in palette.tiles:
-                    if i.code == tile.code:
+                    if i.name == tile.name:
                         palette.tiles.remove(i)
 
         def register_tile_code(tile):
@@ -441,6 +452,16 @@ class VanillaLevelEditor(ttk.Frame):
             self.dependency_tile_palette_ref_in_use.insert(
                 0, DependencyPalette("From " + dependency, tiles)
             )
+
+        # Clear tilecodes from all sister locations so they do not get reused.
+        sister_locations = LevelDependencies.sister_locations_for_level(
+            lvl, self.lvls_path, self.extracts_path
+        )
+        for sister_location_path in sister_locations:
+            for level in sister_location_path:
+                for tilecode in level.level.tile_codes.all():
+                    if tilecode.value in self.usable_codes:
+                        self.usable_codes.remove(tilecode.value)
 
         level = LevelFile.from_path(Path(lvl_path))
         tiles = get_level_tilecodes(level)
@@ -500,15 +521,16 @@ class VanillaLevelEditor(ttk.Frame):
                                 self.usable_codes.remove(i)
 
                         img = self.texture_fetcher.get_texture(
-                            str(need[1]), self.lvl_biome, lvl, self.mag
+                            str(need[1]), self.lvl_biome, None, None, lvl, self.mag
                         )
                         img_select = self.texture_fetcher.get_texture(
-                            str(need[1]), self.lvl_biome, lvl, 40
+                            str(need[1]), self.lvl_biome, None, None, lvl, 40
                         )
 
                         tile = Tile(
                             str(need[1]),
                             str(need[0]),
+                            "",
                             ImageTk.PhotoImage(img),
                             ImageTk.PhotoImage(img_select),
                         )
@@ -541,6 +563,8 @@ class VanillaLevelEditor(ttk.Frame):
             None,
             self.dependency_tile_palette_ref_in_use,
             self.lvl_biome,
+            None,
+            None,
             self.lvl,
         )
         self.multi_room_editor_tab.populate_tilecode_palette(
@@ -643,7 +667,7 @@ class VanillaLevelEditor(ttk.Frame):
                         TileCode(
                             name=tilecode.name,
                             value=tilecode.code,
-                            comment="",
+                            comment=tilecode.comment,
                         )
                     )
 
@@ -861,7 +885,7 @@ class VanillaLevelEditor(ttk.Frame):
                     for column, _ in enumerate(row_codes):
                         row_codes[column] = "0"
             self.canvas.clear()
-            self.canvas.draw_background(self.lvl_biome)
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None)
             self.canvas.draw_grid()
             self.changes_made()
 
@@ -901,7 +925,7 @@ class VanillaLevelEditor(ttk.Frame):
             )
 
             # Draw lines to fill the size of the level.
-            self.canvas.draw_background(self.lvl_biome)
+            self.canvas.draw_background(Biomes.theme_for_biome(self.lvl_biome), None)
             self.canvas.draw_grid()
 
             self.canvas.hide_canvas(1, not dual_mode)
@@ -914,13 +938,21 @@ class VanillaLevelEditor(ttk.Frame):
             for canvas_index, layer_tile_codes in enumerate(self.tile_codes):
                 for row_index, row in enumerate(layer_tile_codes):
                     for column_index, tile_code in enumerate(row):
-                        tile = self.tile_palette_map[tile_code]
-                        tile_image = tile.image
-                        x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
-                            tile_image.width(),
-                            tile_image.height(),
-                            tile.name,
-                        )
+                        tile = self.tile_palette_map.get(tile_code)
+                        if tile:
+                            tile_image = tile.image
+                            x_coord, y_coord = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile.name,
+                            )
+                        else:
+                            logger.warning(
+                                "Tile code %s found in room, but does not map to a valid tile code.",
+                                tile_code,
+                            )
+                            tile_image = self.error_image
+                            x_coord, y_coord = 0, 0
                         self.canvas.replace_tile_at(
                             CanvasIndex(0, canvas_index),
                             row_index,
@@ -976,11 +1008,69 @@ class VanillaLevelEditor(ttk.Frame):
         logger.debug("%s codes left (%s)", len(self.usable_codes), codes)
 
     def use_dependency_tile(self, tile, dependency):
-        self.tile_palette_ref_in_use.append(tile)
+        new_tile = tile
+
+        def tile_will_conflict():
+            sister_locations = LevelDependencies.sister_locations_for_level(
+                self.lvl, self.lvls_path, self.extracts_path
+            )
+            for sister_location_path in sister_locations:
+                for level in sister_location_path:
+                    for tilecode in level.level.tile_codes.all():
+                        if tilecode.value == tile.code and tilecode.name != tile.name:
+                            return True
+            return False
+
+        if tile_will_conflict():
+            if len(self.usable_codes) > 0:
+                usable_code = self.usable_codes[0]
+                self.usable_codes.remove(usable_code)
+            else:
+                # self.usable_codes removes tilecodes used in any dependency file to avoid tilecode collisions.
+                # When there are no tilecodes left due to many tiles in other files, attempt to find tilecodes
+                # not used in the current file, but warn the user that this could cause an issue before
+                # proceeding.
+                may_collide_codes = ShortCode.usable_codes()
+                for tile in self.tile_palette_ref_in_use:
+                    if tile.code in may_collide_codes:
+                        may_collide_codes.remove(tile.code)
+
+                if len(may_collide_codes) > 0:
+                    answer = tkMessageBox.askokcancel(
+                        "Uh oh!",
+                        "You have run out of non-conflicting tilecodes. Adding this tile may cause conflicts "
+                        "with other level files loaded in at the same time. Would you still like to add this "
+                        "tile? Delete some tiles to add more without encountering this issue.",
+                        icon="warning",
+                    )
+
+                    if answer:
+                        usable_code = may_collide_codes[0]
+                    else:
+                        return
+                else:
+                    tkMessageBox.showinfo(
+                        "Uh Oh!",
+                        "You've reached the tilecode limit; delete some to add more",
+                    )
+                    return
+
+            new_tile = Tile(
+                tile.name,
+                str(usable_code),
+                tile.comment,
+                tile.image,
+                tile.picker_image,
+            )
+
+        self.tile_palette_map[new_tile.code] = new_tile
+        self.tile_palette_ref_in_use.append(new_tile)
         dependency.tiles.remove(tile)
 
         self.populate_tilecode_palette()
         self.changes_made()
+
+        return new_tile
 
     def add_tilecode(
         self,
@@ -1020,12 +1110,12 @@ class VanillaLevelEditor(ttk.Frame):
 
         tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, scale
+                new_tile_code, self.lvl_biome, None, None, self.lvl, scale
             )
         )
         tile_image_picker = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                new_tile_code, self.lvl_biome, self.lvl, 40
+                new_tile_code, self.lvl_biome, None, None, self.lvl, 40
             )
         )
 
@@ -1042,12 +1132,38 @@ class VanillaLevelEditor(ttk.Frame):
                 if code == usable_code:
                     self.usable_codes.remove(code)
         else:
-            tkMessageBox.showinfo(
-                "Uh Oh!", "You've reached the tilecode limit; delete some to add more"
-            )
-            return
+            # self.usable_codes removes tilecodes used in any dependency file to avoid tilecode collisions.
+            # When there are no tilecodes left due to many tiles in other files, attempt to find tilecodes
+            # not used in the current file, but warn the user that this could cause an issue before
+            # proceeding.
+            may_collide_codes = ShortCode.usable_codes()
+            for tile in self.tile_palette_ref_in_use:
+                if tile.code in may_collide_codes:
+                    may_collide_codes.remove(tile.code)
 
-        ref_tile = Tile(new_tile_code, str(usable_code), tile_image, tile_image_picker)
+            if len(may_collide_codes) > 0:
+                answer = tkMessageBox.askokcancel(
+                    "Uh oh!",
+                    "You have run out of non-conflicting tilecodes. Adding this tile may cause conflicts "
+                    "with other level files loaded in at the same time. Would you still like to add this "
+                    "tile? Delete some tiles to add more without encountering this issue.",
+                    icon="warning",
+                )
+
+                if answer:
+                    usable_code = may_collide_codes[0]
+                else:
+                    return
+            else:
+                tkMessageBox.showinfo(
+                    "Uh Oh!",
+                    "You've reached the tilecode limit; delete some to add more",
+                )
+                return
+
+        ref_tile = Tile(
+            new_tile_code, str(usable_code), "", tile_image, tile_image_picker
+        )
         self.tile_palette_ref_in_use.append(ref_tile)
         self.tile_palette_map[usable_code] = ref_tile
 
@@ -1066,6 +1182,9 @@ class VanillaLevelEditor(ttk.Frame):
     def on_select_file(self, lvl):
         self.reset()
         self.read_lvl_file(lvl)
+
+    def on_create_file(self, lvl, _):
+        self.on_select_file(lvl)
 
     def on_insert_room(self, parent_index, name=None):
         room_template = self.template_list[parent_index]

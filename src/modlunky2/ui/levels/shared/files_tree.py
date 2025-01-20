@@ -48,6 +48,7 @@ class FilesTree(ttk.Frame):
         on_level_exited,
         on_update_lvls_path,
         on_select_file,
+        on_create_file,
         *args,
         **kwargs,
     ):
@@ -62,6 +63,7 @@ class FilesTree(ttk.Frame):
         self.on_level_exited = on_level_exited
         self.on_update_lvls_path = on_update_lvls_path
         self.on_select_file = on_select_file
+        self.on_create_file = on_create_file
 
         self.icon_add = ImageTk.PhotoImage(
             Image.open(BASE_DIR / "static/images/add.png").resize((20, 20))
@@ -73,6 +75,7 @@ class FilesTree(ttk.Frame):
         self.current_save_format = None
         self.last_selected_file = None
         self.lvls_path = None
+        self.has_sequence = False
 
         self.pack_names = []
         self.level_names = []
@@ -224,31 +227,35 @@ class FilesTree(ttk.Frame):
             is_arenas = True
         self.in_arena_folder = is_arenas
 
-        self.level_names = level_files
+        self.level_names = list(
+            filter(
+                lambda lvl_name: is_arenas or not (defaults_path / lvl_name).exists(),
+                level_files,
+            )
+        )
 
-        for lvl_name in level_files:
-            if is_arenas or not (defaults_path / lvl_name).exists():
-                item = None
-                lvl_in_use = False
-                for name in mod_files:
-                    if name == lvl_name:
-                        lvl_in_use = True
-                        item = self.tree.insert(
-                            "",
-                            "end",
-                            text=str(lvl_name),
-                            image=self.lvl_icon(LEVEL_TYPE.MODDED),
-                        )
-                if not lvl_in_use:
+        for lvl_name in self.level_names:
+            item = None
+            lvl_in_use = False
+            for name in mod_files:
+                if name == lvl_name:
+                    lvl_in_use = True
                     item = self.tree.insert(
                         "",
                         "end",
                         text=str(lvl_name),
-                        image=self.lvl_icon(LEVEL_TYPE.VANILLA),
+                        image=self.lvl_icon(LEVEL_TYPE.MODDED),
                     )
-                if item != None and lvl_name == selected_lvl:
-                    self.tree.selection_set(item)
-                    self.last_selected_file = item
+            if not lvl_in_use:
+                item = self.tree.insert(
+                    "",
+                    "end",
+                    text=str(lvl_name),
+                    image=self.lvl_icon(LEVEL_TYPE.VANILLA),
+                )
+            if item != None and lvl_name == selected_lvl:
+                self.tree.selection_set(item)
+                self.last_selected_file = item
 
         self.tree.insert("", "end", text=str("Create New Level"), image=self.icon_add)
 
@@ -444,11 +451,11 @@ class FilesTree(ttk.Frame):
         cancel_button.grid(row=0, column=1, pady=5, sticky="nsew")
 
     def create_level_dialog(self):
-        def on_created(lvl_file_name):
+        def on_created(lvl_file_name, add_to_sequence):
             # Reload the file list tree so that the new file shows up, and select it.
             self.load_pack_custom_lvls(self.lvls_path, lvl_file_name)
             # Load the newly created file into the editor.
-            self.on_select_file(lvl_file_name)
+            self.on_create_file(lvl_file_name, add_to_sequence)
 
         loaded_pack = self.get_loaded_pack()
         backup_dir = str(self.packs_path).split("Pack")[0] + "Backups/" + loaded_pack
@@ -457,8 +464,13 @@ class FilesTree(ttk.Frame):
             backup_dir,
             self.lvls_path,
             self.current_save_format,
+            self.has_sequence,
+            not self.in_arena_folder,
             on_created,
         )
+
+    def update_has_sequence(self, has_sequence):
+        self.has_sequence = has_sequence
 
     def reset_tree(self):
         for i in self.tree.get_children():

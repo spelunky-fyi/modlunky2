@@ -324,17 +324,19 @@ class MultiCanvasContainer(tk.Frame):
             for canvas in tab_of_canvases:
                 canvas.hide_room_lines(hide_room_lines)
 
-    def draw_background(self, theme, index=None):
+    def draw_background(self, theme, subtheme, index=None):
         if index is None:
             for tab_of_canvases in self.canvases:
                 for canvas in tab_of_canvases:
-                    canvas.draw_background(theme)
+                    canvas.draw_background(theme, subtheme)
         else:
-            self.canvases[index.tab_index][index.canvas_index].draw_background(theme)
+            self.canvases[index.tab_index][index.canvas_index].draw_background(
+                theme, subtheme
+            )
 
-    def draw_background_over_room(self, index, theme, row, col):
+    def draw_background_over_room(self, index, theme, subtheme, row, col):
         self.canvases[index.tab_index][index.canvas_index].draw_background_over_room(
-            theme, row, col
+            theme, subtheme, row, col
         )
 
     def draw_grid(self, width=None, index=None):

@@ -77,7 +77,22 @@ class SpelunkySpriteFetcher:
         return sheets, key_map
 
     # noinspection PyNoneFunctionAssignment
-    def get(self, name: str, biome: str = "cave") -> Optional[Image.Image]:
+    def get(
+        self,
+        name: str,
+        biome: str = "cave",
+        floor_biome: Optional[str] = None,
+        border_biome: Optional[str] = None,
+    ) -> Optional[Image.Image]:
+        if name == "floor" or name == "generic_floor":
+            if floor_biome is not None:
+                # Use floor biome for regular floors.
+                biome = floor_biome
+        elif name == "floor_hard":
+            if border_biome is not None:
+                # Use border biome for hard floors.
+                biome = border_biome
+
         # we are getting the right sprite sheet with the first `(name)` then getting the
         # image with the second `(name)` maybe using partials here would be more
         # pleasing?

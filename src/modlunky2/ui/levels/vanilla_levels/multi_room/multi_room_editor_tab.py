@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import math
 from PIL import Image, ImageTk
 import random
@@ -6,7 +7,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from modlunky2.config import Config
+from modlunky2.constants import BASE_DIR
 from modlunky2.levels.level_templates import TemplateSetting
+from modlunky2.ui.levels.shared.biomes import Biomes
 from modlunky2.ui.levels.shared.level_canvas import GridRoom
 from modlunky2.ui.levels.shared.multi_canvas_container import (
     MultiCanvasContainer,
@@ -30,6 +33,8 @@ from modlunky2.ui.levels.vanilla_levels.vanilla_types import (
     MatchedSetroomTemplate,
 )
 from modlunky2.ui.widgets import PopupWindow
+
+logger = logging.getLogger(__name__)
 
 
 class MultiRoomEditorTab(ttk.Frame):
@@ -57,6 +62,9 @@ class MultiRoomEditorTab(ttk.Frame):
         self.modlunky_config = modlunky_config
         self.texture_fetcher = texture_fetcher
         self.textures_dir = textures_dir
+
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(Image.open(image_path).resize((30, 30)))
 
         self.on_add_tilecode = on_add_tilecode
         self.on_delete_tilecode = on_delete_tilecode
@@ -174,7 +182,7 @@ class MultiRoomEditorTab(ttk.Frame):
 
         new_tile_image = ImageTk.PhotoImage(
             self.texture_fetcher.get_texture(
-                tile_name, self.lvl_biome, self.lvl, self.zoom_level
+                tile_name, self.lvl_biome, None, None, self.lvl, self.zoom_level
             )
         )
 
@@ -283,6 +291,10 @@ class MultiRoomEditorTab(ttk.Frame):
         self.zoom_level = zoom
         self.canvas.set_zoom(zoom)
         self.tile_image_map = {}
+        image_path = BASE_DIR / "static/images/help.png"
+        self.error_image = ImageTk.PhotoImage(
+            Image.open(image_path).resize((zoom, zoom))
+        )
         self.redraw()
 
     def __get_chunk_for_template_draw_item(
@@ -725,6 +737,8 @@ class MultiRoomEditorTab(ttk.Frame):
             suggestions,
             dependency_tiles,
             self.lvl_biome,
+            None,
+            None,
             self.lvl,
         )
 
@@ -906,8 +920,12 @@ class MultiRoomEditorTab(ttk.Frame):
                 width * 10, height * 8, CanvasIndex(1, map_index)
             )
 
-            self.canvas.draw_background(self.lvl_biome, CanvasIndex(0, map_index))
-            self.canvas.draw_background(self.lvl_biome, CanvasIndex(1, map_index))
+            self.canvas.draw_background(
+                Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(0, map_index)
+            )
+            self.canvas.draw_background(
+                Biomes.theme_for_biome(self.lvl_biome), None, CanvasIndex(1, map_index)
+            )
             self.canvas.draw_grid(index=CanvasIndex(0, map_index))
             self.canvas.draw_grid(index=CanvasIndex(1, map_index))
 
@@ -935,17 +953,25 @@ class MultiRoomEditorTab(ttk.Frame):
                 for row_index, room_row in enumerate(tile_codes):
                     if row_index + chunk_start_y >= height * 8:
                         continue
-                    for tile_index, tile in enumerate(room_row):
+                    for tile_index, tilecode in enumerate(room_row):
                         if tile_index + chunk_start_x >= width * 10:
                             continue
-                        tilecode = self.tile_palette_map[tile]
-                        tile_image = self.image_for_tile_code(tile)
-                        x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
-                            tile_image.width(),
-                            tile_image.height(),
-                            tilecode.name,
-                            self.zoom_level,
-                        )
+                        tile = self.tile_palette_map.get(tilecode)
+                        if tile:
+                            tile_image = self.image_for_tile_code(tilecode)
+                            x_offset, y_offset = self.texture_fetcher.adjust_texture_xy(
+                                tile_image.width(),
+                                tile_image.height(),
+                                tile.name,
+                                self.zoom_level,
+                            )
+                        else:
+                            logger.warning(
+                                "Tile code %s found in room, but does not map to a valid tile code.",
+                                tilecode,
+                            )
+                            tile_image = self.error_image
+                            x_offset, y_offset = 0, 0
                         self.canvas.replace_tile_at(
                             canvas_index,
                             row_index + chunk_start_y,
@@ -990,7 +1016,8 @@ class MultiRoomEditorTab(ttk.Frame):
                                 for c in range(template_draw_item.width_in_rooms):
                                     self.canvas.draw_background_over_room(
                                         CanvasIndex(backlayer_canvas, map_index),
-                                        self.lvl_biome,
+                                        Biomes.theme_for_biome(self.lvl_biome),
+                                        None,
                                         room_row_index + r,
                                         room_column_index + c,
                                     )
@@ -1001,13 +1028,15 @@ class MultiRoomEditorTab(ttk.Frame):
                         if template is None:
                             self.canvas.draw_background_over_room(
                                 CanvasIndex(0, map_index),
-                                self.lvl_biome,
+                                Biomes.theme_for_biome(self.lvl_biome),
+                                None,
                                 room_row_index,
                                 room_column_index,
                             )
                             self.canvas.draw_background_over_room(
                                 CanvasIndex(1, map_index),
-                                self.lvl_biome,
+                                Biomes.theme_for_biome(self.lvl_biome),
+                                None,
                                 room_row_index,
                                 room_column_index,
                             )
