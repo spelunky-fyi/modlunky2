@@ -107,6 +107,19 @@ class COTrackerModifiers(ttk.LabelFrame):
         )
         self.session_stats_checkbox.grid(row=0, column=3, pady=5, padx=5, sticky="w")
 
+        # Show header
+        self.show_header = tk.BooleanVar()
+        self.show_header.set(self.co_tracker_config.show_header)
+        self.header_checkbox = ttk.Checkbutton(
+            self,
+            text="Show Header",
+            variable=self.show_header,
+            onvalue=True,
+            offvalue=False,
+            command=self.toggle_show_header,
+        )
+        self.header_checkbox.grid(row=0, column=4, pady=5, padx=5, sticky="w")
+
     def update_theme_name_style(self, event=None):
         name_style = self.theme_name_style.get()
         self.co_tracker_config.theme_name_style = name_style
@@ -121,6 +134,10 @@ class COTrackerModifiers(ttk.LabelFrame):
 
     def toggle_show_session_stats(self):
         self.co_tracker_config.show_session_stats = self.show_session_stats.get()
+        self.parent.config_update_callback()
+
+    def toggle_show_header(self):
+        self.co_tracker_config.show_header = self.show_header.get()
         self.parent.config_update_callback()
 
 
@@ -259,11 +276,17 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
             max(map(len, theme_names.values())) if theme_names is not None else 0
         )
 
-        header = [" " * (max_theme_name_length + 1)] if theme_names is not None else []
-        if config.show_run_stats:
-            header.append(f"{'Run':^9}")
-        if config.show_session_stats:
-            header.append(f"{'Session':^9}")
+        if config.show_header:
+            header = (
+                [" " * (max_theme_name_length + 1)] if theme_names is not None else []
+            )
+            if config.show_run_stats:
+                header.append(f"{'Run':^9}")
+            if config.show_session_stats:
+                header.append(f"{'Session':^9}")
+            header_str = " ".join(header) + "\n"
+        else:
+            header_str = ""
 
         stats_lines = []
         for theme in self.THEMES.values():
@@ -276,7 +299,7 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
                 stats_line.append(self.get_stats_str(self.session_stats, theme))
             stats_lines.append(" ".join(stats_line))
 
-        return " ".join(header) + "\n" + "\n".join(stats_lines)
+        return header_str + "\n".join(stats_lines)
 
     def poll(self, proc: Spel2Process, config: COTrackerConfig) -> WindowData:
         game_state = proc.get_state()

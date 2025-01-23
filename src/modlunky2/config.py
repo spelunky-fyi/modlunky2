@@ -184,6 +184,7 @@ class COTrackerConfig(CommonTrackerConfig):
     theme_name_style: str = field(default="Full area names")
     show_run_stats: bool = field(default=True)
     show_session_stats: bool = field(default=True)
+    show_header: bool = field(default=True)
 
 
 @serialize(rename_all="kebabcase")
