@@ -180,6 +180,15 @@ class PacinoGolfTrackerConfig(CommonTrackerConfig):
 @serialize(rename_all="kebabcase")
 @deserialize(rename_all="kebabcase")
 @dataclass
+class COTrackerConfig(CommonTrackerConfig):
+    theme_name_style: str = field(default="Full area names")
+    show_run_stats: bool = field(default=True)
+    show_session_stats: bool = field(default=True)
+
+
+@serialize(rename_all="kebabcase")
+@deserialize(rename_all="kebabcase")
+@dataclass
 class TrackersConfig:
     category: CategoryTrackerConfig = field(default_factory=CategoryTrackerConfig)
     pacifist: PacifistTrackerConfig = field(default_factory=PacifistTrackerConfig)
@@ -188,6 +197,7 @@ class TrackersConfig:
     pacino_golf: PacinoGolfTrackerConfig = field(
         default_factory=PacinoGolfTrackerConfig
     )
+    co_tracker: COTrackerConfig = field(default_factory=COTrackerConfig)
 
 
 @serialize  # Note: these fields aren't renamed for historical reasons
