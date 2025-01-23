@@ -12,6 +12,7 @@ from modlunky2.mem.memrauder.dsl import (
     dc_struct,
     sc_int32,
     sc_uint32,
+    sc_uint64,
     sc_int8,
     sc_uint8,
 )
@@ -148,6 +149,11 @@ class Items:
 
 
 @dataclass(frozen=True)
+class ThemeInfo:
+    sub_theme_address: int = struct_field(0x10, sc_uint64)
+
+
+@dataclass(frozen=True)
 class State:
     screen_last: Screen = struct_field(0x08, sc_int32, default=Screen.LEVEL_TRANSITION)
     screen: Screen = struct_field(0x0C, sc_int32, default=Screen.LEVEL)
@@ -167,6 +173,9 @@ class State:
     world_next: int = struct_field(0x69, sc_uint8, default=1)
     level: int = struct_field(0x6A, sc_uint8, default=1)
     level_next: int = struct_field(0x6B, sc_uint8, default=2)
+    theme_info: Optional[ThemeInfo] = struct_field(
+        0x6C, pointer(dc_struct), default_factory=ThemeInfo
+    )
     theme: Theme = struct_field(0x74, sc_uint8, default=Theme.DWELLING)
     theme_next: Theme = struct_field(0x75, sc_uint8, default=Theme.DWELLING)
     win_state: WinState = struct_field(0x76, sc_int8, default=WinState.NO_WIN)
