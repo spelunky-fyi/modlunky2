@@ -1,7 +1,8 @@
 import logging
+from collections import Counter
+
 import tkinter as tk
 from tkinter import ttk
-
 from PIL import Image, ImageTk
 
 from modlunky2.config import Config, COTrackerConfig
@@ -220,8 +221,8 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
         self.world = 0
         self.level = 0
         self.get_theme_by_address = None
-        self.session_stats = {theme: 0 for theme in self.THEMES.values()}
-        self.run_stats = {theme: 0 for theme in self.THEMES.values()}
+        self.session_stats = Counter()
+        self.run_stats = Counter()
 
     def add_theme_to_stats(self, theme: Theme):
         """
@@ -257,13 +258,13 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
         return get_theme_by_address
 
     @staticmethod
-    def get_stats_str(theme_count: dict[Theme, int], theme: Theme) -> str:
+    def get_stats_str(theme_count: Counter[Theme, int], theme: Theme) -> str:
         """
         Returns a string of length 9 (unless the count has 3 digits or more)
         Example: " 2  (25%)"
         """
-        count = theme_count.get(theme, 0)
-        total_count = sum((count for count in theme_count.values()))
+        count = theme_count[theme]
+        total_count = theme_count.total()
         percentage_str = f"{f'({count/total_count if total_count > 0 else 0:.0%})':>6}"
         return f"{count:>2} {percentage_str}"
 
@@ -329,7 +330,7 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
             if (
                 world == game_state.world_start and level == game_state.level_start
             ) or game_state.theme == Theme.BASE_CAMP:
-                self.run_stats = {theme: 0 for theme in self.THEMES.values()}
+                self.run_stats.clear()
 
         label = self.get_display_str(config)
         return WindowData(label)
