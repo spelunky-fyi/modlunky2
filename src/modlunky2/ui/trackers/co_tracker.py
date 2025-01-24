@@ -122,6 +122,7 @@ class COTrackerModifiers(ttk.LabelFrame):
         self.header_checkbox.grid(row=0, column=4, pady=5, padx=5, sticky="w")
 
     def update_theme_name_style(self, event=None):
+        # pylint: disable=unused-argument
         name_style = self.theme_name_style.get()
         self.co_tracker_config.theme_name_style = name_style
         self.co_tracker_config.theme_names = self.THEME_NAME_STYLES.get(
