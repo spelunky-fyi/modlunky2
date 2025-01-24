@@ -204,7 +204,18 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.initialize()
+        self.world = 0
+        self.level = 0
+        self.get_theme_by_address = None
+        self.session_stats = Counter()
+        self.run_stats = Counter()
+
+    def initialize(self):
+        self.world = 0
+        self.level = 0
+        self.get_theme_by_address = None
+        self.session_stats = Counter()
+        self.run_stats = Counter()
 
     THEMES = {
         2: Theme.DWELLING,
@@ -216,13 +227,6 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
         9: Theme.NEO_BABYLON,
         10: Theme.SUNKEN_CITY,
     }
-
-    def initialize(self):
-        self.world = 0
-        self.level = 0
-        self.get_theme_by_address = None
-        self.session_stats = Counter()
-        self.run_stats = Counter()
 
     def add_theme_to_stats(self, theme: Theme):
         """
