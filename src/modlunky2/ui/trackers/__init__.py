@@ -10,6 +10,7 @@ from .pacifist import PacifistButtons
 from .timer import TimerButtons
 from .gem import GemButtons
 from .pacino_golf_tracker import PacinoGolfButtons
+from .co_tracker import COTrackerButtons
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class TrackersFrame(ttk.LabelFrame):
         self.add_button(TimerButtons(self, self.ml_config))
         self.add_button(GemButtons(self, self.ml_config))
         self.add_button(PacinoGolfButtons(self, self.ml_config))
+        self.add_button(COTrackerButtons(self, self.ml_config))
 
         self.rowconfigure(self.button_index, weight=1)
 
