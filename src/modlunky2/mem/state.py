@@ -150,7 +150,7 @@ class Items:
 
 @dataclass(frozen=True)
 class ThemeInfo:
-    sub_theme_address: int = struct_field(0x10, sc_uint64)
+    sub_theme_address: int = struct_field(0x10, sc_uint64, default=0)
 
 
 @dataclass(frozen=True)
