@@ -320,7 +320,7 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
             self.level = level
 
             # If CO, increment theme counter
-            if game_state.theme == Theme.COSMIC_OCEAN:
+            if game_state.theme == Theme.COSMIC_OCEAN and level < 99:
                 sub_theme = self.get_theme_by_address(
                     game_state.theme_info.sub_theme_address
                 )
