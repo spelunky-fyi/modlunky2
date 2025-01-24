@@ -263,7 +263,7 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
         return get_theme_by_address
 
     @staticmethod
-    def get_stats_str(theme_count: Counter[Theme], theme: Theme) -> str:
+    def get_stats_str(theme_count: Counter, theme: Theme) -> str:
         """
         Returns a string of length 9 (unless the count has 3 digits or more)
         Example: " 2  (25%)"
