@@ -126,6 +126,9 @@ class SaveFormats:
                 or name == ""
                 or template_format == "setroom{y}-{x}"
                 or template_format == "setroom{x}-{y}"
+                or "{x}" not in template_format
+                or "{y}" not in template_format
+                or "{}" in template_format
             ):
                 return
             save_format = CustomLevelSaveFormat(

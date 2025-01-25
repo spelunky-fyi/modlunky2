@@ -640,8 +640,11 @@ class CustomLevelEditor(ttk.Frame):
             + SaveFormats.base_save_formats()
         )
         for save_format in valid_save_formats:
+            template_format = save_format.room_template_format
+            if "{x}" not in template_format or "{y}" not in template_format or "{}" in template_format:
+                continue
             for template in level.level_templates.all():
-                if template.name == save_format.room_template_format.format(y=0, x=0):
+                if template.name == template_format.format(y=0, x=0):
                     return save_format
 
     # Shows an error dialog when attempting to open a level using an unrecognized template format.
