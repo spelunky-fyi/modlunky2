@@ -31,9 +31,11 @@ jobs:
           components: clippy rustfmt
       - name: cargo fmt
         run: cargo fmt --all --check
-      - name: cargo check
-        run: cargo check --workspace --all-targets --exclude launcher --locked
-      - name: cargo clippy
-        run: cargo clippy --workspace --all-targets --exclude launcher --locked -- -D warnings
-      - name: cargo test
-        run: cargo test --workspace --all-targets --exclude launcher --locked
+      # None of these are being used right now and the rust conversion is stalled so
+      # don't bother running these for now.
+      # - name: cargo check
+      #   run: cargo check --workspace --all-targets --exclude launcher --locked
+      # - name: cargo clippy
+      #   run: cargo clippy --workspace --all-targets --exclude launcher --locked -- -D warnings
+      # - name: cargo test
+      #   run: cargo test --workspace --all-targets --exclude launcher --locked
