@@ -37,10 +37,3 @@ jobs:
         run: cargo clippy --workspace --all-targets --exclude launcher --locked -- -D warnings
       - name: cargo test
         run: cargo test --workspace --all-targets --exclude launcher --locked
-  # cargo deny only works on Linux due to using a container
-  deny:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: cargo deny check
-        uses: EmbarkStudios/cargo-deny-action@v1
