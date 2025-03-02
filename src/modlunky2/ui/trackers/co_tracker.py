@@ -269,7 +269,9 @@ class COTracker(Tracker[COTrackerConfig, WindowData]):
         Example: " 2  (25%)"
         """
         count = theme_count[theme]
-        total_count = theme_count.total()
+        total_count = sum(
+            theme_count.values()
+        )  # theme_count.total() only works in python 3.10+
         percentage_str = f"{f'({count/total_count if total_count > 0 else 0:.0%})':>6}"
         return f"{count:>2} {percentage_str}"
 
