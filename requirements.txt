@@ -12,6 +12,6 @@ requests==2.31.0
 sfyi-fsb5==1.1
 starlette==0.31.1
 typing_extensions==4.8.0
-websockets==11.0.3
+websockets==12.0
 zstandard==0.21.0
 python-tkdnd==0.2.1
