@@ -21,6 +21,14 @@ from modlunky2.api import SpelunkyFYIClient
 logger = logging.getLogger(__name__)
 
 
+# Names of save files to preserve during pack updates.
+PRESERVE_SAVE_FILENAMES = [
+    "savegame.sav",
+    "save.dat",
+    "save_main.dat"
+]
+
+
 class SourceChooser(ttk.Frame):
     def __init__(self, parent, modlunky_config: Config):
         super().__init__(parent)
@@ -434,14 +442,21 @@ def install_fyi_mod(
     pack_dir = packs_dir / f"fyi.{install_code}"
     tmp_dir = packs_dir / f"temp_fyi.{install_code}"
 
-    save_path = pack_dir / "save.dat"
-    tmp_save_path = tmp_dir / "save.dat"
+    save_paths = []
+
     if pack_dir.exists():
-        if save_path.exists():
-            # Store the save file into a temp directory while downloading the new version.
-            tmp_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(save_path, tmp_save_path)
         if overwrite:
+            # Store save files into a temp directory while installing the new version.
+            for save_filename in PRESERVE_SAVE_FILENAMES:
+                save_path = pack_dir / save_filename
+                if save_path.exists():
+                    if len(save_paths) == 0:
+                        logger.debug("Creating temp directory to preserve save files: %s", tmp_dir)
+                        tmp_dir.mkdir(parents=True, exist_ok=True)
+                    logger.debug("Preserving save file: %s", save_path)
+                    tmp_save_path = tmp_dir / save_filename
+                    shutil.copy(save_path, tmp_save_path)
+                    save_paths.append((save_path, tmp_save_path))
             logger.debug("Removing previous installation at %s", pack_dir)
             shutil.rmtree(pack_dir)
         else:
@@ -490,9 +505,12 @@ def install_fyi_mod(
 
     write_manifest(pack_metadata_dir, mod_details, mod_file, logo_name)
 
-    if tmp_save_path.exists():
-        # If there was a save file, move it into the new pack.
-        shutil.copy(tmp_save_path, save_path)
+    if len(save_paths) > 0:
+        for save_path, tmp_save_path in save_paths:
+            # Move the save file into the new pack.
+            logger.debug("Restoring save file: %s", save_path)
+            shutil.copy(tmp_save_path, save_path)
+        logger.debug("Removing temp directory: %s", tmp_dir)
         shutil.rmtree(tmp_dir)
 
     logger.info("Finished installing %s to %s", install_code, pack_dir)
