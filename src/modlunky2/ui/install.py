@@ -22,11 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # Names of save files to preserve during pack updates.
-PRESERVE_SAVE_FILENAMES = [
-    "savegame.sav",
-    "save.dat",
-    "save_main.dat"
-]
+PRESERVE_SAVE_FILENAMES = ["savegame.sav", "save.dat", "save_main.dat"]
 
 
 class SourceChooser(ttk.Frame):
@@ -451,7 +447,10 @@ def install_fyi_mod(
                 save_path = pack_dir / save_filename
                 if save_path.exists():
                     if len(save_paths) == 0:
-                        logger.debug("Creating temp directory to preserve save files: %s", tmp_dir)
+                        logger.debug(
+                            "Creating temp directory to preserve save files: %s",
+                            tmp_dir,
+                        )
                         tmp_dir.mkdir(parents=True, exist_ok=True)
                     logger.debug("Preserving save file: %s", save_path)
                     tmp_save_path = tmp_dir / save_filename
