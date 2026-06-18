@@ -1,5 +1,6 @@
 from pytest import mark
 
+from modlunky2.config import SaveableCategory
 from modlunky2.ui.trackers.label import Label, RunLabel
 
 # This file only contains tests for the correspondence between MossRanking
@@ -46,7 +47,6 @@ MAIN_SCORE_CATEGORIES = [
 
 MISC_CATEGORIES = [
     ({Label.EGGPLANT, Label.COSMIC_OCEAN}, "Eggplant Cosmic Ocean%"),
-    ({Label.TRUE_CROWN, Label.COSMIC_OCEAN}, "True Crown Cosmic Ocean%"),
     (
         {Label.EGGPLANT, Label.TRUE_CROWN, Label.COSMIC_OCEAN},
         "Eggplant True Crown Cosmic Ocean%",
@@ -396,3 +396,28 @@ def test_label_matches_mossranking(labels, expected):
     run_label = RunLabel(labels)
     actual = run_label.text(hide_early=False, excluded_categories=set())
     assert actual == expected
+
+
+TRUE_CROWN_CATEGORIES = [
+    (
+        {Label.SCORE, Label.TRUE_CROWN, Label.COSMIC_OCEAN},
+        "Score",
+        "True Crown Cosmic Ocean%",
+    ),
+    (
+        {Label.SCORE, Label.TRUE_CROWN, Label.ANY},
+        "Score",
+        "Any%",
+    ),
+]
+
+
+@mark.parametrize("labels,expected,expected_no_score", TRUE_CROWN_CATEGORIES)
+def test_tc_label_matches_mossranking(labels, expected, expected_no_score):
+    run_label = RunLabel(labels)
+    actual = run_label.text(hide_early=False, excluded_categories=set())
+    actual_no_score = run_label.text(
+        hide_early=False, excluded_categories={SaveableCategory.SCORE}
+    )
+    assert actual == expected
+    assert actual_no_score == expected_no_score

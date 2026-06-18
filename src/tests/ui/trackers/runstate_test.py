@@ -222,8 +222,7 @@ def test_no_tp(
     [
         ({EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False),
         ({EntityType.ITEM_PLASMACANNON}, True),
-        ({EntityType.ITEM_PLASMACANNON}, True),
-        (set(), False),
+        ({EntityType.ITEM_POWERUP_TRUECROWN}, True),
         (set(), False),
     ],
 )
@@ -233,6 +232,23 @@ def test_score_items(item_set, expected_score):
 
     is_score = Label.SCORE in run_state.run_label._set
     assert is_score == expected_score
+
+
+@pytest.mark.parametrize(
+    "item_set,expected_true_crown",
+    [
+        ({EntityType.ITEM_POWERUP_EGGPLANTCROWN}, False),
+        ({EntityType.ITEM_PLASMACANNON}, False),
+        ({EntityType.ITEM_POWERUP_TRUECROWN}, True),
+        (set(), False),
+    ],
+)
+def test_true_crown(item_set, expected_true_crown):
+    run_state = RunState()
+    run_state.update_true_crown(item_set)
+
+    is_true_crown = Label.TRUE_CROWN in run_state.run_label._set
+    assert is_true_crown == expected_true_crown
 
 
 @pytest.mark.parametrize(
