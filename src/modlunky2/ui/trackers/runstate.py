@@ -242,6 +242,10 @@ class RunState:
         else:
             self.run_label.discard(Label.EGGPLANT)
 
+    def update_true_crown(self, player_item_types):
+        if EntityType.ITEM_POWERUP_TRUECROWN in player_item_types:
+            self.run_label.add(Label.TRUE_CROWN)
+
     def update_low_cosmic(self):
         if self.cosmic_stepper.last_status.failed and self.mc_has_swung_mattock:
             self.fail_low()
@@ -733,6 +737,7 @@ class RunState:
         self.update_no_gold(run_recap_flags)
         self.update_no_tp(player, self.player_item_types, self.player_last_item_types)
         self.update_eggplant()
+        self.update_true_crown(self.player_item_types)
         self.update_low_cosmic()
 
         # Check Category Criteria
