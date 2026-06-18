@@ -125,6 +125,7 @@ class SaveableCategory(Enum):
     NO = "No%"
     NO_GOLD = "No Gold"
     PACIFIST = "Pacifist"
+    SCORE = "Score"
 
 
 @serialize(rename_all="kebabcase")
@@ -291,7 +292,7 @@ class Config:
     @classmethod
     def from_path(
         cls,
-        config_path: Path = None,
+        config_path: Optional[Path] = None,
         exe_dir: Optional[Path] = None,
         launcher_exe: Optional[Path] = None,
     ):

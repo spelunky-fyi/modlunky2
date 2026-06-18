@@ -56,6 +56,7 @@ class Label(Enum):
             SaveableCategory.NO: Label.NO,
             SaveableCategory.NO_GOLD: Label.NO_GOLD,
             SaveableCategory.PACIFIST: Label.PACIFIST,
+            SaveableCategory.SCORE: Label.SCORE,
         }
 
         return mapping[sc]
@@ -89,6 +90,7 @@ class RunLabel:
     _ONLY_SHOW_WITH[Label.JUNGLE_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.VOLCANA_TEMPLE] |= {Label.LOW}
     _ONLY_SHOW_WITH[Label.NO_CO] |= {Label.SCORE}
+    _ONLY_SHOW_WITH[Label.TRUE_CROWN] |= {Label.COSMIC_OCEAN}
 
     # Some labels hide others, e.g. we want "Low%" not "Low% Any".
     # If the key is present, hide all of the labels in the value
