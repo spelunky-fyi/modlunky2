@@ -52,3 +52,48 @@ jobs:
           name: modlunky2.exe
           path: target/release/modlunky2.exe
           retention-days: 5
+
+  # Bumping the version in src/modlunky2/VERSION on main creates a draft
+  # release tagged ${VERSION} with the exe built above attached.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Check for version bump
+        id: bump
+        run: |
+          base="${{ github.event.before }}"
+          # Fall back to the parent commit if `before` is missing/unknown
+          # (e.g. first push to the branch, which reports an all-zero SHA).
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            base="${{ github.sha }}^"
+          fi
+          if git diff --name-only "$base" "${{ github.sha }}" | grep -qx 'src/modlunky2/VERSION'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Read version
+        if: steps.bump.outputs.changed == 'true'
+        id: version
+        run: echo "version=$(tr -d '[:space:]' < src/modlunky2/VERSION)" >> "$GITHUB_OUTPUT"
+      - name: Download exe artifact
+        if: steps.bump.outputs.changed == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: modlunky2.exe
+      - name: Create draft release
+        if: steps.bump.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: modlunky2.exe
