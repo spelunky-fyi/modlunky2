@@ -22,9 +22,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test stable + MSRV. MSRV mirrors the workspace Cargo.toml's
-        # rust-version field.
-        rust: [stable, "1.94"]
+        # Pin to the toolchain we build and ship with (MSRV, mirroring the
+        # workspace Cargo.toml's rust-version). We deliberately don't run on
+        # floating `stable`: `clippy -- -D warnings` there breaks CI whenever a
+        # new clippy release adds lints, which is churn unrelated to our code.
+        rust: ["1.94"]
 
     steps:
       - uses: actions/checkout@v4
