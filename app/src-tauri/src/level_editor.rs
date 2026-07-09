@@ -1042,6 +1042,9 @@ pub struct EditorPrefs {
     pub show_tile_grid: bool,
     /// Default visibility of the room-boundary grid overlay.
     pub show_room_grid: bool,
+    /// Collapse the palette to icon-only swatches that wrap into a dense grid.
+    /// Shared across both editors; reorder mode ignores it and stays expanded.
+    pub palette_dense: bool,
 }
 
 impl Default for EditorPrefs {
@@ -1052,6 +1055,7 @@ impl Default for EditorPrefs {
             clamp_render: false,
             show_tile_grid: true,
             show_room_grid: true,
+            palette_dense: false,
         }
     }
 }

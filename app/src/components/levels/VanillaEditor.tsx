@@ -2464,6 +2464,10 @@ export function VanillaEditor({ pack }: Props) {
             conflictCount={conflicts.length}
             onOpenConflicts={() => setConflictsOpen(true)}
             helpMode="vanilla"
+            dense={prefs.paletteDense}
+            onToggleDense={() =>
+              updatePrefs({ paletteDense: !prefs.paletteDense })
+            }
           />
         </aside>
       </div>

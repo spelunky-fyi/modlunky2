@@ -50,6 +50,9 @@ interface Props {
    *  can live in a shared header (alongside conflicts / help). Omit
    *  to keep the palette in normal pick-tile mode. */
   reorderMode?: boolean;
+  /** Icon-only, wrapping layout for a dense palette. The caller already
+   *  suppresses this while reordering, so drag/delete keep the full rows. */
+  dense?: boolean;
 }
 
 interface SwatchStyle {
@@ -68,6 +71,7 @@ export function LevelPalette({
   onReorder,
   onDelete,
   reorderMode: reorderModeProp,
+  dense = false,
 }: Props) {
   const [filter, setFilter] = useState("");
   // Reorder mode is now driven externally so the toggle icon can live
@@ -187,7 +191,7 @@ export function LevelPalette({
             items={items}
             strategy={verticalListSortingStrategy}
           >
-            <ul className="level-palette">
+            <ul className={`level-palette${dense ? " dense" : ""}`}>
               {palette.map((entry) => {
                 if (
                   filterLower &&

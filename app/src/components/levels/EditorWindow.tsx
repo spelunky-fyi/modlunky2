@@ -1272,6 +1272,10 @@ function CustomEditor({ pack }: { pack: string }) {
             onSelectSecondary={setSecondary}
             onOpenAddTile={level ? () => setAddOpen(true) : undefined}
             helpMode="custom"
+            dense={prefs.paletteDense}
+            onToggleDense={() =>
+              updatePrefs({ paletteDense: !prefs.paletteDense })
+            }
           />
         </aside>
       </div>

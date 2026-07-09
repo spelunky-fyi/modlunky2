@@ -742,6 +742,9 @@ export interface EditorPrefs {
   clampRender: boolean;
   showTileGrid: boolean;
   showRoomGrid: boolean;
+  /** Collapse the palette to icon-only swatches that wrap into a dense grid.
+   *  Shared by both editors; reorder mode ignores it and stays expanded. */
+  paletteDense: boolean;
 }
 
 export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
@@ -750,6 +753,7 @@ export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
   clampRender: false,
   showTileGrid: true,
   showRoomGrid: true,
+  paletteDense: false,
 };
 
 /** Canvas zoom limits (scale factor), mirrored from TileCanvas so the

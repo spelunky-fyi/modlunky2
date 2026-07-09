@@ -13,7 +13,13 @@
 // Custom doesn't need, so keeping handleAddTile in the parent avoids a
 // forked add path in shared code.
 
-import { AlertTriangle, HelpCircle, Lock, LockOpen } from "lucide-react";
+import {
+  AlertTriangle,
+  HelpCircle,
+  LayoutGrid,
+  Lock,
+  LockOpen,
+} from "lucide-react";
 import type {
   CustomLevelPaletteEntry,
   EditorAtlas,
@@ -49,6 +55,10 @@ interface Props {
   /** Which set of help text the modal should show. Vanilla mentions
    *  sibling / parent files; custom omits that section entirely. */
   helpMode: "vanilla" | "custom";
+  /** Persistent icon-only palette toggle (shared editor pref). Reorder mode
+   *  ignores it and keeps the full rows so drag/delete stay usable. */
+  dense: boolean;
+  onToggleDense: () => void;
 }
 
 export function PaletteSidebarSection({
@@ -64,6 +74,8 @@ export function PaletteSidebarSection({
   conflictCount,
   onOpenConflicts,
   helpMode,
+  dense,
+  onToggleDense,
 }: Props) {
   const {
     swatchOverrides,
@@ -94,6 +106,20 @@ export function PaletteSidebarSection({
               <AlertTriangle size={14} aria-hidden="true" />
             </button>
           )}
+          <button
+            type="button"
+            className={`editor-window-palette-icon${dense ? " active" : ""}`}
+            onClick={onToggleDense}
+            onMouseDown={(e) => e.preventDefault()}
+            title={
+              dense
+                ? "Expanded palette (show names)"
+                : "Compact palette (icon-only, wraps)"
+            }
+            aria-pressed={dense}
+          >
+            <LayoutGrid size={14} aria-hidden="true" />
+          </button>
           <button
             type="button"
             className={`editor-window-palette-icon${paletteReorderMode ? " active" : ""}`}
@@ -141,6 +167,7 @@ export function PaletteSidebarSection({
         onReorder={handleReorder}
         onDelete={handlePaletteDelete}
         reorderMode={paletteReorderMode}
+        dense={dense && !paletteReorderMode}
       />
       {paletteHelpOpen && (
         <PaletteHelpModal

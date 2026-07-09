@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Level editor: a compact palette toggle in the palette header collapses it to
+  icon-only swatches that wrap into a dense grid. It's a persistent setting
+  shared by both editors; reorder mode ignores it and stays expanded so
+  drag-and-drop and delete keep their full rows.
+
 ## [2.0.10] - 2026-07-09
 
 ### Added

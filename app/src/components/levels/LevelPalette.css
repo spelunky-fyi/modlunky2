@@ -45,6 +45,29 @@
   overflow-y: auto;
 }
 
+/* Dense (icon-only) palette: swatches wrap into a grid instead of stacking as
+   full-width rows. The caller only sets this outside reorder mode, so the drag
+   handles / delete buttons never coexist with it. */
+.level-palette.dense {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+}
+
+.level-palette.dense .level-palette-item {
+  width: auto;
+  padding: 3px;
+}
+
+.level-palette.dense .level-palette-swatch-btn {
+  gap: 0;
+}
+
+.level-palette.dense .level-palette-meta {
+  display: none;
+}
+
 .level-palette-add-button {
   padding: 8px;
   border: 1px dashed rgba(255, 255, 255, 0.12);
