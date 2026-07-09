@@ -1,22 +1,51 @@
 [workspace]
 members = [
-    "src/launcher",
-    # None of these are being used right now and the rust conversion is stalled so
-    # don't bother running these for now.
-    # "src/libs/ml2_assets",
-    # "src/libs/ml2_chacha",
-    # "src/libs/ml2_entity_data",
-    # "src/libs/ml2_mods",
-    # "src/libs/ml2_net",
-    # "src/libs/ml2_types",
-    # "src/libs/ml2_vorbis_header",
-    # "src/tauri/src-tauri",
+    "app/src-tauri",
+    "crates/ml2_mods",
+    "crates/ml2_net",
+    "crates/ml2_assets",
+    "crates/ml2_chacha",
+    "crates/ml2_entity_data",
+    "crates/ml2_levels",
+    "crates/ml2_mem",
+    "crates/ml2_mem_derive",
+    "crates/ml2_sprites",
+    "crates/ml2_trackers",
+    "crates/ml2_types",
+    "crates/ml2_vorbis_header",
 ]
 resolver = "2"
 
-# Note: src-tauri doesn't use these
+# Note: src-tauri doesn't inherit these
 [workspace.package]
 license = "Apache-2.0"
-edition = "2021"
-# Reminder: update workflows when increasing
-rust-version = "1.70"
+edition = "2024"
+# Reminder: update workflows when increasing.
+rust-version = "1.94"
+
+# Optimize third-party dependencies in dev builds. Image decode + resize
+# (image crate) and PNG compression (flate2) run 10-20x slower in a plain
+# debug build; opt-level 1 gives them near-release perf while keeping app
+# code fully debuggable. This is a load-time win for the level editor's
+# atlas builder in particular.
+[profile.dev.package."*"]
+opt-level = 1
+
+# Release-profile size tweaks for the shipped Tauri exe. Every one of
+# these knobs costs build time in exchange for a smaller binary, which
+# matters for self-update download size (the app is one exe, so the
+# whole thing lands on every update).
+#  - `strip = true`  drop debug symbols; usually the biggest single win.
+#  - `lto = "fat"`   whole-program dead code elimination across all
+#                    crates in the workspace.
+#  - `codegen-units = 1`
+#                    single codegen unit per crate lets the optimizer
+#                    see everything; needed for lto to reach maximum.
+#  - `panic = "abort"`
+#                    no unwinding tables. We don't catch_unwind
+#                    anywhere in the app, so an unwinder is dead weight.
+[profile.release]
+strip = true
+lto = "fat"
+codegen-units = 1
+panic = "abort"

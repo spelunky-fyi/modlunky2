@@ -1,0 +1,611 @@
+/* Flush-to-edge scroll container. Padding lives on .trackers-grid
+   below so the scrollbar sits at the true right edge of the tab
+   pane (which is `.tab-content-fullbleed` for this tab), not
+   sandwiched between the sidebar and a dead padding strip. */
+.trackers-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Kill the WebView2 rubber-band bounce when scrolling past the
+     ends; `contain` also stops the scroll from chaining to any
+     parent. */
+  overscroll-behavior: contain;
+}
+
+.trackers-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  padding: 20px 24px;
+  align-items: start;
+}
+
+/* Below a threshold the fixed 320px sidebar starts crowding the
+   tracker cards; stack it under instead so both stay usable at
+   compact window sizes. */
+@media (max-width: 720px) {
+  .trackers-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.trackers-main {
+  min-width: 0;
+}
+
+/* --- Left column: tracker cards -------------------------------- */
+
+.tracker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Card is a flex column so an expandable settings block can slot in
+   underneath the main row without disturbing the icon/body/actions
+   grid. */
+.tracker-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 100ms, background 100ms;
+}
+
+.tracker-card-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Inline settings body, sits under the tracker name in the card
+   body column. No divider or vertical stack, per-tracker settings
+   are supposed to be quick knobs, not a form. */
+.tracker-card-settings {
+  margin-top: 4px;
+}
+
+/* Horizontal row: toggle + separator + category checkboxes.
+   Wraps at narrow widths so it never overflows the card. */
+.category-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  font-size: 12.5px;
+}
+
+.category-settings-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tracker-card:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.tracker-card.disabled {
+  opacity: 0.55;
+}
+
+.tracker-card-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.tracker-card-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tracker-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tracker-card-name {
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tracker-card-soon {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tracker-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tracker-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 80ms, border-color 80ms, color 80ms;
+}
+
+.tracker-action:hover:not(:disabled) {
+  background: rgba(240, 165, 90, 0.12);
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.tracker-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Right sidebar --------------------------------------------- */
+
+.trackers-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.sidebar-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar-card-title-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-card-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.sidebar-card-help:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--fg);
+}
+
+.sidebar-card-help.active {
+  background: rgba(240, 165, 90, 0.15);
+  border-color: rgba(240, 165, 90, 0.4);
+  color: var(--accent);
+}
+
+.sidebar-card-info {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sidebar-card-info p {
+  margin: 0;
+}
+
+.sidebar-card-info code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.sidebar-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+/* --- Help modal (card `?` button opens this) ------------------------------ */
+
+.tracker-help {
+  color: var(--fg);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.tracker-help p {
+  margin: 0 0 12px;
+  color: var(--fg-muted);
+}
+
+.tracker-help h3 {
+  margin: 20px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.tracker-help ol,
+.tracker-help ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: var(--fg-muted);
+}
+
+.tracker-help li {
+  margin-bottom: 6px;
+}
+
+.tracker-help strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.tracker-help code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.tracker-help-code {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  overflow-x: auto;
+}
+
+.tracker-help-code code {
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+/* Muted cross-reference / aside callout inside a help doc. */
+.tracker-help-note {
+  margin: 4px 0 0;
+  padding: 9px 12px;
+  border-left: 2px solid rgba(240, 165, 90, 0.5);
+  border-radius: 0 6px 6px 0;
+  background: rgba(240, 165, 90, 0.07);
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+/* No trailing gap under the last block so the modal padding reads evenly. */
+.tracker-help > *:last-child,
+.tracker-help-doc > *:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-status.ok {
+  color: #7ce38b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-status.err {
+  color: #ff8a80;
+  font-size: 12px;
+}
+
+/* Diagnostics card: header behaves like a disclosure button so the
+   whole title strip is clickable, not just the chevron. */
+.diagnostics-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+/* When the disclosure is open, drop the toggle's own bottom padding
+   so the body's top padding controls the gap; otherwise the two
+   stack visually. */
+.sidebar-card:has(.diagnostics-toggle[aria-expanded="true"])
+  .diagnostics-toggle {
+  padding-bottom: 0;
+}
+
+.diagnostics-toggle:hover {
+  color: var(--accent-bright);
+}
+
+.diagnostics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.diagnostics-table th,
+.diagnostics-table td {
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.diagnostics-table th {
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.diagnostics-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.diagnostics-table td.yes {
+  color: #7ce38b;
+}
+
+.diagnostics-table td.no {
+  color: var(--fg-muted);
+}
+
+.sidebar-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #ffbf85;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.sidebar-url:hover {
+  text-decoration: underline;
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.sidebar-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-input {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.sidebar-input:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.sidebar-action {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.sidebar-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sidebar-check input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Vertical stack of per-tracker enable checkboxes under the File
+   sidebar card. Overrides .sidebar-check's inline-flex so each row
+   sits on its own line without needing separate wrappers. */
+.sidebar-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-check-list .sidebar-check {
+  display: flex;
+}
+
+/* Read-only path display + action buttons. Value truncates so a
+   long absolute path doesn't blow out the sidebar column. */
+.path-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.path-picker-value {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.path-picker-value.placeholder {
+  color: var(--fg-muted);
+  font-style: italic;
+  direction: ltr;
+}
+
+.path-picker-btn {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.sidebar-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sidebar-hint code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.sidebar-note {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.color-preset-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-preset {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 80ms, transform 80ms;
+}
+
+.color-preset:hover {
+  transform: translateY(-1px);
+}
+
+.color-preset.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(240, 165, 90, 0.35);
+}
+
+.color-hex-input {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+/* Native color-picker widget. Browsers render this as a tiny swatch
+ * that opens the system picker on click. Trim its padding + border
+ * to match the preset swatches so the row reads as one control. */
+.color-picker-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.color-picker-swatch::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-picker-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.font-size-field {
+  flex: 0 0 80px;
+}

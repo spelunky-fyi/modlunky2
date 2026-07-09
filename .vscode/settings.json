@@ -2,20 +2,8 @@
   // General
   "editor.formatOnSave": true,
   "files.eol": "\n",
-  // UI
-  "svelte.plugin.typescript.enable": true,
-  "eslint.validate": ["javascript", "typescript", "svelte"],
+  "eslint.validate": ["javascript", "typescript"],
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  // Python
-  "python.formatting.provider": "none",
-  "python.linting.pylintEnabled": true,
-  "python.linting.pylintArgs": ["--disable=R,C"],
-  "python.testing.pytestArgs": ["src/"],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true,
-  "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
   }
 }

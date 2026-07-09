@@ -1,0 +1,68 @@
+# Ignore list for `cargo audit`.
+#
+# Every entry here is a RUSTSEC advisory that we've decided cannot be
+# closed from our side today. Each block explains *why*, if the reason
+# stops applying (e.g. an upstream ships a fix), re-run `cargo audit`
+# without the ignore and see if the finding drops off naturally.
+#
+# The rule is: if it's reachable from the shipped Windows binary AND
+# we can fix it, we fix it, we do not ignore it. Everything below is
+# either not-in-our-binary or blocked on someone else.
+
+[advisories]
+ignore = [
+    # ---------------------------------------------------------------
+    # Linux-only GTK3 bindings. Pulled in by `arboard` (the clipboard
+    # crate tauri-plugin-clipboard-manager depends on) as unix-target
+    # deps. On our Windows-only build these never link into the exe;
+    # the gtk-rs team has stopped maintaining the GTK3 bindings but
+    # tauri still lists them in its Linux path. Wait for tauri to
+    # migrate off GTK3 or drop Linux support entirely.
+    "RUSTSEC-2024-0411", # gdkwayland-sys
+    "RUSTSEC-2024-0412", # gdk
+    "RUSTSEC-2024-0413", # atk
+    "RUSTSEC-2024-0414", # gdkx11-sys
+    "RUSTSEC-2024-0415", # gtk
+    "RUSTSEC-2024-0416", # atk-sys
+    "RUSTSEC-2024-0417", # gdkx11
+    "RUSTSEC-2024-0418", # gdk-sys
+    "RUSTSEC-2024-0419", # gtk3-macros
+    "RUSTSEC-2024-0420", # gtk-sys
+    "RUSTSEC-2024-0429", # glib unsound VariantStrIter
+
+    # quick-xml 0.39 vulns: pulled via wayland-scanner -> wayland-* ->
+    # wl-clipboard-rs -> arboard, i.e. the Linux clipboard path only.
+    # Our Windows binary uses quick-xml 0.41 (via tauri-utils/plist)
+    # which is already past the fix.
+    "RUSTSEC-2026-0194", # quick-xml quadratic attribute check
+    "RUSTSEC-2026-0195", # quick-xml unbounded namespace allocation
+
+    # ---------------------------------------------------------------
+    # Wait-for-upstream unmaintained transitives. Real code paths, no
+    # replacement in our tree, but the crate we depend on directly
+    # hasn't bumped past them yet.
+
+    # via ab_glyph 0.2.32 -> owned_ttf_parser 0.25.1. ab_glyph is our
+    # font rasterizer for the level-editor tile label overlay.
+    "RUSTSEC-2026-0192", # ttf-parser unmaintained
+
+    # via ml2_assets -> riff-io 0.2 (RIFF chunk parser for soundbanks).
+    # riff-io 0.2 pins memmap2 = "^0.6". Bumping means forking riff-io
+    # or rewriting the (small) soundbank reader on plain std::io. Not
+    # worth it until the unsound path is shown to be reachable with
+    # controlled input.
+    "RUSTSEC-2026-0186", # memmap2 unchecked pointer offset
+
+    # ---------------------------------------------------------------
+    # Ubiquitous legacy transitives with no clean replacement. Pulled
+    # in by many crates across the ecosystem (proc-macro helpers,
+    # unicode tables, ancient build utils). Nothing to swap for.
+    "RUSTSEC-2024-0370", # proc-macro-error 1.0.4
+    "RUSTSEC-2024-0436", # paste 1.0.15
+    "RUSTSEC-2025-0075", # unic-char-range
+    "RUSTSEC-2025-0080", # unic-common
+    "RUSTSEC-2025-0081", # unic-char-property
+    "RUSTSEC-2025-0098", # unic-ucd-version
+    "RUSTSEC-2025-0100", # unic-ucd-ident
+    "RUSTSEC-2025-0121", # gcc 0.3.55
+]

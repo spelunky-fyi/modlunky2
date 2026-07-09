@@ -1,0 +1,5 @@
+error: MemEnum only supports #[repr(iN)] / #[repr(uN)], got `C`
+ --> tests/ui/memenum_unsupported_repr.rs:9:6
+  |
+9 | enum ReprC {
+  |      ^^^^^

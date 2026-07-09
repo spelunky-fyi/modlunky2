@@ -1,0 +1,118 @@
+name: Build and release
+
+# Runs on every push / PR to main. On a main push where the Tauri app's
+# version bumped, cuts a draft GitHub release with the built exe attached
+# so the maintainer just has to click "Publish".
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+
+jobs:
+  build:
+    # Skip Dependabot's automated dep-bump PRs. Every one of them would
+    # burn a ~10-min Windows release build, and they can't merge without
+    # a maintainer's manual approval anyway; run CI when the human
+    # actually promotes them.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Cache Cargo's build products across runs so the ~10-min release
+      # LTO build shrinks to a few minutes on incremental changes.
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            app/src-tauri
+
+      - name: Cache npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install npm deps
+        working-directory: app
+        run: npm ci
+
+      - name: Build release exe
+        run: node scripts/build-release.mjs
+
+      - name: Upload exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modlunky2.exe
+          path: release/modlunky2.exe
+          retention-days: 14
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Auto-draft only fires when the version field in tauri.conf.json
+      # actually changed vs the parent commit. Diffing the file alone
+      # would false-fire on unrelated config edits (permission changes,
+      # window size tweaks) which would then try to re-tag an existing
+      # version and fail.
+      - name: Detect version bump
+        id: bump
+        run: |
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            base="${{ github.sha }}^"
+          fi
+          conf="app/src-tauri/tauri.conf.json"
+          prev=$(git show "$base:$conf" 2>/dev/null | node -e "let s=''; process.stdin.on('data',d=>s+=d); process.stdin.on('end',()=>{try{console.log(JSON.parse(s).version)}catch{console.log('')}})" || echo "")
+          cur=$(node -e "console.log(require('./$conf').version)")
+          echo "prev=$prev"
+          echo "cur=$cur"
+          if [ -n "$cur" ] && [ "$prev" != "$cur" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$cur" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download exe artifact
+        if: steps.bump.outputs.changed == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: modlunky2.exe
+
+      - name: Create draft release
+        if: steps.bump.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          # Tag matches the exact version from tauri.conf.json.
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: ${{ steps.bump.outputs.version }}
+          generate_release_notes: true
+          files: modlunky2.exe

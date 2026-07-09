@@ -1,4 +1,0 @@
-include requirements.txt
-include LICENSE
-include src/modlunky2/VERSION
-recursive-include src/modlunky2/static *

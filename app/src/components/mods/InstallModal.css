@@ -1,0 +1,78 @@
+.install-source-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.install-source-tab {
+  flex: 1;
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.install-source-tab:hover {
+  color: var(--fg);
+}
+
+.install-source-tab.active {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.install-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.install-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.install-label {
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.install-hint {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.install-file-row {
+  display: flex;
+  gap: 8px;
+}
+
+.install-file-row input {
+  flex: 1;
+}
+
+.install-form input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--fg);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.install-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

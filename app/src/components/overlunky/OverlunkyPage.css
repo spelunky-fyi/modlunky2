@@ -1,0 +1,269 @@
+.ovl-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
+/* --- Header ----------------------------------------------------------- */
+
+.ovl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.ovl-header-copy {
+  min-width: 0;
+}
+
+.ovl-title {
+  margin: 0 0 4px 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.ovl-subtitle {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 640px;
+}
+
+.ovl-docs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Body scroll region ---------------------------------------------- */
+
+.ovl-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+/* --- Install strip --------------------------------------------------- */
+
+.ovl-install {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  transition: border-color 120ms;
+}
+
+.ovl-install-installed {
+  border-color: rgba(180, 220, 140, 0.35);
+}
+
+.ovl-install-missing {
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.ovl-install-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg-muted);
+}
+
+.ovl-install-installed .ovl-install-glyph {
+  background: rgba(180, 220, 140, 0.14);
+  color: #d8f0b0;
+}
+
+.ovl-install-missing .ovl-install-glyph {
+  background: rgba(240, 165, 90, 0.15);
+  color: #ffcd99;
+}
+
+.ovl-install-copy {
+  min-width: 0;
+}
+
+.ovl-install-label {
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ovl-install-hint {
+  margin-top: 2px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.ovl-install-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ovl-install-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ovl-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: color 80ms;
+}
+
+.ovl-inline-btn:hover:not(:disabled) {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+.ovl-inline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Launch cards ---------------------------------------------------- */
+
+.ovl-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ovl-launch-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 22px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  transition:
+    border-color 120ms,
+    background 120ms,
+    transform 120ms;
+}
+
+.ovl-launch-card:has(.ovl-launch-btn:not(:disabled):hover) {
+  border-color: rgba(240, 165, 90, 0.35);
+  background: rgba(240, 165, 90, 0.05);
+}
+
+.ovl-launch-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(240, 165, 90, 0.14);
+  color: #ffcd99;
+  margin-bottom: 4px;
+}
+
+.ovl-launch-title {
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ovl-launch-hint {
+  flex: 1;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.ovl-launch-btn {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.ovl-footnote {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* --- Progress -------------------------------------------------------- */
+
+.ovl-progress {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ovl-progress-track {
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ovl-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 120ms ease-out;
+}
+
+.ovl-progress-fill-indeterminate {
+  width: 40%;
+  animation: ovl-progress-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes ovl-progress-sweep {
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+
+.ovl-progress-label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}

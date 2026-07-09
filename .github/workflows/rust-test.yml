@@ -1,41 +1,51 @@
-name: Rust testing
+name: Rust checks
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "**/*.md"
   pull_request:
     branches:
       - main
     paths-ignore:
-      - "src/modlunky2/**"
-      - "src/tests/**"
-      - "requirements*.txt"
+      - "**/*.md"
 
 jobs:
-  build:
-    name: "Rust ${{matrix.rust}}"
+  checks:
+    name: "Rust ${{ matrix.rust }}"
+    # Skip Dependabot's automated dep-bump PRs. They can't merge without
+    # maintainer approval anyway; run CI when the human promotes them.
+    if: github.actor != 'dependabot[bot]'
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        # Test stable and MSRV
-        rust: [stable, "1.70"]
+        # Test stable + MSRV. MSRV mirrors the workspace Cargo.toml's
+        # rust-version field.
+        rust: [stable, "1.94"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{matrix.rust}}
+          toolchain: ${{ matrix.rust }}
           components: clippy rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
       - name: cargo fmt
         run: cargo fmt --all --check
-      # None of these are being used right now and the rust conversion is stalled so
-      # don't bother running these for now.
-      # - name: cargo check
-      #   run: cargo check --workspace --all-targets --exclude launcher --locked
-      # - name: cargo clippy
-      #   run: cargo clippy --workspace --all-targets --exclude launcher --locked -- -D warnings
-      # - name: cargo test
-      #   run: cargo test --workspace --all-targets --exclude launcher --locked
+
+      - name: cargo check
+        run: cargo check --workspace --all-targets --locked
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace --all-targets --locked

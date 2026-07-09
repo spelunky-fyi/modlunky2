@@ -1,10 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: daily
-    open-pull-requests-limit: 10
   - package-ecosystem: cargo
     directory: "/"
     schedule:
@@ -16,7 +11,7 @@ updates:
           - "tauri"
           - "tauri-build"
   - package-ecosystem: npm
-    directory: "/src/tauri/"
+    directory: "/app/"
     schedule:
       interval: daily
     open-pull-requests-limit: 10

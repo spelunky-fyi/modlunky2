@@ -1,0 +1,323 @@
+.editor-bottombar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  row-gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 12px;
+  min-height: 36px;
+}
+
+/* Room-settings section always lives on its own line ABOVE the zoom /
+ * grid / layer / link row. `order: -1` puts it first in the wrap; the
+ * `flex-basis: 100%` forces the wrap so the second row starts fresh. */
+.editor-bottombar-settings {
+  order: -1;
+  flex-basis: 100%;
+  margin-left: 0;
+  padding-left: 0;
+  padding-bottom: 6px;
+  border-left: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.editor-bottombar-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editor-bottombar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.editor-bottombar-icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.editor-bottombar-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.editor-bottombar-zoom-input {
+  width: 64px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  text-align: center;
+}
+
+.editor-bottombar-zoom-input:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.editor-bottombar-zoom-input:disabled {
+  opacity: 0.4;
+}
+
+.editor-bottombar-fit {
+  margin-left: 4px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.editor-bottombar-fit:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+}
+
+.editor-bottombar-fit:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.editor-bottombar-grid-wrap {
+  position: relative;
+  margin-left: 8px;
+}
+
+.editor-bottombar-grid-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.editor-bottombar-grid-btn:hover,
+.editor-bottombar-grid-btn.active {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg);
+}
+
+.editor-bottombar-grid-menu {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-bottombar-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--fg);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.editor-bottombar-grid-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.editor-bottombar-grid-item input[type="checkbox"] {
+  accent-color: #f0a55a;
+  margin: 0;
+  cursor: pointer;
+}
+
+.editor-bottombar-layerview {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  margin-left: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.editor-bottombar-layerview-btn {
+  padding: 3px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 80ms, color 80ms;
+}
+
+.editor-bottombar-layerview-btn:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editor-bottombar-layerview-btn.active {
+  background: rgba(240, 165, 90, 0.2);
+  color: #fff2e0;
+  box-shadow: inset 0 0 0 1px rgba(240, 165, 90, 0.45);
+}
+
+.editor-bottombar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.editor-bottombar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg);
+}
+
+.editor-bottombar-link.active {
+  background: rgba(240, 165, 90, 0.2);
+  border-color: rgba(240, 165, 90, 0.5);
+  color: #fff2e0;
+}
+
+/* Right-aligned "pack settings" slot at the end of the top row. Divider
+ * on the left visually separates these from paint tools/grid/layers. */
+.editor-bottombar-trailing {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.editor-bottombar-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.editor-bottombar-action:hover:not(:disabled) {
+  background: rgba(240, 165, 90, 0.14);
+  color: #fff2e0;
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.editor-bottombar-action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-bottombar-action-dirty {
+  color: #ffb266;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.editor-bottombar-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editor-bottombar-settings-label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.editor-bottombar-settings-dirty {
+  margin-left: 4px;
+  color: #ffb266;
+  font-weight: 700;
+}
+
+.editor-bottombar-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: background 80ms, color 80ms;
+}
+
+.editor-bottombar-setting:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+}
+
+.editor-bottombar-setting.on {
+  color: var(--fg);
+}
+
+.editor-bottombar-setting input[type="checkbox"] {
+  accent-color: #f0a55a;
+  cursor: pointer;
+  margin: 0;
+}

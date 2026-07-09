@@ -1,0 +1,5 @@
+error: MemEnum requires an explicit #[repr(iN)] or #[repr(uN)]
+ --> tests/ui/memenum_no_repr.rs:9:6
+  |
+9 | enum NoRepr {
+  |      ^^^^^^

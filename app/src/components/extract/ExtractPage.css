@@ -1,0 +1,416 @@
+.extract-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
+/* --- Header ---------------------------------------------------------- */
+
+.extract-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.extract-header-copy {
+  min-width: 0;
+}
+
+.extract-title {
+  margin: 0 0 4px 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.extract-subtitle {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 640px;
+}
+
+.extract-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Two-column body ------------------------------------------------- */
+
+.extract-body {
+  display: grid;
+  grid-template-columns: minmax(360px, 2fr) minmax(320px, 3fr);
+  gap: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.extract-config {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.extract-status {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* --- Sections -------------------------------------------------------- */
+
+.extract-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.extract-section-title {
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.extract-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.extract-exe-row {
+  display: flex;
+  gap: 8px;
+}
+
+.extract-exe-row select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.extract-exe-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* --- Option rows ----------------------------------------------------- */
+
+.extract-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition:
+    background 80ms,
+    border-color 80ms;
+}
+
+.extract-option:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.extract-option.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.extract-option input[type="checkbox"] {
+  margin: 3px 0 0 0;
+  cursor: inherit;
+  accent-color: var(--accent);
+}
+
+.extract-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.extract-option-label {
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.extract-option-hint {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* --- Extract action button ------------------------------------------- */
+
+.extract-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.extract-run {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+.extract-spin {
+  animation: extract-spin 900ms linear infinite;
+}
+
+@keyframes extract-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Status panel: idle ---------------------------------------------- */
+
+.extract-status-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.extract-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-muted);
+}
+
+.extract-status-icon.idle {
+  background: rgba(106, 183, 255, 0.14);
+  color: #a8ccff;
+}
+
+.extract-status-heading {
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.extract-status-body {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+/* --- Status panel: phase list --------------------------------------- */
+
+.extract-phase-list {
+  list-style: none;
+  margin: 12px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.extract-phase-placeholder {
+  padding: 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.extract-phase {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.extract-phase-complete {
+  border-color: rgba(180, 220, 140, 0.24);
+  background: rgba(180, 220, 140, 0.06);
+}
+
+.extract-phase-running {
+  border-color: rgba(106, 183, 255, 0.32);
+  background: rgba(106, 183, 255, 0.08);
+}
+
+.extract-phase-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+.extract-phase-complete .extract-phase-glyph {
+  background: rgba(180, 220, 140, 0.2);
+  color: #d8f0b0;
+}
+
+.extract-phase-running .extract-phase-glyph {
+  background: rgba(106, 183, 255, 0.22);
+  color: #a8ccff;
+}
+
+.extract-phase-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.extract-phase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.extract-phase-label {
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.extract-phase-count {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.extract-phase-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.extract-phase-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 120ms linear;
+}
+
+.extract-phase-fill-indeterminate {
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    rgba(106, 183, 255, 0.15) 0%,
+    var(--accent) 50%,
+    rgba(106, 183, 255, 0.15) 100%
+  );
+  animation: extract-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes extract-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+/* --- Status panel: error -------------------------------------------- */
+
+.extract-status-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(235, 87, 87, 0.4);
+  border-radius: 8px;
+  background: rgba(235, 87, 87, 0.08);
+}
+
+.extract-status-error-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffb0b0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.extract-status-error-body {
+  margin: 0;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 5px;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* --- Narrow: stack the two columns ----------------------------------- */
+
+@media (max-width: 900px) {
+  .extract-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .extract-config,
+  .extract-status {
+    overflow-y: visible;
+  }
+}

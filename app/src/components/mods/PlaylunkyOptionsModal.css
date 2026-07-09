@@ -1,0 +1,95 @@
+.plo-hint {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.plo-form {
+  columns: 2;
+  column-gap: 24px;
+}
+
+.plo-section {
+  break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+.plo-section-full {
+  column-span: all;
+  break-before: column;
+  padding-top: 20px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.plo-section-title {
+  margin: 0 0 8px 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plo-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.plo-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.plo-number {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.plo-number input[type="number"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--fg);
+  font-size: 13px;
+  font-family: inherit;
+  width: 90px;
+  text-align: left;
+  align-self: flex-start;
+}
+
+.plo-number input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.plo-danger-hint {
+  margin: 0 0 4px 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.plo-danger-btn {
+  align-self: flex-start;
+  color: #eb5757;
+  border-color: rgba(235, 87, 87, 0.35);
+}
+
+.plo-danger-btn:hover:not(:disabled) {
+  background: rgba(235, 87, 87, 0.08);
+  border-color: #eb5757;
+}

@@ -1,0 +1,5 @@
+error: MemStruct only supports structs with named fields
+ --> tests/ui/memstruct_on_enum.rs:8:6
+  |
+8 | enum NotAStruct {
+  |      ^^^^^^^^^^

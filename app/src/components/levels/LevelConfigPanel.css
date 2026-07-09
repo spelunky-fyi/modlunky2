@@ -1,0 +1,261 @@
+.level-config {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px;
+  overflow-y: auto;
+  min-height: 0;
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.level-config-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.level-config-hint code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 11.5px;
+}
+
+.level-config-hint-inline {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.level-config-warn {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 178, 102, 0.12);
+  color: #ffcd99;
+  font-size: 11.5px;
+}
+
+.level-config-grid {
+  display: grid;
+  gap: 10px 12px;
+}
+
+.level-config-grid.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Theme row wraps: theme dropdown always visible, CO extras only when the
+ * user picks Cosmic Ocean. Auto-fit keeps things from getting cramped. */
+.level-config-grid.theme-row {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.level-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.level-config-field-inline {
+  flex: 1;
+}
+
+.level-config-label {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.level-config-field input[type="text"],
+.level-config-field input[type="number"],
+.level-config-field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+}
+
+/* Override the browser's default select chrome so the closed control
+ * matches the surrounding inputs (WebView2 renders the native arrow +
+ * grey background otherwise). Custom SVG arrow keeps the affordance. */
+.level-config-field select {
+  appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23c8c8c8' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+/* Style the option list so the dropdown itself reads dark instead of
+ * falling back to Windows grey. Support is patchy across engines but
+ * WebView2 honors these. */
+.level-config-field option {
+  background: #171b20;
+  color: var(--fg);
+}
+
+.level-config-field input:focus,
+.level-config-field select:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.level-config-field select:disabled,
+.level-config-field input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.level-config-readonly {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--fg-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+  user-select: text;
+}
+
+/* Convert-on-save note in the save format section. Uses the same warm
+ * tone as the dirty pip so users read it as "there's a change queued." */
+.level-config-convert-note {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(255, 178, 102, 0.12);
+  color: #ffcd99;
+}
+
+.level-config-convert-note code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  color: #ffe6c9;
+}
+
+.level-config-hint-inline code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--fg);
+}
+
+.level-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* The section-dividers read as vertical rhythm between sections; on the
+ * first section they'd render as a stray hr at the top of the panel. */
+.level-config > .level-config-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.level-config-section-title {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* --- Grid resize row ---------------------------------------------------- */
+
+.level-config-resize {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.level-config-resize-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* --- Loop mode segmented control --------------------------------------- */
+
+.level-config-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  width: fit-content;
+}
+
+.level-config-segment-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 80ms, color 80ms;
+}
+
+.level-config-segment-btn:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.level-config-segment-btn.active {
+  background: rgba(240, 165, 90, 0.22);
+  color: #fff2e0;
+  box-shadow: inset 0 0 0 1px rgba(240, 165, 90, 0.45);
+}
+
+/* --- Advanced flag checkboxes ------------------------------------------ */
+
+.level-config-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.level-config-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  color: var(--fg);
+  font-size: 12.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.level-config-flag input[type="checkbox"] {
+  accent-color: #f0a55a;
+  cursor: pointer;
+  margin: 0;
+}

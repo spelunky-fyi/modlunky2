@@ -1,0 +1,89 @@
+.kbd-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kbd-modal-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.kbd-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px 24px;
+}
+
+.kbd-modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kbd-modal-group-title {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kbd-modal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kbd-modal-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.kbd-modal-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.kbd-modal-key-frag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.kbd-modal-plus {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.kbd-modal-key {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.kbd-modal-desc {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}

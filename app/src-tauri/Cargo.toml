@@ -1,0 +1,59 @@
+[package]
+name = "modlunky2-app"
+version = "2.0.10"
+edition = "2024"
+
+[lib]
+name = "modlunky2_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-window-state = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tokio-graceful-shutdown = "0.19"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+directories = "6"
+base64 = "0.22"
+image = "0.25"
+ab_glyph = "0.2"
+fontdb = { version = "0.23", default-features = false, features = ["fs", "std", "memmap"] }
+reqwest = { version = "0.13", features = ["json", "stream"] }
+zip = "8"
+futures-util = "0.3"
+rust-ini = "0.21"
+shell-words = "1"
+mslnk = "0.1"
+rand = "0.10"
+
+ml2_mods = { path = "../../crates/ml2_mods" }
+ml2_net = { path = "../../crates/ml2_net" }
+ml2_assets = { path = "../../crates/ml2_assets" }
+ml2_sprites = { path = "../../crates/ml2_sprites" }
+ml2_levels = { path = "../../crates/ml2_levels" }
+ml2_mem = { path = "../../crates/ml2_mem" }
+ml2_trackers = { path = "../../crates/ml2_trackers" }
+
+# Trackers server + OBS WebSocket.
+axum = { version = "0.8", features = ["ws"] }
+include_dir = "0.7"
+mime_guess = "2"
+url = "2"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+] }

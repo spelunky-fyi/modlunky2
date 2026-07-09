@@ -1,0 +1,661 @@
+.cc {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg, #14161a);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.cc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.cc-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cc-title-scope {
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.cc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.cc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cc-btn:hover:not(:disabled) {
+  border-color: rgba(240, 165, 90, 0.5);
+}
+
+.cc-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cc-status {
+  padding: 24px 18px;
+  color: var(--fg-muted);
+}
+
+.cc-status-sm {
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+.cc-error {
+  margin: 12px 18px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #e06a6a;
+  background: rgba(224, 106, 106, 0.12);
+  color: #ffbcbc;
+}
+
+.cc-section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+}
+
+.cc-section-sub {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.cc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+/* --- Slot card ----------------------------------------------------------- */
+
+.cc-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cc-slot.modded {
+  border-color: rgba(240, 165, 90, 0.35);
+  background: rgba(240, 165, 90, 0.05);
+}
+
+.cc-slot-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-slot-meta {
+  min-width: 0;
+}
+
+.cc-slot-name {
+  font-weight: 600;
+}
+
+.cc-slot-color {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.cc-occupant,
+.cc-potential {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.cc-potential {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cc-potential.inactive {
+  opacity: 0.72;
+}
+
+.cc-occupant-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cc-occupant-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-occupant-sub {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-vanilla-note {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-slot-note {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.cc-conflict {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #f0b45a;
+}
+
+/* --- Previews ------------------------------------------------------------ */
+
+.cc-preview {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.cc-preview-ph {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.03) 6px,
+    rgba(255, 255, 255, 0.06) 6px,
+    rgba(255, 255, 255, 0.06) 12px
+  );
+}
+
+/* Vanilla portraits match the mod-character preview size (base .cc-preview);
+   the `small` variant (.cc-preview-sm) still shrinks them inside menus. */
+
+.cc-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.cc-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cc-link-btn:hover {
+  color: var(--fg);
+}
+
+.cc-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-align: center;
+  padding: 2px;
+  word-break: break-all;
+}
+
+/* --- Badges -------------------------------------------------------------- */
+
+.cc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.cc-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-muted);
+}
+
+.cc-badge.full {
+  border-color: rgba(120, 180, 240, 0.5);
+  color: #9cc7f0;
+}
+
+.cc-badge.warn {
+  border-color: rgba(240, 165, 90, 0.55);
+  background: rgba(240, 165, 90, 0.16);
+  color: #f2c79a;
+}
+
+.cc-badge.muted {
+  opacity: 0.7;
+}
+
+.cc-badge.conf-likely {
+  border-color: rgba(150, 200, 150, 0.5);
+  color: #a6d6a6;
+}
+
+.cc-badge.conf-possible {
+  color: var(--fg-muted);
+}
+
+/* --- Per-pack assignment table ------------------------------------------- */
+
+.cc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cc-table thead th {
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cc-th-actions {
+  text-align: right !important;
+}
+
+.cc-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.cc-row-disabled {
+  opacity: 0.6;
+}
+
+.cc-cell-char {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cc-files {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cc-file {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+  word-break: break-all;
+}
+
+.cc-file-related {
+  opacity: 0.7;
+}
+
+.cc-cell-slot {
+  width: 260px;
+}
+
+.cc-disabled-label {
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+.cc-cell-actions {
+  text-align: right;
+}
+
+.cc-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cc-action {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 80ms, border-color 80ms, color 80ms;
+}
+
+.cc-action:hover {
+  border-color: rgba(240, 165, 90, 0.5);
+  background: rgba(240, 165, 90, 0.1);
+}
+
+.cc-action.warn {
+  border-color: rgba(240, 165, 90, 0.55);
+  background: rgba(240, 165, 90, 0.16);
+  color: #f2c79a;
+}
+
+.cc-action.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg-muted);
+}
+
+.cc-action.ghost:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Custom slot picker -------------------------------------------------- */
+
+.cc-select {
+  position: relative;
+  width: 100%;
+}
+
+.cc-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cc-select-btn:hover,
+.cc-select-btn.open {
+  border-color: rgba(240, 165, 90, 0.5);
+}
+
+.cc-select-current {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-select-placeholder {
+  flex: 1;
+  color: var(--fg-muted);
+}
+
+.cc-select-caret {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+
+/* Popover menu rendered in a portal; position/size come from inline style
+   (see useAnchoredMenu) so it can't be clipped by the scroll container. */
+.cc-floating-menu {
+  z-index: 100;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: #1b1e24;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+}
+
+.cc-select-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cc-select-opt:hover:not(:disabled) {
+  background: rgba(240, 165, 90, 0.14);
+}
+
+.cc-select-opt.selected {
+  background: rgba(240, 165, 90, 0.1);
+}
+
+.cc-select-opt:disabled,
+.cc-select-opt.taken {
+  color: var(--fg-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+
+.cc-select-opt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-select-opt-slug {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--fg-muted);
+}
+
+.cc-select-opt-flag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--fg-muted);
+}
+
+.cc-preview-sm {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+}
+
+/* --- Global slot board --------------------------------------------------- */
+
+.cc-slotboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(470px, 1fr));
+  gap: 6px;
+}
+
+.cc-slotrow {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cc-slotrow.filled {
+  border-color: rgba(240, 165, 90, 0.3);
+  background: rgba(240, 165, 90, 0.04);
+}
+
+.cc-slotrow-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cc-slotrow-name {
+  font-weight: 600;
+}
+
+.cc-slotrow-slug {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.cc-slotrow-fill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cc-conflict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  color: #f0b45a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cc-slotrow-spacer {
+  width: 1px;
+}
+
+.cc-fillpicker {
+  position: relative;
+}
+
+.cc-menu-label {
+  padding: 8px 8px 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+}
+
+.cc-fillopt-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-fillopt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-fillopt-mod {
+  font-size: 11px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Possible-character triage ------------------------------------------- */
+
+.cc-triage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cc-triage-q {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+}
+
+.cc-triage-btns {
+  display: flex;
+  gap: 6px;
+}

@@ -1,0 +1,5 @@
+error: field `body` is missing #[offset(N)]
+  --> tests/ui/memstruct_missing_offset.rs:12:5
+   |
+12 |     body: u32,
+   |     ^^^^

@@ -1,0 +1,15 @@
+[package]
+name = "ml2_trackers"
+version = "0.1.0"
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ml2_mem = { path = "../ml2_mem" }
+bitflags = "2"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
+serde_json = "1"

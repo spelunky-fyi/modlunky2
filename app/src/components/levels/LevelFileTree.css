@@ -1,0 +1,205 @@
+.level-tree-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 6px;
+}
+
+.level-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 4px;
+  /* Header stays put above the scrolling file list. */
+  flex-shrink: 0;
+}
+
+.level-tree-title {
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.level-tree-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.level-tree-new:hover {
+  background: rgba(240, 165, 90, 0.14);
+  color: #fff2e0;
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.level-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Only the file list scrolls, so the header + "+ New" button stay
+     visible even in packs with a lot of levels. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.level-tree-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 80ms, border-color 80ms;
+}
+
+.level-tree-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.level-tree-item.selected {
+  background: rgba(240, 165, 90, 0.18);
+  border-color: rgba(240, 165, 90, 0.4);
+  color: #fff2e0;
+}
+
+.level-tree-status,
+.level-tree-error {
+  padding: 20px 8px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.level-tree-error {
+  color: #f2a2a2;
+}
+
+/* --- Create / rename modal form ------------------------------------------ */
+
+.level-tree-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.level-tree-form input[type="text"],
+.level-tree-form input[type="number"],
+.level-tree-form select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.level-tree-form input[type="text"]:focus,
+.level-tree-form input[type="number"]:focus,
+.level-tree-form select:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.level-tree-form-checkbox {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+  user-select: none;
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.level-tree-form-checkbox input[type="checkbox"] {
+  accent-color: #f0a55a;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.level-tree-form-checkbox > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.level-tree-form-hint-inline {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.level-tree-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.level-tree-form-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-tree-form-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.level-tree-form-hint-warn {
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(255, 178, 102, 0.14);
+  color: #ffcd99;
+}
+
+.level-tree-form-hint code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 11.5px;
+}
+
+.level-tree-form-error {
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(240, 90, 90, 0.15);
+  color: #ffb0b0;
+  font-size: 12.5px;
+}
+
+.level-tree-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 6px;
+}

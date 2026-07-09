@@ -1,0 +1,248 @@
+.logs-window {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.logs-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.logs-tabs {
+  display: flex;
+  gap: 4px;
+  align-self: stretch;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/*
+ * Active state: warm accent-tinted background + accent underline + brighter
+ * text. Deliberately louder than the top-nav tabs so at a glance it's clear
+ * which pane the toolbar controls are targeting.
+ */
+.logs-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+}
+
+.logs-tab:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.logs-tab.active {
+  color: var(--accent-bright);
+  background: rgba(240, 165, 90, 0.14);
+}
+
+.logs-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -11px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.logs-tab-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.logs-tab.active .logs-tab-count {
+  background: rgba(240, 165, 90, 0.2);
+  color: var(--accent-bright);
+}
+
+.logs-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.logs-search {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  max-width: 480px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg-muted);
+}
+
+.logs-search:focus-within {
+  border-color: var(--accent);
+}
+
+.logs-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg);
+  font-size: 12.5px;
+}
+
+.logs-level {
+  padding: 5px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.logs-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.logs-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 8px 14px;
+  background: var(--bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.logs-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.logs-row {
+  display: grid;
+  grid-template-columns: 92px 60px 200px minmax(0, 1fr);
+  gap: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  align-items: baseline;
+}
+
+.logs-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.logs-time {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.logs-badge {
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: center;
+  align-self: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg-muted);
+}
+
+.logs-badge-error,
+.logs-badge.logs-variant-error {
+  color: #ff9d9d;
+  background: rgba(235, 87, 87, 0.15);
+}
+.logs-badge-warn {
+  color: #ffcf85;
+  background: rgba(240, 165, 90, 0.15);
+}
+.logs-badge-info,
+.logs-badge.logs-variant-info {
+  color: #a6d8ff;
+  background: rgba(93, 168, 255, 0.15);
+}
+.logs-badge-debug {
+  color: #b2b8c4;
+}
+.logs-badge-trace {
+  color: rgba(255, 255, 255, 0.35);
+}
+.logs-badge.logs-variant-success {
+  color: #b7e6a6;
+  background: rgba(127, 208, 138, 0.15);
+}
+
+.logs-target {
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logs-message {
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.logs-level-error .logs-message {
+  color: #ff9d9d;
+}
+.logs-level-warn .logs-message {
+  color: #ffcf85;
+}
+
+.logs-variant-error .logs-message {
+  color: #ff9d9d;
+}
+.logs-variant-success .logs-message {
+  color: #b7e6a6;
+}

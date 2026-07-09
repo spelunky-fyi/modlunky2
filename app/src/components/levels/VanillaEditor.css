@@ -1,0 +1,459 @@
+/* --- File switcher (top of sidebar) --------------------------------------- */
+
+.vanilla-file-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms;
+}
+
+.vanilla-file-switcher:hover {
+  background: rgba(240, 165, 90, 0.08);
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.vanilla-file-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.vanilla-file-icon.inline {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.vanilla-file-switcher-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vanilla-file-switcher-name.muted {
+  color: var(--fg-muted);
+  font-family: inherit;
+}
+
+.vanilla-caret {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+  transform: rotate(-90deg);
+  transition: transform 120ms ease;
+}
+
+.vanilla-caret.open {
+  transform: rotate(0deg);
+}
+
+/* --- File picker modal ---------------------------------------------------- */
+
+.vanilla-file-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 400px;
+  max-height: 60vh;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.vanilla-file-search {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.vanilla-file-search:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.vanilla-file-picker-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.vanilla-file-picker-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.vanilla-file-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.vanilla-file-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 80ms, border-color 80ms;
+}
+
+.vanilla-file-group-header:hover {
+  background: rgba(240, 165, 90, 0.08);
+  border-color: rgba(240, 165, 90, 0.3);
+}
+
+.vanilla-file-group-header.open {
+  background: rgba(240, 165, 90, 0.06);
+}
+
+.vanilla-file-group-header .vanilla-caret {
+  color: var(--fg);
+}
+
+.vanilla-file-group-label {
+  flex: 1;
+  color: var(--fg-muted);
+}
+
+.vanilla-file-group-count {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.vanilla-file-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 8px 0;
+  /* Single column: an alphabetical list scans straight down with one vertical
+     scroll (the picker-groups container owns the scrolling). No column-major
+     ambiguity and no per-group horizontal scrollbars. */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vanilla-file-group-list > li {
+  min-width: 0;
+}
+
+.vanilla-file-group-empty {
+  padding: 8px 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.vanilla-file-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.vanilla-file-picker-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vanilla-file-picker-item.selected {
+  background: rgba(240, 165, 90, 0.18);
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.vanilla-file-picker-item.vanilla {
+  color: var(--fg-muted);
+}
+
+.vanilla-file-picker-item.vanilla:hover {
+  color: var(--fg);
+}
+
+/* Theme picker modal body. Reuses the shared `.level-tree-form` column
+   layout; just needs a touch of breathing room around the selects. */
+.vanilla-theme-panel select {
+  width: 100%;
+}
+
+/* Pack-only, non-vanilla levels. Tinted to echo the red lvl_custom icon
+   so they stand out from base-game files at a glance. */
+.vanilla-file-picker-item.custom {
+  color: #e08a7a;
+}
+
+.vanilla-file-picker-item.custom:hover {
+  color: #f0a090;
+}
+
+.vanilla-file-picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* --- Rooms tree ----------------------------------------------------------- */
+
+.vanilla-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  flex: 1;
+}
+
+.vanilla-rooms-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  /* Never a horizontal scrollbar; room rows wrap their badges instead. */
+  overflow-x: hidden;
+  min-height: 0;
+  flex: 1;
+}
+
+.vanilla-rooms-add {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+
+.vanilla-rooms-add:hover {
+  background: rgba(240, 165, 90, 0.08);
+  border-color: rgba(240, 165, 90, 0.4);
+  color: var(--fg);
+}
+
+.vanilla-rooms-template {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 80ms, border-color 80ms;
+}
+
+.vanilla-rooms-template:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vanilla-rooms-template.selected {
+  background: rgba(240, 165, 90, 0.18);
+  border-color: rgba(240, 165, 90, 0.4);
+}
+
+.vanilla-rooms-template.multi.selected {
+  /* multi templates highlight is a hint that a child is selected; keep
+     it a shade dimmer than the actual room row selection. */
+  background: rgba(240, 165, 90, 0.08);
+  border-color: transparent;
+}
+
+.vanilla-rooms-template.multi.selected .vanilla-rooms-name {
+  color: #ffbf85;
+}
+
+.vanilla-rooms-template.edited .vanilla-rooms-name::after {
+  content: "";
+}
+
+.vanilla-rooms-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  color: var(--fg-muted);
+}
+
+.vanilla-rooms-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vanilla-rooms-count {
+  padding: 0 4px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vanilla-rooms-children {
+  list-style: none;
+  margin: 0 0 2px 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vanilla-rooms-room {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* row-gap keeps wrapped badge lines tight; column-gap spaces items. */
+  gap: 3px 6px;
+  width: 100%;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fg-muted);
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Keep the "room N" label on one line so badges wrap below it rather than
+   pushing the label onto two lines (or forcing a horizontal scrollbar). */
+.vanilla-rooms-room-label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.vanilla-rooms-room:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.vanilla-rooms-room.selected {
+  background: rgba(240, 165, 90, 0.18);
+  border-color: rgba(240, 165, 90, 0.4);
+  color: var(--fg);
+}
+
+.vanilla-rooms-tag {
+  flex-shrink: 0;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fg-muted);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Per-tag colors. Dual keeps the original orange; the rest are tinted so
+   authors can tell room flags apart at a glance in the list. */
+.vanilla-rooms-tag-dual {
+  background: rgba(240, 160, 90, 0.16);
+  color: #ffb266;
+}
+
+.vanilla-rooms-tag-flip {
+  background: rgba(106, 170, 255, 0.16);
+  color: #86bdff;
+}
+
+.vanilla-rooms-tag-onlyflip {
+  background: rgba(180, 140, 255, 0.16);
+  color: #c1a2ff;
+}
+
+.vanilla-rooms-tag-ignore {
+  background: rgba(150, 150, 160, 0.16);
+  color: #a6adb8;
+}
+
+.vanilla-rooms-tag-rare {
+  background: rgba(240, 210, 90, 0.16);
+  color: #f2d45c;
+}
+
+.vanilla-rooms-tag-hard {
+  background: rgba(235, 100, 100, 0.16);
+  color: #f08a8a;
+}
+
+.vanilla-rooms-tag-liquid {
+  background: rgba(90, 205, 220, 0.16);
+  color: #6fd6e6;
+}
+
+.vanilla-rooms-tag-purge {
+  background: rgba(200, 120, 200, 0.16);
+  color: #d79ad7;
+}
+
+.vanilla-rooms-edited {
+  color: #ffb266;
+  font-weight: 700;
+}

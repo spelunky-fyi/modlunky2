@@ -1,0 +1,130 @@
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-label {
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.settings-hint {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.settings-path-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-path-row input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.settings-token-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.settings-token-row input {
+  flex: 1;
+}
+
+.settings-eye {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.settings-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.settings-linklike {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.settings-linklike:hover {
+  text-decoration: underline;
+}
+
+.settings-form input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--fg);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.settings-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0f1215;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.btn-danger {
+  background: #b04848;
+  color: #fff;
+  border-color: #b04848;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c85555;
+  border-color: #c85555;
+}

@@ -1,0 +1,98 @@
+.playlunky-pane {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.playlunky-config {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.playlunky-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.playlunky-version select {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.playlunky-version select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.playlunky-options-btn,
+.playlunky-manage-btn,
+.playlunky-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.playlunky-play-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.playlunky-speedrun {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.playlunky-speedrun input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.playlunky-speedrun input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.btn-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #0f1215;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-play:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn-play:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

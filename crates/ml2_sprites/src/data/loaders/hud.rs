@@ -1,0 +1,72 @@
+// Sprite loader/merger configs describing which chunks live in which
+// sheet, keyed by tile name for the sprite fetcher lookup.
+
+use crate::LoaderConfig;
+use crate::data::chunks;
+
+/// `HudSheet`. HUD / UI art (health, ammo, item pickups, kapala fill states,
+/// compass arrows, etc.) on `Data/Textures/hud.png`. Unlike the level-tile
+/// sheets this one is 32px per chunk.
+pub fn hud_sheet() -> LoaderConfig {
+    LoaderConfig {
+        name: "HudSheet".into(),
+        sprite_sheet_path: "Data/Textures/hud.png".into(),
+        chunk_size: 32,
+        chunk_map: chunks(&[
+            ("hud_bar_long", 0.0, 0.0, 8.0, 2.0),
+            ("hud_bar_medium", 9.0, 0.0, 15.0, 2.0),
+            ("hud_bar_short", 0.0, 2.0, 4.0, 4.0),
+            ("hud_bar_medium_alt", 10.0, 12.0, 16.0, 14.0),
+            ("hud_bar_huge", 0.0, 10.0, 14.0, 12.0),
+            ("hud_circular_gradient", 10.0, 14.0, 12.0, 16.0),
+            ("hud_ankh", 14.0, 0.0, 16.0, 2.0),
+            ("hud_bomb", 4.0, 2.0, 6.0, 4.0),
+            ("hud_rope", 6.0, 2.0, 8.0, 4.0),
+            ("hud_dollar", 8.0, 2.0, 10.0, 4.0),
+            ("hud_hour_glass", 10.0, 2.0, 12.0, 4.0),
+            ("hud_marker", 12.0, 2.0, 14.0, 4.0),
+            ("hud_skull", 14.0, 2.0, 16.0, 4.0),
+            ("hud_paste", 0.0, 4.0, 1.0, 5.0),
+            ("hud_compass", 1.0, 4.0, 2.0, 5.0),
+            ("hud_climbing_gloves", 2.0, 4.0, 3.0, 5.0),
+            ("hud_pitchers_mitt", 3.0, 4.0, 4.0, 5.0),
+            ("hud_spike_shoes", 4.0, 4.0, 5.0, 5.0),
+            ("hud_spring_shoes", 5.0, 4.0, 6.0, 5.0),
+            ("hud_parachute", 6.0, 4.0, 7.0, 5.0),
+            ("hud_speckles", 7.0, 4.0, 8.0, 5.0),
+            ("hud_skeleton_key", 0.0, 5.0, 1.0, 6.0),
+            ("hud_tablet_of_destiny", 1.0, 5.0, 2.0, 6.0),
+            ("hud_alien_compass", 2.0, 5.0, 3.0, 6.0),
+            ("hud_empty_1", 3.0, 5.0, 4.0, 6.0),
+            ("hud_empty_2", 4.0, 5.0, 5.0, 6.0),
+            ("hud_empty_3", 5.0, 5.0, 6.0, 6.0),
+            ("hud_empty_4", 6.0, 5.0, 7.0, 6.0),
+            ("hud_red_dot", 7.0, 5.0, 8.0, 6.0),
+            ("hud_udjat_eye_open", 8.0, 4.0, 10.0, 6.0),
+            ("hud_udjat_eye_close", 10.0, 4.0, 12.0, 6.0),
+            ("hud_crown", 12.0, 4.0, 14.0, 6.0),
+            ("hud_hedjet", 14.0, 4.0, 16.0, 6.0),
+            ("hud_heart", 0.0, 6.0, 2.0, 8.0),
+            ("hud_heart_poison", 2.0, 6.0, 4.0, 8.0),
+            ("hud_heart_curse", 4.0, 6.0, 6.0, 8.0),
+            ("hud_bones", 6.0, 6.0, 8.0, 8.0),
+            ("hud_eggplant_crown", 8.0, 6.0, 10.0, 8.0),
+            ("hud_the_true_crown", 10.0, 6.0, 12.0, 8.0),
+            ("hud_hourglass_large", 12.0, 6.0, 14.0, 8.0),
+            ("hud_hand_point_down", 14.0, 6.0, 16.0, 8.0),
+            ("hud_kapala_0", 0.0, 8.0, 2.0, 10.0),
+            ("hud_kapala_1", 2.0, 8.0, 4.0, 10.0),
+            ("hud_kapala_2", 4.0, 8.0, 6.0, 10.0),
+            ("hud_kapala_3", 6.0, 8.0, 8.0, 10.0),
+            ("hud_kapala_4", 8.0, 8.0, 10.0, 10.0),
+            ("hud_kapala_5", 10.0, 8.0, 12.0, 10.0),
+            ("hud_kapala_6", 12.0, 8.0, 14.0, 10.0),
+            ("hud_dollar_large", 14.0, 8.0, 16.0, 10.0),
+            ("hud_note", 14.0, 10.0, 16.0, 12.0),
+            ("hud_compass_arrow", 0.0, 12.0, 4.0, 16.0),
+            ("hud_alien_compass_arrow", 4.0, 12.0, 8.0, 16.0),
+            ("hud_marker_sapling", 12.0, 14.0, 14.0, 16.0),
+            ("hud_shopkeeper_angry", 14.0, 14.0, 16.0, 16.0),
+        ]),
+    }
+}

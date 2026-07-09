@@ -1,0 +1,5 @@
+error: MemEnum variant `B` needs an explicit discriminant (e.g. `= 3`)
+  --> tests/ui/memenum_missing_discriminant.rs:12:5
+   |
+12 |     B, // deliberately no `= <int>`
+   |     ^

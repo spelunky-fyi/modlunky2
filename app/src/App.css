@@ -1,0 +1,245 @@
+/* Bundled Fira Sans SemiBold. Used to be the tkinter app's title font
+ * for entity placeholder tiles; keep it available as the "Spelunky
+ * font" for anywhere in the UI that wants a chunkier, warmer look
+ * (splash headers, level editor palette, tracker default). */
+@font-face {
+  font-family: "Fira Sans";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/FiraSans-SemiBold.ttf") format("truetype");
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #1a1a1e;
+  --bg-elevated: #23232a;
+  --fg: #e6e6ea;
+  --fg-muted: #8a8a95;
+  /* Amber accent lifted from the tracker sidebar's card titles. Warm
+   * against the dark ground and reads clearly at small sizes; used
+   * for links, focus borders, active tab underlines, primary buttons,
+   * badge chrome. --accent-bright for hover/highlight states,
+   * --accent-fg for text on top of an accent-colored surface. */
+  --accent: #f0a55a;
+  --accent-bright: #ffbf85;
+  --accent-fg: #fff2e0;
+  --border: #34343d;
+  /* Head font available anywhere. Falls back to the system UI stack so
+   * no layout regression if the ttf ever fails to load. */
+  --font-display:
+    "Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  overscroll-behavior: none;
+}
+
+.tab-content {
+  overscroll-behavior: contain;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab-bar-tab {
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 12px 14px;
+  margin-bottom: -1px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    color 100ms ease,
+    border-color 100ms ease;
+}
+
+.tab-bar-tab:hover {
+  color: var(--fg);
+}
+
+.tab-bar-tab.active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+
+.tab-bar-divider {
+  flex: 1;
+}
+
+.app-version {
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Update to v0.10.5" pill in the tab-bar's right cluster. Amber to
+   match the accent + draw the eye without shouting. */
+.update-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  /* Breathing room from the version chip / folder menu to the right;
+     .tab-bar's gap of 2px is too tight for a colored pill. */
+  margin-right: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 165, 90, 0.35);
+  background: rgba(240, 165, 90, 0.12);
+  color: var(--accent-bright);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms;
+}
+
+.update-pill:hover:not(:disabled) {
+  background: rgba(240, 165, 90, 0.2);
+  border-color: rgba(240, 165, 90, 0.55);
+}
+
+.update-pill:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.update-pill.updating {
+  color: var(--fg-muted);
+}
+
+.fyi-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  user-select: none;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms,
+    filter 120ms;
+}
+
+.fyi-status:hover {
+  filter: brightness(1.15);
+}
+
+.fyi-status:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.fyi-status svg {
+  flex-shrink: 0;
+}
+
+.fyi-status-connected {
+  color: #7fd08a;
+  border-color: rgba(127, 208, 138, 0.35);
+  background: rgba(127, 208, 138, 0.12);
+}
+
+.fyi-status-connecting {
+  color: var(--accent-bright);
+  border-color: rgba(240, 165, 90, 0.35);
+  background: rgba(240, 165, 90, 0.1);
+}
+
+.fyi-status-connecting svg {
+  animation: fyi-status-pulse 1.2s ease-in-out infinite;
+}
+
+.fyi-status-disconnected {
+  color: var(--fg-muted);
+}
+
+@keyframes fyi-status-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.icon-button {
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-content-fullbleed {
+  padding: 0;
+}
+
+.page-placeholder {
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 640px;
+}
+
+.page-placeholder h1 {
+  color: var(--fg);
+  font-size: 20px;
+  margin: 0 0 12px 0;
+}

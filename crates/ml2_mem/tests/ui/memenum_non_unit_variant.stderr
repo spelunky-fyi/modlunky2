@@ -1,0 +1,5 @@
+error: MemEnum variant `B` must be a unit variant (no fields)
+  --> tests/ui/memenum_non_unit_variant.rs:11:5
+   |
+11 |     B(u8) = 1,
+   |     ^

@@ -1,0 +1,45 @@
+[package]
+name = "ml2_mods"
+version = "0.1.0"
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["serde"] }
+derive_more = { version = "2", features = ["debug"] }
+futures-util = "0.3"
+ml2_net = { path = "../ml2_net" }
+rand = "0.10"
+reqwest = { version = "0.13", default-features = false, features = [
+    "json",
+    "stream",
+    "native-tls",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tempfile = "3.6"
+thiserror = "2"
+tokio = { version = "1.32", features = [
+    "fs",
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "signal",
+    "sync",
+    "time",
+    "tracing",
+] }
+tokio-graceful-shutdown = "0.19"
+tokio-tungstenite = { version = "0.29", features = ["native-tls"] }
+tracing = "0.1"
+url = "2"
+zip = "8"
+
+[dev-dependencies]
+clap = { version = "4.4", features = ["derive"] }
+tracing-subscriber = "0.3"

@@ -1,0 +1,74 @@
+.create-pack-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.create-pack-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #c8d1d8;
+}
+
+.create-pack-field input[type="text"] {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: #171b20;
+  color: #dfe6ec;
+  font-size: 14px;
+}
+
+.create-pack-field input[type="text"]:focus {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.create-pack-hint {
+  color: #8f9aa2;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.create-pack-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  margin: 0;
+}
+
+.create-pack-mode legend {
+  padding: 0 6px;
+  color: #98a2ab;
+  font-size: 12px;
+}
+
+.create-pack-mode label {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: baseline;
+  gap: 6px 10px;
+  cursor: pointer;
+}
+
+.create-pack-mode label > input {
+  grid-row: 1 / span 2;
+  justify-self: center;
+  margin-top: 3px;
+}
+
+.create-pack-mode label > span:nth-of-type(1) {
+  font-size: 13.5px;
+  color: #dfe6ec;
+}
+
+.create-pack-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

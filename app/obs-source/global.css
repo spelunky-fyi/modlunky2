@@ -1,0 +1,160 @@
+/* Shared styles for every OBS-facing page. The tracker pages set a
+ * solid color as the "chroma key" background so users can chroma-key
+ * it out in OBS. Index / dev pages get a normal-looking dark theme.
+ *
+ * `body.tracker-page` = chroma-key mode; `body.index` = dev/setup mode.
+ */
+
+:root {
+  --chroma-key: #00ff00;
+  --tracker-text: #ffffff;
+  --tracker-shadow: rgba(0, 0, 0, 0.75);
+  /* Text styling knobs, set live from /api/window-config by the runtime.
+     Kept as variables so an OBS Custom CSS rule on `.tracker-content` still
+     wins by cascade order. */
+  --tracker-font-color: #ffffff;
+  --tracker-stroke-width: 0px;
+  --tracker-stroke-color: #000000;
+  --index-bg: #14181d;
+  --index-fg: #eaeef2;
+  --index-muted: #8b95a1;
+  --index-accent: #f0a55a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif;
+  /* Trackers have no scrollable content; block the rubber-band
+     bounce that fires when the tracker window is dragged. */
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+/* --- Tracker pages (OBS-facing) ------------------------------- */
+
+body.tracker-page {
+  background: var(--chroma-key);
+  color: var(--tracker-text);
+  min-height: 100vh;
+}
+
+/* Outer wrapper: our default look (font, size, padding). Everything here is
+   inheritable, so the inner `.tracker-content` picks it up. Font family/size
+   come from window-config variables (with a sensible fallback pre-load). */
+.tracker-text {
+  font-family: var(--tracker-font-family, inherit);
+  font-size: var(--tracker-font-size, clamp(28px, 8vw, 96px));
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  /* Inherit text-align from body (defaults to left) so OBS Custom CSS can
+     set it without being beaten by this more-specific rule. */
+  padding: 12px 24px;
+  line-height: 1.15;
+}
+
+/* Inner element that actually holds the tracker text. Color and the (uniform)
+   text outline are driven by window-config variables here so they apply to
+   every tracker the same way. An OBS Browser Source's Custom CSS can target
+   `.tracker-content` to override any of it by cascade order. */
+.tracker-content {
+  display: block;
+  color: var(--tracker-font-color, #fff);
+  -webkit-text-stroke: var(--tracker-stroke-width, 0px)
+    var(--tracker-stroke-color, #000);
+  paint-order: stroke fill;
+}
+
+/* Trackers that render newline-separated labels honor `\n`. Just the wrapping
+   behavior now; the legibility outline is a uniform window setting (text
+   stroke) rather than a shadow that only these trackers got. */
+.tracker-text-multiline {
+  white-space: pre-line;
+}
+
+.tracker-content.final-death {
+  color: #ff8b8b;
+}
+
+.tracker-content.disconnected {
+  color: #cbd3dd;
+  opacity: 0.7;
+}
+
+/* --- Index page (developer / setup) --------------------------- */
+
+body.index {
+  background: var(--index-bg);
+  color: var(--index-fg);
+  padding: 40px 32px;
+  min-height: 100vh;
+}
+
+.index-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.index h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: var(--index-accent);
+}
+
+.index .hint {
+  margin: 0 0 24px;
+  color: var(--index-muted);
+  line-height: 1.5;
+}
+
+.index .tracker-list {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.index .tracker-list li {
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.index .tracker-list a {
+  color: var(--index-accent);
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.index .tracker-list a:hover {
+  text-decoration: underline;
+}
+
+.index .tracker-desc {
+  color: var(--index-muted);
+  font-size: 12.5px;
+}
+
+.index .footer-note {
+  color: var(--index-muted);
+  font-size: 12px;
+  margin: 0;
+}
