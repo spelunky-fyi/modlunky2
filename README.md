@@ -1,6 +1,7 @@
 # modlunky2
 
-[![CI](https://github.com/spelunky-fyi/modlunky2/actions/workflows/build.yml/badge.svg)](https://github.com/spelunky-fyi/modlunky2/actions/workflows/build.yml)
+[![Build](https://github.com/spelunky-fyi/modlunky2/actions/workflows/build.yml/badge.svg)](https://github.com/spelunky-fyi/modlunky2/actions/workflows/build.yml)
+[![Rust Test](https://github.com/spelunky-fyi/modlunky2/actions/workflows/rust-test.yml/badge.svg)](https://github.com/spelunky-fyi/modlunky2/actions/workflows/rust-test.yml)
 [![Latest Release](https://img.shields.io/github/release/spelunky-fyi/modlunky2.svg?style=flat)](https://github.com/spelunky-fyi/modlunky2/releases/latest)
 ![Downloads](https://img.shields.io/github/downloads/spelunky-fyi/modlunky2/total.svg?style=flat)
 
@@ -36,12 +37,4 @@ The [documentation for contributing](CONTRIBUTING.md) explains
 
 Special thanks to the following contributors for helping make modlunky possible:
 
-- `garebear`
-- `SciresM`
-- `Cloppershy`
-- `iojonmbnmb`
-- `Dregu`
-- `JackHasWifi`
-- `mriswithe`
-- `Malacath`
-- `MauveAlert`
+`garebear`, `SciresM`, `Cloppershy`, `iojonmbnmb`, `Dregu`, `JackHasWifi`, `mriswithe`, `Malacath`, `MauveAlert`
