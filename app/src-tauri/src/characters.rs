@@ -368,10 +368,13 @@ fn rel_forward(root: &Path, path: &Path) -> Option<String> {
     Some(rel.to_string_lossy().replace('\\', "/"))
 }
 
+/// `(forward-slash rel path, absolute path)` pairs.
+type PathPairs = Vec<(String, PathBuf)>;
+
 /// Recursively collect every `.png` and every metadata sidecar (`.json` /
 /// `.name`) under `root`, each as a `(forward-slash rel path, absolute path)`
 /// pair. Iterative to avoid deep recursion on oddly-nested packs.
-fn crawl(root: &Path) -> (Vec<(String, PathBuf)>, Vec<(String, PathBuf)>) {
+fn crawl(root: &Path) -> (PathPairs, PathPairs) {
     let mut pngs = Vec::new();
     let mut sidecars = Vec::new();
     let mut stack = vec![root.to_path_buf()];
@@ -395,10 +398,10 @@ fn crawl(root: &Path) -> (Vec<(String, PathBuf)>, Vec<(String, PathBuf)>) {
                     if let Some(rel) = rel_forward(root, &path) {
                         pngs.push((rel, path));
                     }
-                } else if lower.ends_with(".json") || lower.ends_with(".name") {
-                    if let Some(rel) = rel_forward(root, &path) {
-                        sidecars.push((rel, path));
-                    }
+                } else if (lower.ends_with(".json") || lower.ends_with(".name"))
+                    && let Some(rel) = rel_forward(root, &path)
+                {
+                    sidecars.push((rel, path));
                 }
             }
         }
@@ -455,10 +458,10 @@ fn pair_metadata(
             }
             anywhere.get_or_insert(s);
         }
-        if let Some(hit) = same_dir.or(anywhere) {
-            if let Some(meta) = read_meta(&hit.1) {
-                return Some((hit.0.clone(), meta));
-            }
+        if let Some(hit) = same_dir.or(anywhere)
+            && let Some(meta) = read_meta(&hit.1)
+        {
+            return Some((hit.0.clone(), meta));
         }
     }
     None
@@ -1061,12 +1064,12 @@ pub async fn get_character_preview(pack_id: String, rel_path: String) -> Result<
         let (w, h) = img.dimensions();
         // Clamp the crop to the image bounds so non-standard-sized candidates
         // still yield a best-effort preview instead of erroring.
-        let cw = PREVIEW_W.min(w.saturating_sub(PREVIEW_X.min(w)));
-        let ch = PREVIEW_H.min(h.saturating_sub(PREVIEW_Y.min(h)));
+        let cw = PREVIEW_W.min(w.saturating_sub(PREVIEW_X));
+        let ch = PREVIEW_H.min(h.saturating_sub(PREVIEW_Y));
         let (x, y, cw, ch) = if cw == 0 || ch == 0 {
             (0, 0, w, h)
         } else {
-            (PREVIEW_X.min(w), PREVIEW_Y.min(h), cw, ch)
+            (PREVIEW_X, PREVIEW_Y, cw, ch)
         };
         let crop = image::imageops::crop_imm(&img, x, y, cw, ch).to_image();
         let mut buf: Vec<u8> = Vec::new();
@@ -1112,10 +1115,10 @@ fn vanilla_preview_sync(color: &str) -> Result<Option<String>, String> {
         .map(|d| d.join(PORTRAIT_CACHE_SUBDIR).join(format!("{color}.png")));
 
     // Serve from cache when we've already cropped this portrait.
-    if let Some(cached) = &cached {
-        if let Ok(bytes) = fs::read(cached) {
-            return Ok(Some(png_data_url(&bytes)));
-        }
+    if let Some(cached) = &cached
+        && let Ok(bytes) = fs::read(cached)
+    {
+        return Ok(Some(png_data_url(&bytes)));
     }
 
     // Otherwise crop from the user's extracted char sheet, cache, and serve.

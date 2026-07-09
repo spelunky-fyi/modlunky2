@@ -4274,8 +4274,10 @@ mod theme_marker_tests {
         let built = upsert_theme_marker(None, Some(2), None).unwrap();
         assert!(built.starts_with(SECTION_COMMENT));
         // Round-trip through the actual writer + parser.
-        let mut file = LevelFile::default();
-        file.comment = Some(built);
+        let file = LevelFile {
+            comment: Some(built),
+            ..Default::default()
+        };
         let serialized = file.to_string().unwrap();
         let reparsed = LevelFile::from_str(&serialized).unwrap();
         assert_eq!(
