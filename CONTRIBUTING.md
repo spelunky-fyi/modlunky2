@@ -17,6 +17,8 @@ whether yours has been reported.
 
 ## Repo layout
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together.
+
 - `app/`, the Tauri 2 app.
   - `app/src/`, React + TypeScript frontend (Vite).
   - `app/src-tauri/`, Rust backend that hosts the WebView, tauri commands,
