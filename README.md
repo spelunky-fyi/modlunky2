@@ -37,4 +37,4 @@ The [documentation for contributing](CONTRIBUTING.md) explains
 
 Special thanks to the following contributors for helping make modlunky possible:
 
-`garebear`, `SciresM`, `Cloppershy`, `iojonmbnmb`, `Dregu`, `JackHasWifi`, `mriswithe`, `Malacath`, `MauveAlert`
+`garebear`, `SciresM`, `Cloppershy`, `iojonmbnmb`, `Dregu`, `JackHasWifi`, `mriswithe`, `Malacath`, `MauveAlert`, `JayTheBusinessGoose`
