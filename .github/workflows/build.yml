@@ -106,6 +106,23 @@ jobs:
         with:
           name: modlunky2.exe
 
+      # Pull this version's CHANGELOG section (everything between its
+      # `## [x.y.z] - ...` heading and the next `## [` heading) so the draft's
+      # body is the curated notes. Empty if the changelog wasn't dated for this
+      # version, in which case only the auto-generated PR list shows.
+      - name: Build release notes from changelog
+        if: steps.bump.outputs.changed == 'true'
+        run: |
+          ver='${{ steps.bump.outputs.version }}'
+          esc=$(printf '%s' "$ver" | sed 's/[.]/\\./g')
+          awk -v ver="$esc" '
+            $0 ~ ("^## \\[" ver "\\]") { grab = 1; next }
+            grab && /^## \[/ { exit }
+            grab { print }
+          ' CHANGELOG.md | sed '/./,$!d' > release_notes.md
+          echo "----- release_notes.md -----"
+          cat release_notes.md
+
       - name: Create draft release
         if: steps.bump.outputs.changed == 'true'
         uses: softprops/action-gh-release@v2
@@ -114,5 +131,8 @@ jobs:
           # Tag matches the exact version from tauri.conf.json.
           tag_name: ${{ steps.bump.outputs.version }}
           name: ${{ steps.bump.outputs.version }}
+          # Curated changelog first; `generate_release_notes` appends the
+          # auto "What's Changed" PR list beneath it.
+          body_path: release_notes.md
           generate_release_notes: true
           files: modlunky2.exe
