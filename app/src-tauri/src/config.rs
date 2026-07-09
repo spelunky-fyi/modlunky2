@@ -296,11 +296,7 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
             .unwrap_or_else(|| DEFAULT_TRACKER_FONT_FAMILY.to_string()),
         tracker_font_color: get_string(obj, KEY_TRACKER_FONT_COLOR)
             .unwrap_or_else(|| DEFAULT_TRACKER_FONT_COLOR.to_string()),
-        tracker_stroke_width: get_u16(
-            obj,
-            KEY_TRACKER_STROKE_WIDTH,
-            DEFAULT_TRACKER_STROKE_WIDTH,
-        ),
+        tracker_stroke_width: get_u16(obj, KEY_TRACKER_STROKE_WIDTH, DEFAULT_TRACKER_STROKE_WIDTH),
         tracker_stroke_color: get_string(obj, KEY_TRACKER_STROKE_COLOR)
             .unwrap_or_else(|| DEFAULT_TRACKER_STROKE_COLOR.to_string()),
         tracker_output_dir: get_string(obj, KEY_TRACKER_OUTPUT_DIR),
@@ -429,8 +425,16 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
     apply_u16(&mut obj, KEY_TRACKER_FONT_SIZE, patch.tracker_font_size);
     apply_field(&mut obj, KEY_TRACKER_FONT_FAMILY, patch.tracker_font_family);
     apply_field(&mut obj, KEY_TRACKER_FONT_COLOR, patch.tracker_font_color);
-    apply_u16(&mut obj, KEY_TRACKER_STROKE_WIDTH, patch.tracker_stroke_width);
-    apply_field(&mut obj, KEY_TRACKER_STROKE_COLOR, patch.tracker_stroke_color);
+    apply_u16(
+        &mut obj,
+        KEY_TRACKER_STROKE_WIDTH,
+        patch.tracker_stroke_width,
+    );
+    apply_field(
+        &mut obj,
+        KEY_TRACKER_STROKE_COLOR,
+        patch.tracker_stroke_color,
+    );
     apply_field(&mut obj, KEY_TRACKER_OUTPUT_DIR, patch.tracker_output_dir);
     apply_bool(
         &mut obj,

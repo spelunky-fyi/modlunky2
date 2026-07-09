@@ -31,26 +31,106 @@ struct VanillaCharacter {
 
 /// The 20 vanilla characters in the game's canonical order.
 const VANILLA_CHARACTERS: &[VanillaCharacter] = &[
-    VanillaCharacter { color: "yellow", full_name: "Ana Spelunky", short_name: "Ana" },
-    VanillaCharacter { color: "magenta", full_name: "Margaret Tunnel", short_name: "Margaret" },
-    VanillaCharacter { color: "cyan", full_name: "Colin Northward", short_name: "Colin" },
-    VanillaCharacter { color: "black", full_name: "Roffy", short_name: "Roffy" },
-    VanillaCharacter { color: "cinnabar", full_name: "Alto Singh", short_name: "Alto" },
-    VanillaCharacter { color: "green", full_name: "Liz Mutton", short_name: "Liz" },
-    VanillaCharacter { color: "olive", full_name: "Nekka the Eagle", short_name: "Nekka" },
-    VanillaCharacter { color: "white", full_name: "LISE Project", short_name: "LISE" },
-    VanillaCharacter { color: "cerulean", full_name: "Coco Von Diamonds", short_name: "Coco" },
-    VanillaCharacter { color: "blue", full_name: "Manfred Tunnel", short_name: "Manfred" },
-    VanillaCharacter { color: "lime", full_name: "Little Jay", short_name: "Jay" },
-    VanillaCharacter { color: "lemon", full_name: "Tina Flan", short_name: "Tina" },
-    VanillaCharacter { color: "iris", full_name: "Valerie Crump", short_name: "Valerie" },
-    VanillaCharacter { color: "gold", full_name: "Au", short_name: "Au" },
-    VanillaCharacter { color: "red", full_name: "Demi Von Diamonds", short_name: "Demi" },
-    VanillaCharacter { color: "pink", full_name: "Pilot", short_name: "Pilot" },
-    VanillaCharacter { color: "violet", full_name: "Princess Airyn", short_name: "Airyn" },
-    VanillaCharacter { color: "gray", full_name: "Dirk Yamaoka", short_name: "Dirk" },
-    VanillaCharacter { color: "khaki", full_name: "Guy Spelunky", short_name: "Guy" },
-    VanillaCharacter { color: "orange", full_name: "Classic Guy", short_name: "Classic Guy" },
+    VanillaCharacter {
+        color: "yellow",
+        full_name: "Ana Spelunky",
+        short_name: "Ana",
+    },
+    VanillaCharacter {
+        color: "magenta",
+        full_name: "Margaret Tunnel",
+        short_name: "Margaret",
+    },
+    VanillaCharacter {
+        color: "cyan",
+        full_name: "Colin Northward",
+        short_name: "Colin",
+    },
+    VanillaCharacter {
+        color: "black",
+        full_name: "Roffy",
+        short_name: "Roffy",
+    },
+    VanillaCharacter {
+        color: "cinnabar",
+        full_name: "Alto Singh",
+        short_name: "Alto",
+    },
+    VanillaCharacter {
+        color: "green",
+        full_name: "Liz Mutton",
+        short_name: "Liz",
+    },
+    VanillaCharacter {
+        color: "olive",
+        full_name: "Nekka the Eagle",
+        short_name: "Nekka",
+    },
+    VanillaCharacter {
+        color: "white",
+        full_name: "LISE Project",
+        short_name: "LISE",
+    },
+    VanillaCharacter {
+        color: "cerulean",
+        full_name: "Coco Von Diamonds",
+        short_name: "Coco",
+    },
+    VanillaCharacter {
+        color: "blue",
+        full_name: "Manfred Tunnel",
+        short_name: "Manfred",
+    },
+    VanillaCharacter {
+        color: "lime",
+        full_name: "Little Jay",
+        short_name: "Jay",
+    },
+    VanillaCharacter {
+        color: "lemon",
+        full_name: "Tina Flan",
+        short_name: "Tina",
+    },
+    VanillaCharacter {
+        color: "iris",
+        full_name: "Valerie Crump",
+        short_name: "Valerie",
+    },
+    VanillaCharacter {
+        color: "gold",
+        full_name: "Au",
+        short_name: "Au",
+    },
+    VanillaCharacter {
+        color: "red",
+        full_name: "Demi Von Diamonds",
+        short_name: "Demi",
+    },
+    VanillaCharacter {
+        color: "pink",
+        full_name: "Pilot",
+        short_name: "Pilot",
+    },
+    VanillaCharacter {
+        color: "violet",
+        full_name: "Princess Airyn",
+        short_name: "Airyn",
+    },
+    VanillaCharacter {
+        color: "gray",
+        full_name: "Dirk Yamaoka",
+        short_name: "Dirk",
+    },
+    VanillaCharacter {
+        color: "khaki",
+        full_name: "Guy Spelunky",
+        short_name: "Guy",
+    },
+    VanillaCharacter {
+        color: "orange",
+        full_name: "Classic Guy",
+        short_name: "Classic Guy",
+    },
 ];
 
 fn is_known_color(color: &str) -> bool {
@@ -338,8 +418,16 @@ fn pair_metadata(
     sidecars: &[(String, PathBuf)],
 ) -> Option<(String, CharacterMeta)> {
     let png_dir = png_rel.rsplit_once('/').map(|(d, _)| d).unwrap_or("");
-    let basename = |rel: &str| rel.rsplit_once('/').map(|(_, n)| n.to_string()).unwrap_or_else(|| rel.to_string());
-    let dir_of = |rel: &str| rel.rsplit_once('/').map(|(d, _)| d.to_string()).unwrap_or_default();
+    let basename = |rel: &str| {
+        rel.rsplit_once('/')
+            .map(|(_, n)| n.to_string())
+            .unwrap_or_else(|| rel.to_string())
+    };
+    let dir_of = |rel: &str| {
+        rel.rsplit_once('/')
+            .map(|(d, _)| d.to_string())
+            .unwrap_or_default()
+    };
 
     // Candidate sidecar filenames in preference order.
     let targets: Vec<String> = match color {
@@ -408,11 +496,9 @@ pub async fn get_characters(
     include_inactive: bool,
     pack_id: Option<String>,
 ) -> Result<CharactersResponse, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        get_characters_sync(include_inactive, pack_id)
-    })
-    .await
-    .map_err(|e| format!("character scan panicked: {e}"))?
+    tauri::async_runtime::spawn_blocking(move || get_characters_sync(include_inactive, pack_id))
+        .await
+        .map_err(|e| format!("character scan panicked: {e}"))?
 }
 
 fn get_characters_sync(
@@ -820,7 +906,11 @@ pub fn assign_character(pack_id: String, rel_path: String, color: String) -> Res
     let sidecar = pair_metadata(&rel_path, src_color.as_deref(), &sidecars);
 
     let mut state = read_character_state(&pack_id);
-    let existing = state.renames.iter().find(|r| r.current == rel_path).cloned();
+    let existing = state
+        .renames
+        .iter()
+        .find(|r| r.current == rel_path)
+        .cloned();
     let png_original = existing
         .as_ref()
         .map(|r| r.original.clone())
@@ -864,13 +954,22 @@ pub fn assign_character(pack_id: String, rel_path: String, color: String) -> Res
 /// stops occupying the slot. `char_unassigned*` keeps it as an available
 /// character in the pool; `char_disabled*` marks it explicitly off. The
 /// sidecar is left in place but remembered so restore brings the pair back.
-fn park_character(pack_id: &str, rel_path: &str, prefix: &str, disabled: bool) -> Result<(), String> {
+fn park_character(
+    pack_id: &str,
+    rel_path: &str,
+    prefix: &str,
+    disabled: bool,
+) -> Result<(), String> {
     validate_rel(rel_path)?;
     let pack_root = pack_root_for(pack_id)?;
     let target_rel = next_parked_rel(&pack_root, rel_path, prefix);
 
     let mut state = read_character_state(pack_id);
-    let existing = state.renames.iter().find(|r| r.current == rel_path).cloned();
+    let existing = state
+        .renames
+        .iter()
+        .find(|r| r.current == rel_path)
+        .cloned();
     let png_original = existing
         .as_ref()
         .map(|r| r.original.clone())
@@ -911,7 +1010,12 @@ pub fn restore_character(pack_id: String, rel_path: String) -> Result<(), String
     validate_rel(&rel_path)?;
     let pack_root = pack_root_for(&pack_id)?;
     let mut state = read_character_state(&pack_id);
-    let Some(rec) = state.renames.iter().find(|r| r.current == rel_path).cloned() else {
+    let Some(rec) = state
+        .renames
+        .iter()
+        .find(|r| r.current == rel_path)
+        .cloned()
+    else {
         return Err(format!("no rename to restore for {rel_path}"));
     };
     move_file_in_pack(&pack_root, &rel_path, &rec.original)?;
@@ -1150,15 +1254,26 @@ mod tests {
 
     #[test]
     fn correctly_named_variants_have_no_mismatch() {
-        assert!(!classify("char_blue.png", Some((2048, 2048))).unwrap().name_mismatch);
-        assert!(!classify("char_blue_full.png", Some((2048, 2224))).unwrap().name_mismatch);
+        assert!(
+            !classify("char_blue.png", Some((2048, 2048)))
+                .unwrap()
+                .name_mismatch
+        );
+        assert!(
+            !classify("char_blue_full.png", Some((2048, 2224)))
+                .unwrap()
+                .name_mismatch
+        );
     }
 
     #[test]
     fn definite_flags_wrong_dimensions() {
         let c = classify("char_blue.png", Some((512, 512))).unwrap();
         assert_eq!(c.confidence, Confidence::Definite);
-        assert!(!c.dims_ok, "wrong-sized char_blue should flag dims_ok=false");
+        assert!(
+            !c.dims_ok,
+            "wrong-sized char_blue should flag dims_ok=false"
+        );
     }
 
     #[test]
@@ -1225,7 +1340,10 @@ mod tests {
         assert_eq!(char_basename("blue", true), "char_blue_full.png");
         // Renames keep the source directory.
         assert_eq!(
-            sibling_rel("Data/Textures/Entities/char_sonic_full.png", "char_blue_full.png"),
+            sibling_rel(
+                "Data/Textures/Entities/char_sonic_full.png",
+                "char_blue_full.png"
+            ),
             "Data/Textures/Entities/char_blue_full.png"
         );
         assert_eq!(sibling_rel("weird.png", "char_blue.png"), "char_blue.png");
@@ -1235,7 +1353,9 @@ mod tests {
     fn classify_detects_color_without_dimensions() {
         // assign_character resolves the source's slot by name only.
         assert_eq!(
-            classify("char_blue.png", None).and_then(|c| c.color).as_deref(),
+            classify("char_blue.png", None)
+                .and_then(|c| c.color)
+                .as_deref(),
             Some("blue")
         );
         assert!(classify("asfeafasf.png", None).is_none());
