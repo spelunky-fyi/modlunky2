@@ -9,6 +9,7 @@ import { OverlunkyPage } from "./components/overlunky/OverlunkyPage";
 import { TrackersPage } from "./components/trackers/TrackersPage";
 import { LevelsPage } from "./components/levels/LevelsPage";
 import { EditorWindow } from "./components/levels/EditorWindow";
+import { RoomPreviewWindow } from "./components/levels/RoomPreviewWindow";
 import { CharacterChooser } from "./components/characters/CharacterChooser";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { ToastProvider } from "./components/shared/Toast";
@@ -45,10 +46,19 @@ interface CharactersWindowRoute {
   pack: string | null;
 }
 
+interface RoomPreviewWindowRoute {
+  kind: "roomPreview";
+  pack: string;
+  file: string;
+  template: string;
+  roomIndex: number;
+}
+
 type WindowRoute =
   | EditorWindowRoute
   | LogsWindowRoute
-  | CharactersWindowRoute;
+  | CharactersWindowRoute
+  | RoomPreviewWindowRoute;
 
 // Rust injects one of these into the target window before any of the app's
 // own JS runs, so we can pick the shell synchronously at first render. See
@@ -59,6 +69,12 @@ declare global {
     __editorContext?: { pack?: string; mode?: string };
     __logsContext?: { kind?: string };
     __charChooserContext?: { kind?: string; pack?: string };
+    __roomPreviewContext?: {
+      pack?: string;
+      file?: string;
+      template?: string;
+      roomIndex?: number;
+    };
   }
 }
 
@@ -68,6 +84,22 @@ function readRoute(): WindowRoute | null {
   }
   if (window.__charChooserContext?.kind === "characters") {
     return { kind: "characters", pack: window.__charChooserContext.pack ?? null };
+  }
+  const preview = window.__roomPreviewContext;
+  if (
+    preview &&
+    preview.pack &&
+    preview.file &&
+    preview.template &&
+    typeof preview.roomIndex === "number"
+  ) {
+    return {
+      kind: "roomPreview",
+      pack: preview.pack,
+      file: preview.file,
+      template: preview.template,
+      roomIndex: preview.roomIndex,
+    };
   }
   const ctx = window.__editorContext;
   if (ctx && ctx.pack && ctx.mode) {
@@ -100,6 +132,13 @@ function App() {
         <LogsWindow />
       ) : route?.kind === "characters" ? (
         <CharacterChooser pack={route.pack} />
+      ) : route?.kind === "roomPreview" ? (
+        <RoomPreviewWindow
+          pack={route.pack}
+          file={route.file}
+          template={route.template}
+          roomIndex={route.roomIndex}
+        />
       ) : (
         <AppShell />
       )}

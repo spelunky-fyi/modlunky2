@@ -31,6 +31,7 @@ import {
   openLevelFile,
   openLevelFileWith,
   openModFolder,
+  openRoomPreviewWindow,
   saveVanillaLevel,
   TEMPLATE_SETTING_HINTS,
   TEMPLATE_SETTING_LABELS,
@@ -44,6 +45,7 @@ import {
   type VanillaLevelData,
   type VanillaLevelListEntry,
 } from "../../lib/commands";
+import { emit } from "@tauri-apps/api/event";
 import { useFloatingMenu } from "../../hooks/useFloatingMenu";
 import { Modal } from "../shared/Modal";
 import { useToast } from "../shared/Toast";
@@ -1204,6 +1206,8 @@ export function VanillaEditor({ pack }: Props) {
       });
       setDirty(false);
       toast.success(`Saved ${selectedFile}.`);
+      // Tell any open room-preview windows for this file to reload from disk.
+      void emit("vanilla-level-saved", { pack, file: selectedFile });
       // Refresh the file list so a first-time save flips Vanilla → Modded.
       listVanillaLevels(pack)
         .then(setFiles)
@@ -3064,6 +3068,12 @@ export function VanillaEditor({ pack }: Props) {
           onDuplicateRoom={(name, idx) => {
             commitDuplicateRoom(name, idx);
           }}
+          onOpenPreview={(name, idx) => {
+            if (!selectedFile) return;
+            void openRoomPreviewWindow(pack, selectedFile, name, idx).catch(
+              (e) => toast.error(`Couldn't open preview: ${String(e)}`),
+            );
+          }}
         />
       )}
       {pendingTreeOp && (
@@ -3179,6 +3189,7 @@ function TreeContextMenu({
   onAddRoomToClipboard,
   onPasteRoom,
   onDuplicateRoom,
+  onOpenPreview,
 }: {
   menu:
     | { kind: "template"; templateName: string; x: number; y: number }
@@ -3217,6 +3228,7 @@ function TreeContextMenu({
   onAddRoomToClipboard: (templateName: string, roomIndex: number) => void;
   onPasteRoom: (templateName: string) => void;
   onDuplicateRoom: (templateName: string, roomIndex: number) => void;
+  onOpenPreview: (templateName: string, roomIndex: number) => void;
 }) {
   const tpl = templates.find((t) => t.name === menu.templateName);
   const room = menu.kind === "room" ? tpl?.rooms[menu.roomIndex] : undefined;
@@ -3319,6 +3331,18 @@ function TreeContextMenu({
         )}
         {menu.kind === "room" && (
           <>
+            <button
+              type="button"
+              className="tree-menu-item"
+              onClick={() => {
+                onOpenPreview(menu.templateName, menu.roomIndex);
+                onClose();
+              }}
+              title="Open a read-only preview window for this room"
+            >
+              Open preview
+            </button>
+            <div className="tree-menu-sep" />
             <button
               type="button"
               className="tree-menu-item"

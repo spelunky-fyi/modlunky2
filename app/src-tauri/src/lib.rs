@@ -169,6 +169,7 @@ pub fn run() {
             level_editor::check_latest_level_sequence,
             level_editor::install_level_sequence,
             level_editor::list_custom_levels,
+            level_editor::open_room_preview_window,
             level_editor::open_level_file,
             level_editor::open_level_file_with,
             level_editor::load_custom_level,

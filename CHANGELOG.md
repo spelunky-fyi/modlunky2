@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Level editor: right-clicking a level file (the file switcher in the Vanilla
   editor, a file in the Custom editor's list) offers "Open" and "Open with..."
   to open it in an external program, for anything the editor can't handle.
+- Vanilla level editor: "Open preview" on a room's right-click menu opens a
+  read-only window pinned to that room, useful for referencing other rooms (e.g.
+  on a second monitor) while editing. Multiple previews can be open at once, and
+  they reload to the latest saved state when you save.
 
 ### Changed
 

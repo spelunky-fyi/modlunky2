@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capabilities for the main window and any editor windows spawned from it.",
-  "windows": ["main", "editor-*", "tracker-*", "logs"],
+  "windows": ["main", "editor-*", "preview-*", "tracker-*", "logs"],
   "permissions": [
     "core:default",
     "core:window:allow-close",

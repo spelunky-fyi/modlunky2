@@ -326,6 +326,22 @@ export async function openLevelEditorWindow(
   return invoke<void>("open_level_editor_window", { pack, mode });
 }
 
+/** Opens a read-only preview window pinned to one vanilla room. Re-opening the
+ *  same room focuses its existing window. */
+export async function openRoomPreviewWindow(
+  pack: string,
+  fileName: string,
+  template: string,
+  roomIndex: number,
+): Promise<void> {
+  return invoke<void>("open_room_preview_window", {
+    pack,
+    fileName,
+    template,
+    roomIndex,
+  });
+}
+
 // --- Character chooser -----------------------------------------------------
 
 /** How confident detection is that a file is a character sheet. */

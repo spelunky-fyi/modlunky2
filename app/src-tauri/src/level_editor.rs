@@ -517,6 +517,85 @@ pub async fn open_level_editor_window(
     Ok(())
 }
 
+/// Slugify a string for use inside a Tauri window label (labels allow only
+/// `[A-Za-z0-9_/:-]`). Lowercased; every other char becomes `_`.
+fn slug_for_label(s: &str) -> String {
+    s.to_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+/// Opens a read-only preview window pinned to one room of a vanilla level, for
+/// referencing other rooms (e.g. on a second monitor) while editing. Multiple
+/// previews can be open at once; opening the same room again just focuses its
+/// existing window. The window reads from disk and reloads when the editor
+/// saves (see the `vanilla-level-saved` event), so it reflects the last save.
+#[tauri::command]
+pub async fn open_room_preview_window(
+    app: AppHandle,
+    pack: String,
+    file_name: String,
+    template: String,
+    room_index: usize,
+) -> Result<(), String> {
+    let sanitized = validate_pack_name(&pack)?;
+    if file_name.contains("..") || file_name.starts_with('/') || file_name.starts_with('\\') {
+        return Err(format!("invalid level file: {file_name:?}"));
+    }
+    let dir = packs_dir()?;
+    if !dir.join(&sanitized).exists() {
+        return Err(format!("pack {sanitized:?} not found"));
+    }
+
+    // Stable, unique per (pack, file, template, room) so geometry is
+    // remembered (window-state plugin keys on label) and re-opening the same
+    // room focuses the existing window rather than spawning a duplicate.
+    let label = format!(
+        "preview-{}-{}-{}-{}",
+        slug_for_label(&sanitized),
+        slug_for_label(&file_name),
+        slug_for_label(&template),
+        room_index,
+    );
+    if let Some(existing) = app.get_webview_window(&label) {
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+
+    let title = format!("{template} #{room_index} - {file_name} - Preview - Modlunky2");
+
+    // See open_level_editor_window for why context travels via an init script
+    // rather than URL params.
+    let context = format!(
+        "window.__roomPreviewContext = {{ pack: {}, file: {}, template: {}, roomIndex: {} }};",
+        serde_json::to_string(&sanitized).map_err(|e| e.to_string())?,
+        serde_json::to_string(&file_name).map_err(|e| e.to_string())?,
+        serde_json::to_string(&template).map_err(|e| e.to_string())?,
+        room_index,
+    );
+
+    let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("/".into()))
+        .title(&title)
+        .inner_size(900.0, 720.0)
+        .min_inner_size(480.0, 420.0)
+        .resizable(true)
+        .initialization_script(&context)
+        .build()
+        .map_err(|e| format!("open window: {e}"))?;
+    if let Err(e) = crate::window_icon::apply_window_icon(&window) {
+        tracing::warn!("failed to set crisp window icon on {label}: {e}");
+    }
+
+    Ok(())
+}
+
 /// Returns the cp1252 character pool a `.lvl` file can use as tile codes.
 /// The frontend picks the first char that isn't already assigned when the
 /// user adds a new tile to the palette. Comes from `ml2_levels`.
