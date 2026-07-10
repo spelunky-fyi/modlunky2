@@ -600,13 +600,19 @@
   transition: background 80ms, color 80ms;
 }
 
-.tree-menu-item:hover {
+.tree-menu-item:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.tree-menu-item.danger:hover {
+.tree-menu-item.danger:hover:not(:disabled) {
   background: rgba(240, 90, 90, 0.18);
   color: #ffbcbc;
+}
+
+.tree-menu-item:disabled {
+  color: var(--fg-muted);
+  opacity: 0.5;
+  cursor: default;
 }
 
 .tree-menu-sep {

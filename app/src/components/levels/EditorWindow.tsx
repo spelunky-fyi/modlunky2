@@ -16,6 +16,7 @@ import {
   listShortCodes,
   loadCustomConfig,
   loadCustomLevel,
+  openModFolder,
   saveCustomConfig,
   saveCustomLevel,
   type CustomLevelData,
@@ -34,6 +35,7 @@ import { EditorBottomBar } from "./EditorBottomBar";
 import { EditorTopBar } from "./EditorTopBar";
 import {
   Expand,
+  FolderOpen,
   Keyboard,
   ListOrdered,
   Settings,
@@ -1033,6 +1035,19 @@ function CustomEditor({ pack }: { pack: string }) {
         onSave={() => setPendingSave(true)}
         farRightExtras={
           <>
+            <button
+              type="button"
+              className="editor-window-gear"
+              onClick={() => {
+                void openModFolder(pack).catch((e) =>
+                  toast.error(`Couldn't open pack folder: ${String(e)}`),
+                );
+              }}
+              title="Open pack folder"
+              aria-label="Open pack folder"
+            >
+              <FolderOpen size={16} aria-hidden="true" />
+            </button>
             <button
               type="button"
               className="editor-window-gear"

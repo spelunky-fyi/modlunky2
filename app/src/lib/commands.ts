@@ -569,6 +569,25 @@ export async function listCustomLevels(pack: string): Promise<string[]> {
   return invoke<string[]>("list_custom_levels", { pack });
 }
 
+/** Opens a pack's .lvl file with the OS default program (on Windows, the
+ *  "how do you want to open this?" prompt when no default is set). */
+export async function openLevelFile(
+  pack: string,
+  fileName: string,
+): Promise<void> {
+  return invoke<void>("open_level_file", { pack, fileName });
+}
+
+/** Opens a pack's .lvl file in an external program the user picks. On Windows
+ *  this shows the native "Open with" chooser; elsewhere the OS default
+ *  handler. An escape hatch for files the built-in editor can't handle. */
+export async function openLevelFileWith(
+  pack: string,
+  fileName: string,
+): Promise<void> {
+  return invoke<void>("open_level_file_with", { pack, fileName });
+}
+
 export async function loadCustomLevel(
   pack: string,
   fileName: string,

@@ -19,9 +19,12 @@ import {
   createCustomLevel,
   deleteCustomLevel,
   listCustomLevels,
+  openLevelFile,
+  openLevelFileWith,
   renameCustomLevel,
   type CustomLevelSaveFormat,
 } from "../../lib/commands";
+import { useFloatingMenu } from "../../hooks/useFloatingMenu";
 import { Modal } from "../shared/Modal";
 import { useToast } from "../shared/Toast";
 import { THEMES } from "./LevelConfigPanel";
@@ -154,6 +157,20 @@ export function LevelFileTree({
         <TreeContextMenu
           menu={menu}
           onClose={() => setMenu(null)}
+          onOpen={() => {
+            const file = menu.file;
+            setMenu(null);
+            void openLevelFile(pack, file).catch((err) =>
+              toast.error(`Couldn't open: ${extractMessage(err)}`),
+            );
+          }}
+          onOpenWith={() => {
+            const file = menu.file;
+            setMenu(null);
+            void openLevelFileWith(pack, file).catch((err) =>
+              toast.error(`Couldn't open: ${extractMessage(err)}`),
+            );
+          }}
           onRename={() => {
             setOp({
               kind: "rename",
@@ -253,47 +270,44 @@ export function LevelFileTree({
 function TreeContextMenu({
   menu,
   onClose,
+  onOpen,
+  onOpenWith,
   onRename,
   onDelete,
 }: {
   menu: MenuState;
   onClose: () => void;
+  onOpen: () => void;
+  onOpenWith: () => void;
   onRename: () => void;
   onDelete: () => void;
 }) {
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [pos, setPos] = useState({ left: menu.x, top: menu.y });
-  useEffect(() => {
-    const el = menuRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const pad = 4;
-    let left = menu.x;
-    let top = menu.y;
-    if (left + rect.width > window.innerWidth - pad) {
-      left = Math.max(pad, window.innerWidth - rect.width - pad);
-    }
-    if (top + rect.height > window.innerHeight - pad) {
-      top = Math.max(pad, window.innerHeight - rect.height - pad);
-    }
-    setPos({ left, top });
-  }, [menu.x, menu.y]);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const { menuRef, pos } = useFloatingMenu(menu.x, menu.y, onClose);
   return (
     <>
-      <div className="tree-menu-backdrop" onClick={onClose} />
       <div
         ref={menuRef}
         className="tree-menu"
         style={{ left: pos.left, top: pos.top }}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          className="tree-menu-item"
+          onClick={onOpen}
+          title="Open this file with the default program"
+        >
+          Open
+        </button>
+        <button
+          type="button"
+          className="tree-menu-item"
+          onClick={onOpenWith}
+          title="Pick a program to open this file with"
+        >
+          Open with...
+        </button>
+        <div className="tree-menu-sep" />
         <button
           type="button"
           className="tree-menu-item"

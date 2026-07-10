@@ -1147,6 +1147,101 @@ fn resolve_pack_level_path(pack: &str, file_name: &str) -> Result<PathBuf, Strin
         .join(file_name))
 }
 
+/// Opens a pack's `.lvl` file with the OS default program (or, on Windows, the
+/// "how do you want to open this?" prompt when no default is set). The paired
+/// escape hatch for anything the built-in editor can't handle.
+#[tauri::command]
+pub fn open_level_file<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    pack: String,
+    file_name: String,
+) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    let path = resolve_pack_level_path(&pack, &file_name)?;
+    if !path.exists() {
+        return Err(format!("level file not found: {}", path.display()));
+    }
+    app.opener()
+        .open_path(path.to_string_lossy(), None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+/// Opens a pack's `.lvl` file with an external program the user picks. On
+/// Windows this pops the native "Open with" chooser (ShellExecute's `openas`
+/// verb); on other platforms it falls back to the OS default handler.
+#[tauri::command]
+pub fn open_level_file_with<R: tauri::Runtime>(
+    #[allow(unused_variables)] app: tauri::AppHandle<R>,
+    pack: String,
+    file_name: String,
+) -> Result<(), String> {
+    let path = resolve_pack_level_path(&pack, &file_name)?;
+    if !path.exists() {
+        return Err(format!("level file not found: {}", path.display()));
+    }
+    #[cfg(windows)]
+    {
+        open_with_dialog(&path)
+    }
+    #[cfg(not(windows))]
+    {
+        use tauri_plugin_opener::OpenerExt;
+        app.opener()
+            .open_path(path.to_string_lossy(), None::<&str>)
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// Shows the Windows "Open with" chooser for `path`. Uses SHOpenWithDialog,
+/// which works even for extensions with no association -- unlike
+/// ShellExecute's `openas` verb (returns SE_ERR_NOASSOC) or rundll32's
+/// OpenAs_RunDLL (silently no-ops). `.lvl` has no association, so those don't
+/// work here.
+#[cfg(windows)]
+fn open_with_dialog(path: &std::path::Path) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::Win32::Foundation::ERROR_CANCELLED;
+    use windows::Win32::System::Com::{
+        COINIT_APARTMENTTHREADED, CoInitializeEx, CoUninitialize,
+    };
+    use windows::Win32::UI::Shell::{
+        OAIF_ALLOW_REGISTRATION, OAIF_EXEC, OPENASINFO, SHOpenWithDialog,
+    };
+    use windows::core::{HRESULT, PCWSTR};
+
+    let file_wide: Vec<u16> = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+
+    // The dialog wants an STA apartment and the command may run off the main
+    // thread. Only uninit if we actually initialized (RPC_E_CHANGED_MODE means
+    // someone beat us to it with a different mode, which is fine).
+    let hr = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) };
+    let did_init = hr.is_ok();
+
+    let info = OPENASINFO {
+        pcszFile: PCWSTR(file_wide.as_ptr()),
+        pcszClass: PCWSTR::null(),
+        // EXEC launches the chosen program; ALLOW_REGISTRATION lets the user
+        // tick "always use this app" so a default gets set for next time.
+        oaifInFlags: OAIF_ALLOW_REGISTRATION | OAIF_EXEC,
+    };
+    let result = unsafe { SHOpenWithDialog(None, &info) };
+
+    if did_init {
+        unsafe { CoUninitialize() };
+    }
+
+    match result {
+        Ok(()) => Ok(()),
+        // Closing the dialog without picking anything isn't an error.
+        Err(e) if e.code() == HRESULT::from_win32(ERROR_CANCELLED.0) => Ok(()),
+        Err(e) => Err(format!("Open with dialog failed: {e}")),
+    }
+}
+
 /// Lists `.lvl` files under the pack's `Data/Levels/`, including any
 /// `Arena/*.lvl`. Filenames are relative to `Data/Levels/`. Doesn't
 /// filter against extracts; showing everything a pack ships is more

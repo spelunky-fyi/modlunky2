@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   them within a template or move them to another. Templates whose rooms are a
   different size are dimmed and won't accept the drop; moving a template's last
   room out leaves it with one blank room.
+- Level editor: a folder button in both editors' top bar opens the pack's
+  folder.
+- Level editor: right-clicking a level file (the file switcher in the Vanilla
+  editor, a file in the Custom editor's list) offers "Open" and "Open with..."
+  to open it in an external program, for anything the editor can't handle.
 
 ### Changed
 

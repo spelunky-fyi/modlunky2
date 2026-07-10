@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronsDownUp,
   ChevronsUpDown,
+  FolderOpen,
   Keyboard,
   Palette,
   Settings,
@@ -27,6 +28,9 @@ import {
   listShortCodes,
   listVanillaLevels,
   loadVanillaLevel,
+  openLevelFile,
+  openLevelFileWith,
+  openModFolder,
   saveVanillaLevel,
   TEMPLATE_SETTING_HINTS,
   TEMPLATE_SETTING_LABELS,
@@ -40,6 +44,7 @@ import {
   type VanillaLevelData,
   type VanillaLevelListEntry,
 } from "../../lib/commands";
+import { useFloatingMenu } from "../../hooks/useFloatingMenu";
 import { Modal } from "../shared/Modal";
 import { useToast } from "../shared/Toast";
 import { AddTileModal } from "./AddTileModal";
@@ -282,6 +287,11 @@ export function VanillaEditor({ pack }: Props) {
         y: number;
       };
   const [treeMenu, setTreeMenu] = useState<TreeMenu | null>(null);
+  // Right-click menu on the file switcher (escape hatch to open the current
+  // .lvl in an external program).
+  const [fileMenu, setFileMenu] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   // Rooms currently on the clipboard, peeked when a room context menu opens so
   // "Add to clipboard" only appears when there's already something to add to.
   const [clipboardRoomCount, setClipboardRoomCount] = useState<number | null>(
@@ -2385,6 +2395,19 @@ export function VanillaEditor({ pack }: Props) {
             <button
               type="button"
               className="editor-window-gear"
+              onClick={() => {
+                void openModFolder(pack).catch((e) =>
+                  toast.error(`Couldn't open pack folder: ${String(e)}`),
+                );
+              }}
+              title="Open pack folder"
+              aria-label="Open pack folder"
+            >
+              <FolderOpen size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="editor-window-gear"
               onClick={() => setHelpOpen(true)}
               title="Keyboard shortcuts"
               aria-label="Keyboard shortcuts"
@@ -2438,6 +2461,10 @@ export function VanillaEditor({ pack }: Props) {
               type="button"
               className="vanilla-file-switcher"
               onClick={openFilePicker}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setFileMenu({ x: e.clientX, y: e.clientY });
+              }}
             >
               {selectedFile ? (
                 <>
@@ -2988,6 +3015,30 @@ export function VanillaEditor({ pack }: Props) {
           onPurgeComments={commitPurgeComments}
         />
       )}
+      {fileMenu && (
+        <FileContextMenu
+          x={fileMenu.x}
+          y={fileMenu.y}
+          fileName={selectedFile}
+          onClose={() => setFileMenu(null)}
+          onOpen={() => {
+            if (!selectedFile) return;
+            const file = selectedFile;
+            setFileMenu(null);
+            void openLevelFile(pack, file).catch((e) =>
+              toast.error(`Couldn't open: ${String(e)}`),
+            );
+          }}
+          onOpenWith={() => {
+            if (!selectedFile) return;
+            const file = selectedFile;
+            setFileMenu(null);
+            void openLevelFileWith(pack, file).catch((e) =>
+              toast.error(`Couldn't open: ${String(e)}`),
+            );
+          }}
+        />
+      )}
       {treeMenu && (
         <TreeContextMenu
           menu={treeMenu}
@@ -3057,6 +3108,63 @@ export function VanillaEditor({ pack }: Props) {
   );
 }
 
+// Right-click menu for the file switcher. A small escape hatch to open the
+// current .lvl in an external program for anything the editor can't handle.
+function FileContextMenu({
+  x,
+  y,
+  fileName,
+  onClose,
+  onOpen,
+  onOpenWith,
+}: {
+  x: number;
+  y: number;
+  fileName: string | null;
+  onClose: () => void;
+  onOpen: () => void;
+  onOpenWith: () => void;
+}) {
+  const { menuRef, pos } = useFloatingMenu(x, y, onClose);
+  return (
+    <>
+      <div
+        ref={menuRef}
+        className="tree-menu"
+        style={{ left: pos.left, top: pos.top }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="tree-menu-item"
+          onClick={onOpen}
+          disabled={!fileName}
+          title={
+            fileName
+              ? `Open ${fileName} with the default program`
+              : "Pick a .lvl file first"
+          }
+        >
+          Open
+        </button>
+        <button
+          type="button"
+          className="tree-menu-item"
+          onClick={onOpenWith}
+          disabled={!fileName}
+          title={
+            fileName
+              ? `Pick a program to open ${fileName} with`
+              : "Pick a .lvl file first"
+          }
+        >
+          Open with...
+        </button>
+      </div>
+    </>
+  );
+}
+
 // Floating context menu positioned at the click point. Closes on any
 // outside click, Esc, or scroll. Not a full popover system, just enough
 // to route the user's right-click to an action.
@@ -3112,63 +3220,7 @@ function TreeContextMenu({
 }) {
   const tpl = templates.find((t) => t.name === menu.templateName);
   const room = menu.kind === "room" ? tpl?.rooms[menu.roomIndex] : undefined;
-  // Adjust the anchor point so the menu never renders past the right or
-  // bottom edge of the viewport. Measured after mount because we need the
-  // menu's actual size; a small pad matches the click's initial gap.
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [pos, setPos] = useState({ left: menu.x, top: menu.y });
-  useEffect(() => {
-    const el = menuRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const pad = 4;
-    let left = menu.x;
-    let top = menu.y;
-    if (left + rect.width > window.innerWidth - pad) {
-      left = Math.max(pad, window.innerWidth - rect.width - pad);
-    }
-    if (top + rect.height > window.innerHeight - pad) {
-      top = Math.max(pad, window.innerHeight - rect.height - pad);
-    }
-    setPos({ left, top });
-  }, [menu.x, menu.y]);
-  // Dismiss on outside interaction via document listeners instead of a
-  // blocking full-screen backdrop. The backdrop used to swallow right-clicks:
-  // clicking another row popped the browser's native menu and left this menu
-  // open. With no overlay, a right-click reaches the row underneath, whose own
-  // handler opens a fresh menu here. Ref-wrap onClose so we subscribe once.
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  useEffect(() => {
-    const insideMenu = (target: EventTarget | null) =>
-      target instanceof Node && !!menuRef.current?.contains(target);
-    const onMouseDown = (e: MouseEvent) => {
-      // Right mousedown is handled by the contextmenu path below.
-      if (e.button === 2) return;
-      if (!insideMenu(e.target)) onCloseRef.current();
-    };
-    const onContext = (e: MouseEvent) => {
-      if (insideMenu(e.target)) return;
-      // Suppress the browser menu and close this one. A right-click on another
-      // tree row still reaches that row, which opens its own menu.
-      e.preventDefault();
-      onCloseRef.current();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCloseRef.current();
-    };
-    const onScroll = () => onCloseRef.current();
-    document.addEventListener("mousedown", onMouseDown, true);
-    document.addEventListener("contextmenu", onContext, true);
-    document.addEventListener("keydown", onKey, true);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown, true);
-      document.removeEventListener("contextmenu", onContext, true);
-      document.removeEventListener("keydown", onKey, true);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  }, []);
+  const { menuRef, pos } = useFloatingMenu(menu.x, menu.y, onClose);
   return (
     <>
       <div
