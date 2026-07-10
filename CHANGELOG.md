@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Vanilla level editor: keyboard navigation in the rooms list. Up/Down move
+  between rooms (opening each as you go) and templates; Left/Right collapse and
+  expand a template.
+
 ### Changed
 
 - Level editor: switching rooms no longer flashes a black canvas before the new

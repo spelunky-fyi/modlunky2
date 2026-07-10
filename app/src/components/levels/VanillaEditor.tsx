@@ -3596,6 +3596,131 @@ function VanillaRoomsTree({
   const [filter, setFilter] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const filterLower = filter.trim().toLowerCase();
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // --- Keyboard navigation of the rooms tree ---
+  // The rendered buttons carry data-template (headers + rooms) and
+  // data-room-index (rooms only). Up/Down walk the combined list of headers
+  // and rooms in document (visual) order: only expanded, unfiltered rooms
+  // exist in the DOM, so collapse/filter state and template boundaries are
+  // respected for free. Landing on a room selects it so the canvas follows;
+  // landing on a header only moves focus (the canvas stays put) so a
+  // collapsed template is still reachable and can be re-opened with Right.
+  // Left/Right collapse/expand the template.
+
+  // Headers + rooms in document order. A comma selector returns matches in
+  // document order regardless of the order the selectors are written.
+  const navButtons = () =>
+    Array.from(
+      listRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button.vanilla-rooms-template, button.vanilla-rooms-room",
+      ) ?? [],
+    );
+
+  const isRoomButton = (btn: HTMLButtonElement) =>
+    btn.classList.contains("vanilla-rooms-room");
+
+  const selectFromButton = (btn: HTMLButtonElement) => {
+    const templateName = btn.dataset.template;
+    const roomIndex = btn.dataset.roomIndex;
+    if (templateName == null || roomIndex == null) return;
+    onSelect({ templateName, roomIndex: Number(roomIndex) });
+  };
+
+  // Move focus to the adjacent tree button (header or room). Selecting only
+  // when it's a room is what keeps focus from dragging the canvas onto a
+  // header. Returns false at the ends so the key falls through.
+  const focusAdjacent = (from: HTMLButtonElement, dir: 1 | -1) => {
+    const items = navButtons();
+    const idx = items.indexOf(from);
+    if (idx === -1) return false;
+    const next = items[idx + dir];
+    if (!next) return false;
+    next.focus();
+    if (isRoomButton(next)) selectFromButton(next);
+    return true;
+  };
+
+  const collapse = (name: string) =>
+    setCollapsed((prev) => new Set(prev).add(name));
+  const expand = (name: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.delete(name);
+      return next;
+    });
+
+  const onRoomKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    switch (e.key) {
+      case "ArrowDown":
+      case "ArrowUp":
+        if (focusAdjacent(e.currentTarget, e.key === "ArrowDown" ? 1 : -1))
+          e.preventDefault();
+        return;
+      case "ArrowLeft": {
+        // Collapse the parent template and retreat to its header. Focus the
+        // header first: collapsing unmounts this room button. A filter forces
+        // every template open, so collapse is a no-op then -- skip it.
+        const templateName = e.currentTarget.dataset.template;
+        if (templateName == null || filterLower.length > 0) return;
+        e.preventDefault();
+        // The header is the previous nav item at the top of the template; walk
+        // back to the nearest one.
+        const items = navButtons();
+        for (let i = items.indexOf(e.currentTarget) - 1; i >= 0; i--) {
+          if (!isRoomButton(items[i])) {
+            items[i].focus();
+            break;
+          }
+        }
+        collapse(templateName);
+        return;
+      }
+      default:
+        return;
+    }
+  };
+
+  const onTemplateKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    const templateName = e.currentTarget.dataset.template;
+    if (templateName == null) return;
+    const isCollapsed = collapsed.has(templateName) && filterLower.length === 0;
+    switch (e.key) {
+      case "ArrowDown":
+      case "ArrowUp":
+        if (focusAdjacent(e.currentTarget, e.key === "ArrowDown" ? 1 : -1))
+          e.preventDefault();
+        return;
+      case "ArrowRight": {
+        e.preventDefault();
+        // Collapsed: open it (focus stays on the header). Already open: dive
+        // into the first child room, but only if the next item really is this
+        // template's room -- an empty template shouldn't leap into the next.
+        if (isCollapsed) {
+          expand(templateName);
+          return;
+        }
+        const items = navButtons();
+        const next = items[items.indexOf(e.currentTarget) + 1];
+        if (
+          next &&
+          isRoomButton(next) &&
+          next.dataset.template === templateName
+        ) {
+          next.focus();
+          selectFromButton(next);
+        }
+        return;
+      }
+      case "ArrowLeft":
+        if (isCollapsed || filterLower.length > 0) return;
+        e.preventDefault();
+        collapse(templateName);
+        return;
+      default:
+        return;
+    }
+  };
 
   const toggle = (name: string) => {
     setCollapsed((prev) => {
@@ -3622,7 +3747,7 @@ function VanillaRoomsTree({
       {templates.length === 0 ? (
         <div className="level-tree-status">No templates.</div>
       ) : (
-        <ul className="vanilla-rooms-list">
+        <ul className="vanilla-rooms-list" ref={listRef}>
           {filtered.map((tpl) => {
             const isExpanded =
               !collapsed.has(tpl.name) || filterLower.length > 0;
@@ -3644,7 +3769,9 @@ function VanillaRoomsTree({
                 <button
                   type="button"
                   className={templateClass}
+                  data-template={tpl.name}
                   onClick={() => toggle(tpl.name)}
+                  onKeyDown={onTemplateKeyDown}
                   onContextMenu={(e) => {
                     if (!onTemplateContextMenu) return;
                     e.preventDefault();
@@ -3683,6 +3810,8 @@ function VanillaRoomsTree({
                           <button
                             type="button"
                             className={`vanilla-rooms-room${isSelected ? " selected" : ""}${isEdited ? " edited" : ""}`}
+                            data-template={tpl.name}
+                            data-room-index={idx}
                             onClick={() =>
                               onSelect({
                                 templateName: tpl.name,
@@ -3694,6 +3823,7 @@ function VanillaRoomsTree({
                               e.preventDefault();
                               onRoomContextMenu(tpl.name, idx, e);
                             }}
+                            onKeyDown={onRoomKeyDown}
                           >
                             <span
                               className="vanilla-rooms-room-label"
