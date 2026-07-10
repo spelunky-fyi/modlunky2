@@ -90,8 +90,13 @@ export interface UseLevelCanvasReturn {
    *  the "cleared by undo" branch of the dirty check. */
   currentRoomTouchedRef: React.MutableRefObject<boolean>;
   savedUndoIndexRef: React.MutableRefObject<number>;
-  /** Included in the canvas `key` so a wholesale grid rewrite (palette
-   *  delete, restore) forces a remount. */
+  /** The key the undo/redo stacks describe, or null when they're empty. Any
+   *  dirty check that reads the undo depth must first confirm the stack
+   *  belongs to the key it's judging -- the stacks survive a key switch until
+   *  the caller's `resetHistory` effect runs. */
+  historyKeyRef: React.MutableRefObject<string | null>;
+  /** Included in the canvas `viewKey` so a wholesale grid rewrite (palette
+   *  delete, restore) re-applies the zoom policy and drops the selection. */
   gridsVersion: number;
   bumpGridsVersion: () => void;
 
@@ -226,6 +231,13 @@ export function useLevelCanvas(
   const undoStack = useRef<Stroke[]>([]);
   const redoStack = useRef<Stroke[]>([]);
   const strokeBuffer = useRef<PaintEdit[]>([]);
+  /** The room the undo/redo stacks currently describe, or null when they're
+   *  empty. The stacks outlive a room switch by one effect pass -- the caller
+   *  resets them from its own `currentKey` effect, which runs after this
+   *  hook's reconcile effect -- so without this, the outgoing room's undo
+   *  depth reads as "the room you just clicked into has unsaved strokes" and
+   *  marks it dirty. See `reconcileEditedKeys`. */
+  const historyKeyRef = useRef<string | null>(null);
   const [undoLen, setUndoLen] = useState(0);
   const [redoLen, setRedoLen] = useState(0);
 
@@ -428,6 +440,9 @@ export function useLevelCanvas(
         onEditedKeysChanged?.();
       }
       currentRoomTouchedRef.current = true;
+      // Every stroke that reaches the undo stack originates here, so this is
+      // the one place that knows which room the stack belongs to.
+      historyKeyRef.current = currentKey;
       const canvasCol = layerToCanvasCol(layer, gridCol);
       if (canvasCol !== null) {
         canvasRef.current?.setTile(row, canvasCol, newName);
@@ -512,7 +527,12 @@ export function useLevelCanvas(
 
   const reconcileEditedKeys = useCallback(() => {
     if (!currentKey) return;
+    // Only trust the undo depth when the stack actually describes this room.
+    // On a room switch this effect re-runs (currentKey is a dep) before the
+    // caller's resetHistory lands, and the outgoing room's strokes would
+    // otherwise mark the incoming room dirty.
     const strokesDirty =
+      historyKeyRef.current === currentKey &&
       undoStack.current.length !== savedUndoIndexRef.current;
     const settingsSet = hasSettingsOverride?.(currentKey) ?? false;
     const wasPresent = editedKeysRef.current.has(currentKey);
@@ -562,6 +582,7 @@ export function useLevelCanvas(
     strokeBuffer.current = [];
     savedUndoIndexRef.current = 0;
     currentRoomTouchedRef.current = false;
+    historyKeyRef.current = null;
     setUndoLen(0);
     setRedoLen(0);
   }, []);
@@ -923,6 +944,7 @@ export function useLevelCanvas(
     editedKeysRef,
     currentRoomTouchedRef,
     savedUndoIndexRef,
+    historyKeyRef,
     gridsVersion,
     bumpGridsVersion,
     resetHistory,

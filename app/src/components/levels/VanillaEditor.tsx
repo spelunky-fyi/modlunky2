@@ -433,6 +433,7 @@ export function VanillaEditor({ pack }: Props) {
     editedKeysRef,
     currentRoomTouchedRef,
     savedUndoIndexRef,
+    historyKeyRef,
     gridsVersion,
     bumpGridsVersion,
     resetHistory,
@@ -802,7 +803,11 @@ export function VanillaEditor({ pack }: Props) {
   const recomputeDirty = useCallback(() => {
     if (selectedRoom) {
       const key = roomKey(selectedRoom);
-      const strokesDirty = undoLen !== savedUndoIndexRef.current;
+      // Undo depth only counts when the history belongs to this room; the
+      // stacks outlive a room switch until resetHistory runs.
+      const strokesDirty =
+        historyKeyRef.current === key &&
+        undoLen !== savedUndoIndexRef.current;
       const settingsSet = settingsRef.current.has(key);
       const wasPresent = editedKeysRef.current.has(key);
       const shouldBePresent = strokesDirty || settingsSet;
@@ -838,6 +843,7 @@ export function VanillaEditor({ pack }: Props) {
     editedKeysRef,
     currentRoomTouchedRef,
     savedUndoIndexRef,
+    historyKeyRef,
   ]);
 
   // Palette editor: owns swatch overrides, reorder mode, help modal open
@@ -2309,7 +2315,7 @@ export function VanillaEditor({ pack }: Props) {
                 <div className="editor-canvas-surface">
                   <TileCanvas
                     ref={canvasRef}
-                    key={`level-${pack}-${selectedFile}-${levelViewData.hasBg ? "dual" : "single"}-v${gridsVersion}`}
+                    viewKey={`level-${pack}-${selectedFile}-${levelViewData.hasBg ? "dual" : "single"}-v${gridsVersion}`}
                     atlas={atlas}
                     tiles={levelViewData.combined}
                     tileDisplaySize={tileDisplaySize}
@@ -2385,7 +2391,7 @@ export function VanillaEditor({ pack }: Props) {
                 <div className="editor-canvas-surface">
                   <TileCanvas
                     ref={canvasRef}
-                    key={`${pack}-${selectedFile}-${selectedRoom.templateName}-${selectedRoom.roomIndex}-${effectiveLayerView}-v${gridsVersion}`}
+                    viewKey={`${pack}-${selectedFile}-${selectedRoom.templateName}-${selectedRoom.roomIndex}-${effectiveLayerView}-v${gridsVersion}`}
                     atlas={atlas}
                     tiles={combinedGrid}
                     tileDisplaySize={tileDisplaySize}

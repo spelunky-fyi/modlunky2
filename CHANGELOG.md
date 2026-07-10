@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Level editor: switching rooms no longer flashes a black canvas before the new
+  room appears. The canvas keeps a single renderer for the whole session and
+  swaps the room in place.
+
+### Fixed
+
+- Level editor: editing a room and then clicking a different room no longer
+  marks that second room as edited when you haven't touched it.
+
 ## [2.0.11] - 2026-07-09
 
 ### Added

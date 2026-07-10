@@ -31,10 +31,17 @@ import "./TileCanvas.css";
 
 interface Props {
   atlas: EditorAtlas;
-  /** Initial 2D grid of tile names. Rows are outer, cols are inner. Paints
-   *  update sprites in place and fire `onPaint`; this prop is only read at
-   *  mount and on atlas/dimension change. */
+  /** 2D grid of tile names. Rows are outer, cols are inner. Paints update
+   *  sprites in place and fire `onPaint`. Changing the grid's dimensions
+   *  rebuilds the world; changing only its contents reconciles cell-by-cell. */
   tiles: string[][];
+  /** Identifies what the canvas is currently showing (room, file, layer
+   *  view). The canvas does NOT remount between subjects -- it reuses one
+   *  PixiJS Application so switching rooms doesn't flash an empty canvas --
+   *  so this is what tells it to re-apply the initial-zoom policy and drop
+   *  the marquee selection, the two things a remount used to reset for free.
+   *  Any stable string works; only equality matters. */
+  viewKey?: string;
   /** Display size in CSS pixels per tile at 100% zoom. */
   tileDisplaySize?: number;
   /** Name of the tile painted on left-click. If null, painting is disabled. */
@@ -79,8 +86,8 @@ interface Props {
   onZoomChange?: (zoom: number) => void;
   /** Initial-zoom policy applied when a room first renders. When true
    *  (default), fit-to-view. When false, start at `initialZoom` (a scale
-   *  factor, centered). Read once at mount; changing it later has no effect
-   *  until the canvas remounts. */
+   *  factor, centered). Read when the canvas first builds and on every
+   *  `viewKey` change; changing it alone has no effect until then. */
   zoomFit?: boolean;
   /** Scale factor to start at when `zoomFit` is false (e.g. 1 = 100%). */
   initialZoom?: number;
@@ -205,6 +212,15 @@ interface CanvasState {
    *  visibility toggles don't need to rebuild the whole canvas. */
   fineGrid: Graphics | null;
   roomGrid: Graphics | null;
+  /** Monotonic id for the newest world build. An async build that finds its
+   *  token superseded drops its work instead of swapping in a stale world. */
+  buildToken: number;
+  /** Number of world builds that have started and not yet swapped in. */
+  buildsInFlight: number;
+  /** A `viewKey` change asked for the initial-zoom policy, but a rebuild may
+   *  still be in flight; fit-to-view has to measure the incoming room, not
+   *  the outgoing one, so the request waits for the build to land. */
+  zoomPolicyPending: boolean;
 }
 
 export interface TileCanvasHandle {
@@ -239,10 +255,49 @@ function safeDestroy(app: Application) {
   }
 }
 
+// Decoded images, keyed by URL. The editor rebuilds its world every time the
+// user switches room, toggles the layer view, or resizes the grid, and each
+// rebuild wants the same handful of images (the atlas, a biome backdrop, the
+// cosmic starfield). Decoding them once is what lets a rebuild run start to
+// finish without yielding, which in turn is what keeps the swap inside a
+// single frame. The cache is small and bounded (one atlas plus a few
+// backdrops per session) and lives as long as the editor.
+const decodedImages = new Map<string, HTMLImageElement>();
+const decodingImages = new Map<string, Promise<HTMLImageElement>>();
+
+/** Decoded image for `url`, or undefined if it hasn't been loaded yet. */
+function peekImage(url: string): HTMLImageElement | undefined {
+  return decodedImages.get(url);
+}
+
+/** Decode `url`, reusing an in-flight or completed decode when there is one. */
+function loadImage(url: string): Promise<HTMLImageElement> {
+  const decoded = decodedImages.get(url);
+  if (decoded) return Promise.resolve(decoded);
+  const inFlight = decodingImages.get(url);
+  if (inFlight) return inFlight;
+  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      decodedImages.set(url, img);
+      decodingImages.delete(url);
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      decodingImages.delete(url);
+      reject(new Error(`image failed to decode: ${String(e)}`));
+    };
+    img.src = url;
+  });
+  decodingImages.set(url, promise);
+  return promise;
+}
+
 export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanvas(
   {
     atlas,
     tiles,
+    viewKey,
     tileDisplaySize = 24,
     primary,
     secondary,
@@ -291,6 +346,44 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     "none",
   );
 
+  // Props the world build reads. The build effect below only re-runs when the
+  // atlas changes, so its closure over these props goes stale immediately;
+  // everything it needs comes through a ref instead. Declared ahead of every
+  // effect that reads them so React commits the sync first.
+  const tilesRef = useRef(tiles);
+  const tileDisplaySizeRef = useRef(tileDisplaySize);
+  const backgroundImageUrlRef = useRef(backgroundImageUrl);
+  const cosmicBackdropUrlRef = useRef(cosmicBackdropUrl);
+  const cosmicSubthemeDecoUrlRef = useRef(cosmicSubthemeDecoUrl);
+  const roomTileWidthRef = useRef(roomTileWidth);
+  const roomTileHeightRef = useRef(roomTileHeight);
+  const sectionsRef = useRef(sections);
+  const badgesRef = useRef(badges);
+  const showTileGridRef = useRef(showTileGrid);
+  const showRoomGridRef = useRef(showRoomGrid);
+  const zoomFitRef = useRef(zoomFit);
+  const initialZoomRef = useRef(initialZoom);
+  useEffect(() => {
+    tilesRef.current = tiles;
+    tileDisplaySizeRef.current = tileDisplaySize;
+    backgroundImageUrlRef.current = backgroundImageUrl;
+    cosmicBackdropUrlRef.current = cosmicBackdropUrl;
+    cosmicSubthemeDecoUrlRef.current = cosmicSubthemeDecoUrl;
+    roomTileWidthRef.current = roomTileWidth;
+    roomTileHeightRef.current = roomTileHeight;
+    sectionsRef.current = sections;
+    badgesRef.current = badges;
+    showTileGridRef.current = showTileGrid;
+    showRoomGridRef.current = showRoomGrid;
+    zoomFitRef.current = zoomFit;
+    initialZoomRef.current = initialZoom;
+  });
+
+  /** Rebuilds the world container in place. Set by the build effect. */
+  const buildWorldRef = useRef<(() => Promise<void>) | null>(null);
+  /** Re-applies the initial-zoom policy. Set by the build effect. */
+  const applyZoomPolicyRef = useRef<(() => void) | null>(null);
+
   // Position HTML section labels in the DOM to match their world anchor
   // point (centered horizontally under each section). Called from every
   // world-transform update so pan/zoom drags the labels along with the
@@ -300,6 +393,10 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     if (!local || !local.canvas) return;
     const ts = local.tileDisplaySize;
     const gridPxH = local.grid.length * ts;
+    // Read through refs: the build effect calls this from a closure that only
+    // gets rebuilt on atlas change, so the props would be stale.
+    const sections = sectionsRef.current;
+    const badges = badgesRef.current;
     if (sections) {
       sections.forEach((section, i) => {
         if (!section.label) return;
@@ -621,6 +718,19 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     const parent = containerRef.current;
     if (!parent) return;
 
+    // Overlay graphics outlive individual world rebuilds: they carry live
+    // gesture state (rect preview, marquee selection, move ghost), so each
+    // new world container re-parents them rather than recreating them.
+    const rectPreview = new Graphics();
+    rectPreview.eventMode = "none";
+    rectPreview.visible = false;
+    const marqueeOverlay = new Graphics();
+    marqueeOverlay.eventMode = "none";
+    marqueeOverlay.visible = false;
+    const moveGhost = new Graphics();
+    moveGhost.eventMode = "none";
+    moveGhost.visible = false;
+
     const local: CanvasState = {
       cancelled: false,
       app: null,
@@ -629,12 +739,15 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       resizeObserver: null,
       sprites: [],
       textures: new Map(),
-      grid: tiles.map((row) => row.slice()),
-      tileDisplaySize,
+      grid: tilesRef.current.map((row) => row.slice()),
+      tileDisplaySize: tileDisplaySizeRef.current,
       worldExtraBottom: 0,
       selectionApi: null,
       fineGrid: null,
       roomGrid: null,
+      buildToken: 0,
+      buildsInFlight: 0,
+      zoomPolicyPending: false,
     };
     stateRef.current = local;
     setError(null);
@@ -646,63 +759,162 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       positionLabels();
     };
 
-    const setup = async () => {
+    // Initial-zoom policy (see zoomFit / initialZoom props). Fit-to-view is
+    // the default so opening a room shows the whole room instead of a 100%
+    // zoom that overflows anything larger than a single 10x8 room. A fixed
+    // or remembered zoom starts at the caller's requested scale instead.
+    const applyZoomPolicy = () => {
+      if (!local.world) return;
+      const rows = local.grid.length;
+      const cols = local.grid[0]?.length ?? 0;
+      const gridPxW = cols * local.tileDisplaySize;
+      const gridPxH = rows * local.tileDisplaySize;
+      const worldH = gridPxH + local.worldExtraBottom;
+      const cw = parent.clientWidth;
+      const ch = parent.clientHeight;
+      const margin = 24;
+      let startZoom: number;
+      if (zoomFitRef.current) {
+        const fitZoom = Math.min(
+          (cw - margin * 2) / Math.max(1, gridPxW),
+          (ch - margin * 2) / Math.max(1, worldH),
+        );
+        startZoom = clamp(fitZoom, 0.25, 8);
+      } else {
+        startZoom = clamp(initialZoomRef.current, 0.25, 8);
+      }
+      offsetRef.current = {
+        x: (cw - gridPxW * startZoom) / 2,
+        y: (ch - worldH * startZoom) / 2,
+      };
+      zoomRef.current = startZoom;
+      applyTransform();
+      onZoomChangeRef.current?.(startZoom);
+    };
+
+    // Fit-to-view has to measure the room it's about to show, so a zoom
+    // request raised while a rebuild is still in flight waits for that
+    // rebuild to swap in. `buildWorld` drains the request on its way out.
+    const maybeApplyZoomPolicy = () => {
+      if (local.buildsInFlight > 0 || !local.zoomPolicyPending) return;
+      local.zoomPolicyPending = false;
+      applyZoomPolicy();
+    };
+
+    applyZoomPolicyRef.current = () => {
+      local.zoomPolicyPending = true;
+      maybeApplyZoomPolicy();
+    };
+
+    // One-time Application setup: decode the atlas, create the WebGL context,
+    // slice the per-tile textures. Deliberately separate from buildWorld so
+    // room switches reuse all of it. Spinning up a context per room switch
+    // costs tens of milliseconds AND leaks toward the browser's hard cap on
+    // live contexts, so the canvas holds exactly one for its whole lifetime.
+    const ensureApp = async (): Promise<boolean> => {
+      if (local.app) return true;
+
+      const img = await loadImage(atlas.pngDataUrl);
+      if (local.cancelled) return false;
+
+      let attempt = 0;
+      while (
+        (parent.clientWidth === 0 || parent.clientHeight === 0) &&
+        attempt < 20
+      ) {
+        await new Promise((r) => setTimeout(r, 16));
+        attempt++;
+        if (local.cancelled) return false;
+      }
+
+      const app = new Application();
+      await app.init({
+        width: Math.max(parent.clientWidth, 1),
+        height: Math.max(parent.clientHeight, 1),
+        background: 0x101418,
+        antialias: false,
+      });
+      if (local.cancelled) {
+        safeDestroy(app);
+        return false;
+      }
+      local.app = app;
+      local.canvas = app.canvas;
+      parent.appendChild(app.canvas);
+
+      const ro = new ResizeObserver(() => {
+        if (local.cancelled || !local.app) return;
+        const w = Math.max(parent.clientWidth, 1);
+        const h = Math.max(parent.clientHeight, 1);
+        local.app.renderer.resize(w, h);
+      });
+      ro.observe(parent);
+      local.resizeObserver = ro;
+
+      const baseTexture = Texture.from(img);
+      for (const tile of atlas.tiles) {
+        const frame = new Rectangle(tile.x, tile.y, tile.w, tile.h);
+        local.textures.set(
+          tile.name,
+          new Texture({ source: baseTexture.source, frame }),
+        );
+      }
+      return true;
+    };
+
+    // Assemble a fresh world container from the live props and swap it in for
+    // the old one. Every image is awaited up front, so the assemble-and-swap
+    // below runs to completion without yielding: the outgoing room stays on
+    // screen until the incoming one is fully built, and the two never share a
+    // frame. This is what the React `key` remount used to do, minus throwing
+    // away the Application (and with it, a black frame's worth of nothing).
+    const buildWorld = async () => {
+      const token = ++local.buildToken;
+      local.buildsInFlight++;
       try {
-        const img = new Image();
-        img.src = atlas.pngDataUrl;
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = (e) =>
-            reject(new Error(`atlas image failed to decode: ${String(e)}`));
-        });
-        if (local.cancelled) return;
+        if (!(await ensureApp())) return;
+        if (local.cancelled || local.buildToken !== token) return;
 
-        let attempt = 0;
-        while (
-          (parent.clientWidth === 0 || parent.clientHeight === 0) &&
-          attempt < 20
-        ) {
-          await new Promise((r) => setTimeout(r, 16));
-          attempt++;
-          if (local.cancelled) return;
-        }
+        const app = local.app;
+        if (!app) return;
 
-        const app = new Application();
-        await app.init({
-          width: Math.max(parent.clientWidth, 1),
-          height: Math.max(parent.clientHeight, 1),
-          background: 0x101418,
-          antialias: false,
-        });
-        if (local.cancelled) {
-          safeDestroy(app);
-          return;
-        }
-        local.app = app;
-        local.canvas = app.canvas;
-        parent.appendChild(app.canvas);
+        // Shadow the props with their ref values: this effect only re-runs on
+        // atlas change, so the destructured props above are stale by now.
+        const backgroundImageUrl = backgroundImageUrlRef.current;
+        const cosmicBackdropUrl = cosmicBackdropUrlRef.current;
+        const cosmicSubthemeDecoUrl = cosmicSubthemeDecoUrlRef.current;
+        const roomTileWidth = roomTileWidthRef.current;
+        const roomTileHeight = roomTileHeightRef.current;
+        const sections = sectionsRef.current;
+        const showTileGrid = showTileGridRef.current;
+        const showRoomGrid = showRoomGridRef.current;
 
-        const ro = new ResizeObserver(() => {
-          if (local.cancelled || !local.app) return;
-          const w = Math.max(parent.clientWidth, 1);
-          const h = Math.max(parent.clientHeight, 1);
-          local.app.renderer.resize(w, h);
-        });
-        ro.observe(parent);
-        local.resizeObserver = ro;
-
-        const baseTexture = Texture.from(img);
-        for (const tile of atlas.tiles) {
-          const frame = new Rectangle(tile.x, tile.y, tile.w, tile.h);
-          local.textures.set(
-            tile.name,
-            new Texture({ source: baseTexture.source, frame }),
+        // Decode anything we haven't seen before. After the first room in a
+        // level this is always empty, which is what makes later rebuilds
+        // synchronous. A backdrop that fails to decode is skipped below
+        // rather than taking the whole room down with it.
+        const undecoded = [
+          backgroundImageUrl,
+          cosmicBackdropUrl,
+          cosmicSubthemeDecoUrl,
+        ].filter((url): url is string => !!url && !peekImage(url));
+        if (undecoded.length > 0) {
+          await Promise.all(
+            undecoded.map((url) =>
+              loadImage(url).catch((err: unknown) => {
+                // eslint-disable-next-line no-console
+                console.warn("[TileCanvas] backdrop failed to decode", err);
+                return null;
+              }),
+            ),
           );
+          if (local.cancelled || local.buildToken !== token) return;
         }
+
+        local.tileDisplaySize = tileDisplaySizeRef.current;
+        local.grid = tilesRef.current.map((row) => row.slice());
 
         const world = new Container();
-        local.world = world;
-        app.stage.addChild(world);
 
         const rows = local.grid.length;
         const cols = local.grid[0]?.length ?? 0;
@@ -734,7 +946,6 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         // the same at the grid's right and bottom edges.
         let coLayer: Container | null = null;
         const ensureCoLayer = () => {
-          if (!local.world) return null;
           if (coLayer) return coLayer;
           const container = new Container();
           const maskRect = new Graphics();
@@ -743,39 +954,36 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
           container.addChild(maskRect);
           container.mask = maskRect;
           coLayer = container;
-          local.world.addChildAt(container, 0);
+          world.addChildAt(container, 0);
           return container;
         };
 
-        if (cosmicBackdropUrl) {
-          const cosmosImg = new Image();
-          cosmosImg.src = cosmicBackdropUrl;
-          cosmosImg.onload = () => {
-            if (local.cancelled || !local.world) return;
-            const layer = ensureCoLayer();
-            if (!layer) return;
-            const tex = Texture.from(cosmosImg);
-            const ts = local.tileDisplaySize;
-            const cosmosNativeTilePx = 30;
-            const spriteW = (tex.width * ts) / cosmosNativeTilePx;
-            const spriteH = (tex.height * ts) / cosmosNativeTilePx;
-            const stepX = 4 * roomTileWidth * ts;
-            const stepY = 3 * roomTileHeight * ts;
-            const nCols = 1 + Math.ceil(gridPxW / stepX);
-            const nRows = 1 + Math.ceil(gridPxH / stepY);
-            for (let y = 0; y < nRows; y++) {
-              const shift = (((y ^ 8) * 8) % 30) * ts;
-              for (let x = 0; x < nCols; x++) {
-                const sprite = new Sprite(tex);
-                sprite.width = spriteW;
-                sprite.height = spriteH;
-                sprite.x = x * stepX - shift;
-                sprite.y = y * stepY;
-                sprite.eventMode = "none";
-                layer.addChild(sprite);
-              }
+        const cosmosImg = cosmicBackdropUrl
+          ? peekImage(cosmicBackdropUrl)
+          : undefined;
+        if (cosmosImg) {
+          const layer = ensureCoLayer();
+          const tex = Texture.from(cosmosImg);
+          const ts = local.tileDisplaySize;
+          const cosmosNativeTilePx = 30;
+          const spriteW = (tex.width * ts) / cosmosNativeTilePx;
+          const spriteH = (tex.height * ts) / cosmosNativeTilePx;
+          const stepX = 4 * roomTileWidth * ts;
+          const stepY = 3 * roomTileHeight * ts;
+          const nCols = 1 + Math.ceil(gridPxW / stepX);
+          const nRows = 1 + Math.ceil(gridPxH / stepY);
+          for (let y = 0; y < nRows; y++) {
+            const shift = (((y ^ 8) * 8) % 30) * ts;
+            for (let x = 0; x < nCols; x++) {
+              const sprite = new Sprite(tex);
+              sprite.width = spriteW;
+              sprite.height = spriteH;
+              sprite.x = x * stepX - shift;
+              sprite.y = y * stepY;
+              sprite.eventMode = "none";
+              layer.addChild(sprite);
             }
-          };
+          }
         }
 
         // Cosmic Ocean subtheme decorations: 31 scattered sprites drawn
@@ -785,50 +993,50 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         // at 1x scale, plus 30 random sprites with pos in ([0, 80], [0,
         // 120]) tiles, rotation in [0, 360) deg, scale in [0.75, 1.25].
         // Sprites past 5 tiles beyond the grid are skipped, again matching
-        // Python. Positions randomize per mount (Python does the same by
-        // reseeding `co_bg_locations` in every canvas ctor).
-        if (cosmicSubthemeDecoUrl) {
-          const decoImg = new Image();
-          decoImg.src = cosmicSubthemeDecoUrl;
-          decoImg.onload = () => {
-            if (local.cancelled || !local.world) return;
-            const layer = ensureCoLayer();
-            if (!layer) return;
-            const tex = Texture.from(decoImg);
-            const ts = local.tileDisplaySize;
-            const gridTilesW = cols;
-            const gridTilesH = rows;
-            const basePx = 8 * ts;
-            type Placement = {
-              x: number;
-              y: number;
-              rotation: number;
-              size: number;
-            };
-            const placements: Placement[] = [
-              { x: 11, y: 6, rotation: 40, size: 1 },
-            ];
-            for (let i = 0; i < 30; i++) {
-              placements.push({
-                x: Math.random() * 80,
-                y: Math.random() * 120,
-                rotation: Math.random() * 360,
-                size: 0.75 + Math.random() * 0.5,
-              });
-            }
-            for (const p of placements) {
-              if (p.x - 5 > gridTilesW || p.y - 5 > gridTilesH) continue;
-              const sprite = new Sprite(tex);
-              sprite.anchor.set(0.5, 0.5);
-              sprite.width = basePx * p.size;
-              sprite.height = basePx * p.size;
-              sprite.rotation = (p.rotation * Math.PI) / 180;
-              sprite.x = p.x * ts;
-              sprite.y = p.y * ts;
-              sprite.eventMode = "none";
-              layer.addChild(sprite);
-            }
+        // Python. Positions randomize per world build (Python does the same
+        // by reseeding `co_bg_locations` in every canvas ctor).
+        //
+        // Added after the starfield so the decorations sit over it; both land
+        // in the same masked container.
+        const decoImg = cosmicSubthemeDecoUrl
+          ? peekImage(cosmicSubthemeDecoUrl)
+          : undefined;
+        if (decoImg) {
+          const layer = ensureCoLayer();
+          const tex = Texture.from(decoImg);
+          const ts = local.tileDisplaySize;
+          const gridTilesW = cols;
+          const gridTilesH = rows;
+          const basePx = 8 * ts;
+          type Placement = {
+            x: number;
+            y: number;
+            rotation: number;
+            size: number;
           };
+          const placements: Placement[] = [
+            { x: 11, y: 6, rotation: 40, size: 1 },
+          ];
+          for (let i = 0; i < 30; i++) {
+            placements.push({
+              x: Math.random() * 80,
+              y: Math.random() * 120,
+              rotation: Math.random() * 360,
+              size: 0.75 + Math.random() * 0.5,
+            });
+          }
+          for (const p of placements) {
+            if (p.x - 5 > gridTilesW || p.y - 5 > gridTilesH) continue;
+            const sprite = new Sprite(tex);
+            sprite.anchor.set(0.5, 0.5);
+            sprite.width = basePx * p.size;
+            sprite.height = basePx * p.size;
+            sprite.rotation = (p.rotation * Math.PI) / 180;
+            sprite.x = p.x * ts;
+            sprite.y = p.y * ts;
+            sprite.eventMode = "none";
+            layer.addChild(sprite);
+          }
         }
 
         // Layer 0: biome background tiled behind each section only, so the
@@ -841,28 +1049,26 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         // (bg_cave.png ships as 1280x720, not a square). We match that
         // by driving `tileScale.x` / `tileScale.y` off the room extents
         // so one texture repeat = one room = 10x8 tiles.
-        if (backgroundImageUrl) {
-          const bgImg = new Image();
-          bgImg.src = backgroundImageUrl;
-          bgImg.onload = () => {
-            if (local.cancelled || !local.world) return;
-            const tex = Texture.from(bgImg);
-            const roomPxW = roomTileWidth * local.tileDisplaySize;
-            const roomPxH = roomTileHeight * local.tileDisplaySize;
-            for (const section of effectiveSections) {
-              const secW =
-                (section.colEnd - section.colStart) * local.tileDisplaySize;
-              const tiling = new TilingSprite({
-                texture: tex,
-                width: secW,
-                height: gridPxH,
-              });
-              tiling.x = section.colStart * local.tileDisplaySize;
-              tiling.y = 0;
-              tiling.tileScale.set(roomPxW / tex.width, roomPxH / tex.height);
-              local.world.addChildAt(tiling, 0);
-            }
-          };
+        const bgImg = backgroundImageUrl
+          ? peekImage(backgroundImageUrl)
+          : undefined;
+        if (bgImg) {
+          const tex = Texture.from(bgImg);
+          const roomPxW = roomTileWidth * local.tileDisplaySize;
+          const roomPxH = roomTileHeight * local.tileDisplaySize;
+          for (const section of effectiveSections) {
+            const secW =
+              (section.colEnd - section.colStart) * local.tileDisplaySize;
+            const tiling = new TilingSprite({
+              texture: tex,
+              width: secW,
+              height: gridPxH,
+            });
+            tiling.x = section.colStart * local.tileDisplaySize;
+            tiling.y = 0;
+            tiling.tileScale.set(roomPxW / tex.width, roomPxH / tex.height);
+            world.addChildAt(tiling, 0);
+          }
         }
 
         local.sprites = Array.from({ length: rows }, () =>
@@ -964,44 +1170,41 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
           `[TileCanvas] atlas=${atlas.width}x${atlas.height} tiles=${atlas.tiles.length} grid=${cols}x${rows} rendered=${rows * cols - missing}/${rows * cols} canvas=${app.canvas.width}x${app.canvas.height}`,
         );
 
-        const cw = parent.clientWidth;
-        const ch = parent.clientHeight;
-        const margin = 24;
-        const worldH = gridPxH + local.worldExtraBottom;
-        // Initial-zoom policy (see zoomFit / initialZoom props). Fit-to-view is
-        // the default so opening a room shows the whole room instead of a 100%
-        // zoom that overflows anything larger than a single 10x8 room. A fixed
-        // or remembered zoom starts at the caller's requested scale instead.
-        // Read here at mount only; `zoomFit`/`initialZoom` are intentionally
-        // absent from the effect deps so a later zoom change doesn't reset.
-        let startZoom: number;
-        if (zoomFit) {
-          const fitZoom = Math.min(
-            (cw - margin * 2) / Math.max(1, gridPxW),
-            (ch - margin * 2) / Math.max(1, worldH),
-          );
-          startZoom = Math.max(0.25, Math.min(8, fitZoom));
-        } else {
-          startZoom = Math.max(0.25, Math.min(8, initialZoom));
+        // Swap the finished world in for the outgoing one, synchronously, so
+        // only the new state is ever rendered. The overlays get re-parented
+        // first: destroying the old container with `children: true` would
+        // take them with it. Textures are shared with `local.textures` (and
+        // with the next world), so they explicitly survive the teardown.
+        const previous = local.world;
+        if (previous) {
+          previous.removeChild(rectPreview, marqueeOverlay, moveGhost);
+          app.stage.removeChild(previous);
+          previous.destroy({
+            children: true,
+            texture: false,
+            textureSource: false,
+          });
         }
-        offsetRef.current = {
-          x: (cw - gridPxW * startZoom) / 2,
-          y: (ch - worldH * startZoom) / 2,
-        };
-        zoomRef.current = startZoom;
+        app.stage.addChild(world);
+        local.world = world;
         applyTransform();
-        onZoomChangeRef.current?.(startZoom);
-
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error("[TileCanvas] setup failed", err);
+        console.error("[TileCanvas] world build failed", err);
         if (!local.cancelled) {
           setError(err instanceof Error ? err.message : String(err));
         }
+      } finally {
+        local.buildsInFlight--;
       }
+      // A zoom request that arrived mid-build (a `viewKey` change racing this
+      // rebuild) has been waiting for the new extents. Drain it now.
+      maybeApplyZoomPolicy();
     };
+    buildWorldRef.current = buildWorld;
 
-    void setup();
+    local.zoomPolicyPending = true;
+    void buildWorld();
 
     let dragging = false;
     /** Active gesture. Captures the tool at mousedown so switching tools
@@ -1015,23 +1218,11 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     let dragStart = { x: 0, y: 0 };
     let offsetStart = { x: 0, y: 0 };
     let spaceDown = false;
-    const rows = tiles.length;
-    const cols = tiles[0]?.length ?? 0;
-    // Rectangle-tool preview outline. Reused across strokes so we don't
-    // churn Graphics objects; drawn into an already-attached container so
-    // it's part of the world transform.
-    const rectPreview = new Graphics();
-    rectPreview.eventMode = "none";
-    rectPreview.visible = false;
-    // Marquee tool: current committed selection + its overlay Graphics.
-    // A separate `moveGhost` Graphics visualizes the drop position while
-    // the user drags the selection to a new home.
-    const marqueeOverlay = new Graphics();
-    marqueeOverlay.eventMode = "none";
-    marqueeOverlay.visible = false;
-    const moveGhost = new Graphics();
-    moveGhost.eventMode = "none";
-    moveGhost.visible = false;
+    // Grid extents are read live rather than captured: the world now rebuilds
+    // in place on a dimension change instead of remounting the component, so
+    // a `rows`/`cols` snapshot taken here would go stale under the handlers.
+    const gridRows = () => local.grid.length;
+    const gridCols = () => local.grid[0]?.length ?? 0;
     // Selection state. `selection` is the currently committed rect (null =
     // no selection). `marqueeGesture` is any in-flight marquee mouse drag:
     // "create" while defining a new rect, "move" while dragging an existing
@@ -1116,7 +1307,7 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       allowMirror = true,
     ) => {
       if (!local.world) return;
-      if (row < 0 || row >= rows || col < 0 || col >= cols) return;
+      if (row < 0 || row >= gridRows() || col < 0 || col >= gridCols()) return;
       if (canPaintCellRef.current && !canPaintCellRef.current(row, col)) return;
       // Eraser overrides the color choice; primary/secondary otherwise.
       const rawName =
@@ -1180,6 +1371,8 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       c0: number,
       kind: "primary" | "secondary",
     ) => {
+      const rows = gridRows();
+      const cols = gridCols();
       if (r0 < 0 || r0 >= rows || c0 < 0 || c0 >= cols) return;
       if (canPaintCellRef.current && !canPaintCellRef.current(r0, c0)) return;
       const originalName = local.grid[r0]?.[c0] ?? "";
@@ -1211,9 +1404,9 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       kind: "primary" | "secondary",
     ) => {
       const rTop = Math.max(0, Math.min(r0, r1));
-      const rBot = Math.min(rows - 1, Math.max(r0, r1));
+      const rBot = Math.min(gridRows() - 1, Math.max(r0, r1));
       const cLeft = Math.max(0, Math.min(c0, c1));
-      const cRight = Math.min(cols - 1, Math.max(c0, c1));
+      const cRight = Math.min(gridCols() - 1, Math.max(c0, c1));
       for (let r = rTop; r <= rBot; r++) {
         for (let c = cLeft; c <= cRight; c++) {
           paintAt(r, c, kind);
@@ -1230,9 +1423,9 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     ) => {
       const ts = local.tileDisplaySize;
       const rTop = Math.max(0, Math.min(r0, r1));
-      const rBot = Math.min(rows - 1, Math.max(r0, r1));
+      const rBot = Math.min(gridRows() - 1, Math.max(r0, r1));
       const cLeft = Math.max(0, Math.min(c0, c1));
-      const cRight = Math.min(cols - 1, Math.max(c0, c1));
+      const cRight = Math.min(gridCols() - 1, Math.max(c0, c1));
       const x = cLeft * ts;
       const y = rTop * ts;
       const w = (cRight - cLeft + 1) * ts;
@@ -1295,6 +1488,8 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         setPanCursor("active");
         return;
       }
+      const rows = gridRows();
+      const cols = gridCols();
       if (readOnlyRef.current) {
         if (e.button === 0) {
           e.preventDefault();
@@ -1375,6 +1570,8 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         applyTransform();
         return;
       }
+      const rows = gridRows();
+      const cols = gridCols();
       const { row, col } = pointerToTile(e.clientX, e.clientY);
       if (painting) {
         if (painting.tool === "brush" || painting.tool === "eraser") {
@@ -1537,27 +1734,66 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       local.resizeObserver = null;
       local.sprites = [];
       local.textures.clear();
+      buildWorldRef.current = null;
+      applyZoomPolicyRef.current = null;
     };
+    // Only the atlas rebuilds the Application. Grid dimensions, backdrops and
+    // room extents rebuild the world in place via the effect below -- tearing
+    // the WebGL context down and back up on a room switch is what used to
+    // black the canvas out between rooms.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atlas]);
+
+  // Structural rebuild. Anything that changes the *shape* of the world --
+  // grid dimensions, backdrops, room extents, section layout, tile size --
+  // reassembles the world container against the surviving Application. Pure
+  // content changes skip this and fall through to the sprite reconcile below,
+  // which is cheaper still. Neither path destroys anything the user can see.
+  const sectionsKey = useMemo(
+    () => JSON.stringify(sections ?? null),
+    [sections],
+  );
+  useEffect(() => {
+    const local = stateRef.current;
+    // Before the Application exists, the build effect's own initial
+    // `buildWorld()` is already queued and will read these same props.
+    if (!local || !local.app) return;
+    void buildWorldRef.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    atlas,
-    tileDisplaySize,
     tiles.length,
     tiles[0]?.length,
+    tileDisplaySize,
     backgroundImageUrl,
     cosmicBackdropUrl,
     cosmicSubthemeDecoUrl,
     roomTileWidth,
     roomTileHeight,
+    sectionsKey,
   ]);
 
+  // A `viewKey` change means the canvas is now showing a different subject
+  // (room, file, layer view). Remounting used to reset the view and drop the
+  // selection as a side effect of the component being destroyed; now that it
+  // survives, both have to be asked for. Runs after the structural effect
+  // above, so `zoomFit` measures the room that's actually on screen.
+  useEffect(() => {
+    const local = stateRef.current;
+    // The initial build applies the zoom policy itself.
+    if (!local || !local.world) return;
+    local.selectionApi?.set(null);
+    setHover(null);
+    hoverRef.current = null;
+    applyZoomPolicyRef.current?.();
+  }, [viewKey]);
+
   // Reconcile rendered sprites when the `tiles` prop content changes WITHOUT
-  // a dimension change. The setup effect above only re-runs on dimension /
-  // atlas changes, and painting updates sprites imperatively (it doesn't move
-  // this prop), so the one case that lands here is a same-size content swap:
-  // the flip / mirror preview toggle, which reverses each row. Without this,
-  // toggling the Preview-flip / Mirrored button changed the data but never
-  // repainted the canvas. Diffs against local.grid so only changed cells move.
+  // a dimension change: painting updates sprites imperatively (it doesn't move
+  // this prop), so what lands here is a same-size content swap. Two cases:
+  // the flip / mirror preview toggle, which reverses each row, and -- since
+  // the canvas stopped remounting per room -- switching to another room of
+  // the same dimensions, which is the overwhelmingly common one. Diffs
+  // against local.grid so only the cells that actually differ get touched.
   useEffect(() => {
     const local = stateRef.current;
     if (!local || !local.world) return;

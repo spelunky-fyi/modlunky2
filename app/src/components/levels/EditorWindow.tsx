@@ -1162,7 +1162,7 @@ function CustomEditor({ pack }: { pack: string }) {
               <div className="editor-canvas-surface">
                 <TileCanvas
                   ref={canvasRef}
-                  key={`custom-${pack}-${selectedFile}-${atlas.tiles.length}-${effectiveLayerView}-v${canvas.gridsVersion}`}
+                  viewKey={`custom-${pack}-${selectedFile}-${atlas.tiles.length}-${effectiveLayerView}-v${canvas.gridsVersion}`}
                   atlas={atlas}
                   tiles={tilesForCanvas}
                   tileDisplaySize={TILE_DISPLAY_SIZE}
