@@ -11,6 +11,8 @@ import {
 } from "@tauri-apps/plugin-clipboard-manager";
 import {
   ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Keyboard,
   Palette,
   Settings,
@@ -3731,19 +3733,51 @@ function VanillaRoomsTree({
     });
   };
 
+  // Expand/collapse every template at once. When anything is open the button
+  // collapses all; when everything is collapsed it expands all. A filter
+  // force-expands every template regardless of this set, so the button has no
+  // visible effect then and is disabled.
+  const anyExpanded = templates.some((t) => !collapsed.has(t.name));
+  const toggleAll = () =>
+    setCollapsed(
+      anyExpanded ? new Set(templates.map((t) => t.name)) : new Set(),
+    );
+
   const filtered = filterLower
     ? templates.filter((t) => t.name.toLowerCase().includes(filterLower))
     : templates;
 
   return (
     <div className="vanilla-rooms">
-      <input
-        type="text"
-        className="vanilla-file-search"
-        placeholder="Filter rooms..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
+      <div className="vanilla-rooms-toolbar">
+        <input
+          type="text"
+          className="vanilla-file-search"
+          placeholder="Filter rooms..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        {templates.length > 0 && (
+          <button
+            type="button"
+            className="vanilla-rooms-collapse-all"
+            onClick={toggleAll}
+            disabled={filterLower.length > 0}
+            title={
+              anyExpanded ? "Collapse all templates" : "Expand all templates"
+            }
+            aria-label={
+              anyExpanded ? "Collapse all templates" : "Expand all templates"
+            }
+          >
+            {anyExpanded ? (
+              <ChevronsDownUp size={15} aria-hidden="true" />
+            ) : (
+              <ChevronsUpDown size={15} aria-hidden="true" />
+            )}
+          </button>
+        )}
+      </div>
       {templates.length === 0 ? (
         <div className="level-tree-status">No templates.</div>
       ) : (

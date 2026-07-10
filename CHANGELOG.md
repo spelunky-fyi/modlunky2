@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vanilla level editor: keyboard navigation in the rooms list. Up/Down move
   between rooms (opening each as you go) and templates; Left/Right collapse and
   expand a template.
+- Vanilla level editor: a button in the rooms list header expands or collapses
+  every template at once.
 
 ### Changed
 

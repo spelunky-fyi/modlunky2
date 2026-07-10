@@ -257,6 +257,47 @@
   flex: 1;
 }
 
+.vanilla-rooms-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.vanilla-rooms-toolbar .vanilla-file-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.vanilla-rooms-collapse-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #171b20;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+
+.vanilla-rooms-collapse-all:hover:not(:disabled) {
+  background: rgba(240, 165, 90, 0.08);
+  border-color: rgba(240, 165, 90, 0.4);
+  color: var(--fg);
+}
+
+.vanilla-rooms-collapse-all:focus-visible {
+  outline: none;
+  border-color: #f0a55a;
+}
+
+.vanilla-rooms-collapse-all:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .vanilla-rooms-list {
   list-style: none;
   margin: 0;
