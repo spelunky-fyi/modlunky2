@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, CopyPlus, SquareArrowOutUpRight, Trash2 } from "lucide-react";
+import {
+  Copy,
+  CopyPlus,
+  SquareArrowOutUpRight,
+  Trash2,
+} from "lucide-react";
 import { Modal } from "../shared/Modal";
 import type { EditorAtlas, EditorAtlasTile, VanillaLevelData } from "../../lib/commands";
 import "./RoomManagerModal.css";
@@ -23,6 +28,11 @@ interface RoomManagerModalProps {
   /** Copy a room to the clipboard. `append` (Shift-click) adds to the existing
    *  clipboard rooms instead of replacing them. */
   onCopyRoom: (templateName: string, roomIndex: number, append: boolean) => void;
+  /** Delete a single room. No-op (with its own toast) on a template's last
+   *  room; callers should keep at least one room per template. */
+  onDeleteRoom: (templateName: string, roomIndex: number) => void;
+  /** Delete every room in a template, leaving one blank room. */
+  onDeleteAllRooms: (templateName: string) => void;
   onPurgeComments: (scope: PurgeScope) => void;
 }
 
@@ -36,9 +46,31 @@ export function RoomManagerModal({
   onEditRoomComment,
   onJumpToRoom,
   onCopyRoom,
+  onDeleteRoom,
+  onDeleteAllRooms,
   onPurgeComments,
 }: RoomManagerModalProps) {
   const [confirmingPurge, setConfirmingPurge] = useState(false);
+  // Two-click delete confirmation. `armedDelete` holds the id of the delete
+  // button waiting for its second click (`room:tpl#idx` or `all:tpl`); the
+  // first click arms it, the second commits. Auto-disarms after a few seconds
+  // and whenever the modal closes so a stale armed button can't bite later.
+  const [armedDelete, setArmedDelete] = useState<string | null>(null);
+  const armTimer = useRef<number | null>(null);
+  const arm = (id: string) => {
+    setArmedDelete(id);
+    if (armTimer.current != null) window.clearTimeout(armTimer.current);
+    armTimer.current = window.setTimeout(() => setArmedDelete(null), 3000);
+  };
+  const disarm = () => {
+    setArmedDelete(null);
+    if (armTimer.current != null) window.clearTimeout(armTimer.current);
+    armTimer.current = null;
+  };
+  useEffect(() => {
+    if (!open) disarm();
+  }, [open]);
+  useEffect(() => () => disarm(), []);
   // Track Shift so each room's copy icon can preview the append action. The
   // click handler reads e.shiftKey directly, so the action stays correct even
   // if this state lags.
@@ -158,6 +190,33 @@ export function RoomManagerModal({
             <div className="rm-template-head">
               <span className="rm-template-name">{tpl.name}</span>
               <span className="rm-template-count">{tpl.rooms.length}</span>
+              {tpl.rooms.length > 0 &&
+                (() => {
+                  const id = `all:${tpl.name}`;
+                  const armed = armedDelete === id;
+                  return (
+                    <button
+                      type="button"
+                      className={`rm-template-delete${armed ? " armed" : ""}`}
+                      title={
+                        armed
+                          ? "Click again to delete every room"
+                          : "Delete all rooms (kept as one blank room)"
+                      }
+                      onClick={() => {
+                        if (armed) {
+                          disarm();
+                          onDeleteAllRooms(tpl.name);
+                        } else {
+                          arm(id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                      {armed ? "Delete all rooms?" : "Delete all rooms"}
+                    </button>
+                  );
+                })()}
             </div>
             <CommentInput
               className="rm-template-comment"
@@ -208,6 +267,38 @@ export function RoomManagerModal({
                           <Copy size={13} aria-hidden="true" />
                         )}
                       </button>
+                      {(() => {
+                        const id = `room:${tpl.name}#${idx}`;
+                        const armed = armedDelete === id;
+                        // The last room isn't removed; it's cleared to a blank
+                        // room, since a template keeps at least one.
+                        const isLast = tpl.rooms.length <= 1;
+                        return (
+                          <button
+                            type="button"
+                            className={`rm-room-delete${armed ? " armed" : ""}`}
+                            title={
+                              armed
+                                ? isLast
+                                  ? "Click again to clear this room"
+                                  : "Click again to delete this room"
+                                : isLast
+                                  ? "Clear room (blanks the template's last room)"
+                                  : "Delete room"
+                            }
+                            onClick={() => {
+                              if (armed) {
+                                disarm();
+                                onDeleteRoom(tpl.name, idx);
+                              } else {
+                                arm(id);
+                              }
+                            }}
+                          >
+                            <Trash2 size={13} aria-hidden="true" />
+                          </button>
+                        );
+                      })()}
                     </div>
                     <CommentInput
                       className="rm-room-comment"

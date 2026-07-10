@@ -302,6 +302,7 @@ export function VanillaEditor({ pack }: Props) {
         initialValue: string;
       }
     | { kind: "deleteTemplate"; templateName: string }
+    | { kind: "deleteAllRooms"; templateName: string }
     | { kind: "addRoom"; templateName: string }
     | {
         kind: "editRoomComment";
@@ -1707,6 +1708,65 @@ export function VanillaEditor({ pack }: Props) {
     [level, selectedRoom, dropTemplateKeys, toast],
   );
 
+  // Reduce a template to a single blank room. The editor requires every
+  // template to keep at least one room (see commitDeleteRoom), so "delete all
+  // rooms" resets to one empty room of the template's size rather than
+  // leaving it empty. Distinct from commitDeleteTemplate, which drops the
+  // template outright.
+  const commitDeleteAllRooms = useCallback(
+    (templateName: string) => {
+      if (!level) return;
+      const tpl = level.templates.find((t) => t.name === templateName);
+      if (!tpl) return;
+      const first = tpl.rooms[0];
+      const cols = first?.width ?? 10;
+      const rows = first?.height ?? 8;
+      const emptyName = palette.find((p) => p.name === "empty")?.name ?? "";
+      const grid: string[][] = Array.from({ length: rows }, () =>
+        new Array<string>(cols).fill(emptyName),
+      );
+      const blankRoom = {
+        settings: [] as string[],
+        foreground: grid.map((row) => row.slice()),
+        background: [] as string[][],
+        width: cols,
+        height: rows,
+        comment: null,
+        isDual: false,
+      };
+      setLevel({
+        ...level,
+        templates: level.templates.map((t) =>
+          t.name === templateName ? { ...t, rooms: [blankRoom] } : t,
+        ),
+      });
+      // Drop every existing key for this template, then seed room 0 with the
+      // blank grid so the refs match the new single-room layout.
+      dropTemplateKeys(templateName);
+      const key = `${templateName}#0`;
+      gridsRef.current.set(
+        key,
+        grid.map((r) => r.slice()),
+      );
+      bgGridsRef.current.set(
+        key,
+        grid.map((r) => r.map(() => "")),
+      );
+      editedKeysRef.current.add(key);
+      if (selectedRoom?.templateName === templateName) {
+        setSelectedRoom({ templateName, roomIndex: 0 });
+      }
+      // Room 0's grid content changes to blank even when it was already the
+      // selected room, so currentKey may not change; bump gridsVersion to
+      // force the canvas memo to re-read the blanked grid.
+      bumpGridsVersion();
+      setEditedTick((t) => t + 1);
+      setDirty(true);
+      toast.success(`Cleared all rooms in "${templateName}".`);
+    },
+    [level, palette, selectedRoom, dropTemplateKeys, bumpGridsVersion, toast],
+  );
+
   // Extract a room's current content (live grids/settings) as a clipboard
   // payload.
   const roomPayloadFor = useCallback(
@@ -1970,9 +2030,10 @@ export function VanillaEditor({ pack }: Props) {
       const tpl = level.templates.find((t) => t.name === templateName);
       if (!tpl) return;
       if (tpl.rooms.length <= 1) {
-        toast.error(
-          `"${templateName}" has only one room; delete the whole template instead.`,
-        );
+        // A template keeps at least one room, so deleting its only room
+        // clears that room to blank rather than removing it (same result as
+        // "Delete all rooms" on a single-room template).
+        commitDeleteAllRooms(templateName);
         return;
       }
       // Drop the room and shift subsequent room keys down so refs still
@@ -2035,11 +2096,16 @@ export function VanillaEditor({ pack }: Props) {
           roomIndex: selectedRoom.roomIndex - 1,
         });
       }
+      // Deleting the selected room clamps selection back to the same key
+      // (e.g. room 0 -> room 0) while the shift moves different content under
+      // it, so currentKey may not change; bump gridsVersion so the canvas
+      // re-reads the grid now living at that key.
+      bumpGridsVersion();
       setEditedTick((t) => t + 1);
       setDirty(true);
       toast.success(`Removed room ${roomIndex} from "${templateName}".`);
     },
-    [level, selectedRoom, toast],
+    [level, selectedRoom, bumpGridsVersion, commitDeleteAllRooms, toast],
   );
 
   const commitEditRoomComment = useCallback(
@@ -2746,6 +2812,8 @@ export function VanillaEditor({ pack }: Props) {
             if (append) void commitAddRoomToClipboard(name, idx);
             else void commitCopyRoom(name, idx);
           }}
+          onDeleteRoom={commitDeleteRoom}
+          onDeleteAllRooms={commitDeleteAllRooms}
           onPurgeComments={commitPurgeComments}
         />
       )}
@@ -2794,6 +2862,10 @@ export function VanillaEditor({ pack }: Props) {
           }}
           onSubmitDeleteTemplate={(name) => {
             commitDeleteTemplate(name);
+            setPendingTreeOp(null);
+          }}
+          onSubmitDeleteAllRooms={(name) => {
+            commitDeleteAllRooms(name);
             setPendingTreeOp(null);
           }}
           onSubmitAddRoom={(name) => {
@@ -2850,6 +2922,7 @@ function TreeContextMenu({
           initialValue: string;
         }
       | { kind: "deleteTemplate"; templateName: string }
+      | { kind: "deleteAllRooms"; templateName: string }
       | { kind: "addRoom"; templateName: string }
       | {
           kind: "editRoomComment";
@@ -2993,6 +3066,20 @@ function TreeContextMenu({
               Edit comment...
             </button>
             <div className="tree-menu-sep" />
+            {(tpl?.rooms.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="tree-menu-item danger"
+                onClick={() =>
+                  onOp({
+                    kind: "deleteAllRooms",
+                    templateName: menu.templateName,
+                  })
+                }
+              >
+                Delete all rooms
+              </button>
+            )}
             <button
               type="button"
               className="tree-menu-item danger"
@@ -3086,6 +3173,7 @@ function TreeOpModal({
   onSubmitRenameTemplate,
   onSubmitEditTemplateComment,
   onSubmitDeleteTemplate,
+  onSubmitDeleteAllRooms,
   onSubmitAddRoom,
   onSubmitEditRoomComment,
   onSubmitDeleteRoom,
@@ -3099,6 +3187,7 @@ function TreeOpModal({
         initialValue: string;
       }
     | { kind: "deleteTemplate"; templateName: string }
+    | { kind: "deleteAllRooms"; templateName: string }
     | { kind: "addRoom"; templateName: string }
     | {
         kind: "editRoomComment";
@@ -3112,6 +3201,7 @@ function TreeOpModal({
   onSubmitRenameTemplate: (oldName: string, newName: string) => void;
   onSubmitEditTemplateComment: (name: string, comment: string) => void;
   onSubmitDeleteTemplate: (name: string) => void;
+  onSubmitDeleteAllRooms: (name: string) => void;
   onSubmitAddRoom: (name: string) => void;
   onSubmitEditRoomComment: (
     name: string,
@@ -3152,6 +3242,9 @@ function TreeOpModal({
       case "deleteTemplate":
         onSubmitDeleteTemplate(op.templateName);
         break;
+      case "deleteAllRooms":
+        onSubmitDeleteAllRooms(op.templateName);
+        break;
       case "deleteRoom":
         onSubmitDeleteRoom(op.templateName, op.roomIndex);
         break;
@@ -3165,10 +3258,14 @@ function TreeOpModal({
     editRoomComment: `Comment on "${op.kind === "editRoomComment" ? `${op.templateName}#${op.roomIndex}` : ""}"`,
     addRoom: `Add room to "${op.kind === "addRoom" ? op.templateName : ""}"`,
     deleteTemplate: "Delete template",
+    deleteAllRooms: "Delete all rooms",
     deleteRoom: "Delete room",
   }[op.kind];
 
-  const isDanger = op.kind === "deleteTemplate" || op.kind === "deleteRoom";
+  const isDanger =
+    op.kind === "deleteTemplate" ||
+    op.kind === "deleteAllRooms" ||
+    op.kind === "deleteRoom";
   const submitLabel = isDanger
     ? "Delete"
     : op.kind === "addRoom"
@@ -3308,6 +3405,17 @@ function TreeOpModal({
           <p className="editor-confirm-body">
             Delete template <code>{op.templateName}</code>? Every room in it
             will be removed.
+          </p>
+          <p className="editor-confirm-warn">
+            This can't be undone. Save the file first if you want a backup.
+          </p>
+        </>
+      )}
+      {op.kind === "deleteAllRooms" && (
+        <>
+          <p className="editor-confirm-body">
+            Delete every room in <code>{op.templateName}</code>? The template
+            is kept with a single blank room.
           </p>
           <p className="editor-confirm-warn">
             This can't be undone. Save the file first if you want a backup.

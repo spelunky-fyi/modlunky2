@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   expand a template.
 - Vanilla level editor: a button in the rooms list header expands or collapses
   every template at once.
+- Vanilla level editor: delete rooms from the Rooms manager. Each room card has
+  a delete button, and each template a "Delete all rooms" button; both ask for
+  confirmation by needing a second click. Deleting a template's last room clears
+  it to a blank room rather than removing it.
+- Vanilla level editor: the template context menu has a "Delete all rooms"
+  option that resets the template to a single blank room.
 
 ### Changed
 
