@@ -1767,6 +1767,176 @@ export function VanillaEditor({ pack }: Props) {
     [level, palette, selectedRoom, dropTemplateKeys, bumpGridsVersion, toast],
   );
 
+  // Reorder a room within its template, or move it to another template.
+  // `toIdx` is the insertion index in the destination AFTER the room is
+  // removed from its source (arrayMove semantics for same-template moves).
+  //
+  // Room grid content lives in the positional ref maps (gridsRef etc., keyed
+  // `template#index`) which save() reads, so a move has to renumber those
+  // maps to match the new room order, not just reorder level.templates.
+  const commitMoveRoom = useCallback(
+    (fromTpl: string, fromIdx: number, toTpl: string, toIdx: number) => {
+      if (!level) return;
+      if (fromTpl === toTpl && fromIdx === toIdx) return;
+      const a = level.templates.find((t) => t.name === fromTpl);
+      const b = level.templates.find((t) => t.name === toTpl);
+      if (!a || !b) return;
+      const moved = a.rooms[fromIdx];
+      if (!moved) return;
+
+      if (fromTpl !== toTpl) {
+        // Rooms in a template share one size. Block drops that don't match so
+        // the game doesn't read a mis-sized room.
+        const ref = b.rooms[0];
+        if (ref && (ref.width !== moved.width || ref.height !== moved.height)) {
+          toast.error(
+            `Can't move a ${moved.width}x${moved.height} room into "${toTpl}" (its rooms are ${ref.width}x${ref.height}).`,
+          );
+          return;
+        }
+      }
+
+      // An Origin points at where a destination slot's data currently lives.
+      type Origin = { tpl: string; idx: number };
+      let newAOrigins: Origin[];
+      let newBOrigins: Origin[] | null;
+      if (fromTpl === toTpl) {
+        const origins: Origin[] = a.rooms.map((_, i) => ({
+          tpl: fromTpl,
+          idx: i,
+        }));
+        const [m] = origins.splice(fromIdx, 1);
+        origins.splice(Math.max(0, Math.min(toIdx, origins.length)), 0, m);
+        newAOrigins = origins;
+        newBOrigins = null;
+      } else {
+        newAOrigins = a.rooms
+          .map((_, i): Origin => ({ tpl: fromTpl, idx: i }))
+          .filter((_, i) => i !== fromIdx);
+        const bOrigins: Origin[] = b.rooms.map((_, i) => ({
+          tpl: toTpl,
+          idx: i,
+        }));
+        bOrigins.splice(Math.max(0, Math.min(toIdx, bOrigins.length)), 0, {
+          tpl: fromTpl,
+          idx: fromIdx,
+        });
+        newBOrigins = bOrigins;
+      }
+
+      const roomAt = (o: Origin) => (o.tpl === fromTpl ? a : b).rooms[o.idx];
+      const newARooms = newAOrigins.map(roomAt);
+      const newBRooms = newBOrigins ? newBOrigins.map(roomAt) : null;
+
+      const affected = fromTpl === toTpl ? [fromTpl] : [fromTpl, toTpl];
+      const orderByTpl: Record<string, Origin[]> = { [fromTpl]: newAOrigins };
+      if (newBOrigins) orderByTpl[toTpl] = newBOrigins;
+
+      // Renumber a positional map to the new order. Source and destination
+      // key spaces overlap, so snapshot every origin value before deleting.
+      const reshuffle = <T,>(map: Map<string, T>) => {
+        const snap = new Map<string, T | undefined>();
+        for (const tpl of affected) {
+          for (const o of orderByTpl[tpl]) {
+            const k = `${o.tpl}#${o.idx}`;
+            if (!snap.has(k)) snap.set(k, map.get(k));
+          }
+        }
+        for (const tpl of affected) {
+          for (const k of Array.from(map.keys())) {
+            if (k.startsWith(`${tpl}#`)) map.delete(k);
+          }
+        }
+        for (const tpl of affected) {
+          orderByTpl[tpl].forEach((o, p) => {
+            const v = snap.get(`${o.tpl}#${o.idx}`);
+            if (v !== undefined) map.set(`${tpl}#${p}`, v);
+          });
+        }
+      };
+      reshuffle(gridsRef.current);
+      reshuffle(bgGridsRef.current);
+      reshuffle(settingsRef.current);
+
+      // Moving a template's only room out empties it. A template must keep at
+      // least one room, so refill the source with a blank room of the same
+      // size (mirrors deleting a template's last room).
+      let finalARooms = newARooms;
+      if (fromTpl !== toTpl && newARooms.length === 0) {
+        const emptyName = palette.find((p) => p.name === "empty")?.name ?? "";
+        const grid: string[][] = Array.from({ length: moved.height }, () =>
+          new Array<string>(moved.width).fill(emptyName),
+        );
+        finalARooms = [
+          {
+            settings: [],
+            foreground: grid.map((r) => r.slice()),
+            background: [],
+            width: moved.width,
+            height: moved.height,
+            comment: null,
+            isDual: false,
+          },
+        ];
+        gridsRef.current.set(
+          `${fromTpl}#0`,
+          grid.map((r) => r.slice()),
+        );
+        bgGridsRef.current.set(
+          `${fromTpl}#0`,
+          grid.map((r) => r.map(() => "")),
+        );
+      }
+
+      // Every room in the affected templates shifted position, so re-mark
+      // them all edited at their new keys and drop the old ones.
+      for (const k of Array.from(editedKeysRef.current)) {
+        if (affected.some((tpl) => k.startsWith(`${tpl}#`))) {
+          editedKeysRef.current.delete(k);
+        }
+      }
+      for (const tpl of affected) {
+        const count =
+          tpl === fromTpl ? finalARooms.length : orderByTpl[tpl].length;
+        for (let p = 0; p < count; p++) {
+          editedKeysRef.current.add(`${tpl}#${p}`);
+        }
+      }
+
+      // Keep the canvas on whichever room the user had open.
+      if (
+        selectedRoom &&
+        (selectedRoom.templateName === fromTpl ||
+          selectedRoom.templateName === toTpl)
+      ) {
+        for (const tpl of affected) {
+          const p = orderByTpl[tpl].findIndex(
+            (o) =>
+              o.tpl === selectedRoom.templateName &&
+              o.idx === selectedRoom.roomIndex,
+          );
+          if (p !== -1) {
+            setSelectedRoom({ templateName: tpl, roomIndex: p });
+            break;
+          }
+        }
+      }
+
+      setLevel({
+        ...level,
+        templates: level.templates.map((t) => {
+          if (t.name === fromTpl) return { ...t, rooms: finalARooms };
+          if (newBRooms && t.name === toTpl) return { ...t, rooms: newBRooms };
+          return t;
+        }),
+      });
+      bumpGridsVersion();
+      setEditedTick((t) => t + 1);
+      setDirty(true);
+    },
+    [level, palette, selectedRoom, bumpGridsVersion, toast],
+  );
+
   // Extract a room's current content (live grids/settings) as a clipboard
   // payload.
   const roomPayloadFor = useCallback(
@@ -2814,6 +2984,7 @@ export function VanillaEditor({ pack }: Props) {
           }}
           onDeleteRoom={commitDeleteRoom}
           onDeleteAllRooms={commitDeleteAllRooms}
+          onMoveRoom={commitMoveRoom}
           onPurgeComments={commitPurgeComments}
         />
       )}

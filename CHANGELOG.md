@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it to a blank room rather than removing it.
 - Vanilla level editor: the template context menu has a "Delete all rooms"
   option that resets the template to a single blank room.
+- Vanilla level editor: drag and drop rooms in the Rooms manager to reorder
+  them within a template or move them to another. Templates whose rooms are a
+  different size are dimmed and won't accept the drop; moving a template's last
+  room out leaves it with one blank room.
 
 ### Changed
 
@@ -32,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Level editor: editing a room and then clicking a different room no longer
   marks that second room as edited when you haven't touched it.
+- Level editor: a level whose palette reuses a tile code across two entries no
+  longer triggers a React duplicate-key warning.
 
 ## [2.0.11] - 2026-07-09
 

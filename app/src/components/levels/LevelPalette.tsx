@@ -200,8 +200,11 @@ export function LevelPalette({
                   return null;
                 }
                 return (
+                  // Key by code+name, not code alone: a level can carry two
+                  // entries sharing a tile code (a code collision), which
+                  // would otherwise be duplicate React keys.
                   <PaletteRow
-                    key={entry.code}
+                    key={`${entry.code}-${entry.name}`}
                     entry={entry}
                     reorderMode={reorderMode && !!onReorder}
                     swatch={swatchStyleFor(entry)}

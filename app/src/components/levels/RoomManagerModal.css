@@ -154,6 +154,7 @@
 }
 
 .rm-room-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -163,8 +164,61 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* The card being dragged fades in place; its floating clone (DragOverlay)
+   carries the visible content. */
+.rm-room-card.dragging {
+  opacity: 0.35;
+}
+
+.rm-room-card-overlay {
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  background: #1b1f26;
+}
+
 .rm-room-preview-wrap {
   position: relative;
+}
+
+.rm-room-drag {
+  position: absolute;
+  /* Anchored to the card (its padding is 8px), sitting over the preview's
+     top-left corner. */
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: rgba(20, 22, 27, 0.82);
+  color: var(--fg-muted);
+  cursor: grab;
+  opacity: 0.55;
+  touch-action: none;
+  transition: opacity 80ms, color 80ms, border-color 80ms;
+}
+
+.rm-room-preview-wrap:hover .rm-room-drag {
+  opacity: 1;
+}
+
+.rm-room-drag:hover {
+  color: var(--fg);
+  border-color: rgba(240, 165, 90, 0.6);
+}
+
+.rm-room-drag:active {
+  cursor: grabbing;
+}
+
+/* Template that can't accept the dragged room (different room size, or would
+   empty its source): dimmed so the mismatch reads before the drop. It also
+   never accepts the card mid-drag, so a drop there is a no-op. */
+.rm-template-invalid {
+  opacity: 0.4;
 }
 
 .rm-room-jump {
