@@ -505,8 +505,8 @@ export function TrackersPage() {
                 <ol>
                   <li>
                     First you must start the tracker server. If the default port
-                    conflict with another proces/server on your machine choose a
-                    different one.
+                    conflict with another process/server on your machine choose
+                    a different one.
                   </li>
                   <li>
                     Click the browser button to open the tracker in your default
