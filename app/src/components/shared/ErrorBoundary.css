@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #eb5757;
+  color: var(--danger);
 }
 
 .error-boundary-header h1 {

@@ -58,7 +58,7 @@
 .settings-linklike {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -105,12 +105,12 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #0f1215;
+  color: var(--accent-contrast);
   border-color: var(--accent);
 }
 
@@ -119,12 +119,12 @@
 }
 
 .btn-danger {
-  background: #b04848;
-  color: #fff;
-  border-color: #b04848;
+  background: var(--danger-solid);
+  color: var(--on-solid);
+  border-color: var(--danger-solid);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #c85555;
-  border-color: #c85555;
+  background: var(--danger-solid-hover);
+  border-color: var(--danger-solid-hover);
 }

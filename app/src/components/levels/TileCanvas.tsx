@@ -1886,7 +1886,7 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
 
   return (
     <div
-      className="tile-canvas"
+      className="tile-canvas dark-scope"
       ref={containerRef}
       style={{ cursor: canvasCursor }}
     >

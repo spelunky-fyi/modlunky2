@@ -19,9 +19,9 @@
   grid-template-rows: auto 1fr auto;
   gap: 12px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   align-items: center;
   justify-items: center;
 }
@@ -66,17 +66,17 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(var(--overlay-rgb), 0.15);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
   cursor: pointer;
   transition: background 80ms, border-color 80ms, color 80ms;
 }
 
 .resize-modal-btn:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.2);
-  border-color: rgba(240, 165, 90, 0.5);
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .resize-modal-btn:disabled {
@@ -88,7 +88,7 @@
   min-width: 30px;
   padding: 2px 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   color: var(--fg-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11.5px;
@@ -109,13 +109,13 @@
   min-width: 180px;
   min-height: 120px;
   padding: 16px 20px;
-  border: 1px dashed rgba(240, 165, 90, 0.5);
+  border: 1px dashed rgba(var(--accent-rgb), 0.5);
   border-radius: 6px;
-  background: rgba(240, 165, 90, 0.06);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 .resize-modal-preview-size {
-  color: #fff2e0;
+  color: var(--accent-fg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 22px;
   font-weight: 600;
@@ -138,8 +138,8 @@
 .resize-modal-warn {
   padding: 8px 10px;
   border-radius: 4px;
-  background: rgba(255, 178, 102, 0.14);
-  color: #ffcd99;
+  background: rgba(var(--accent-bright-rgb), 0.14);
+  color: var(--accent-soft);
   font-size: 12px;
   visibility: hidden;
   transition: opacity 100ms;

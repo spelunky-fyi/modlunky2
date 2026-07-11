@@ -9,25 +9,25 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #c8d1d8;
+  color: var(--fg);
 }
 
 .create-pack-field input[type="text"] {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 6px;
-  background: #171b20;
-  color: #dfe6ec;
+  background: var(--bg-inset);
+  color: var(--fg);
   font-size: 14px;
 }
 
 .create-pack-field input[type="text"]:focus {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .create-pack-hint {
-  color: #8f9aa2;
+  color: var(--fg-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -37,14 +37,14 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 6px;
   margin: 0;
 }
 
 .create-pack-mode legend {
   padding: 0 6px;
-  color: #98a2ab;
+  color: var(--fg-muted);
   font-size: 12px;
 }
 
@@ -64,7 +64,7 @@
 
 .create-pack-mode label > span:nth-of-type(1) {
   font-size: 13.5px;
-  color: #dfe6ec;
+  color: var(--fg);
 }
 
 .create-pack-footer {

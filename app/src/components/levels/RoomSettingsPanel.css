@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 8px 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.06);
 }
 
 .room-settings-header {
@@ -18,7 +18,7 @@
 }
 
 .room-settings-dirty {
-  color: #ffb266;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .room-settings-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
 }
 
@@ -53,7 +53,7 @@
 }
 
 .room-settings-item input[type="checkbox"] {
-  accent-color: #f0a55a;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Light theme. A Sun/Moon button in the top bar toggles between the dark
+  (default) and light themes
+
 ## [2.0.13] - 2026-07-10
 
 ### Fixed

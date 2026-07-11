@@ -15,6 +15,8 @@ export interface SharedConfig {
   trackerServerPort: number;
   /** Whether the tracker server auto-starts on app boot. */
   trackerServerAutoStart: boolean;
+  /** UI color theme for the whole app: "dark" (default) or "light". */
+  theme: string;
 }
 
 export interface ConfigPatch {
@@ -30,4 +32,6 @@ export interface ConfigPatch {
   lastTab?: string;
   trackerServerPort?: number;
   trackerServerAutoStart?: boolean;
+  /** "dark" | "light". Pass to persist the app's color theme. */
+  theme?: string;
 }

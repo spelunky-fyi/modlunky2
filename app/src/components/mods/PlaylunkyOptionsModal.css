@@ -85,11 +85,11 @@
 
 .plo-danger-btn {
   align-self: flex-start;
-  color: #eb5757;
-  border-color: rgba(235, 87, 87, 0.35);
+  color: var(--danger);
+  border-color: rgba(var(--danger-rgb), 0.35);
 }
 
 .plo-danger-btn:hover:not(:disabled) {
-  background: rgba(235, 87, 87, 0.08);
-  border-color: #eb5757;
+  background: rgba(var(--danger-rgb), 0.08);
+  border-color: var(--danger);
 }

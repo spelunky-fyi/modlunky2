@@ -6,27 +6,27 @@
 
 .pack-picker-search {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 6px;
-  background: #171b20;
-  color: #dfe6ec;
+  background: var(--bg-inset);
+  color: var(--fg);
   font-size: 14px;
 }
 
 .pack-picker-search:focus {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .pack-picker-status,
 .pack-picker-error {
   padding: 16px 4px;
-  color: #98a2ab;
+  color: var(--fg-muted);
   font-size: 13px;
 }
 
 .pack-picker-error {
-  color: #f2a2a2;
+  color: var(--danger-fg);
 }
 
 .pack-picker-list {
@@ -46,8 +46,8 @@
   padding: 10px 14px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #dfe6ec;
+  background: rgba(var(--overlay-rgb), 0.03);
+  color: var(--fg);
   text-align: left;
   font: inherit;
   cursor: pointer;
@@ -55,6 +55,6 @@
 }
 
 .pack-picker-item:hover {
-  background: rgba(240, 165, 90, 0.12);
-  border-color: rgba(240, 165, 90, 0.3);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.3);
 }

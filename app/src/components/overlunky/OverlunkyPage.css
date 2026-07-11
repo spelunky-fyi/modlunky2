@@ -70,11 +70,11 @@
 }
 
 .ovl-install-installed {
-  border-color: rgba(180, 220, 140, 0.35);
+  border-color: rgba(var(--success-rgb), 0.35);
 }
 
 .ovl-install-missing {
-  border-color: rgba(240, 165, 90, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .ovl-install-glyph {
@@ -84,18 +84,18 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg-muted);
 }
 
 .ovl-install-installed .ovl-install-glyph {
-  background: rgba(180, 220, 140, 0.14);
-  color: #d8f0b0;
+  background: rgba(var(--success-rgb), 0.14);
+  color: var(--success-fg);
 }
 
 .ovl-install-missing .ovl-install-glyph {
-  background: rgba(240, 165, 90, 0.15);
-  color: #ffcd99;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-soft);
 }
 
 .ovl-install-copy {
@@ -176,8 +176,8 @@
 }
 
 .ovl-launch-card:has(.ovl-launch-btn:not(:disabled):hover) {
-  border-color: rgba(240, 165, 90, 0.35);
-  background: rgba(240, 165, 90, 0.05);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.05);
 }
 
 .ovl-launch-icon {
@@ -187,8 +187,8 @@
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: rgba(240, 165, 90, 0.14);
-  color: #ffcd99;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-soft);
   margin-bottom: 4px;
 }
 

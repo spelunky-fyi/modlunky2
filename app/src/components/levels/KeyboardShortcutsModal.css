@@ -71,10 +71,10 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-bottom-width: 2px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;

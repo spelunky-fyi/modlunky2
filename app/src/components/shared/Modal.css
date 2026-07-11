@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(var(--scrim-rgb), 0.55);
   backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
@@ -14,7 +14,7 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 40px rgba(var(--scrim-rgb), 0.4);
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 48px);
@@ -67,7 +67,7 @@
 
 .modal-close:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 .modal-body {

@@ -29,9 +29,9 @@
   align-items: stretch;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .conflicts-modal-row {
@@ -73,8 +73,8 @@
   min-width: 18px;
   padding: 2px 5px;
   border-radius: 3px;
-  background: rgba(240, 165, 90, 0.15);
-  color: #ffbf85;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--accent-bright);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   text-align: center;

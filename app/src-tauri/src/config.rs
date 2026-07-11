@@ -68,6 +68,9 @@ const KEY_TRACKER_FILE_ENABLED: &str = "tracker-file-enabled";
 /// windows. Applied to every new tracker window at open time and to
 /// every already-open one when the setting toggles.
 const KEY_TRACKER_ALWAYS_ON_TOP: &str = "tracker-always-on-top";
+/// UI color theme for the whole app. `"dark"` (default) or `"light"`.
+/// The frontend reads this at boot to set `data-theme` on the document.
+const KEY_THEME: &str = "theme";
 
 pub const DEFAULT_TRACKER_COLOR_KEY: &str = "#00ff00";
 pub const DEFAULT_TRACKER_FONT_SIZE: u16 = 24;
@@ -81,6 +84,8 @@ pub const DEFAULT_TRACKER_STROKE_COLOR: &str = "#000000";
 /// tracker window was hardcoded to always-on-top, so upgrading users
 /// don't notice a change on first launch.
 pub const DEFAULT_TRACKER_ALWAYS_ON_TOP: bool = true;
+/// Dark is the app's original and default look; light is opt-in.
+pub const DEFAULT_THEME: &str = "dark";
 
 /// Wire-facing snapshot of the config fields the Tauri app cares about.
 /// camelCase over the wire; snake_case in Rust.
@@ -107,6 +112,7 @@ pub struct SharedConfig {
     pub tracker_output_dir: Option<String>,
     pub tracker_file_enabled: bool,
     pub tracker_always_on_top: bool,
+    pub theme: String,
 }
 
 /// Values the Settings modal can set. `Some("")` clears a string field
@@ -135,6 +141,7 @@ pub struct ConfigPatch {
     pub tracker_output_dir: Option<String>,
     pub tracker_file_enabled: Option<bool>,
     pub tracker_always_on_top: Option<bool>,
+    pub theme: Option<String>,
 }
 
 /// Path where the shared config.json lives. On Windows this is
@@ -308,6 +315,7 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
             .get(KEY_TRACKER_ALWAYS_ON_TOP)
             .and_then(|v| v.as_bool())
             .unwrap_or(DEFAULT_TRACKER_ALWAYS_ON_TOP),
+        theme: get_string(obj, KEY_THEME).unwrap_or_else(|| DEFAULT_THEME.to_string()),
     }
 }
 
@@ -446,6 +454,7 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
         KEY_TRACKER_ALWAYS_ON_TOP,
         patch.tracker_always_on_top,
     );
+    apply_field(&mut obj, KEY_THEME, patch.theme);
 
     let serialized =
         serde_json::to_string_pretty(&Value::Object(obj)).map_err(|e| format!("encode: {e}"))?;

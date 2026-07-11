@@ -130,9 +130,9 @@
   grid-template-columns: auto 1fr;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   cursor: pointer;
   transition:
     background 80ms,
@@ -140,8 +140,8 @@
 }
 
 .extract-option:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.04);
+  border-color: rgba(var(--overlay-rgb), 0.1);
 }
 
 .extract-option.disabled {
@@ -225,13 +225,13 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   color: var(--fg-muted);
 }
 
 .extract-status-icon.idle {
-  background: rgba(106, 183, 255, 0.14);
-  color: #a8ccff;
+  background: rgba(var(--info-rgb), 0.14);
+  color: var(--info);
 }
 
 .extract-status-heading {
@@ -271,19 +271,19 @@
   grid-template-columns: auto 1fr;
   gap: 10px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .extract-phase-complete {
-  border-color: rgba(180, 220, 140, 0.24);
-  background: rgba(180, 220, 140, 0.06);
+  border-color: rgba(var(--success-rgb), 0.24);
+  background: rgba(var(--success-rgb), 0.06);
 }
 
 .extract-phase-running {
-  border-color: rgba(106, 183, 255, 0.32);
-  background: rgba(106, 183, 255, 0.08);
+  border-color: rgba(var(--info-rgb), 0.32);
+  background: rgba(var(--info-rgb), 0.08);
 }
 
 .extract-phase-glyph {
@@ -298,13 +298,13 @@
 }
 
 .extract-phase-complete .extract-phase-glyph {
-  background: rgba(180, 220, 140, 0.2);
-  color: #d8f0b0;
+  background: rgba(var(--success-rgb), 0.2);
+  color: var(--success-fg);
 }
 
 .extract-phase-running .extract-phase-glyph {
-  background: rgba(106, 183, 255, 0.22);
-  color: #a8ccff;
+  background: rgba(var(--info-rgb), 0.22);
+  color: var(--info);
 }
 
 .extract-phase-body {
@@ -335,7 +335,7 @@
 
 .extract-phase-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -351,9 +351,9 @@
   width: 40%;
   background: linear-gradient(
     90deg,
-    rgba(106, 183, 255, 0.15) 0%,
+    rgba(var(--info-rgb), 0.15) 0%,
     var(--accent) 50%,
-    rgba(106, 183, 255, 0.15) 100%
+    rgba(var(--info-rgb), 0.15) 100%
   );
   animation: extract-indeterminate 1.4s ease-in-out infinite;
 }
@@ -374,16 +374,16 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 14px;
-  border: 1px solid rgba(235, 87, 87, 0.4);
+  border: 1px solid rgba(var(--danger-rgb), 0.4);
   border-radius: 8px;
-  background: rgba(235, 87, 87, 0.08);
+  background: rgba(var(--danger-rgb), 0.08);
 }
 
 .extract-status-error-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffb0b0;
+  color: var(--danger-fg);
   font-size: 13px;
   font-weight: 600;
 }
@@ -391,7 +391,7 @@
 .extract-status-error-body {
   margin: 0;
   padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(var(--scrim-rgb), 0.28);
   border-radius: 5px;
   color: var(--fg);
   white-space: pre-wrap;

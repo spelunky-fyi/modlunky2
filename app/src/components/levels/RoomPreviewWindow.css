@@ -66,8 +66,8 @@
   gap: 8px;
   padding: 6px 12px;
   flex: 0 0 auto;
-  background: rgba(240, 165, 90, 0.14);
-  border-bottom: 1px solid rgba(240, 165, 90, 0.35);
+  background: rgba(var(--accent-rgb), 0.14);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.35);
   color: var(--fg);
   font-size: 12px;
 }
@@ -79,7 +79,7 @@
 .room-preview-banner-dismiss {
   flex: 0 0 auto;
   padding: 3px 8px;
-  border: 1px solid rgba(240, 165, 90, 0.45);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
   border-radius: 4px;
   background: transparent;
   color: var(--fg);
@@ -89,7 +89,7 @@
 }
 
 .room-preview-banner-dismiss:hover {
-  background: rgba(240, 165, 90, 0.18);
+  background: rgba(var(--accent-rgb), 0.18);
 }
 
 .room-preview-segmented {
@@ -119,7 +119,7 @@
 }
 
 .room-preview-seg.active {
-  background: rgba(240, 165, 90, 0.16);
+  background: rgba(var(--accent-rgb), 0.16);
   color: var(--fg);
 }
 
@@ -140,12 +140,12 @@
 
 .room-preview-toggle:hover {
   color: var(--fg);
-  border-color: rgba(240, 165, 90, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .room-preview-toggle.active {
-  background: rgba(240, 165, 90, 0.16);
-  border-color: rgba(240, 165, 90, 0.5);
+  background: rgba(var(--accent-rgb), 0.16);
+  border-color: rgba(var(--accent-rgb), 0.5);
   color: var(--fg);
 }
 
@@ -167,7 +167,7 @@
 }
 
 .room-preview-error {
-  color: #ffbcbc;
+  color: var(--danger-fg);
 }
 
 .room-preview-footer {

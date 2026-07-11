@@ -152,7 +152,7 @@ export function LevelsPage() {
 
   return (
     <div
-      className="levels-splash"
+      className="levels-splash dark-scope"
       style={{ backgroundImage: `url(${splashImg})` }}
     >
       <div className="levels-splash-tint" />

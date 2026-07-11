@@ -585,7 +585,7 @@ export function RoomManagerModal({
           <DragOverlay dropAnimation={null}>
             {activeInfo ? (
               <div className="rm-room-card rm-room-card-overlay">
-                <div className="rm-room-preview-wrap">
+                <div className="rm-room-preview-wrap dark-scope">
                   <RoomFgPreview
                     grid={fgFor(activeInfo.templateName, activeInfo.roomIndex)}
                     atlasImg={atlasImg}
@@ -769,7 +769,7 @@ const RoomCardBody = memo(function RoomCardBody({
 
   return (
     <>
-      <div className="rm-room-preview-wrap">
+      <div className="rm-room-preview-wrap dark-scope">
         <button
           type="button"
           className="rm-room-jump"

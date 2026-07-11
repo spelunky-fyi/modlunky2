@@ -19,7 +19,7 @@
 .level-config-hint code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   font-size: 11.5px;
 }
 
@@ -32,8 +32,8 @@
 .level-config-warn {
   padding: 4px 8px;
   border-radius: 4px;
-  background: rgba(255, 178, 102, 0.12);
-  color: #ffcd99;
+  background: rgba(var(--accent-bright-rgb), 0.12);
+  color: var(--accent-soft);
   font-size: 11.5px;
 }
 
@@ -76,9 +76,9 @@
 .level-config-field select {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: #171b20;
+  background: var(--bg-inset);
   color: var(--fg);
   font: inherit;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -101,14 +101,14 @@
  * falling back to Windows grey. Support is patchy across engines but
  * WebView2 honors these. */
 .level-config-field option {
-  background: #171b20;
+  background: var(--bg-inset);
   color: var(--fg);
 }
 
 .level-config-field input:focus,
 .level-config-field select:focus {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .level-config-field select:disabled,
@@ -121,9 +121,9 @@
   display: block;
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   color: var(--fg-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12.5px;
@@ -139,23 +139,23 @@
 .level-config-convert-note {
   padding: 6px 8px;
   border-radius: 4px;
-  background: rgba(255, 178, 102, 0.12);
-  color: #ffcd99;
+  background: rgba(var(--accent-bright-rgb), 0.12);
+  color: var(--accent-soft);
 }
 
 .level-config-convert-note code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11.5px;
-  color: #ffe6c9;
+  color: var(--accent-soft);
 }
 
 .level-config-hint-inline code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11.5px;
   color: var(--fg);
@@ -166,7 +166,7 @@
   flex-direction: column;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
 }
 
 /* The section-dividers read as vertical rhythm between sections; on the
@@ -204,9 +204,9 @@
   display: inline-flex;
   gap: 2px;
   padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   width: fit-content;
 }
 
@@ -225,13 +225,13 @@
 
 .level-config-segment-btn:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .level-config-segment-btn.active {
-  background: rgba(240, 165, 90, 0.22);
-  color: #fff2e0;
-  box-shadow: inset 0 0 0 1px rgba(240, 165, 90, 0.45);
+  background: rgba(var(--accent-rgb), 0.22);
+  color: var(--accent-fg);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45);
 }
 
 /* --- Advanced flag checkboxes ------------------------------------------ */
@@ -255,7 +255,7 @@
 }
 
 .level-config-flag input[type="checkbox"] {
-  accent-color: #f0a55a;
+  accent-color: var(--accent);
   cursor: pointer;
   margin: 0;
 }

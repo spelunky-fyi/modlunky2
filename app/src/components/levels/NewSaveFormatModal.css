@@ -14,7 +14,7 @@
 .save-format-form-hint code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11.5px;
 }
@@ -38,9 +38,9 @@
 .save-format-form input[type="text"] {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: #171b20;
+  background: var(--bg-inset);
   color: var(--fg);
   font: inherit;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -49,7 +49,7 @@
 
 .save-format-form input[type="text"]:focus {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .save-format-form-checkbox {
@@ -64,7 +64,7 @@
 }
 
 .save-format-form-checkbox input[type="checkbox"] {
-  accent-color: #f0a55a;
+  accent-color: var(--accent);
   margin-top: 3px;
   cursor: pointer;
 }
@@ -72,8 +72,8 @@
 .save-format-form-error {
   padding: 6px 10px;
   border-radius: 4px;
-  background: rgba(240, 90, 90, 0.15);
-  color: #ffb0b0;
+  background: rgba(var(--danger-rgb), 0.15);
+  color: var(--danger-fg);
   font-size: 12.5px;
 }
 

@@ -13,7 +13,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
   flex-shrink: 0;
 }
 
@@ -47,9 +47,9 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -57,7 +57,7 @@
 }
 
 .cc-btn:hover:not(:disabled) {
-  border-color: rgba(240, 165, 90, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .cc-btn:disabled {
@@ -88,9 +88,9 @@
   margin: 12px 18px;
   padding: 10px 12px;
   border-radius: 6px;
-  border-left: 3px solid #e06a6a;
-  background: rgba(224, 106, 106, 0.12);
-  color: #ffbcbc;
+  border-left: 3px solid var(--danger);
+  background: rgba(var(--danger-rgb), 0.12);
+  color: var(--danger-fg);
 }
 
 .cc-section-title {
@@ -121,14 +121,14 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .cc-slot.modded {
-  border-color: rgba(240, 165, 90, 0.35);
-  background: rgba(240, 165, 90, 0.05);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.05);
 }
 
 .cc-slot-head {
@@ -160,9 +160,9 @@
 
 .cc-potential {
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .cc-potential.inactive {
@@ -207,7 +207,7 @@
   align-items: center;
   gap: 5px;
   font-size: 11.5px;
-  color: #f0b45a;
+  color: var(--accent-text);
 }
 
 /* --- Previews ------------------------------------------------------------ */
@@ -236,10 +236,10 @@
   height: 100%;
   background: repeating-linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.03),
-    rgba(255, 255, 255, 0.03) 6px,
-    rgba(255, 255, 255, 0.06) 6px,
-    rgba(255, 255, 255, 0.06) 12px
+    rgba(var(--overlay-rgb), 0.03),
+    rgba(var(--overlay-rgb), 0.03) 6px,
+    rgba(var(--overlay-rgb), 0.06) 6px,
+    rgba(var(--overlay-rgb), 0.06) 12px
   );
 }
 
@@ -292,20 +292,20 @@
   text-transform: uppercase;
   padding: 1px 6px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.16);
+  background: rgba(var(--overlay-rgb), 0.05);
   color: var(--fg-muted);
 }
 
 .cc-badge.full {
-  border-color: rgba(120, 180, 240, 0.5);
-  color: #9cc7f0;
+  border-color: rgba(var(--info-rgb), 0.5);
+  color: var(--info);
 }
 
 .cc-badge.warn {
-  border-color: rgba(240, 165, 90, 0.55);
-  background: rgba(240, 165, 90, 0.16);
-  color: #f2c79a;
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-soft);
 }
 
 .cc-badge.muted {
@@ -313,8 +313,8 @@
 }
 
 .cc-badge.conf-likely {
-  border-color: rgba(150, 200, 150, 0.5);
-  color: #a6d6a6;
+  border-color: rgba(var(--success-rgb), 0.5);
+  color: var(--success-fg);
 }
 
 .cc-badge.conf-possible {
@@ -336,7 +336,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--fg-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.1);
 }
 
 .cc-th-actions {
@@ -345,7 +345,7 @@
 
 .cc-table tbody td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   vertical-align: middle;
 }
 
@@ -398,9 +398,9 @@
 
 .cc-action {
   padding: 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -410,14 +410,14 @@
 }
 
 .cc-action:hover {
-  border-color: rgba(240, 165, 90, 0.5);
-  background: rgba(240, 165, 90, 0.1);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .cc-action.warn {
-  border-color: rgba(240, 165, 90, 0.55);
-  background: rgba(240, 165, 90, 0.16);
-  color: #f2c79a;
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-soft);
 }
 
 .cc-action.ghost {
@@ -428,7 +428,7 @@
 
 .cc-action.ghost:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 /* --- Custom slot picker -------------------------------------------------- */
@@ -444,9 +444,9 @@
   gap: 8px;
   width: 100%;
   padding: 5px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(var(--scrim-rgb), 0.25);
   color: var(--fg);
   font: inherit;
   font-size: 12.5px;
@@ -456,7 +456,7 @@
 
 .cc-select-btn:hover,
 .cc-select-btn.open {
-  border-color: rgba(240, 165, 90, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .cc-select-current {
@@ -482,10 +482,10 @@
 .cc-floating-menu {
   z-index: 100;
   padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: 8px;
-  background: #1b1e24;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+  background: var(--bg-inset);
+  box-shadow: 0 12px 34px rgba(var(--scrim-rgb), 0.55);
 }
 
 .cc-select-opt {
@@ -505,11 +505,11 @@
 }
 
 .cc-select-opt:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.14);
+  background: rgba(var(--accent-rgb), 0.14);
 }
 
 .cc-select-opt.selected {
-  background: rgba(240, 165, 90, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .cc-select-opt:disabled,
@@ -560,14 +560,14 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .cc-slotrow.filled {
-  border-color: rgba(240, 165, 90, 0.3);
-  background: rgba(240, 165, 90, 0.04);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  background: rgba(var(--accent-rgb), 0.04);
 }
 
 .cc-slotrow-slot {
@@ -599,7 +599,7 @@
   align-items: center;
   gap: 3px;
   margin-left: auto;
-  color: #f0b45a;
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 600;
 }

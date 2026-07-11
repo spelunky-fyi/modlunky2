@@ -28,25 +28,25 @@
 .seq-panel-hint code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   font-size: 11.5px;
 }
 
 .seq-panel-error {
   padding: 8px 10px;
   border-radius: 4px;
-  background: rgba(240, 90, 90, 0.15);
-  color: #ffb0b0;
+  background: rgba(var(--danger-rgb), 0.15);
+  color: var(--danger-fg);
   font-size: 12.5px;
 }
 
 .seq-panel-revert {
   flex: 0 0 auto;
   padding: 5px 10px;
-  border: 1px solid rgba(255, 178, 102, 0.35);
+  border: 1px solid rgba(var(--accent-bright-rgb), 0.35);
   border-radius: 5px;
-  background: rgba(255, 178, 102, 0.1);
-  color: #ffcd99;
+  background: rgba(var(--accent-bright-rgb), 0.1);
+  color: var(--accent-soft);
   font: inherit;
   font-size: 11.5px;
   cursor: pointer;
@@ -56,7 +56,7 @@
 }
 
 .seq-panel-revert:hover:not(:disabled) {
-  background: rgba(255, 178, 102, 0.2);
+  background: rgba(var(--accent-bright-rgb), 0.2);
 }
 
 /* Keep the button in the layout at all times to avoid a topbar reflow
@@ -79,9 +79,9 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .seq-col-header {
@@ -89,7 +89,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.06);
 }
 
 .seq-col-title {
@@ -104,7 +104,7 @@
 .seq-col-count {
   padding: 1px 8px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--fg-muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -145,9 +145,9 @@
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .seq-row.available {
@@ -171,12 +171,12 @@
 }
 
 .seq-row.current {
-  border-color: rgba(240, 165, 90, 0.5);
-  background: rgba(240, 165, 90, 0.1);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .seq-row.dragging {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(var(--scrim-rgb), 0.4);
 }
 
 .seq-row-handle {
@@ -197,7 +197,7 @@
 }
 
 .seq-row-handle:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--fg);
 }
 
@@ -209,7 +209,7 @@
   min-width: 22px;
   padding: 2px 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11.5px;
@@ -217,8 +217,8 @@
 }
 
 .seq-row.current .seq-row-order {
-  background: rgba(240, 165, 90, 0.25);
-  color: #fff2e0;
+  background: rgba(var(--accent-rgb), 0.25);
+  color: var(--accent-fg);
 }
 
 .seq-row-add,
@@ -240,13 +240,13 @@
 }
 
 .seq-row-add:hover {
-  background: rgba(180, 220, 140, 0.18);
-  color: #d8f0b0;
+  background: rgba(var(--success-rgb), 0.18);
+  color: var(--success-fg);
 }
 
 .seq-row-remove:hover {
-  background: rgba(240, 90, 90, 0.18);
-  color: #ffbcbc;
+  background: rgba(var(--danger-rgb), 0.18);
+  color: var(--danger-fg);
 }
 
 /* --- LevelSequence library section ------------------------------------- */
@@ -257,9 +257,9 @@
   gap: 8px;
   margin-top: 4px;
   padding: 12px 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
 }
 
 .seq-panel-library-head {
@@ -286,7 +286,7 @@
 .seq-panel-library-desc code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
 }
@@ -302,9 +302,9 @@
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   color: var(--fg-muted);
   font: inherit;
   font-size: 11.5px;
@@ -317,20 +317,20 @@
 }
 
 .seq-panel-library-btn:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.14);
-  color: #fff2e0;
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-fg);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .seq-panel-library-btn.primary {
-  background: rgba(240, 165, 90, 0.2);
-  color: #fff2e0;
-  border-color: rgba(240, 165, 90, 0.5);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-fg);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 
 .seq-panel-library-btn.primary:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.32);
-  border-color: rgba(255, 191, 133, 0.65);
+  background: rgba(var(--accent-rgb), 0.32);
+  border-color: rgba(var(--accent-bright-rgb), 0.65);
 }
 
 .seq-panel-library-btn:disabled {
@@ -354,26 +354,26 @@
 }
 
 .seq-panel-library-pill.missing {
-  background: rgba(240, 90, 90, 0.15);
-  color: #ffbcbc;
+  background: rgba(var(--danger-rgb), 0.15);
+  color: var(--danger-fg);
 }
 
 .seq-panel-library-pill.uptodate {
-  background: rgba(180, 220, 140, 0.16);
-  color: #cae8a0;
+  background: rgba(var(--success-rgb), 0.16);
+  color: var(--success-fg);
   text-transform: none;
   letter-spacing: 0.02em;
 }
 
 .seq-panel-library-pill.update {
-  background: rgba(255, 178, 102, 0.16);
-  color: #ffcd99;
+  background: rgba(var(--accent-bright-rgb), 0.16);
+  color: var(--accent-soft);
   text-transform: none;
   letter-spacing: 0.02em;
 }
 
 .seq-panel-library-pill.installed {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--fg-muted);
   text-transform: none;
   letter-spacing: 0.02em;

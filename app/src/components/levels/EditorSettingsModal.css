@@ -8,8 +8,8 @@
   margin: 0;
   padding: 8px 10px;
   border-radius: 4px;
-  background: rgba(240, 165, 90, 0.08);
-  border-left: 3px solid rgba(240, 165, 90, 0.5);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-left: 3px solid rgba(var(--accent-rgb), 0.5);
   color: var(--fg-muted);
   font-size: 12px;
   line-height: 1.45;
@@ -48,9 +48,9 @@
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   color: var(--fg-muted);
   font: inherit;
   font-size: 11.5px;
@@ -60,9 +60,9 @@
 }
 
 .editor-settings-add-btn:hover {
-  background: rgba(240, 165, 90, 0.14);
-  color: #fff2e0;
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-fg);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 /* --- Save format list ---------------------------------------------------- */
@@ -79,21 +79,21 @@
 .save-format-row {
   display: flex;
   align-items: stretch;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   overflow: hidden;
   transition: background 80ms, border-color 80ms;
 }
 
 .save-format-row:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(var(--overlay-rgb), 0.14);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .save-format-row.default {
-  border-color: rgba(240, 165, 90, 0.5);
-  background: rgba(240, 165, 90, 0.08);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .save-format-row-body {
@@ -116,7 +116,7 @@
   align-items: center;
   justify-content: center;
   width: 20px;
-  color: #f0a55a;
+  color: var(--accent-text);
 }
 
 .save-format-row-meta {
@@ -145,7 +145,7 @@
 .save-format-row-tags code {
   padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: var(--fg);
 }
@@ -160,18 +160,18 @@
 }
 
 .save-format-tag.builtin {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--fg-muted);
 }
 
 .save-format-tag.custom {
-  background: rgba(240, 165, 90, 0.2);
-  color: #d5f2fb;
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--fg);
 }
 
 .save-format-tag.mirrors {
-  background: rgba(180, 220, 140, 0.14);
-  color: #cae8a0;
+  background: rgba(var(--success-rgb), 0.14);
+  color: var(--success-fg);
 }
 
 .save-format-row-delete {
@@ -181,7 +181,7 @@
   width: 34px;
   padding: 0;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 1px solid rgba(var(--overlay-rgb), 0.06);
   background: transparent;
   color: var(--fg-muted);
   cursor: pointer;
@@ -189,8 +189,8 @@
 }
 
 .save-format-row-delete:hover {
-  background: rgba(240, 90, 90, 0.18);
-  color: #ffbcbc;
+  background: rgba(var(--danger-rgb), 0.18);
+  color: var(--danger-fg);
 }
 
 /* --- Canvas section controls (zoom / clamp / grid) ----------------------- */
@@ -211,9 +211,9 @@
   display: inline-flex;
   gap: 4px;
   padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   width: fit-content;
 }
 
@@ -234,8 +234,8 @@
 }
 
 .editor-settings-seg.active {
-  background: rgba(240, 165, 90, 0.9);
-  color: #1b1205;
+  background: rgba(var(--accent-rgb), 0.9);
+  color: var(--accent-contrast);
   font-weight: 600;
 }
 
@@ -255,9 +255,9 @@
 .editor-settings-fixed-zoom input {
   width: 72px;
   padding: 5px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(var(--scrim-rgb), 0.2);
   color: var(--fg);
   font: inherit;
   font-size: 13px;
@@ -271,9 +271,9 @@
 
 .editor-settings-preset {
   padding: 4px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   color: var(--fg-muted);
   font: inherit;
   font-size: 12px;
@@ -283,13 +283,13 @@
 
 .editor-settings-preset:hover {
   color: var(--fg);
-  border-color: rgba(240, 165, 90, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .editor-settings-preset.active {
   color: var(--fg);
-  border-color: rgba(240, 165, 90, 0.55);
-  background: rgba(240, 165, 90, 0.14);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.14);
 }
 
 .editor-settings-check {
@@ -310,7 +310,7 @@
 /* Delineate each settings section so scope (global vs custom-only) reads as a
    distinct block, not just differently-worded copy. */
 .editor-settings-section + .editor-settings-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
   padding-top: 16px;
 }
 
@@ -330,16 +330,16 @@
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.16);
+  background: rgba(var(--overlay-rgb), 0.05);
   color: var(--fg-muted);
   white-space: nowrap;
 }
 
 .editor-settings-scope.custom {
-  border-color: rgba(240, 165, 90, 0.55);
-  background: rgba(240, 165, 90, 0.16);
-  color: #f2c79a;
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-soft);
 }
 
 /* Segmented zoom control and its inline Fixed controls share one row, so

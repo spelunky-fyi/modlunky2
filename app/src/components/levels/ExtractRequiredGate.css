@@ -29,8 +29,8 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: rgba(240, 165, 90, 0.14);
-  color: #ffcd99;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-soft);
 }
 
 .extract-required-title {
@@ -51,7 +51,7 @@
 .extract-required-body code {
   padding: 1px 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
 }

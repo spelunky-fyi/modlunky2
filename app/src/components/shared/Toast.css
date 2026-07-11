@@ -18,7 +18,7 @@
   color: var(--fg);
   border: 1px solid var(--border);
   border-left-width: 3px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 20px rgba(var(--scrim-rgb), 0.35);
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -28,11 +28,11 @@
 }
 
 .toast-success {
-  border-left-color: #6fcf97;
+  border-left-color: var(--success);
 }
 
 .toast-error {
-  border-left-color: #eb5757;
+  border-left-color: var(--danger);
 }
 
 .toast-info {
@@ -58,7 +58,7 @@
 
 .toast-dismiss:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 @keyframes toast-in {

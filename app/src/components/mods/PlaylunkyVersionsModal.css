@@ -64,11 +64,11 @@
 
 .pl-badge-muted {
   color: var(--fg-muted);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .pl-badge-accent {
-  color: #0f1215;
+  color: var(--accent-contrast);
   background: var(--accent);
 }
 
@@ -84,8 +84,8 @@
 }
 
 .pl-btn-danger:hover:not(:disabled) {
-  color: #eb5757;
-  border-color: rgba(235, 87, 87, 0.4);
+  color: var(--danger);
+  border-color: rgba(var(--danger-rgb), 0.4);
 }
 
 .pl-warning {

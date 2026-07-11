@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Download, Radio, ScrollText, Settings } from "lucide-react";
+import { Download, Moon, Radio, ScrollText, Settings, Sun } from "lucide-react";
 import { ModsPage } from "./components/mods/ModsPage";
 import { ExtractPage } from "./components/extract/ExtractPage";
 import { OverlunkyPage } from "./components/overlunky/OverlunkyPage";
@@ -29,6 +29,14 @@ import {
   type EditorMode,
 } from "./lib/commands";
 import { useToast } from "./components/shared/Toast";
+import {
+  applyTheme,
+  broadcastTheme,
+  normalizeTheme,
+  THEME_CHANGED_EVENT,
+  useThemeSync,
+  type Theme,
+} from "./lib/theme";
 
 interface EditorWindowRoute {
   kind: "editor";
@@ -124,6 +132,9 @@ const TABS: { id: Tab; label: string }[] = [
 
 function App() {
   const route = readRoute();
+  // Keep every window (any route) in sync when the theme changes elsewhere.
+  // The pre-paint script in index.html already set the initial theme.
+  useThemeSync();
   return (
     <ToastProvider>
       {route?.kind === "editor" ? (
@@ -170,6 +181,12 @@ function AppShell() {
   // fire on mount doesn't overwrite the value the user picked previously
   // with the default we're rendering now.
   const [restoredTab, setRestoredTab] = useState(false);
+  // Mirror of the current theme for the header toggle icon. Initialized from
+  // the attribute the pre-paint script set, reconciled with config on boot,
+  // and kept in sync if another window flips the theme.
+  const [theme, setTheme] = useState<Theme>(() =>
+    normalizeTheme(document.documentElement.dataset.theme),
+  );
 
   useEffect(() => {
     appVersion().then(setVersion).catch(() => setVersion(""));
@@ -196,6 +213,28 @@ function AppShell() {
     return () => {
       void unlisten.then((fn) => fn());
     };
+  }, []);
+
+  // Keep the toggle icon in sync when another window flips the theme.
+  // (useThemeSync in App applies the actual DOM change for every window.)
+  useEffect(() => {
+    const unlisten = listen<{ theme?: string }>(THEME_CHANGED_EVENT, (event) => {
+      setTheme(normalizeTheme(event.payload?.theme));
+    });
+    return () => {
+      void unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => {
+      const next: Theme = current === "dark" ? "light" : "dark";
+      // Apply everywhere + persist. Theme is a harmless instant preference,
+      // so it saves immediately rather than through a form.
+      broadcastTheme(next);
+      void setConfig({ theme: next }).catch(() => {});
+      return next;
+    });
   }, []);
 
   const refreshFyiConfigured = useCallback(() => {
@@ -240,6 +279,12 @@ function AppShell() {
     getConfig()
       .then((cfg) => {
         if (isTab(cfg.lastTab)) setActiveTab(cfg.lastTab);
+        // Config is the source of truth; reconcile the DOM + localStorage
+        // mirror the pre-paint script read (covers a config edited out of
+        // band or a first launch with no mirror yet).
+        const resolved = normalizeTheme(cfg.theme);
+        applyTheme(resolved);
+        setTheme(resolved);
       })
       .catch(() => {})
       .finally(() => setRestoredTab(true));
@@ -311,6 +356,18 @@ function AppShell() {
         )}
         {version && <span className="app-version">v{version}</span>}
         <FolderMenu />
+        <button
+          className="icon-button"
+          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          onClick={toggleTheme}
+        >
+          {theme === "dark" ? (
+            <Sun size={18} aria-hidden="true" />
+          ) : (
+            <Moon size={18} aria-hidden="true" />
+          )}
+        </button>
         <button
           className="icon-button"
           aria-label="Logs"

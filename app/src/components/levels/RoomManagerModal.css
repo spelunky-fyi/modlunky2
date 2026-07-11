@@ -19,18 +19,18 @@
   gap: 6px;
   margin-left: auto;
   padding: 5px 11px;
-  border: 1px solid rgba(235, 87, 87, 0.4);
+  border: 1px solid rgba(var(--danger-rgb), 0.4);
   border-radius: 6px;
-  background: rgba(235, 87, 87, 0.08);
-  color: #f08a8a;
+  background: rgba(var(--danger-rgb), 0.08);
+  color: var(--danger);
   font: inherit;
   font-size: 12.5px;
   cursor: pointer;
 }
 
 .rm-purge-btn:hover {
-  background: rgba(235, 87, 87, 0.16);
-  border-color: rgba(235, 87, 87, 0.6);
+  background: rgba(var(--danger-rgb), 0.16);
+  border-color: rgba(var(--danger-rgb), 0.6);
 }
 
 .rm-purge-confirm {
@@ -48,17 +48,17 @@
 
 .rm-purge-choice {
   padding: 5px 10px;
-  border: 1px solid rgba(235, 87, 87, 0.45);
+  border: 1px solid rgba(var(--danger-rgb), 0.45);
   border-radius: 6px;
-  background: rgba(235, 87, 87, 0.1);
-  color: #f0a0a0;
+  background: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger-fg);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 
 .rm-purge-choice:hover {
-  background: rgba(235, 87, 87, 0.22);
+  background: rgba(var(--danger-rgb), 0.22);
 }
 
 .rm-purge-cancel {
@@ -74,7 +74,7 @@
 
 .rm-purge-cancel:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .rm-body {
@@ -119,7 +119,7 @@
   height: 18px;
   padding: 0 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   color: var(--fg-muted);
   font-size: 11px;
   font-weight: 600;
@@ -131,7 +131,7 @@
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(var(--scrim-rgb), 0.18);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -144,7 +144,7 @@
 .rm-template-comment:focus,
 .rm-room-comment:focus {
   outline: none;
-  border-color: rgba(240, 165, 90, 0.55);
+  border-color: rgba(var(--accent-rgb), 0.55);
 }
 
 .rm-room-grid {
@@ -161,7 +161,7 @@
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 /* The card being dragged fades in place; its floating clone (DragOverlay)
@@ -172,8 +172,8 @@
 
 .rm-room-card-overlay {
   cursor: grabbing;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  background: #1b1f26;
+  box-shadow: 0 8px 24px rgba(var(--scrim-rgb), 0.45);
+  background: var(--bg-inset);
 }
 
 .rm-room-preview-wrap {
@@ -207,7 +207,7 @@
 
 .rm-room-drag:hover {
   color: var(--fg);
-  border-color: rgba(240, 165, 90, 0.6);
+  border-color: rgba(var(--accent-rgb), 0.6);
 }
 
 .rm-room-drag:active {
@@ -230,7 +230,7 @@
   padding: 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.22);
+  background: rgba(var(--scrim-rgb), 0.22);
   color: var(--fg-muted);
   font: inherit;
   cursor: pointer;
@@ -259,8 +259,8 @@
 
 .rm-room-copy:hover {
   color: var(--fg);
-  border-color: rgba(240, 165, 90, 0.6);
-  background: rgba(240, 165, 90, 0.16);
+  border-color: rgba(var(--accent-rgb), 0.6);
+  background: rgba(var(--accent-rgb), 0.16);
 }
 
 /* Delete sits directly under the copy button, same footprint. */
@@ -286,18 +286,18 @@
 }
 
 .rm-room-delete:hover:not(:disabled) {
-  color: #ffbcbc;
-  border-color: rgba(240, 90, 90, 0.6);
-  background: rgba(240, 90, 90, 0.18);
+  color: var(--danger-fg);
+  border-color: rgba(var(--danger-rgb), 0.6);
+  background: rgba(var(--danger-rgb), 0.18);
 }
 
 /* Armed (one click in): stays lit and reads as the committed danger color so
    the second click clearly deletes. */
 .rm-room-delete.armed {
   opacity: 1;
-  color: #fff;
-  border-color: #c85555;
-  background: #b04848;
+  color: var(--on-solid);
+  border-color: var(--danger-solid-hover);
+  background: var(--danger-solid);
 }
 
 .rm-room-delete:disabled,
@@ -324,19 +324,19 @@
 }
 
 .rm-template-delete:hover {
-  color: #ffbcbc;
-  border-color: rgba(240, 90, 90, 0.55);
-  background: rgba(240, 90, 90, 0.12);
+  color: var(--danger-fg);
+  border-color: rgba(var(--danger-rgb), 0.55);
+  background: rgba(var(--danger-rgb), 0.12);
 }
 
 .rm-template-delete.armed {
-  color: #fff;
-  border-color: #c85555;
-  background: #b04848;
+  color: var(--on-solid);
+  border-color: var(--danger-solid-hover);
+  background: var(--danger-solid);
 }
 
 .rm-room-jump:hover {
-  border-color: rgba(240, 165, 90, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
   color: var(--fg);
 }
 

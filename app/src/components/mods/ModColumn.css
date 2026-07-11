@@ -14,7 +14,7 @@
   gap: 10px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .mod-column-title {
@@ -30,9 +30,9 @@
   gap: 6px;
   margin-left: auto;
   padding: 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -41,8 +41,8 @@
 }
 
 .mod-column-action:hover {
-  border-color: rgba(240, 165, 90, 0.5);
-  background: rgba(240, 165, 90, 0.1);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .mod-column-count {
@@ -53,7 +53,7 @@
   height: 20px;
   padding: 0 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   color: var(--fg-muted);
   font-size: 11px;
   font-weight: 600;
@@ -93,18 +93,18 @@
 }
 
 .mod-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
 }
 
 .mod-row.is-dragging {
-  background: rgba(106, 183, 255, 0.08);
+  background: rgba(var(--info-rgb), 0.08);
 }
 
 .mod-row-logo {
   width: 48px;
   height: 48px;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
@@ -172,7 +172,7 @@
 
 .mod-row-toggle:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   border-color: var(--fg-muted);
 }
 
@@ -180,9 +180,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(106, 183, 255, 0.12);
-  border: 1px solid rgba(106, 183, 255, 0.35);
-  color: var(--accent);
+  background: rgba(var(--info-rgb), 0.12);
+  border: 1px solid rgba(var(--info-rgb), 0.35);
+  color: var(--accent-text);
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 5px;
@@ -191,21 +191,21 @@
 }
 
 .mod-row-update:hover {
-  background: rgba(106, 183, 255, 0.2);
+  background: rgba(var(--info-rgb), 0.2);
   border-color: var(--accent);
 }
 
 .mod-row-update.is-updating,
 .mod-row-update:disabled {
-  background: rgba(106, 183, 255, 0.08);
-  border-color: rgba(106, 183, 255, 0.25);
+  background: rgba(var(--info-rgb), 0.08);
+  border-color: rgba(var(--info-rgb), 0.25);
   color: var(--fg-muted);
   cursor: default;
 }
 
 .mod-row-update.is-updating:hover {
-  background: rgba(106, 183, 255, 0.08);
-  border-color: rgba(106, 183, 255, 0.25);
+  background: rgba(var(--info-rgb), 0.08);
+  border-color: rgba(var(--info-rgb), 0.25);
 }
 
 .mod-row-spinner {
@@ -223,7 +223,7 @@
 
 .mod-row.is-updating {
   transition: background 120ms;
-  background: rgba(106, 183, 255, 0.04);
+  background: rgba(var(--info-rgb), 0.04);
 }
 
 .mod-row-icon-btn {
@@ -241,12 +241,12 @@
 
 .mod-row-icon-btn:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 .mod-row-icon-danger:hover {
-  color: #eb5757;
-  background: rgba(235, 87, 87, 0.1);
+  color: var(--danger);
+  background: rgba(var(--danger-rgb), 0.1);
 }
 
 .mod-row-handle {
@@ -264,7 +264,7 @@
 
 .mod-row-handle:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
 }
 
 .mod-row-handle:active {
@@ -284,10 +284,10 @@
   z-index: 100;
   min-width: 200px;
   padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: 8px;
-  background: #1b1e24;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+  background: var(--bg-inset);
+  box-shadow: 0 12px 34px rgba(var(--scrim-rgb), 0.55);
 }
 
 .mod-ctx-item {
@@ -307,5 +307,5 @@
 }
 
 .mod-ctx-item:hover {
-  background: rgba(240, 165, 90, 0.14);
+  background: rgba(var(--accent-rgb), 0.14);
 }

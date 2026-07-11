@@ -4,13 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Modlunky2</title>
+    <script>
+      // Set the color theme before any app JS or CSS runs so a light-mode
+      // user never sees a dark flash (and vice versa). Reads the localStorage
+      // mirror written by lib/theme.ts; the Rust config stays the source of
+      // truth and reconciles this on boot. Runs in every window (shared
+      // origin), so secondary windows get themed pre-paint too.
+      (function () {
+        try {
+          var t = localStorage.getItem("ml2-theme") === "light" ? "light" : "dark";
+          document.documentElement.dataset.theme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
     <style>
       /* Inline the app background so the webview is never white for a
-         frame before Vite's CSS lands. --bg is #1a1a1e in App.css. */
+         frame before Vite's CSS lands. Mirrors --bg per theme in App.css. */
       html,
       body {
         margin: 0;
         background: #1a1a1e;
+      }
+      html[data-theme="light"],
+      html[data-theme="light"] body {
+        background: #f4f4f6;
       }
     </style>
   </head>

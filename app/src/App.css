@@ -10,26 +10,144 @@
   src: url("./assets/FiraSans-SemiBold.ttf") format("truetype");
 }
 
+/* ===========================================================================
+ * Theme tokens. Dark is the default (bare :root); light is a set of overrides
+ * under :root[data-theme="light"] (set by lib/theme.ts / the pre-paint script
+ * in index.html). Component CSS references these tokens instead of hardcoding
+ * colors, so a theme is a palette swap rather than a fork.
+ *
+ * Two shapes of token:
+ *   - Solid tokens (--bg, --fg, --accent, --danger, ...): a finished color.
+ *   - Channel tokens (--*-rgb): just "R, G, B", consumed as
+ *     rgba(var(--accent-rgb), 0.4). Lets a whole family of tinted
+ *     backgrounds/borders share one hue while keeping per-use alpha. The
+ *     neutral --overlay-rgb flips white->black between themes so every
+ *     "subtle white wash" becomes a "subtle black wash" on a light ground.
+ * ======================================================================== */
 :root {
   color-scheme: dark;
+
+  /* Surfaces, from the window ground up to recessed insets. --bg-canvas is
+   * the level-editor pixel workspace; it is DARK-LOCKED (no light override)
+   * so sprites read the same on both themes, like an image editor's canvas. */
   --bg: #1a1a1e;
   --bg-elevated: #23232a;
+  --bg-inset: #171b20;
+  --bg-canvas: #0a0d10;
+
   --fg: #e6e6ea;
   --fg-muted: #8a8a95;
-  /* Amber accent lifted from the tracker sidebar's card titles. Warm
-   * against the dark ground and reads clearly at small sizes; used
-   * for links, focus borders, active tab underlines, primary buttons,
-   * badge chrome. --accent-bright for hover/highlight states,
-   * --accent-fg for text on top of an accent-colored surface. */
+  --border: #34343d;
+
+  /* Amber accent lifted from the tracker sidebar's card titles. Warm against
+   * the dark ground; used for links, focus borders, active tab underlines,
+   * primary buttons, badge chrome. --accent-bright/-strong/-soft are the
+   * brighter text/hover shades; --accent-fg is soft text on an accent tint;
+   * --accent-contrast is dark text on a SOLID accent fill (a button). */
   --accent: #f0a55a;
   --accent-bright: #ffbf85;
+  --accent-strong: #ffb266;
+  --accent-soft: #ffcd99;
   --accent-fg: #fff2e0;
-  --border: #34343d;
+  --accent-contrast: #0f1215;
+  /* Accent used as plain TEXT / links. Same amber as --accent on dark, but
+   * darkens on light so it keeps contrast on a white page. --accent itself
+   * stays vivid so button fills / borders don't turn muddy brown. */
+  --accent-text: #f0a55a;
+  /* Bright amber CHIP FILLS (tile keycaps): dark text sits on top, so these
+   * stay bright in both themes and are NOT overridden below, unlike the
+   * accent-bright/-strong TEXT shades which darken for light backgrounds. */
+  --accent-fill: #ffbf85;
+  --accent-fill-2: #ffb266;
+
+  /* Semantic status colors. --*-fg are the light text shades used on top of
+   * a matching tinted chip; --danger-solid(-hover) are filled-button grounds. */
+  --danger: #eb5757;
+  --danger-solid: #b04848;
+  --danger-solid-hover: #c85555;
+  --danger-fg: #ffb0b0;
+  --success: #7fd08a;
+  --success-fg: #d8f0b0;
+  --info: #a6d8ff;
+
+  /* White text on any solid colored button (danger/success fills). */
+  --on-solid: #fff;
+
+  /* Channels (see header). Alpha is supplied at each call site. */
+  --overlay-rgb: 255, 255, 255; /* neutral washes/borders */
+  --scrim-rgb: 0, 0, 0; /* drop shadows / modal backdrops */
+  --accent-rgb: 240, 165, 90;
+  --accent-bright-rgb: 255, 191, 133;
+  --danger-rgb: 235, 87, 87;
+  --success-rgb: 127, 208, 138;
+  --info-rgb: 106, 183, 255;
+
   /* Head font available anywhere. Falls back to the system UI stack so
    * no layout regression if the ttf ever fails to load. */
   --font-display:
     "Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, sans-serif;
+}
+
+/* Light theme: override only what must change. Anything not listed here
+ * (--bg-canvas, --accent-contrast, the accent tint channel, scrim) is shared
+ * with dark on purpose. The big lever is --overlay-rgb flipping to black. The
+ * "bright text" accent/status shades darken so they still read on white. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f4f6;
+  --bg-elevated: #ffffff;
+  --bg-inset: #e9e9ee;
+
+  --fg: #1c1c22;
+  --fg-muted: #63636e;
+  --border: #d7d7de;
+
+  /* Keep --accent the vivid brand amber so button fills / active borders stay
+   * bright (dark --accent-contrast text still reads on it). Only --accent-text
+   * darkens, for links/labels that sit directly on the white page. */
+  --accent: #f0a55a;
+  --accent-text: #a35f16;
+  --accent-bright: #a35f16;
+  --accent-strong: #a35f16;
+  --accent-soft: #b06a1e;
+  --accent-fg: #6b3f10;
+
+  --danger: #cf2f2f;
+  --danger-fg: #a52020;
+  --success: #2f9e4a;
+  --success-fg: #256b2f;
+  --info: #2f6fb0;
+
+  --overlay-rgb: 0, 0, 0;
+}
+
+/* Art- and pixel-backed regions (the level-editor splash hero, the tile
+ * canvas) stay dark in BOTH themes, like an image editor's canvas. Re-pin the
+ * theme tokens to their dark values on the container so every descendant
+ * inherits a dark palette (light text, white neutral overlays, bright accent
+ * text) regardless of data-theme. This keeps those regions correct without
+ * leaving hardcoded literals scattered through their component CSS. */
+.dark-scope {
+  color-scheme: dark;
+  --bg: #1a1a1e;
+  --bg-elevated: #23232a;
+  --bg-inset: #171b20;
+  --fg: #e6e6ea;
+  --fg-muted: #8a8a95;
+  --border: #34343d;
+  --accent: #f0a55a;
+  --accent-bright: #ffbf85;
+  --accent-strong: #ffb266;
+  --accent-soft: #ffcd99;
+  --accent-fg: #fff2e0;
+  --danger: #eb5757;
+  --danger-fg: #ffb0b0;
+  --success: #7fd08a;
+  --success-fg: #d8f0b0;
+  --info: #a6d8ff;
+  --overlay-rgb: 255, 255, 255;
 }
 
 * {
@@ -115,8 +233,8 @@ body,
      .tab-bar's gap of 2px is too tight for a colored pill. */
   margin-right: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(240, 165, 90, 0.35);
-  background: rgba(240, 165, 90, 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-bright);
   font-size: 12px;
   font-weight: 600;
@@ -125,8 +243,8 @@ body,
 }
 
 .update-pill:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.2);
-  border-color: rgba(240, 165, 90, 0.55);
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.55);
 }
 
 .update-pill:disabled {
@@ -145,8 +263,8 @@ body,
   padding: 3px 8px;
   margin-right: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  background: rgba(var(--overlay-rgb), 0.03);
   color: var(--fg-muted);
   font-family: inherit;
   font-size: 11px;
@@ -173,15 +291,15 @@ body,
 }
 
 .fyi-status-connected {
-  color: #7fd08a;
-  border-color: rgba(127, 208, 138, 0.35);
-  background: rgba(127, 208, 138, 0.12);
+  color: var(--success);
+  border-color: rgba(var(--success-rgb), 0.35);
+  background: rgba(var(--success-rgb), 0.12);
 }
 
 .fyi-status-connecting {
   color: var(--accent-bright);
-  border-color: rgba(240, 165, 90, 0.35);
-  background: rgba(240, 165, 90, 0.1);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .fyi-status-connecting svg {
@@ -216,7 +334,7 @@ body,
 
 .icon-button:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .tab-content {

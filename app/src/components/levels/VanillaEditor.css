@@ -8,9 +8,9 @@
   min-width: 0;
   padding: 8px 10px;
   margin-bottom: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   color: var(--fg);
   font: inherit;
   font-size: 13px;
@@ -20,8 +20,8 @@
 }
 
 .vanilla-file-switcher:hover {
-  background: rgba(240, 165, 90, 0.08);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .vanilla-file-icon {
@@ -76,16 +76,16 @@
 
 .vanilla-file-search {
   padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: #171b20;
+  background: var(--bg-inset);
   color: var(--fg);
   font-size: 13px;
 }
 
 .vanilla-file-search:focus {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .vanilla-file-picker-hint {
@@ -95,7 +95,7 @@
   padding: 6px 8px;
   color: var(--fg-muted);
   font-size: 11.5px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   border-radius: 4px;
 }
 
@@ -122,7 +122,7 @@
   padding: 6px 10px;
   border: 1px solid transparent;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   color: var(--fg);
   font: inherit;
   font-size: 12px;
@@ -135,12 +135,12 @@
 }
 
 .vanilla-file-group-header:hover {
-  background: rgba(240, 165, 90, 0.08);
-  border-color: rgba(240, 165, 90, 0.3);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 .vanilla-file-group-header.open {
-  background: rgba(240, 165, 90, 0.06);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 .vanilla-file-group-header .vanilla-caret {
@@ -155,7 +155,7 @@
 .vanilla-file-group-count {
   padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   color: var(--fg-muted);
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -206,12 +206,12 @@
 }
 
 .vanilla-file-picker-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .vanilla-file-picker-item.selected {
-  background: rgba(240, 165, 90, 0.18);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .vanilla-file-picker-item.vanilla {
@@ -231,11 +231,11 @@
 /* Pack-only, non-vanilla levels. Tinted to echo the red lvl_custom icon
    so they stand out from base-game files at a glance. */
 .vanilla-file-picker-item.custom {
-  color: #e08a7a;
+  color: var(--danger);
 }
 
 .vanilla-file-picker-item.custom:hover {
-  color: #f0a090;
+  color: var(--danger);
 }
 
 .vanilla-file-picker-name {
@@ -274,23 +274,23 @@
   justify-content: center;
   flex: 0 0 auto;
   padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
-  background: #171b20;
+  background: var(--bg-inset);
   color: var(--fg-muted);
   cursor: pointer;
   transition: background 100ms, border-color 100ms, color 100ms;
 }
 
 .vanilla-rooms-collapse-all:hover:not(:disabled) {
-  background: rgba(240, 165, 90, 0.08);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.4);
   color: var(--fg);
 }
 
 .vanilla-rooms-collapse-all:focus-visible {
   outline: none;
-  border-color: #f0a55a;
+  border-color: var(--accent);
 }
 
 .vanilla-rooms-collapse-all:disabled {
@@ -315,7 +315,7 @@
 .vanilla-rooms-add {
   margin-top: 6px;
   padding: 6px 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed rgba(var(--overlay-rgb), 0.12);
   border-radius: 4px;
   background: transparent;
   color: var(--fg-muted);
@@ -327,8 +327,8 @@
 }
 
 .vanilla-rooms-add:hover {
-  background: rgba(240, 165, 90, 0.08);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.4);
   color: var(--fg);
 }
 
@@ -350,23 +350,23 @@
 }
 
 .vanilla-rooms-template:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .vanilla-rooms-template.selected {
-  background: rgba(240, 165, 90, 0.18);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .vanilla-rooms-template.multi.selected {
   /* multi templates highlight is a hint that a child is selected; keep
      it a shade dimmer than the actual room row selection. */
-  background: rgba(240, 165, 90, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   border-color: transparent;
 }
 
 .vanilla-rooms-template.multi.selected .vanilla-rooms-name {
-  color: #ffbf85;
+  color: var(--accent-bright);
 }
 
 .vanilla-rooms-template.edited .vanilla-rooms-name::after {
@@ -431,12 +431,12 @@
 }
 
 .vanilla-rooms-room:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .vanilla-rooms-room.selected {
-  background: rgba(240, 165, 90, 0.18);
-  border-color: rgba(240, 165, 90, 0.4);
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.4);
   color: var(--fg);
 }
 
@@ -444,7 +444,7 @@
   flex-shrink: 0;
   padding: 0 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   color: var(--fg-muted);
   font-size: 10px;
   letter-spacing: 0.03em;
@@ -455,13 +455,13 @@
 /* Per-tag colors. Dual keeps the original orange; the rest are tinted so
    authors can tell room flags apart at a glance in the list. */
 .vanilla-rooms-tag-dual {
-  background: rgba(240, 160, 90, 0.16);
-  color: #ffb266;
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-strong);
 }
 
 .vanilla-rooms-tag-flip {
-  background: rgba(106, 170, 255, 0.16);
-  color: #86bdff;
+  background: rgba(var(--info-rgb), 0.16);
+  color: var(--info);
 }
 
 .vanilla-rooms-tag-onlyflip {
@@ -480,8 +480,8 @@
 }
 
 .vanilla-rooms-tag-hard {
-  background: rgba(235, 100, 100, 0.16);
-  color: #f08a8a;
+  background: rgba(var(--danger-rgb), 0.16);
+  color: var(--danger);
 }
 
 .vanilla-rooms-tag-liquid {
@@ -495,6 +495,6 @@
 }
 
 .vanilla-rooms-edited {
-  color: #ffb266;
+  color: var(--accent-strong);
   font-weight: 700;
 }

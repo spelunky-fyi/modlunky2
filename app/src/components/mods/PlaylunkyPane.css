@@ -80,7 +80,7 @@
   padding: 10px 22px;
   border-radius: 8px;
   background: var(--accent);
-  color: #0f1215;
+  color: var(--accent-contrast);
   border: none;
   font-size: 14px;
   font-weight: 600;
