@@ -1133,6 +1133,10 @@ pub struct EditorPrefs {
     /// Collapse the palette to icon-only swatches that wrap into a dense grid.
     /// Shared across both editors; reorder mode ignores it and stays expanded.
     pub palette_dense: bool,
+    /// Whether saving pops a confirmation dialog first. Defaults to true (the
+    /// historical behavior); users opt out via the dialog's "Don't ask again"
+    /// or the editor settings.
+    pub confirm_save: bool,
 }
 
 impl Default for EditorPrefs {
@@ -1144,6 +1148,7 @@ impl Default for EditorPrefs {
             show_tile_grid: true,
             show_room_grid: true,
             palette_dense: false,
+            confirm_save: true,
         }
     }
 }

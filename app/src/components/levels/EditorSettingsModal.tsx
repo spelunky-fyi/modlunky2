@@ -229,6 +229,25 @@ export function EditorSettingsModal({
             </label>
           </section>
 
+          <section className="editor-settings-section">
+            <header className="editor-settings-section-head">
+              <div>
+                <div className="editor-settings-section-titlerow">
+                  <span className="editor-settings-section-title">Saving</span>
+                  <span className="editor-settings-scope">All editors</span>
+                </div>
+              </div>
+            </header>
+            <label className="editor-settings-check">
+              <input
+                type="checkbox"
+                checked={prefs.confirmSave}
+                onChange={(e) => onChangePrefs({ confirmSave: e.target.checked })}
+              />
+              <span>Ask for confirmation before saving</span>
+            </label>
+          </section>
+
           {showSaveFormats && (
             <section className="editor-settings-section">
               <header className="editor-settings-section-head">

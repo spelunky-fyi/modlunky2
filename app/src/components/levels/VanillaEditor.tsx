@@ -248,10 +248,17 @@ export function VanillaEditor({ pack }: Props) {
   const [viewMode, setViewMode] = useState<"room" | "level">("room");
   const [pendingRestore, setPendingRestore] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
+  // "Don't ask again" checkbox in the save-confirm dialog. Reset each time the
+  // dialog closes.
+  const [saveDontAskAgain, setSaveDontAskAgain] = useState(false);
   // App-wide editor preferences (zoom mode, clamp, grid defaults). Persisted,
   // so they survive reopening the window and app restarts. Threaded down to
   // the canvas, bottom bar, and settings modal.
   const { prefs, updatePrefs } = useEditorPrefs();
+  // Read the confirm-save pref through a ref so the Ctrl+S handler (whose
+  // effect only re-subscribes on `save`) always sees the current value.
+  const confirmSaveRef = useRef(prefs.confirmSave);
+  confirmSaveRef.current = prefs.confirmSave;
   const renderMode = prefs.clampRender ? "cell" : "natural";
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [roomManagerOpen, setRoomManagerOpen] = useState(false);
@@ -1267,7 +1274,10 @@ export function VanillaEditor({ pack }: Props) {
       const isCtrl = e.ctrlKey || e.metaKey;
       if (isCtrl && e.code === "KeyS") {
         e.preventDefault();
-        if (dirty) setPendingSave(true);
+        if (dirty) {
+          if (confirmSaveRef.current) setPendingSave(true);
+          else void save();
+        }
       } else if (!isCtrl && !e.altKey && !e.shiftKey && e.code === "Tab") {
         e.preventDefault();
         setViewMode((m) => (m === "room" ? "level" : "room"));
@@ -2393,7 +2403,10 @@ export function VanillaEditor({ pack }: Props) {
         canSave={!!selectedFile && dirty}
         saving={saving}
         onRestore={() => setPendingRestore(true)}
-        onSave={() => setPendingSave(true)}
+        onSave={() => {
+          if (prefs.confirmSave) setPendingSave(true);
+          else void save();
+        }}
         farRightExtras={
           <>
             <button
@@ -2919,7 +2932,10 @@ export function VanillaEditor({ pack }: Props) {
       {pendingSave && (
         <Modal
           open
-          onClose={() => setPendingSave(false)}
+          onClose={() => {
+            setPendingSave(false);
+            setSaveDontAskAgain(false);
+          }}
           title="Save changes"
           size="sm"
           footer={
@@ -2927,7 +2943,10 @@ export function VanillaEditor({ pack }: Props) {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => setPendingSave(false)}
+                onClick={() => {
+                  setPendingSave(false);
+                  setSaveDontAskAgain(false);
+                }}
               >
                 Cancel
               </button>
@@ -2936,6 +2955,8 @@ export function VanillaEditor({ pack }: Props) {
                 className="btn btn-primary"
                 onClick={() => {
                   setPendingSave(false);
+                  if (saveDontAskAgain) updatePrefs({ confirmSave: false });
+                  setSaveDontAskAgain(false);
                   void save();
                 }}
                 autoFocus
@@ -2948,6 +2969,14 @@ export function VanillaEditor({ pack }: Props) {
           <p className="editor-confirm-body">
             Write all pending changes to disk?
           </p>
+          <label className="editor-confirm-check">
+            <input
+              type="checkbox"
+              checked={saveDontAskAgain}
+              onChange={(e) => setSaveDontAskAgain(e.target.checked)}
+            />
+            <span>Don't ask again (save immediately from now on)</span>
+          </label>
         </Modal>
       )}
       {pendingRestore && (

@@ -780,6 +780,8 @@ export interface EditorPrefs {
   /** Collapse the palette to icon-only swatches that wrap into a dense grid.
    *  Shared by both editors; reorder mode ignores it and stays expanded. */
   paletteDense: boolean;
+  /** Whether saving pops a confirmation dialog first. Default true. */
+  confirmSave: boolean;
 }
 
 export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
@@ -789,6 +791,7 @@ export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
   showTileGrid: true,
   showRoomGrid: true,
   paletteDense: false,
+  confirmSave: true,
 };
 
 /** Canvas zoom limits (scale factor), mirrored from TileCanvas so the

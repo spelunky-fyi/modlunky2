@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toast notifications: a Settings option controls which severities pop on
   screen. Defaults to warnings and higher, so routine confirmations no longer
   cover the UI. Every toast is still recorded to the toast log regardless.
+- Level editor: an option to skip the save confirmation dialog. Tick "Don't ask
+  again" in the dialog, or toggle "Ask for confirmation before saving" in the
+  editor settings.
 
 ### Changed
 

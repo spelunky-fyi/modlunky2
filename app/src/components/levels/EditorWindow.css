@@ -566,6 +566,20 @@
   font-size: 12.5px;
 }
 
+.editor-confirm-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.editor-confirm-check input {
+  cursor: pointer;
+}
+
 .tree-menu-backdrop {
   position: fixed;
   inset: 0;
