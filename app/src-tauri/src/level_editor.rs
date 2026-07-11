@@ -3059,9 +3059,11 @@ pub async fn render_tile_sprites(
     let extract_dir = crate::config::load()
         .install_dir
         .map(|d| d.join("Mods").join("Extracted"));
-    tauri::async_runtime::spawn_blocking(move || render_tile_sprites_sync(names, biome, extract_dir))
-        .await
-        .map_err(|e| format!("sprite task panicked: {e}"))?
+    tauri::async_runtime::spawn_blocking(move || {
+        render_tile_sprites_sync(names, biome, extract_dir)
+    })
+    .await
+    .map_err(|e| format!("sprite task panicked: {e}"))?
 }
 
 fn render_tile_sprites_sync(
@@ -3090,14 +3092,18 @@ fn render_tile_sprites_sync(
         let mut png_bytes = Vec::new();
         {
             let mut cursor = std::io::Cursor::new(&mut png_bytes);
-            PngEncoder::new_with_quality(&mut cursor, CompressionType::Default, FilterType::Adaptive)
-                .write_image(
-                    img.as_raw(),
-                    img.width(),
-                    img.height(),
-                    ColorType::Rgba8.into(),
-                )
-                .map_err(|e| e.to_string())?;
+            PngEncoder::new_with_quality(
+                &mut cursor,
+                CompressionType::Default,
+                FilterType::Adaptive,
+            )
+            .write_image(
+                img.as_raw(),
+                img.width(),
+                img.height(),
+                ColorType::Rgba8.into(),
+            )
+            .map_err(|e| e.to_string())?;
         }
 
         let mut png_data_url = String::from("data:image/png;base64,");
