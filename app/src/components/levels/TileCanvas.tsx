@@ -1228,8 +1228,18 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     // "create" while defining a new rect, "move" while dragging an existing
     // selection to a new location.
     let selection: Selection | null = null;
+    // `secStart`/`secEnd` lock a marquee to the section it started in (the fg
+    // or bg half in dual view) so a selection never straddles the spacer gap
+    // between them -- which the layer ops can't represent anyway. In a
+    // single-section grid these span the whole width.
     let marqueeGesture:
-      | { mode: "create"; startRow: number; startCol: number }
+      | {
+          mode: "create";
+          startRow: number;
+          startCol: number;
+          secStart: number;
+          secEnd: number;
+        }
       | {
           mode: "move";
           origin: Selection;
@@ -1237,8 +1247,34 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
           startCol: number;
           curRow: number;
           curCol: number;
+          secStart: number;
+          secEnd: number;
         }
       | null = null;
+
+    // Column range [start, end) of the section containing `col`, or the
+    // nearest section when `col` lands in a gap. Null only when there are no
+    // sections (one region spanning the whole grid).
+    const sectionBoundsForCol = (
+      col: number,
+    ): { start: number; end: number } | null => {
+      const secs = sectionsRef.current;
+      if (!secs || secs.length === 0) return null;
+      let best: { start: number; end: number } | null = null;
+      let bestDist = Infinity;
+      for (const s of secs) {
+        if (col >= s.colStart && col < s.colEnd) {
+          return { start: s.colStart, end: s.colEnd };
+        }
+        const dist =
+          col < s.colStart ? s.colStart - col : col - (s.colEnd - 1);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { start: s.colStart, end: s.colEnd };
+        }
+      }
+      return best;
+    };
 
     const drawSelectionOverlay = () => {
       marqueeOverlay.clear();
@@ -1516,20 +1552,36 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
         const { row, col } = pointerToTile(e.clientX, e.clientY);
         if (row < 0 || row >= rows || col < 0 || col >= cols) return;
         if (selection && inSelection(row, col)) {
-          // Click inside the current selection starts a move gesture.
+          // Click inside the current selection starts a move gesture. Lock it
+          // to the section the selection lives in.
+          const originLeft = Math.min(selection.col0, selection.col1);
+          const b = sectionBoundsForCol(originLeft);
           marqueeGesture = {
             mode: "move",
             origin: { ...selection },
             startRow: row,
             startCol: col,
             curRow: Math.min(selection.row0, selection.row1),
-            curCol: Math.min(selection.col0, selection.col1),
+            curCol: originLeft,
+            secStart: b?.start ?? 0,
+            secEnd: b?.end ?? gridCols(),
           };
           drawMoveGhost(selection, marqueeGesture.curRow, marqueeGesture.curCol);
         } else {
-          // Otherwise start a fresh selection rect.
-          marqueeGesture = { mode: "create", startRow: row, startCol: col };
-          selection = { row0: row, col0: col, row1: row, col1: col };
+          // Otherwise start a fresh selection rect, clamped into the section
+          // the click landed in (or nearest, if it hit the spacer gap).
+          const b = sectionBoundsForCol(col);
+          const startCol = b
+            ? Math.max(b.start, Math.min(b.end - 1, col))
+            : col;
+          marqueeGesture = {
+            mode: "create",
+            startRow: row,
+            startCol,
+            secStart: b?.start ?? 0,
+            secEnd: b?.end ?? gridCols(),
+          };
+          selection = { row0: row, col0: startCol, row1: row, col1: startCol };
           drawSelectionOverlay();
           onSelectionChangeRef.current?.(selection);
         }
@@ -1583,7 +1635,12 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       if (marqueeGesture) {
         if (marqueeGesture.mode === "create") {
           const r = Math.max(0, Math.min(rows - 1, row));
-          const c = Math.max(0, Math.min(cols - 1, col));
+          // Clamp the drag to the section the selection started in so it can't
+          // cross the gap into the other layer's half.
+          const c = Math.max(
+            marqueeGesture.secStart,
+            Math.min(marqueeGesture.secEnd - 1, col),
+          );
           selection = {
             row0: marqueeGesture.startRow,
             col0: marqueeGesture.startCol,
@@ -1603,8 +1660,16 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
             marqueeGesture.origin.col0,
             marqueeGesture.origin.col1,
           );
+          const width =
+            Math.abs(marqueeGesture.origin.col1 - marqueeGesture.origin.col0) +
+            1;
           marqueeGesture.curRow = origTop + dr;
-          marqueeGesture.curCol = origLeft + dc;
+          // Keep the moved block inside its section (columns only; row motion
+          // is unconstrained as before).
+          marqueeGesture.curCol = Math.max(
+            marqueeGesture.secStart,
+            Math.min(marqueeGesture.secEnd - width, origLeft + dc),
+          );
           drawMoveGhost(
             marqueeGesture.origin,
             marqueeGesture.curRow,

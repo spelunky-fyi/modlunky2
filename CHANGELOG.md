@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.13] - 2026-07-10
+
+### Fixed
+
+- Level editor: Duat theme now use a solid black background instead of
+  the tiled `bg_duat` texture, which didn't tile like the other biomes.
+- Level editor: in the dual (foreground + background) view, a marquee selection
+  is locked to the layer it starts in, so it no longer straddles the gap. It
+  previously let you select across both halves but only acted on the
+  foreground.
+
 ## [2.0.12] - 2026-07-10
 
 ### Added

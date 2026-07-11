@@ -708,13 +708,22 @@ pub async fn get_cosmic_subtheme_decoration(subtheme_id: i32) -> Result<Option<S
     .map_err(|e| format!("deco crop task panicked: {e}"))?
 }
 
+// A 1x1 opaque black PNG, tiled as the Duat backdrop. Duat has no back wall
+// and `bg_duat.png` doesn't tile like the other biome backgrounds, so a solid
+// black fill reads better than the broken repeat.
+const BLACK_TILE_DATA_URL: &str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==";
+
 /// Returns the biome-themed background PNG as a base64 data URL for the
 /// canvas to use as a tiled backdrop behind the level tiles. Comes straight
-/// from `Data/Textures/bg_{biome}.png` in the extracts.
+/// from `Data/Textures/bg_{biome}.png` in the extracts, except Duat, which
+/// gets a solid black fill (see BLACK_TILE_DATA_URL).
 #[tauri::command]
 pub async fn get_biome_background(biome: String) -> Result<String, String> {
     if !FLOOR_BIOMES.contains(&biome.as_str()) {
         return Err(format!("unknown biome: {biome}"));
+    }
+    if biome == "duat" {
+        return Ok(BLACK_TILE_DATA_URL.to_string());
     }
     let dir = textures_dir()?;
     let path = dir.join(format!("bg_{biome}.png"));
