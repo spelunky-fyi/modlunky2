@@ -175,6 +175,7 @@ pub fn run() {
             level_editor::load_custom_level,
             level_editor::build_tile_name_atlas,
             level_editor::get_tile_sprite,
+            level_editor::render_tile_sprites,
             level_editor::list_short_codes,
             level_editor::list_valid_tile_codes,
             level_editor::list_valid_level_settings,

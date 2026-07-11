@@ -1073,6 +1073,22 @@ export async function getTileSprite(
   return invoke<TileSprite>("get_tile_sprite", { name, biome });
 }
 
+export interface NamedTileSprite {
+  name: string;
+  pngDataUrl: string;
+  tileSize: number;
+}
+
+/** Renders a batch of tiles to individual sprite data URLs in one call
+ *  (one shared sheet load for the whole batch). Used by the add-tile
+ *  dropdown to fetch a windowed set of swatches as you scroll. */
+export async function renderTileSprites(
+  names: string[],
+  biome: string | null = null,
+): Promise<NamedTileSprite[]> {
+  return invoke<NamedTileSprite[]>("render_tile_sprites", { names, biome });
+}
+
 // ---------------------------------------------------------------------
 // Trackers
 // ---------------------------------------------------------------------

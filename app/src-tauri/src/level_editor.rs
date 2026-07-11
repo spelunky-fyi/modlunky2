@@ -3035,6 +3035,83 @@ fn get_tile_sprite_sync(
     })
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NamedTileSprite {
+    pub name: String,
+    pub png_data_url: String,
+    pub tile_size: u32,
+}
+
+/// Renders a batch of tiles to individual PNG data URLs, sharing one sheet
+/// cache across the whole batch so N tiles from the same sheet pay a single
+/// file open + decode. This is the windowed alternative to a full atlas: the
+/// add-tile dropdown fetches only the ~screenful of names near the viewport as
+/// you scroll, and caches each sprite by (biome, name) on the frontend.
+#[tauri::command]
+pub async fn render_tile_sprites(
+    names: Vec<String>,
+    biome: Option<String>,
+) -> Result<Vec<NamedTileSprite>, String> {
+    if names.is_empty() {
+        return Ok(Vec::new());
+    }
+    let extract_dir = crate::config::load()
+        .install_dir
+        .map(|d| d.join("Mods").join("Extracted"));
+    tauri::async_runtime::spawn_blocking(move || render_tile_sprites_sync(names, biome, extract_dir))
+        .await
+        .map_err(|e| format!("sprite task panicked: {e}"))?
+}
+
+fn render_tile_sprites_sync(
+    names: Vec<String>,
+    biome: Option<String>,
+    extract_dir: Option<PathBuf>,
+) -> Result<Vec<NamedTileSprite>, String> {
+    use image::codecs::png::{CompressionType, FilterType, PngEncoder};
+    use image::{ColorType, ImageEncoder};
+
+    let all_loaders = ml2_sprites::all_loaders();
+    let priority = biome_priority(biome.as_deref());
+    let mut sheet_cache = std::collections::HashMap::new();
+
+    let mut out = Vec::with_capacity(names.len());
+    for name in &names {
+        let rendered = render_tile_image(
+            name,
+            &all_loaders,
+            &priority,
+            extract_dir.as_ref(),
+            &mut sheet_cache,
+        );
+        let img = force_to_cell(rendered.image);
+
+        let mut png_bytes = Vec::new();
+        {
+            let mut cursor = std::io::Cursor::new(&mut png_bytes);
+            PngEncoder::new_with_quality(&mut cursor, CompressionType::Default, FilterType::Adaptive)
+                .write_image(
+                    img.as_raw(),
+                    img.width(),
+                    img.height(),
+                    ColorType::Rgba8.into(),
+                )
+                .map_err(|e| e.to_string())?;
+        }
+
+        let mut png_data_url = String::from("data:image/png;base64,");
+        STANDARD.encode_string(&png_bytes, &mut png_data_url);
+
+        out.push(NamedTileSprite {
+            name: name.clone(),
+            png_data_url,
+            tile_size: ATLAS_TILE_CELL,
+        });
+    }
+    Ok(out)
+}
+
 fn build_tile_name_atlas_sync(
     names: Vec<String>,
     biome: Option<String>,

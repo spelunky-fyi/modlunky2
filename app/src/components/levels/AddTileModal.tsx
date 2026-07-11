@@ -9,11 +9,20 @@
 // know via inheritance, so a single click adopts it into this file
 // instead of retyping the name.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   getTileSprite,
   listShortCodes,
   listValidTileCodes,
+  renderTileSprites,
   type CustomLevelPaletteEntry,
   type DependencyPalette,
   type EditorAtlas,
@@ -21,6 +30,57 @@ import {
 } from "../../lib/commands";
 import { Modal } from "../shared/Modal";
 import "./AddTileModal.css";
+
+// Per-name tile-sprite cache for the add-tile dropdown swatches, keyed by
+// `${biome}|${name}`. A tile renders the same regardless of which file is open
+// (only the biome matters), so this cache is shared across modal opens and file
+// switches for the whole session -- future adds reuse everything already
+// fetched. Swatches are pulled in windows as you scroll, never all ~400 up
+// front.
+const swatchCache = new Map<string, string>();
+const swatchInflight = new Set<string>();
+
+function swatchKey(biome: string | null | undefined, name: string) {
+  return `${biome ?? "cave"}|${name}`;
+}
+
+/** Windowed sprite fetcher. `get` reads the shared cache; `ensure` batch-
+ *  fetches any names not yet cached or in flight (one backend call, one shared
+ *  sheet load for the batch) and re-renders when they land. */
+function useTileSwatches(biome: string | null | undefined) {
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  const get = useCallback(
+    (name: string) => swatchCache.get(swatchKey(biome, name)) ?? null,
+    [biome],
+  );
+  const ensure = useCallback(
+    (names: string[]) => {
+      const need: string[] = [];
+      for (const n of names) {
+        const k = swatchKey(biome, n);
+        if (!swatchCache.has(k) && !swatchInflight.has(k)) need.push(n);
+      }
+      if (need.length === 0) return;
+      for (const n of need) swatchInflight.add(swatchKey(biome, n));
+      renderTileSprites(need, biome ?? null)
+        .then((sprites) => {
+          for (const s of sprites) {
+            swatchCache.set(swatchKey(biome, s.name), s.pngDataUrl);
+          }
+        })
+        .catch((err) => {
+          // Non-fatal: rows just keep their dashed placeholder.
+          console.warn("tile swatch fetch failed", err);
+        })
+        .finally(() => {
+          for (const n of need) swatchInflight.delete(swatchKey(biome, n));
+          bump();
+        });
+    },
+    [biome],
+  );
+  return { get, ensure };
+}
 
 // How a candidate tile code relates to what's already bound, given the tile
 // being added:
@@ -101,6 +161,7 @@ export function AddTileModal({
       cancelled = true;
     };
   }, []);
+
 
   const composedName = useMemo(() => {
     const name = primary.trim();
@@ -309,6 +370,8 @@ export function AddTileModal({
               value={primary}
               onChange={setPrimary}
               names={validNames}
+              biome={biome}
+              usedNames={existingNames}
               placeholder="floor, spikes, treasure..."
               autoFocus
             />
@@ -319,6 +382,7 @@ export function AddTileModal({
               value={alt}
               onChange={setAlt}
               names={validNames}
+              biome={biome}
               placeholder="empty"
               disabled={altDisabled}
             />
@@ -551,10 +615,23 @@ interface ComboboxProps {
   value: string;
   onChange: (next: string) => void;
   names: string[];
+  /** Biome for rendering the tile swatch previews shown beside each name. */
+  biome?: string | null;
+  /** Names already in the palette. These rows show as "in palette" and can't
+   *  be picked. */
+  usedNames?: Set<string>;
   placeholder?: string;
   disabled?: boolean;
   autoFocus?: boolean;
 }
+
+// Safety cap on rows rendered at once. The full valid-name list is only ~400,
+// so this shows everything unfiltered while guarding against a pathological
+// name source.
+const COMBOBOX_MAX_ROWS = 600;
+// Fallback row height (px) until a real row is measured, for the scroll-window
+// math. Matches a 34px swatch plus the item's vertical padding.
+const ROW_HEIGHT_FALLBACK = 42;
 
 // Filterable tile-name combobox. Free-form input still allowed so users
 // can add custom Lua tiles that aren't in the built-in name list.
@@ -562,6 +639,8 @@ function TileNameCombobox({
   value,
   onChange,
   names,
+  biome,
+  usedNames,
   placeholder,
   disabled,
   autoFocus,
@@ -571,11 +650,15 @@ function TileNameCombobox({
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
+  const isUsed = useCallback(
+    (name: string) => usedNames?.has(name) ?? false,
+    [usedNames],
+  );
+
   const filter = value.trim().toLowerCase();
   const filtered = useMemo(() => {
-    if (!filter) return names.slice(0, 200);
-    // Prefix matches first, then substring matches, capped so the DOM
-    // doesn't get overwhelmed on empty filters.
+    if (!filter) return names.slice(0, COMBOBOX_MAX_ROWS);
+    // Prefix matches first, then substring matches.
     const prefix: string[] = [];
     const contains: string[] = [];
     for (const n of names) {
@@ -583,8 +666,53 @@ function TileNameCombobox({
       if (lower.startsWith(filter)) prefix.push(n);
       else if (lower.includes(filter)) contains.push(n);
     }
-    return [...prefix, ...contains].slice(0, 200);
+    return [...prefix, ...contains].slice(0, COMBOBOX_MAX_ROWS);
   }, [names, filter]);
+
+  // Swatch previews, fetched in a window around the viewport as you scroll and
+  // cached by (biome, name) so nothing is fetched twice.
+  const { get: getSwatch, ensure: ensureSwatches } = useTileSwatches(biome);
+  const rowHeightRef = useRef(ROW_HEIGHT_FALLBACK);
+  const rafRef = useRef<number | null>(null);
+
+  // Prefetch the swatches for the visible rows plus one screen above and below.
+  const prefetchWindow = useCallback(() => {
+    const el = listRef.current;
+    if (!el || filtered.length === 0) return;
+    const firstRow = el.firstElementChild as HTMLElement | null;
+    if (firstRow) {
+      const h = firstRow.getBoundingClientRect().height;
+      if (h > 0) rowHeightRef.current = h;
+    }
+    const rh = rowHeightRef.current;
+    const perScreen = Math.max(1, Math.ceil(el.clientHeight / rh));
+    const start = Math.floor(el.scrollTop / rh);
+    const from = Math.max(0, start - perScreen); // one screen above
+    const to = Math.min(filtered.length, start + perScreen * 2); // visible + below
+    ensureSwatches(filtered.slice(from, to));
+  }, [filtered, ensureSwatches]);
+
+  const onListScroll = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      prefetchWindow();
+    });
+  }, [prefetchWindow]);
+
+  // Kick off the first window when the list opens and whenever the filter
+  // changes (which resets the scroll to the top).
+  useLayoutEffect(() => {
+    if (!open) return;
+    prefetchWindow();
+  }, [open, prefetchWindow]);
+
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
 
   // Close on outside click.
   useEffect(() => {
@@ -597,10 +725,12 @@ function TileNameCombobox({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // Reset active row when the filter changes.
+  // Reset to the first selectable row when the filter changes.
   useEffect(() => {
-    setActiveIdx(0);
-  }, [filter]);
+    let idx = 0;
+    while (idx < filtered.length && isUsed(filtered[idx])) idx++;
+    setActiveIdx(idx < filtered.length ? idx : 0);
+  }, [filter, filtered, isUsed]);
 
   // Keep the active row visible when arrow keys move it past the fold.
   useLayoutEffect(() => {
@@ -611,22 +741,32 @@ function TileNameCombobox({
 
   const commit = useCallback(
     (name: string) => {
+      if (isUsed(name)) return;
       onChange(name);
       setOpen(false);
     },
-    [onChange],
+    [onChange, isUsed],
   );
+
+  // Next selectable row index in `dir`, skipping used rows. Stays put if there
+  // is no selectable row that way.
+  const nextSelectable = (from: number, dir: 1 | -1) => {
+    for (let j = from + dir; j >= 0 && j < filtered.length; j += dir) {
+      if (!isUsed(filtered[j])) return j;
+    }
+    return from;
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (!open) setOpen(true);
-      else setActiveIdx((i) => Math.min(filtered.length - 1, i + 1));
+      else setActiveIdx((i) => nextSelectable(i, 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIdx((i) => Math.max(0, i - 1));
+      setActiveIdx((i) => nextSelectable(i, -1));
     } else if (e.key === "Enter") {
-      if (open && filtered[activeIdx]) {
+      if (open && filtered[activeIdx] && !isUsed(filtered[activeIdx])) {
         e.preventDefault();
         commit(filtered[activeIdx]);
       }
@@ -655,22 +795,43 @@ function TileNameCombobox({
         spellCheck={false}
       />
       {open && !disabled && filtered.length > 0 && (
-        <ul className="tile-combobox-list" ref={listRef} role="listbox">
-          {filtered.map((n, i) => (
-            <li
-              key={n}
-              role="option"
-              aria-selected={i === activeIdx}
-              className={`tile-combobox-item${i === activeIdx ? " active" : ""}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                commit(n);
-              }}
-              onMouseMove={() => setActiveIdx(i)}
-            >
-              {n}
-            </li>
-          ))}
+        <ul
+          className="tile-combobox-list"
+          ref={listRef}
+          role="listbox"
+          onScroll={onListScroll}
+        >
+          {filtered.map((n, i) => {
+            const src = getSwatch(n);
+            const used = isUsed(n);
+            return (
+              <li
+                key={n}
+                role="option"
+                aria-selected={i === activeIdx}
+                aria-disabled={used}
+                className={`tile-combobox-item${i === activeIdx ? " active" : ""}${
+                  used ? " used" : ""
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  if (!used) commit(n);
+                }}
+                onMouseMove={() => {
+                  if (!used) setActiveIdx(i);
+                }}
+              >
+                <span
+                  className={`tile-combobox-swatch${src ? "" : " empty"}`}
+                  aria-hidden="true"
+                >
+                  {src && <img src={src} alt="" draggable={false} />}
+                </span>
+                <span className="tile-combobox-name">{n}</span>
+                {used && <span className="tile-combobox-used">in palette</span>}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

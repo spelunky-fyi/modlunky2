@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lets you change it. The picker groups codes as available, available but
   overriding an inherited file's binding (with a warning), and unavailable
   (already used in this file, shown so you can see what's using it).
+- Level editor: the Add Tile name dropdown now previews each tile's sprite
+  beside its name. Tiles already in the palette are shown
+  greyed out and can't be picked.
 
 ### Changed
 
