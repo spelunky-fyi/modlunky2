@@ -1299,43 +1299,35 @@ export function VanillaEditor({ pack }: Props) {
   }, [palette, level]);
 
   const handleAddTile = useCallback(
-    async (name: string, preview: TileSprite) => {
+    async (name: string, preview: TileSprite, chosenCode: string) => {
       setAddOpen(false);
       if (!name) return;
       if (palette.some((p) => p.name === name)) {
         toast.error(`"${name}" is already in the palette.`);
         return;
       }
-      const pool = shortCodesRef.current;
-      const localCodes = new Set(palette.map((p) => p.code));
-      // Inheritance-friendly allocation: if any sister file already
-      // declares this exact name (e.g. the user typed "floor" and
-      // generic.lvl also declares "floor"), reuse that sister's code so
-      // the game sees consistent bindings across the load chain. Only
-      // valid when the code is still free in this file's palette.
-      let code: string | undefined;
-      for (const dep of level?.dependencyPalettes ?? []) {
-        const match = dep.palette.find((e) => e.name === name);
-        if (match && !localCodes.has(match.code)) {
-          code = match.code;
-          break;
+      // The Add Tile modal picks and validates the code (free, or an inherited
+      // override; never a local conflict), so use it directly. The
+      // auto-allocation below is only a fallback for a missing code.
+      let code: string | undefined = chosenCode || undefined;
+      if (!code) {
+        const pool = shortCodesRef.current;
+        const localCodes = new Set(palette.map((p) => p.code));
+        for (const dep of level?.dependencyPalettes ?? []) {
+          const match = dep.palette.find((e) => e.name === name);
+          if (match && !localCodes.has(match.code)) {
+            code = match.code;
+            break;
+          }
         }
-      }
-      if (!code) {
-        const used = collectUsedCodes();
-        code = pool?.find((c) => !used.has(c));
-      }
-      if (!code) {
-        // No non-conflicting code available. Fall back to any code not
-        // already used by *this file* (may collide with a sister),
-        // deferring the actual add until the user confirms.
-        const loose = pool?.find((c) => !localCodes.has(c));
-        if (!loose) {
+        if (!code) {
+          const used = collectUsedCodes();
+          code = pool?.find((c) => !used.has(c));
+        }
+        if (!code) {
           toast.error("No free tile-code characters left in this level.");
           return;
         }
-        setPendingCollision({ kind: "add", name, preview, code: loose });
-        return;
       }
       try {
         await canvasRef.current?.addTexture(name, preview.pngDataUrl);

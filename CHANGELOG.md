@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Level editor: an option to skip the save confirmation dialog. Tick "Don't ask
   again" in the dialog, or toggle "Ask for confirmation before saving" in the
   editor settings.
+- Level editor: the Add Tile dialog now shows the tile code it will assign and
+  lets you change it. The picker groups codes as available, available but
+  overriding an inherited file's binding (with a warning), and unavailable
+  (already used in this file, shown so you can see what's using it).
 
 ### Changed
 

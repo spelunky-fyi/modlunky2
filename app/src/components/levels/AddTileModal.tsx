@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   getTileSprite,
+  listShortCodes,
   listValidTileCodes,
   type CustomLevelPaletteEntry,
   type DependencyPalette,
@@ -20,6 +21,17 @@ import {
 } from "../../lib/commands";
 import { Modal } from "../shared/Modal";
 import "./AddTileModal.css";
+
+// How a candidate tile code relates to what's already bound, given the tile
+// being added:
+//   free      - unused anywhere; safe.
+//   match     - used by an inherited tile with the SAME name; reusing it keeps
+//               the game's binding consistent, so it's the preferred pick.
+//   inherited - used by a DIFFERENT inherited tile; picking it shadows that
+//               binding in this file. Allowed, with a warning.
+//   local     - already used by a tile in THIS file; a file can't bind one code
+//               to two tiles, so this is blocked.
+type CodeState = "free" | "match" | "inherited" | "local";
 
 interface Props {
   existing: CustomLevelPaletteEntry[];
@@ -33,7 +45,7 @@ interface Props {
    *  request per tile if omitted. */
   atlas?: EditorAtlas | null;
   onClose: () => void;
-  onSubmit: (name: string, preview: TileSprite) => void;
+  onSubmit: (name: string, preview: TileSprite, code: string) => void;
   /** Called when the user quick-picks an inherited tile. The parent
    *  handles collision-aware allocation and closes the modal on success. */
   onAdoptInherited?: (
@@ -59,6 +71,15 @@ export function AddTileModal({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<number | null>(null);
+  // Advanced: the single-character tile code this tile binds to. Auto-picked
+  // to a safe free code (or a matching inherited one) until the user overrides
+  // it via the code combobox; `codeTouched` stops the auto-fill from stomping
+  // their choice.
+  const [codePool, setCodePool] = useState<string[]>([]);
+  const [code, setCode] = useState("");
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const codeWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +89,13 @@ export function AddTileModal({
       })
       .catch(() => {
         // Non-fatal; freeform input still works.
+      });
+    listShortCodes()
+      .then((codes) => {
+        if (!cancelled) setCodePool(codes);
+      })
+      .catch(() => {
+        // Non-fatal; the code chip just won't offer picks.
       });
     return () => {
       cancelled = true;
@@ -87,6 +115,115 @@ export function AddTileModal({
     () => new Set(existing.map((e) => e.name)),
     [existing],
   );
+
+  // code -> the local tile using it (a file can't reuse a code).
+  const localByCode = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const e of existing) m.set(e.code, e.name);
+    return m;
+  }, [existing]);
+  // code -> the first inherited tile using it (closest sister wins), skipping
+  // codes already taken locally (those are a local conflict, not inherited).
+  const inheritedByCode = useMemo(() => {
+    const m = new Map<string, { file: string; tile: string }>();
+    for (const dep of dependencyPalettes ?? []) {
+      for (const e of dep.palette) {
+        if (localByCode.has(e.code) || m.has(e.code)) continue;
+        m.set(e.code, { file: dep.fileName, tile: e.name });
+      }
+    }
+    return m;
+  }, [dependencyPalettes, localByCode]);
+
+  const classifyCode = useCallback(
+    (c: string): { state: CodeState; context: string | null } => {
+      const local = localByCode.get(c);
+      if (local !== undefined) {
+        return { state: "local", context: `this file: ${local}` };
+      }
+      const inh = inheritedByCode.get(c);
+      if (inh) {
+        const state = inh.tile === composedName ? "match" : "inherited";
+        return { state, context: `${inh.file}: ${inh.tile}` };
+      }
+      return { state: "free", context: null };
+    },
+    [localByCode, inheritedByCode, composedName],
+  );
+
+  // Every valid code with its state, grouped available -> warning -> disabled
+  // so the combobox reads as three tiers.
+  const codeOptions = useMemo(() => {
+    const rank: Record<CodeState, number> = {
+      match: 0,
+      free: 1,
+      inherited: 2,
+      local: 3,
+    };
+    return codePool
+      .map((c) => ({ code: c, ...classifyCode(c) }))
+      .sort((a, b) => rank[a.state] - rank[b.state]);
+  }, [codePool, classifyCode]);
+
+  // Preferred auto code: reuse a same-name inherited binding, else first free,
+  // else first non-local (an inherited override) so there's always a pick when
+  // free codes run out. Never a local code.
+  const suggestedCode = useMemo(() => {
+    for (const c of codePool) {
+      const inh = inheritedByCode.get(c);
+      if (inh && inh.tile === composedName && !localByCode.has(c)) return c;
+    }
+    for (const c of codePool) {
+      if (!localByCode.has(c) && !inheritedByCode.has(c)) return c;
+    }
+    for (const c of codePool) {
+      if (!localByCode.has(c)) return c;
+    }
+    return "";
+  }, [codePool, inheritedByCode, localByCode, composedName]);
+
+  // Follow the suggestion until the user picks a code themselves.
+  useEffect(() => {
+    if (!codeTouched) setCode(suggestedCode);
+  }, [suggestedCode, codeTouched]);
+
+  // Close the code combobox on an outside click.
+  useEffect(() => {
+    if (!codeOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!codeWrapRef.current?.contains(e.target as Node)) setCodeOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [codeOpen]);
+
+  const codeState = useMemo(
+    () => (code ? classifyCode(code).state : null),
+    [code, classifyCode],
+  );
+  const codeInPool = codePool.length === 0 || codePool.includes(code);
+  const codeError = useMemo(() => {
+    // Pool unavailable (command failed): the chip is hidden and the parent
+    // auto-allocates, so don't block on the empty code.
+    if (codePool.length === 0) return null;
+    if (!code) return "Pick a tile code.";
+    if (!codeInPool) return `"${code}" isn't a valid tile code.`;
+    if (codeState === "local") {
+      return `Code "${code}" is already used by "${localByCode.get(code)}" in this file.`;
+    }
+    return null;
+  }, [code, codeInPool, codeState, localByCode]);
+  const codeWarning = useMemo(() => {
+    if (codeState !== "inherited") return null;
+    const inh = inheritedByCode.get(code);
+    return `Overrides "${inh?.tile}" inherited from ${inh?.file}.`;
+  }, [codeState, code, inheritedByCode]);
+
+  const pickCode = useCallback((c: string) => {
+    setCode(c);
+    setCodeTouched(true);
+    setCodeOpen(false);
+  }, []);
 
   const validationError = useMemo(() => {
     if (!primary.trim()) return "Pick or type a primary tile.";
@@ -125,7 +262,7 @@ export function AddTileModal({
     };
   }, [composedName, biome, validationError]);
 
-  const canSubmit = !validationError && preview !== null;
+  const canSubmit = !validationError && preview !== null && !codeError;
   const altDisabled = percent >= 100;
 
   return (
@@ -162,7 +299,7 @@ export function AddTileModal({
         onSubmit={(e) => {
           e.preventDefault();
           if (!canSubmit || !preview) return;
-          onSubmit(composedName, preview);
+          onSubmit(composedName, preview, code);
         }}
       >
         <div className="add-tile-tile-row">
@@ -234,6 +371,66 @@ export function AddTileModal({
           <div className="add-tile-preview-name">
             {composedName || "(pick a primary tile)"}
           </div>
+          {codePool.length > 0 && (
+            <>
+              <div className="add-tile-code" ref={codeWrapRef}>
+                <span className="add-tile-code-label">code</span>
+                <div className="add-tile-code-control">
+                  <input
+                    className={`add-tile-code-input${
+                      codeError ? " invalid" : codeWarning ? " warn" : ""
+                    }`}
+                    value={code}
+                    maxLength={1}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      setCodeTouched(true);
+                    }}
+                    onFocus={() => setCodeOpen(true)}
+                    onClick={() => setCodeOpen(true)}
+                    spellCheck={false}
+                    aria-label="Tile code"
+                    title="The single-character code this tile binds to"
+                  />
+                  {codeOpen && codeOptions.length > 0 && (
+                    <ul className="add-tile-code-list" role="listbox">
+                      {codeOptions.map((o) => (
+                        <li
+                          key={o.code}
+                          role="option"
+                          aria-selected={o.code === code}
+                          aria-disabled={o.state === "local"}
+                          className={`add-tile-code-opt ${o.state}${
+                            o.code === code ? " current" : ""
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            if (o.state !== "local") pickCode(o.code);
+                          }}
+                        >
+                          <span className="add-tile-code-opt-char">
+                            {o.code}
+                          </span>
+                          {o.context && (
+                            <span className="add-tile-code-opt-ctx">
+                              {o.context}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              {(codeError || codeWarning) && (
+                <div
+                  className={`add-tile-code-msg${codeError ? " error" : " warn"}`}
+                >
+                  {codeError ?? codeWarning}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {(error || validationError) && (

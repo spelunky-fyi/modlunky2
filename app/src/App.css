@@ -81,6 +81,7 @@
   --accent-bright-rgb: 255, 191, 133;
   --danger-rgb: 235, 87, 87;
   --success-rgb: 127, 208, 138;
+  --warning-rgb: 230, 176, 74;
   --info-rgb: 106, 183, 255;
 
   /* Head font available anywhere. Falls back to the system UI stack so

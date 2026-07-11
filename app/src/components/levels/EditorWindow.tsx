@@ -880,16 +880,20 @@ function CustomEditor({ pack }: { pack: string }) {
    * on large levels.
    */
   const handleAddTile = useCallback(
-    async (name: string, preview: TileSprite) => {
+    async (name: string, preview: TileSprite, chosenCode: string) => {
       setAddOpen(false);
       if (!name) return;
       if (palette.some((p) => p.name === name)) {
         toast.error(`"${name}" is already in the palette.`);
         return;
       }
-      const used = new Set(palette.map((p) => p.code));
-      const pool = shortCodesRef.current;
-      const code = pool?.find((c) => !used.has(c));
+      // The Add Tile modal validates and supplies the code; fall back to the
+      // first free code only if it didn't.
+      let code = chosenCode || undefined;
+      if (!code) {
+        const used = new Set(palette.map((p) => p.code));
+        code = shortCodesRef.current?.find((c) => !used.has(c));
+      }
       if (!code) {
         toast.error("No free tile-code characters left in this level.");
         return;
