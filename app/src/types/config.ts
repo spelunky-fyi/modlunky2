@@ -17,6 +17,10 @@ export interface SharedConfig {
   trackerServerAutoStart: boolean;
   /** UI color theme for the whole app: "dark" (default) or "light". */
   theme: string;
+  /** Minimum severity that pops a floating toast: "info" | "success" |
+   *  "warning" | "error". Quieter ones still land in the toast log. Defaults
+   *  to "warning". */
+  toastLevel: string;
 }
 
 export interface ConfigPatch {
@@ -34,4 +38,6 @@ export interface ConfigPatch {
   trackerServerAutoStart?: boolean;
   /** "dark" | "light". Pass to persist the app's color theme. */
   theme?: string;
+  /** "info" | "success" | "warning" | "error". Minimum toast severity. */
+  toastLevel?: string;
 }

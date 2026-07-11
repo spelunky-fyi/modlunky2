@@ -68,6 +68,7 @@
   --danger-fg: #ffb0b0;
   --success: #7fd08a;
   --success-fg: #d8f0b0;
+  --warning: #e6b04a;
   --info: #a6d8ff;
 
   /* White text on any solid colored button (danger/success fills). */
@@ -118,6 +119,7 @@
   --danger-fg: #a52020;
   --success: #2f9e4a;
   --success-fg: #256b2f;
+  --warning: #b9770f;
   --info: #2f6fb0;
 
   --overlay-rgb: 0, 0, 0;
@@ -146,6 +148,7 @@
   --danger-fg: #ffb0b0;
   --success: #7fd08a;
   --success-fg: #d8f0b0;
+  --warning: #e6b04a;
   --info: #a6d8ff;
   --overlay-rgb: 255, 255, 255;
 }

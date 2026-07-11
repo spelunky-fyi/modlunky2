@@ -71,6 +71,11 @@ const KEY_TRACKER_ALWAYS_ON_TOP: &str = "tracker-always-on-top";
 /// UI color theme for the whole app. `"dark"` (default) or `"light"`.
 /// The frontend reads this at boot to set `data-theme` on the document.
 const KEY_THEME: &str = "theme";
+/// Minimum severity that shows a floating toast: `"info" | "success" |
+/// "warning" | "error"`. Quieter levels are still recorded to the toast log,
+/// just not popped. Defaults to `"warning"` so routine success/info messages
+/// stay in the log without covering the UI.
+const KEY_TOAST_LEVEL: &str = "toast-level";
 
 pub const DEFAULT_TRACKER_COLOR_KEY: &str = "#00ff00";
 pub const DEFAULT_TRACKER_FONT_SIZE: u16 = 24;
@@ -86,6 +91,9 @@ pub const DEFAULT_TRACKER_STROKE_COLOR: &str = "#000000";
 pub const DEFAULT_TRACKER_ALWAYS_ON_TOP: bool = true;
 /// Dark is the app's original and default look; light is opt-in.
 pub const DEFAULT_THEME: &str = "dark";
+/// Only warnings and errors pop a toast by default; success/info stay in the
+/// log. Keeps the corners clear during routine use.
+pub const DEFAULT_TOAST_LEVEL: &str = "warning";
 
 /// Wire-facing snapshot of the config fields the Tauri app cares about.
 /// camelCase over the wire; snake_case in Rust.
@@ -113,6 +121,7 @@ pub struct SharedConfig {
     pub tracker_file_enabled: bool,
     pub tracker_always_on_top: bool,
     pub theme: String,
+    pub toast_level: String,
 }
 
 /// Values the Settings modal can set. `Some("")` clears a string field
@@ -142,6 +151,7 @@ pub struct ConfigPatch {
     pub tracker_file_enabled: Option<bool>,
     pub tracker_always_on_top: Option<bool>,
     pub theme: Option<String>,
+    pub toast_level: Option<String>,
 }
 
 /// Path where the shared config.json lives. On Windows this is
@@ -316,6 +326,8 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
             .and_then(|v| v.as_bool())
             .unwrap_or(DEFAULT_TRACKER_ALWAYS_ON_TOP),
         theme: get_string(obj, KEY_THEME).unwrap_or_else(|| DEFAULT_THEME.to_string()),
+        toast_level: get_string(obj, KEY_TOAST_LEVEL)
+            .unwrap_or_else(|| DEFAULT_TOAST_LEVEL.to_string()),
     }
 }
 
@@ -455,6 +467,7 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
         patch.tracker_always_on_top,
     );
     apply_field(&mut obj, KEY_THEME, patch.theme);
+    apply_field(&mut obj, KEY_TOAST_LEVEL, patch.toast_level);
 
     let serialized =
         serde_json::to_string_pretty(&Value::Object(obj)).map_err(|e| format!("encode: {e}"))?;

@@ -69,7 +69,8 @@
   text-decoration: underline;
 }
 
-.settings-form input {
+.settings-form input,
+.settings-form select {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -79,7 +80,12 @@
   font-family: inherit;
 }
 
-.settings-form input:focus {
+.settings-form select {
+  cursor: pointer;
+}
+
+.settings-form input:focus,
+.settings-form select:focus {
   outline: none;
   border-color: var(--accent);
 }

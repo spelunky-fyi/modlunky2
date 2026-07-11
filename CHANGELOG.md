@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Toast notifications: a Settings option controls which severities pop on
+  screen. Defaults to warnings and higher, so routine confirmations no longer
+  cover the UI. Every toast is still recorded to the toast log regardless.
+
+### Changed
+
+- Toast notifications now appear at the bottom center instead of a corner, so
+  they no longer cover the Save or Play buttons. Success and info messages
+  (e.g. "Copied") are log-only by default (see the new Settings option).
+
 ## [2.0.14] - 2026-07-11
 
 ### Added

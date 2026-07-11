@@ -1,9 +1,11 @@
 .toast-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
   z-index: 2000;
   pointer-events: none;
@@ -35,8 +37,12 @@
   border-left-color: var(--danger);
 }
 
+.toast-warning {
+  border-left-color: var(--warning);
+}
+
 .toast-info {
-  border-left-color: var(--accent);
+  border-left-color: var(--info);
 }
 
 .toast-message {
@@ -64,7 +70,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;

@@ -12,6 +12,11 @@ import {
   setConfig,
   syncDesktopShortcut,
 } from "../../lib/commands";
+import {
+  broadcastToastLevel,
+  normalizeToastLevel,
+  type ToastLevel,
+} from "../../lib/toastLevel";
 import "./SettingsModal.css";
 
 interface SettingsModalProps {
@@ -25,6 +30,7 @@ interface FormState {
   spelunkyFyiRoot: string;
   spelunkyFyiApiToken: string;
   commandPrefix: string;
+  toastLevel: ToastLevel;
 }
 
 const EMPTY_FORM: FormState = {
@@ -32,7 +38,17 @@ const EMPTY_FORM: FormState = {
   spelunkyFyiRoot: "",
   spelunkyFyiApiToken: "",
   commandPrefix: "",
+  toastLevel: "warning",
 };
+
+// Ordered as the severity ladder, low to high. The chosen level and every
+// level above it pop; the rest stay log-only.
+const TOAST_LEVEL_OPTIONS: { value: ToastLevel; label: string }[] = [
+  { value: "info", label: "Info" },
+  { value: "success", label: "Success" },
+  { value: "warning", label: "Warning" },
+  { value: "error", label: "Error" },
+];
 
 const DEFAULT_FYI_ROOT = "https://spelunky.fyi/";
 
@@ -56,6 +72,7 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
           spelunkyFyiRoot: cfg.spelunkyFyiRoot ?? "",
           spelunkyFyiApiToken: cfg.spelunkyFyiApiToken ?? "",
           commandPrefix: cfg.commandPrefix ?? "",
+          toastLevel: normalizeToastLevel(cfg.toastLevel),
         };
         setInitial(loaded);
         setForm(loaded);
@@ -76,7 +93,8 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
       form.installDir !== initial.installDir ||
       form.spelunkyFyiRoot !== initial.spelunkyFyiRoot ||
       form.spelunkyFyiApiToken !== initial.spelunkyFyiApiToken ||
-      form.commandPrefix !== initial.commandPrefix,
+      form.commandPrefix !== initial.commandPrefix ||
+      form.toastLevel !== initial.toastLevel,
     [form, initial],
   );
 
@@ -104,7 +122,7 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
         setForm((f) => ({ ...f, installDir: found }));
         toast.success("Found it.");
       } else {
-        toast.info("Couldn't find Spelunky 2 automatically. Try Browse.");
+        toast.warning("Couldn't find Spelunky 2 automatically. Try Browse.");
       }
     } catch (err) {
       toast.error(`Auto-detect failed: ${extractMessage(err)}`);
@@ -131,7 +149,12 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
         spelunkyFyiRoot: form.spelunkyFyiRoot,
         spelunkyFyiApiToken: form.spelunkyFyiApiToken,
         commandPrefix: form.commandPrefix,
+        toastLevel: form.toastLevel,
       });
+      // Fan the new threshold out to every open window's ToastProvider.
+      if (form.toastLevel !== initial.toastLevel) {
+        broadcastToastLevel(form.toastLevel);
+      }
       const installDirChanged = form.installDir !== initial.installDir;
       const authChanged =
         form.spelunkyFyiApiToken !== initial.spelunkyFyiApiToken ||
@@ -307,6 +330,29 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
             <span className="settings-hint">
               Advanced. Runs before playlunky_launcher.exe on each launch.
               Useful for Proton or Wine wrappers on non-Windows setups.
+            </span>
+          </label>
+
+          <label className="settings-field">
+            <span className="settings-label">Toast severity threshold</span>
+            <select
+              value={form.toastLevel}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  toastLevel: e.target.value as ToastLevel,
+                }))
+              }
+            >
+              {TOAST_LEVEL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <span className="settings-hint">
+              The lowest severity that pops a toast; this level and anything
+              more severe show. Everything is still recorded to the toast log.
             </span>
           </label>
         </form>

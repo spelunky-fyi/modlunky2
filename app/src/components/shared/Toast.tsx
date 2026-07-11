@@ -2,15 +2,24 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { recordToast } from "../../lib/commands";
+import { listen } from "@tauri-apps/api/event";
+import { getConfig, recordToast } from "../../lib/commands";
+import {
+  DEFAULT_TOAST_LEVEL,
+  TOAST_LEVEL_CHANGED_EVENT,
+  normalizeToastLevel,
+  shouldPopToast,
+  type ToastLevel,
+} from "../../lib/toastLevel";
 import "./Toast.css";
 
-export type ToastVariant = "success" | "error" | "info";
+export type ToastVariant = "info" | "success" | "warning" | "error";
 
 export interface Toast {
   id: string;
@@ -29,6 +38,7 @@ interface ToastAPI {
   success(message: string): void;
   error(message: string): void;
   info(message: string): void;
+  warning(message: string): void;
   dismiss(id: string): void;
   history(): ToastHistoryEntry[];
 }
@@ -48,6 +58,24 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   /// render; sticking it in useState would rerender the whole app for
   /// every toast just to keep an off-screen list current.
   const historyRef = useRef<ToastHistoryEntry[]>([]);
+  // Minimum severity that actually pops. Every toast is still recorded to the
+  // history/log below; this only gates the on-screen render. Kept in a ref so
+  // `push` stays stable and a threshold change just affects future toasts.
+  const levelRef = useRef<ToastLevel>(DEFAULT_TOAST_LEVEL);
+  useEffect(() => {
+    void getConfig()
+      .then((cfg) => {
+        levelRef.current = normalizeToastLevel(cfg.toastLevel);
+      })
+      .catch(() => {});
+    let unlisten: (() => void) | undefined;
+    void listen<{ level?: string }>(TOAST_LEVEL_CHANGED_EVENT, (event) => {
+      levelRef.current = normalizeToastLevel(event.payload?.level);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
+  }, []);
 
   const dismiss = useCallback((id: string) => {
     setToasts((current) => current.filter((t) => t.id !== id));
@@ -76,6 +104,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       // a failed record shouldn't block the user's toast from
       // rendering in-window.
       void recordToast(entry).catch(() => {});
+      // Below the configured threshold: recorded to the log above, but not
+      // popped on screen.
+      if (!shouldPopToast(variant, levelRef.current)) return;
       setToasts((current) => [...current, { id, message, variant }]);
       window.setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
     },
@@ -88,6 +119,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       success: (m) => push(m, "success"),
       error: (m) => push(m, "error"),
       info: (m) => push(m, "info"),
+      warning: (m) => push(m, "warning"),
       dismiss,
       history: () => historyRef.current.slice(),
     }),

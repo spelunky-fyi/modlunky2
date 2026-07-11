@@ -140,7 +140,7 @@ export async function openLogsWindow(): Promise<void> {
 /// window's React tree.
 export interface ToastRecord {
   id: string;
-  variant: "success" | "error" | "info";
+  variant: "info" | "success" | "warning" | "error";
   message: string;
   tsMs: number;
 }
