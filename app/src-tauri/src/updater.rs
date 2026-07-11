@@ -12,8 +12,11 @@ use serde::Serialize;
 const GITHUB_LATEST_URL: &str = "https://github.com/spelunky-fyi/modlunky2/releases/latest";
 const GITHUB_LATEST_API_URL: &str =
     "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest";
-const LATEST_EXE_URL: &str =
-    "https://github.com/spelunky-fyi/modlunky2/releases/latest/download/modlunky2.exe";
+/// Name of the release asset we install. We resolve its versioned
+/// `browser_download_url` from the API response rather than hitting the
+/// `latest/download/<name>` web redirect, whose CDN cache can lag the API and
+/// hand back the previous release's exe.
+const EXE_ASSET_NAME: &str = "modlunky2.exe";
 
 // ---------------------------------------------------------------------
 // Tauri commands
@@ -36,7 +39,7 @@ pub struct ModlunkyVersionInfo {
 #[tauri::command]
 pub async fn get_modlunky_version() -> Result<ModlunkyVersionInfo, String> {
     let current = env!("CARGO_PKG_VERSION").to_string();
-    let latest = fetch_latest_version().await;
+    let latest = fetch_latest_release().await.map(|r| r.tag);
     let update_available = latest
         .as_ref()
         .map(|l| version_is_newer(l, &current))
@@ -57,6 +60,32 @@ pub async fn get_modlunky_version() -> Result<ModlunkyVersionInfo, String> {
 /// rename itself fails, nothing else happens.
 #[tauri::command]
 pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    // Resolve the exact release we're about to install and pin the download to
+    // that release's asset, so the bytes we write match the version we
+    // advertised. The old code read the version from the API but downloaded
+    // from the `latest/download` web redirect, and the two are cached
+    // independently: the redirect could serve the previous release's exe while
+    // the API already reported the new tag. That left the app "updating" to the
+    // same old build on a loop.
+    let release = fetch_latest_release()
+        .await
+        .ok_or_else(|| "couldn't reach GitHub to resolve the latest release".to_string())?;
+
+    // Only install when GitHub's latest is genuinely newer than what's running.
+    // Guards against the loop above: even if a stale response points at an old
+    // release, we refuse rather than reinstall it.
+    let current = env!("CARGO_PKG_VERSION");
+    if !version_is_newer(&release.tag, current) {
+        return Err(format!(
+            "already up to date (latest is {}, running {current})",
+            release.tag
+        ));
+    }
+
+    let exe_url = release
+        .exe_url
+        .ok_or_else(|| format!("release {} has no {EXE_ASSET_NAME} asset", release.tag))?;
+
     let self_exe = std::env::current_exe().map_err(|e| format!("resolve current exe: {e}"))?;
 
     // 1. Move the current exe aside. Renaming an in-use exe is legal
@@ -71,8 +100,8 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     std::fs::rename(&self_exe, &backup)
         .map_err(|e| format!("rename current exe to backup: {e}"))?;
 
-    // 2. Stream the download to the original path.
-    if let Err(e) = download_latest(&self_exe).await {
+    // 2. Stream the pinned asset to the original path.
+    if let Err(e) = download_to(&exe_url, &self_exe).await {
         // Roll back so the user isn't stranded.
         let _ = std::fs::rename(&backup, &self_exe);
         return Err(format!("download update: {e}"));
@@ -94,7 +123,18 @@ fn user_agent() -> String {
     format!("modlunky2/{}", env!("CARGO_PKG_VERSION"))
 }
 
-async fn fetch_latest_version() -> Option<String> {
+/// The one release we resolve up front, so the version we show and the bytes
+/// we download come from the same object.
+struct LatestRelease {
+    /// `tag_name`, e.g. `"v2.0.14"` or `"2.0.14"`.
+    tag: String,
+    /// Pinned, versioned download URL for [`EXE_ASSET_NAME`] (e.g.
+    /// `.../releases/download/v2.0.14/modlunky2.exe`). `None` if that release
+    /// has no such asset.
+    exe_url: Option<String>,
+}
+
+async fn fetch_latest_release() -> Option<LatestRelease> {
     let client = reqwest::Client::builder()
         .user_agent(user_agent())
         .build()
@@ -104,16 +144,34 @@ async fn fetch_latest_version() -> Option<String> {
         return None;
     }
     let json: serde_json::Value = resp.json().await.ok()?;
-    json.get("tag_name")?.as_str().map(String::from)
+    let tag = json.get("tag_name")?.as_str()?.to_string();
+    let exe_url = exe_asset_url(&json, EXE_ASSET_NAME);
+    Some(LatestRelease { tag, exe_url })
 }
 
-async fn download_latest(dest: &std::path::Path) -> Result<(), String> {
+/// Pull the `browser_download_url` of the named asset out of a release JSON
+/// object. Matching is case-insensitive so `Modlunky2.exe` still resolves.
+fn exe_asset_url(release: &serde_json::Value, asset_name: &str) -> Option<String> {
+    release.get("assets")?.as_array()?.iter().find_map(|asset| {
+        let name = asset.get("name")?.as_str()?;
+        if name.eq_ignore_ascii_case(asset_name) {
+            asset
+                .get("browser_download_url")?
+                .as_str()
+                .map(String::from)
+        } else {
+            None
+        }
+    })
+}
+
+async fn download_to(url: &str, dest: &std::path::Path) -> Result<(), String> {
     let client = reqwest::Client::builder()
         .user_agent(user_agent())
         .build()
         .map_err(|e| format!("http client: {e}"))?;
     let resp = client
-        .get(LATEST_EXE_URL)
+        .get(url)
         .send()
         .await
         .map_err(|e| format!("send: {e}"))?;
@@ -195,5 +253,55 @@ mod tests {
             backup_path_for(&p),
             PathBuf::from(r"C:\Users\me\modlunky2.backup.exe")
         );
+    }
+
+    #[test]
+    fn exe_asset_url_pins_to_the_versioned_asset() {
+        // Shape mirrors the GitHub "get latest release" payload. The pinned
+        // url must be the versioned one, not the `latest/download` redirect.
+        let release = serde_json::json!({
+            "tag_name": "v2.0.14",
+            "assets": [
+                { "name": "some-other.zip", "browser_download_url": "https://example/other.zip" },
+                {
+                    "name": "modlunky2.exe",
+                    "browser_download_url":
+                        "https://github.com/spelunky-fyi/modlunky2/releases/download/v2.0.14/modlunky2.exe"
+                }
+            ]
+        });
+        assert_eq!(
+            exe_asset_url(&release, EXE_ASSET_NAME).as_deref(),
+            Some(
+                "https://github.com/spelunky-fyi/modlunky2/releases/download/v2.0.14/modlunky2.exe"
+            )
+        );
+    }
+
+    #[test]
+    fn exe_asset_url_is_case_insensitive() {
+        let release = serde_json::json!({
+            "assets": [
+                { "name": "Modlunky2.EXE", "browser_download_url": "https://example/m.exe" }
+            ]
+        });
+        assert_eq!(
+            exe_asset_url(&release, EXE_ASSET_NAME).as_deref(),
+            Some("https://example/m.exe")
+        );
+    }
+
+    #[test]
+    fn exe_asset_url_none_when_asset_missing() {
+        let release = serde_json::json!({
+            "assets": [
+                { "name": "checksums.txt", "browser_download_url": "https://example/c.txt" }
+            ]
+        });
+        assert_eq!(exe_asset_url(&release, EXE_ASSET_NAME), None);
+
+        // Also None when there's no assets array at all.
+        let empty = serde_json::json!({ "tag_name": "v2.0.14" });
+        assert_eq!(exe_asset_url(&empty, EXE_ASSET_NAME), None);
     }
 }

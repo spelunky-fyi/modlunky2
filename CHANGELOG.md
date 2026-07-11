@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Light theme. A Sun/Moon button in the top bar toggles between the dark
   (default) and light themes
 
+### Fixed
+
+- Self-updater: an update now downloads the exact release the version check
+  resolved (from that release's own asset URL) instead of GitHub's
+  `latest/download` link, whose separate cache could briefly serve the previous
+  version and leave the app "updating" to the same older build in a loop.
+
 ## [2.0.13] - 2026-07-10
 
 ### Fixed
