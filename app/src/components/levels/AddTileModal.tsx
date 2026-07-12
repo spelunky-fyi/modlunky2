@@ -556,20 +556,23 @@ function InheritedTilesStrip({
   if (!onAdopt || adoptable.length === 0) return null;
 
   const swatchSize = 36;
-  const swatchStyleFor = (name: string): React.CSSProperties => {
+  const swatchStyleFor = (name: string): React.CSSProperties | null => {
     const uv = uvByName.get(name);
     if (uv && atlas) {
       const scale = Math.min(swatchSize / uv.w, swatchSize / uv.h);
+      // Size the image to the scaled tile (not the full box) so a non-square
+      // tile doesn't reveal the next atlas tile in its leftover strip. The
+      // fixed-size box (CSS) centers it.
       return {
         backgroundImage: `url(${atlas.pngDataUrl})`,
         backgroundPosition: `-${uv.x * scale}px -${uv.y * scale}px`,
         backgroundSize: `${atlas.width * scale}px ${atlas.height * scale}px`,
         backgroundRepeat: "no-repeat",
-        width: swatchSize,
-        height: swatchSize,
+        width: uv.w * scale,
+        height: uv.h * scale,
       };
     }
-    return { width: swatchSize, height: swatchSize };
+    return null;
   };
 
   return (
@@ -595,10 +598,12 @@ function InheritedTilesStrip({
               onClick={() => onAdopt(sourceFile, entry)}
               title={`Adopt ${entry.name} from ${sourceFile}${entry.comment ? `\n${entry.comment}` : ""}`}
             >
-              <span
-                className="add-tile-inherited-swatch"
-                style={swatchStyleFor(entry.name)}
-              />
+              <span className="add-tile-inherited-swatch">
+                <span
+                  className="add-tile-inherited-swatch-img"
+                  style={swatchStyleFor(entry.name) ?? undefined}
+                />
+              </span>
               <span className="add-tile-inherited-meta">
                 <span className="add-tile-inherited-name">{entry.name}</span>
                 <span className="add-tile-inherited-source">{sourceFile}</span>

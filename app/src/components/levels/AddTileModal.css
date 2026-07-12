@@ -81,9 +81,18 @@
 
 .add-tile-inherited-swatch {
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 3px;
   border: 1px solid rgba(var(--overlay-rgb), 0.08);
   background: var(--bg-inset);
+}
+
+.add-tile-inherited-swatch-img {
+  background-repeat: no-repeat;
 }
 
 .add-tile-inherited-meta {

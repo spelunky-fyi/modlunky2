@@ -120,18 +120,23 @@ export function LevelPalette({
       // inside the swatch instead of scaling by width alone, so a
       // 1x2 or 2x2 tile isn't clipped or squashed vertically.
       const scale = Math.min(swatchSize / uv.w, swatchSize / uv.h);
+      // Size the image element to the SCALED TILE, not the full swatch box.
+      // A non-square tile only fills one axis; if the element were the whole
+      // box, the leftover strip would show the next tile packed beside it in
+      // the atlas (the bleed that made moai_statue carry the alien queen).
+      // The 40x40 box (CSS) then centers this exact-size image.
       return {
         style: {
           backgroundImage: `url(${atlas.pngDataUrl})`,
           backgroundPosition: `-${uv.x * scale}px -${uv.y * scale}px`,
           backgroundSize: `${atlas.width * scale}px ${atlas.height * scale}px`,
           backgroundRepeat: "no-repeat",
-          width: swatchSize,
-          height: swatchSize,
+          width: uv.w * scale,
+          height: uv.h * scale,
         },
       };
     }
-    return { style: { width: swatchSize, height: swatchSize } };
+    return { style: {} };
   };
 
   // dnd-kit uses stable string IDs. Tile-code chars are unique per palette
@@ -318,7 +323,8 @@ function PaletteRow({
         disabled={reorderMode}
         title={`${entry.name} (${entry.code})\nLeft-click: primary, right-click: secondary${entry.comment ? `\n${entry.comment}` : ""}`}
       >
-        <span className="level-palette-swatch" style={swatch.style}>
+        <span className="level-palette-swatch">
+          <span className="level-palette-swatch-img" style={swatch.style} />
           {isPrimary && (
             <span className="level-palette-badge primary">L</span>
           )}

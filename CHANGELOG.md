@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tile that the new file's palette doesn't define, which let you paint an
   undefined tilecode into that file. The brush now falls back to a valid tile
   when the previous one isn't in the new palette.
+- Level editor: the `moai_statue` sprite is no longer cut in half; its crop was
+  only half the width of the actual art.
+- Level editor: the `empress_grave` sprite now renders. Its crop ran past the
+  bottom edge of the sprite sheet, so the tile came up blank.
+- Level editor: palette swatches for non-square tiles (such as `moai_statue` or
+  `shopkeeper_vat`) no longer show a sliver of the neighbouring tile bleeding in
+  from the packed sprite atlas.
 
 ## [2.0.15] - 2026-07-11
 

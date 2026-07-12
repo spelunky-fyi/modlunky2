@@ -45,7 +45,7 @@ pub fn ice_caves_deco_sheet() -> LoaderConfig {
         sprite_sheet_path: "Data/Textures/deco_ice.png".into(),
         chunk_size: 128,
         chunk_map: chunks(&[
-            ("moai_statue", 0.0, 7.0, 2.0, 12.0),
+            ("moai_statue", 0.0, 7.0, 4.0, 12.0),
             ("boulder", 0.0, 5.0, 2.0, 7.0),
         ]),
     }

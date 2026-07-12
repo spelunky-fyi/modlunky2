@@ -216,10 +216,22 @@
 .level-palette-swatch {
   position: relative;
   flex-shrink: 0;
-  display: block;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
   border-radius: 3px;
   border: 1px solid rgba(var(--overlay-rgb), 0.08);
   background: var(--bg-inset);
+}
+
+/* The cropped sprite, sized to the scaled tile and centered in the box above.
+   Sizing it exactly (rather than filling the box) is what stops a non-square
+   tile from revealing the neighbouring atlas tile in its leftover strip. */
+.level-palette-swatch-img {
+  background-repeat: no-repeat;
 }
 
 .level-palette-badge {

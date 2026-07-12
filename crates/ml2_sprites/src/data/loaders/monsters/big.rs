@@ -644,7 +644,7 @@ pub fn yama() -> LoaderConfig {
         chunk_size: 128,
         chunk_map: chunks(&[
             ("yama", 0.0, 0.0, 8.0, 10.0),
-            ("empress_grave", 8.0, 6.0, 10.0, 12.0),
+            ("empress_grave", 8.0, 6.0, 10.0, 10.0),
         ]),
     }
 }
