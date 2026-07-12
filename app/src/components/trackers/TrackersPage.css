@@ -101,7 +101,6 @@
   width: 40px;
   height: 40px;
   object-fit: contain;
-  image-rendering: pixelated;
 }
 
 .tracker-card-body {

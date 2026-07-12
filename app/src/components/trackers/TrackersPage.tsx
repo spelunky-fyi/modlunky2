@@ -61,11 +61,11 @@ import {
 } from "../../lib/commands";
 import { useToast } from "../shared/Toast";
 import { Modal } from "../shared/Modal";
-import categoryIcon from "../../assets/tracker_category.png";
-import pacifistIcon from "../../assets/tracker_pacifist.png";
-import timerIcon from "../../assets/tracker_timer.png";
-import gemIcon from "../../assets/tracker_gem.png";
-import golfIcon from "../../assets/tracker_golf.png";
+import categoryIcon from "../../assets/tracker_category.svg";
+import pacifistIcon from "../../assets/tracker_pacifist.svg";
+import timerIcon from "../../assets/tracker_timer.svg";
+import gemIcon from "../../assets/tracker_gem.svg";
+import golfIcon from "../../assets/tracker_golf.svg";
 import coIcon from "../../assets/tracker_co.png";
 import "./TrackersPage.css";
 

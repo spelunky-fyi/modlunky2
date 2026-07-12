@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Trackers: the tracker icons are now crisp SVGs instead of small bitmaps that
+  looked blurry when scaled up.
+
 ## [2.0.15] - 2026-07-11
 
 ### Added
