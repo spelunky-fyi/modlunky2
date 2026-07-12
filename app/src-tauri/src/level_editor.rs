@@ -729,8 +729,14 @@ pub async fn get_biome_background(biome: String) -> Result<String, String> {
     if biome == "duat" {
         return Ok(BLACK_TILE_DATA_URL.to_string());
     }
+    // A few biomes have no bg_<biome>.png and reuse another's backdrop art.
+    let bg_stem = match biome.as_str() {
+        "olmec" => "stone",
+        "surface" => "cave",
+        other => other,
+    };
     let dir = textures_dir()?;
-    let path = dir.join(format!("bg_{biome}.png"));
+    let path = dir.join(format!("bg_{bg_stem}.png"));
     if !path.exists() {
         return Err(format!(
             "missing background {}; run Extract Assets first",

@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Level editor: palette swatches for non-square tiles (such as `moai_statue` or
   `shopkeeper_vat`) no longer show a sliver of the neighbouring tile bleeding in
   from the packed sprite atlas.
+- Level editor: biomes that have no background art of their own now fall back to
+  the right one instead of keeping whichever background was on screen from the
+  previously open file. Olmec-area files (e.g. `olmecarea.lvl`) use the stone
+  background, and the Base Camp theme uses the cave background.
 
 ## [2.0.15] - 2026-07-11
 
