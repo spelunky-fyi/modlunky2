@@ -24,7 +24,8 @@ const EXE_ASSET_NAME: &str = "modlunky2.exe";
 
 /// What the frontend needs to render the update state. A missing
 /// `latest` means the GitHub request failed (offline, rate-limited);
-/// UI silently hides the pill in that case.
+/// `check_error` then carries the reason so the UI can say "couldn't
+/// check" instead of silently looking identical to "up to date".
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModlunkyVersionInfo {
@@ -34,21 +35,35 @@ pub struct ModlunkyVersionInfo {
     /// GitHub releases page for the manual-download fallback if the
     /// in-place swap fails (locked file, weird permissions).
     pub release_page_url: &'static str,
+    /// Why the latest-release lookup failed, when it did. `None` on success.
+    pub check_error: Option<String>,
 }
 
 #[tauri::command]
 pub async fn get_modlunky_version() -> Result<ModlunkyVersionInfo, String> {
     let current = env!("CARGO_PKG_VERSION").to_string();
-    let latest = fetch_latest_release().await.map(|r| r.tag);
+    let (latest, check_error) = match fetch_latest_release().await {
+        Ok(release) => (Some(release.tag), None),
+        Err(e) => {
+            // Log so a user who never sees the update pill has something to
+            // find; the check is otherwise invisible when it fails.
+            tracing::warn!("update check failed: {e}");
+            (None, Some(e))
+        }
+    };
     let update_available = latest
         .as_ref()
         .map(|l| version_is_newer(l, &current))
         .unwrap_or(false);
+    tracing::debug!(
+        "update check: current={current} latest={latest:?} update_available={update_available}"
+    );
     Ok(ModlunkyVersionInfo {
         current,
         latest,
         update_available,
         release_page_url: GITHUB_LATEST_URL,
+        check_error,
     })
 }
 
@@ -69,7 +84,7 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     // same old build on a loop.
     let release = fetch_latest_release()
         .await
-        .ok_or_else(|| "couldn't reach GitHub to resolve the latest release".to_string())?;
+        .map_err(|e| format!("couldn't reach GitHub to resolve the latest release: {e}"))?;
 
     // Only install when GitHub's latest is genuinely newer than what's running.
     // Guards against the loop above: even if a stale response points at an old
@@ -134,19 +149,39 @@ struct LatestRelease {
     exe_url: Option<String>,
 }
 
-async fn fetch_latest_release() -> Option<LatestRelease> {
+async fn fetch_latest_release() -> Result<LatestRelease, String> {
     let client = reqwest::Client::builder()
         .user_agent(user_agent())
         .build()
-        .ok()?;
-    let resp = client.get(GITHUB_LATEST_API_URL).send().await.ok()?;
-    if !resp.status().is_success() {
-        return None;
+        .map_err(|e| format!("build http client: {e}"))?;
+    let resp = client
+        .get(GITHUB_LATEST_API_URL)
+        .send()
+        .await
+        .map_err(|e| format!("request to GitHub failed: {e}"))?;
+    let status = resp.status();
+    if !status.is_success() {
+        // Rate limiting is the most common silent failure: GitHub's
+        // unauthenticated API allows only 60 requests/hour per IP, which a
+        // shared/corporate NAT can exhaust. Call it out explicitly.
+        let hint = if status.as_u16() == 403 || status.as_u16() == 429 {
+            " (GitHub API rate limit or blocked; the unauthenticated limit is 60 requests/hour per IP)"
+        } else {
+            ""
+        };
+        return Err(format!("GitHub API returned HTTP {status}{hint}"));
     }
-    let json: serde_json::Value = resp.json().await.ok()?;
-    let tag = json.get("tag_name")?.as_str()?.to_string();
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("parse GitHub response: {e}"))?;
+    let tag = json
+        .get("tag_name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "GitHub response had no tag_name".to_string())?
+        .to_string();
     let exe_url = exe_asset_url(&json, EXE_ASSET_NAME);
-    Some(LatestRelease { tag, exe_url })
+    Ok(LatestRelease { tag, exe_url })
 }
 
 /// Pull the `browser_download_url` of the named asset out of a release JSON

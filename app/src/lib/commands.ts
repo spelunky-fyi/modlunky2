@@ -10,14 +10,16 @@ export async function appVersion(): Promise<string> {
 }
 
 /** Modlunky2 self-version state. `latest === null` means the GitHub
- *  latest-release request failed (offline, rate-limited); UI hides
- *  the banner silently. `releasePageUrl` is a fallback when the
- *  in-place swap fails and the user needs to grab the exe manually. */
+ *  latest-release request failed (offline, rate-limited); `checkError`
+ *  then carries why, so the UI can distinguish "couldn't check" from
+ *  "up to date". `releasePageUrl` is a fallback when the in-place swap
+ *  fails and the user needs to grab the exe manually. */
 export interface ModlunkyVersionInfo {
   current: string;
   latest: string | null;
   updateAvailable: boolean;
   releasePageUrl: string;
+  checkError: string | null;
 }
 
 export async function getModlunkyVersion(): Promise<ModlunkyVersionInfo> {

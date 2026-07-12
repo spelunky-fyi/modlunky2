@@ -8,8 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Update check: click the version number in the top bar to check for updates on
+  demand. It shows "checking" then "up to date", or, if the check can't reach
+  GitHub, an error with the reason.
+
 ### Fixed
 
+- Update check: failures are no longer silent. If the latest-version lookup
+  fails (offline, GitHub API rate limit, or a blocked connection), the reason is
+  logged and the version number turns amber with the reason on hover, instead of
+  the update pill just never appearing.
 - Trackers: the tracker icons are now crisp SVGs instead of small bitmaps that
   looked blurry when scaled up.
 - Level editor: the door sprite (and its `eggplant_door` and `starting_exit`

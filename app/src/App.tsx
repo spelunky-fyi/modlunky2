@@ -273,6 +273,50 @@ function AppShell() {
     }
   }, [updating, versionInfo, toast]);
 
+  // Manual "check for updates", triggered by clicking the version chip. Gives
+  // explicit feedback the automatic check never does: a transient note on the
+  // chip for "checking" / "up to date", and a toast + the chip's error tint
+  // when the GitHub lookup fails (rate limit, blocked, offline). This is the
+  // escape hatch for users who are behind but never see the pill.
+  const [checkState, setCheckState] = useState<
+    "idle" | "checking" | "latest" | "error"
+  >("idle");
+  const checkClearRef = useRef<number | null>(null);
+  const checkForUpdate = useCallback(async () => {
+    if (checkState === "checking") return;
+    if (checkClearRef.current) window.clearTimeout(checkClearRef.current);
+    setCheckState("checking");
+    try {
+      const info = await getModlunkyVersion();
+      setVersionInfo(info);
+      if (info.checkError) {
+        setCheckState("error");
+        toast.error(`Update check failed: ${info.checkError}`);
+      } else if (info.updateAvailable && info.latest) {
+        // The update pill now renders the result; no transient note needed.
+        setCheckState("idle");
+      } else {
+        setCheckState("latest");
+      }
+    } catch (err) {
+      setCheckState("error");
+      toast.error(`Update check failed: ${extractMessage(err)}`);
+    } finally {
+      // Let the transient "checking / up to date / failed" note fade back to
+      // the plain version after a few seconds.
+      checkClearRef.current = window.setTimeout(
+        () => setCheckState("idle"),
+        5000,
+      );
+    }
+  }, [checkState, toast]);
+  useEffect(
+    () => () => {
+      if (checkClearRef.current) window.clearTimeout(checkClearRef.current);
+    },
+    [],
+  );
+
   // Restore the previous tab on mount. Silent on failure: an unreadable
   // config just leaves the default tab active.
   useEffect(() => {
@@ -354,7 +398,32 @@ function AppShell() {
             <span className="fyi-status-label">{FYI_STATUS_LABEL[fyiStatus]}</span>
           </button>
         )}
-        {version && <span className="app-version">v{version}</span>}
+        {version && (
+          <button
+            type="button"
+            className={`app-version${versionInfo?.checkError ? " has-error" : ""}`}
+            onClick={checkForUpdate}
+            disabled={checkState === "checking"}
+            title={
+              versionInfo?.checkError
+                ? `Update check failed: ${versionInfo.checkError}. Click to retry.`
+                : versionInfo?.updateAvailable && versionInfo.latest
+                  ? `Update available: ${versionInfo.latest}. Click to re-check.`
+                  : "Click to check for updates"
+            }
+          >
+            <span>v{version}</span>
+            {checkState === "checking" && (
+              <span className="app-version-note">checking…</span>
+            )}
+            {checkState === "latest" && (
+              <span className="app-version-note ok">up to date</span>
+            )}
+            {checkState === "error" && (
+              <span className="app-version-note err">check failed</span>
+            )}
+          </button>
+        )}
         <FolderMenu />
         <button
           className="icon-button"

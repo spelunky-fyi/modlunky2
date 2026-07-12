@@ -221,9 +221,46 @@ body,
 }
 
 .app-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--fg-muted);
+  font-family: inherit;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+
+.app-version:hover:not(:disabled) {
+  color: var(--fg);
+  background: rgba(var(--overlay-rgb), 0.04);
+}
+
+.app-version:disabled {
+  cursor: default;
+}
+
+/* The last check failed: a subtle warning tint so it's noticeable without a
+   toast, with the reason in the tooltip. */
+.app-version.has-error {
+  color: var(--warning);
+}
+
+.app-version-note {
+  font-size: 11px;
+}
+
+.app-version-note.ok {
+  color: var(--success);
+}
+
+.app-version-note.err {
+  color: var(--warning);
 }
 
 /* "Update to v0.10.5" pill in the tab-bar's right cluster. Amber to
