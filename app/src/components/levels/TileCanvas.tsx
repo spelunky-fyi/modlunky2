@@ -197,6 +197,11 @@ interface CanvasState {
   resizeObserver: ResizeObserver | null;
   sprites: (Sprite | null)[][];
   textures: Map<string, Texture>;
+  /** Footprint + anchor for tiles added incrementally (not yet in the atlas
+   *  prop). Consulted by applySpriteLayout after the atlas-derived map, so a
+   *  freshly added multi-cell tile renders at its natural size and anchor
+   *  before the next full atlas rebuild folds it in. */
+  extraNat: Map<string, { w: number; h: number; ax: number; ay: number }>;
   grid: string[][];
   tileDisplaySize: number;
   /** Extra world height reserved below the grid for section labels. Added
@@ -229,8 +234,14 @@ export interface TileCanvasHandle {
   setTile(row: number, col: number, name: string): void;
   /** Add a new named texture to the canvas without rebuilding. Data URL is
    *  loaded as an HTMLImage then wrapped in a PixiJS texture. Used by the
-   *  add-tile flow so growing the palette doesn't trigger a canvas rebuild. */
-  addTexture(name: string, pngDataUrl: string): Promise<void>;
+   *  add-tile flow so growing the palette doesn't trigger a canvas rebuild.
+   *  Pass `nat` (footprint + anchor) when the tile is multi-cell so it draws
+   *  at natural size and anchor right away; omit it for plain 1x1 tiles. */
+  addTexture(
+    name: string,
+    pngDataUrl: string,
+    nat?: { w: number; h: number; ax: number; ay: number },
+  ): Promise<void>;
   /** Set the world zoom directly. Zooms around the canvas center. */
   setZoom(zoom: number): void;
   /** Fit the whole grid into the visible area at max legible size. */
@@ -565,12 +576,15 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     name: string,
   ) => {
     const mode = renderModeRef.current;
-    const nat = natCellsRef.current.get(name) ?? {
-      w: 1,
-      h: 1,
-      ax: 0,
-      ay: 0,
-    };
+    // Atlas metadata wins (authoritative once a tile is folded in); fall back
+    // to any footprint registered by an incremental add, then to a plain 1x1.
+    const nat = natCellsRef.current.get(name) ??
+      stateRef.current?.extraNat.get(name) ?? {
+        w: 1,
+        h: 1,
+        ax: 0,
+        ay: 0,
+      };
     if (mode === "natural") {
       // Natural render: sprite drawn at its atlas-native resolution and
       // positioned by the per-tile anchor (ported from Python's
@@ -628,9 +642,16 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     }
   };
 
-  const addTextureInternal = async (name: string, dataUrl: string) => {
+  const addTextureInternal = async (
+    name: string,
+    dataUrl: string,
+    nat?: { w: number; h: number; ax: number; ay: number },
+  ) => {
     const local = stateRef.current;
     if (!local || !local.world) return;
+    // Record the footprint/anchor even if the texture is already present, so a
+    // re-add can't leave a multi-cell tile stuck at its old 1x1 layout.
+    if (nat) local.extraNat.set(name, nat);
     if (local.textures.has(name)) return;
     const img = new Image();
     img.src = dataUrl;
@@ -704,7 +725,8 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     ref,
     () => ({
       setTile: (row, col, name) => setTileInternal(row, col, name),
-      addTexture: (name, dataUrl) => addTextureInternal(name, dataUrl),
+      addTexture: (name, dataUrl, nat) =>
+        addTextureInternal(name, dataUrl, nat),
       setZoom: (zoom) => setZoomImperative(zoom),
       zoomToFit: () => zoomToFitImperative(),
       getSelection: () => stateRef.current?.selectionApi?.get() ?? null,
@@ -734,6 +756,7 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
     const local: CanvasState = {
       cancelled: false,
       app: null,
+      extraNat: new Map(),
       world: null,
       canvas: null,
       resizeObserver: null,

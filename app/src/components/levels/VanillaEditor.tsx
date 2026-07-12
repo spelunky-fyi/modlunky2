@@ -25,6 +25,7 @@ import {
   getBiomeBackground,
   getCosmicBackdrop,
   getCosmicSubthemeDecoration,
+  getTileSpriteNatural,
   listShortCodes,
   listVanillaLevels,
   loadVanillaLevel,
@@ -1298,6 +1299,28 @@ export function VanillaEditor({ pack }: Props) {
     return used;
   }, [palette, level]);
 
+  // Register a newly added tile's texture on the canvas. Fetches the tile's
+  // natural (multi-cell) sprite + footprint/anchor so a door/statue/etc draws
+  // full-size and anchored immediately, instead of clamped to one cell until
+  // the next atlas rebuild. Falls back to the 1x1 swatch if the natural fetch
+  // fails, so the tile still appears.
+  const addTileTexture = useCallback(
+    async (name: string, fallbackDataUrl: string) => {
+      try {
+        const nat = await getTileSpriteNatural(name, currentBiome ?? null);
+        await canvasRef.current?.addTexture(name, nat.pngDataUrl, {
+          w: nat.natWCells,
+          h: nat.natHCells,
+          ax: nat.anchorXCells,
+          ay: nat.anchorYCells,
+        });
+      } catch {
+        await canvasRef.current?.addTexture(name, fallbackDataUrl);
+      }
+    },
+    [currentBiome],
+  );
+
   const handleAddTile = useCallback(
     async (name: string, preview: TileSprite, chosenCode: string) => {
       setAddOpen(false);
@@ -1330,7 +1353,7 @@ export function VanillaEditor({ pack }: Props) {
         }
       }
       try {
-        await canvasRef.current?.addTexture(name, preview.pngDataUrl);
+        await addTileTexture(name, preview.pngDataUrl);
       } catch (err) {
         toast.error(`Add failed: ${extractMessage(err)}`);
         return;
@@ -1345,7 +1368,7 @@ export function VanillaEditor({ pack }: Props) {
       paletteChangedSinceSave.current = true;
       recomputeDirty();
     },
-    [palette, level, collectUsedCodes, toast, recomputeDirty],
+    [palette, level, collectUsedCodes, toast, recomputeDirty, addTileTexture],
   );
 
   const confirmCollisionAdd = useCallback(async () => {
@@ -1354,10 +1377,7 @@ export function VanillaEditor({ pack }: Props) {
     setPendingCollision(null);
     if (pending.kind === "add") {
       try {
-        await canvasRef.current?.addTexture(
-          pending.name,
-          pending.preview.pngDataUrl,
-        );
+        await addTileTexture(pending.name, pending.preview.pngDataUrl);
       } catch (err) {
         toast.error(`Add failed: ${extractMessage(err)}`);
         return;
@@ -1393,7 +1413,7 @@ export function VanillaEditor({ pack }: Props) {
         `Adopted "${pending.entry.name}" using a code that may collide with a sister file.`,
       );
     }
-  }, [pendingCollision, toast, setPrimary, recomputeDirty]);
+  }, [pendingCollision, toast, setPrimary, recomputeDirty, addTileTexture]);
 
   // Walk the current palette and flag every entry whose code is also
   // used by a sister-location file with a different name. Same-name reuse

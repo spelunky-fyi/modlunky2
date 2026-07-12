@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Trackers: the tracker icons are now crisp SVGs instead of small bitmaps that
   looked blurry when scaled up.
+- Level editor: the door sprite (and its `eggplant_door` and `starting_exit`
+  variants) now renders centered on its cell instead of shifted off to one side
+  and stretched too wide. Its crop was misaligned by half a cell in every biome.
+- Level editor: a newly added multi-cell tile (a door, statue, big trap, etc.)
+  now draws at its full size and correct position the moment you add it, instead
+  of being squished into a single cell until the next refresh.
 
 ## [2.0.15] - 2026-07-11
 

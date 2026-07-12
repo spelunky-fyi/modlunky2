@@ -128,7 +128,11 @@ fn anchor_from_mode(mode: u8, w: f32, h: f32) -> (f32, f32) {
         10 => (0.0, h / 2.0 + 2.0),
         11 => (1.0, 0.0),
         12 => (0.0, 1.0),
-        13 => (0.5, h / 2.0),
+        // Centered horizontally on the placement cell (ax = w/2 - 0.5, so a
+        // 2-wide sprite shifts 0.5, a 3-wide 1.0, a 4-wide 1.5) and
+        // bottom-anchored so the sprite rests on that cell. Used by doors and
+        // other ground-standing props whose art is wider than one cell.
+        13 => (w / 2.0 - 0.5, h / 2.0),
         14 => (2.0, h - 1.0),
         15 => (1.0, h / 2.0 + 1.0),
         16 => (0.5, 0.0),
@@ -3116,6 +3120,88 @@ fn render_tile_sprites_sync(
         });
     }
     Ok(out)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NaturalTileSprite {
+    /// Data URL of the sprite at its NATURAL size (`nat_*_cells * ATLAS_TILE_CELL`
+    /// per axis), not clamped to one cell like `get_tile_sprite`.
+    pub png_data_url: String,
+    pub tile_size: u32,
+    pub nat_w_cells: u32,
+    pub nat_h_cells: u32,
+    pub anchor_x_cells: f32,
+    pub anchor_y_cells: f32,
+}
+
+/// Renders one tile at its natural multi-cell size and returns it together
+/// with the same footprint + anchor metadata the atlas ships. The add-tile
+/// flow uses this so a freshly added multi-cell tile (door, statue, ...) draws
+/// at full size and correctly anchored immediately, instead of clamped to a
+/// single cell until the next full atlas rebuild.
+#[tauri::command]
+pub async fn get_tile_sprite_natural(
+    name: String,
+    biome: Option<String>,
+) -> Result<NaturalTileSprite, String> {
+    let extract_dir = crate::config::load()
+        .install_dir
+        .map(|d| d.join("Mods").join("Extracted"));
+    tauri::async_runtime::spawn_blocking(move || {
+        get_tile_sprite_natural_sync(name, biome, extract_dir)
+    })
+    .await
+    .map_err(|e| format!("sprite task panicked: {e}"))?
+}
+
+fn get_tile_sprite_natural_sync(
+    name: String,
+    biome: Option<String>,
+    extract_dir: Option<PathBuf>,
+) -> Result<NaturalTileSprite, String> {
+    use image::codecs::png::{CompressionType, FilterType, PngEncoder};
+    use image::{ColorType, ImageEncoder};
+
+    let all_loaders = ml2_sprites::all_loaders();
+    let priority = biome_priority(biome.as_deref());
+    let mut sheet_cache = std::collections::HashMap::new();
+    let rendered = render_tile_image(
+        &name,
+        &all_loaders,
+        &priority,
+        extract_dir.as_ref(),
+        &mut sheet_cache,
+    );
+    let nat_w = rendered.nat_w_cells;
+    let nat_h = rendered.nat_h_cells;
+    let (anchor_x, anchor_y) = anchor_for_tile(&name, nat_w, nat_h);
+    let img = rendered.image;
+
+    let mut png_bytes = Vec::new();
+    {
+        let mut cursor = std::io::Cursor::new(&mut png_bytes);
+        PngEncoder::new_with_quality(&mut cursor, CompressionType::Default, FilterType::Adaptive)
+            .write_image(
+                img.as_raw(),
+                img.width(),
+                img.height(),
+                ColorType::Rgba8.into(),
+            )
+            .map_err(|e| e.to_string())?;
+    }
+
+    let mut png_data_url = String::from("data:image/png;base64,");
+    STANDARD.encode_string(&png_bytes, &mut png_data_url);
+
+    Ok(NaturalTileSprite {
+        png_data_url,
+        tile_size: ATLAS_TILE_CELL,
+        nat_w_cells: nat_w,
+        nat_h_cells: nat_h,
+        anchor_x_cells: anchor_x,
+        anchor_y_cells: anchor_y,
+    })
 }
 
 fn build_tile_name_atlas_sync(

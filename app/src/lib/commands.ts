@@ -1073,6 +1073,25 @@ export async function getTileSprite(
   return invoke<TileSprite>("get_tile_sprite", { name, biome });
 }
 
+export interface NaturalTileSprite {
+  pngDataUrl: string;
+  tileSize: number;
+  natWCells: number;
+  natHCells: number;
+  anchorXCells: number;
+  anchorYCells: number;
+}
+
+/** Renders a tile at its natural multi-cell size plus its footprint/anchor
+ *  metadata, so the add-tile flow can draw a new multi-cell tile correctly
+ *  without waiting for a full atlas rebuild. */
+export async function getTileSpriteNatural(
+  name: string,
+  biome: string | null = null,
+): Promise<NaturalTileSprite> {
+  return invoke<NaturalTileSprite>("get_tile_sprite_natural", { name, biome });
+}
+
 export interface NamedTileSprite {
   name: string;
   pngDataUrl: string;

@@ -12,6 +12,7 @@ import {
   getCosmicBackdrop,
   getCosmicSubthemeDecoration,
   getDefaultSaveFormat,
+  getTileSpriteNatural,
   listCustomSaveFormats,
   listShortCodes,
   loadCustomConfig,
@@ -899,7 +900,21 @@ function CustomEditor({ pack }: { pack: string }) {
         return;
       }
       try {
-        await canvasRef.current?.addTexture(name, preview.pngDataUrl);
+        // Fetch the natural (multi-cell) sprite + footprint/anchor so a new
+        // multi-cell tile draws full-size and anchored right away, instead of
+        // clamped to one cell until the next atlas rebuild. Fall back to the
+        // 1x1 swatch if that fails so the tile still appears.
+        try {
+          const nat = await getTileSpriteNatural(name, currentBiome ?? null);
+          await canvasRef.current?.addTexture(name, nat.pngDataUrl, {
+            w: nat.natWCells,
+            h: nat.natHCells,
+            ax: nat.anchorXCells,
+            ay: nat.anchorYCells,
+          });
+        } catch {
+          await canvasRef.current?.addTexture(name, preview.pngDataUrl);
+        }
       } catch (err) {
         toast.error(`Add failed: ${extractMessage(err)}`);
         return;
@@ -914,7 +929,7 @@ function CustomEditor({ pack }: { pack: string }) {
       paletteChangedSinceSave.current = true;
       recomputeDirty();
     },
-    [palette, toast, canvasRef, setPrimary, recomputeDirty],
+    [palette, toast, canvasRef, setPrimary, recomputeDirty, currentBiome],
   );
 
   const tilesForCanvas = useMemo(() => {
