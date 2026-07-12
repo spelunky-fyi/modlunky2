@@ -1,6 +1,6 @@
 [package]
 name = "modlunky2-app"
-version = "2.0.15"
+version = "2.0.16"
 edition = "2024"
 
 [lib]
