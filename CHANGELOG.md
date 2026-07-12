@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Vanilla level editor: saving a file no longer erases tiles it inherits from a
+  parent file. Files like `blackmarket.lvl` build their rooms almost entirely
+  from tilecodes defined in `generic.lvl` (and area parents); the save was only
+  aware of the file's own palette, so it blanked every inherited tile (~96% of
+  `blackmarket.lvl`'s cells). Saves now resolve tile names back through the same
+  inheritance chain used to load them, so inherited tiles round-trip intact.
 - Update check: failures are no longer silent. If the latest-version lookup
   fails (offline, GitHub API rate limit, or a blocked connection), the reason is
   logged and the version number turns amber with the reason on hover, instead of

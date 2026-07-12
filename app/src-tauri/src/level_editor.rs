@@ -4096,6 +4096,40 @@ pub async fn load_vanilla_level(
     .map_err(|e| format!("load task panicked: {e}"))?
 }
 
+/// The inherited (non-own) `char -> tile-code name` bindings for a vanilla
+/// file, in precedence order (later overrides earlier): the hardcoded generic
+/// implicit bindings (unless this is a basecamp file), then each
+/// render-inheritance parent's declared tilecodes. The file's own tilecodes are
+/// NOT included; callers layer those on top.
+///
+/// Shared by load (resolve room chars -> names) and save (convert names back to
+/// the SAME chars). Without it, save only sees the file's own palette, so a tile
+/// a room uses but inherits from a parent (e.g. generic.lvl's `=` floor in
+/// blackmarket.lvl) maps to no code and the cell is blanked -- silently erasing
+/// most of an inheritance-heavy file on a plain save.
+fn inherited_bindings(pack: &str, file_name: &str) -> Vec<(char, String)> {
+    let mut out = Vec::new();
+    if !file_name.to_ascii_lowercase().starts_with("base") {
+        for (ch, name) in GENERIC_IMPLICIT {
+            out.push((*ch, (*name).to_string()));
+        }
+    }
+    for dep in render_dependencies_for(file_name) {
+        let Some(dep_path) = resolve_sister_path(pack, dep) else {
+            continue;
+        };
+        let Ok(dep_level) = LevelFile::from_path(&dep_path) else {
+            continue;
+        };
+        for tc in dep_level.tile_codes.all() {
+            if let Some(ch) = tc.value.chars().next() {
+                out.push((ch, tc.name.clone()));
+            }
+        }
+    }
+    out
+}
+
 fn load_vanilla_level_sync(
     pack: String,
     file_name: String,
@@ -4113,25 +4147,8 @@ fn load_vanilla_level_sync(
     // parents' full palettes surface separately via `dependency_palettes`).
     let mut code_to_name: std::collections::HashMap<char, String> =
         std::collections::HashMap::new();
-    // Lowest layer: the hardcoded generic bindings, for any file that inherits
-    // generic.lvl (everything but basecamp). A real declaration below overrides.
-    if !file_name.to_ascii_lowercase().starts_with("base") {
-        for (ch, name) in GENERIC_IMPLICIT {
-            code_to_name.insert(*ch, (*name).to_string());
-        }
-    }
-    for dep in render_dependencies_for(&file_name) {
-        let Some(dep_path) = resolve_sister_path(&pack, dep) else {
-            continue;
-        };
-        let Ok(dep_level) = LevelFile::from_path(&dep_path) else {
-            continue;
-        };
-        for tc in dep_level.tile_codes.all() {
-            if let Some(ch) = tc.value.chars().next() {
-                code_to_name.insert(ch, tc.name.clone());
-            }
-        }
+    for (ch, name) in inherited_bindings(&pack, &file_name) {
+        code_to_name.insert(ch, name);
     }
 
     let mut palette = Vec::new();
@@ -4402,6 +4419,8 @@ pub async fn save_vanilla_level(
 
     tauri::async_runtime::spawn_blocking(move || {
         save_vanilla_level_sync(
+            pack,
+            file_name,
             source_path,
             target_path,
             backup_dir,
@@ -4418,6 +4437,8 @@ pub async fn save_vanilla_level(
 
 #[allow(clippy::too_many_arguments)]
 fn save_vanilla_level_sync(
+    pack: String,
+    file_name: String,
     source_path: PathBuf,
     target_path: PathBuf,
     backup_dir: PathBuf,
@@ -4448,9 +4469,17 @@ fn save_vanilla_level_sync(
     }
     level.tile_codes = new_tile_codes;
 
-    // Build name -> code lookup.
+    // Build name -> code lookup. Seed it from the inherited namespace (generic +
+    // parents) so a tile a room uses but this file doesn't itself declare rounds
+    // back to the SAME inherited code instead of being blanked; the file's own
+    // palette overlays on top so local declarations win. This mirrors the
+    // char -> name chain load resolves rooms with; without it, saving an
+    // inheritance-heavy file (e.g. blackmarket.lvl) erases most of its rooms.
     let mut name_to_code: std::collections::HashMap<String, char> =
         std::collections::HashMap::new();
+    for (ch, name) in inherited_bindings(&pack, &file_name) {
+        name_to_code.insert(name, ch);
+    }
     for p in &palette {
         if let Some(ch) = p.code.chars().next() {
             name_to_code.insert(p.name.clone(), ch);
