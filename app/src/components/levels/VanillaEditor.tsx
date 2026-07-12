@@ -744,17 +744,24 @@ export function VanillaEditor({ pack }: Props) {
           setAtlas(a);
         }
         // Default left click to the first paintable (non-empty) tile and
-        // right click to "empty" so erasing works right away. `prev ??`
-        // preserves an active selection across file switches.
+        // right click to "empty" so erasing works right away. An active
+        // selection is preserved across file switches ONLY when the tile also
+        // exists in the new file's palette; otherwise a brush carried over from
+        // another file would let you paint a tilecode this file doesn't define.
+        const paletteNames = new Set(data.palette.map((p) => p.name));
         const firstPaintable = data.palette.find(
           (p) => p.name !== "empty",
         )?.name;
         const emptyName =
           data.palette.find((p) => p.name === "empty")?.name ?? null;
-        setPrimary(
-          (prev) => prev ?? firstPaintable ?? data.palette[0]?.name ?? null,
+        setPrimary((prev) =>
+          prev && paletteNames.has(prev)
+            ? prev
+            : (firstPaintable ?? data.palette[0]?.name ?? null),
         );
-        setSecondary((prev) => prev ?? emptyName);
+        setSecondary((prev) =>
+          prev && paletteNames.has(prev) ? prev : emptyName,
+        );
       } catch (err) {
         if (!cancelled) toast.error(`Load failed: ${extractMessage(err)}`);
       } finally {

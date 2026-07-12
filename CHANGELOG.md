@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Level editor: a newly added multi-cell tile (a door, statue, big trap, etc.)
   now draws at its full size and correct position the moment you add it, instead
   of being squished into a single cell until the next refresh.
+- Level editor: switching level files no longer carries over a selected brush
+  tile that the new file's palette doesn't define, which let you paint an
+  undefined tilecode into that file. The brush now falls back to a valid tile
+  when the previous one isn't in the new palette.
 
 ## [2.0.15] - 2026-07-11
 
