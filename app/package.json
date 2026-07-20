@@ -21,7 +21,7 @@
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-opener": "^2.5.3",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.25.0",
     "pixi.js": "^8.19.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
