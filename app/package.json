@@ -23,7 +23,7 @@
     "@tauri-apps/plugin-opener": "^2.5.3",
     "lucide-react": "^1.23.0",
     "pixi.js": "^8.19.0",
-    "react": "^19.2.4",
+    "react": "^19.2.8",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
