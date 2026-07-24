@@ -25,7 +25,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
 directories = "6"
-base64 = "0.22"
+base64 = "0.23"
 image = "0.25"
 ab_glyph = "0.2"
 fontdb = { version = "0.23", default-features = false, features = ["fs", "std", "memmap"] }
