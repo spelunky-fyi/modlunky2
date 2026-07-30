@@ -28,7 +28,7 @@ directories = "6"
 base64 = "0.22"
 image = "0.25"
 ab_glyph = "0.2"
-fontdb = { version = "0.23", default-features = false, features = ["fs", "std", "memmap"] }
+fontdb = { version = "0.24", default-features = false, features = ["fs", "std", "memmap"] }
 reqwest = { version = "0.13", features = ["json", "stream"] }
 zip = "8"
 futures-util = "0.3"
