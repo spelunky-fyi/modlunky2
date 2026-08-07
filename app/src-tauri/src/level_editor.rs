@@ -4752,11 +4752,12 @@ mod case_insensitive_lookup_tests {
         // resolves for free on Windows and under Wine, so nothing catches it
         // until a native Linux build silently ignores the override.
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("Generic.lvl"), "").unwrap();
-        assert_eq!(
-            find_ignoring_case(dir.path(), "generic.lvl"),
-            Some(dir.path().join("Generic.lvl"))
-        );
+        std::fs::write(dir.path().join("Generic.lvl"), "the override").unwrap();
+        // Assert on the file the path opens, not its spelling: Windows matches
+        // in the `exists` check and hands back the caller's casing, Linux finds
+        // the entry by scanning and hands back the on-disk casing.
+        let hit = find_ignoring_case(dir.path(), "generic.lvl").expect("override not found");
+        assert_eq!(std::fs::read_to_string(hit).unwrap(), "the override");
     }
 
     #[test]
