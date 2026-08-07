@@ -4,7 +4,12 @@ export interface SharedConfig {
   spelunkyFyiApiToken: string | null;
   playlunkyVersion: string | null;
   playlunkyConsole: boolean;
+  /** Whether the launch dock has Overlunky selected. Named for its original
+   *  meaning (pass --overlunky to Playlunky), which is still what it does
+   *  when Playlunky is also selected. */
   playlunkyOverlunky: boolean;
+  /** Whether the launch dock has Playlunky selected. Defaults to true. */
+  launchWithPlaylunky: boolean;
   commandPrefix: string | null;
   playlunkyShortcut: boolean;
   /** Tab id last active in the app shell (mods / overlunky / extract /
@@ -30,6 +35,7 @@ export interface ConfigPatch {
   playlunkyVersion?: string;
   playlunkyConsole?: boolean;
   playlunkyOverlunky?: boolean;
+  launchWithPlaylunky?: boolean;
   commandPrefix?: string;
   playlunkyShortcut?: boolean;
   /** Tab id to persist; pass "" to clear. */

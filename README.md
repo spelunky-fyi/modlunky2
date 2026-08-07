@@ -17,9 +17,36 @@ Modlunky 2 is a tool for creating and using mods related to Spelunky 2. It offer
 
 ## Usage
 
+### Windows
+
 Download the latest `modlunky2.exe` from
 [Releases](https://github.com/spelunky-fyi/modlunky2/releases/latest) and drop it
 anywhere (desktop, Spelunky 2 install directory, wherever you keep tools).
+
+### Linux
+
+Download `modlunky2-x86_64.AppImage` from 
+[Releases](https://github.com/spelunky-fyi/modlunky2/releases/latest), mark
+it executable, and run it:
+
+```console
+chmod +x modlunky2-x86_64.AppImage
+./modlunky2-x86_64.AppImage
+```
+
+Spelunky 2 has no native Linux build, so Modlunky runs it through the Proton
+setup Steam already made for it. That's detected automatically, and "I'm feeling
+lucky" in Settings finds your install directory. A few things to know:
+
+- **Steam has to be running.** The game talks to it whether or not you launched
+  through it.
+- **Settings don't carry over** if you were previously running the Windows build
+  under Proton. Modlunky now stores its config natively, at
+  `~/.local/share/spelunky.fyi/modlunky2/`, so you'll set your profile up once.
+- **If the level editor renders black**, your graphics driver is hitting a
+  known WebKitGTK bug. Launch with `WEBKIT_DISABLE_DMABUF_RENDERER=1` set.
+
+Requires glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, or later).
 
 Check out the docs at the [Modlunky 2 Wiki](https://github.com/spelunky-fyi/modlunky2/wiki).
 

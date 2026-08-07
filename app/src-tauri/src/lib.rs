@@ -3,12 +3,17 @@ mod config;
 mod extract;
 mod fonts;
 mod fyi_ws;
+mod launch;
 mod level_editor;
 mod log_buffer;
 mod mods;
 mod overlunky;
 mod paths;
 mod playlunky;
+/// Steam and Proton discovery. Linux-only: everything modlunky2 launches is a
+/// Windows executable, and only there does it need a compatibility layer.
+#[cfg(target_os = "linux")]
+mod proton;
 mod state;
 mod toast_buffer;
 mod trackers;
@@ -43,11 +48,17 @@ pub fn run() {
         .with(log_buffer::LogBufferLayer)
         .init();
 
+    // Before anything is launched, so every game process we start stays in
+    // our subtree and the trackers can read it. No-op off Linux.
+    launch::become_child_subreaper();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        // Lets the frontend branch on the OS synchronously; see lib/platform.ts.
+        .plugin(tauri_plugin_os::init())
         // Persists each window's size + position and restores on next
         // launch. The plugin clamps the restored geometry to the
         // currently connected monitors so an off-screen state (external
@@ -151,6 +162,8 @@ pub fn run() {
             playlunky::download_playlunky_version,
             playlunky::remove_playlunky_version,
             playlunky::launch_playlunky,
+            playlunky::launch_vanilla,
+            launch::launch_game,
             playlunky::get_playlunky_options,
             playlunky::set_playlunky_options,
             playlunky::sync_desktop_shortcut,
@@ -217,6 +230,7 @@ pub fn run() {
             trackers::start_tracker_server,
             trackers::stop_tracker_server,
             trackers::get_tracker_server_status,
+            trackers::get_tracker_attach_problem,
             trackers::get_tracker_payload,
             trackers::get_tracker_config,
             trackers::set_tracker_config,

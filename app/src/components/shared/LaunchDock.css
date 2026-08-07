@@ -1,0 +1,108 @@
+/* Fixed footer dock, deliberately mirroring .tab-bar rather than the card it
+   replaced: same elevated surface, same flat full-width edge, border on the
+   side that faces the content. It reads as part of the window chrome, which is
+   what a control present on every tab should look like.
+
+   Everything inside reuses shared vocabulary rather than inventing dock-local
+   styles: `.btn .btn-ghost` for the secondary actions and the shared `Switch`
+   for every on/off control.
+
+   Two groups: Playlunky's settings on the left, and the action cluster
+   (tool switches + launch button) on the right. Only the settings group may
+   shrink, so a narrow window degrades there rather than overlapping the
+   button, which is what happened when everything was one flat row. */
+.launch-dock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  /* Pin the height so toggling a tool can't resize the dock and shift the
+     content above it. Matches the tallest child, the launch button. */
+  min-height: 56px;
+  box-sizing: border-box;
+}
+
+/* margin-right:auto pushes the action cluster to the right edge, so the
+   button's position doesn't depend on how wide the settings happen to be. */
+.launch-dock-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.launch-dock-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+/* Matches the height of the .btn siblings next to it. Fixed width so the
+   longest tag can't widen the row and push the launch button around. */
+.launch-dock-version {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  width: 132px;
+  flex-shrink: 0;
+}
+
+.launch-dock-version:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon-only, so it shouldn't carry the text padding .btn assumes. */
+.launch-dock-icon-btn {
+  padding: 6px 8px;
+}
+
+/* The secondary actions are .btn .btn-ghost; this only adds the icon layout
+   and keeps them from wrapping when the dock gets tight. */
+.launch-dock .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Fixed width, sized for the longest label, so flipping a switch relabels the
+   button without resizing it and shoving the switches sideways. */
+.launch-dock-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 200px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.launch-dock-play:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.launch-dock-play:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

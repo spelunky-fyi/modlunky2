@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Linux builds.** Modlunky2 now runs natively on Linux, downloaded as
+  `modlunky2-x86_64.AppImage` from the releases page. It finds the Proton setup
+  Steam already made for Spelunky 2 and runs the game, Playlunky and Overlunky
+  through it, so mods, the level editor, asset extraction and the speedrun
+  trackers all work the same as on Windows. Needs glibc 2.35 or newer (Ubuntu
+  22.04, Debian 12, Fedora 36 or later).
+- A global launch bar along the bottom of every tab. Allows toggling Playlunky
+  and/or Overlunky on or off.
+- New launch bar lets you launch without PL/OL into vanilla if you want.
+- Playlunky now installs nightly itself the first time you launch with it selected.
+
+
+### Fixed
+
+- Trackers no longer drop and re-establish their connection to the game
+  repeatedly during the first few seconds after Spelunky 2 launches.
+
 ## [2.0.16] - 2026-07-11
 
 ### Added

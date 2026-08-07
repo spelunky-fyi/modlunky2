@@ -31,6 +31,7 @@ import {
   getConfig,
   getFileSettings,
   getTrackerAlwaysOnTop,
+  getTrackerAttachProblem,
   getTrackerConfig,
   getTrackerDiagnostics,
   getTrackerFilePath,
@@ -250,7 +251,33 @@ export function TrackersPage() {
     () => Object.fromEntries(TRACKERS.map((t) => [t.slug, t.defaultConfig])),
   );
   const [busy, setBusy] = useState(false);
+  /** Set when the game is running but unreadable, so the page can say why
+   *  instead of leaving every tracker on "Waiting for Spelunky 2". Polled
+   *  because it's produced by the tick tasks, which have no way to push. */
+  const [attachProblem, setAttachProblem] = useState<string | null>(null);
   const toast = useToast();
+
+  // Only while the server is up: the tick tasks that publish this don't run
+  // otherwise, so polling a stopped server would just re-read a stale value.
+  useEffect(() => {
+    if (!status.running) {
+      setAttachProblem(null);
+      return;
+    }
+    let cancelled = false;
+    const poll = () =>
+      getTrackerAttachProblem()
+        .then((p) => {
+          if (!cancelled) setAttachProblem(p);
+        })
+        .catch(() => {});
+    void poll();
+    const id = window.setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [status.running]);
 
   useEffect(() => {
     (async () => {
@@ -560,6 +587,12 @@ export function TrackersPage() {
                 <div className="sidebar-status ok">
                   Running on port {status.port}
                 </div>
+                {/* The game is up but unreadable, which otherwise looks
+                    identical to it not running: every tracker just sits on
+                    "Waiting for Spelunky 2" with nothing to go on. */}
+                {attachProblem && (
+                  <div className="sidebar-status err">{attachProblem}</div>
+                )}
                 {runningUrl && (
                   <a
                     href={runningUrl}

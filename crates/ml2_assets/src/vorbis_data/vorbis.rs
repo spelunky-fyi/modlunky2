@@ -1,3 +1,8 @@
+// libvorbis returns C `long` from some entry points, which is 32-bit on
+// Windows (LLP64) and 64-bit on Linux/macOS (LP64). The allow covers the
+// narrowing casts that are no-ops on Windows.
+#![allow(clippy::unnecessary_cast)]
+
 use thiserror::Error;
 use vorbis_sys::{
     vorbis_comment, vorbis_comment_clear, vorbis_commentheader_out, vorbis_info, vorbis_info_clear,
@@ -97,7 +102,11 @@ pub(crate) fn vorbis_packet_blocksize(
     info: &mut VorbisInfo,
     packet: &mut OggPacket,
 ) -> Result<i32, VorbisError> {
-    match unsafe { vorbis_sys::vorbis_packet_blocksize(&mut info.0, &mut packet.0) } {
+    // Returns a C `long`, so narrow to i32 before matching against the
+    // `OV_*` constants (which are plain `c_int`). Blocksizes are powers of
+    // two up to 8192, so the narrowing can't lose information.
+    let result = unsafe { vorbis_sys::vorbis_packet_blocksize(&mut info.0, &mut packet.0) } as i32;
+    match result {
         vorbis_sys::OV_ENOTAUDIO => Err(VorbisError::NotAudio),
         vorbis_sys::OV_EBADPACKET => Err(VorbisError::BadPacket),
         err if err <= 0 => Err(VorbisError::Unknown(err)),

@@ -1,3 +1,9 @@
+// `ogg_packet::bytes` is a C `long`: 32-bit on Windows (LLP64), 64-bit on
+// Linux/macOS (LP64). Cast through `c_long` at every assignment so the same
+// source builds on both. The allow is for Windows, where these are no-ops.
+#![allow(clippy::unnecessary_cast)]
+
+use std::ffi::c_long;
 use std::io::Cursor;
 use std::io::Read;
 
@@ -63,7 +69,7 @@ fn rebuild_id_header(
 
     buffer.writecheck()?;
 
-    packet.0.bytes = buffer.bytes();
+    packet.0.bytes = buffer.bytes() as c_long;
 
     let mut mem = Vec::with_capacity(packet.0.bytes as usize);
     mem.extend_from_slice(buffer.buffer());
@@ -94,7 +100,7 @@ fn rebuild_setup_header(setup_packet_buff: &[u8]) -> OggPacket {
     let mem = Box::leak(mem.into_boxed_slice());
 
     packet.0.packet = mem.as_mut_ptr();
-    packet.0.bytes = setup_packet_buff.len() as i32;
+    packet.0.bytes = setup_packet_buff.len() as c_long;
     packet.0.b_o_s = 0;
     packet.0.e_o_s = 0;
     packet.0.granulepos = 0;
@@ -152,7 +158,7 @@ pub(crate) fn rebuild_vorbis(track: &Track) -> Result<Vec<u8>, RebuildError> {
         let mem = Box::leak(mem.into_boxed_slice());
 
         packet.0.packet = mem.as_mut_ptr();
-        packet.0.bytes = packet_size as i32;
+        packet.0.bytes = packet_size as c_long;
         packet.0.packetno = packetno;
 
         match inbuf.read_u16::<LE>() {

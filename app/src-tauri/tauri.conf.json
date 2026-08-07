@@ -30,6 +30,9 @@
   "bundle": {
     "active": false,
     "targets": "all",
+    "category": "Game",
+    "shortDescription": "Mod manager and level editor for Spelunky 2",
+    "longDescription": "Modlunky2 manages Spelunky 2 mods, edits levels, extracts game assets, and runs speedrun trackers. It installs and launches Playlunky and Overlunky.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

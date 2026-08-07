@@ -16,9 +16,10 @@
 //! is one line in `TrackersState::new`; the WS route, config commands,
 //! persistence, and refcount lifecycle all funnel through the slug.
 //!
-//! Windows-only in practice (Spel2Process only attaches there), but
-//! the module builds on any platform so cross-compilation for CI
-//! stays sane; on non-Windows the tick loop reports `Empty` forever.
+//! Works on Windows and Linux (the latter reading a Proton-hosted game
+//! through /proc). The module builds on any platform so cross-compilation
+//! for CI stays sane; where `Spel2Process` can't attach at all, the tick
+//! loop reports `Empty` forever.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -236,6 +237,18 @@ pub fn get_tracker_server_status(
             port: None,
         },
     })
+}
+
+/// Why the trackers can't read the game, when the reason is something the user
+/// can fix. `None` when they're reading fine, or when the game simply isn't
+/// running, which the trackers already show on their own.
+///
+/// Deliberately not part of the tracker payload: that goes out over the
+/// WebSocket to OBS browser sources, and a `sudo sysctl ...` line rendering on
+/// someone's stream is not the outcome we want. This is for the app's own UI.
+#[tauri::command]
+pub fn get_tracker_attach_problem() -> Option<String> {
+    tick_task::current_attach_problem()
 }
 
 /// Returns the current payload for `slug` without waiting for a

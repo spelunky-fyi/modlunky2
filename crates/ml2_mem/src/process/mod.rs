@@ -2,18 +2,34 @@
 //!
 //! `ReadProcess` is the seam between the type system (MemType /
 //! MemStruct decode) and the OS-specific mechanism for getting bytes out
-//! of a process (Windows' ReadProcessMemory, tests' in-memory buffer,
-//! future macOS / Linux / debugger backends).
+//! of a process (Windows' ReadProcessMemory, Linux's /proc/<pid>/mem,
+//! tests' in-memory buffer, future macOS / debugger backends).
+
+/// Bytes marking the sentinel value the game plants near `State`. The exact
+/// byte sequence must be `\x00\xde\xc0\xed\xfe` so tooling that already knows
+/// this address recognises the scan.
+pub const FEEDCODE_MARKER: &[u8] = &[0x00, 0xde, 0xc0, 0xed, 0xfe];
+
+/// Exe file name to look for during process enumeration. Kept public so the
+/// tauri app can surface a "not running" toast that matches. Also the name
+/// under Wine, where the PE keeps its own name.
+pub const SPEL2_EXE_NAME: &str = "Spel2.exe";
 
 #[cfg(windows)]
 mod win;
 #[cfg(windows)]
-pub use win::{FEEDCODE_MARKER, SPEL2_EXE_NAME, Spel2Process, find_spelunky2_pid};
+pub use win::{Spel2Process, find_spelunky2_pid};
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::{Spel2Process, find_spelunky2_pid};
+
+// macOS and anything else: the crate still builds, but attaching errors out.
+#[cfg(not(any(windows, target_os = "linux")))]
 mod stub;
-#[cfg(not(windows))]
-pub use stub::{FEEDCODE_MARKER, SPEL2_EXE_NAME, Spel2Process, find_spelunky2_pid};
+#[cfg(not(any(windows, target_os = "linux")))]
+pub use stub::{Spel2Process, find_spelunky2_pid};
 
 use crate::error::{MemError, Result};
 

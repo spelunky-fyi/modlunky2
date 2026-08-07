@@ -1,7 +1,7 @@
 // Level Editor backend. Owns the atlas builder, pack picker, editor-window
 // spawn, and save flow.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use image::GenericImageView;
@@ -3692,20 +3692,42 @@ fn render_dependencies_for(file_name: &str) -> Vec<&'static str> {
 /// dependency load path, the caller just skips that sister).
 fn resolve_sister_path(pack: &str, file_name: &str) -> Option<PathBuf> {
     let sanitized = validate_pack_name(pack).ok()?;
-    let pack_path = packs_dir()
+    let pack_levels = packs_dir()
         .ok()?
         .join(&sanitized)
         .join("Data")
-        .join("Levels")
-        .join(file_name);
-    if pack_path.exists() {
-        return Some(pack_path);
+        .join("Levels");
+    if let Some(hit) = find_ignoring_case(&pack_levels, file_name) {
+        return Some(hit);
     }
-    let extract_path = extracts_levels_dir().ok()?.join(file_name);
-    if extract_path.exists() {
-        return Some(extract_path);
+    find_ignoring_case(&extracts_levels_dir().ok()?, file_name)
+}
+
+/// Look up `file_name` in `dir`, falling back to a case-insensitive match.
+///
+/// Callers pass hardcoded vanilla names (`generic.lvl` and the other parents a
+/// level inherits from), but a pack author's override is named whatever they
+/// typed. Windows resolves `Generic.lvl` to `generic.lvl` for free, and so
+/// does the game itself under Wine, so a mis-cased override works everywhere
+/// except a native Linux build. Without this it isn't an error either: the
+/// lookup just misses, falls through to the extracted vanilla file, and the
+/// editor silently renders the base game's tiles instead of the pack's.
+fn find_ignoring_case(dir: &Path, file_name: &str) -> Option<PathBuf> {
+    let exact = dir.join(file_name);
+    if exact.exists() {
+        return Some(exact);
     }
-    None
+    // On Windows the join above already matched case-insensitively, so a miss
+    // is a real miss and scanning the directory would only cost time.
+    if cfg!(windows) {
+        return None;
+    }
+    std::fs::read_dir(dir).ok()?.flatten().find_map(|entry| {
+        let name = entry.file_name();
+        name.to_str()?
+            .eq_ignore_ascii_case(file_name)
+            .then(|| entry.path())
+    })
 }
 
 #[derive(Debug, Serialize)]
@@ -4707,5 +4729,45 @@ mod theme_marker_tests {
         let after = upsert_theme_marker(Some(before), Some(6), None).unwrap();
         assert!(after.contains("My cool pack"));
         assert_eq!(parse_theme_marker(Some(&after)), (Some(6), None));
+    }
+}
+
+#[cfg(test)]
+mod case_insensitive_lookup_tests {
+    use super::*;
+
+    #[test]
+    fn find_ignoring_case_prefers_an_exact_match() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("generic.lvl"), "").unwrap();
+        assert_eq!(
+            find_ignoring_case(dir.path(), "generic.lvl"),
+            Some(dir.path().join("generic.lvl"))
+        );
+    }
+
+    #[test]
+    fn find_ignoring_case_finds_a_miscased_override() {
+        // A pack authored on Windows can easily hold `Generic.lvl`. That
+        // resolves for free on Windows and under Wine, so nothing catches it
+        // until a native Linux build silently ignores the override.
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("Generic.lvl"), "").unwrap();
+        assert_eq!(
+            find_ignoring_case(dir.path(), "generic.lvl"),
+            Some(dir.path().join("Generic.lvl"))
+        );
+    }
+
+    #[test]
+    fn find_ignoring_case_reports_a_genuine_miss() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("basecamp.lvl"), "").unwrap();
+        assert_eq!(find_ignoring_case(dir.path(), "generic.lvl"), None);
+        // A missing directory is a miss, not a panic.
+        assert_eq!(
+            find_ignoring_case(&dir.path().join("nope"), "generic.lvl"),
+            None
+        );
     }
 }

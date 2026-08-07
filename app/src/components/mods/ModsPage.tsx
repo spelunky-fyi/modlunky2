@@ -39,7 +39,6 @@ import type { Mod } from "../../types/mods";
 import { useToast } from "../shared/Toast";
 import { ModColumn } from "./ModColumn";
 import { InstallModal } from "./InstallModal";
-import { PlaylunkyPane } from "./PlaylunkyPane";
 import "./ModsPage.css";
 
 // Module-scope cache so remounting the tab (e.g. after switching away)
@@ -425,7 +424,6 @@ export function ModsPage() {
             </div>
           </DndContext>
 
-          <PlaylunkyPane activeCount={activeIds.length} />
         </>
       )}
 

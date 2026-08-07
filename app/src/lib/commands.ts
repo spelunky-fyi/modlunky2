@@ -189,6 +189,23 @@ export async function launchPlaylunky(): Promise<void> {
   return invoke<void>("launch_playlunky");
 }
 
+/** Launches the game with neither Playlunky nor Overlunky attached. */
+export async function launchVanilla(): Promise<void> {
+  return invoke<void>("launch_vanilla");
+}
+
+/** Starts the game with the requested tools, and remembers the choice.
+ *  The backend owns the mapping from "which tools" to "which launcher",
+ *  including that Playlunky + Overlunky is one launch rather than two.
+ *  With Playlunky selected and nothing installed, it downloads nightly
+ *  first, so this can take a while on a fresh setup. */
+export async function launchGame(
+  withPlaylunky: boolean,
+  withOverlunky: boolean,
+): Promise<void> {
+  return invoke<void>("launch_game", { withPlaylunky, withOverlunky });
+}
+
 export async function getPlaylunkyOptions(): Promise<PlaylunkyOptions> {
   return invoke<PlaylunkyOptions>("get_playlunky_options");
 }
@@ -1226,6 +1243,15 @@ export async function stopTrackerServer(): Promise<TrackerServerStatus> {
 
 export async function getTrackerServerStatus(): Promise<TrackerServerStatus> {
   return invoke<TrackerServerStatus>("get_tracker_server_status");
+}
+
+/** Why the trackers can't read the game, when it's something the user can fix
+ *  (on Linux, the ptrace restriction). Null when they're reading fine, and
+ *  also when the game just isn't running, which the trackers already show on
+ *  their own. Deliberately not part of the tracker payload, since that
+ *  renders in OBS. */
+export async function getTrackerAttachProblem(): Promise<string | null> {
+  return invoke<string | null>("get_tracker_attach_problem");
 }
 
 /** Peek the current payload for `slug`. Every tracker's variant is

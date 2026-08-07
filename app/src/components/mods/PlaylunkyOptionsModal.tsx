@@ -11,6 +11,7 @@ import {
   syncDesktopShortcut,
 } from "../../lib/commands";
 import type { PlaylunkyOptions } from "../../types/playlunkyOptions";
+import { supportsDesktopShortcut } from "../../lib/platform";
 import "./PlaylunkyOptionsModal.css";
 
 interface PlaylunkyOptionsModalProps {
@@ -183,11 +184,16 @@ export function PlaylunkyOptionsModal({
               value={flags.overlunky}
               onChange={(v) => setFlags((f) => ({ ...f, overlunky: v }))}
             />
-            <Toggle
-              label="Keep a Play Spelunky 2 shortcut on the desktop"
-              value={flags.shortcut}
-              onChange={(v) => setFlags((f) => ({ ...f, shortcut: v }))}
-            />
+            {/* The backend writes a .lnk, so this only means anything on
+                Windows. Hidden rather than disabled elsewhere: a toggle that
+                silently does nothing is worse than no toggle. */}
+            {supportsDesktopShortcut && (
+              <Toggle
+                label="Keep a Play Spelunky 2 shortcut on the desktop"
+                value={flags.shortcut}
+                onChange={(v) => setFlags((f) => ({ ...f, shortcut: v }))}
+              />
+            )}
           </Section>
 
           <Section title="General">

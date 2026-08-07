@@ -5,9 +5,6 @@
 use crate::error::{MemError, Result};
 use crate::process::ReadProcess;
 
-pub const FEEDCODE_MARKER: &[u8] = &[0x00, 0xde, 0xc0, 0xed, 0xfe];
-pub const SPEL2_EXE_NAME: &str = "Spel2.exe";
-
 /// Placeholder that never yields a valid process. Constructing one
 /// unconditionally errors; every method surfaces `Unsupported`.
 pub struct Spel2Process {

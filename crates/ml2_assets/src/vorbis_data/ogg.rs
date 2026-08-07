@@ -1,3 +1,13 @@
+// libogg's public API is written in terms of `long` / `unsigned long`, whose
+// width is not the same everywhere: LLP64 (Windows) makes them 32-bit while
+// LP64 (Linux, macOS) makes them 64-bit. Keep the Rust-facing signatures in
+// this module fixed-width and convert at the FFI boundary, so the same code
+// compiles on both. The `unnecessary_cast` allow is for Windows, where these
+// casts are genuinely no-ops.
+#![allow(clippy::unnecessary_cast)]
+
+use std::ffi::c_ulong;
+
 use ogg_sys::{
     ogg_packet, ogg_packet_clear, ogg_page, ogg_stream_clear, ogg_stream_flush,
     ogg_stream_packetin, ogg_stream_pageout, ogg_stream_state, oggpack_buffer, oggpack_bytes,
@@ -87,7 +97,7 @@ impl OggpackBuffer {
 
     pub(crate) fn write(&mut self, value: u32, bits: i32) {
         unsafe {
-            oggpack_write(&mut self.0, value, bits);
+            oggpack_write(&mut self.0, value as c_ulong, bits);
         }
     }
 
@@ -102,7 +112,7 @@ impl OggpackBuffer {
     }
 
     pub(crate) fn bytes(&mut self) -> i32 {
-        unsafe { oggpack_bytes(&mut self.0) }
+        unsafe { oggpack_bytes(&mut self.0) as i32 }
     }
 
     pub(crate) fn buffer(&mut self) -> &[u8] {
@@ -126,7 +136,7 @@ impl OggPage {
     }
 
     pub(crate) fn header_len(&self) -> i32 {
-        self.0.header_len
+        self.0.header_len as i32
     }
 
     pub(crate) fn header(&self) -> &[u8] {
@@ -134,7 +144,7 @@ impl OggPage {
     }
 
     pub(crate) fn body_len(&self) -> i32 {
-        self.0.body_len
+        self.0.body_len as i32
     }
 
     pub(crate) fn body(&self) -> &[u8] {

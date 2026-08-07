@@ -16,6 +16,12 @@ const KEY_FYI_TOKEN: &str = "spelunky-fyi-api-token";
 const KEY_PLAYLUNKY_VERSION: &str = "playlunky-version";
 const KEY_PLAYLUNKY_CONSOLE: &str = "playlunky-console";
 const KEY_PLAYLUNKY_OVERLUNKY: &str = "playlunky-overlunky";
+/// Whether the launch dock has Playlunky selected. Defaults to true, matching
+/// what the old Mods-tab Play button did, so the familiar action stays one
+/// click away. `KEY_PLAYLUNKY_OVERLUNKY` is the other half of the pair and
+/// keeps its name: it still means "include Overlunky", it just no longer
+/// requires Playlunky to be on.
+const KEY_LAUNCH_WITH_PLAYLUNKY: &str = "launch-with-playlunky";
 const KEY_COMMAND_PREFIX: &str = "command-prefix";
 const KEY_PLAYLUNKY_SHORTCUT: &str = "playlunky-shortcut";
 /// Tab id that was active when the user last closed the app shell.
@@ -106,6 +112,7 @@ pub struct SharedConfig {
     pub playlunky_version: Option<String>,
     pub playlunky_console: bool,
     pub playlunky_overlunky: bool,
+    pub launch_with_playlunky: bool,
     pub command_prefix: Option<String>,
     pub playlunky_shortcut: bool,
     pub last_tab: Option<String>,
@@ -136,6 +143,7 @@ pub struct ConfigPatch {
     pub playlunky_version: Option<String>,
     pub playlunky_console: Option<bool>,
     pub playlunky_overlunky: Option<bool>,
+    pub launch_with_playlunky: Option<bool>,
     pub command_prefix: Option<String>,
     pub playlunky_shortcut: Option<bool>,
     pub last_tab: Option<String>,
@@ -251,6 +259,11 @@ fn get_bool(obj: &Map<String, Value>, key: &str) -> bool {
     obj.get(key).and_then(|v| v.as_bool()).unwrap_or(false)
 }
 
+/// Like `get_bool`, but for keys whose sensible default isn't `false`.
+fn get_bool_or(obj: &Map<String, Value>, key: &str, default: bool) -> bool {
+    obj.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+}
+
 fn get_u16(obj: &Map<String, Value>, key: &str, default: u16) -> u16 {
     obj.get(key)
         .and_then(|v| v.as_u64())
@@ -301,6 +314,9 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
         playlunky_version: get_string(obj, KEY_PLAYLUNKY_VERSION),
         playlunky_console: get_bool(obj, KEY_PLAYLUNKY_CONSOLE),
         playlunky_overlunky: get_bool(obj, KEY_PLAYLUNKY_OVERLUNKY),
+        // Absent means a config written before the dock existed, so fall back
+        // to the old Play button's behaviour rather than to `false`.
+        launch_with_playlunky: get_bool_or(obj, KEY_LAUNCH_WITH_PLAYLUNKY, true),
         command_prefix: get_command_prefix(obj),
         playlunky_shortcut: get_bool(obj, KEY_PLAYLUNKY_SHORTCUT),
         last_tab: get_string(obj, KEY_LAST_TAB),
@@ -432,6 +448,11 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
     apply_field(&mut obj, KEY_PLAYLUNKY_VERSION, patch.playlunky_version);
     apply_bool(&mut obj, KEY_PLAYLUNKY_CONSOLE, patch.playlunky_console);
     apply_bool(&mut obj, KEY_PLAYLUNKY_OVERLUNKY, patch.playlunky_overlunky);
+    apply_bool(
+        &mut obj,
+        KEY_LAUNCH_WITH_PLAYLUNKY,
+        patch.launch_with_playlunky,
+    );
     apply_field(&mut obj, KEY_COMMAND_PREFIX, patch.command_prefix);
     apply_bool(&mut obj, KEY_PLAYLUNKY_SHORTCUT, patch.playlunky_shortcut);
     apply_field(&mut obj, KEY_LAST_TAB, patch.last_tab);
@@ -491,8 +512,8 @@ mod tests {
 
     #[test]
     fn backup_corrupt_path_shape() {
-        let p = std::path::Path::new(r"C:\Users\me\config.json");
-        let b = backup_corrupt_path(p);
+        let p = std::path::Path::new("home").join("me").join("config.json");
+        let b = backup_corrupt_path(&p);
         let name = b.file_name().unwrap().to_string_lossy();
         assert!(name.starts_with("config.corrupt."));
         assert!(name.ends_with(".json"));

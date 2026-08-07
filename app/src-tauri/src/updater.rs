@@ -1,22 +1,37 @@
-//! Self-update: rename the running EXE aside, download the new EXE
-//! over the old path, spawn it, exit. Works because Windows lets a
-//! running EXE be renamed even though it can't be overwritten.
+//! Self-update: rename the running program aside, download the new one over
+//! the old path, spawn it, exit. Works because Windows lets a running EXE be
+//! renamed even though it can't be overwritten, and Unix lets a running file
+//! be replaced outright.
+//!
+//! Nothing here downloads on its own. `install_update` runs only when the user
+//! clicks the update pill.
 //!
 //! No signature check because the binary isn't signed. SmartScreen
 //! click-through is expected on the first run of every version.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
 const GITHUB_LATEST_URL: &str = "https://github.com/spelunky-fyi/modlunky2/releases/latest";
 const GITHUB_LATEST_API_URL: &str =
     "https://api.github.com/repos/spelunky-fyi/modlunky2/releases/latest";
-/// Name of the release asset we install. We resolve its versioned
-/// `browser_download_url` from the API response rather than hitting the
-/// `latest/download/<name>` web redirect, whose CDN cache can lag the API and
-/// hand back the previous release's exe.
-const EXE_ASSET_NAME: &str = "modlunky2.exe";
+/// Name of the release asset we install, for this platform. One tag carries
+/// every platform's asset, so the name is what picks ours out.
+///
+/// We resolve its versioned `browser_download_url` from the API response
+/// rather than hitting the `latest/download/<name>` web redirect, whose CDN
+/// cache can lag the API and hand back the previous release's binary.
+///
+/// `None` where we don't publish a build; `install_update` then says so
+/// instead of failing further down with something cryptic.
+const RELEASE_ASSET_NAME: Option<&str> = if cfg!(windows) {
+    Some("modlunky2.exe")
+} else if cfg!(target_os = "linux") {
+    Some("modlunky2-x86_64.AppImage")
+} else {
+    None
+};
 
 // ---------------------------------------------------------------------
 // Tauri commands
@@ -97,32 +112,18 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
         ));
     }
 
+    let asset_name =
+        RELEASE_ASSET_NAME.ok_or("there's no modlunky2 build for this platform to update to")?;
     let exe_url = release
         .exe_url
-        .ok_or_else(|| format!("release {} has no {EXE_ASSET_NAME} asset", release.tag))?;
+        .ok_or_else(|| format!("release {} has no {asset_name} asset", release.tag))?;
 
-    let self_exe = std::env::current_exe().map_err(|e| format!("resolve current exe: {e}"))?;
+    let self_exe = self_path()?;
+    swap_in_place(&exe_url, &self_exe).await?;
 
-    // 1. Move the current exe aside. Renaming an in-use exe is legal
-    // on Windows even though overwriting one isn't.
-    let backup = backup_path_for(&self_exe);
-    if backup.exists() {
-        // A previous update crashed after the rename; clear it. If it
-        // can't be cleared (locked handle, permissions), the rename
-        // below fails and surfaces the underlying error.
-        let _ = std::fs::remove_file(&backup);
-    }
-    std::fs::rename(&self_exe, &backup)
-        .map_err(|e| format!("rename current exe to backup: {e}"))?;
-
-    // 2. Stream the pinned asset to the original path.
-    if let Err(e) = download_to(&exe_url, &self_exe).await {
-        // Roll back so the user isn't stranded.
-        let _ = std::fs::rename(&backup, &self_exe);
-        return Err(format!("download update: {e}"));
-    }
-
-    // 3. Spawn the new exe, then exit.
+    // Spawn the replacement, then exit. Verified on Linux that the running
+    // process survives its own AppImage being renamed and replaced, so this
+    // ordering is safe rather than a race.
     if let Err(e) = std::process::Command::new(&self_exe).spawn() {
         return Err(format!("spawn new exe: {e}"));
     }
@@ -130,9 +131,73 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Replace the file at `target` with whatever `url` serves.
+///
+/// Split out from `install_update` so it can be tested without GitHub or a
+/// running app: it's the part that touches the user's files, and the part
+/// whose rollback path would otherwise never be exercised until it mattered.
+///
+/// On any failure the original file is put back, so a failed update leaves the
+/// user exactly where they started rather than with nothing to run.
+async fn swap_in_place(url: &str, target: &Path) -> Result<(), String> {
+    // 1. Move the current file aside. Renaming an in-use exe is legal
+    // on Windows even though overwriting one isn't, and on Linux a running
+    // program doesn't care that its file moved.
+    let backup = backup_path_for(target);
+    if backup.exists() {
+        // A previous update crashed after the rename; clear it. If it
+        // can't be cleared (locked handle, permissions), the rename
+        // below fails and surfaces the underlying error.
+        let _ = std::fs::remove_file(&backup);
+    }
+    std::fs::rename(target, &backup).map_err(|e| format!("rename current exe to backup: {e}"))?;
+
+    // 2. Stream the pinned asset to the original path.
+    if let Err(e) = download_to(url, target).await {
+        // Roll back so the user isn't stranded.
+        let _ = std::fs::rename(&backup, target);
+        return Err(format!("download update: {e}"));
+    }
+
+    // 3. The download arrives without a permission bit, which matters on Unix
+    // where it has to be executable to spawn. Do it before the spawn so a
+    // failure here rolls back rather than stranding an unrunnable file.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Err(e) = std::fs::set_permissions(target, std::fs::Permissions::from_mode(0o755)) {
+            let _ = std::fs::remove_file(target);
+            let _ = std::fs::rename(&backup, target);
+            return Err(format!("make the downloaded update executable: {e}"));
+        }
+    }
+
+    Ok(())
+}
+
 // ---------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------
+
+/// The file on disk to replace.
+///
+/// Normally that's just the running executable, but inside an AppImage
+/// `current_exe()` points into the read-only squashfs mount that the runtime
+/// created (`/tmp/.mount_XXXX/usr/bin/...`). Replacing that would fail, and
+/// would be pointless even if it didn't, since the mount disappears on exit.
+/// The AppImage runtime exports `APPIMAGE` holding the path of the `.AppImage`
+/// file itself, which is the thing a user actually keeps and runs.
+fn self_path() -> Result<PathBuf, String> {
+    // Set by the AppImage runtime, so its presence is also how we know we're
+    // running as one. Absent for a plain binary, which falls through.
+    if let Some(appimage) = std::env::var_os("APPIMAGE") {
+        let path = PathBuf::from(appimage);
+        if path.is_file() {
+            return Ok(path);
+        }
+    }
+    std::env::current_exe().map_err(|e| format!("resolve current exe: {e}"))
+}
 
 fn user_agent() -> String {
     format!("modlunky2/{}", env!("CARGO_PKG_VERSION"))
@@ -143,7 +208,7 @@ fn user_agent() -> String {
 struct LatestRelease {
     /// `tag_name`, e.g. `"v2.0.14"` or `"2.0.14"`.
     tag: String,
-    /// Pinned, versioned download URL for [`EXE_ASSET_NAME`] (e.g.
+    /// Pinned, versioned download URL for [`RELEASE_ASSET_NAME`] (e.g.
     /// `.../releases/download/v2.0.14/modlunky2.exe`). `None` if that release
     /// has no such asset.
     exe_url: Option<String>,
@@ -180,7 +245,7 @@ async fn fetch_latest_release() -> Result<LatestRelease, String> {
         .and_then(|v| v.as_str())
         .ok_or_else(|| "GitHub response had no tag_name".to_string())?
         .to_string();
-    let exe_url = exe_asset_url(&json, EXE_ASSET_NAME);
+    let exe_url = RELEASE_ASSET_NAME.and_then(|name| exe_asset_url(&json, name));
     Ok(LatestRelease { tag, exe_url })
 }
 
@@ -291,6 +356,48 @@ mod tests {
     }
 
     #[test]
+    fn backup_path_handles_the_appimage_extension() {
+        let p = PathBuf::from("/home/me/modlunky2-x86_64.AppImage");
+        assert_eq!(
+            backup_path_for(&p),
+            PathBuf::from("/home/me/modlunky2-x86_64.backup.AppImage")
+        );
+    }
+
+    /// The reason `self_path` exists: inside an AppImage, `current_exe()` is a
+    /// path into the runtime's read-only mount, and replacing that instead of
+    /// the real `.AppImage` would fail (or silently update nothing). Verified
+    /// against a real bundle: `current_exe()` came back as
+    /// `/tmp/.mount_ModlunIJHMbl/usr/bin/modlunky2-app` while `APPIMAGE` held
+    /// the actual file path.
+    #[test]
+    fn self_path_prefers_the_appimage_over_the_mount() {
+        let dir = tempfile::tempdir().unwrap();
+        let appimage = dir.path().join("modlunky2-x86_64.AppImage");
+        std::fs::write(&appimage, b"not really an appimage").unwrap();
+
+        // SAFETY: single-threaded test, and the var is removed before it ends.
+        unsafe { std::env::set_var("APPIMAGE", &appimage) };
+        let resolved = self_path();
+        unsafe { std::env::remove_var("APPIMAGE") };
+
+        assert_eq!(resolved.unwrap(), appimage);
+    }
+
+    /// A stale or bogus `APPIMAGE` shouldn't send the updater somewhere that
+    /// doesn't exist; falling back to `current_exe` keeps a plain binary
+    /// updatable even in a polluted environment.
+    #[test]
+    fn self_path_falls_back_when_appimage_is_not_a_file() {
+        // SAFETY: as above.
+        unsafe { std::env::set_var("APPIMAGE", "/nope/does/not/exist.AppImage") };
+        let resolved = self_path();
+        unsafe { std::env::remove_var("APPIMAGE") };
+
+        assert_eq!(resolved.unwrap(), std::env::current_exe().unwrap());
+    }
+
+    #[test]
     fn exe_asset_url_pins_to_the_versioned_asset() {
         // Shape mirrors the GitHub "get latest release" payload. The pinned
         // url must be the versioned one, not the `latest/download` redirect.
@@ -306,7 +413,7 @@ mod tests {
             ]
         });
         assert_eq!(
-            exe_asset_url(&release, EXE_ASSET_NAME).as_deref(),
+            exe_asset_url(&release, "modlunky2.exe").as_deref(),
             Some(
                 "https://github.com/spelunky-fyi/modlunky2/releases/download/v2.0.14/modlunky2.exe"
             )
@@ -321,7 +428,7 @@ mod tests {
             ]
         });
         assert_eq!(
-            exe_asset_url(&release, EXE_ASSET_NAME).as_deref(),
+            exe_asset_url(&release, "modlunky2.exe").as_deref(),
             Some("https://example/m.exe")
         );
     }
@@ -333,10 +440,118 @@ mod tests {
                 { "name": "checksums.txt", "browser_download_url": "https://example/c.txt" }
             ]
         });
-        assert_eq!(exe_asset_url(&release, EXE_ASSET_NAME), None);
+        assert_eq!(exe_asset_url(&release, "modlunky2.exe"), None);
 
         // Also None when there's no assets array at all.
         let empty = serde_json::json!({ "tag_name": "v2.0.14" });
-        assert_eq!(exe_asset_url(&empty, EXE_ASSET_NAME), None);
+        assert_eq!(exe_asset_url(&empty, "modlunky2.exe"), None);
+    }
+
+    // ---------------------------------------------------------------
+    // swap_in_place
+    //
+    // Served over a real local HTTP server rather than a stubbed
+    // downloader, so reqwest, the status check and the streaming write are
+    // all in the loop. This is the code that replaces the file a user is
+    // running; the rollback path in particular has no other way of being
+    // exercised before the day it's needed.
+    // ---------------------------------------------------------------
+
+    /// Serves `body` at `/asset` and nothing anywhere else, so a request to
+    /// any other path exercises the non-success branch. Returns the base URL.
+    async fn serve(body: &'static str) -> String {
+        let app =
+            axum::Router::new().route("/asset", axum::routing::get(move || async move { body }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let _ = axum::serve(listener, app).await;
+        });
+        format!("http://{addr}")
+    }
+
+    /// Stands in for the installed binary: deliberately not executable, so
+    /// the mode assertion afterwards can only pass if we set it.
+    fn existing_install(dir: &std::path::Path) -> PathBuf {
+        let target = dir.join("modlunky2-x86_64.AppImage");
+        std::fs::write(&target, b"old version").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o644)).unwrap();
+        }
+        target
+    }
+
+    #[tokio::test]
+    async fn swap_in_place_replaces_the_file_and_keeps_a_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = existing_install(dir.path());
+        let base = serve("new version").await;
+
+        swap_in_place(&format!("{base}/asset"), &target)
+            .await
+            .expect("swap should succeed");
+
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "new version");
+        assert_eq!(
+            std::fs::read_to_string(backup_path_for(&target)).unwrap(),
+            "old version",
+            "the previous version should still be recoverable"
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn swap_in_place_makes_the_download_executable() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = existing_install(dir.path());
+        let base = serve("new version").await;
+
+        swap_in_place(&format!("{base}/asset"), &target)
+            .await
+            .unwrap();
+
+        let mode = std::fs::metadata(&target).unwrap().permissions().mode();
+        assert!(
+            mode & 0o111 != 0,
+            "downloaded update must be executable to spawn, got mode {mode:o}"
+        );
+    }
+
+    /// The one that matters. A failed download must leave the user with the
+    /// version they already had, not an empty path where their app used to be.
+    #[tokio::test]
+    async fn swap_in_place_restores_the_original_when_the_download_fails() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = existing_install(dir.path());
+        let base = serve("unused").await;
+
+        let err = swap_in_place(&format!("{base}/not-a-real-asset"), &target)
+            .await
+            .expect_err("a 404 should fail the swap");
+        assert!(err.contains("download update"), "unexpected error: {err}");
+
+        assert!(target.exists(), "the original was not put back");
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "old version");
+    }
+
+    /// A previous update that died between the rename and the download leaves
+    /// a backup behind. The next attempt has to clear it, or the rename fails
+    /// and the user can never update again.
+    #[tokio::test]
+    async fn swap_in_place_clears_a_leftover_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = existing_install(dir.path());
+        std::fs::write(backup_path_for(&target), b"stale backup").unwrap();
+        let base = serve("new version").await;
+
+        swap_in_place(&format!("{base}/asset"), &target)
+            .await
+            .expect("a leftover backup should not block the update");
+
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "new version");
     }
 }

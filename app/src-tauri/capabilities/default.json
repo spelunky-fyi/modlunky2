@@ -23,6 +23,7 @@
     "fs:allow-copy-file",
     "fs:allow-read-dir",
     "opener:default",
+    "os:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text"
   ]

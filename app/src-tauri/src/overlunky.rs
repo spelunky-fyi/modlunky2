@@ -174,6 +174,12 @@ pub fn launch_overlunky<R: Runtime>(
     _app: tauri::AppHandle<R>,
     mode: LaunchMode,
 ) -> Result<(), String> {
+    spawn_overlunky(mode)
+}
+
+/// The launch itself, without the command wrapper, so the unified launch path
+/// can reach it too.
+pub fn spawn_overlunky(mode: LaunchMode) -> Result<(), String> {
     let install_dir = install_dir_required()?;
     let exe = overlunky_exe_path(&install_dir);
     if !exe.exists() {
@@ -195,31 +201,19 @@ pub fn launch_overlunky<R: Runtime>(
         }
     }
 
-    // command_prefix wraps the whole invocation, same shape as Playlunky.
-    let prefix_tokens: Vec<String> = crate::config::load()
-        .command_prefix
-        .as_deref()
-        .filter(|s| !s.trim().is_empty())
-        .and_then(|s| shell_words::split(s).ok())
-        .unwrap_or_default();
-
-    let cwd = exe
-        .parent()
-        .ok_or_else(|| "Overlunky exe has no parent dir".to_string())?;
-
-    let spawn = if let Some((head, tail)) = prefix_tokens.split_first() {
-        let mut cmd = std::process::Command::new(head);
-        cmd.args(tail).arg(&exe).args(&args).current_dir(cwd);
-        #[cfg(windows)]
-        cmd.creation_flags(CREATE_NEW_CONSOLE);
-        cmd.spawn()
-    } else {
-        let mut cmd = std::process::Command::new(&exe);
-        cmd.args(&args).current_dir(cwd);
-        #[cfg(windows)]
-        cmd.creation_flags(CREATE_NEW_CONSOLE);
-        cmd.spawn()
+    // Inject attaches to a game that's already up, so the prefix is live and
+    // Proton must not do its prefix maintenance. The other two modes start
+    // the game themselves, so there's nothing in there to disturb.
+    let prefix = match mode {
+        LaunchMode::Inject => crate::launch::PrefixState::Live,
+        LaunchMode::LaunchGame | LaunchMode::Update => crate::launch::PrefixState::Fresh,
     };
-    spawn.map_err(|e| format!("spawn Overlunky.exe: {e}"))?;
+
+    let mut cmd = crate::launch::command_for_exe(&exe, prefix)?;
+    cmd.args(&args);
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NEW_CONSOLE);
+    cmd.spawn()
+        .map_err(|e| format!("spawn Overlunky.exe: {e}"))?;
     Ok(())
 }

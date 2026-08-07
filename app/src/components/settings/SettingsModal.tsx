@@ -17,6 +17,7 @@ import {
   normalizeToastLevel,
   type ToastLevel,
 } from "../../lib/toastLevel";
+import { installDirPlaceholder, isWindows } from "../../lib/platform";
 import "./SettingsModal.css";
 
 interface SettingsModalProps {
@@ -235,7 +236,7 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, installDir: e.target.value }))
                 }
-                placeholder="C:\Program Files (x86)\Steam\steamapps\common\Spelunky 2"
+                placeholder={installDirPlaceholder}
                 spellCheck={false}
               />
               <button
@@ -324,12 +325,13 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, commandPrefix: e.target.value }))
               }
-              placeholder="Leave blank on Windows"
+              placeholder="Leave blank"
               spellCheck={false}
             />
             <span className="settings-hint">
-              Advanced. Runs before playlunky_launcher.exe on each launch.
-              Useful for Proton or Wine wrappers on non-Windows setups.
+              {isWindows
+                ? "Advanced. Runs before the game and the launchers on each launch. Leave blank unless you need a wrapper."
+                : "Advanced. Leave blank to use the Proton that Steam already set up for Spelunky 2, which is detected automatically. Setting this replaces it with your own wrapper."}
             </span>
           </label>
 

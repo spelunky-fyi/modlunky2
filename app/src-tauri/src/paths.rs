@@ -79,11 +79,32 @@ fn guess_install_from_registry() -> Option<PathBuf> {
     None
 }
 
+/// Ask Steam where the game is. Works regardless of which library it landed
+/// in, so it covers the multi-drive setups the hardcoded default never could.
+#[cfg(target_os = "linux")]
+fn guess_install_from_steam() -> Option<PathBuf> {
+    crate::proton::ProtonEnv::detect()
+        .inspect_err(|e| tracing::debug!("Steam auto-detect: {e}"))
+        .ok()
+        .map(|env| env.install_dir)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn guess_install_from_steam() -> Option<PathBuf> {
+    None
+}
+
+/// Best guess at the install directory, for the Settings "I'm feeling lucky"
+/// button. Every candidate is confirmed to actually contain the exe before
+/// being offered.
 #[tauri::command]
 pub fn guess_install_dir() -> Option<PathBuf> {
     let default = PathBuf::from(DEFAULT_INSTALL);
     if default.join(EXE_NAME).exists() {
         return Some(default);
+    }
+    if let Some(dir) = guess_install_from_steam().filter(|d| d.join(EXE_NAME).exists()) {
+        return Some(dir);
     }
     let reg = guess_install_from_registry()?;
     if reg.join(EXE_NAME).exists() {

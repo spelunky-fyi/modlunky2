@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
-import {
-  BookOpen,
-  Cog,
-  Download,
-  Package,
-  Play,
-  Zap,
-} from "lucide-react";
+import { BookOpen, Cog, Download, Package, Play, Zap } from "lucide-react";
 import {
   downloadOverlunky,
   isOverlunkyInstalled,
@@ -117,7 +110,19 @@ export function OverlunkyPage() {
         <div className="ovl-header-copy">
           <h2 className="ovl-title">Overlunky</h2>
           <p className="ovl-subtitle">
-An overlay for Spelunky 2 to help you with modding, exploring the depths of the game and practicing with tools like spawning arbitrary items, warping to levels and teleporting made by the cool people from the <a href="https://discord.gg/spelunky-community" target="_blank" rel="noopener noreferrer">Spelunky Community Discord</a>.</p>
+            An overlay for Spelunky 2 to help you with modding, exploring the
+            depths of the game and practicing with tools like spawning arbitrary
+            items, warping to levels and teleporting made by the cool people
+            from the{" "}
+            <a
+              href="https://discord.gg/spelunky-community"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Spelunky Community Discord
+            </a>
+            .
+          </p>
         </div>
         <button
           type="button"
@@ -176,32 +181,32 @@ An overlay for Spelunky 2 to help you with modding, exploring the depths of the 
             <DownloadProgressBar progress={progress} />
           )}
         </section>
-
         {/* --- Launch grid -------------------------------------------- */}
         <section className="ovl-launch-grid">
           <LaunchCard
             icon={<Zap size={26} aria-hidden="true" />}
             title="Inject into a running game"
-            hint="Attach to Spel2.exe that's already running."
+            hint="Attach to a Spel2.exe that's already running."
             buttonLabel={launching === "inject" ? "Launching..." : "Inject"}
             disabled={!canLaunch}
             onClick={() => void handleLaunch("inject")}
           />
+          {/* A one-off, for testing something under Overlunky without
+              disturbing the launch bar. Deliberately does not write the bar's
+              saved selection: the bar describes what its own button will do
+              next time, so a transient launch from here shouldn't leave the
+              user with a setting to undo afterwards. */}
           <LaunchCard
             icon={<Play size={26} aria-hidden="true" />}
-            title="Launch vanilla with Overlunky"
-            hint="Starts a fresh Spel2.exe with Overlunky already attached, no timing race."
-            buttonLabel={
-              launching === "launchGame" ? "Launching..." : "Launch"
-            }
+            title="Launch the game with Overlunky"
+            hint="Starts Spelunky 2 with Overlunky attached."
+            buttonLabel={launching === "launchGame" ? "Launching..." : "Launch"}
             disabled={!canLaunch}
             onClick={() => void handleLaunch("launchGame")}
           />
-        </section>
-
+        </section>{" "}
         <p className="ovl-footnote">
-          To launch Overlunky with Playlunky instead, toggle "Launch
-          Overlunky alongside Playlunky" in the Playlunky Options modal.
+          To launch Overlunky with Playlunky instead, use the launch bar below.
         </p>
       </div>
     </div>

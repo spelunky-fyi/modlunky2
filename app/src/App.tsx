@@ -15,6 +15,7 @@ import { SettingsModal } from "./components/settings/SettingsModal";
 import { ToastProvider } from "./components/shared/Toast";
 import { LogsWindow } from "./components/shared/LogsWindow";
 import { FolderMenu } from "./components/shared/FolderMenu";
+import { LaunchDock } from "./components/shared/LaunchDock";
 import {
   appVersion,
   getConfig,
@@ -467,6 +468,7 @@ function AppShell() {
         {activeTab === "levels" && <LevelsPage />}
         {activeTab === "trackers" && <TrackersPage />}
       </main>
+      <LaunchDock />
       <SettingsModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}

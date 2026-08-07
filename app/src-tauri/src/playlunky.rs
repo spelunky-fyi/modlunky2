@@ -7,6 +7,8 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use directories::BaseDirs;
+
+use crate::launch::PrefixState;
 use futures_util::StreamExt;
 use ini::Ini;
 use serde::{Deserialize, Serialize};
@@ -129,6 +131,10 @@ async fn load_releases(force: bool) -> Result<Vec<GhRelease>, String> {
     }
 }
 
+/// Playlunky's rolling pre-release build. The default for a fresh install:
+/// it always exists, so there's no resolution step that can come back empty.
+pub const NIGHTLY_TAG: &str = "nightly";
+
 /// The synthetic tag for the newest non-prerelease `vX.Y.Z` GitHub release.
 /// Playlunky itself never publishes a tag named "stable"; this is a
 /// modlunky2-side alias. Every code path that reads `playlunky-version`
@@ -214,7 +220,7 @@ pub async fn list_playlunky_releases(
         if r.tag_name.eq_ignore_ascii_case(STABLE_TAG) {
             continue;
         }
-        if r.tag_name == "nightly" {
+        if r.tag_name == NIGHTLY_TAG {
             nightly = Some(r);
         } else {
             rest.push(r);
@@ -352,7 +358,7 @@ const NOT_INSTALLED_SENTINEL: &str = "PLAYLUNKY_NOT_INSTALLED";
 /// before spawning. Failure to reach GitHub is not fatal, the on-disk
 /// build launches anyway.
 async fn refresh_rolling_release_if_stale(tag: &str) -> Result<(), String> {
-    if tag != "nightly" && tag != STABLE_TAG {
+    if tag != NIGHTLY_TAG && tag != STABLE_TAG {
         return Ok(());
     }
     let releases = match load_releases(false).await {
@@ -400,6 +406,12 @@ async fn refresh_rolling_release_if_stale(tag: &str) -> Result<(), String> {
 /// handles the launch itself.
 #[tauri::command]
 pub async fn launch_playlunky() -> Result<(), String> {
+    spawn_playlunky().await
+}
+
+/// The launch itself, without the command wrapper, so the unified launch path
+/// can reach it too.
+pub async fn spawn_playlunky() -> Result<(), String> {
     let cfg = crate::config::load();
     let install_dir = cfg
         .install_dir
@@ -411,10 +423,26 @@ pub async fn launch_playlunky() -> Result<(), String> {
         ));
     }
 
-    let tag = cfg
-        .playlunky_version
-        .filter(|t| !t.trim().is_empty())
-        .ok_or_else(|| "no Playlunky version selected".to_string())?;
+    // Nothing installed at all is the first-run case, and asking someone to go
+    // find the version modal before they can play is a step too many: people
+    // read "no Playlunky version selected" as a bug. Pick nightly and fetch it.
+    let nothing_installed = installed_tags().is_empty();
+    let tag = match cfg.playlunky_version.filter(|t| !t.trim().is_empty()) {
+        Some(tag) if !nothing_installed => tag,
+        _ => {
+            let tag = NIGHTLY_TAG.to_string();
+            download_playlunky_version(tag.clone())
+                .await
+                .map_err(|e| format!("couldn't download Playlunky {tag}: {e}"))?;
+            // Persist so the dropdown agrees with what we just installed;
+            // launch reads config, not UI state.
+            crate::config::apply_patch(crate::config::ConfigPatch {
+                playlunky_version: Some(tag.clone()),
+                ..Default::default()
+            })?;
+            tag
+        }
+    };
 
     // Auto-update rolling releases (nightly) before spawn.
     refresh_rolling_release_if_stale(&tag).await?;
@@ -422,9 +450,11 @@ pub async fn launch_playlunky() -> Result<(), String> {
     let launcher =
         launcher_exe_path(&tag).ok_or_else(|| "no data directory for Playlunky".to_string())?;
     if !launcher.exists() {
-        // Sentinel the frontend catches to offer a one-click reinstall
-        // (common cause: antivirus quarantines playlunky_launcher.exe
-        // after it's dropped on disk).
+        // A version is installed but this one's files are gone. Distinct from
+        // the first-run case above and not auto-healed on purpose: the usual
+        // cause is antivirus quarantining playlunky_launcher.exe after it
+        // lands, and silently re-downloading into that would loop. The
+        // sentinel drives a frontend prompt that names the cause.
         return Err(format!("{NOT_INSTALLED_SENTINEL}:{tag}"));
     }
 
@@ -433,9 +463,6 @@ pub async fn launch_playlunky() -> Result<(), String> {
     let appid_path = install_dir.join(STEAM_APPID_FILENAME);
     std::fs::write(&appid_path, STEAM_APP_ID).map_err(|e| format!("write steam_appid.txt: {e}"))?;
 
-    let cwd = launcher
-        .parent()
-        .ok_or_else(|| "playlunky launcher has no parent dir".to_string())?;
     let exe_dir_arg = format!("--exe_dir={}", install_dir.display());
 
     // Assemble args after the launcher path. --exe_dir first, then flags
@@ -448,30 +475,44 @@ pub async fn launch_playlunky() -> Result<(), String> {
         launcher_args.push("--overlunky".to_string());
     }
 
-    // command_prefix wraps the whole invocation. First token becomes the
-    // executable and the rest become leading args, so a prefix of "wine"
-    // produces `wine playlunky_launcher.exe --exe_dir=...`.
-    let prefix_tokens: Vec<String> = cfg
-        .command_prefix
-        .as_deref()
-        .filter(|s| !s.trim().is_empty())
-        .and_then(|s| shell_words::split(s).ok())
-        .unwrap_or_default();
+    crate::launch::command_for_exe(&launcher, PrefixState::Fresh)?
+        .args(&launcher_args)
+        .spawn()
+        .map_err(|e| format!("spawn playlunky_launcher.exe: {e}"))?;
 
-    let spawn_result = if let Some((head, tail)) = prefix_tokens.split_first() {
-        std::process::Command::new(head)
-            .args(tail)
-            .arg(&launcher)
-            .args(&launcher_args)
-            .current_dir(cwd)
-            .spawn()
-    } else {
-        std::process::Command::new(&launcher)
-            .args(&launcher_args)
-            .current_dir(cwd)
-            .spawn()
-    };
-    spawn_result.map_err(|e| format!("spawn playlunky_launcher.exe: {e}"))?;
+    Ok(())
+}
+
+/// Launches the game with nothing attached. The other launch paths go through
+/// Playlunky or Overlunky, which both start the game themselves, so there was
+/// no way to just play vanilla from here.
+#[tauri::command]
+pub fn launch_vanilla() -> Result<(), String> {
+    spawn_vanilla()
+}
+
+/// The launch itself, without the command wrapper, so the unified launch path
+/// can reach it too.
+pub fn spawn_vanilla() -> Result<(), String> {
+    let install_dir = crate::config::load()
+        .install_dir
+        .ok_or_else(|| "install directory not configured".to_string())?;
+    let exe = install_dir.join(ml2_mem::SPEL2_EXE_NAME);
+    if !exe.exists() {
+        return Err(format!(
+            "{} not found in the install directory",
+            ml2_mem::SPEL2_EXE_NAME
+        ));
+    }
+
+    // Same reason Playlunky needs it: lets the Steamworks init in the game
+    // find the running Steam client when we didn't launch through Steam.
+    let appid_path = install_dir.join(STEAM_APPID_FILENAME);
+    std::fs::write(&appid_path, STEAM_APP_ID).map_err(|e| format!("write steam_appid.txt: {e}"))?;
+
+    crate::launch::command_for_exe(&exe, PrefixState::Fresh)?
+        .spawn()
+        .map_err(|e| format!("spawn {}: {e}", ml2_mem::SPEL2_EXE_NAME))?;
 
     Ok(())
 }
@@ -529,26 +570,47 @@ pub fn sync_desktop_shortcut() -> Result<(), String> {
         return Ok(());
     }
 
-    let args = [format!("--exe_dir={}", install_dir.display())];
+    let args = format!("--exe_dir={}", install_dir.display());
 
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    write_shortcut(&launcher, &args, &path)
+}
+
+/// Writes a Windows Shell Link (`.lnk`) at `dest` pointing at `launcher`.
+#[cfg(windows)]
+fn write_shortcut(
+    launcher: &std::path::Path,
+    args: &str,
+    dest: &std::path::Path,
+) -> Result<(), String> {
     let launcher_str = launcher
         .to_str()
         .ok_or_else(|| "launcher path is not valid unicode".to_string())?;
     let mut lnk =
         mslnk::ShellLink::new(launcher_str).map_err(|e| format!("create shortcut: {e}"))?;
-    lnk.set_arguments(Some(args.join(" ")));
+    lnk.set_arguments(Some(args.to_string()));
     if let Some(cwd) = launcher.parent().and_then(|p| p.to_str()) {
         lnk.set_working_dir(Some(cwd.to_string()));
     }
-
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    let path_str = path
+    let dest_str = dest
         .to_str()
         .ok_or_else(|| "shortcut path is not valid unicode".to_string())?;
-    lnk.create_lnk(path_str)
-        .map_err(|e| format!("write shortcut: {e}"))?;
+    lnk.create_lnk(dest_str)
+        .map_err(|e| format!("write shortcut: {e}"))
+}
+
+/// `.lnk` is a Windows-only format and `mslnk` only builds there, so
+/// non-Windows targets no-op. The removal branch in `sync_desktop_shortcut`
+/// still runs, so a shortcut left behind by a Windows install gets cleaned
+/// up if the same profile is later used here.
+#[cfg(not(windows))]
+fn write_shortcut(
+    _launcher: &std::path::Path,
+    _args: &str,
+    _dest: &std::path::Path,
+) -> Result<(), String> {
     Ok(())
 }
 

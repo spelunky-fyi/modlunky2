@@ -13,17 +13,9 @@ use windows::Win32::System::Memory::{
 };
 use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
 
+use super::{FEEDCODE_MARKER, SPEL2_EXE_NAME};
 use crate::error::{MemError, Result};
 use crate::process::ReadProcess;
-
-/// Bytes marking the sentinel value the game plants near `State`. The
-/// exact byte sequence must be `\x00\xde\xc0\xed\xfe` so tooling that
-/// already knows this address recognises the scan.
-pub const FEEDCODE_MARKER: &[u8] = &[0x00, 0xde, 0xc0, 0xed, 0xfe];
-
-/// Exe file name to look for during process enumeration. Kept public so
-/// the tauri app can surface a "not running" toast that matches.
-pub const SPEL2_EXE_NAME: &str = "Spel2.exe";
 
 /// Cheapest useful memory-page scan window. State lives well above
 /// `0x40000000000` on target systems; a lower floor would waste minutes

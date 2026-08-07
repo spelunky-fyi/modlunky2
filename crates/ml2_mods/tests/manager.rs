@@ -48,7 +48,9 @@ fn make_remote_control_mod() -> Mod {
 
 fn testdata_install_dir() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join(r"tests\data\install_dir")
+        .join("tests")
+        .join("data")
+        .join("install_dir")
         .to_str()
         .unwrap()
         .into()
@@ -170,7 +172,9 @@ async fn test_remove() {
 
 async fn install_from_local_sources(handle: &ModManagerHandle, source_file: &str, dest_id: &str) {
     let source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join(r"tests\data\local_sources")
+        .join("tests")
+        .join("data")
+        .join("local_sources")
         .join(source_file)
         .as_os_str()
         .to_str()
@@ -253,7 +257,9 @@ async fn test_install_locall() {
 
 async fn update_from_local_sources(handle: &ModManagerHandle, source_file: &str, dest_id: &str) {
     let source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join(r"tests\data\local_sources")
+        .join("tests")
+        .join("data")
+        .join("local_sources")
         .join(source_file)
         .as_os_str()
         .to_str()

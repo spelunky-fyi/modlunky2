@@ -46,7 +46,10 @@ You need:
 ```console
 cd app
 npm install
+cargo install tauri-cli
 ```
+
+If you're developing on Linux see [Developing on Linux](#developing-on-linux).
 
 ### Run in dev mode
 
@@ -75,6 +78,42 @@ npm run release
 Output lands at `release/modlunky2.exe`. This is only for local testing;
 publishing a release is automated. (see [Releases](#releases)).
 
+## Developing on Linux
+
+While windows is the primary target, we try to keep the build running on Linux as well.
+
+### System dependencies
+
+Make sure to follow the steps for [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/#linux) for your distro.
+
+
+### Building and running
+
+The same commands work as on Windows:
+
+```console
+cd app
+npm run tauri dev
+```
+
+Two things to know when running it:
+
+- **Snap-provided terminals leak GTK environment.** Launching from a snap
+  VS Code's integrated terminal makes the app pick up `/snap/...` GTK modules
+  and die with a `libpthread` symbol lookup error. That's the environment, not
+  the build. Run it from a normal terminal, or scrub the environment:
+
+  ```console
+    unset GTK_PATH
+  ```
+
+- **WebGL in the level editor** can hit WebKitGTK's DMA-BUF renderer bugs on
+  some drivers. `WEBKIT_DISABLE_DMABUF_RENDERER=1` can be used if needed as a workaround.
+
+Config lives at `~/.local/share/spelunky.fyi/modlunky2/config.json` rather than
+under `%LOCALAPPDATA%`.
+
+
 ## Working in the codebase
 
 ### Adding a Tauri command
@@ -97,8 +136,9 @@ not hot-reload the way `app/src/` does.
 
 ## Checks
 
-CI (`.github/workflows/rust-test.yml`) runs on the pinned MSRV toolchain and
-fails on any of the following, so run them locally before pushing.
+CI (`.github/workflows/rust-test.yml`) runs on the pinned MSRV toolchain, on
+both Windows and Linux, and fails on any of the following, so run them locally
+before pushing.
 
 Rust, from the repo root:
 
