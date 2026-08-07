@@ -124,7 +124,13 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     // Spawn the replacement, then exit. Verified on Linux that the running
     // process survives its own AppImage being renamed and replaced, so this
     // ordering is safe rather than a race.
-    if let Err(e) = std::process::Command::new(&self_exe).spawn() {
+    //
+    // Stripped like any other child: the new instance sets up its own AppImage
+    // environment, and anything it inherited from us points into a mount that
+    // is about to disappear.
+    let mut cmd = std::process::Command::new(&self_exe);
+    crate::launch::strip_appimage_env(&mut cmd);
+    if let Err(e) = cmd.spawn() {
         return Err(format!("spawn new exe: {e}"));
     }
     app.exit(0);

@@ -236,6 +236,15 @@ impl LocalMods for DiskMods {
             }
         }
 
+        // `read_dir` yields entries in whatever order the filesystem stores
+        // them: alphabetical on NTFS, but hash order on ext4, which differs
+        // between two checkouts of the same tree. Sorting by id makes the
+        // result the same everywhere.
+        //
+        // This is about determinism, not presentation. The mods page sorts by
+        // display name for the user; callers that don't sort at least get a
+        // stable order rather than one that can change between refreshes.
+        mods.sort_by(|a, b| a.id.cmp(&b.id));
         Ok(mods)
     }
 

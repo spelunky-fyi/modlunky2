@@ -126,6 +126,38 @@ async fn touch_file(path: PathBuf) {
     file.sync_all().await.unwrap();
 }
 
+/// `list` sorts, rather than handing back whatever order the filesystem
+/// happened to store the directory entries in.
+///
+/// This bit for real: `test_list_exists` asserts an exact order and passed on
+/// Windows (NTFS enumerates alphabetically) and on some Linux checkouts, while
+/// failing on others, because ext4 returns entries in hash order and that
+/// differs between two checkouts of the same tree.
+///
+/// Enough mods here, created in reverse, that an unsorted result is very
+/// unlikely to come back in sorted order by chance.
+#[tokio::test]
+async fn test_list_is_sorted_regardless_of_directory_order() {
+    let dir = tempfile::tempdir().unwrap();
+    let handle = setup(dir.path().to_str().unwrap());
+
+    let ids = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"];
+    for id in ids.iter().rev() {
+        let mod_path = dir.path().join(MODS_SUBPATH).join(id);
+        fs::create_dir_all(&mod_path).await.unwrap();
+        touch_file(mod_path.join("main.lua")).await;
+    }
+
+    let listed: Vec<String> = handle
+        .list()
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|m| m.id)
+        .collect();
+    assert_eq!(listed, ids);
+}
+
 #[tokio::test]
 async fn test_remove() {
     let mod_id = "some-mod";

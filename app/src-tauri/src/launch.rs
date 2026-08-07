@@ -43,7 +43,64 @@ pub fn command_for_exe(exe: &Path, prefix: PrefixState) -> Result<Command, Strin
     if let Some(dir) = exe.parent() {
         cmd.current_dir(dir);
     }
+    strip_appimage_env(&mut cmd);
     Ok(cmd)
+}
+
+/// Undo the AppImage runtime's environment for a child process.
+///
+/// When modlunky2 runs as an AppImage, its `AppRun` points a dozen variables
+/// at the read-only mount so the bundled copies of GTK, WebKit and friends get
+/// used instead of the system ones. Those are right for us and wrong for
+/// everything we launch: children inherit them and then load our libraries, or
+/// worse, look for their own runtime somewhere it isn't.
+///
+/// Proton is the case that made this obvious. It's a Python script, so it
+/// inherited `PYTHONHOME=$APPDIR/usr/` and died with "Failed to import
+/// encodings module" before it got anywhere near starting the game.
+/// `GIO_EXTRA_MODULES` produced a second, noisier symptom on the way past.
+///
+/// Filters rather than clears, because some of these mix our paths with the
+/// real ones: `PATH` and `XDG_DATA_DIRS` have the AppDir prepended to the
+/// user's actual values, and a child needs what's left. Any variable that ends
+/// up empty is removed outright.
+///
+/// No-op when not running as an AppImage, where `APPDIR` is unset.
+pub fn strip_appimage_env(cmd: &mut Command) {
+    let Ok(appdir) = std::env::var("APPDIR") else {
+        return;
+    };
+    for (key, replacement) in appimage_env_overrides(&appdir, std::env::vars()) {
+        match replacement {
+            Some(value) => cmd.env(key, value),
+            None => cmd.env_remove(key),
+        };
+    }
+}
+
+/// Which variables [`strip_appimage_env`] changes, and to what. `None` means
+/// remove it. Split out from the `Command` so the filtering can be tested
+/// against a captured real environment instead of the test process's own.
+fn appimage_env_overrides(
+    appdir: &str,
+    vars: impl Iterator<Item = (String, String)>,
+) -> Vec<(String, Option<String>)> {
+    if appdir.is_empty() {
+        return Vec::new();
+    }
+    vars.filter(|(_, value)| value.contains(appdir))
+        .map(|(key, value)| {
+            // Empty components go too. In a search path an empty entry means
+            // the current directory, which is not something a child should
+            // inherit from us, and the runtime leaves trailing colons behind.
+            let kept: Vec<&str> = value
+                .split(':')
+                .filter(|part| !part.is_empty() && !part.starts_with(appdir))
+                .collect();
+            let replacement = (!kept.is_empty()).then(|| kept.join(":"));
+            (key, replacement)
+        })
+        .collect()
 }
 
 fn command_without_cwd(exe: &Path, prefix: PrefixState) -> Result<Command, String> {
@@ -148,5 +205,114 @@ pub fn become_child_subreaper() {
                 std::io::Error::last_os_error()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const APPDIR: &str = "/tmp/.mount_modlunAbc123";
+
+    /// Lifted from a running AppImage build of this app, trimmed to the
+    /// variables its runtime actually rewrites. Real values rather than
+    /// invented ones, including the doubled slashes and trailing colons the
+    /// runtime emits, since those are what the filter has to cope with.
+    fn captured_appimage_env() -> Vec<(String, String)> {
+        [
+            ("PYTHONHOME", "/tmp/.mount_modlunAbc123/usr/"),
+            (
+                "PYTHONPATH",
+                "/tmp/.mount_modlunAbc123/usr/share/pyshared/:",
+            ),
+            (
+                "GIO_EXTRA_MODULES",
+                "/tmp/.mount_modlunAbc123/usr/lib/x86_64-linux-gnu/gio/modules",
+            ),
+            (
+                "LD_LIBRARY_PATH",
+                "/tmp/.mount_modlunAbc123/usr/lib/:/tmp/.mount_modlunAbc123/lib64/:",
+            ),
+            ("APPDIR", "/tmp/.mount_modlunAbc123"),
+            (
+                "GTK_PATH",
+                "/tmp/.mount_modlunAbc123//usr/lib/x86_64-linux-gnu/gtk-3.0:/usr/lib64/gtk-3.0",
+            ),
+            (
+                "XDG_DATA_DIRS",
+                "/tmp/.mount_modlunAbc123/usr/share/:/usr/share:/usr/local/share/",
+            ),
+            (
+                "PATH",
+                "/tmp/.mount_modlunAbc123/usr/bin/:/usr/local/bin:/usr/bin:/bin",
+            ),
+            // Untouched: no AppDir anywhere in it.
+            ("HOME", "/home/gary"),
+            (
+                "STEAM_COMPAT_DATA_PATH",
+                "/home/gary/.steam/compatdata/418530",
+            ),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect()
+    }
+
+    fn overrides() -> std::collections::HashMap<String, Option<String>> {
+        appimage_env_overrides(APPDIR, captured_appimage_env().into_iter())
+            .into_iter()
+            .collect()
+    }
+
+    /// The bug this all exists for. Proton is a Python script, and an
+    /// inherited PYTHONHOME pointing into our mount kills it before it starts
+    /// with "Failed to import encodings module".
+    #[test]
+    fn removes_the_python_vars_that_break_proton() {
+        let o = overrides();
+        assert_eq!(o.get("PYTHONHOME"), Some(&None));
+        assert_eq!(o.get("PYTHONPATH"), Some(&None));
+    }
+
+    #[test]
+    fn removes_vars_that_point_only_into_the_appdir() {
+        let o = overrides();
+        for key in ["GIO_EXTRA_MODULES", "LD_LIBRARY_PATH", "APPDIR"] {
+            assert_eq!(o.get(key), Some(&None), "{key} should have been removed");
+        }
+    }
+
+    /// The reason this filters instead of clearing. A child still needs to
+    /// find its own executables and data; only our entries should go.
+    #[test]
+    fn keeps_the_real_entries_in_mixed_search_paths() {
+        let o = overrides();
+        assert_eq!(
+            o.get("PATH"),
+            Some(&Some("/usr/local/bin:/usr/bin:/bin".to_string()))
+        );
+        assert_eq!(
+            o.get("XDG_DATA_DIRS"),
+            Some(&Some("/usr/share:/usr/local/share/".to_string()))
+        );
+        assert_eq!(
+            o.get("GTK_PATH"),
+            Some(&Some("/usr/lib64/gtk-3.0".to_string()))
+        );
+    }
+
+    #[test]
+    fn leaves_unrelated_vars_alone() {
+        let o = overrides();
+        assert!(!o.contains_key("HOME"));
+        assert!(!o.contains_key("STEAM_COMPAT_DATA_PATH"));
+    }
+
+    /// Not running as an AppImage: nothing to undo, and we must not start
+    /// deleting a normal environment on the strength of an empty prefix.
+    #[test]
+    fn does_nothing_without_an_appdir() {
+        let o = appimage_env_overrides("", captured_appimage_env().into_iter());
+        assert!(o.is_empty());
     }
 }
