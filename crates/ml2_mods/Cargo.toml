@@ -34,7 +34,7 @@ tokio = { version = "1.32", features = [
     "time",
     "tracing",
 ] }
-tokio-graceful-shutdown = "0.19"
+tokio-graceful-shutdown = "0.20"
 tokio-tungstenite = { version = "0.30", features = ["native-tls"] }
 tracing = "0.1"
 url = "2"
