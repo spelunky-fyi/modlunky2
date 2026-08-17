@@ -20,12 +20,17 @@ pub enum Error {
     #[error("Mod {0} isn't in a directory")]
     NonDirectory(String),
 
-    #[error("Problem with installation source")]
+    #[error("Problem with installation source: {0}")]
     SourceError(#[source] anyhow::Error),
-    #[error("Problem with the destination")]
+    #[error("Problem with the destination: {0}")]
     DestinationError(#[source] anyhow::Error),
 
-    #[error("I/O error")]
+    // The cause belongs in the message. Callers render these by `Display` on
+    // the outermost error (the toast the user sees is one line), so anything
+    // left only in `source()` is thrown away: this used to surface as a bare
+    // "Unknown error: I/O error" with no way to tell a full disk from a
+    // permissions problem from a cross-volume rename.
+    #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Unknown error: {0}")]

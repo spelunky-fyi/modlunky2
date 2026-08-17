@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use tempfile::{TempDir, tempdir};
+use tempfile::{TempDir, tempdir_in};
 use tokio::fs;
 use tracing::{debug, instrument};
 use zip::ZipArchive;
@@ -142,13 +142,36 @@ impl DiskMods {
         Ok(dest_name)
     }
 
+    /// Directory an update stashes the old copy of a mod into while the new
+    /// one installs.
+    ///
+    /// Has to sit on the same volume as the mods themselves, because the
+    /// stash is a rename and a rename cannot cross volumes:
+    /// `ERROR_NOT_SAME_DEVICE` on Windows, `EXDEV` elsewhere. Staging in the
+    /// system temp directory instead (which is on C: for practically
+    /// everyone) meant every update and every overwrite-install failed for
+    /// anyone whose Spelunky 2 lives on a second drive, while plain installs
+    /// and uninstalls -- which never rename across the boundary -- kept
+    /// working.
+    ///
+    /// Deliberately under `Mods/.ml` rather than `Mods/Packs`, so a stash
+    /// that outlives a crashed update is never mistaken for an installed
+    /// pack by `list`.
+    fn update_staging_path(&self) -> PathBuf {
+        self.install_path.join("Mods").join(".ml").join(".updates")
+    }
+
     async fn prep_for_update(&self, dest_id: &str) -> Result<TempDir> {
-        let temp_dir = tempdir()?;
-        let temp_mod_path = temp_dir.path().join(dest_id);
         let old_mod_path = self.mods_dir_path(dest_id);
         if path_metadata(&old_mod_path).await?.is_none() {
             return Err(Error::NotFound(dest_id.to_string()));
         }
+        let staging = self.update_staging_path();
+        fs::create_dir_all(&staging)
+            .await
+            .map_err(|e| Error::DestinationError(e.into()))?;
+        let temp_dir = tempdir_in(&staging)?;
+        let temp_mod_path = temp_dir.path().join(dest_id);
         fs::rename(&old_mod_path, &temp_mod_path).await?;
         debug!("Stashed old mod version in {:?}", temp_mod_path);
         Ok(temp_dir)
@@ -649,6 +672,161 @@ mod tests {
         assert_paths(
             &["main.lua", "mod_info.json", "custom_images/batty.png"],
             &["main.lua", "mod_info.json", "custom_images/batty.png"],
+        );
+    }
+}
+
+#[cfg(test)]
+mod update_tests {
+    use super::*;
+    use crate::local::LocalMods;
+
+    /// A game install with one pack already in it.
+    struct Fixture {
+        _root: tempfile::TempDir,
+        install_path: PathBuf,
+        mods: DiskMods,
+    }
+
+    fn fixture(pack: &str) -> Fixture {
+        let root = tempfile::tempdir().unwrap();
+        let install_path = root.path().join("Spelunky 2");
+        let pack_dir = install_path.join(MODS_SUBPATH).join(pack);
+        std::fs::create_dir_all(&pack_dir).unwrap();
+        std::fs::write(pack_dir.join("main.lua"), "old version").unwrap();
+        let mods = DiskMods::new(install_path.to_str().unwrap());
+        Fixture {
+            _root: root,
+            install_path,
+            mods,
+        }
+    }
+
+    /// Writes the replacement mod somewhere outside the install directory,
+    /// the way a real download or a user-picked file would be.
+    fn source_file(fixture: &Fixture, contents: &str) -> PathBuf {
+        let path = fixture._root.path().join("new-version.lua");
+        std::fs::write(&path, contents).unwrap();
+        path
+    }
+
+    /// The bug: the old copy was stashed in the *system* temp directory, and
+    /// the stash is a rename, so the whole update failed with a bare
+    /// "I/O error" whenever the game was installed on a different drive than
+    /// the temp directory. Keeping the stash inside the install directory is
+    /// what makes the rename same-volume by construction. Asserting on the
+    /// path is the only way to pin this without a second physical volume.
+    #[tokio::test]
+    async fn the_update_stash_stays_on_the_games_volume() {
+        let f = fixture("a-pack");
+
+        let stash = f.mods.prep_for_update("a-pack").await.unwrap();
+
+        assert!(
+            stash.path().starts_with(&f.install_path),
+            "stash {:?} escaped the install dir {:?}; a cross-volume rename \
+             would fail with ERROR_NOT_SAME_DEVICE / EXDEV",
+            stash.path(),
+            f.install_path,
+        );
+    }
+
+    /// The stash must not be visible as an installed pack, even while an
+    /// update is mid-flight or if one died and left its directory behind.
+    #[tokio::test]
+    async fn a_pending_update_is_not_listed_as_a_mod() {
+        let f = fixture("a-pack");
+
+        let _stash = f.mods.prep_for_update("a-pack").await.unwrap();
+
+        let listed: Vec<String> = f
+            .mods
+            .list()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|m| m.id)
+            .collect();
+        assert_eq!(listed, Vec::<String>::new());
+    }
+
+    #[tokio::test]
+    async fn update_replaces_the_pack_contents() {
+        let f = fixture("a-pack");
+        let source = source_file(&f, "new version");
+
+        f.mods
+            .update_local(source.to_str().unwrap(), "a-pack")
+            .await
+            .unwrap();
+
+        let installed = f.install_path.join(MODS_SUBPATH).join("a-pack");
+        assert_eq!(
+            std::fs::read_to_string(installed.join("main.lua")).unwrap(),
+            "new version"
+        );
+        // The stash is cleaned up, so the pack is listable again.
+        let listed: Vec<String> = f
+            .mods
+            .list()
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|m| m.id)
+            .collect();
+        assert_eq!(listed, vec!["a-pack".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn update_preserves_save_files() {
+        let f = fixture("a-pack");
+        let pack_dir = f.install_path.join(MODS_SUBPATH).join("a-pack");
+        std::fs::write(pack_dir.join("save.dat"), "my save").unwrap();
+        let source = source_file(&f, "new version");
+
+        f.mods
+            .update_local(source.to_str().unwrap(), "a-pack")
+            .await
+            .unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(pack_dir.join("save.dat")).unwrap(),
+            "my save"
+        );
+    }
+
+    /// A failed install has to put the old copy back rather than leaving the
+    /// user with no mod at all.
+    #[tokio::test]
+    async fn a_failed_update_restores_the_previous_version() {
+        let f = fixture("a-pack");
+        let missing = f._root.path().join("does-not-exist.lua");
+
+        let err = f
+            .mods
+            .update_local(missing.to_str().unwrap(), "a-pack")
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, Error::SourceError(_)), "got {err:?}");
+        let installed = f.install_path.join(MODS_SUBPATH).join("a-pack");
+        assert_eq!(
+            std::fs::read_to_string(installed.join("main.lua")).unwrap(),
+            "old version"
+        );
+    }
+
+    /// The message the user actually reads is the outermost `Display`, so the
+    /// cause has to survive into it. This is what made the original report
+    /// undiagnosable: every failure looked like "Unknown error: I/O error".
+    #[test]
+    fn io_errors_say_what_went_wrong() {
+        let err = Error::from(io::Error::other(
+            "The system cannot move the file to a different disk drive. (os error 17)",
+        ));
+        assert!(
+            err.to_string().contains("different disk drive"),
+            "cause was dropped: {err}"
         );
     }
 }

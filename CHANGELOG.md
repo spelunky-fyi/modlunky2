@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Race condition where mod list could show up empty until you refresh
+- Issue related to updating/installing over existing mods when system temp lives
+  on a different drive from mods.
 - **Trackers stuck on "Spelunky 2 exited" until restarted.** Closing the game
   could leave a tracker holding the dead process. A running tracker now always
   returns to polling when the game exits so it can reconnect.
