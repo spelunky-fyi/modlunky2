@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Race condition where mod list could show up empty until you refresh
+- **Trackers stuck on "Spelunky 2 exited" until restarted.** Closing the game
+  could leave a tracker holding the dead process. A running tracker now always
+  returns to polling when the game exits so it can reconnect.
 - **Linux: AppImage starting with no window ever appearing**, aborting with
   `Could not create default EGL display: EGL_BAD_PARAMETER`. The AppImage
   bundled its own copy of the Wayland client libraries and put them ahead of
