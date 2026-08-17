@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Race condition where mod list could show up empty until you refresh
+- **Linux: AppImage starting with no window ever appearing**, aborting with
+  `Could not create default EGL display: EGL_BAD_PARAMETER`. The AppImage
+  bundled its own copy of the Wayland client libraries and put them ahead of
+  the host's, so distros whose Mesa is newer than our Ubuntu 22.04 build host
+  (Steam Deck / SteamOS above all) failed to initialize EGL. Those libraries
+  now come from the host.
 
 ## [2.1.1] - 2026-08-07
 
