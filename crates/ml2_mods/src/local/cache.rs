@@ -9,7 +9,7 @@ use derive_more::Debug;
 use serde::{Deserialize, Serialize};
 use tokio::{
     select,
-    sync::{Mutex, broadcast, mpsc, oneshot},
+    sync::{Mutex, broadcast, mpsc, oneshot, watch},
     time,
 };
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
@@ -35,8 +35,12 @@ where
     detected_tx: broadcast::Sender<DetectedChange>,
     local_mods: L,
     local_scan_interval: Duration,
+    /// Flipped to true once `populate_cache` has finished, so callers can
+    /// tell "the cache is empty because there are no mods" apart from "the
+    /// cache is empty because the first scan hasn't landed yet". Arc'd
+    /// because `watch::Sender` isn't `Clone` and `ModCache` is.
     #[debug(skip)]
-    ready_tx: mpsc::Sender<()>,
+    ready_tx: Arc<watch::Sender<bool>>,
     /// On-demand scan request channel. Senders (through `ModCacheHandle`)
     /// hand off a oneshot sender to request an immediate `local_scan()`
     /// and get notified when it finishes. Wrapped in Arc<Mutex<Option<..>>
@@ -50,15 +54,22 @@ where
 #[derive(Clone, Debug)]
 pub struct ModCacheHandle {
     #[debug(skip)]
-    ready_rx: Arc<Mutex<mpsc::Receiver<()>>>,
+    ready_rx: watch::Receiver<bool>,
     #[debug(skip)]
     scan_req_tx: mpsc::Sender<oneshot::Sender<()>>,
 }
 
 impl ModCacheHandle {
-    pub async fn ready(self) {
-        let mut rx = self.ready_rx.lock().await;
-        rx.recv().await;
+    /// Resolves once the cache holds the result of its first disk scan.
+    /// Returns immediately (not just for the first caller) once that has
+    /// happened, so it's safe to await on every read path.
+    pub async fn ready(&self) {
+        let mut rx = self.ready_rx.clone();
+        // Err means the ModCache was dropped without ever becoming ready,
+        // which happens when its subsystem gets aborted mid-scan (see
+        // rebuild_mods). There's nothing left to wait for; let the caller
+        // proceed and read whatever the abandoned cache held.
+        let _ = rx.wait_for(|ready| *ready).await;
     }
 
     /// Asks the running ModCache to perform an immediate `local_scan()` and
@@ -97,7 +108,7 @@ where
         local_mods: L,
         local_scan_interval: Duration,
     ) -> (Self, ModCacheHandle) {
-        let (ready_tx, ready_rx) = mpsc::channel(1);
+        let (ready_tx, ready_rx) = watch::channel(false);
         let (scan_req_tx, scan_req_rx) = mpsc::channel(4);
         let poller = ModCache {
             api_client,
@@ -106,11 +117,11 @@ where
             detected_tx,
             local_mods,
             local_scan_interval,
-            ready_tx,
+            ready_tx: Arc::new(ready_tx),
             scan_req_rx: Arc::new(Mutex::new(Some(scan_req_rx))),
         };
         let handle = ModCacheHandle {
-            ready_rx: Arc::new(Mutex::new(ready_rx)),
+            ready_rx,
             scan_req_tx,
         };
 
@@ -264,7 +275,7 @@ where
     #[instrument(skip_all)]
     async fn run(self, subsystem: &mut SubsystemHandle) -> Result<()> {
         self.populate_cache().await;
-        let _ = self.ready_tx.send(()).await;
+        let _ = self.ready_tx.send(true);
 
         // Move the request channel out of `self` so `select!` can borrow it
         // mutably at the same time as `self.local_scan()` and friends (all
@@ -382,5 +393,124 @@ where
     #[instrument(skip(self))]
     async fn get_mod_logo(&self, id: &str) -> Result<ModLogo> {
         self.local_mods.get_mod_logo(id).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tokio_graceful_shutdown::{SubsystemBuilder, Toplevel};
+
+    use super::*;
+    use crate::spelunkyfyi::http::HttpApiMods;
+
+    /// Stands in for DiskMods with a scan slow enough that anything reading
+    /// the cache without waiting is guaranteed to see it empty.
+    // `Debug` here is `derive_more`'s, pulled in by the `use super::*`
+    // above; spelled out so it doesn't read as the prelude's.
+    #[derive(Clone, derive_more::Debug)]
+    struct SlowDisk;
+
+    const SCAN_TIME: Duration = Duration::from_millis(300);
+
+    #[async_trait]
+    impl LocalMods for SlowDisk {
+        async fn get(&self, id: &str) -> Result<Mod> {
+            Err(Error::NotFound(id.to_string()))
+        }
+
+        async fn list(&self) -> Result<Vec<Mod>> {
+            time::sleep(SCAN_TIME).await;
+            Ok(vec![Mod {
+                id: "a-pack".to_string(),
+                manifest: None,
+            }])
+        }
+
+        async fn remove(&self, _id: &str) -> Result<()> {
+            unimplemented!()
+        }
+        async fn install_local(&self, _source: &str, _dest_id: &str) -> Result<Mod> {
+            unimplemented!()
+        }
+        async fn install_remote(&self, _downloaded: &DownloadedMod) -> Result<Mod> {
+            unimplemented!()
+        }
+        async fn update_local(&self, _source: &str, _dest_id: &str) -> Result<Mod> {
+            unimplemented!()
+        }
+        async fn update_remote(&self, _downloaded: &DownloadedMod) -> Result<Mod> {
+            unimplemented!()
+        }
+        async fn update_latest_json(&self, _api_mod: &ApiMod) -> Result<Option<String>> {
+            unimplemented!()
+        }
+        async fn apply_latest_check_result(
+            &self,
+            _slug: &str,
+            _mod_file_id: &str,
+        ) -> Result<Option<String>> {
+            unimplemented!()
+        }
+        async fn get_mod_logo(&self, _id: &str) -> Result<ModLogo> {
+            unimplemented!()
+        }
+    }
+
+    fn spawn_cache() -> (ModCache<HttpApiMods, SlowDisk>, ModCacheHandle) {
+        let (detected_tx, _detected_rx) = broadcast::channel(10);
+        let (cache, handle) = ModCache::new(
+            None::<HttpApiMods>,
+            Duration::from_secs(60),
+            detected_tx,
+            SlowDisk,
+            Duration::from_secs(30),
+        );
+        let subsystem = cache.clone();
+        tokio::spawn(async move {
+            let _ = Toplevel::new(async move |s: &mut SubsystemHandle| {
+                s.start(SubsystemBuilder::new(
+                    "ModCache",
+                    subsystem.into_subsystem(),
+                ));
+            })
+            .handle_shutdown_requests(Duration::from_millis(100))
+            .await;
+        });
+        (cache, handle)
+    }
+
+    /// The mods page calls `list` the moment the webview boots, which beats
+    /// the first disk scan. Awaiting `ready` first has to close that gap,
+    /// otherwise the page renders an empty list that nothing corrects (the
+    /// initial populate broadcasts no changes) until the user hits Refresh.
+    #[tokio::test]
+    async fn ready_waits_for_the_first_scan() {
+        let (cache, handle) = spawn_cache();
+
+        // Precondition: without the wait there is genuinely nothing to read,
+        // so the assertion below is testing the wait and not a fast scan.
+        assert!(cache.list().await.unwrap().is_empty());
+
+        handle.ready().await;
+        assert_eq!(cache.list().await.unwrap().len(), 1);
+    }
+
+    /// `ready` is awaited on every `list_mods`, not just the first, so it
+    /// must keep resolving after the scan has already landed. The original
+    /// mpsc-based version only ever released one waiter.
+    #[tokio::test]
+    async fn ready_resolves_for_every_caller() {
+        let (_cache, handle) = spawn_cache();
+
+        handle.ready().await;
+        for _ in 0..3 {
+            time::timeout(SCAN_TIME * 4, handle.ready())
+                .await
+                .expect("ready() hung after the cache was already populated");
+        }
+        // Handles get cloned out of AppState per command call.
+        time::timeout(SCAN_TIME * 4, handle.clone().ready())
+            .await
+            .expect("ready() hung on a cloned handle");
     }
 }

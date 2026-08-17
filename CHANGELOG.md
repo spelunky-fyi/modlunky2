@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Race condition where mod list could show up empty until you refresh
+
 ## [2.1.1] - 2026-08-07
 
 ### Added
@@ -22,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and/or Overlunky on or off.
 - New launch bar lets you launch without PL/OL into vanilla if you want.
 - Playlunky now installs nightly itself the first time you launch with it selected.
-
 
 ### Fixed
 

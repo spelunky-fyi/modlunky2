@@ -26,6 +26,12 @@ use crate::state::AppState;
 const MODS_CHANGED_EVENT: &str = "mods-changed";
 const FYI_ID_PREFIX: &str = "fyi.";
 
+/// Ceiling on how long `list_mods` blocks waiting for ModCache's first disk
+/// scan. Only a pathological install dir (dead network share) should get
+/// anywhere near it; the timeout exists so such a case degrades to an empty
+/// list the user can Refresh out of, rather than a spinner that never ends.
+const CACHE_READY_TIMEOUT: Duration = Duration::from_secs(15);
+
 pub struct ModsSetup {
     pub handle: ModManagerHandle,
     pub cache_handle: ml2_mods::local::cache::ModCacheHandle,
@@ -289,6 +295,22 @@ pub async fn list_mods(state: tauri::State<'_, AppState>) -> Result<Vec<ModDto>,
             "install directory not configured".to_string(),
         ));
     };
+    // The Mods tab is the default tab, so the frontend fires this the
+    // instant the webview boots, which routinely beats ModCache's first
+    // disk scan (DiskMods::list reads every pack's manifest serially, so
+    // it's slower the more mods you have and slower still on a cold FS
+    // cache). Listing at that point returned an empty Vec, and since the
+    // initial populate deliberately broadcasts no changes, nothing ever
+    // emitted mods-changed to correct it: the page stayed empty until the
+    // user hit Refresh. Wait for the scan instead, so the caller either
+    // sees the real list or keeps showing its spinner.
+    if let Some(cache_handle) = state.cache_handle()
+        && tokio::time::timeout(CACHE_READY_TIMEOUT, cache_handle.ready())
+            .await
+            .is_err()
+    {
+        tracing::warn!("mod cache's first scan is still running; listing without it");
+    }
     let mods = handle.list().await.map_err(ManagerError::from)?;
     Ok(build_mod_dtos(mods, state.updates_available()))
 }
