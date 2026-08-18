@@ -57,12 +57,19 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
   const toast = useToast();
   const [initial, setInitial] = useState<FormState>(EMPTY_FORM);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [status, setStatus] = useState<"idle" | "loading" | "saving" | "guessing">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "saving" | "guessing"
+  >("idle");
   const [showToken, setShowToken] = useState(false);
+  // Whether the "you'll lose your changes" prompt is up.
+  const [confirmClose, setConfirmClose] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    // A reopen starts clean, so a prompt left over from last time doesn't
+    // greet the user on the way in.
+    setConfirmClose(false);
     setStatus("loading");
     setShowToken(false);
     getConfig()
@@ -142,6 +149,31 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
     }
   };
 
+  /**
+   * Every way out of this modal comes through here -- Cancel, the X, Escape,
+   * and a backdrop click all reach `Modal`'s `onClose` -- so guarding this one
+   * function covers all of them.
+   *
+   * The early return while the confirm is up matters: `Modal` binds its Escape
+   * handler on `window`, so with both open a single Escape reaches both. This
+   * closure was built in a render where `confirmClose` was already true, so it
+   * bows out and lets the confirm handle that keypress alone.
+   */
+  const handleClose = () => {
+    if (status === "saving") return;
+    if (confirmClose) return;
+    if (dirty) {
+      setConfirmClose(true);
+      return;
+    }
+    onClose();
+  };
+
+  const discardAndClose = () => {
+    setConfirmClose(false);
+    onClose();
+  };
+
   const handleSave = async () => {
     setStatus("saving");
     try {
@@ -196,170 +228,222 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Settings"
-      size="md"
-      footer={
-        <>
-          <button className="btn btn-ghost" type="button" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={handleSave}
-            disabled={!dirty || status === "saving" || status === "loading"}
+    <>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        title="Settings"
+        size="md"
+        footer={
+          <>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={handleClose}
+              disabled={status === "saving"}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || status === "saving" || status === "loading"}
+            >
+              {status === "saving" ? "Saving…" : "Save"}
+            </button>
+          </>
+        }
+      >
+        {status === "loading" ? (
+          <p className="settings-hint">Loading…</p>
+        ) : (
+          <form
+            className="settings-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (dirty) handleSave();
+            }}
           >
-            {status === "saving" ? "Saving…" : "Save"}
-          </button>
-        </>
-      }
-    >
-      {status === "loading" ? (
-        <p className="settings-hint">Loading…</p>
-      ) : (
-        <form
-          className="settings-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (dirty) handleSave();
-          }}
-        >
-          <label className="settings-field">
-            <span className="settings-label">Spelunky 2 install directory</span>
-            <div className="settings-path-row">
+            <label className="settings-field">
+              <span className="settings-label">
+                Spelunky 2 install directory
+              </span>
+              <div className="settings-path-row">
+                <input
+                  type="text"
+                  value={form.installDir}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, installDir: e.target.value }))
+                  }
+                  placeholder={installDirPlaceholder}
+                  spellCheck={false}
+                />
+                <button
+                  className="btn btn-ghost"
+                  type="button"
+                  onClick={handleBrowse}
+                >
+                  Browse{"…"}
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  type="button"
+                  onClick={handleGuess}
+                  disabled={status === "guessing"}
+                  title="Try to find Spelunky 2 automatically"
+                >
+                  {status === "guessing" ? "Searching…" : "I'm feeling lucky"}
+                </button>
+              </div>
+              <span className="settings-hint">
+                The Spelunky 2 folder that contains Spel2.exe.
+              </span>
+            </label>
+
+            <div className="settings-field">
+              <div className="settings-label-row">
+                <span className="settings-label">spelunky.fyi API token</span>
+                <button
+                  type="button"
+                  className="settings-linklike"
+                  onClick={handleOpenTokenPage}
+                >
+                  Get your token
+                </button>
+              </div>
+              <div className="settings-token-row">
+                <input
+                  type={showToken ? "text" : "password"}
+                  value={form.spelunkyFyiApiToken}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      spelunkyFyiApiToken: e.target.value,
+                    }))
+                  }
+                  placeholder="Optional, required to install mods from spelunky.fyi"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  className="icon-button settings-eye"
+                  onClick={() => setShowToken((v) => !v)}
+                  aria-label={showToken ? "Hide token" : "Show token"}
+                  title={showToken ? "Hide token" : "Show token"}
+                >
+                  {showToken ? (
+                    <EyeOff size={16} aria-hidden="true" />
+                  ) : (
+                    <Eye size={16} aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <label className="settings-field">
+              <span className="settings-label">spelunky.fyi root</span>
               <input
                 type="text"
-                value={form.installDir}
+                value={form.spelunkyFyiRoot}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, installDir: e.target.value }))
+                  setForm((f) => ({ ...f, spelunkyFyiRoot: e.target.value }))
                 }
-                placeholder={installDirPlaceholder}
+                placeholder={DEFAULT_FYI_ROOT}
                 spellCheck={false}
               />
-              <button
-                className="btn btn-ghost"
-                type="button"
-                onClick={handleBrowse}
-              >
-                Browse{"…"}
-              </button>
-              <button
-                className="btn btn-ghost"
-                type="button"
-                onClick={handleGuess}
-                disabled={status === "guessing"}
-                title="Try to find Spelunky 2 automatically"
-              >
-                {status === "guessing" ? "Searching…" : "I'm feeling lucky"}
-              </button>
-            </div>
-            <span className="settings-hint">
-              The Spelunky 2 folder that contains Spel2.exe.
-            </span>
-          </label>
+              <span className="settings-hint">
+                Leave blank to use the default.
+              </span>
+            </label>
 
-          <div className="settings-field">
-            <div className="settings-label-row">
-              <span className="settings-label">spelunky.fyi API token</span>
-              <button
-                type="button"
-                className="settings-linklike"
-                onClick={handleOpenTokenPage}
-              >
-                Get your token
-              </button>
-            </div>
-            <div className="settings-token-row">
+            <label className="settings-field">
+              <span className="settings-label">Playlunky command prefix</span>
               <input
-                type={showToken ? "text" : "password"}
-                value={form.spelunkyFyiApiToken}
+                type="text"
+                value={form.commandPrefix}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, commandPrefix: e.target.value }))
+                }
+                placeholder="Leave blank"
+                spellCheck={false}
+              />
+              <span className="settings-hint">
+                {isWindows
+                  ? "Advanced. Runs before the game and the launchers on each launch. Leave blank unless you need a wrapper."
+                  : "Advanced. Leave blank to use the Proton that Steam already set up for Spelunky 2, which is detected automatically. Setting this replaces it with your own wrapper."}
+              </span>
+            </label>
+
+            <label className="settings-field">
+              <span className="settings-label">Toast severity threshold</span>
+              <select
+                value={form.toastLevel}
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    spelunkyFyiApiToken: e.target.value,
+                    toastLevel: e.target.value as ToastLevel,
                   }))
                 }
-                placeholder="Optional, required to install mods from spelunky.fyi"
-                spellCheck={false}
-              />
+              >
+                {TOAST_LEVEL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <span className="settings-hint">
+                The lowest severity that pops a toast; this level and anything
+                more severe show. Everything is still recorded to the toast log.
+              </span>
+            </label>
+          </form>
+        )}
+      </Modal>
+
+      {/* Rendered after the settings modal so its portal lands on top of it,
+          and tied to `open` as well so any path that closes the parent takes
+          the prompt with it rather than leaving it stranded. */}
+      {open && confirmClose && (
+        <Modal
+          open
+          onClose={() => setConfirmClose(false)}
+          title="Unsaved changes"
+          size="sm"
+          footer={
+            <>
               <button
                 type="button"
-                className="icon-button settings-eye"
-                onClick={() => setShowToken((v) => !v)}
-                aria-label={showToken ? "Hide token" : "Show token"}
-                title={showToken ? "Hide token" : "Show token"}
+                className="btn btn-ghost"
+                onClick={() => setConfirmClose(false)}
               >
-                {showToken ? (
-                  <EyeOff size={16} aria-hidden="true" />
-                ) : (
-                  <Eye size={16} aria-hidden="true" />
-                )}
+                Cancel
               </button>
-            </div>
-          </div>
-
-          <label className="settings-field">
-            <span className="settings-label">spelunky.fyi root</span>
-            <input
-              type="text"
-              value={form.spelunkyFyiRoot}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, spelunkyFyiRoot: e.target.value }))
-              }
-              placeholder={DEFAULT_FYI_ROOT}
-              spellCheck={false}
-            />
-            <span className="settings-hint">
-              Leave blank to use the default.
-            </span>
-          </label>
-
-          <label className="settings-field">
-            <span className="settings-label">Playlunky command prefix</span>
-            <input
-              type="text"
-              value={form.commandPrefix}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, commandPrefix: e.target.value }))
-              }
-              placeholder="Leave blank"
-              spellCheck={false}
-            />
-            <span className="settings-hint">
-              {isWindows
-                ? "Advanced. Runs before the game and the launchers on each launch. Leave blank unless you need a wrapper."
-                : "Advanced. Leave blank to use the Proton that Steam already set up for Spelunky 2, which is detected automatically. Setting this replaces it with your own wrapper."}
-            </span>
-          </label>
-
-          <label className="settings-field">
-            <span className="settings-label">Toast severity threshold</span>
-            <select
-              value={form.toastLevel}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  toastLevel: e.target.value as ToastLevel,
-                }))
-              }
-            >
-              {TOAST_LEVEL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <span className="settings-hint">
-              The lowest severity that pops a toast; this level and anything
-              more severe show. Everything is still recorded to the toast log.
-            </span>
-          </label>
-        </form>
+              <button
+                type="button"
+                className="btn btn-danger-ghost"
+                onClick={discardAndClose}
+              >
+                Discard and close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void handleSave()}
+                disabled={status === "saving"}
+              >
+                {status === "saving" ? "Saving…" : "Save and close"}
+              </button>
+            </>
+          }
+        >
+          <p className="settings-hint">
+            You have unsaved changes to your settings. Close anyway? Your
+            changes will be lost.
+          </p>
+        </Modal>
       )}
-    </Modal>
+    </>
   );
 }
 

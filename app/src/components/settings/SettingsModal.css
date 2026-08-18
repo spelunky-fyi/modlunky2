@@ -134,3 +134,18 @@
   background: var(--danger-solid-hover);
   border-color: var(--danger-solid-hover);
 }
+
+/* A destructive action that isn't the one being recommended. Solid
+ * `.btn-danger` shouts too loudly for something sitting beside a Cancel, but
+ * it still shouldn't be indistinguishable from it -- as in the discard-changes
+ * prompts, where the safe way out is one button along. */
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgba(var(--danger-rgb), 0.35);
+}
+
+.btn-danger-ghost:hover:not(:disabled) {
+  background: rgba(var(--danger-rgb), 0.08);
+  border-color: var(--danger);
+}

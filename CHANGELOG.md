@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The delete button has been removed from active mods.
+- Closing Settings or the Playlunky options with unsaved changes now asks
+  first, and lets you save from the prompt instead of making you go back and
+  find the button.
 
 ### Fixed
 

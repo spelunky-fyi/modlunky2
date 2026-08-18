@@ -46,10 +46,15 @@ export function PlaylunkyOptionsModal({
   });
   const [status, setStatus] = useState<Status>("loading");
   const [clearingCache, setClearingCache] = useState(false);
+  // Whether the "you'll lose your changes" prompt is up.
+  const [confirmClose, setConfirmClose] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    // A reopen starts clean, so a prompt left over from last time doesn't
+    // greet the user on the way in.
+    setConfirmClose(false);
     setStatus("loading");
     Promise.all([getPlaylunkyOptions(), getConfig()])
       .then(([opts, cfg]) => {
@@ -118,8 +123,28 @@ export function PlaylunkyOptionsModal({
     }
   };
 
+  /**
+   * Every way out of this modal comes through here -- Cancel, the X, Escape,
+   * and a backdrop click all reach `Modal`'s `onClose` -- so guarding this one
+   * function covers all of them.
+   *
+   * The early return while the confirm is up matters: `Modal` binds its Escape
+   * handler on `window`, so with both open a single Escape reaches both. This
+   * closure was built in a render where `confirmClose` was already true, so it
+   * bows out and lets the confirm handle that keypress alone.
+   */
   const handleClose = () => {
     if (status === "saving") return;
+    if (confirmClose) return;
+    if (dirty) {
+      setConfirmClose(true);
+      return;
+    }
+    onClose();
+  };
+
+  const discardAndClose = () => {
+    setConfirmClose(false);
     onClose();
   };
 
@@ -143,315 +168,367 @@ export function PlaylunkyOptionsModal({
   const canSave = dirty && status === "idle" && options !== null;
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="Playlunky options"
-      size="lg"
-      footer={
-        <>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={handleClose}
-            disabled={status === "saving"}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void handleSave()}
-            disabled={!canSave}
-          >
-            {status === "saving" ? "Saving…" : "Save"}
-          </button>
-        </>
-      }
-    >
-      {status === "loading" || !options ? (
-        <p className="plo-hint">Loading…</p>
-      ) : (
-        <div className="plo-form">
-          <Section title="Launcher">
-            <Toggle
-              label="Show Playlunky console window"
-              value={flags.console}
-              onChange={(v) => setFlags((f) => ({ ...f, console: v }))}
-            />
-            <Toggle
-              label="Launch Overlunky alongside Playlunky"
-              value={flags.overlunky}
-              onChange={(v) => setFlags((f) => ({ ...f, overlunky: v }))}
-            />
-            {/* The backend writes a .lnk, so this only means anything on
-                Windows. Hidden rather than disabled elsewhere: a toggle that
-                silently does nothing is worse than no toggle. */}
-            {supportsDesktopShortcut && (
-              <Toggle
-                label="Keep a Play Spelunky 2 shortcut on the desktop"
-                value={flags.shortcut}
-                onChange={(v) => setFlags((f) => ({ ...f, shortcut: v }))}
-              />
-            )}
-          </Section>
-
-          <Section title="General">
-            <Toggle
-              label="Enable loose file warning"
-              value={options.general.enableLooseFileWarning}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, enableLooseFileWarning: v },
-                })
-              }
-            />
-            <Toggle
-              label="Disable asset caching"
-              value={options.general.disableAssetCaching}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, disableAssetCaching: v },
-                })
-              }
-            />
-            <Toggle
-              label="Speedrun mode"
-              value={options.general.speedrunMode}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, speedrunMode: v },
-                })
-              }
-            />
-            <Toggle
-              label="Block save game"
-              value={options.general.blockSaveGame}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, blockSaveGame: v },
-                })
-              }
-            />
-            <Toggle
-              label="Allow save game mods"
-              value={options.general.allowSaveGameMods}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, allowSaveGameMods: v },
-                })
-              }
-            />
-            <Toggle
-              label="Disable Steam achievements"
-              value={options.general.disableSteamAchievements}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, disableSteamAchievements: v },
-                })
-              }
-            />
-            <Toggle
-              label="Use Playlunky save"
-              value={options.general.usePlaylunkySave}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  general: { ...options.general, usePlaylunkySave: v },
-                })
-              }
-            />
-          </Section>
-
-          <Section title="Script">
-            <Toggle
-              label="Enable developer mode"
-              value={options.script.enableDeveloperMode}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  script: { ...options.script, enableDeveloperMode: v },
-                })
-              }
-            />
-            <Toggle
-              label="Enable developer console"
-              value={options.script.enableDeveloperConsole}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  script: { ...options.script, enableDeveloperConsole: v },
-                })
-              }
-            />
-            <NumberField
-              label="Console history size"
-              value={options.script.consoleHistorySize}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  script: { ...options.script, consoleHistorySize: v },
-                })
-              }
-            />
-          </Section>
-
-          <Section title="Audio">
-            <Toggle
-              label="Enable loose audio files"
-              value={options.audio.enableLooseAudioFiles}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  audio: { ...options.audio, enableLooseAudioFiles: v },
-                })
-              }
-            />
-            <Toggle
-              label="Cache decoded audio files"
-              value={options.audio.cacheDecodedAudioFiles}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  audio: { ...options.audio, cacheDecodedAudioFiles: v },
-                })
-              }
-            />
-            <Toggle
-              label="Synchronous update"
-              value={options.audio.synchronousUpdate}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  audio: { ...options.audio, synchronousUpdate: v },
-                })
-              }
-            />
-          </Section>
-
-          <Section title="Sprite">
-            <Toggle
-              label="Random character select"
-              value={options.sprite.randomCharacterSelect}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, randomCharacterSelect: v },
-                })
-              }
-            />
-            <Toggle
-              label="Link related files"
-              value={options.sprite.linkRelatedFiles}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, linkRelatedFiles: v },
-                })
-              }
-            />
-            <Toggle
-              label="Generate character journal stickers"
-              value={options.sprite.generateCharacterJournalStickers}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: {
-                    ...options.sprite,
-                    generateCharacterJournalStickers: v,
-                  },
-                })
-              }
-            />
-            <Toggle
-              label="Generate character journal entries"
-              value={options.sprite.generateCharacterJournalEntries}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: {
-                    ...options.sprite,
-                    generateCharacterJournalEntries: v,
-                  },
-                })
-              }
-            />
-            <Toggle
-              label="Generate sticker pixel art"
-              value={options.sprite.generateStickerPixelArt}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, generateStickerPixelArt: v },
-                })
-              }
-            />
-            <Toggle
-              label="Enable sprite hot loading"
-              value={options.sprite.enableSpriteHotLoading}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, enableSpriteHotLoading: v },
-                })
-              }
-            />
-            <NumberField
-              label="Sprite hot load delay (ms)"
-              value={options.sprite.spriteHotLoadDelay}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, spriteHotLoadDelay: v },
-                })
-              }
-            />
-            <Toggle
-              label="Enable customizable sheets"
-              value={options.sprite.enableCustomizableSheets}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, enableCustomizableSheets: v },
-                })
-              }
-            />
-            <Toggle
-              label="Enable luminance scaling"
-              value={options.sprite.enableLuminanceScaling}
-              onChange={(v) =>
-                setOptions({
-                  ...options,
-                  sprite: { ...options.sprite, enableLuminanceScaling: v },
-                })
-              }
-            />
-          </Section>
-
-          <Section title="Cache" full>
-            <p className="plo-danger-hint">
-              Playlunky keeps a cache under Mods/Packs/.db to speed up
-              subsequent launches. Clearing it forces a rebuild on the
-              next launch.
-            </p>
+    <>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        title="Playlunky options"
+        size="lg"
+        footer={
+          <>
             <button
               type="button"
-              className="btn btn-ghost plo-danger-btn"
-              onClick={() => void handleClearCache()}
-              disabled={clearingCache || status === "saving"}
+              className="btn btn-ghost"
+              onClick={handleClose}
+              disabled={status === "saving"}
             >
-              {clearingCache ? "Clearing…" : "Clear Playlunky cache"}
+              Cancel
             </button>
-          </Section>
-        </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void handleSave()}
+              disabled={!canSave}
+            >
+              {status === "saving" ? "Saving…" : "Save"}
+            </button>
+          </>
+        }
+      >
+        {status === "loading" || !options ? (
+          <p className="plo-hint">Loading…</p>
+        ) : (
+          <div className="plo-form">
+            <Section title="Launcher">
+              <Toggle
+                label="Show Playlunky console window"
+                value={flags.console}
+                onChange={(v) => setFlags((f) => ({ ...f, console: v }))}
+              />
+              <Toggle
+                label="Launch Overlunky alongside Playlunky"
+                value={flags.overlunky}
+                onChange={(v) => setFlags((f) => ({ ...f, overlunky: v }))}
+              />
+              {/* The backend writes a .lnk, so this only means anything on
+                Windows. Hidden rather than disabled elsewhere: a toggle that
+                silently does nothing is worse than no toggle. */}
+              {supportsDesktopShortcut && (
+                <Toggle
+                  label="Keep a Play Spelunky 2 shortcut on the desktop"
+                  value={flags.shortcut}
+                  onChange={(v) => setFlags((f) => ({ ...f, shortcut: v }))}
+                />
+              )}
+            </Section>
+
+            <Section title="General">
+              <Toggle
+                label="Enable loose file warning"
+                value={options.general.enableLooseFileWarning}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, enableLooseFileWarning: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Disable asset caching"
+                value={options.general.disableAssetCaching}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, disableAssetCaching: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Speedrun mode"
+                value={options.general.speedrunMode}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, speedrunMode: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Block save game"
+                value={options.general.blockSaveGame}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, blockSaveGame: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Allow save game mods"
+                value={options.general.allowSaveGameMods}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, allowSaveGameMods: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Disable Steam achievements"
+                value={options.general.disableSteamAchievements}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: {
+                      ...options.general,
+                      disableSteamAchievements: v,
+                    },
+                  })
+                }
+              />
+              <Toggle
+                label="Use Playlunky save"
+                value={options.general.usePlaylunkySave}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    general: { ...options.general, usePlaylunkySave: v },
+                  })
+                }
+              />
+            </Section>
+
+            <Section title="Script">
+              <Toggle
+                label="Enable developer mode"
+                value={options.script.enableDeveloperMode}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    script: { ...options.script, enableDeveloperMode: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Enable developer console"
+                value={options.script.enableDeveloperConsole}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    script: { ...options.script, enableDeveloperConsole: v },
+                  })
+                }
+              />
+              <NumberField
+                label="Console history size"
+                value={options.script.consoleHistorySize}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    script: { ...options.script, consoleHistorySize: v },
+                  })
+                }
+              />
+            </Section>
+
+            <Section title="Audio">
+              <Toggle
+                label="Enable loose audio files"
+                value={options.audio.enableLooseAudioFiles}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    audio: { ...options.audio, enableLooseAudioFiles: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Cache decoded audio files"
+                value={options.audio.cacheDecodedAudioFiles}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    audio: { ...options.audio, cacheDecodedAudioFiles: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Synchronous update"
+                value={options.audio.synchronousUpdate}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    audio: { ...options.audio, synchronousUpdate: v },
+                  })
+                }
+              />
+            </Section>
+
+            <Section title="Sprite">
+              <Toggle
+                label="Random character select"
+                value={options.sprite.randomCharacterSelect}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, randomCharacterSelect: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Link related files"
+                value={options.sprite.linkRelatedFiles}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, linkRelatedFiles: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Generate character journal stickers"
+                value={options.sprite.generateCharacterJournalStickers}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: {
+                      ...options.sprite,
+                      generateCharacterJournalStickers: v,
+                    },
+                  })
+                }
+              />
+              <Toggle
+                label="Generate character journal entries"
+                value={options.sprite.generateCharacterJournalEntries}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: {
+                      ...options.sprite,
+                      generateCharacterJournalEntries: v,
+                    },
+                  })
+                }
+              />
+              <Toggle
+                label="Generate sticker pixel art"
+                value={options.sprite.generateStickerPixelArt}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, generateStickerPixelArt: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Enable sprite hot loading"
+                value={options.sprite.enableSpriteHotLoading}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, enableSpriteHotLoading: v },
+                  })
+                }
+              />
+              <NumberField
+                label="Sprite hot load delay (ms)"
+                value={options.sprite.spriteHotLoadDelay}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, spriteHotLoadDelay: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Enable customizable sheets"
+                value={options.sprite.enableCustomizableSheets}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, enableCustomizableSheets: v },
+                  })
+                }
+              />
+              <Toggle
+                label="Enable luminance scaling"
+                value={options.sprite.enableLuminanceScaling}
+                onChange={(v) =>
+                  setOptions({
+                    ...options,
+                    sprite: { ...options.sprite, enableLuminanceScaling: v },
+                  })
+                }
+              />
+            </Section>
+
+            <Section title="Cache" full>
+              <p className="plo-danger-hint">
+                Playlunky keeps a cache under Mods/Packs/.db to speed up
+                subsequent launches. Clearing it forces a rebuild on the next
+                launch.
+              </p>
+              <button
+                type="button"
+                className="btn btn-ghost plo-danger-btn"
+                onClick={() => void handleClearCache()}
+                disabled={clearingCache || status === "saving"}
+              >
+                {clearingCache ? "Clearing…" : "Clear Playlunky cache"}
+              </button>
+            </Section>
+          </div>
+        )}
+      </Modal>
+
+      {/* Rendered after the options modal so its portal lands on top of it,
+          leaving the settings visible behind the prompt. Offers Save as well
+          as Discard: the whole point is not losing work, and saving from here
+          is the same one click it would be in the footer. */}
+      {/* Tied to `open` as well, so any path that closes the parent (saving
+          from in here, most obviously) takes the prompt with it instead of
+          leaving it stranded on screen. */}
+      {open && confirmClose && (
+        <Modal
+          open
+          onClose={() => setConfirmClose(false)}
+          title="Unsaved changes"
+          size="sm"
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setConfirmClose(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-ghost"
+                onClick={discardAndClose}
+              >
+                Discard and close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void handleSave()}
+                disabled={status === "saving"}
+              >
+                {status === "saving" ? "Saving…" : "Save and close"}
+              </button>
+            </>
+          }
+        >
+          <p className="plo-hint">
+            You have unsaved changes to your Playlunky options. Close anyway?
+            Your changes will be lost.
+          </p>
+        </Modal>
       )}
-    </Modal>
+    </>
   );
 }
 
