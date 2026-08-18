@@ -6,6 +6,7 @@ mod fyi_ws;
 mod launch;
 mod level_editor;
 mod log_buffer;
+mod mod_check;
 mod mod_state;
 mod mods;
 mod overlunky;
@@ -154,6 +155,7 @@ pub fn run() {
             mods::install_from_local,
             mods::list_pack_ids,
             mods::set_mod_favorite,
+            mods::check_mod,
             mods::rebuild_mods,
             mods::check_fyi_updates,
             mods::clear_playlunky_cache,

@@ -16,6 +16,23 @@ export interface Manifest {
   mod_file: ManifestModFile;
 }
 
+/** A defect found in a mod's files by `checkMod`. */
+export interface ModProblem {
+  kind: "characterJson";
+  /** Path relative to the pack root, so the user can go straight to it. */
+  file: string;
+  /** The parser's own message, carrying line and column. */
+  detail: string;
+}
+
+/** One-line summary of a problem, for a badge tooltip or a confirm dialog. */
+export function describeProblem(problem: ModProblem): string {
+  switch (problem.kind) {
+    case "characterJson":
+      return `${problem.file} is not valid JSON (${problem.detail}).`;
+  }
+}
+
 export interface Mod {
   id: string;
   manifest: Manifest | null;
@@ -28,6 +45,9 @@ export interface Mod {
    *  installing a mod isn't using it. */
   lastUsedAt: number | null;
   favorite: boolean;
+  /** Defects from the last check. Empty when clean *or* never checked; the
+   *  UI only needs to know whether there's something to warn about. */
+  problems: ModProblem[];
 }
 
 /** What the inactive list is ordered by. Each field has its own natural

@@ -281,6 +281,11 @@ pub struct ModDto {
     /// installing a mod is not using it.
     last_used_at: Option<u64>,
     favorite: bool,
+    /// Defects found by the last `check_mod` run, empty when the mod is clean
+    /// *or* has never been checked. The two are deliberately not distinguished
+    /// on the wire: the UI only ever needs "is there something to warn about",
+    /// and checking every pack up front is what this design avoids.
+    problems: Vec<crate::mod_check::ModProblem>,
 }
 
 /// On-disk record ml2_mods writes at
@@ -428,19 +433,57 @@ fn build_mod_dtos(mods: Vec<Mod>, updates_available: &Arc<Mutex<HashSet<String>>
                 },
                 _ => false,
             };
+            let modified_at = install_dir
+                .as_ref()
+                .map(|dir| read_modified_at(dir, &m.id))
+                .unwrap_or(0);
+            // Only trust a cached check that was taken against the pack as it
+            // stands now. Anything older describes files the user may since
+            // have fixed, and reporting that would be worse than saying
+            // nothing.
+            let problems = mod_state
+                .checks
+                .get(&m.id)
+                .filter(|c| crate::mod_state::check_is_current(c, modified_at))
+                .map(|c| c.problems.clone())
+                .unwrap_or_default();
             ModDto {
                 has_update: updates.contains(&m.id) || latest_stale,
-                modified_at: install_dir
-                    .as_ref()
-                    .map(|dir| read_modified_at(dir, &m.id))
-                    .unwrap_or(0),
+                modified_at,
                 last_used_at: mod_state.last_used.get(&m.id).copied(),
                 favorite: favorites.contains(m.id.as_str()),
+                problems,
                 id: m.id,
                 manifest: m.manifest,
             }
         })
         .collect()
+}
+
+/// Inspects one mod's files for defects that would break the game, caching
+/// the result against the pack's current mtime.
+///
+/// Scoped to a single pack and called when the user is about to enable one,
+/// rather than swept across the library: the walk is cheap for one mod and
+/// prohibitive for the several hundred a heavy user has installed.
+#[tauri::command]
+pub async fn check_mod(id: String) -> Result<Vec<crate::mod_check::ModProblem>, String> {
+    let install_dir = crate::config::load()
+        .install_dir
+        .ok_or_else(|| "install directory not configured".to_string())?;
+    let pack_dir = install_dir.join("Mods").join("Packs").join(&id);
+    let problems =
+        tauri::async_runtime::spawn_blocking(move || crate::mod_check::check_pack(&pack_dir))
+            .await
+            .map_err(|e| format!("check_mod: {e}"))?;
+    // Best-effort cache: failing to persist costs a rescan, not correctness.
+    let _ = crate::mod_state::set_check(
+        &install_dir,
+        &id,
+        read_modified_at(&install_dir, &id),
+        problems.clone(),
+    );
+    Ok(problems)
 }
 
 /// Stars or unstars a mod. Persisted per install (see `mod_state`), so it

@@ -19,6 +19,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   checkFyiUpdates,
+  checkMod,
   getConfig,
   getLoadOrder,
   listMods,
@@ -42,6 +43,7 @@ import {
   Users,
 } from "lucide-react";
 import type { Mod, ModDensity, ModSort } from "../../types/mods";
+import { describeProblem } from "../../types/mods";
 import { relativeTime, sortMods } from "../../lib/modSort";
 import {
   DEFAULT_MOD_DENSITY,
@@ -103,6 +105,9 @@ export function ModsPage() {
   // Guards the persist effect below so restoring the saved values doesn't
   // immediately write them straight back out.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  // Mods with an in-flight file check, so the badge can show progress and a
+  // double-click can't queue a second scan of the same pack.
+  const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   // Ids of mods with an in-flight `updateMod` call. Used to disable the
   // row's Update button and swap its label to "Updating…" so the click
   // gives immediate feedback instead of appearing to do nothing.
@@ -323,12 +328,85 @@ export function ModsPage() {
     });
   };
 
-  const activate = (id: string) =>
+  const commitActivate = (id: string) =>
     setActiveIds((c) => {
+      if (c.includes(id)) return c;
       const next = [...c, id];
       persistOrder(next);
       return next;
     });
+
+  /**
+   * Enabling runs the file check first, against the files as they are right
+   * now rather than whatever the badge cached, because this is the moment it
+   * actually matters.
+   *
+   * It warns rather than refuses. We only detect files that are definitely
+   * broken, but Playlunky is the authority on what it will accept, and being
+   * wrong in the blocking direction would mean locking someone out of a mod
+   * that works.
+   */
+  const activate = async (id: string) => {
+    const mod = mods.find((m) => m.id === id);
+    const name = mod?.manifest?.name ?? id;
+    let problems: Awaited<ReturnType<typeof checkMod>> = [];
+    try {
+      problems = await checkMod(id);
+    } catch {
+      // A failed check is not a reason to block the user from their mod.
+      commitActivate(id);
+      return;
+    }
+    // Fold the fresh result back into the list so the badge agrees with what
+    // we just found, whichever way the user answers.
+    applyProblems(id, problems);
+    if (problems.length > 0) {
+      const detail = problems.map(describeProblem).join("\n");
+      const ok = await ask(
+        `${name} has a problem that can crash the game:
+
+${detail}
+
+Enable anyway?`,
+        { title: "Problem found", kind: "warning" },
+      );
+      if (!ok) return;
+    }
+    commitActivate(id);
+  };
+
+  /** Writes a check result into both the render state and the module cache. */
+  const applyProblems = (id: string, problems: Mod["problems"]) => {
+    const apply = (list: Mod[]) =>
+      list.map((m) => (m.id === id ? { ...m, problems } : m));
+    cachedMods = apply(cachedMods);
+    notifyCacheChanged();
+    setMods(apply);
+  };
+
+  /** Re-runs the check on demand, for someone who has just fixed the file. */
+  const handleRecheck = async (mod: Mod) => {
+    if (checkingIds.has(mod.id)) return;
+    setCheckingIds((prev) => new Set(prev).add(mod.id));
+    try {
+      const problems = await checkMod(mod.id);
+      applyProblems(mod.id, problems);
+      const name = mod.manifest?.name ?? mod.id;
+      if (problems.length === 0) {
+        toast.success(`${name} looks fine now.`);
+      } else {
+        toast.warning(`${name} still has a problem: ${describeProblem(problems[0])}`);
+      }
+    } catch (err) {
+      toast.error(`Couldn't check ${mod.id}: ${extractMessage(err)}`);
+    } finally {
+      setCheckingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(mod.id);
+        return next;
+      });
+    }
+  };
   const deactivate = (id: string) =>
     setActiveIds((c) => {
       const next = c.filter((x) => x !== id);
@@ -501,11 +579,13 @@ export function ModsPage() {
                 title="Inactive"
                 mods={inactiveMods}
                 toggleLabel="Enable"
-                onToggle={activate}
+                onToggle={(id) => void activate(id)}
                 onDelete={handleDelete}
                 onOpenFolder={handleOpenFolder}
                 onUpdate={handleUpdate}
                 onToggleFavorite={(mod) => void handleToggleFavorite(mod)}
+                onRecheck={(mod) => void handleRecheck(mod)}
+                checkingIds={checkingIds}
                 updatingIds={updatingIds}
                 detail={rowDetail}
                 headerAction={
@@ -590,6 +670,8 @@ export function ModsPage() {
                   onOpenFolder={handleOpenFolder}
                   onUpdate={handleUpdate}
                   onToggleFavorite={(mod) => void handleToggleFavorite(mod)}
+                  onRecheck={(mod) => void handleRecheck(mod)}
+                  checkingIds={checkingIds}
                   updatingIds={updatingIds}
                   headerAction={
                     <button

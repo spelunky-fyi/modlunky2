@@ -7,10 +7,12 @@ import {
   GripVertical,
   Loader2,
   Star,
+  TriangleAlert,
   Trash2,
   Users,
 } from "lucide-react";
 import type { Mod } from "../../types/mods";
+import { describeProblem } from "../../types/mods";
 import { openCharacterChooserWindow } from "../../lib/commands";
 import { useModLogo } from "../../hooks/useModLogo";
 import "./ModColumn.css";
@@ -27,6 +29,12 @@ interface ModColumnProps {
   onOpenFolder: (id: string) => void;
   onUpdate: (mod: Mod) => void;
   onToggleFavorite: (mod: Mod) => void;
+  /** Re-runs the file check for one mod. Needed because the cached result
+   *  behind the badge can outlive the problem: editing a file in place
+   *  doesn't change the pack folder's mtime, so fixing the file wouldn't
+   *  clear the badge on its own. */
+  onRecheck: (mod: Mod) => void;
+  checkingIds: Set<string>;
   updatingIds: Set<string>;
   sortable?: boolean;
   /** Extra line under the mod name explaining its position in the current
@@ -47,6 +55,8 @@ export function ModColumn({
   onOpenFolder,
   onUpdate,
   onToggleFavorite,
+  onRecheck,
+  checkingIds,
   updatingIds,
   sortable = false,
   detail,
@@ -92,8 +102,10 @@ export function ModColumn({
                   onOpenFolder={onOpenFolder}
                   onUpdate={onUpdate}
                   onToggleFavorite={onToggleFavorite}
+                  onRecheck={onRecheck}
                   onContextMenu={openMenu}
                   detail={detail}
+                  isChecking={checkingIds.has(mod.id)}
                   isUpdating={updatingIds.has(mod.id)}
                 />
               ) : (
@@ -106,8 +118,10 @@ export function ModColumn({
                   onOpenFolder={onOpenFolder}
                   onUpdate={onUpdate}
                   onToggleFavorite={onToggleFavorite}
+                  onRecheck={onRecheck}
                   onContextMenu={openMenu}
                   detail={detail}
+                  isChecking={checkingIds.has(mod.id)}
                   isUpdating={updatingIds.has(mod.id)}
                 />
               ),
@@ -159,8 +173,10 @@ interface RowProps {
   onOpenFolder: (id: string) => void;
   onUpdate: (mod: Mod) => void;
   onToggleFavorite: (mod: Mod) => void;
+  onRecheck: (mod: Mod) => void;
   onContextMenu: (mod: Mod, e: MouseEvent) => void;
   detail?: (mod: Mod) => string | null;
+  isChecking: boolean;
   isUpdating: boolean;
 }
 
@@ -172,8 +188,10 @@ function PlainRow({
   onOpenFolder,
   onUpdate,
   onToggleFavorite,
+  onRecheck,
   onContextMenu,
   detail,
+  isChecking,
   isUpdating,
 }: RowProps) {
   return (
@@ -183,6 +201,7 @@ function PlainRow({
     >
       <ModLogo mod={mod} />
       <RowBody mod={mod} detail={detail} />
+      <ProblemBadge mod={mod} onRecheck={onRecheck} isChecking={isChecking} />
       <RowActions
         mod={mod}
         toggleLabel={toggleLabel}
@@ -205,8 +224,10 @@ function SortableRow({
   onOpenFolder,
   onUpdate,
   onToggleFavorite,
+  onRecheck,
   onContextMenu,
   detail,
+  isChecking,
   isUpdating,
 }: RowProps) {
   const {
@@ -243,6 +264,7 @@ function SortableRow({
       </button>
       <ModLogo mod={mod} />
       <RowBody mod={mod} detail={detail} />
+      <ProblemBadge mod={mod} onRecheck={onRecheck} isChecking={isChecking} />
       <RowActions
         mod={mod}
         toggleLabel={toggleLabel}
@@ -254,6 +276,45 @@ function SortableRow({
         isUpdating={isUpdating}
       />
     </li>
+  );
+}
+
+/**
+ * Warns that a mod has files that can break the game.
+ *
+ * Clickable, and that isn't decoration: the finding behind it is cached, and
+ * the cache can't see someone fixing the file in a text editor, because
+ * editing a file's contents doesn't change the mtime of the folder above it.
+ * So the user needs a way to say "I fixed it, look again".
+ */
+function ProblemBadge({
+  mod,
+  onRecheck,
+  isChecking,
+}: {
+  mod: Mod;
+  onRecheck: (mod: Mod) => void;
+  isChecking: boolean;
+}) {
+  if (mod.problems.length === 0) return null;
+  const summary = mod.problems.map(describeProblem).join("\n");
+  return (
+    <button
+      type="button"
+      className="mod-row-problem"
+      onClick={() => onRecheck(mod)}
+      disabled={isChecking}
+      title={`${summary}
+
+This can crash the game. Click to check again.`}
+      aria-label={`${mod.problems.length} problem(s) found. Check again.`}
+    >
+      {isChecking ? (
+        <Loader2 size={13} className="mod-row-spinner" aria-hidden="true" />
+      ) : (
+        <TriangleAlert size={13} aria-hidden="true" />
+      )}
+    </button>
   );
 }
 
@@ -303,7 +364,9 @@ function RowActions({
   onUpdate,
   onToggleFavorite,
   isUpdating,
-}: Omit<RowProps, "onContextMenu">) {
+  // The badge is rendered beside this group rather than inside it, so the
+  // check-related props stop here.
+}: Omit<RowProps, "onContextMenu" | "onRecheck" | "isChecking" | "detail">) {
   return (
     <div className="mod-row-actions">
       <button

@@ -12,6 +12,7 @@ function mod(id: string, over: Partial<Mod> = {}): Mod {
     modifiedAt: 0,
     lastUsedAt: null,
     favorite: false,
+    problems: [],
     ...over,
   };
 }

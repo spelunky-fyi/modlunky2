@@ -160,6 +160,33 @@
   opacity: 0.6;
 }
 
+/* Sits between the name and the actions so it reads as a property of the mod
+ * rather than another thing to click. Amber, not red: the mod still works
+ * well enough to enable, and this is a warning, not a failure. */
+.mod-row-problem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: var(--mod-icon-pad, 5px);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  border-radius: 5px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mod-row-problem:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.2);
+}
+
+.mod-row-problem:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 .mod-row-actions {
   display: flex;
   align-items: center;

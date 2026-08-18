@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Mod } from "../types/mods";
+import type { Mod, ModProblem } from "../types/mods";
 import type { ConfigPatch, SharedConfig } from "../types/config";
 import type { DirectoryKind } from "../types/paths";
 import type { PlaylunkyReleaseInfo } from "../types/playlunky";
@@ -64,6 +64,13 @@ export async function removeMod(id: string): Promise<void> {
 
 export async function openModFolder(id: string): Promise<void> {
   return invoke<void>("open_mod_folder", { id });
+}
+
+/// Inspects one mod's files for defects that would break the game, caching
+/// the result. Scoped to a single pack: cheap for one, prohibitive for the
+/// several hundred a heavy user has installed.
+export async function checkMod(id: string): Promise<ModProblem[]> {
+  return invoke<ModProblem[]>("check_mod", { id });
 }
 
 /// Stars or unstars a mod. Stored per install alongside the mods themselves,

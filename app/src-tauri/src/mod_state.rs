@@ -19,6 +19,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::mod_check::ModProblem;
+
 /// Everything this module persists, as one small file. A single document
 /// rather than a file per mod because sorting the list needs every mod's
 /// timestamp at once, and `list_mods` runs on every `mods-changed` event.
@@ -33,6 +35,38 @@ pub struct ModState {
     /// naturally; the sizes involved make lookup cost irrelevant.
     #[serde(default)]
     pub favorites: Vec<String>,
+    /// Results of the last `mod_check` run per mod. Cached because checking
+    /// walks the pack's files, which is far too expensive to repeat for every
+    /// mod on every list refresh once someone has a few hundred installed.
+    #[serde(default)]
+    pub checks: HashMap<String, PackCheck>,
+}
+
+/// One pack's check result, stamped with the folder mtime it was computed
+/// from.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackCheck {
+    /// `mod_check::CHECK_VERSION` at the time this ran. Missing (and so `0`)
+    /// for anything written before versioning existed, which never matches
+    /// and is therefore discarded.
+    #[serde(default)]
+    pub version: u32,
+    /// Folder mtime in milliseconds when the check ran. `list_mods` already
+    /// stats this for its sort, so validating the cache costs nothing extra.
+    ///
+    /// Best-effort, and deliberately so. It catches the coarse cases -- the
+    /// pack being installed, updated, or replaced -- but not someone fixing
+    /// `Data/Textures/char_yellow.json` in a text editor, because editing a
+    /// file's contents doesn't touch the mtime of any directory above it.
+    /// Making that airtight would mean walking the pack on every list refresh,
+    /// which is the exact cost this cache exists to avoid.
+    ///
+    /// So the cache backs the *badge*, which is advisory and can be re-run on
+    /// demand. The check that actually gates enabling is always run fresh
+    /// against the files as they are right now.
+    pub mtime: u64,
+    pub problems: Vec<ModProblem>,
 }
 
 fn state_path(install_dir: &Path) -> PathBuf {
@@ -65,10 +99,20 @@ pub fn save(install_dir: &Path, state: &ModState) -> Result<(), String> {
 /// keeps its entry after the mod is deleted. Same treatment `list_recent_packs`
 /// gives its dead pack names.
 pub fn prune(state: &mut ModState, live_ids: &std::collections::HashSet<String>) -> bool {
-    let before = (state.last_used.len(), state.favorites.len());
+    let before = (
+        state.last_used.len(),
+        state.favorites.len(),
+        state.checks.len(),
+    );
     state.last_used.retain(|id, _| live_ids.contains(id));
     state.favorites.retain(|id| live_ids.contains(id));
-    before != (state.last_used.len(), state.favorites.len())
+    state.checks.retain(|id, _| live_ids.contains(id));
+    before
+        != (
+            state.last_used.len(),
+            state.favorites.len(),
+            state.checks.len(),
+        )
 }
 
 /// Stars or unstars one mod.
@@ -96,6 +140,31 @@ pub fn mark_used(install_dir: &Path, ids: &[String], now_ms: u64) -> Result<(), 
         state.last_used.insert(id.clone(), now_ms);
     }
     save(install_dir, &state)
+}
+
+/// Records a fresh check result for one mod.
+pub fn set_check(
+    install_dir: &Path,
+    id: &str,
+    mtime: u64,
+    problems: Vec<ModProblem>,
+) -> Result<(), String> {
+    let mut state = load(install_dir);
+    state.checks.insert(
+        id.to_string(),
+        PackCheck {
+            version: crate::mod_check::CHECK_VERSION,
+            mtime,
+            problems,
+        },
+    );
+    save(install_dir, &state)
+}
+
+/// Whether a cached result still describes the pack as it is now, under the
+/// checks we run today.
+pub fn check_is_current(check: &PackCheck, pack_mtime: u64) -> bool {
+    check.version == crate::mod_check::CHECK_VERSION && check.mtime == pack_mtime
 }
 
 /// Milliseconds since the Unix epoch, or 0 if the clock is before it.
@@ -176,10 +245,50 @@ mod tests {
     }
 
     #[test]
+    fn a_fresh_check_is_current() {
+        let dir = tempfile::tempdir().unwrap();
+        set_check(dir.path(), "a-mod", 500, Vec::new()).unwrap();
+        let state = load(dir.path());
+        assert!(check_is_current(&state.checks["a-mod"], 500));
+    }
+
+    /// A pack that's been reinstalled or updated has a different folder mtime,
+    /// so its old findings describe files that may no longer exist.
+    #[test]
+    fn a_check_taken_against_a_different_pack_state_is_stale() {
+        let dir = tempfile::tempdir().unwrap();
+        set_check(dir.path(), "a-mod", 500, Vec::new()).unwrap();
+        let state = load(dir.path());
+        assert!(!check_is_current(&state.checks["a-mod"], 900));
+    }
+
+    /// Adding a check must not leave every already-scanned pack reporting
+    /// clean forever under the old, smaller set of checks.
+    #[test]
+    fn a_check_from_an_older_check_set_is_stale() {
+        let stale = PackCheck {
+            version: crate::mod_check::CHECK_VERSION - 1,
+            mtime: 500,
+            problems: Vec::new(),
+        };
+        assert!(!check_is_current(&stale, 500));
+    }
+
+    /// Results written before versioning existed deserialize with version 0.
+    #[test]
+    fn an_unversioned_check_is_stale() {
+        let unversioned: PackCheck =
+            serde_json::from_str(r#"{"mtime":500,"problems":[]}"#).unwrap();
+        assert_eq!(unversioned.version, 0);
+        assert!(!check_is_current(&unversioned, 500));
+    }
+
+    #[test]
     fn prune_drops_entries_for_uninstalled_mods() {
         let mut state = ModState {
             last_used: [("gone".to_string(), 1u64), ("kept".to_string(), 2)].into(),
             favorites: vec!["gone".into(), "kept".into()],
+            ..Default::default()
         };
 
         assert!(prune(&mut state, &ids(&["kept"])));
@@ -193,6 +302,7 @@ mod tests {
         let mut state = ModState {
             last_used: [("kept".to_string(), 2u64)].into(),
             favorites: vec!["kept".into()],
+            ..Default::default()
         };
         assert!(!prune(&mut state, &ids(&["kept", "other"])));
     }
