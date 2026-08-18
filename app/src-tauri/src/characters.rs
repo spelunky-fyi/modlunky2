@@ -340,9 +340,7 @@ pub struct CharactersResponse {
 }
 
 fn packs_dir() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir.join("Mods").join("Packs"))
 }
 
@@ -682,9 +680,7 @@ fn pack_metadata_dir(pack_id: &str) -> Result<PathBuf, String> {
     if pack_id.contains('/') || pack_id.contains('\\') || pack_id.contains("..") {
         return Err(format!("invalid pack: {pack_id:?}"));
     }
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir
         .join("Mods")
         .join(".ml")

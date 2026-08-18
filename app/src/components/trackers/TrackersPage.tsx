@@ -61,6 +61,7 @@ import {
   type WindowConfig,
 } from "../../lib/commands";
 import { useToast } from "../shared/Toast";
+import { useSetup } from "../shared/SetupContext";
 import { Modal } from "../shared/Modal";
 import categoryIcon from "../../assets/tracker_category.svg";
 import pacifistIcon from "../../assets/tracker_pacifist.svg";
@@ -241,6 +242,7 @@ export function TrackersPage() {
     };
   }, []);
   const fontOptions = systemFonts.length > 0 ? systemFonts : FONT_FAMILIES;
+  const setup = useSetup();
   const [fileSettings, setFileSettingsState] = useState<FileOutputSettings>({
     outputDir: null,
     enabled: false,
@@ -468,6 +470,13 @@ export function TrackersPage() {
     [fileSettings, commitFileSettings],
   );
 
+  // Somewhere we can actually write: a folder the user picked, or the default
+  // inside a Spelunky 2 folder that is really there. "ok" rather than merely
+  // configured, because the fallback path is built from it and a stale path on
+  // a disconnected drive is no more writable than none at all.
+  const fileOutputReady =
+    !!fileSettings.outputDir?.trim() || setup.status?.installDir === "ok";
+
   const chooseOutputDir = useCallback(async () => {
     try {
       const picked = await openDialog({
@@ -498,7 +507,7 @@ export function TrackersPage() {
                 key={tracker.slug}
                 tracker={tracker}
                 serverRunning={status.running}
-                fileEnabled={fileSettings.enabled}
+                fileEnabled={fileSettings.enabled && fileOutputReady}
                 onWindow={onWindow}
                 onBrowser={onBrowser}
                 onFile={onFile}
@@ -910,6 +919,11 @@ export function TrackersPage() {
               </div>
             }
           >
+            {/* Nothing below works without somewhere to write, so the state
+                is derived once and everything that depends on it is turned
+                off rather than left to fail on click. The fallback is only
+                real if the game folder is genuinely there, so this asks for
+                "ok" rather than merely "configured". */}
             <label className="sidebar-field">
               <span className="sidebar-label">Output folder</span>
               <div className="path-picker">
@@ -918,7 +932,9 @@ export function TrackersPage() {
                   title={fileSettings.outputDir ?? undefined}
                 >
                   {fileSettings.outputDir ??
-                    "(default: <install>/Mods/Modlunky2/trackers)"}
+                    (fileOutputReady
+                      ? "(default: <install>/Mods/Modlunky2/trackers)"
+                      : "No folder set")}
                 </span>
                 <button
                   type="button"
@@ -939,18 +955,28 @@ export function TrackersPage() {
                 )}
               </div>
             </label>
-            <label className="sidebar-check">
+            <label
+              className={`sidebar-check${fileOutputReady ? "" : " is-disabled"}`}
+            >
               <input
                 type="checkbox"
-                checked={fileSettings.enabled}
+                checked={fileSettings.enabled && fileOutputReady}
+                disabled={!fileOutputReady}
                 onChange={(e) => toggleFileEnabled(e.target.checked)}
               />
               <span>Mirror tracker window to file while open</span>
             </label>
+            {!fileOutputReady && (
+              <p className="sidebar-hint">
+                Choose an output folder above or configure an install directory
+                in your settings to enable.
+              </p>
+            )}
             <button
               type="button"
               className="btn btn-secondary sidebar-action"
               onClick={onOpenFileDir}
+              disabled={!fileOutputReady}
             >
               Open folder
             </button>

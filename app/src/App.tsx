@@ -12,6 +12,10 @@ import { EditorWindow } from "./components/levels/EditorWindow";
 import { RoomPreviewWindow } from "./components/levels/RoomPreviewWindow";
 import { CharacterChooser } from "./components/characters/CharacterChooser";
 import { SettingsModal } from "./components/settings/SettingsModal";
+import { SetupProvider, useSetup } from "./components/shared/SetupContext";
+import type { SettingsFocus } from "./components/shared/SetupContext";
+import { SetupGate } from "./components/shared/SetupGate";
+import type { SetupRequirement } from "./types/setup";
 import { ToastProvider } from "./components/shared/Toast";
 import { LogsWindow } from "./components/shared/LogsWindow";
 import { FolderMenu } from "./components/shared/FolderMenu";
@@ -158,6 +162,24 @@ function App() {
   );
 }
 
+/** What each tab can't work without, in one place so the gate and the banner
+ *  can't drift into disagreeing about it.
+ *
+ *  Only blocking requirements live here. A spelunky.fyi token is deliberately
+ *  absent: a zip install works fine without one, so it gates the single place
+ *  it's actually needed (the install modal's spelunky.fyi source) rather than
+ *  a whole tab.
+ *
+ *  Trackers needs nothing at all: it reads the running game's memory rather
+ *  than the install folder. */
+const TAB_REQUIREMENTS: Record<Tab, SetupRequirement[]> = {
+  mods: ["installDir"],
+  overlunky: ["installDir"],
+  extract: ["installDir"],
+  levels: ["installDir", "assets"],
+  trackers: [],
+};
+
 /** Guard so a corrupted config value can't crash the shell on load. */
 function isTab(value: string | null | undefined): value is Tab {
   return (
@@ -175,6 +197,8 @@ function AppShell() {
   const [versionInfo, setVersionInfo] = useState<ModlunkyVersionInfo | null>(null);
   const [updating, setUpdating] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // What the user came to Settings to do, so the modal can point at it.
+  const [settingsFocus, setSettingsFocus] = useState<SettingsFocus | null>(null);
   const [fyiStatus, setFyiStatus] = useState<FyiWsStatus>("disconnected");
   const [fyiConfigured, setFyiConfigured] = useState<boolean>(false);
   const toast = useToast();
@@ -360,6 +384,14 @@ function AppShell() {
   }, [activeTab, restoredTab]);
 
   return (
+    <SetupProvider
+      openSettings={(focus) => {
+        setSettingsFocus(focus ?? null);
+        setSettingsOpen(true);
+      }}
+      goToExtract={() => setActiveTab("extract")}
+    >
+      <SetupRefreshOnTab tab={activeTab} />
     <div className="app">
       <nav className="tab-bar">
         {TABS.map((tab) => (
@@ -454,7 +486,10 @@ function AppShell() {
           className="icon-button"
           aria-label="Settings"
           title="Settings"
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => {
+            setSettingsFocus(null);
+            setSettingsOpen(true);
+          }}
         >
           <Settings size={18} aria-hidden="true" />
         </button>
@@ -462,19 +497,75 @@ function AppShell() {
       <main
         className={`tab-content${activeTab === "levels" || activeTab === "trackers" ? " tab-content-fullbleed" : ""}`}
       >
-        {activeTab === "mods" && <ModsPage />}
-        {activeTab === "overlunky" && <OverlunkyPage />}
-        {activeTab === "extract" && <ExtractPage />}
-        {activeTab === "levels" && <LevelsPage />}
+        {activeTab === "mods" && (
+          <SetupGate requires={TAB_REQUIREMENTS.mods}>
+            <ModsPage />
+          </SetupGate>
+        )}
+        {activeTab === "overlunky" && (
+          <SetupGate requires={TAB_REQUIREMENTS.overlunky}>
+            <OverlunkyPage />
+          </SetupGate>
+        )}
+        {activeTab === "extract" && (
+          <SetupGate requires={TAB_REQUIREMENTS.extract}>
+            <ExtractPage />
+          </SetupGate>
+        )}
+        {activeTab === "levels" && (
+          <SetupGate requires={TAB_REQUIREMENTS.levels}>
+            <LevelsPage />
+          </SetupGate>
+        )}
         {activeTab === "trackers" && <TrackersPage />}
       </main>
       <LaunchDock />
-      <SettingsModal
+      <SettingsModalWithRefresh
         open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        focus={settingsFocus}
+        onClose={() => {
+          setSettingsOpen(false);
+          setSettingsFocus(null);
+        }}
         onSaved={() => refreshFyiConfigured()}
       />
     </div>
+    </SetupProvider>
+  );
+}
+
+/** Re-reads setup status whenever the tab changes.
+ *
+ *  Cheap, and it covers the transition that matters: extract assets, switch to
+ *  the level editor, and the gate is already gone rather than still insisting
+ *  you extract. */
+function SetupRefreshOnTab({ tab }: { tab: Tab }) {
+  const { refresh } = useSetup();
+  useEffect(() => {
+    void refresh();
+  }, [tab, refresh]);
+  return null;
+}
+
+/** Settings can satisfy two of the three requirements, so a save has to
+ *  re-read the status or the gate the user just fixed stays up. */
+function SettingsModalWithRefresh(props: {
+  open: boolean;
+  focus: SettingsFocus | null;
+  onClose: () => void;
+  onSaved: (installDirChanged: boolean) => void;
+}) {
+  const { refresh } = useSetup();
+  return (
+    <SettingsModal
+      open={props.open}
+      focus={props.focus}
+      onClose={props.onClose}
+      onSaved={(installDirChanged) => {
+        props.onSaved(installDirChanged);
+        void refresh();
+      }}
+    />
   );
 }
 

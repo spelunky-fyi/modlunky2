@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Mod, ModProblem } from "../types/mods";
 import type { ConfigPatch, SharedConfig } from "../types/config";
 import type { DirectoryKind } from "../types/paths";
+import type { SetupStatus } from "../types/setup";
 import type { PlaylunkyReleaseInfo } from "../types/playlunky";
 import type { PlaylunkyOptions } from "../types/playlunkyOptions";
 
@@ -32,6 +33,13 @@ export async function getModlunkyVersion(): Promise<ModlunkyVersionInfo> {
  *  can point the user at `releasePageUrl` for manual recovery. */
 export async function installUpdate(): Promise<void> {
   return invoke("install_update");
+}
+
+/// What the app still needs configured: the install directory, extracted
+/// assets, and a spelunky.fyi token. One call so a tab can decide what to
+/// render without chaining three.
+export async function getSetupStatus(): Promise<SetupStatus> {
+  return invoke<SetupStatus>("get_setup_status");
 }
 
 export async function listMods(): Promise<Mod[]> {

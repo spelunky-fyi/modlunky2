@@ -106,3 +106,15 @@
   opacity: 0.55;
   cursor: default;
 }
+
+/* The dock with nowhere to launch to. Same height and shape as the real dock
+   so the layout doesn't shift the moment setup completes. */
+.launch-dock-unconfigured {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.launch-dock-unconfigured-text {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}

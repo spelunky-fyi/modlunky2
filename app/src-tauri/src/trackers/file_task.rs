@@ -79,6 +79,15 @@ async fn write_atomic(path: &std::path::Path, text: &str) -> std::io::Result<()>
 /// `{install-dir}/Mods/Modlunky2/trackers` if the user didn't override
 /// it in config; returns None when neither is configured (typically a
 /// first-launch user).
+/// What to tell the user when there's nowhere to write.
+///
+/// Names both fixes, in the order that suits the person most likely to hit
+/// this. Someone who only uses the trackers has no reason to own a Spelunky 2
+/// folder path, and telling them to go configure one to get a text file is
+/// sending them the long way around; picking an output folder is right there
+/// in the same sidebar.
+pub const NO_OUTPUT_DIR_MESSAGE: &str = "No valid directory found to write tracker files to.";
+
 pub fn effective_output_dir(cfg: &crate::config::SharedConfig) -> Option<PathBuf> {
     if let Some(dir) = cfg
         .tracker_output_dir

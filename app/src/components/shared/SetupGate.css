@@ -1,0 +1,73 @@
+.setup-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* .tab-content is a flex column, and the banner may sit above us, so take
+     the remaining space rather than claiming the parent's full height. */
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.setup-gate-card {
+  max-width: 520px;
+  padding: 28px 30px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  text-align: center;
+}
+
+.setup-gate-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-text);
+}
+
+.setup-gate-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.setup-gate-body {
+  color: var(--fg-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.setup-gate-body p {
+  margin: 0 0 10px;
+}
+
+.setup-gate-body code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(var(--overlay-rgb), 0.08);
+  font-size: 12.5px;
+  /* Long install paths shouldn't push the card wider than its max-width. */
+  word-break: break-all;
+}
+
+/* The secondary line is context, not instruction, so it sits back a step. */
+.setup-gate-note {
+  font-size: 12.5px;
+  opacity: 0.85;
+}
+
+.setup-gate-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}

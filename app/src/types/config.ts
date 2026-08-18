@@ -28,6 +28,9 @@ export interface SharedConfig {
   /** How tightly the Mods page packs rows: "comfortable" | "compact" |
    *  "dense". Null until the user picks one. */
   modDensity: string | null;
+  /** Which source the Install dialog opens on: "fyi" | "file". Null until the
+   *  user has installed something. */
+  modInstallSource: string | null;
   /** Port the tracker HTTP + WS server binds on. Defaults to 9526
    *  (matches Python's api-port) when the field is missing. */
   trackerServerPort: number;
@@ -59,6 +62,8 @@ export interface ConfigPatch {
   modFavoritesOnly?: boolean;
   /** "comfortable" | "compact" | "dense". */
   modDensity?: string;
+  /** "fyi" | "file". */
+  modInstallSource?: string;
   trackerServerPort?: number;
   trackerServerAutoStart?: boolean;
   /** "dark" | "light". Pass to persist the app's color theme. */

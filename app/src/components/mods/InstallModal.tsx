@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { open as openDialog, ask } from "@tauri-apps/plugin-dialog";
+import { KeyRound } from "lucide-react";
 import { Modal } from "../shared/Modal";
 import { useToast } from "../shared/Toast";
+import { useSetup } from "../shared/SetupContext";
 import {
+  getConfig,
   installFromFyi,
   installFromLocal,
   listPackIds,
+  setConfig,
 } from "../../lib/commands";
 import "./InstallModal.css";
 
@@ -22,6 +26,10 @@ const DEST_PATTERN = /^[-\w.]+$/;
 export function InstallModal({ open, onClose }: InstallModalProps) {
   const toast = useToast();
   const [source, setSource] = useState<Source>("fyi");
+  const { status, openSettings } = useSetup();
+  // Null status means we couldn't read setup state; assume a token rather than
+  // blocking the user out of an install on a failed status call.
+  const needsToken = status ? !status.hasApiToken : false;
   const [code, setCode] = useState("");
   const [filePath, setFilePath] = useState("");
   const [destId, setDestId] = useState("");
@@ -29,8 +37,18 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
   const [existingPacks, setExistingPacks] = useState<string[]>([]);
   const [installing, setInstalling] = useState(false);
 
+  // Deliberately leaves `source` alone: it is remembered across installs, so
+  // someone with no spelunky.fyi token isn't returned to a source they can't
+  // use every time they install something.
+  /** Switch source and remember it for next time. */
+  const chooseSource = (next: Source) => {
+    setSource(next);
+    void setConfig({ modInstallSource: next }).catch(() => {
+      // A failed write only costs the memory of the choice, not the choice.
+    });
+  };
+
   const reset = () => {
-    setSource("fyi");
     setCode("");
     setFilePath("");
     setDestId("");
@@ -41,6 +59,16 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    void getConfig()
+      .then((cfg) => {
+        if (cancelled) return;
+        if (cfg.modInstallSource === "file" || cfg.modInstallSource === "fyi") {
+          setSource(cfg.modInstallSource);
+        }
+      })
+      .catch(() => {
+        // Falls back to whatever the modal already had.
+      });
     listPackIds()
       .then((ids) => {
         if (!cancelled) setExistingPacks(ids);
@@ -173,10 +201,11 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
 
   const canInstall =
     !installing &&
-    ((source === "fyi" && code.trim().length > 0) ||
-      (source === "file" &&
-        filePath.length > 0 &&
-        destId.trim().length > 0));
+    // `needsToken` guards the fyi branch as well as hiding its form: the code
+    // field is unmounted while the gate is up, but a value left in state would
+    // otherwise still count as installable.
+    ((source === "fyi" && !needsToken && code.trim().length > 0) ||
+      (source === "file" && filePath.length > 0 && destId.trim().length > 0));
 
   return (
     <Modal
@@ -211,7 +240,7 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
           role="tab"
           aria-selected={source === "fyi"}
           className={`install-source-tab${source === "fyi" ? " active" : ""}`}
-          onClick={() => setSource("fyi")}
+          onClick={() => chooseSource("fyi")}
           disabled={installing}
         >
           From spelunky.fyi
@@ -221,14 +250,44 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
           role="tab"
           aria-selected={source === "file"}
           className={`install-source-tab${source === "file" ? " active" : ""}`}
-          onClick={() => setSource("file")}
+          onClick={() => chooseSource("file")}
           disabled={installing}
         >
           From file
         </button>
       </div>
 
-      {source === "fyi" ? (
+      {source === "fyi" && needsToken ? (
+        /* The one place a token is genuinely required, so the one place worth
+           stopping. Shown only when the token is actually missing, and it
+           carries a way to fix it rather than just naming what's needed. */
+        <div className="install-needs-token">
+          <KeyRound size={24} aria-hidden="true" />
+          <p>Installing from spelunky.fyi needs an API token.</p>
+          <p className="install-hint">
+            Configure it in your settings or{" "}
+            <button
+              type="button"
+              className="install-inline-link"
+              onClick={() => chooseSource("file")}
+            >
+              install from local files
+            </button>
+            .
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              // Settings is a modal too, so hand off rather than stack.
+              onClose();
+              openSettings("apiToken");
+            }}
+          >
+            Add a token in Settings
+          </button>
+        </div>
+      ) : source === "fyi" ? (
         <div className="install-form">
           <label className="install-field">
             <span className="install-label">Mod code or URL</span>
@@ -241,9 +300,6 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
               autoFocus
               disabled={installing}
             />
-            <span className="install-hint">
-              Requires a spelunky.fyi API token in Settings.
-            </span>
           </label>
         </div>
       ) : (
@@ -322,16 +378,12 @@ function fileStem(path: string): string {
 }
 
 function isModExists(err: unknown): boolean {
-  return (
-    typeof err === "object" && err !== null && "ModExistsError" in err
-  );
+  return typeof err === "object" && err !== null && "ModExistsError" in err;
 }
 
 function isLibraryMod(err: unknown): boolean {
   return (
-    typeof err === "object" &&
-    err !== null &&
-    "LibraryModNotInstallable" in err
+    typeof err === "object" && err !== null && "LibraryModNotInstallable" in err
   );
 }
 

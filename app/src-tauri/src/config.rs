@@ -39,6 +39,10 @@ const KEY_MOD_SORT: &str = "mod-sort";
 const KEY_MOD_SORT_DESC: &str = "mod-sort-desc";
 /// Whether the Mods page is currently showing only favorites.
 const KEY_MOD_FAVORITES_ONLY: &str = "mod-favorites-only";
+/// Which source the Install dialog opens on: `"fyi"` or `"file"`. Remembered
+/// so someone who never adds a spelunky.fyi token isn't switching away from a
+/// source they can't use every single time they install something.
+const KEY_MOD_INSTALL_SOURCE: &str = "mod-install-source";
 /// How tightly the Mods page packs its rows: `"comfortable"` (default),
 /// `"compact"`, or `"dense"`. Someone running hundreds of mods wants far
 /// more of the list on screen than the default leaves room for.
@@ -136,6 +140,7 @@ pub struct SharedConfig {
     pub mod_sort_desc: Option<bool>,
     pub mod_favorites_only: bool,
     pub mod_density: Option<String>,
+    pub mod_install_source: Option<String>,
     pub tracker_server_port: u16,
     pub tracker_server_auto_start: bool,
     pub tracker_color_key: String,
@@ -171,6 +176,7 @@ pub struct ConfigPatch {
     pub mod_sort_desc: Option<bool>,
     pub mod_favorites_only: Option<bool>,
     pub mod_density: Option<String>,
+    pub mod_install_source: Option<String>,
     pub tracker_server_port: Option<u16>,
     pub tracker_server_auto_start: Option<bool>,
     pub tracker_color_key: Option<String>,
@@ -355,6 +361,7 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
         mod_sort_desc: get_bool_opt(obj, KEY_MOD_SORT_DESC),
         mod_favorites_only: get_bool(obj, KEY_MOD_FAVORITES_ONLY),
         mod_density: get_string(obj, KEY_MOD_DENSITY),
+        mod_install_source: get_string(obj, KEY_MOD_INSTALL_SOURCE),
         tracker_server_port: get_u16(obj, KEY_TRACKER_PORT, crate::trackers::DEFAULT_TRACKER_PORT),
         tracker_server_auto_start: get_bool(obj, KEY_TRACKER_AUTO_START),
         tracker_color_key: get_string(obj, KEY_TRACKER_COLOR_KEY)
@@ -495,6 +502,7 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
     apply_bool(&mut obj, KEY_MOD_SORT_DESC, patch.mod_sort_desc);
     apply_bool(&mut obj, KEY_MOD_FAVORITES_ONLY, patch.mod_favorites_only);
     apply_field(&mut obj, KEY_MOD_DENSITY, patch.mod_density);
+    apply_field(&mut obj, KEY_MOD_INSTALL_SOURCE, patch.mod_install_source);
     apply_u16(&mut obj, KEY_TRACKER_PORT, patch.tracker_server_port);
     apply_bool(
         &mut obj,

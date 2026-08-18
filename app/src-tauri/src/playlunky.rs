@@ -413,15 +413,7 @@ pub async fn launch_playlunky() -> Result<(), String> {
 /// can reach it too.
 pub async fn spawn_playlunky() -> Result<(), String> {
     let cfg = crate::config::load();
-    let install_dir = cfg
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
-    if !install_dir.exists() {
-        return Err(format!(
-            "install directory does not exist: {}",
-            install_dir.display()
-        ));
-    }
+    let install_dir = crate::setup::install_dir()?;
 
     // Nothing installed at all is the first-run case, and asking someone to go
     // find the version modal before they can play is a step too many: people
@@ -494,9 +486,7 @@ pub fn launch_vanilla() -> Result<(), String> {
 /// The launch itself, without the command wrapper, so the unified launch path
 /// can reach it too.
 pub fn spawn_vanilla() -> Result<(), String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let exe = install_dir.join(ml2_mem::SPEL2_EXE_NAME);
     if !exe.exists() {
         return Err(format!(
@@ -761,9 +751,7 @@ impl Default for SpriteSettings {
 }
 
 fn playlunky_ini_path() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir.join(INI_FILENAME))
 }
 

@@ -9,10 +9,9 @@
    * variable here so the three levels stay consistent and a row can't end up
    * with, say, a small logo next to full-size buttons.
    *
-   * Comfortable is the default and the original look: the 48px logo is what
-   * sets the height, giving a ~68px pitch. Someone running hundreds of mods
-   * spends their time scrolling past that, which is the complaint this
-   * answers -- the old Python client fit about a third more rows on screen. */
+   * Comfortable is the default: the 48px logo is what sets the height, giving
+   * a ~68px pitch. That is a lot of scrolling for someone running hundreds of
+   * mods, which is what the tighter levels are for. */
   --mod-logo-size: 48px;
   --mod-logo-radius: 7px;
   --mod-logo-font: 20px;
@@ -290,4 +289,11 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 12px;
+}
+
+.mods-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
 }

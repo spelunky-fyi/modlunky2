@@ -67,16 +67,9 @@ pub enum LaunchMode {
 }
 
 fn install_dir_required() -> Result<PathBuf, String> {
-    let dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
-    if !dir.exists() {
-        return Err(format!(
-            "install directory does not exist: {}",
-            dir.display()
-        ));
-    }
-    Ok(dir)
+    // `setup::install_dir` already rejects a path that isn't there, with a
+    // message that says what to do about it.
+    crate::setup::install_dir()
 }
 
 fn overlunky_exe_path(install_dir: &std::path::Path) -> PathBuf {

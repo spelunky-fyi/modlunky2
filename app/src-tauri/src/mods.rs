@@ -316,7 +316,7 @@ fn read_latest_id(install_dir: &std::path::Path, mod_id: &str) -> Option<String>
 pub async fn list_mods(state: tauri::State<'_, AppState>) -> Result<Vec<ModDto>, ManagerError> {
     let Some(handle) = state.mods_handle() else {
         return Err(ManagerError::UnknownError(
-            "install directory not configured".to_string(),
+            crate::setup::install_dir_message(),
         ));
     };
     // The Mods tab is the default tab, so the frontend fires this the
@@ -357,16 +357,14 @@ pub async fn refresh_mods(state: tauri::State<'_, AppState>) -> Result<Vec<ModDt
         let _ = cache_handle.scan_now().await;
         let Some(handle) = state.mods_handle() else {
             return Err(ManagerError::UnknownError(
-                "mods not initialized".to_string(),
+                crate::setup::install_dir_message(),
             ));
         };
         let mods = handle.list().await.map_err(ManagerError::from)?;
         return Ok(build_mod_dtos(mods, state.updates_available()));
     }
 
-    let install_dir = crate::config::load().install_dir.ok_or_else(|| {
-        ManagerError::UnknownError("install directory not configured".to_string())
-    })?;
+    let install_dir = crate::setup::install_dir().map_err(ManagerError::UnknownError)?;
     let install_str = install_dir.to_string_lossy().into_owned();
     let disk = DiskMods::new(&install_str);
     let mods = disk
@@ -468,9 +466,7 @@ fn build_mod_dtos(mods: Vec<Mod>, updates_available: &Arc<Mutex<HashSet<String>>
 /// prohibitive for the several hundred a heavy user has installed.
 #[tauri::command]
 pub async fn check_mod(id: String) -> Result<Vec<crate::mod_check::ModProblem>, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let pack_dir = install_dir.join("Mods").join("Packs").join(&id);
     let problems =
         tauri::async_runtime::spawn_blocking(move || crate::mod_check::check_pack(&pack_dir))
@@ -490,16 +486,12 @@ pub async fn check_mod(id: String) -> Result<Vec<crate::mod_check::ModProblem>, 
 /// travels with the `Mods` folder rather than with the user's settings.
 #[tauri::command]
 pub async fn set_mod_favorite(id: String, favorite: bool) -> Result<(), String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     crate::mod_state::set_favorite(&install_dir, &id, favorite)
 }
 
 fn load_order_path() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir
         .join("Mods")
         .join("Packs")
@@ -540,7 +532,7 @@ pub async fn set_load_order(
 
     let handle = state
         .mods_handle()
-        .ok_or_else(|| "mods not initialized".to_string())?;
+        .ok_or_else(crate::setup::install_dir_message)?;
     let all = handle.list().await.map_err(|e| e.to_string())?;
     let all_ids: HashSet<String> = all.into_iter().map(|m| m.id).collect();
     let active_set: HashSet<String> = active.iter().cloned().collect();
@@ -578,7 +570,7 @@ pub async fn get_mod_logo(
 ) -> Result<Option<String>, String> {
     let handle = state
         .mods_handle()
-        .ok_or_else(|| "mods not initialized".to_string())?;
+        .ok_or_else(crate::setup::install_dir_message)?;
     match handle.get_mod_logo(&id).await {
         Ok(logo) => {
             let encoded = B64.encode(&logo.bytes);
@@ -593,7 +585,7 @@ pub async fn get_mod_logo(
 pub async fn remove_mod(state: tauri::State<'_, AppState>, id: String) -> Result<(), ManagerError> {
     let handle = state
         .mods_handle()
-        .ok_or_else(|| ManagerError::UnknownError("mods not initialized".to_string()))?;
+        .ok_or_else(|| ManagerError::UnknownError(crate::setup::install_dir_message()))?;
     handle.remove(&id).await.map_err(ManagerError::from)
 }
 
@@ -602,9 +594,7 @@ pub async fn open_mod_folder<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     id: String,
 ) -> Result<(), String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let target = install_dir.join("Mods").join("Packs").join(&id);
     if !target.exists() {
         return Err(format!("mod folder not found: {}", target.display()));
@@ -625,7 +615,7 @@ pub async fn update_mod(
 ) -> Result<Mod, ManagerError> {
     let handle = state
         .mods_handle()
-        .ok_or_else(|| ManagerError::UnknownError("mods not initialized".to_string()))?;
+        .ok_or_else(|| ManagerError::UnknownError(crate::setup::install_dir_message()))?;
     let code = id
         .strip_prefix(FYI_ID_PREFIX)
         .ok_or_else(|| {
@@ -652,7 +642,7 @@ pub async fn install_from_fyi(
 ) -> Result<Mod, ManagerError> {
     let handle = state
         .mods_handle()
-        .ok_or_else(|| ManagerError::UnknownError("mods not initialized".to_string()))?;
+        .ok_or_else(|| ManagerError::UnknownError(crate::setup::install_dir_message()))?;
     let package = ModSource::Remote { code };
     if overwrite {
         handle.update(&package).await.map_err(ManagerError::from)
@@ -667,9 +657,7 @@ pub async fn install_from_fyi(
 /// aren't user-facing pack destinations.
 #[tauri::command]
 pub fn list_pack_ids() -> Result<Vec<String>, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let packs_dir = install_dir.join("Mods").join("Packs");
     if !packs_dir.exists() {
         return Ok(Vec::new());
@@ -709,7 +697,7 @@ pub async fn check_fyi_updates<R: Runtime>(
     let cfg = crate::config::load();
     let handle = state
         .mods_handle()
-        .ok_or_else(|| "mods not initialized".to_string())?;
+        .ok_or_else(crate::setup::install_dir_message)?;
     let api_client = build_api_client(
         cfg.spelunky_fyi_api_token.as_deref(),
         cfg.spelunky_fyi_root.as_deref(),
@@ -768,9 +756,7 @@ pub async fn check_fyi_updates<R: Runtime>(
 /// rebuilds this on the next launch.
 #[tauri::command]
 pub fn clear_playlunky_cache() -> Result<(), String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let cache_dir = install_dir.join("Mods").join("Packs").join(".db");
     if cache_dir.exists() {
         std::fs::remove_dir_all(&cache_dir).map_err(|e| format!("clear cache: {e}"))?;
@@ -790,7 +776,7 @@ pub async fn install_from_local(
 ) -> Result<Mod, ManagerError> {
     let handle = state
         .mods_handle()
-        .ok_or_else(|| ManagerError::UnknownError("mods not initialized".to_string()))?;
+        .ok_or_else(|| ManagerError::UnknownError(crate::setup::install_dir_message()))?;
     let package = ModSource::Local {
         source_path,
         dest_id,

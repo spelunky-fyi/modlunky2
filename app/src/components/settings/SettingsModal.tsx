@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Eye, EyeOff } from "lucide-react";
 import { Modal } from "../shared/Modal";
+import type { SettingsFocus } from "../shared/SetupContext";
 import { useToast } from "../shared/Toast";
 import {
   getConfig,
@@ -22,6 +23,8 @@ import "./SettingsModal.css";
 
 interface SettingsModalProps {
   open: boolean;
+  /** Which field the user was sent here to fix, if any. */
+  focus?: SettingsFocus | null;
   onClose: () => void;
   onSaved?: (didInstallDirChange: boolean) => void;
 }
@@ -53,7 +56,12 @@ const TOAST_LEVEL_OPTIONS: { value: ToastLevel; label: string }[] = [
 
 const DEFAULT_FYI_ROOT = "https://spelunky.fyi/";
 
-export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
+export function SettingsModal({
+  open,
+  focus,
+  onClose,
+  onSaved,
+}: SettingsModalProps) {
   const toast = useToast();
   const [initial, setInitial] = useState<FormState>(EMPTY_FORM);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -63,6 +71,31 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
   const [showToken, setShowToken] = useState(false);
   // Whether the "you'll lose your changes" prompt is up.
   const [confirmClose, setConfirmClose] = useState(false);
+  // Set briefly when the user was sent here to fix one specific thing, so the
+  // field they came for is the one they land on rather than one row among a
+  // dozen. Cleared on a timer: it's a pointer, not a state the form stays in.
+  const [highlight, setHighlight] = useState<SettingsFocus | null>(null);
+  const installDirRef = useRef<HTMLInputElement | null>(null);
+  const tokenRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!open || !focus) {
+      setHighlight(null);
+      return;
+    }
+    setHighlight(focus);
+    // After the modal has painted, or there is nothing to focus yet.
+    const raf = requestAnimationFrame(() => {
+      const el = focus === "installDir" ? installDirRef.current : tokenRef.current;
+      el?.focus();
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+    const timer = window.setTimeout(() => setHighlight(null), 2600);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
+  }, [open, focus]);
 
   useEffect(() => {
     if (!open) return;
@@ -193,7 +226,6 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
         form.spelunkyFyiApiToken !== initial.spelunkyFyiApiToken ||
         form.spelunkyFyiRoot !== initial.spelunkyFyiRoot;
       setInitial(form);
-      onSaved?.(installDirChanged);
 
       // Keep the desktop shortcut aligned with any command_prefix or
       // install_dir change. Non-fatal on failure.
@@ -219,6 +251,11 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
       } else {
         toast.success("Settings saved.");
       }
+      // Announced only once the mod subsystem is actually back up. Callers
+      // treat this as "the app now matches the new settings", and the Mods
+      // tab unlocks on it, so firing it any earlier hands them a manager that
+      // isn't running yet.
+      onSaved?.(installDirChanged);
       onClose();
     } catch (err) {
       toast.error(`Save failed: ${extractMessage(err)}`);
@@ -265,12 +302,15 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
               if (dirty) handleSave();
             }}
           >
-            <label className="settings-field">
+            <label
+              className={`settings-field${highlight === "installDir" ? " is-highlighted" : ""}`}
+            >
               <span className="settings-label">
                 Spelunky 2 install directory
               </span>
               <div className="settings-path-row">
                 <input
+                  ref={installDirRef}
                   type="text"
                   value={form.installDir}
                   onChange={(e) =>
@@ -301,7 +341,9 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
               </span>
             </label>
 
-            <div className="settings-field">
+            <div
+              className={`settings-field${highlight === "apiToken" ? " is-highlighted" : ""}`}
+            >
               <div className="settings-label-row">
                 <span className="settings-label">spelunky.fyi API token</span>
                 <button
@@ -314,6 +356,7 @@ export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps) {
               </div>
               <div className="settings-token-row">
                 <input
+                  ref={tokenRef}
                   type={showToken ? "text" : "password"}
                   value={form.spelunkyFyiApiToken}
                   onChange={(e) =>

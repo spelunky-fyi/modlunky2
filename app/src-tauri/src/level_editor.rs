@@ -39,9 +39,7 @@ impl EditorMode {
 }
 
 fn packs_dir() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir.join("Mods").join("Packs"))
 }
 
@@ -158,9 +156,7 @@ pub struct EditorAtlas {
 }
 
 fn textures_dir() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir
         .join("Mods")
         .join("Extracted")
@@ -1741,9 +1737,7 @@ pub async fn save_custom_level(
     if let Some(ref fmt) = save_format {
         validate_room_template_format(&fmt.room_template_format)?;
     }
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let sanitized = validate_pack_name(&pack)?;
     let backup_dir = install_dir.join("Mods").join("Backups").join(&sanitized);
     tauri::async_runtime::spawn_blocking(move || {
@@ -2411,9 +2405,7 @@ pub fn delete_custom_level(pack: String, file_name: String) -> Result<(), String
     if !path.exists() {
         return Err(format!("level not found: {}", path.display()));
     }
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let sanitized = validate_pack_name(&pack)?;
     let backup_dir = install_dir.join("Mods").join("Backups").join(&sanitized);
     if let Err(e) = make_backup(&path, &backup_dir) {
@@ -3489,9 +3481,7 @@ fn glyph_pattern(ch: char) -> [u8; 5] {
 // ---- Vanilla level loading + save (phase 7.4) -------------------------------
 
 fn extracts_levels_dir() -> Result<PathBuf, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     Ok(install_dir
         .join("Mods")
         .join("Extracted")
@@ -4432,9 +4422,7 @@ pub async fn save_vanilla_level(
         return Err(format!("invalid level file: {file_name:?}"));
     }
     let (source_path, _) = resolve_vanilla_level_path(&pack, &file_name)?;
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let target_path = install_dir
         .join("Mods")
         .join("Packs")

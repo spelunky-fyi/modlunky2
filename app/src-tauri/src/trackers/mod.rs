@@ -385,6 +385,21 @@ pub fn set_file_settings(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::state::AppState>,
 ) -> Result<(), String> {
+    // Checked before persisting, or a rejected toggle would still be saved as
+    // enabled and come back that way (still writing nothing) on next launch.
+    // Against the incoming settings, not the stored ones: choosing a folder
+    // and enabling output is one action from the sidebar's point of view.
+    if settings.enabled {
+        let picked = settings
+            .output_dir
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|s| !s.is_empty());
+        if !picked && crate::config::load().install_dir.is_none() {
+            return Err(file_task::NO_OUTPUT_DIR_MESSAGE.to_string());
+        }
+    }
+
     crate::config::apply_patch(crate::config::ConfigPatch {
         tracker_output_dir: Some(settings.output_dir.clone().unwrap_or_default()),
         tracker_file_enabled: Some(settings.enabled),
@@ -405,9 +420,11 @@ pub fn set_file_settings(
     }
 
     let cfg = crate::config::load();
-    let Some(output_dir) = file_task::effective_output_dir(&cfg) else {
-        return Ok(());
-    };
+    // An error rather than a quiet success: switching on an output with
+    // nowhere to write leaves the user watching for files that will never
+    // appear, with nothing to suggest why.
+    let output_dir = file_task::effective_output_dir(&cfg)
+        .ok_or_else(|| file_task::NO_OUTPUT_DIR_MESSAGE.to_string())?;
 
     let open_slugs: Vec<String> = app
         .webview_windows()
@@ -442,7 +459,7 @@ pub fn get_tracker_diagnostics(
 pub fn get_tracker_file_path(tracker: String) -> Result<String, String> {
     let cfg = crate::config::load();
     let dir = file_task::effective_output_dir(&cfg)
-        .ok_or_else(|| "Set install directory in Settings first.".to_string())?;
+        .ok_or_else(|| file_task::NO_OUTPUT_DIR_MESSAGE.to_string())?;
     Ok(dir
         .join(format!("{tracker}.txt"))
         .to_string_lossy()
@@ -453,7 +470,7 @@ pub fn get_tracker_file_path(tracker: String) -> Result<String, String> {
 pub async fn open_tracker_file_dir(app: tauri::AppHandle) -> Result<(), String> {
     let cfg = crate::config::load();
     let dir = file_task::effective_output_dir(&cfg)
-        .ok_or_else(|| "Set install directory in Settings first.".to_string())?;
+        .ok_or_else(|| file_task::NO_OUTPUT_DIR_MESSAGE.to_string())?;
     tokio::fs::create_dir_all(&dir)
         .await
         .map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
@@ -523,6 +540,20 @@ pub async fn open_tracker_window(
         .map_err(|e| format!("open window: {e}"))?;
     if let Err(e) = crate::window_icon::apply_window_icon(&window) {
         tracing::warn!("failed to set crisp window icon on {label}: {e}");
+    }
+
+    // Deliberately not an error: failing to open the window someone asked for
+    // because a side effect can't run would be the wrong trade. It can still
+    // happen to someone whose install folder went away after they turned file
+    // output on, so it goes in the log rather than passing silently.
+    if cfg.tracker_file_enabled
+        && !slot_never_writes_file(trackers, &tracker)
+        && file_task::effective_output_dir(&cfg).is_none()
+    {
+        tracing::warn!(
+            "tracker file output is on but there is nowhere to write: {}",
+            file_task::NO_OUTPUT_DIR_MESSAGE
+        );
     }
 
     if cfg.tracker_file_enabled

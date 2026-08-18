@@ -16,6 +16,7 @@ mod playlunky;
 /// Windows executable, and only there does it need a compatibility layer.
 #[cfg(target_os = "linux")]
 mod proton;
+mod setup;
 mod state;
 mod toast_buffer;
 mod trackers;
@@ -135,6 +136,7 @@ pub fn run() {
             updater::install_update,
             config::get_config,
             config::set_config,
+            setup::get_setup_status,
             fyi_ws::get_fyi_ws_status,
             fyi_ws::refresh_fyi_ws,
             log_buffer::get_recent_logs,

@@ -15,7 +15,8 @@
 // stays put whatever the state.
 
 import { useCallback, useEffect, useState } from "react";
-import { HelpCircle, Package, Play, Settings } from "lucide-react";
+import { useSetup } from "./SetupContext";
+import { HelpCircle, Package, Play, Settings, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useToast } from "./Toast";
 import {
@@ -55,6 +56,7 @@ export function LaunchDock() {
   // it loads and saves separately from everything else on this row.
   const [speedrun, setSpeedrun] = useState(false);
   const [speedrunBusy, setSpeedrunBusy] = useState(false);
+  const setup = useSetup();
 
   const reload = useCallback(async () => {
     try {
@@ -79,9 +81,20 @@ export function LaunchDock() {
     }
   }, [toast]);
 
+  // Every call in `reload` reads something under the game folder, so without
+  // one they can only fail, and the dock is already rendering the prompt that
+  // explains why. Attempting it anyway just produced an error toast about the
+  // very panel the user is looking at.
+  //
+  // Keyed on the resolved state rather than skipped once: when setup finishes,
+  // `status` flips and this runs, so the dock fills itself in without needing
+  // a restart or a tab change.
+  const canLoad = setup.status?.installDir === "ok";
+
   useEffect(() => {
+    if (!canLoad) return;
     void reload();
-  }, [reload]);
+  }, [canLoad, reload]);
 
   // Persist eagerly rather than only on launch, so the choice survives a
   // restart even if the user never presses the button this session.
@@ -155,6 +168,29 @@ export function LaunchDock() {
       setLaunching(false);
     }
   };
+
+  // The dock sits outside every tab gate, so it is the one place that could
+  // otherwise offer to launch a game there is no path to. It speaks only for
+  // itself: it can't do its job, and here is the one thing that fixes that.
+  if (setup.status && setup.status.installDir !== "ok") {
+    return (
+      <footer className="launch-dock launch-dock-unconfigured">
+        <span className="launch-dock-unconfigured-text">
+          {setup.status.installDir === "missing"
+            ? "Spel2.exe not found in your configured install directory."
+            : "Configure your install directory for Spelunky 2 and you can launch it from here."}
+        </span>
+        <button
+          type="button"
+          className="launch-dock-play"
+          onClick={() => setup.openSettings("installDir")}
+        >
+          <Settings2 size={15} aria-hidden="true" />
+          Open Settings
+        </button>
+      </footer>
+    );
+  }
 
   return (
     <footer className="launch-dock">

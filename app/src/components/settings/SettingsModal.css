@@ -149,3 +149,43 @@
   background: rgba(var(--danger-rgb), 0.08);
   border-color: var(--danger);
 }
+
+/* The field the user was sent here to fix.
+   A brief pulse rather than a permanent mark: it answers "which one did I
+   come for" on arrival, then gets out of the way so the form doesn't look
+   like it has an error in it. Padding and a negative inset keep the ring
+   clear of the input without moving anything on the page. */
+.settings-field.is-highlighted {
+  position: relative;
+}
+
+.settings-field.is-highlighted::after {
+  content: "";
+  position: absolute;
+  inset: -6px -8px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  pointer-events: none;
+  animation: settings-highlight 2.6s ease-out forwards;
+}
+
+@keyframes settings-highlight {
+  0%,
+  60% {
+    opacity: 1;
+    background: rgba(var(--accent-rgb), 0.08);
+  }
+  100% {
+    opacity: 0;
+    background: transparent;
+  }
+}
+
+/* Someone who set "reduce motion" still needs to see which field they came
+   for; they just don't need it to fade. */
+@media (prefers-reduced-motion: reduce) {
+  .settings-field.is-highlighted::after {
+    animation: none;
+    background: rgba(var(--accent-rgb), 0.08);
+  }
+}

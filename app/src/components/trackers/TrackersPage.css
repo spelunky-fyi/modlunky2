@@ -478,6 +478,18 @@
   cursor: pointer;
 }
 
+/* A toggle that can't do anything yet. Dimmed and not clickable, with the
+   reason spelled out underneath rather than left for the user to discover by
+   ticking it and reading an error. */
+.sidebar-check.is-disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sidebar-check.is-disabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
 /* Vertical stack of per-tracker enable checkboxes under the File
    sidebar card. Overrides .sidebar-check's inline-flex so each row
    sits on its own line without needing separate wrappers. */

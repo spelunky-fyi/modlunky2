@@ -165,9 +165,7 @@ const PROGRESS_TICK_EVERY: usize = 5;
 /// app's own binary out of the game folder.
 #[tauri::command]
 pub fn list_extractable_exes() -> Result<Vec<String>, String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     if !install_dir.exists() {
         return Ok(Vec::new());
     }
@@ -218,9 +216,7 @@ pub async fn extract_assets<R: Runtime>(
     exe_relative: String,
     options: ExtractOptions,
 ) -> Result<(), String> {
-    let install_dir = crate::config::load()
-        .install_dir
-        .ok_or_else(|| "install directory not configured".to_string())?;
+    let install_dir = crate::setup::install_dir()?;
     let exe_path = install_dir.join(&exe_relative);
     if !exe_path.exists() {
         return Err(format!("exe not found: {}", exe_path.display()));

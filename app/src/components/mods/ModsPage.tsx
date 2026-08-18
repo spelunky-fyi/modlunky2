@@ -56,6 +56,7 @@ import {
   isModSort,
 } from "../../types/mods";
 import { useToast } from "../shared/Toast";
+import { useSetup } from "../shared/SetupContext";
 import { ModColumn } from "./ModColumn";
 import { InstallModal } from "./InstallModal";
 import "./ModsPage.css";
@@ -108,6 +109,7 @@ export function ModsPage() {
   // Mods with an in-flight file check, so the badge can show progress and a
   // double-click can't queue a second scan of the same pack.
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
+  const setup = useSetup();
   // Ids of mods with an in-flight `updateMod` call. Used to disable the
   // row's Update button and swap its label to "Updating…" so the click
   // gives immediate feedback instead of appearing to do nothing.
@@ -283,7 +285,9 @@ export function ModsPage() {
   const rowDetail = useMemo(() => {
     if (sort !== "used") return undefined;
     return (mod: Mod) =>
-      mod.lastUsedAt ? `played ${relativeTime(mod.lastUsedAt)}` : "never played";
+      mod.lastUsedAt
+        ? `played ${relativeTime(mod.lastUsedAt)}`
+        : "never played";
   }, [sort]);
 
   const favoriteCount = useMemo(
@@ -395,7 +399,9 @@ Enable anyway?`,
       if (problems.length === 0) {
         toast.success(`${name} looks fine now.`);
       } else {
-        toast.warning(`${name} still has a problem: ${describeProblem(problems[0])}`);
+        toast.warning(
+          `${name} still has a problem: ${describeProblem(problems[0])}`,
+        );
       }
     } catch (err) {
       toast.error(`Couldn't check ${mod.id}: ${extractMessage(err)}`);
@@ -563,6 +569,24 @@ Enable anyway?`,
         <div className="mods-empty mods-error">
           <p>Couldn’t read your mods:</p>
           <pre>{errorMessage}</pre>
+          <div className="mods-error-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void reload({ showLoading: true, force: true })}
+            >
+              Try again
+            </button>
+            {setup.status && setup.status.installDir !== "ok" && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setup.openSettings("installDir")}
+              >
+                Open Settings
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -696,14 +720,10 @@ Enable anyway?`,
               </SortableContext>
             </div>
           </DndContext>
-
         </>
       )}
 
-      <InstallModal
-        open={installOpen}
-        onClose={() => setInstallOpen(false)}
-      />
+      <InstallModal open={installOpen} onClose={() => setInstallOpen(false)} />
     </div>
   );
 }
