@@ -319,26 +319,34 @@ export function ModsPage() {
     }),
   );
 
+  // Every load-order change goes through here. The module cache is part of
+  // that write, not just the state: `sync` restores activeIds from
+  // `cachedActiveIds`, so a commit that only touched state would be undone
+  // by the next notifyCacheChanged() (a favorite toggle, a file check, an
+  // update starting) and the reverted order would then be persisted by the
+  // following commit. The cache is also the base every commit reads from,
+  // because callers reach here after awaits where the closed-over state may
+  // be a render behind.
+  const commitActiveIds = (next: string[]) => {
+    cachedActiveIds = next;
+    notifyCacheChanged();
+    setActiveIds(next);
+    persistOrder(next);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setActiveIds((current) => {
-      const from = current.indexOf(String(active.id));
-      const to = current.indexOf(String(over.id));
-      if (from < 0 || to < 0) return current;
-      const next = arrayMove(current, from, to);
-      persistOrder(next);
-      return next;
-    });
+    const from = cachedActiveIds.indexOf(String(active.id));
+    const to = cachedActiveIds.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    commitActiveIds(arrayMove(cachedActiveIds, from, to));
   };
 
-  const commitActivate = (id: string) =>
-    setActiveIds((c) => {
-      if (c.includes(id)) return c;
-      const next = [...c, id];
-      persistOrder(next);
-      return next;
-    });
+  const commitActivate = (id: string) => {
+    if (cachedActiveIds.includes(id)) return;
+    commitActiveIds([...cachedActiveIds, id]);
+  };
 
   /**
    * Enabling runs the file check first, against the files as they are right
@@ -413,12 +421,10 @@ Enable anyway?`,
       });
     }
   };
-  const deactivate = (id: string) =>
-    setActiveIds((c) => {
-      const next = c.filter((x) => x !== id);
-      persistOrder(next);
-      return next;
-    });
+  const deactivate = (id: string) => {
+    if (!cachedActiveIds.includes(id)) return;
+    commitActiveIds(cachedActiveIds.filter((x) => x !== id));
+  };
 
   const handleDelete = async (mod: Mod) => {
     const name = mod.manifest?.name ?? mod.id;
