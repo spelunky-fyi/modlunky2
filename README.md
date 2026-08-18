@@ -58,6 +58,10 @@ lucky" in Settings finds your install directory. A few things to know:
   you're launching from a Steam shortcut, set it in the launch options as
   `WEBKIT_DISABLE_DMABUF_RENDERER=1 %command%`.
 
+On Steam Deck, see
+[Modlunky 2 on Steam Deck](https://github.com/spelunky-fyi/modlunky2/wiki/Modlunky-2-on-Steam-Deck)
+for a step by step walkthrough.
+
 Requires glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, or later).
 
 Check out the docs at the [Modlunky 2 Wiki](https://github.com/spelunky-fyi/modlunky2/wiki).
