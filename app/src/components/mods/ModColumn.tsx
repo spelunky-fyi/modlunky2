@@ -285,7 +285,9 @@ function RowBody({
     <div className="mod-row-body">
       <div className="mod-row-title">{mod.manifest?.name ?? mod.id}</div>
       <div className="mod-row-meta">
-        {mod.manifest?.slug ?? mod.id}
+        {/* Wrapped so the dense layout can drop the slug on its own and keep
+            the sort detail, which is the half that's load-bearing there. */}
+        <span className="mod-row-slug">{mod.manifest?.slug ?? mod.id}</span>
         {extra && <span className="mod-row-detail">{extra}</span>}
       </div>
     </div>

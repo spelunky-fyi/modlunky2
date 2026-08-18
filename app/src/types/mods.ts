@@ -52,6 +52,24 @@ export function defaultDescending(sort: ModSort): boolean {
   return sort !== "name";
 }
 
+/** How tightly the mod rows are packed. Applies to both columns: it's about
+ *  how much of the list fits on screen, which isn't a per-column concern. */
+export type ModDensity = "comfortable" | "compact" | "dense";
+
+export const MOD_DENSITIES: ModDensity[] = ["comfortable", "compact", "dense"];
+
+export const DEFAULT_MOD_DENSITY: ModDensity = "comfortable";
+
+export function isModDensity(value: unknown): value is ModDensity {
+  return MOD_DENSITIES.includes(value as ModDensity);
+}
+
+export const MOD_DENSITY_LABELS: Record<ModDensity, string> = {
+  comfortable: "Comfortable",
+  compact: "Compact",
+  dense: "Dense",
+};
+
 export type ManagerErrorKind =
   | "ModExistsError"
   | "ModNotFoundError"

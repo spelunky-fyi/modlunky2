@@ -41,12 +41,16 @@ import {
   Star,
   Users,
 } from "lucide-react";
-import type { Mod, ModSort } from "../../types/mods";
+import type { Mod, ModDensity, ModSort } from "../../types/mods";
 import { relativeTime, sortMods } from "../../lib/modSort";
 import {
+  DEFAULT_MOD_DENSITY,
+  MOD_DENSITIES,
+  MOD_DENSITY_LABELS,
   MOD_SORTS,
   MOD_SORT_LABELS,
   defaultDescending,
+  isModDensity,
   isModSort,
 } from "../../types/mods";
 import { useToast } from "../shared/Toast";
@@ -93,6 +97,9 @@ export function ModsPage() {
   const [sort, setSort] = useState<ModSort>("name");
   const [descending, setDescending] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // Density is page-wide rather than per-column: it answers "how much of my
+  // list can I see", which isn't a question about one column.
+  const [density, setDensity] = useState<ModDensity>(DEFAULT_MOD_DENSITY);
   // Guards the persist effect below so restoring the saved values doesn't
   // immediately write them straight back out.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
@@ -160,6 +167,9 @@ export function ModsPage() {
         // each field has a different natural direction.
         setDescending(cfg.modSortDesc ?? defaultDescending(saved));
         setFavoritesOnly(cfg.modFavoritesOnly);
+        setDensity(
+          isModDensity(cfg.modDensity) ? cfg.modDensity : DEFAULT_MOD_DENSITY,
+        );
       })
       .catch(() => {
         // Falls back to the defaults already in state.
@@ -178,8 +188,9 @@ export function ModsPage() {
       modSort: sort,
       modSortDesc: descending,
       modFavoritesOnly: favoritesOnly,
+      modDensity: density,
     }).catch(() => {});
-  }, [prefsLoaded, sort, descending, favoritesOnly]);
+  }, [prefsLoaded, sort, descending, favoritesOnly, density]);
 
   // Picking a different field resets the direction to that field's natural
   // one: nobody wants Z-to-A or oldest-first as the opening move, and the
@@ -406,7 +417,7 @@ export function ModsPage() {
   };
 
   return (
-    <div className="mods-page">
+    <div className="mods-page" data-density={density}>
       <header className="mods-header">
         <span className="mods-summary">
           {mods.length} installed, {activeIds.length} active
@@ -423,6 +434,22 @@ export function ModsPage() {
           />
         </div>
         <div className="mods-actions">
+          {/* Page-level rather than in a column header: it changes both
+              columns, and it's the answer to "I have hundreds of mods and
+              can only see nine", so it needs to be findable. */}
+          <select
+            className="mods-density-select"
+            value={density}
+            onChange={(e) => setDensity(e.target.value as ModDensity)}
+            title="How tightly to pack the mod rows"
+            aria-label="Row density"
+          >
+            {MOD_DENSITIES.map((option) => (
+              <option key={option} value={option}>
+                {MOD_DENSITY_LABELS[option]}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             className="icon-button mods-action-icon"

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty and fills in from your next launch onwards.
 - **Favorite mods with a star**, and a filter in the Inactive column header
   to show only those.
+- **Row density for the mod list**: Comfortable (the existing look), Compact,
+  or Dense, from the dropdown next to Refresh. Compact fits about half again
+  as many mods on screen, Dense a little over twice as many by dropping to one
+  line per mod. For anyone running hundreds of mods.
 
 ### Changed
 

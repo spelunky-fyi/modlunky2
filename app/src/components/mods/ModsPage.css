@@ -4,6 +4,97 @@
   gap: 14px;
   height: 100%;
   min-height: 0;
+
+  /* Row density. Every dimension that contributes to a row's height is a
+   * variable here so the three levels stay consistent and a row can't end up
+   * with, say, a small logo next to full-size buttons.
+   *
+   * Comfortable is the default and the original look: the 48px logo is what
+   * sets the height, giving a ~68px pitch. Someone running hundreds of mods
+   * spends their time scrolling past that, which is the complaint this
+   * answers -- the old Python client fit about a third more rows on screen. */
+  --mod-logo-size: 48px;
+  --mod-logo-radius: 7px;
+  --mod-logo-font: 20px;
+  --mod-row-pad-y: 8px;
+  --mod-row-pad-x: 10px;
+  --mod-row-gap: 10px;
+  --mod-list-gap: 4px;
+  --mod-list-pad: 6px;
+  --mod-title-size: 13px;
+  --mod-meta-size: 11px;
+  --mod-btn-pad-y: 4px;
+  --mod-btn-pad-x: 10px;
+  --mod-btn-size: 12px;
+  --mod-icon-pad: 5px;
+}
+
+/* Compact: roughly matches what the old client fit on screen. The logo stops
+ * being the tallest thing in the row, so the two text lines set the height
+ * from here down. */
+.mods-page[data-density="compact"] {
+  --mod-logo-size: 30px;
+  --mod-logo-radius: 5px;
+  --mod-logo-font: 14px;
+  --mod-row-pad-y: 5px;
+  --mod-row-pad-x: 8px;
+  --mod-row-gap: 8px;
+  --mod-list-gap: 3px;
+  --mod-list-pad: 4px;
+  --mod-title-size: 12.5px;
+  --mod-meta-size: 10.5px;
+  --mod-btn-pad-y: 3px;
+  --mod-btn-pad-x: 8px;
+  --mod-btn-size: 11.5px;
+  --mod-icon-pad: 4px;
+}
+
+/* Dense drops to one line per mod (see the slug rule below), which is the
+ * only way past the floor the two-line body imposes. */
+.mods-page[data-density="dense"] {
+  --mod-logo-size: 22px;
+  --mod-logo-radius: 4px;
+  --mod-logo-font: 11px;
+  --mod-row-pad-y: 3px;
+  --mod-row-pad-x: 8px;
+  --mod-row-gap: 8px;
+  --mod-list-gap: 2px;
+  --mod-list-pad: 3px;
+  --mod-title-size: 12.5px;
+  --mod-meta-size: 10.5px;
+  --mod-btn-pad-y: 2px;
+  --mod-btn-pad-x: 7px;
+  --mod-btn-size: 11.5px;
+  --mod-icon-pad: 3px;
+}
+
+/* The slug is the line that goes, not the whole meta row: the "never played"
+ * detail rides in there too, and dense is exactly the mode a power user
+ * sorting by recent use would be in. With the slug gone the row keeps a
+ * single line of text at the title's height. */
+.mods-page[data-density="dense"] .mod-row-slug {
+  display: none;
+}
+
+/* That separator only earns its keep between the slug and the detail. */
+.mods-page[data-density="dense"] .mod-row-detail::before {
+  content: none;
+}
+
+/* Sit whatever is left of the meta line beside the title instead of under it,
+ * so switching to the usage sort doesn't silently add a second line to every
+ * row and undo the density the user asked for. */
+.mods-page[data-density="dense"] .mod-row-body {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.mods-page[data-density="dense"] .mod-row-title,
+.mods-page[data-density="dense"] .mod-row-meta {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .mods-header {
@@ -64,6 +155,34 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Opaque background for the same WebView2 reason as the sort select: the
+ * dropdown popup is drawn from the control's own background, so a
+ * translucent one renders the option list unreadable. */
+.mods-density-select {
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mods-density-select option {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.mods-density-select:hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+
+.mods-density-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .mods-action-icon {
