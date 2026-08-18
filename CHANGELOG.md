@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The right-click "Add room" confirmation now has a **"Don't ask again"**
   checkbox, like the save dialog already did. There's a matching toggle in the
   editor settings if you want it back.
+- **Rooms in the level editor's tree are labelled with their comment again**
+  when they have one, instead of always reading "room 3" with the comment
+  hidden behind a tooltip. The room number moves into the tooltip, alongside
+  the full comment so a long one isn't lost to truncation.
+- Templates in that tree now show a small speech-bubble icon when they have a
+  comment.
 - **Row density for the mod list**: Comfortable (the existing look), Compact,
   or Dense, from the dropdown next to Refresh. Compact fits about half again
   as many mods on screen, Dense a little over twice as many by dropping to one

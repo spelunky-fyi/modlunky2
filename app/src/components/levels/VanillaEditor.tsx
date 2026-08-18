@@ -15,6 +15,7 @@ import {
   ChevronsUpDown,
   FolderOpen,
   Keyboard,
+  MessageSquareText,
   Palette,
   Settings,
   Settings2,
@@ -92,6 +93,17 @@ interface RoomKey {
 function keyEq(a: RoomKey | null, b: RoomKey | null) {
   if (!a || !b) return false;
   return a.templateName === b.templateName && a.roomIndex === b.roomIndex;
+}
+
+/**
+ * A comment with actual content in it, or null.
+ *
+ * Whitespace-only counts as absent: clearing a comment leaves an empty string
+ * rather than null, and a blank label would leave the row looking nameless.
+ */
+function usableComment(comment: string | null | undefined): string | null {
+  const trimmed = comment?.trim();
+  return trimmed ? trimmed : null;
 }
 
 /** A per-file theme override sourced from the file's top-comment marker.
@@ -837,8 +849,7 @@ export function VanillaEditor({ pack }: Props) {
       // Undo depth only counts when the history belongs to this room; the
       // stacks outlive a room switch until resetHistory runs.
       const strokesDirty =
-        historyKeyRef.current === key &&
-        undoLen !== savedUndoIndexRef.current;
+        historyKeyRef.current === key && undoLen !== savedUndoIndexRef.current;
       const settingsSet = settingsRef.current.has(key);
       const wasPresent = editedKeysRef.current.has(key);
       const shouldBePresent = strokesDirty || settingsSet;
@@ -958,7 +969,8 @@ export function VanillaEditor({ pack }: Props) {
       // reversed (to line up with the setrooms they connect to), so the front
       // half should show the back layer and vice versa. Only meaningful when
       // the room is dual.
-      const layersReversed = REVERSED_ROOMS.has(tpl.name) && rawBgLayer !== null;
+      const layersReversed =
+        REVERSED_ROOMS.has(tpl.name) && rawBgLayer !== null;
       const baseFg = layersReversed ? rawBgLayer! : rawFg;
       const rawBg = layersReversed ? rawFg : rawBgLayer;
       // `!onlyflip` rooms only ever play mirrored, so show them mirrored here:
@@ -1181,7 +1193,11 @@ export function VanillaEditor({ pack }: Props) {
           const bg = bgGridsRef.current.get(key);
           if (bg?.some((r) => r.some((c) => c))) {
             const fg = gridsRef.current.get(key);
-            if (fg) bgGridsRef.current.set(key, fg.map((r) => r.map(() => "")));
+            if (fg)
+              bgGridsRef.current.set(
+                key,
+                fg.map((r) => r.map(() => "")),
+              );
             clearedBg = true;
           }
         }
@@ -2007,7 +2023,12 @@ export function VanillaEditor({ pack }: Props) {
       const settings = settingsRef.current.get(key) ?? room.settings;
       const isDual = settings.includes("dual");
       const bg = isDual ? (bgGridsRef.current.get(key) ?? room.background) : [];
-      return { settings, comment: room.comment, foreground: fg, background: bg };
+      return {
+        settings,
+        comment: room.comment,
+        foreground: fg,
+        background: bg,
+      };
     },
     [level],
   );
@@ -2397,8 +2418,7 @@ export function VanillaEditor({ pack }: Props) {
       const room = tpl?.rooms[roomIndex];
       if (!room) return [];
       return (
-        gridsRef.current.get(`${templateName}#${roomIndex}`) ??
-        room.foreground
+        gridsRef.current.get(`${templateName}#${roomIndex}`) ?? room.foreground
       );
     },
     [level, gridsRef],
@@ -3751,8 +3771,8 @@ function TreeOpModal({
       {op.kind === "deleteAllRooms" && (
         <>
           <p className="editor-confirm-body">
-            Delete every room in <code>{op.templateName}</code>? The template
-            is kept with a single blank room.
+            Delete every room in <code>{op.templateName}</code>? The template is
+            kept with a single blank room.
           </p>
           <p className="editor-confirm-warn">
             This can't be undone. Save the file first if you want a backup.
@@ -4256,12 +4276,32 @@ function VanillaRoomsTree({
                     e.preventDefault();
                     onTemplateContextMenu(tpl.name, e);
                   }}
-                  title={tpl.comment ?? tpl.name}
+                  title={
+                    usableComment(tpl.comment)
+                      ? `${tpl.name} - ${usableComment(tpl.comment)}`
+                      : tpl.name
+                  }
                 >
                   <span className="vanilla-rooms-arrow">
                     <Caret open={isExpanded} />
                   </span>
                   <span className="vanilla-rooms-name">{tpl.name}</span>
+                  {/* A template keeps its real name -- it's the identifier the
+                      game reads -- so its comment stays in the tooltip, and
+                      this is the only thing marking that there is one.
+                      Wrapped in a span because the title lives there: SVG
+                      ignores the HTML title attribute, it wants a <title>
+                      child, so putting it on the icon itself would silently
+                      do nothing. Its own tooltip is the bare comment, since
+                      the row's already says the template name. */}
+                  {usableComment(tpl.comment) && (
+                    <span
+                      className="vanilla-rooms-comment-icon"
+                      title={usableComment(tpl.comment) ?? undefined}
+                    >
+                      <MessageSquareText size={11} aria-hidden="true" />
+                    </span>
+                  )}
                   {anyChildEdited && (
                     <span className="vanilla-rooms-edited">•</span>
                   )}
@@ -4282,7 +4322,10 @@ function VanillaRoomsTree({
                       // present so toggling a flag updates the list immediately.
                       const override = settingsOverrides.get(key);
                       const effRoom = override
-                        ? { settings: override, isDual: override.includes("dual") }
+                        ? {
+                            settings: override,
+                            isDual: override.includes("dual"),
+                          }
                         : c;
                       return (
                         <li key={idx}>
@@ -4304,11 +4347,23 @@ function VanillaRoomsTree({
                             }}
                             onKeyDown={onRoomKeyDown}
                           >
+                            {/* A room has no name of its own, only a position,
+                                so an author's comment labels it far better
+                                than "room 3" does. The index isn't lost, it
+                                moves to the tooltip -- it's what the toasts,
+                                the delete prompt and the room manager all
+                                call this room, so it has to stay reachable.
+                                The comment rides along there too, because a
+                                long one gets ellipsized in this sidebar. */}
                             <span
                               className="vanilla-rooms-room-label"
-                              title={c.comment ?? `Room ${idx}`}
+                              title={
+                                usableComment(c.comment)
+                                  ? `Room ${idx} - ${usableComment(c.comment)}`
+                                  : `Room ${idx}`
+                              }
                             >
-                              room {idx}
+                              {usableComment(c.comment) ?? `room ${idx}`}
                             </span>
                             {roomTags(effRoom).map((tag) => (
                               <span
@@ -4377,8 +4432,7 @@ function roomTags(room: {
   isDual: boolean;
 }): TemplateSettingName[] {
   return ROOM_TAG_ORDER.filter(
-    (tag) =>
-      room.settings.includes(tag) || (tag === "dual" && room.isDual),
+    (tag) => room.settings.includes(tag) || (tag === "dual" && room.isDual),
   );
 }
 

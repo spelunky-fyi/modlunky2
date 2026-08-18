@@ -425,9 +425,29 @@
 
 /* Keep the "room N" label on one line so badges wrap below it rather than
    pushing the label onto two lines (or forcing a horizontal scrollbar). */
-.vanilla-rooms-room-label {
+/* Marks a template that carries a comment. A template keeps its real name in
+   the tree, so without this there's nothing to say a comment exists at all
+   until you hover. Muted and small: it's an annotation, not a control, and in
+   a well-commented file it lands on every row. */
+.vanilla-rooms-comment-icon {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
+  color: var(--fg-muted);
+  opacity: 0.65;
+}
+
+/* Was flex-shrink:0, which was safe while this only ever read "room 3". Now
+   it carries the room's comment, which is arbitrary author text, so it has to
+   be allowed to shrink and ellipsize instead of forcing the row wider than
+   the sidebar. */
+.vanilla-rooms-room-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vanilla-rooms-room:hover {
