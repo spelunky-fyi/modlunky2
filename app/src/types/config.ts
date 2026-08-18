@@ -15,6 +15,16 @@ export interface SharedConfig {
   /** Tab id last active in the app shell (mods / overlunky / extract /
    *  levels / trackers). Null on first launch or after config reset. */
   lastTab: string | null;
+  /** How the Mods page orders its inactive list: "name" | "installed" |
+   *  "used". Null until the user picks one. Global rather than per-install
+   *  because it names no particular mod; the per-install half (favorites,
+   *  usage history) lives beside the mods themselves. */
+  modSort: string | null;
+  /** Whether that sort runs largest-first. Null means "never set", which
+   *  matters because the sensible default differs per field. */
+  modSortDesc: boolean | null;
+  /** Whether the Mods page is showing only favorites. */
+  modFavoritesOnly: boolean;
   /** Port the tracker HTTP + WS server binds on. Defaults to 9526
    *  (matches Python's api-port) when the field is missing. */
   trackerServerPort: number;
@@ -40,6 +50,10 @@ export interface ConfigPatch {
   playlunkyShortcut?: boolean;
   /** Tab id to persist; pass "" to clear. */
   lastTab?: string;
+  /** "name" | "installed" | "used". */
+  modSort?: string;
+  modSortDesc?: boolean;
+  modFavoritesOnly?: boolean;
   trackerServerPort?: number;
   trackerServerAutoStart?: boolean;
   /** "dark" | "light". Pass to persist the app's color theme. */

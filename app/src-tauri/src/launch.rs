@@ -149,12 +149,31 @@ fn command_without_cwd(exe: &Path, prefix: PrefixState) -> Result<Command, Strin
 /// here: the dock describes what its own button will do next time, and a
 /// transient launch shouldn't leave the user a setting to undo.
 #[tauri::command]
-pub async fn launch_game(with_playlunky: bool, with_overlunky: bool) -> Result<(), String> {
+pub async fn launch_game<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    with_playlunky: bool,
+    with_overlunky: bool,
+) -> Result<(), String> {
     crate::config::apply_patch(crate::config::ConfigPatch {
         launch_with_playlunky: Some(with_playlunky),
         playlunky_overlunky: Some(with_overlunky),
         ..Default::default()
     })?;
+
+    // Record which mods this launch actually loads, so the Mods page can offer
+    // a "recently used" sort. Gated on Playlunky because it is the thing that
+    // reads load_order.txt: an Overlunky-only or vanilla launch starts the game
+    // with no packs at all, and stamping those would make every mod look used
+    // every time the game ran.
+    if with_playlunky && mark_active_mods_used().await {
+        // The Mods page is holding rows fetched before this launch, so their
+        // usage timestamps are now stale. Nothing else notices: the mods
+        // themselves didn't change on disk, and disabling a mod afterwards
+        // only moves it between columns without refetching. Without this the
+        // mod you just played sorts to the bottom of "recently used" until
+        // something forces a refresh.
+        crate::mods::emit_mods_changed(&app);
+    }
 
     match (with_playlunky, with_overlunky) {
         // Playlunky starts the game itself and takes Overlunky along via the
@@ -168,6 +187,36 @@ pub async fn launch_game(with_playlunky: bool, with_overlunky: bool) -> Result<(
             crate::overlunky::spawn_overlunky(crate::overlunky::LaunchMode::LaunchGame)
         }
         (false, false) => crate::playlunky::spawn_vanilla(),
+    }
+}
+
+/// Stamps every mod in the load order as used right now. Returns whether
+/// anything was actually recorded, so the caller only tells the UI to refetch
+/// when there's something new to see.
+///
+/// Entirely best-effort: this is convenience data for a sort order, so a
+/// failure to read the load order or write the state file must never stop the
+/// game from launching. Logged rather than surfaced.
+async fn mark_active_mods_used() -> bool {
+    let Some(install_dir) = crate::config::load().install_dir else {
+        return false;
+    };
+    let active = match crate::mods::get_load_order().await {
+        Ok(active) => active,
+        Err(e) => {
+            tracing::debug!("couldn't read load order to record mod usage: {e}");
+            return false;
+        }
+    };
+    if active.is_empty() {
+        return false;
+    }
+    match crate::mod_state::mark_used(&install_dir, &active, crate::mod_state::now_ms()) {
+        Ok(()) => true,
+        Err(e) => {
+            tracing::debug!("couldn't record mod usage: {e}");
+            false
+        }
     }
 }
 

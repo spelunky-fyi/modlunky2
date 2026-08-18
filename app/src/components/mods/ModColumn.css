@@ -152,6 +152,14 @@
   text-overflow: ellipsis;
 }
 
+/* Appended to the meta line rather than given its own row, so turning the
+ * usage sort on doesn't reflow every row's height. Separator is generated so
+ * the markup carries no punctuation. */
+.mod-row-detail::before {
+  content: " · ";
+  opacity: 0.6;
+}
+
 .mod-row-actions {
   display: flex;
   align-items: center;
@@ -242,6 +250,17 @@
 .mod-row-icon-btn:hover {
   color: var(--fg);
   background: rgba(var(--overlay-rgb), 0.06);
+}
+
+/* Starred mods keep the accent even at rest, so the state is readable while
+   scanning the list rather than only on the row you're hovering. */
+.mod-row-fav.is-fav {
+  color: var(--accent-text);
+}
+
+.mod-row-fav.is-fav:hover {
+  color: var(--accent-text);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 .mod-row-icon-danger:hover {

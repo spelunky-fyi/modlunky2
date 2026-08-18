@@ -75,6 +75,76 @@
   cursor: not-allowed;
 }
 
+/* Ordering + favorites controls, rendered into the Inactive column's header.
+   They live on that column because Active is the load order and isn't
+   reorderable from here. */
+.mods-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* .mod-column-action carries margin-left:auto to push a lone button right.
+   Inside this group the container already does that, so clear it or every
+   child shoves the next one along. */
+.mods-sort .mod-column-action {
+  margin-left: 0;
+}
+
+.mods-sort-label {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+/* Opaque background, not the translucent overlay the sibling buttons use:
+ * WebView2 draws the dropdown popup from the select's own background, so a
+ * see-through one renders the list white while the text stays var(--fg) --
+ * white on white in the dark theme. */
+.mods-sort-select {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* The popup list needs telling separately, or it falls back to the system
+ * palette regardless of what the control itself is set to. */
+.mods-sort-select option {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.mods-sort-select:hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+
+.mods-sort-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.mods-sort-dir {
+  padding: 4px 6px;
+}
+
+.mods-fav-filter {
+  padding: 4px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pressed state has to read without relying on the icon fill alone, since
+   the filter silently empties the list when nothing is starred. */
+.mods-fav-filter.is-on {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent-text);
+}
+
 .mods-columns {
   flex: 1;
   min-height: 0;

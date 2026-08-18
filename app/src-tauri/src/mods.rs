@@ -24,6 +24,16 @@ use tokio_graceful_shutdown::{IntoSubsystem, SubsystemBuilder, SubsystemHandle, 
 use crate::state::AppState;
 
 const MODS_CHANGED_EVENT: &str = "mods-changed";
+
+/// Tells the frontend its mod list is stale so it refetches.
+///
+/// Exposed because the Mods page renders more than what `ml2_mods` tracks:
+/// per-install state like usage history changes from outside that crate
+/// entirely (see `launch`), and without a nudge the page keeps showing
+/// whatever it fetched last.
+pub fn emit_mods_changed<R: Runtime>(app: &AppHandle<R>) {
+    let _ = app.emit(MODS_CHANGED_EVENT, ());
+}
 const FYI_ID_PREFIX: &str = "fyi.";
 
 /// Ceiling on how long `list_mods` blocks waiting for ModCache's first disk
@@ -262,6 +272,15 @@ pub struct ModDto {
     id: String,
     manifest: Option<Manifest>,
     has_update: bool,
+    /// Folder mtime in milliseconds since the Unix epoch, 0 when unreadable.
+    /// Both installing and updating a mod replace its folder, so this doubles
+    /// as "when did this mod arrive", which is what the Mods page sorts on.
+    modified_at: u64,
+    /// When the mod was last loaded into a running game, or None if it hasn't
+    /// been since the app started recording. Distinct from `modified_at`:
+    /// installing a mod is not using it.
+    last_used_at: Option<u64>,
+    favorite: bool,
 }
 
 /// On-disk record ml2_mods writes at
@@ -352,9 +371,46 @@ pub async fn refresh_mods(state: tauri::State<'_, AppState>) -> Result<Vec<ModDt
     Ok(build_mod_dtos(mods, state.updates_available()))
 }
 
+/// Folder mtime for a mod, in milliseconds since the Unix epoch.
+///
+/// Both install and update replace the pack folder wholesale, so its mtime is
+/// effectively "when this version of the mod landed" -- which is what someone
+/// asking to find their newly installed mods actually wants. 0 when the folder
+/// can't be stat'd, which sorts such mods to the far end rather than dropping
+/// them.
+fn read_modified_at(install_dir: &std::path::Path, mod_id: &str) -> u64 {
+    install_dir
+        .join("Mods")
+        .join("Packs")
+        .join(mod_id)
+        .metadata()
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .and_then(|d| u64::try_from(d.as_millis()).ok())
+        .unwrap_or(0)
+}
+
 fn build_mod_dtos(mods: Vec<Mod>, updates_available: &Arc<Mutex<HashSet<String>>>) -> Vec<ModDto> {
     let updates = updates_available.lock().unwrap().clone();
     let install_dir = crate::config::load().install_dir;
+
+    // Favorites + usage history are per-install (see `mod_state`). Read once
+    // for the whole list rather than per mod, and take the chance to drop
+    // entries for mods that have since been deleted so the file stays bounded.
+    let mut mod_state = install_dir
+        .as_ref()
+        .map(|dir| crate::mod_state::load(dir))
+        .unwrap_or_default();
+    if let Some(dir) = install_dir.as_ref() {
+        let live: HashSet<String> = mods.iter().map(|m| m.id.clone()).collect();
+        if crate::mod_state::prune(&mut mod_state, &live) {
+            // Best-effort: a failed prune write costs nothing this run, and
+            // failing the whole listing over it would be absurd.
+            let _ = crate::mod_state::save(dir, &mod_state);
+        }
+    }
+    let favorites: HashSet<&str> = mod_state.favorites.iter().map(String::as_str).collect();
 
     // has_update is the OR of the in-memory set (populated by ModCache's
     // periodic polling and by check_fyi_updates) and a per-mod comparison of
@@ -374,11 +430,27 @@ fn build_mod_dtos(mods: Vec<Mod>, updates_available: &Arc<Mutex<HashSet<String>>
             };
             ModDto {
                 has_update: updates.contains(&m.id) || latest_stale,
+                modified_at: install_dir
+                    .as_ref()
+                    .map(|dir| read_modified_at(dir, &m.id))
+                    .unwrap_or(0),
+                last_used_at: mod_state.last_used.get(&m.id).copied(),
+                favorite: favorites.contains(m.id.as_str()),
                 id: m.id,
                 manifest: m.manifest,
             }
         })
         .collect()
+}
+
+/// Stars or unstars a mod. Persisted per install (see `mod_state`), so it
+/// travels with the `Mods` folder rather than with the user's settings.
+#[tauri::command]
+pub async fn set_mod_favorite(id: String, favorite: bool) -> Result<(), String> {
+    let install_dir = crate::config::load()
+        .install_dir
+        .ok_or_else(|| "install directory not configured".to_string())?;
+    crate::mod_state::set_favorite(&install_dir, &id, favorite)
 }
 
 fn load_order_path() -> Result<PathBuf, String> {

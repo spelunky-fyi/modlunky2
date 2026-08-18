@@ -27,6 +27,18 @@ const KEY_PLAYLUNKY_SHORTCUT: &str = "playlunky-shortcut";
 /// Tab id that was active when the user last closed the app shell.
 /// Matches the frontend's Tab string union so it round-trips as-is.
 const KEY_LAST_TAB: &str = "last-tab";
+/// How the Mods page orders its inactive list: `"name"`, `"installed"`, or
+/// `"used"`. Lives here rather than with the install because it names no
+/// particular mod, so it means the same thing whichever install is open.
+/// The per-install half (which mods are favorites, when each was last
+/// loaded) is in `mod_state`.
+const KEY_MOD_SORT: &str = "mod-sort";
+/// Whether that sort runs largest-first. Newest and most-recently-used both
+/// want descending, alphabetical wants ascending, so the default depends on
+/// the field and is decided by the frontend.
+const KEY_MOD_SORT_DESC: &str = "mod-sort-desc";
+/// Whether the Mods page is currently showing only favorites.
+const KEY_MOD_FAVORITES_ONLY: &str = "mod-favorites-only";
 /// User-authored setroom template formats.
 pub const KEY_CUSTOM_SAVE_FORMATS: &str = "custom-level-editor-custom-save-formats";
 /// The single format the editor uses by default for new levels + as the
@@ -116,6 +128,9 @@ pub struct SharedConfig {
     pub command_prefix: Option<String>,
     pub playlunky_shortcut: bool,
     pub last_tab: Option<String>,
+    pub mod_sort: Option<String>,
+    pub mod_sort_desc: Option<bool>,
+    pub mod_favorites_only: bool,
     pub tracker_server_port: u16,
     pub tracker_server_auto_start: bool,
     pub tracker_color_key: String,
@@ -147,6 +162,9 @@ pub struct ConfigPatch {
     pub command_prefix: Option<String>,
     pub playlunky_shortcut: Option<bool>,
     pub last_tab: Option<String>,
+    pub mod_sort: Option<String>,
+    pub mod_sort_desc: Option<bool>,
+    pub mod_favorites_only: Option<bool>,
     pub tracker_server_port: Option<u16>,
     pub tracker_server_auto_start: Option<bool>,
     pub tracker_color_key: Option<String>,
@@ -264,6 +282,13 @@ fn get_bool_or(obj: &Map<String, Value>, key: &str, default: bool) -> bool {
     obj.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
 }
 
+/// For keys where "never set" and "set to false" have to stay
+/// distinguishable, because the default depends on something the reader
+/// knows and this layer doesn't.
+fn get_bool_opt(obj: &Map<String, Value>, key: &str) -> Option<bool> {
+    obj.get(key).and_then(|v| v.as_bool())
+}
+
 fn get_u16(obj: &Map<String, Value>, key: &str, default: u16) -> u16 {
     obj.get(key)
         .and_then(|v| v.as_u64())
@@ -320,6 +345,9 @@ pub(crate) fn from_map(obj: &Map<String, Value>) -> SharedConfig {
         command_prefix: get_command_prefix(obj),
         playlunky_shortcut: get_bool(obj, KEY_PLAYLUNKY_SHORTCUT),
         last_tab: get_string(obj, KEY_LAST_TAB),
+        mod_sort: get_string(obj, KEY_MOD_SORT),
+        mod_sort_desc: get_bool_opt(obj, KEY_MOD_SORT_DESC),
+        mod_favorites_only: get_bool(obj, KEY_MOD_FAVORITES_ONLY),
         tracker_server_port: get_u16(obj, KEY_TRACKER_PORT, crate::trackers::DEFAULT_TRACKER_PORT),
         tracker_server_auto_start: get_bool(obj, KEY_TRACKER_AUTO_START),
         tracker_color_key: get_string(obj, KEY_TRACKER_COLOR_KEY)
@@ -456,6 +484,9 @@ pub fn apply_patch(patch: ConfigPatch) -> Result<(), String> {
     apply_field(&mut obj, KEY_COMMAND_PREFIX, patch.command_prefix);
     apply_bool(&mut obj, KEY_PLAYLUNKY_SHORTCUT, patch.playlunky_shortcut);
     apply_field(&mut obj, KEY_LAST_TAB, patch.last_tab);
+    apply_field(&mut obj, KEY_MOD_SORT, patch.mod_sort);
+    apply_bool(&mut obj, KEY_MOD_SORT_DESC, patch.mod_sort_desc);
+    apply_bool(&mut obj, KEY_MOD_FAVORITES_ONLY, patch.mod_favorites_only);
     apply_u16(&mut obj, KEY_TRACKER_PORT, patch.tracker_server_port);
     apply_bool(
         &mut obj,

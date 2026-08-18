@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Sort the inactive mod list** by name, recently installed, or recently
+  used, with a button to reverse any of them. Recently installed reads the
+  mod folder's timestamp, so it covers updates as well as fresh installs.
+  Recently used is recorded when you launch with Playlunky, so it starts
+  empty and fills in from your next launch onwards.
+- **Favorite mods with a star**, and a filter in the Inactive column header
+  to show only those.
+
+### Changed
+
+- The delete button has been removed from active mods.
+
 ### Fixed
 
 - Race condition where mod list could show up empty until you refresh

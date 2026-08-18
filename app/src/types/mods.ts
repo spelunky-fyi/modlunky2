@@ -20,6 +20,36 @@ export interface Mod {
   id: string;
   manifest: Manifest | null;
   hasUpdate: boolean;
+  /** Folder mtime, ms since epoch. 0 when it couldn't be read. Installing and
+   *  updating both replace the folder, so this reads as "when it landed". */
+  modifiedAt: number;
+  /** When the mod was last loaded into a running game, or null if it hasn't
+   *  been since the app started recording. Not the same as `modifiedAt`:
+   *  installing a mod isn't using it. */
+  lastUsedAt: number | null;
+  favorite: boolean;
+}
+
+/** What the inactive list is ordered by. Each field has its own natural
+ *  direction (names read A-Z, dates read newest-first), so the default for
+ *  `descending` depends on which one is picked. */
+export type ModSort = "name" | "installed" | "used";
+
+export const MOD_SORTS: ModSort[] = ["name", "installed", "used"];
+
+export function isModSort(value: unknown): value is ModSort {
+  return MOD_SORTS.includes(value as ModSort);
+}
+
+export const MOD_SORT_LABELS: Record<ModSort, string> = {
+  name: "Name",
+  installed: "Recently installed",
+  used: "Recently used",
+};
+
+/** Alphabetical reads A-Z; both date sorts read newest-first. */
+export function defaultDescending(sort: ModSort): boolean {
+  return sort !== "name";
 }
 
 export type ManagerErrorKind =

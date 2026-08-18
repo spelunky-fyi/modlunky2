@@ -19,23 +19,35 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
   checkFyiUpdates,
+  getConfig,
   getLoadOrder,
   listMods,
   openCharacterChooserWindow,
   openModFolder,
   refreshMods,
   removeMod,
+  setConfig,
   setLoadOrder,
+  setModFavorite,
   updateMod,
 } from "../../lib/commands";
 import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
   CircleFadingArrowUp,
   Plus,
   RotateCcw,
   Search,
+  Star,
   Users,
 } from "lucide-react";
-import type { Mod } from "../../types/mods";
+import type { Mod, ModSort } from "../../types/mods";
+import {
+  MOD_SORTS,
+  MOD_SORT_LABELS,
+  defaultDescending,
+  isModSort,
+} from "../../types/mods";
 import { useToast } from "../shared/Toast";
 import { ModColumn } from "./ModColumn";
 import { InstallModal } from "./InstallModal";
@@ -73,6 +85,16 @@ export function ModsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [search, setSearch] = useState("");
+  // Ordering + favorites filtering apply to the Inactive column only. Active
+  // is Playlunky's load_order.txt: its order is data the game reads, not a
+  // view, and it's drag-reorderable. Reordering it here would either lie
+  // about the load order or silently change what the game loads.
+  const [sort, setSort] = useState<ModSort>("name");
+  const [descending, setDescending] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // Guards the persist effect below so restoring the saved values doesn't
+  // immediately write them straight back out.
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
   // Ids of mods with an in-flight `updateMod` call. Used to disable the
   // row's Update button and swap its label to "Updating…" so the click
   // gives immediate feedback instead of appearing to do nothing.
@@ -122,6 +144,49 @@ export function ModsPage() {
   useEffect(() => {
     void reload({ showLoading: true });
   }, [reload]);
+
+  // Restore the saved view preferences. These live in the shared config
+  // rather than beside the mods, because unlike favorites they name no
+  // particular mod and so mean the same thing whichever install is open.
+  useEffect(() => {
+    let cancelled = false;
+    void getConfig()
+      .then((cfg) => {
+        if (cancelled) return;
+        const saved = isModSort(cfg.modSort) ? cfg.modSort : "name";
+        setSort(saved);
+        // Null means never set, which is why the config keeps it nullable:
+        // each field has a different natural direction.
+        setDescending(cfg.modSortDesc ?? defaultDescending(saved));
+        setFavoritesOnly(cfg.modFavoritesOnly);
+      })
+      .catch(() => {
+        // Falls back to the defaults already in state.
+      })
+      .finally(() => {
+        if (!cancelled) setPrefsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!prefsLoaded) return;
+    void setConfig({
+      modSort: sort,
+      modSortDesc: descending,
+      modFavoritesOnly: favoritesOnly,
+    }).catch(() => {});
+  }, [prefsLoaded, sort, descending, favoritesOnly]);
+
+  // Picking a different field resets the direction to that field's natural
+  // one: nobody wants Z-to-A or oldest-first as the opening move, and the
+  // arrow is right there when they do.
+  const changeSort = (next: ModSort) => {
+    setSort(next);
+    setDescending(defaultDescending(next));
+  };
 
   // Sync from cache when a handler on a prior instance mutates it (e.g.
   // handleUpdate's `finally` running after we've remounted).
@@ -180,23 +245,51 @@ export function ModsPage() {
     [activeIds, mods, modMatches],
   );
   // Inactive mods have no user-defined order (unlike active, which is the
-  // drag-sortable load order), so sort them alphabetically by display name
-  // -- the same `manifest.name ?? id` shown in the row -- for a scannable
-  // list. Case-insensitive, numeric-aware so "Mod 2" precedes "Mod 10".
-  const inactiveMods = useMemo(
-    () =>
-      mods
-        .filter((m) => !activeSet.has(m.id))
-        .filter(modMatches)
-        .sort((a, b) =>
-          (a.manifest?.name ?? a.id).localeCompare(
-            b.manifest?.name ?? b.id,
-            undefined,
-            { sensitivity: "base", numeric: true },
-          ),
-        ),
-    [mods, activeSet, modMatches],
+  // drag-sortable load order), so they're ordered by whichever field the
+  // user picked. Search and the favorites toggle both narrow the set; sort
+  // owns the order. Keeping those jobs separate is why favorites is a filter
+  // and not a pin -- a pin would silently overrule the sort control.
+  const inactiveMods = useMemo(() => {
+    const rows = mods
+      .filter((m) => !activeSet.has(m.id))
+      .filter(modMatches)
+      .filter((m) => !favoritesOnly || m.favorite);
+    return rows.sort((a, b) => compareMods(a, b, sort, descending));
+  }, [mods, activeSet, modMatches, favoritesOnly, sort, descending]);
+
+  // Sorting by a value the row doesn't display leaves the order looking
+  // arbitrary, and "never played" is indistinguishable from "played months
+  // ago" when both just sink to the bottom. That bites hardest on day one,
+  // when nothing has been played yet and the sort appears to do nothing at
+  // all. Only shown for the usage sort: the others order by something already
+  // on screen (the name) or by a value with no empty case (the install time).
+  const rowDetail = useMemo(() => {
+    if (sort !== "used") return undefined;
+    return (mod: Mod) =>
+      mod.lastUsedAt ? `played ${relativeTime(mod.lastUsedAt)}` : "never played";
+  }, [sort]);
+
+  const favoriteCount = useMemo(
+    () => mods.filter((m) => m.favorite && !activeSet.has(m.id)).length,
+    [mods, activeSet],
   );
+
+  const handleToggleFavorite = async (mod: Mod) => {
+    const next = !mod.favorite;
+    // Optimistic: the star should respond to the click immediately, and a
+    // failed write is reported rather than silently reverted mid-list.
+    const apply = (list: Mod[]) =>
+      list.map((m) => (m.id === mod.id ? { ...m, favorite: next } : m));
+    cachedMods = apply(cachedMods);
+    notifyCacheChanged();
+    setMods(apply);
+    try {
+      await setModFavorite(mod.id, next);
+    } catch (err) {
+      toast.error(`Couldn't save favorite: ${extractMessage(err)}`);
+      await reload();
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -384,8 +477,74 @@ export function ModsPage() {
                 onDelete={handleDelete}
                 onOpenFolder={handleOpenFolder}
                 onUpdate={handleUpdate}
+                onToggleFavorite={(mod) => void handleToggleFavorite(mod)}
                 updatingIds={updatingIds}
-                emptyMessage={isFiltering ? "No matches." : "No inactive mods."}
+                detail={rowDetail}
+                headerAction={
+                  <div className="mods-sort">
+                    <button
+                      type="button"
+                      className={`mod-column-action mods-fav-filter${favoritesOnly ? " is-on" : ""}`}
+                      aria-pressed={favoritesOnly}
+                      title={
+                        favoritesOnly
+                          ? "Showing favorites only"
+                          : "Show favorites only"
+                      }
+                      onClick={() => setFavoritesOnly((v) => !v)}
+                    >
+                      <Star
+                        size={13}
+                        aria-hidden="true"
+                        fill={favoritesOnly ? "currentColor" : "none"}
+                      />
+                      {favoriteCount > 0 && favoriteCount}
+                    </button>
+                    <label className="mods-sort-label" htmlFor="mods-sort-by">
+                      Sort
+                    </label>
+                    <select
+                      id="mods-sort-by"
+                      className="mods-sort-select"
+                      value={sort}
+                      onChange={(e) => changeSort(e.target.value as ModSort)}
+                    >
+                      {MOD_SORTS.map((option) => (
+                        <option key={option} value={option}>
+                          {MOD_SORT_LABELS[option]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="mod-column-action mods-sort-dir"
+                      onClick={() => setDescending((v) => !v)}
+                      title={
+                        descending
+                          ? `${MOD_SORT_LABELS[sort]}, descending`
+                          : `${MOD_SORT_LABELS[sort]}, ascending`
+                      }
+                      aria-label={
+                        descending
+                          ? "Sorting descending, switch to ascending"
+                          : "Sorting ascending, switch to descending"
+                      }
+                    >
+                      {descending ? (
+                        <ArrowDownWideNarrow size={14} aria-hidden="true" />
+                      ) : (
+                        <ArrowUpNarrowWide size={14} aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                }
+                emptyMessage={
+                  favoritesOnly && favoriteCount === 0
+                    ? "No favorites yet. Star a mod to keep it here."
+                    : isFiltering || favoritesOnly
+                      ? "No matches."
+                      : "No inactive mods."
+                }
               />
               <SortableContext
                 items={activeIds}
@@ -396,9 +555,13 @@ export function ModsPage() {
                   mods={activeMods}
                   toggleLabel="Disable"
                   onToggle={deactivate}
-                  onDelete={handleDelete}
+                  // No onDelete: an active mod is one the game is set to
+                  // load, so deleting it here is a click away from breaking
+                  // the next launch. Disable it first, then delete it from
+                  // the inactive column.
                   onOpenFolder={handleOpenFolder}
                   onUpdate={handleUpdate}
+                  onToggleFavorite={(mod) => void handleToggleFavorite(mod)}
                   updatingIds={updatingIds}
                   headerAction={
                     <button
@@ -433,6 +596,73 @@ export function ModsPage() {
       />
     </div>
   );
+}
+
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 365 * 24 * 60 * 60 * 1000],
+  ["month", 30 * 24 * 60 * 60 * 1000],
+  ["week", 7 * 24 * 60 * 60 * 1000],
+  ["day", 24 * 60 * 60 * 1000],
+  ["hour", 60 * 60 * 1000],
+  ["minute", 60 * 1000],
+];
+
+/** "3 days ago", "yesterday", "just now". Uses the platform formatter so the
+ *  wording follows the user's locale rather than hard-coded English. */
+function relativeTime(ms: number): string {
+  const fmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const elapsed = Date.now() - ms;
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (elapsed >= size) return fmt.format(-Math.floor(elapsed / size), unit);
+  }
+  return "just now";
+}
+
+/** Display name shown in the row, which is what alphabetical should follow. */
+function displayName(mod: Mod): string {
+  return mod.manifest?.name ?? mod.id;
+}
+
+/** Ascending comparison on `sort`'s field alone, with no tie-break. */
+function compareBySort(a: Mod, b: Mod, sort: ModSort): number {
+  switch (sort) {
+    case "installed":
+      return a.modifiedAt - b.modifiedAt;
+    // Never-used mods count as older than anything that has been used, so
+    // descending puts them last rather than at the top, where they'd bury
+    // the mods this sort exists to surface.
+    case "used":
+      return (a.lastUsedAt ?? 0) - (b.lastUsedAt ?? 0);
+    case "name":
+      return byName(a, b);
+  }
+}
+
+/**
+ * Full ordering: the chosen field in the chosen direction, then name as the
+ * tie-break.
+ *
+ * The tie-break is deliberately outside the direction flip. Reversing it too
+ * would order equal timestamps Z-A, and timestamp ties are common -- every
+ * mod that has never been used shares one, as does everything installed in
+ * the same operation.
+ */
+function compareMods(
+  a: Mod,
+  b: Mod,
+  sort: ModSort,
+  descending: boolean,
+): number {
+  const primary = compareBySort(a, b, sort) * (descending ? -1 : 1);
+  return primary || byName(a, b);
+}
+
+/** Case-insensitive and numeric-aware, so "Mod 2" precedes "Mod 10". */
+function byName(a: Mod, b: Mod): number {
+  return displayName(a).localeCompare(displayName(b), undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
 }
 
 function extractMessage(err: unknown): string {

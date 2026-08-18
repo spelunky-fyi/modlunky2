@@ -6,6 +6,7 @@ import {
   Folder,
   GripVertical,
   Loader2,
+  Star,
   Trash2,
   Users,
 } from "lucide-react";
@@ -19,11 +20,19 @@ interface ModColumnProps {
   mods: Mod[];
   toggleLabel: string;
   onToggle: (id: string) => void;
-  onDelete: (mod: Mod) => void;
+  /** Omit to hide the delete affordance entirely. Left off the active column
+   *  so a mod the game is currently loading can't be deleted out from under
+   *  it in one click; disabling it first is the deliberate extra step. */
+  onDelete?: (mod: Mod) => void;
   onOpenFolder: (id: string) => void;
   onUpdate: (mod: Mod) => void;
+  onToggleFavorite: (mod: Mod) => void;
   updatingIds: Set<string>;
   sortable?: boolean;
+  /** Extra line under the mod name explaining its position in the current
+   *  order. Only supplied when the sort is on something the row doesn't
+   *  otherwise show, so a value the list is sorted by is never invisible. */
+  detail?: (mod: Mod) => string | null;
   emptyMessage: string;
   /** Optional control rendered on the right of the column header. */
   headerAction?: ReactNode;
@@ -37,8 +46,10 @@ export function ModColumn({
   onDelete,
   onOpenFolder,
   onUpdate,
+  onToggleFavorite,
   updatingIds,
   sortable = false,
+  detail,
   emptyMessage,
   headerAction,
 }: ModColumnProps) {
@@ -80,7 +91,9 @@ export function ModColumn({
                   onDelete={onDelete}
                   onOpenFolder={onOpenFolder}
                   onUpdate={onUpdate}
+                  onToggleFavorite={onToggleFavorite}
                   onContextMenu={openMenu}
+                  detail={detail}
                   isUpdating={updatingIds.has(mod.id)}
                 />
               ) : (
@@ -92,7 +105,9 @@ export function ModColumn({
                   onDelete={onDelete}
                   onOpenFolder={onOpenFolder}
                   onUpdate={onUpdate}
+                  onToggleFavorite={onToggleFavorite}
                   onContextMenu={openMenu}
+                  detail={detail}
                   isUpdating={updatingIds.has(mod.id)}
                 />
               ),
@@ -140,10 +155,12 @@ interface RowProps {
   mod: Mod;
   toggleLabel: string;
   onToggle: (id: string) => void;
-  onDelete: (mod: Mod) => void;
+  onDelete?: (mod: Mod) => void;
   onOpenFolder: (id: string) => void;
   onUpdate: (mod: Mod) => void;
+  onToggleFavorite: (mod: Mod) => void;
   onContextMenu: (mod: Mod, e: MouseEvent) => void;
+  detail?: (mod: Mod) => string | null;
   isUpdating: boolean;
 }
 
@@ -154,7 +171,9 @@ function PlainRow({
   onDelete,
   onOpenFolder,
   onUpdate,
+  onToggleFavorite,
   onContextMenu,
+  detail,
   isUpdating,
 }: RowProps) {
   return (
@@ -163,7 +182,7 @@ function PlainRow({
       onContextMenu={(e) => onContextMenu(mod, e)}
     >
       <ModLogo mod={mod} />
-      <RowBody mod={mod} />
+      <RowBody mod={mod} detail={detail} />
       <RowActions
         mod={mod}
         toggleLabel={toggleLabel}
@@ -171,6 +190,7 @@ function PlainRow({
         onDelete={onDelete}
         onOpenFolder={onOpenFolder}
         onUpdate={onUpdate}
+        onToggleFavorite={onToggleFavorite}
         isUpdating={isUpdating}
       />
     </li>
@@ -184,7 +204,9 @@ function SortableRow({
   onDelete,
   onOpenFolder,
   onUpdate,
+  onToggleFavorite,
   onContextMenu,
+  detail,
   isUpdating,
 }: RowProps) {
   const {
@@ -220,7 +242,7 @@ function SortableRow({
         <GripVertical size={14} aria-hidden="true" />
       </button>
       <ModLogo mod={mod} />
-      <RowBody mod={mod} />
+      <RowBody mod={mod} detail={detail} />
       <RowActions
         mod={mod}
         toggleLabel={toggleLabel}
@@ -228,6 +250,7 @@ function SortableRow({
         onDelete={onDelete}
         onOpenFolder={onOpenFolder}
         onUpdate={onUpdate}
+        onToggleFavorite={onToggleFavorite}
         isUpdating={isUpdating}
       />
     </li>
@@ -250,11 +273,21 @@ function ModLogo({ mod }: { mod: Mod }) {
   );
 }
 
-function RowBody({ mod }: { mod: Mod }) {
+function RowBody({
+  mod,
+  detail,
+}: {
+  mod: Mod;
+  detail?: (mod: Mod) => string | null;
+}) {
+  const extra = detail?.(mod);
   return (
     <div className="mod-row-body">
       <div className="mod-row-title">{mod.manifest?.name ?? mod.id}</div>
-      <div className="mod-row-meta">{mod.manifest?.slug ?? mod.id}</div>
+      <div className="mod-row-meta">
+        {mod.manifest?.slug ?? mod.id}
+        {extra && <span className="mod-row-detail">{extra}</span>}
+      </div>
     </div>
   );
 }
@@ -266,10 +299,25 @@ function RowActions({
   onDelete,
   onOpenFolder,
   onUpdate,
+  onToggleFavorite,
   isUpdating,
 }: Omit<RowProps, "onContextMenu">) {
   return (
     <div className="mod-row-actions">
+      <button
+        type="button"
+        className={`mod-row-icon-btn mod-row-fav${mod.favorite ? " is-fav" : ""}`}
+        aria-label={mod.favorite ? "Remove from favorites" : "Add to favorites"}
+        aria-pressed={mod.favorite}
+        title={mod.favorite ? "Remove from favorites" : "Add to favorites"}
+        onClick={() => onToggleFavorite(mod)}
+      >
+        <Star
+          size={14}
+          aria-hidden="true"
+          fill={mod.favorite ? "currentColor" : "none"}
+        />
+      </button>
       {(mod.hasUpdate || isUpdating) && (
         <button
           type="button"
@@ -302,15 +350,17 @@ function RowActions({
       >
         <Folder size={14} aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        className="mod-row-icon-btn mod-row-icon-danger"
-        aria-label="Delete"
-        title="Delete"
-        onClick={() => onDelete(mod)}
-      >
-        <Trash2 size={14} aria-hidden="true" />
-      </button>
+      {onDelete && (
+        <button
+          type="button"
+          className="mod-row-icon-btn mod-row-icon-danger"
+          aria-label="Delete"
+          title="Delete"
+          onClick={() => onDelete(mod)}
+        >
+          <Trash2 size={14} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

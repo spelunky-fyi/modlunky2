@@ -66,6 +66,16 @@ export async function openModFolder(id: string): Promise<void> {
   return invoke<void>("open_mod_folder", { id });
 }
 
+/// Stars or unstars a mod. Stored per install alongside the mods themselves,
+/// not in the shared config, because a mod id only means something relative
+/// to one install's Packs folder.
+export async function setModFavorite(
+  id: string,
+  favorite: boolean,
+): Promise<void> {
+  return invoke<void>("set_mod_favorite", { id, favorite });
+}
+
 export async function updateMod(id: string): Promise<Mod> {
   return invoke<Mod>("update_mod", { id });
 }
