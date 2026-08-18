@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Level editor: editing Level settings, Level chances or Monster chances
+  appeared to revert when you hit save.** The file was written correctly, but
+  the Rules panel dropped back to showing the values the file had when you
+  opened it, so the change looked lost until you reloaded. Sections you didn't
+  touch are still left alone.
 - Race condition where mod list could show up empty until you refresh
 - Issue related to updating/installing over existing mods when system temp lives
   on a different drive from mods.

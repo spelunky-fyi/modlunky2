@@ -46,6 +46,7 @@ import {
   type VanillaLevelData,
   type VanillaLevelListEntry,
 } from "../../lib/commands";
+import { foldSavedRules } from "../../lib/levelRules";
 import { emit } from "@tauri-apps/api/event";
 import { useFloatingMenu } from "../../hooks/useFloatingMenu";
 import { Modal } from "../shared/Modal";
@@ -1214,6 +1215,19 @@ export function VanillaEditor({ pack }: Props) {
       // Hook snapshots its own undo depth as "clean" and clears its
       // in-progress stroke buffer.
       markSaved();
+      // Same story as the room settings above, for the Rules panel.
+      // `effectiveRules` reads `rulesEdits.X ?? level.X`, and `level` still
+      // holds what was parsed off disk when the file was opened. Clearing the
+      // edits without folding them in drops the panel straight back to the
+      // pre-edit values, so a save looks like it silently reverted even though
+      // the file on disk is correct.
+      //
+      // See `foldSavedRules` for why only the sent sections are replaced.
+      if (editedRulesPayload) {
+        setLevel((prev) =>
+          prev ? foldSavedRules(prev, editedRulesPayload) : prev,
+        );
+      }
       setRulesEdits({
         levelSettings: null,
         levelChances: null,
