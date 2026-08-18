@@ -818,6 +818,9 @@ export interface EditorPrefs {
   paletteDense: boolean;
   /** Whether saving pops a confirmation dialog first. Default true. */
   confirmSave: boolean;
+  /** Whether adding a room from the context menu pops a confirmation dialog
+   *  first. Default true. */
+  confirmAddRoom: boolean;
 }
 
 export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
@@ -828,6 +831,7 @@ export const DEFAULT_EDITOR_PREFS: EditorPrefs = {
   showRoomGrid: true,
   paletteDense: false,
   confirmSave: true,
+  confirmAddRoom: true,
 };
 
 /** Canvas zoom limits (scale factor), mirrored from TileCanvas so the

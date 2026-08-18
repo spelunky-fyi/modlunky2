@@ -3077,6 +3077,7 @@ export function VanillaEditor({ pack }: Props) {
           }}
           onDeleteRoom={commitDeleteRoom}
           onDeleteAllRooms={commitDeleteAllRooms}
+          onAddRoom={commitAddRoom}
           onMoveRoom={commitMoveRoom}
           onPurgeComments={commitPurgeComments}
         />
@@ -3112,6 +3113,13 @@ export function VanillaEditor({ pack }: Props) {
           templates={level?.templates ?? []}
           onOp={(op) => {
             setTreeMenu(null);
+            // With the prompt turned off, the menu item does the thing rather
+            // than asking about it first. Only adding a room opts out this
+            // way: the destructive ops keep their confirmation regardless.
+            if (op.kind === "addRoom" && !prefs.confirmAddRoom) {
+              commitAddRoom(op.templateName);
+              return;
+            }
             setPendingTreeOp(op);
           }}
           clipboardRoomCount={clipboardRoomCount}
@@ -3166,6 +3174,7 @@ export function VanillaEditor({ pack }: Props) {
             commitAddRoom(name);
             setPendingTreeOp(null);
           }}
+          onSuppressAddRoomPrompt={() => updatePrefs({ confirmAddRoom: false })}
           onSubmitEditRoomComment={(name, idx, comment) => {
             commitEditRoomComment(name, idx, comment);
             setPendingTreeOp(null);
@@ -3486,6 +3495,7 @@ function TreeOpModal({
   onSubmitAddRoom,
   onSubmitEditRoomComment,
   onSubmitDeleteRoom,
+  onSuppressAddRoomPrompt,
 }: {
   op:
     | { kind: "addTemplate" }
@@ -3518,6 +3528,9 @@ function TreeOpModal({
     comment: string,
   ) => void;
   onSubmitDeleteRoom: (name: string, roomIndex: number) => void;
+  /** Called when the user ticks "Don't ask again" and confirms, so the
+   *  preference is only written if they actually went through with it. */
+  onSuppressAddRoomPrompt: () => void;
 }) {
   const initial =
     op.kind === "renameTemplate" ||
@@ -3530,6 +3543,10 @@ function TreeOpModal({
   // 30x8 / 10x16 / 30x16 / etc. are also valid via free-form input.
   const [addWidth, setAddWidth] = useState(10);
   const [addHeight, setAddHeight] = useState(8);
+  // "Don't ask again" for the add-room confirmation, mirroring the save
+  // dialog's. Local to the modal, which is remounted per op, so it resets
+  // itself between prompts.
+  const [dontAskAgain, setDontAskAgain] = useState(false);
 
   const submit = () => {
     switch (op.kind) {
@@ -3546,6 +3563,7 @@ function TreeOpModal({
         onSubmitEditRoomComment(op.templateName, op.roomIndex, value);
         break;
       case "addRoom":
+        if (dontAskAgain) onSuppressAddRoomPrompt();
         onSubmitAddRoom(op.templateName);
         break;
       case "deleteTemplate":
@@ -3704,10 +3722,20 @@ function TreeOpModal({
         </>
       )}
       {op.kind === "addRoom" && (
-        <p className="editor-confirm-body">
-          Add another room to <code>{op.templateName}</code>? A blank room
-          matching this template's existing size will be appended.
-        </p>
+        <>
+          <p className="editor-confirm-body">
+            Add another room to <code>{op.templateName}</code>? A blank room
+            matching this template's existing size will be appended.
+          </p>
+          <label className="editor-confirm-check">
+            <input
+              type="checkbox"
+              checked={dontAskAgain}
+              onChange={(e) => setDontAskAgain(e.target.checked)}
+            />
+            <span>Don't ask again (add rooms immediately from now on)</span>
+          </label>
+        </>
       )}
       {op.kind === "deleteTemplate" && (
         <>

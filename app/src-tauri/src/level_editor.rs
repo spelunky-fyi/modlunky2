@@ -1147,6 +1147,10 @@ pub struct EditorPrefs {
     /// historical behavior); users opt out via the dialog's "Don't ask again"
     /// or the editor settings.
     pub confirm_save: bool,
+    /// Whether adding a room from the room context menu pops a confirmation
+    /// dialog first. Defaults to true (the historical behavior); users opt out
+    /// via the dialog's "Don't ask again" or the editor settings.
+    pub confirm_add_room: bool,
 }
 
 impl Default for EditorPrefs {
@@ -1159,6 +1163,7 @@ impl Default for EditorPrefs {
             show_room_grid: true,
             palette_dense: false,
             confirm_save: true,
+            confirm_add_room: true,
         }
     }
 }

@@ -233,7 +233,9 @@ export function EditorSettingsModal({
             <header className="editor-settings-section-head">
               <div>
                 <div className="editor-settings-section-titlerow">
-                  <span className="editor-settings-section-title">Saving</span>
+                  <span className="editor-settings-section-title">
+                    Confirmations
+                  </span>
                   <span className="editor-settings-scope">All editors</span>
                 </div>
               </div>
@@ -245,6 +247,19 @@ export function EditorSettingsModal({
                 onChange={(e) => onChangePrefs({ confirmSave: e.target.checked })}
               />
               <span>Ask for confirmation before saving</span>
+            </label>
+            <label className="editor-settings-check">
+              <input
+                type="checkbox"
+                checked={prefs.confirmAddRoom}
+                onChange={(e) =>
+                  onChangePrefs({ confirmAddRoom: e.target.checked })
+                }
+              />
+              {/* Only the vanilla editor has a room manager to add rooms in,
+                  so the section's "All editors" scope doesn't hold for this
+                  one and the label says where it applies. */}
+              <span>Ask before adding a room (vanilla editor)</span>
             </label>
           </section>
 

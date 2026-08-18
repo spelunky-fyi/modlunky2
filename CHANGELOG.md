@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mods are checked for files that can crash the game before you enable
   them.** A pack with an unparseable `char_<color>.json` now warns you. Flagged
   mods also have a warning badge you can click to re-check after fixing the file.
+- **An "Add room" tile in the vanilla level editor's room manager**, at the end
+  of each template's rooms.
+- The right-click "Add room" confirmation now has a **"Don't ask again"**
+  checkbox, like the save dialog already did. There's a matching toggle in the
+  editor settings if you want it back.
 - **Row density for the mod list**: Comfortable (the existing look), Compact,
   or Dense, from the dropdown next to Refresh. Compact fits about half again
   as many mods on screen, Dense a little over twice as many by dropping to one

@@ -13,6 +13,7 @@ import {
   Copy,
   CopyPlus,
   GripVertical,
+  Plus,
   SquareArrowOutUpRight,
   Trash2,
 } from "lucide-react";
@@ -75,6 +76,9 @@ interface RoomManagerModalProps {
   onDeleteRoom: (templateName: string, roomIndex: number) => void;
   /** Delete every room in a template, leaving one blank room. */
   onDeleteAllRooms: (templateName: string) => void;
+  /** Append a blank room to a template, sized to match the rooms already
+   *  there. */
+  onAddRoom: (templateName: string) => void;
   /** Reorder a room within its template or move it to another. `toIdx` is the
    *  insertion index in the destination after removal from the source. */
   onMoveRoom: (
@@ -123,6 +127,7 @@ interface RoomManagerCtxValue {
   onJumpToRoom: (templateName: string, roomIndex: number) => void;
   onCopyRoom: (templateName: string, roomIndex: number, append: boolean) => void;
   onDeleteRoom: (templateName: string, roomIndex: number) => void;
+  onAddRoom: (templateName: string) => void;
   onEditRoomComment: (
     templateName: string,
     roomIndex: number,
@@ -154,6 +159,7 @@ export function RoomManagerModal({
   onCopyRoom,
   onDeleteRoom,
   onDeleteAllRooms,
+  onAddRoom,
   onMoveRoom,
   onPurgeComments,
 }: RoomManagerModalProps) {
@@ -482,6 +488,7 @@ export function RoomManagerModal({
       onJumpToRoom,
       onCopyRoom,
       onDeleteRoom,
+      onAddRoom,
       onEditRoomComment,
       roomCountOf,
       isInvalidTarget,
@@ -497,6 +504,7 @@ export function RoomManagerModal({
       onJumpToRoom,
       onCopyRoom,
       onDeleteRoom,
+      onAddRoom,
       onEditRoomComment,
       roomCountOf,
       isInvalidTarget,
@@ -662,26 +670,55 @@ const TemplateSection = memo(function TemplateSection({
         placeholder="Template comment"
         onCommit={(c) => onEditTemplateComment(tpl.name, c)}
       />
-      {roomUids.length > 0 && (
+      {/* The grid is the layout container; SortableContext renders no DOM of
+          its own, so the add tile sits beside the cards as a plain sibling
+          without being registered as something you can drag or drop onto. */}
+      <div className="rm-room-grid">
         <SortableContext items={roomUids} strategy={rectSortingStrategy}>
-          <div className="rm-room-grid">
-            {roomUids.map((uid) => {
-              const meta = uidMeta.get(uid);
-              if (!meta) return null;
-              return (
-                <RoomCard
-                  key={uid}
-                  uid={uid}
-                  templateName={meta.templateName}
-                  roomIndex={meta.roomIndex}
-                  room={meta.room}
-                />
-              );
-            })}
-          </div>
+          {roomUids.map((uid) => {
+            const meta = uidMeta.get(uid);
+            if (!meta) return null;
+            return (
+              <RoomCard
+                key={uid}
+                uid={uid}
+                templateName={meta.templateName}
+                roomIndex={meta.roomIndex}
+                room={meta.room}
+              />
+            );
+          })}
         </SortableContext>
-      )}
+        <AddRoomCard templateName={tpl.name} />
+      </div>
     </section>
+  );
+});
+
+/**
+ * The trailing "add room" tile.
+ *
+ * Sized to match a room card so the grid keeps its rhythm, but deliberately
+ * not a `RoomCard`: it isn't draggable, isn't a drop target, and has no
+ * identity in the template, so registering it as either would put a hole in
+ * the reorder logic.
+ */
+const AddRoomCard = memo(function AddRoomCard({
+  templateName,
+}: {
+  templateName: string;
+}) {
+  const { onAddRoom } = useRoomManagerCtx();
+  return (
+    <button
+      type="button"
+      className="rm-add-room"
+      onClick={() => onAddRoom(templateName)}
+      title={`Add a blank room to "${templateName}"`}
+    >
+      <Plus size={20} aria-hidden="true" />
+      <span>Add room</span>
+    </button>
   );
 });
 
