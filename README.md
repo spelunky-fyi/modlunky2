@@ -38,22 +38,25 @@ Spelunky 2 has no native Linux build, so Modlunky runs it through the Proton
 setup Steam already made for it. That's detected automatically, and "I'm feeling
 lucky" in Settings finds your install directory. A few things to know:
 
+- **Run Spelunky 2 from Steam once before using Modlunky.** Steam only creates
+  the game's Proton prefix the first time you launch it, and Modlunky runs
+  everything through that prefix.
 - **Steam has to be running.** The game talks to it whether or not you launched
   through it.
 - **Settings don't carry over** if you were previously running the Windows build
   under Proton. Modlunky now stores its config natively, at
   `~/.local/share/spelunky.fyi/modlunky2/`, so you'll set your profile up once.
-- **If the level editor renders black, or no window appears at all**, your
-  graphics driver is hitting a known WebKitGTK bug. Launch with
-  `WEBKIT_DISABLE_DMABUF_RENDERER=1` set:
+- **If the level editor renders black**, your graphics driver is hitting a
+  known WebKitGTK bug. Launch with `WEBKIT_DISABLE_DMABUF_RENDERER=1` set:
 
   ```console
   WEBKIT_DISABLE_DMABUF_RENDERER=1 ./modlunky2-x86_64.AppImage
   ```
 
-  On Steam Deck, add it under the shortcut's launch options as
-  `WEBKIT_DISABLE_DMABUF_RENDERER=1 %command%`. This costs GPU compositing, so
-  only reach for it if the app won't start otherwise.
+  This costs GPU compositing, so only reach for it if you hit the problem. It
+  is also worth trying in the rare case that no window appears at all. If
+  you're launching from a Steam shortcut, set it in the launch options as
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1 %command%`.
 
 Requires glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, or later).
 
