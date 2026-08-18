@@ -86,7 +86,6 @@ While windows is the primary target, we try to keep the build running on Linux a
 
 Make sure to follow the steps for [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/#linux) for your distro.
 
-
 ### Building and running
 
 The same commands work as on Windows:
@@ -113,7 +112,6 @@ Two things to know when running it:
 Config lives at `~/.local/share/spelunky.fyi/modlunky2/config.json` rather than
 under `%LOCALAPPDATA%`.
 
-
 ## Working in the codebase
 
 ### Adding a Tauri command
@@ -136,9 +134,11 @@ not hot-reload the way `app/src/` does.
 
 ## Checks
 
-CI (`.github/workflows/rust-test.yml`) runs on the pinned MSRV toolchain, on
-both Windows and Linux, and fails on any of the following, so run them locally
-before pushing.
+CI runs these and fails on any of them, so run them locally before pushing.
+`.github/workflows/rust-test.yml` covers the Rust side on the pinned MSRV
+toolchain on both Windows and Linux; `.github/workflows/web-test.yml` covers
+the frontend on Linux only, since everything it checks is
+platform-independent.
 
 Rust, from the repo root:
 
@@ -152,6 +152,7 @@ Frontend, from `app/`:
 
 ```console
 npx tsc --noEmit
+npm test
 ```
 
 Notes:
@@ -159,8 +160,10 @@ Notes:
 - **Clippy is enforced** with `-D warnings`, so any warning fails CI.
   `cargo clippy --fix` applies most mechanical lints for you.
 - Frontend type-checking is enforced through the release build (`npm run build`
-  runs `tsc` before Vite), so a type error fails the build job. `npx tsc
---noEmit` is the fast local check. There is no ESLint.
+  runs `tsc` before Vite) as well as by the web workflow. `npx tsc --noEmit` is
+  the fast local check. There is no ESLint.
+- Frontend tests are [Vitest](https://vitest.dev/); `npm run test:watch` reruns
+  on save.
 - `--locked` requires `Cargo.lock` to be committed and current. If you
   intentionally changed dependencies, drop `--locked`, then commit the updated
   lockfile.
@@ -194,7 +197,7 @@ PRs target `main`. Please make sure:
 - [ ] `cargo fmt --all` has been run
 - [ ] `cargo clippy --workspace --all-targets --locked -- -D warnings` is clean
 - [ ] `cargo test --workspace --all-targets --locked` passes
-- [ ] `npx tsc --noEmit` passes (from `app/`)
+- [ ] `npx tsc --noEmit` and `npm test` pass (from `app/`)
 - [ ] `CHANGELOG.md` has an `[Unreleased]` entry for any user-facing change
 
 ## Releases

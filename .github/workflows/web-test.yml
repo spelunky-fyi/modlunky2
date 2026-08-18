@@ -1,0 +1,52 @@
+name: Web checks
+
+# Typecheck + unit tests for the frontend. Deliberately separate from
+# `build.yml`: that one produces release artifacts across a two-OS matrix and
+# takes ~10 minutes, so these would run twice and only report once the heavy
+# build had finished. This job is seconds, on one OS, because everything it
+# covers is platform-independent pure logic.
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**/*.md"
+
+jobs:
+  checks:
+    name: Web
+    # Skip Dependabot's automated dep-bump PRs, matching the other workflows:
+    # they can't merge without maintainer approval anyway, so run CI when the
+    # human promotes them.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install deps
+        working-directory: app
+        run: npm ci
+
+      # `npm run build` runs tsc first, but building the whole bundle to learn
+      # about a type error is slower than asking tsc directly.
+      - name: Typecheck
+        working-directory: app
+        run: npx tsc --noEmit
+
+      - name: Test
+        working-directory: app
+        run: npm test

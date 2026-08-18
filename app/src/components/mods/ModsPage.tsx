@@ -42,6 +42,7 @@ import {
   Users,
 } from "lucide-react";
 import type { Mod, ModSort } from "../../types/mods";
+import { relativeTime, sortMods } from "../../lib/modSort";
 import {
   MOD_SORTS,
   MOD_SORT_LABELS,
@@ -254,7 +255,7 @@ export function ModsPage() {
       .filter((m) => !activeSet.has(m.id))
       .filter(modMatches)
       .filter((m) => !favoritesOnly || m.favorite);
-    return rows.sort((a, b) => compareMods(a, b, sort, descending));
+    return sortMods(rows, sort, descending);
   }, [mods, activeSet, modMatches, favoritesOnly, sort, descending]);
 
   // Sorting by a value the row doesn't display leaves the order looking
@@ -596,73 +597,6 @@ export function ModsPage() {
       />
     </div>
   );
-}
-
-const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 365 * 24 * 60 * 60 * 1000],
-  ["month", 30 * 24 * 60 * 60 * 1000],
-  ["week", 7 * 24 * 60 * 60 * 1000],
-  ["day", 24 * 60 * 60 * 1000],
-  ["hour", 60 * 60 * 1000],
-  ["minute", 60 * 1000],
-];
-
-/** "3 days ago", "yesterday", "just now". Uses the platform formatter so the
- *  wording follows the user's locale rather than hard-coded English. */
-function relativeTime(ms: number): string {
-  const fmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-  const elapsed = Date.now() - ms;
-  for (const [unit, size] of RELATIVE_UNITS) {
-    if (elapsed >= size) return fmt.format(-Math.floor(elapsed / size), unit);
-  }
-  return "just now";
-}
-
-/** Display name shown in the row, which is what alphabetical should follow. */
-function displayName(mod: Mod): string {
-  return mod.manifest?.name ?? mod.id;
-}
-
-/** Ascending comparison on `sort`'s field alone, with no tie-break. */
-function compareBySort(a: Mod, b: Mod, sort: ModSort): number {
-  switch (sort) {
-    case "installed":
-      return a.modifiedAt - b.modifiedAt;
-    // Never-used mods count as older than anything that has been used, so
-    // descending puts them last rather than at the top, where they'd bury
-    // the mods this sort exists to surface.
-    case "used":
-      return (a.lastUsedAt ?? 0) - (b.lastUsedAt ?? 0);
-    case "name":
-      return byName(a, b);
-  }
-}
-
-/**
- * Full ordering: the chosen field in the chosen direction, then name as the
- * tie-break.
- *
- * The tie-break is deliberately outside the direction flip. Reversing it too
- * would order equal timestamps Z-A, and timestamp ties are common -- every
- * mod that has never been used shares one, as does everything installed in
- * the same operation.
- */
-function compareMods(
-  a: Mod,
-  b: Mod,
-  sort: ModSort,
-  descending: boolean,
-): number {
-  const primary = compareBySort(a, b, sort) * (descending ? -1 : 1);
-  return primary || byName(a, b);
-}
-
-/** Case-insensitive and numeric-aware, so "Mod 2" precedes "Mod 10". */
-function byName(a: Mod, b: Mod): number {
-  return displayName(a).localeCompare(displayName(b), undefined, {
-    sensitivity: "base",
-    numeric: true,
-  });
 }
 
 function extractMessage(err: unknown): string {
