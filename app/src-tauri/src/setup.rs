@@ -125,6 +125,14 @@ mod tests {
     use super::*;
     use std::path::Path;
 
+    /// Names the one place any of these is fixable. Matched case-insensitively
+    /// and on that word alone: this is here to catch a message that leaves the
+    /// user with nowhere to go, not to freeze the wording of copy that is
+    /// expected to be rewritten.
+    fn points_at_settings(msg: &str) -> bool {
+        msg.to_lowercase().contains("settings")
+    }
+
     /// Whatever the state, the user is told where to go. Routing every call
     /// site through one function is what keeps that true, rather than leaving
     /// it to whichever command happened to fail.
@@ -135,7 +143,7 @@ mod tests {
             install_dir_error(InstallDirState::Missing, Some(Path::new("D:/gone"))),
         ];
         for msg in cases {
-            assert!(msg.contains("Settings"), "no call to action in: {msg}");
+            assert!(points_at_settings(&msg), "no call to action in: {msg}");
         }
     }
 
@@ -163,7 +171,7 @@ mod tests {
         let ok = install_dir_error(InstallDirState::Ok, Some(Path::new("D:/game")));
         // `install_dir_error` is only ever reached for a broken state, so even
         // the Ok arm must be safe advice rather than nonsense.
-        assert!(ok.contains("Settings"), "{ok}");
+        assert!(points_at_settings(&ok), "{ok}");
     }
 
     /// A state of Missing with no path can't happen through `install_dir`,
