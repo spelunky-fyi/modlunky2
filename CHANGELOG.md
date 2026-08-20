@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-20
+
 ### Added
 
 - **A Browse tab to view mods from spelunky.fyi** Let's you check out mods from right inside Modlunky2. This doesn't give the full mod details as there are security concerns about running user provided markdown from the desktop so that may come later but you can easily jump to the site from the details to see the full descriptions.
