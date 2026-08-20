@@ -1,0 +1,161 @@
+/* A column with one scrolling band and a fixed footer, not one long scroller.
+   A mod with several screenshots is taller than the pane, and the actions have
+   to stay on screen throughout rather than sitting at the bottom of the
+   content. */
+.mod-detail {
+  flex: 0 0 22rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mod-detail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.85rem;
+}
+
+.mod-detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mod-detail-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.mod-detail-by {
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  margin: 0.1rem 0 0.75rem;
+}
+
+/* aspect-ratio is doing the real work here: it gives the box its height before
+   the image has one, so the rest of the pane never gets shoved down when a
+   screenshot finishes decoding. `contain` is the other half -- a preview that
+   is not 16:9 letterboxes inside the reserved box instead of resizing it and
+   reintroducing the shift this exists to stop. */
+.mod-detail-shot {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--bg-inset);
+  display: block;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
+}
+
+.mod-detail-shot.is-loaded {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mod-detail-shot {
+    transition: none;
+  }
+}
+
+.mod-detail-thumbs {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.mod-detail-thumb {
+  width: 3rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-inset);
+  cursor: pointer;
+}
+
+.mod-detail-thumb.active {
+  border-color: var(--accent-text);
+}
+
+.mod-detail-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mod-detail-desc {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.85rem 0;
+}
+
+.mod-detail-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+}
+
+.mod-detail-facts dt {
+  color: var(--fg-muted);
+}
+
+.mod-detail-facts dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.mod-detail-file {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 0 !important;
+  word-break: break-all;
+}
+
+.mod-detail-file span {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.mod-detail-note {
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.mod-detail-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.7rem 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Equal halves, so neither button's label decides the split. Both can shrink
+   below their content width, which is what keeps a long install label from
+   pushing the other one off the edge. */
+.mod-detail-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}

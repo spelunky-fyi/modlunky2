@@ -4,9 +4,12 @@ import { KeyRound } from "lucide-react";
 import { Modal } from "../shared/Modal";
 import { useToast } from "../shared/Toast";
 import { useSetup } from "../shared/SetupContext";
+import { ConnectInline } from "../browse/ConnectInline";
+import { ReconnectPrompt } from "../browse/ReconnectPrompt";
 import {
   getConfig,
   installFromFyi,
+  isAuthFailure,
   installFromLocal,
   listPackIds,
   setConfig,
@@ -36,6 +39,9 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
   const [lastAutoDest, setLastAutoDest] = useState("");
   const [existingPacks, setExistingPacks] = useState<string[]>([]);
   const [installing, setInstalling] = useState(false);
+  // Sticky, unlike a toast: this failure has a fix, and the fix needs to
+  // still be on screen when the user goes looking for it.
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Deliberately leaves `source` alone: it is remembered across installs, so
   // someone with no spelunky.fyi token isn't returned to a source they can't
@@ -54,6 +60,7 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
     setDestId("");
     setLastAutoDest("");
     setInstalling(false);
+    setAuthError(null);
   };
 
   useEffect(() => {
@@ -141,9 +148,15 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
             reset();
             onClose();
           } catch (retryErr) {
-            toast.error(`Update failed: ${extractMessage(retryErr)}`);
+            if (isAuthFailure(retryErr)) {
+              setAuthError(extractMessage(retryErr));
+            } else {
+              toast.error(`Update failed: ${extractMessage(retryErr)}`);
+            }
           }
         }
+      } else if (isAuthFailure(err)) {
+        setAuthError(extractMessage(err));
       } else if (isLibraryMod(err)) {
         toast.error(
           `${parsed} is a library mod. Install the pack that depends on it, and the library will come along automatically.`,
@@ -263,9 +276,9 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
            carries a way to fix it rather than just naming what's needed. */
         <div className="install-needs-token">
           <KeyRound size={24} aria-hidden="true" />
-          <p>Installing from spelunky.fyi needs an API token.</p>
+          <p>Installing mods requires connecting your spelunky.fyi account.</p>
           <p className="install-hint">
-            Configure it in your settings or{" "}
+            Connect below, or{" "}
             <button
               type="button"
               className="install-inline-link"
@@ -275,20 +288,26 @@ export function InstallModal({ open, onClose }: InstallModalProps) {
             </button>
             .
           </p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              // Settings is a modal too, so hand off rather than stack.
-              onClose();
-              openSettings("apiToken");
-            }}
-          >
-            Add a token in Settings
-          </button>
+          {/* Connecting happens here rather than sending the user to Settings
+              and back: that route closed this modal to open another one, which
+              meant losing whatever had already been typed. */}
+          <ConnectInline>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                // Settings is a modal too, so hand off rather than stack.
+                onClose();
+                openSettings("apiToken");
+              }}
+            >
+              Paste a token instead
+            </button>
+          </ConnectInline>
         </div>
       ) : source === "fyi" ? (
         <div className="install-form">
+          {authError && <ReconnectPrompt message={authError} />}
           <label className="install-field">
             <span className="install-label">Mod code or URL</span>
             <input

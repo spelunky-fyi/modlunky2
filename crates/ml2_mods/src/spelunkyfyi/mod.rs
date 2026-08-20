@@ -37,4 +37,18 @@ impl From<tokio_tungstenite::tungstenite::Error> for Error {
     }
 }
 
+impl Error {
+    /// Whether the site refused our credentials rather than failing some other
+    /// way. 401 is a missing or unrecognised token; 403 is a token the server
+    /// knows but will not accept for this. Both mean the same thing to a user,
+    /// and both are worth telling them about specifically rather than showing
+    /// a status code, because both have the same fix.
+    pub fn is_auth_failure(&self) -> bool {
+        matches!(
+            self,
+            Error::StatusError(StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN)
+        )
+    }
+}
+
 type Result<R> = std::result::Result<R, Error>;

@@ -170,6 +170,53 @@ body,
   overscroll-behavior: none;
 }
 
+/* --- Scrollbars ------------------------------------------------------
+ *
+ * This webview ships overlay scrollbars: they float above the content instead
+ * of taking layout space, so a scrolling list gets its right-hand edge covered
+ * by the thumb. `scrollbar-gutter` is no help, because the spec reserves no
+ * gutter for overlay scrollbars.
+ *
+ * Giving a scrollbar any custom styling is what opts Chromium out of overlay
+ * behaviour and back to one that occupies real width. That is the actual fix
+ * here; theming it is the bonus, since the default is a pale bar that looks
+ * pasted onto a dark app.
+ *
+ * Both syntaxes are present on purpose, and only one of them runs. Chromium
+ * honours the standard properties from 121 onwards and ignores the -webkit-
+ * pseudo-elements entirely once `scrollbar-color` is set, so those are a
+ * fallback for an older engine rather than the rules that shape what you see.
+ *
+ * Built on --overlay-rgb, which already flips white-to-black between themes,
+ * so there is no light-mode counterpart to keep in step.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--overlay-rgb), 0.25) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--overlay-rgb), 0.25);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--overlay-rgb), 0.38);
+  background-clip: padding-box;
+}
+
 .tab-content {
   overscroll-behavior: contain;
 }

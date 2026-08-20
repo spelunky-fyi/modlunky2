@@ -1,0 +1,285 @@
+/* Three stacked bands: an identity row beside the logo, a full-width
+   description, and a footer pairing the stats with the action.
+
+   The logo is only as tall as the two lines beside it, so nothing below it is
+   indented into its column, and the action shares the footer rather than
+   taking a row of its own. Either alternative leaves dead space on every card
+   in the grid. */
+.mod-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mod-card:hover {
+  border-color: rgba(var(--overlay-rgb), 0.22);
+}
+
+.mod-card.selected {
+  border-color: var(--accent-text);
+}
+
+/* Keeps the focus ring on the card rather than only around the name, since the
+   name is standing in for the whole thing. */
+.mod-card:focus-within {
+  border-color: var(--accent-text);
+  outline: 1px solid var(--accent-text);
+  outline-offset: -2px;
+}
+
+.mod-card-head {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.mod-card-logo {
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The card paints the moment it mounts; the image arrives a frame or more
+   later, and on a filter change thirty of them decode at once. Fading the gap
+   turns a snap into a settle. It does not make the image arrive any sooner:
+   the reason there is a gap at all is that these are full-size uploads being
+   drawn at 44px, which only a smaller derivative fixes. */
+.mod-card-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
+}
+
+.mod-card-logo img.is-loaded {
+  opacity: 1;
+}
+
+/* Anyone who has asked for less motion gets the snap, which is the honest
+   default rather than a slower one. */
+@media (prefers-reduced-motion: reduce) {
+  .mod-card-logo img {
+    transition: none;
+  }
+}
+
+.mod-card-logo-fallback {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--fg-muted);
+}
+
+.mod-card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.mod-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+/* A button that reads as a heading: it carries the tab stop for the card, so
+   it must be focusable, but it should not look like a control. */
+.mod-card-name {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-card-name:focus-visible {
+  outline: none;
+}
+
+.mod-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+}
+
+.mod-card-badge.installed {
+  color: var(--success-fg);
+  background: rgba(var(--success-rgb), 0.16);
+}
+
+.mod-card-badge.update {
+  color: var(--accent-fg);
+  background: rgba(var(--accent-rgb), 0.2);
+}
+
+.mod-card-by {
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Two lines, then ellipsis. A fixed height rather than a max keeps every card
+   in a row the same size, so the footers line up across the grid instead of
+   stepping up and down with how much each author wrote. */
+.mod-card-desc {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  height: calc(2 * 1.35 * 0.82rem);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mod-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.mod-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.mod-card-type {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mod-card-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
+.mod-card-install {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
+}
+
+/* --- Loading placeholder ---------------------------------------------
+ *
+ * Shares .mod-card and its children's geometry, so the grid does not resize
+ * when real results replace these.
+ */
+.mod-card-skeleton {
+  cursor: default;
+  animation: mod-card-pulse 1.4s ease-in-out infinite;
+}
+
+.mod-card-skeleton:hover {
+  border-color: var(--border);
+}
+
+/* One animation on the card rather than one per block: thirty cards of five
+   blocks each is a hundred and fifty animations otherwise, for an effect
+   nobody can tell apart from this. */
+@keyframes mod-card-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mod-card-skeleton {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+
+.skeleton-block {
+  display: block;
+  background: rgba(var(--overlay-rgb), 0.08);
+  border-radius: 4px;
+}
+
+.mod-card-skeleton .mod-card-logo {
+  border-radius: 6px;
+}
+
+.skeleton-line {
+  height: 0.7rem;
+}
+
+.skeleton-line.name {
+  width: 60%;
+  height: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.skeleton-line.by {
+  width: 35%;
+}
+
+.mod-card-skeleton .mod-card-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.skeleton-line.short {
+  width: 70%;
+}
+
+.skeleton-line.meta {
+  width: 45%;
+}
+
+.skeleton-button {
+  width: 4.5rem;
+  height: 1.6rem;
+  border-radius: 6px;
+}

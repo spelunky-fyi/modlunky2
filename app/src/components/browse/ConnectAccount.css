@@ -1,0 +1,98 @@
+/* Mirrors .setup-gate so a tab that needs an account looks like a tab that
+   needs a game folder, rather than like a different app. */
+.connect-account {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 3rem 1.5rem;
+}
+
+.connect-card {
+  max-width: 34rem;
+  text-align: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2rem 2rem 1.75rem;
+}
+
+.connect-icon {
+  color: var(--accent-text);
+  margin-bottom: 0.75rem;
+}
+
+.connect-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 0.6rem;
+}
+
+.connect-body {
+  color: var(--fg-muted);
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+.connect-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.connect-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--fg);
+  margin: 0 0 1rem;
+}
+
+.connect-spin {
+  animation: connect-spin 1s linear infinite;
+  color: var(--accent-text);
+}
+
+@keyframes connect-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Respect the OS setting: a permanent spinner is exactly the kind of motion
+   people turn this off for. */
+@media (prefers-reduced-motion: reduce) {
+  .connect-spin {
+    animation: none;
+  }
+}
+
+.connect-url {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.connect-url input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg-muted);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.connect-url .btn {
+  white-space: nowrap;
+}
+
+.connect-note {
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}

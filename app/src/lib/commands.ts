@@ -188,6 +188,207 @@ export async function checkFyiUpdates(): Promise<number> {
   return invoke<number>("check_fyi_updates");
 }
 
+/* ---- Browsing the spelunky.fyi directory ----
+ *
+ * These come straight from ml2_mods, which deserializes them from the site's
+ * API and hands them on untouched, so they keep the wire format's snake_case
+ * exactly as `Manifest` in types/mods.ts does. Only DTOs the app crate defines
+ * itself (BrowseArgs, LinkStart, LinkResult below) are camelCase.
+ */
+
+export interface FyiUser {
+  username: string;
+}
+
+export interface FyiModFile {
+  id: string;
+  created_at: string;
+  filename: string;
+  downloads: number;
+  download_url: string;
+}
+
+export interface PreviewImage {
+  id: string;
+  created_at: string;
+  image_url: string;
+}
+
+/** One card in the browse grid. Deliberately has no `details`: mod markdown is
+ *  never rendered in-app, it opens on the website via `web_url`. */
+export interface ModListing {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  web_url: string;
+  submitter: FyiUser;
+  collaborators: FyiUser[];
+  mod_type: number | null;
+  mod_type_display: string | null;
+  game: number;
+  game_display: string;
+  /** The author's upload, or null. Prefer `logo_url`. */
+  logo: string | null;
+  /** Always set: the logo, or the spelunkicon generated from the slug. */
+  logo_url: string;
+  adult_content: boolean;
+  favorited: boolean;
+  downloads: number;
+  rating_avg: number;
+  rating_count: number;
+  comment_count: number;
+  favorites_count: number;
+  created_at: string;
+  listed_at: string | null;
+  updated_at: string;
+  latest_file: FyiModFile | null;
+  /** Present because the browse command always asks for it. Carrying these on
+   *  the listing is what lets the detail pane render screenshots with no
+   *  second request. */
+  preview_images: PreviewImage[];
+}
+
+export interface BrowsePage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ModListing[];
+}
+
+/** Defined by the app crate, so camelCase. `game` is not a field: Modlunky is a
+ *  Spelunky 2 tool and pins it rather than offering a control nobody wants. */
+export interface BrowseArgs {
+  q?: string;
+  modType?: number;
+  favorite?: boolean;
+  rated?: string;
+  orderBy?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface BrowseChoice {
+  value: string;
+  label: string;
+}
+
+export interface ModTypeChoice {
+  value: number;
+  label: string;
+  help_text: string;
+}
+
+/** The filter bar's options, fetched rather than hardcoded so a new mod type on
+ *  the site shows up here without a Modlunky release. */
+export interface BrowseOptions {
+  game: number | null;
+  mod_types: ModTypeChoice[];
+  order_by: BrowseChoice[];
+  default_order_by: string;
+  rated: BrowseChoice[];
+  allow_adult: boolean;
+  hide_ratings: boolean;
+}
+
+/** Why a browse call failed. Tagged so the UI can offer a fix rather than
+ *  matching on message text, which breaks the next time someone rewords one.
+ *
+ *  `needsAccount` means nothing is configured; `unauthorized` means something is
+ *  and the site refused it, which is what a reset token looks like from here. */
+export type BrowseError =
+  | { kind: "needsAccount"; message: string }
+  | { kind: "unauthorized"; message: string }
+  | { kind: "failed"; message: string };
+
+/** Narrows an unknown caught from a browse command. Anything that isn't one of
+ *  our tagged shapes (a panic, a serialization failure) becomes `failed`, so
+ *  callers always have something to render. */
+export function asBrowseError(err: unknown): BrowseError {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "kind" in err &&
+    typeof (err as { kind: unknown }).kind === "string"
+  ) {
+    const tagged = err as BrowseError;
+    if (
+      tagged.kind === "needsAccount" ||
+      tagged.kind === "unauthorized" ||
+      tagged.kind === "failed"
+    ) {
+      return tagged;
+    }
+  }
+  return { kind: "failed", message: String(err) };
+}
+
+/** True when an error from *any* command means the site refused our
+ *  credentials. Install errors come back as ManagerError, which is tagged
+ *  differently from BrowseError, so both spellings are checked here rather
+ *  than at each call site. */
+export function isAuthFailure(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  if ("Unauthorized" in err) return true; // ManagerError, from installs
+  return (err as { kind?: unknown }).kind === "unauthorized";
+}
+
+export async function browseMods(args: BrowseArgs = {}): Promise<BrowsePage> {
+  return invoke<BrowsePage>("browse_mods", { args });
+}
+
+export async function browseModOptions(): Promise<BrowseOptions> {
+  return invoke<BrowseOptions>("browse_mod_options");
+}
+
+/** Asks the site whether the configured token still works. Resolves on
+ *  success, rejects with a {@link BrowseError} otherwise.
+ *
+ *  There is no passive way to know a token has been reset on the website, so
+ *  without this the first sign is a failed install. */
+export async function verifyFyiAccount(): Promise<void> {
+  return invoke<void>("verify_fyi_account");
+}
+
+/** App-crate DTO, so camelCase. */
+export interface InstalledFyiMod {
+  slug: string;
+  hasUpdate: boolean;
+}
+
+/** What's already on disk, for the Installed and Update badges. The one thing
+ *  a browse tab can show that the website cannot. */
+export async function installedFyiMods(): Promise<InstalledFyiMod[]> {
+  return invoke<InstalledFyiMod[]>("installed_fyi_mods");
+}
+
+/* ---- Linking a spelunky.fyi account ---- */
+
+export interface LinkStart {
+  /** Open this, and show it too: opening a browser fails on a Steam Deck in
+   *  Game Mode, so the user needs something they can copy. */
+  url: string;
+  port: number;
+}
+
+export type LinkResult =
+  | { status: "linked"; username: string }
+  | { status: "failed"; message: string }
+  | { status: "cancelled" };
+
+/** Event name carrying a {@link LinkResult} when an attempt finishes. */
+export const ACCOUNT_LINK_EVENT = "account-link";
+
+/** Starts a link and returns immediately. The outcome arrives later on
+ *  {@link ACCOUNT_LINK_EVENT}, so the caller should be listening first. */
+export async function startAccountLink(): Promise<LinkStart> {
+  return invoke<LinkStart>("start_account_link");
+}
+
+export async function cancelAccountLink(): Promise<void> {
+  return invoke<void>("cancel_account_link");
+}
+
 export async function clearPlaylunkyCache(): Promise<void> {
   return invoke<void>("clear_playlunky_cache");
 }
@@ -296,7 +497,9 @@ export async function downloadOverlunky(): Promise<void> {
   return invoke<void>("download_overlunky");
 }
 
-export async function launchOverlunky(mode: OverlunkyLaunchMode): Promise<void> {
+export async function launchOverlunky(
+  mode: OverlunkyLaunchMode,
+): Promise<void> {
   return invoke<void>("launch_overlunky", { mode });
 }
 
@@ -500,7 +703,11 @@ export async function setCharacterConfirmed(
   relPath: string,
   confirmed: boolean,
 ): Promise<void> {
-  return invoke<void>("set_character_confirmed", { packId, relPath, confirmed });
+  return invoke<void>("set_character_confirmed", {
+    packId,
+    relPath,
+    confirmed,
+  });
 }
 
 /** Assign a character sheet to a slot: renames the PNG (+ sidecar) to the
@@ -783,7 +990,9 @@ export function isBuiltInSaveFormat(f: CustomLevelSaveFormat): boolean {
 
 /** User-authored setroom template formats persisted in the shared
  *  config.json. Built-ins live in the frontend so we don't over-sync. */
-export async function listCustomSaveFormats(): Promise<CustomLevelSaveFormat[]> {
+export async function listCustomSaveFormats(): Promise<
+  CustomLevelSaveFormat[]
+> {
   return invoke<CustomLevelSaveFormat[]>("list_custom_save_formats");
 }
 
@@ -1173,7 +1382,10 @@ export type TrackerPayload =
   | { type: "Empty" }
   | { type: "Detached" }
   | { type: "Category"; data: { text: string; final_death: boolean } }
-  | { type: "Pacifist"; data: { text: string; broken: boolean; kills_total: number } }
+  | {
+      type: "Pacifist";
+      data: { text: string; broken: boolean; kills_total: number };
+    }
   | { type: "Timer"; data: { text: string } }
   | { type: "Gem"; data: { text: string } }
   | { type: "PacinoGolf"; data: { text: string } }

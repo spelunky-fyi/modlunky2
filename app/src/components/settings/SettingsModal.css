@@ -189,3 +189,34 @@
     background: rgba(var(--accent-rgb), 0.08);
   }
 }
+
+/* Connect and Test sit under the token field: two ways to get a working
+   account, and a way to find out whether the one you have still is. */
+.settings-token-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.settings-token-actions > .connect-inline {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.settings-test-result {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.settings-test-result.ok {
+  color: var(--success-fg);
+}
+
+.settings-test-result.bad {
+  color: var(--danger-fg);
+}

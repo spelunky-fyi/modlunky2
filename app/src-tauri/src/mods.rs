@@ -59,6 +59,17 @@ pub struct SetupOpts {
 /// empty. Returns None when there's no token (local-only mode) so remote
 /// features silently no-op.
 fn build_api_client(api_token: Option<&str>, service_root: Option<&str>) -> Option<HttpApiMods> {
+    build_api_client_with(api_token, service_root, reqwest::Client::new())
+}
+
+/// As `build_api_client`, but reusing a caller-supplied HTTP client. The browse
+/// grid issues many small requests as the user types and pages, so it keeps one
+/// client alive rather than discarding a connection pool per call.
+pub(crate) fn build_api_client_with(
+    api_token: Option<&str>,
+    service_root: Option<&str>,
+    http: reqwest::Client,
+) -> Option<HttpApiMods> {
     let token = api_token?;
     if token.trim().is_empty() {
         return None;
@@ -67,7 +78,7 @@ fn build_api_client(api_token: Option<&str>, service_root: Option<&str>) -> Opti
         .map(|r| r.trim())
         .filter(|r| !r.is_empty())
         .unwrap_or(DEFAULT_SERVICE_ROOT);
-    match HttpApiMods::new(root, token, reqwest::Client::new()) {
+    match HttpApiMods::new(root, token, http) {
         Ok(client) => Some(client),
         Err(e) => {
             tracing::warn!("Failed to build spelunky.fyi API client for root {root}: {e}");
@@ -233,6 +244,19 @@ pub async fn rebuild_mods<R: Runtime>(
     state: tauri::State<'_, AppState>,
     app: tauri::AppHandle<R>,
 ) -> Result<(), String> {
+    rebuild(&state, &app);
+    Ok(())
+}
+
+/// Swap the mod subsystem for one built from current config.
+///
+/// Separate from the command because the credentials it reads can change
+/// without anyone visiting Settings: linking an account writes a token from
+/// Rust, and the manager captures its API client once at construction. Skipping
+/// this leaves a manager holding `api_client: None`, which surfaces much later
+/// as "Tried to access remote mod, but API isn't configured" on the next
+/// install, long after the step that actually caused it.
+pub(crate) fn rebuild<R: Runtime>(state: &AppState, app: &tauri::AppHandle<R>) {
     let updates_arc = state.updates_available().clone();
     let slot_arc = state.mods_slot().clone();
 
@@ -260,7 +284,6 @@ pub async fn rebuild_mods<R: Runtime>(
     }
 
     let _ = app.emit(MODS_CHANGED_EVENT, ());
-    Ok(())
 }
 
 /// Wire-facing mod DTO. Rust `Mod` doesn't carry an update flag; joins in
@@ -643,6 +666,23 @@ pub async fn install_from_fyi(
     let handle = state
         .mods_handle()
         .ok_or_else(|| ManagerError::UnknownError(crate::setup::install_dir_message()))?;
+
+    // Checked here rather than left to the manager, which answers with "Tried
+    // to access remote mod, but API isn't configured": true, but it names an
+    // internal condition instead of the thing the user can do about it.
+    let config = crate::config::load();
+    if build_api_client(
+        config.spelunky_fyi_api_token.as_deref(),
+        config.spelunky_fyi_root.as_deref(),
+    )
+    .is_none()
+    {
+        return Err(ManagerError::UnknownError(
+            "Connect your spelunky.fyi account in Settings to install mods."
+                .to_string(),
+        ));
+    }
+
     let package = ModSource::Remote { code };
     if overwrite {
         handle.update(&package).await.map_err(ManagerError::from)

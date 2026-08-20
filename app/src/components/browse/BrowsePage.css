@@ -1,0 +1,141 @@
+.browse-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.browse-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.browse-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 14rem;
+  min-width: 10rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 0.55rem;
+  color: var(--fg-muted);
+}
+
+.browse-search:focus-within {
+  border-color: var(--accent-text);
+}
+
+.browse-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--fg);
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
+
+.browse-select {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.browse-select:hover {
+  border-color: var(--accent-text);
+}
+
+.browse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.browse-summary {
+  margin-left: auto;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Grid and detail pane sit side by side and scroll independently, so picking a
+   mod never scrolls the list out from under you. */
+.browse-body {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  padding-top: 0.75rem;
+}
+
+.browse-results {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Keeps the cards off the scrollbar rather than flush against it. */
+  padding-right: 6px;
+}
+
+.browse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.browse-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0 0.25rem;
+}
+
+.browse-empty {
+  color: var(--fg-muted);
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.browse-empty-note {
+  font-size: 0.85rem;
+}
+
+.browse-error pre {
+  white-space: pre-wrap;
+  text-align: left;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin: 0.5rem auto 1rem;
+  max-width: 40rem;
+  font-size: 0.8rem;
+  color: var(--danger-fg);
+}
+
+/* Refining a search keeps the previous results readable, just visibly stale,
+   rather than blanking the grid for the length of a round trip. */
+.browse-grid.is-refreshing {
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browse-grid.is-refreshing {
+    transition: none;
+  }
+}

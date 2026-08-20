@@ -1,0 +1,60 @@
+/* Sized to work in two places: filling the browse grid when the whole page
+   failed, and sitting inside the Install modal above the form. */
+.reconnect {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  max-width: 34rem;
+  margin: 1.5rem auto;
+  padding: 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warning);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.reconnect > svg {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: var(--warning);
+}
+
+.reconnect-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.reconnect-message {
+  margin: 0 0 0.25rem;
+  color: var(--fg);
+}
+
+.reconnect-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+
+.reconnect-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.reconnect-actions .btn {
+  white-space: nowrap;
+}
+
+/* Stack on narrow panes rather than squeezing the buttons to nothing. */
+@media (max-width: 34rem) {
+  .reconnect {
+    flex-wrap: wrap;
+  }
+
+  .reconnect-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+}

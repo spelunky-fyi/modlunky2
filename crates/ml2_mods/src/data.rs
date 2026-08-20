@@ -79,6 +79,10 @@ pub enum ManagerError {
     LibraryModNotInstallable(String),
     #[error("{0}")]
     ChannelError(String),
+    /// Serialized as a tagged variant so the UI can offer a reconnect button
+    /// instead of printing a status code at someone.
+    #[error("{0}")]
+    Unauthorized(String),
     #[error("{0}")]
     UnknownError(String),
 }
@@ -98,6 +102,7 @@ impl From<Error> for ManagerError {
                 ManagerError::LibraryModNotInstallable(format!("{original}"))
             }
             Error::ChannelError(_) => ManagerError::ChannelError(format!("{original}")),
+            Error::Unauthorized => ManagerError::Unauthorized(format!("{original}")),
             Error::UnknownError(_) => ManagerError::UnknownError(format!("{original}")),
         }
     }

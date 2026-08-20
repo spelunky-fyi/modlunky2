@@ -81,6 +81,12 @@ pub enum Error {
     #[error("{0} is a library mod, install the pack that uses it instead")]
     LibraryModNotInstallable(String),
 
+    /// spelunky.fyi rejected our token. Distinct from a generic failure
+    /// because the user can actually fix this one, and the UI offers them the
+    /// way to do it.
+    #[error("spelunky.fyi rejected your account credentials")]
+    Unauthorized,
+
     #[error("Channel error: {0}")]
     ChannelError(#[source] anyhow::Error),
     #[error("Unknown error: {0}")]
@@ -345,9 +351,12 @@ where
         };
         let manifest = api_client
             .get_manifest(code)
-            .await
-            .map_err(|e| Error::UnknownError(e.into()))?;
-        if manifest.mod_type == MOD_TYPE_LIBRARY {
+            // Plain `?` rather than a map_err to UnknownError: this is the
+            // first request an install makes, so it is where a bad token
+            // surfaces, and flattening it here would lose the Unauthorized
+            // the From impl exists to produce.
+            .await?;
+        if manifest.mod_type == Some(MOD_TYPE_LIBRARY) {
             return Err(Error::LibraryModNotInstallable(manifest.slug));
         }
         Ok(())
@@ -530,6 +539,9 @@ impl ModManagerHandle {
 
 impl From<RemoteError> for Error {
     fn from(err: RemoteError) -> Self {
+        if err.is_auth_failure() {
+            return Error::Unauthorized;
+        }
         Error::UnknownError(err.into())
     }
 }

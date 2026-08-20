@@ -1,3 +1,4 @@
+mod browse;
 mod characters;
 mod config;
 mod extract;
@@ -5,6 +6,7 @@ mod fonts;
 mod fyi_ws;
 mod launch;
 mod level_editor;
+mod link;
 mod log_buffer;
 mod mod_check;
 mod mod_state;
@@ -160,6 +162,12 @@ pub fn run() {
             mods::check_mod,
             mods::rebuild_mods,
             mods::check_fyi_updates,
+            browse::browse_mods,
+            browse::browse_mod_options,
+            browse::installed_fyi_mods,
+            browse::verify_fyi_account,
+            link::start_account_link,
+            link::cancel_account_link,
             mods::clear_playlunky_cache,
             paths::guess_install_dir,
             paths::open_directory,

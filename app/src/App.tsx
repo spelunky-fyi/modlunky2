@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Download, Moon, Radio, ScrollText, Settings, Sun } from "lucide-react";
 import { ModsPage } from "./components/mods/ModsPage";
+import { BrowsePage } from "./components/browse/BrowsePage";
 import { ExtractPage } from "./components/extract/ExtractPage";
 import { OverlunkyPage } from "./components/overlunky/OverlunkyPage";
 import { TrackersPage } from "./components/trackers/TrackersPage";
@@ -125,10 +126,11 @@ function readRoute(): WindowRoute | null {
   return null;
 }
 
-type Tab = "mods" | "overlunky" | "extract" | "levels" | "trackers";
+type Tab = "mods" | "browse" | "overlunky" | "extract" | "levels" | "trackers";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "mods", label: "Mods" },
+  { id: "browse", label: "Browse" },
   { id: "overlunky", label: "Overlunky" },
   { id: "extract", label: "Extract Assets" },
   { id: "levels", label: "Level Editor" },
@@ -174,6 +176,10 @@ function App() {
  *  than the install folder. */
 const TAB_REQUIREMENTS: Record<Tab, SetupRequirement[]> = {
   mods: ["installDir"],
+  // Not gated on installDir: browsing works before the game is found, and
+  // BrowsePage puts up its own account wall, since the directory API needs
+  // a token in a way nothing else in the app does.
+  browse: [],
   overlunky: ["installDir"],
   extract: ["installDir"],
   levels: ["installDir", "assets"],
@@ -502,6 +508,7 @@ function AppShell() {
             <ModsPage />
           </SetupGate>
         )}
+        {activeTab === "browse" && <BrowsePage />}
         {activeTab === "overlunky" && (
           <SetupGate requires={TAB_REQUIREMENTS.overlunky}>
             <OverlunkyPage />

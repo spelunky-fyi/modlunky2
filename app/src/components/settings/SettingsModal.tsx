@@ -1,17 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Eye, EyeOff } from "lucide-react";
+import { CircleAlert, CircleCheck, Eye, EyeOff } from "lucide-react";
 import { Modal } from "../shared/Modal";
 import type { SettingsFocus } from "../shared/SetupContext";
+import type { SharedConfig } from "../../types/config";
 import { useToast } from "../shared/Toast";
+import { ConnectInline } from "../browse/ConnectInline";
 import {
+  asBrowseError,
   getConfig,
   guessInstallDir,
   rebuildMods,
   refreshFyiWs,
   setConfig,
   syncDesktopShortcut,
+  verifyFyiAccount,
 } from "../../lib/commands";
 import {
   broadcastToastLevel,
@@ -20,6 +24,18 @@ import {
 } from "../../lib/toastLevel";
 import { installDirPlaceholder, isWindows } from "../../lib/platform";
 import "./SettingsModal.css";
+
+/** One definition of how stored config becomes form state, used both on open
+ *  and after a link replaces the token behind the form's back. */
+function toFormState(cfg: SharedConfig): FormState {
+  return {
+    installDir: cfg.installDir ?? "",
+    spelunkyFyiRoot: cfg.spelunkyFyiRoot ?? "",
+    spelunkyFyiApiToken: cfg.spelunkyFyiApiToken ?? "",
+    commandPrefix: cfg.commandPrefix ?? "",
+    toastLevel: normalizeToastLevel(cfg.toastLevel),
+  };
+}
 
 interface SettingsModalProps {
   open: boolean;
@@ -77,6 +93,11 @@ export function SettingsModal({
   const [highlight, setHighlight] = useState<SettingsFocus | null>(null);
   const installDirRef = useRef<HTMLInputElement | null>(null);
   const tokenRef = useRef<HTMLInputElement | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!open || !focus) {
@@ -86,7 +107,8 @@ export function SettingsModal({
     setHighlight(focus);
     // After the modal has painted, or there is nothing to focus yet.
     const raf = requestAnimationFrame(() => {
-      const el = focus === "installDir" ? installDirRef.current : tokenRef.current;
+      const el =
+        focus === "installDir" ? installDirRef.current : tokenRef.current;
       el?.focus();
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
@@ -108,13 +130,7 @@ export function SettingsModal({
     getConfig()
       .then((cfg) => {
         if (cancelled) return;
-        const loaded: FormState = {
-          installDir: cfg.installDir ?? "",
-          spelunkyFyiRoot: cfg.spelunkyFyiRoot ?? "",
-          spelunkyFyiApiToken: cfg.spelunkyFyiApiToken ?? "",
-          commandPrefix: cfg.commandPrefix ?? "",
-          toastLevel: normalizeToastLevel(cfg.toastLevel),
-        };
+        const loaded = toFormState(cfg);
         setInitial(loaded);
         setForm(loaded);
         setStatus("idle");
@@ -169,6 +185,67 @@ export function SettingsModal({
       toast.error(`Auto-detect failed: ${extractMessage(err)}`);
     } finally {
       setStatus("idle");
+    }
+  };
+
+  /* Reported inline rather than by toast. Toasts are gated on a severity
+     threshold that defaults to warnings-and-above, so a success one never pops
+     for most people: the button appeared to do nothing when the token worked
+     and complained when it did not, which is the wrong way round. The answer to
+     "does this work" also belongs next to the thing being asked about, and
+     needs to stay there long enough to read. */
+  /**
+   * Connecting writes a token to the config from Rust, underneath this form.
+   *
+   * Without re-reading it, the form would still hold the token from when the
+   * modal opened -- usually empty -- and saving any *other* change afterwards
+   * would write that stale value straight over the one just linked. Re-reading
+   * also doubles as the confirmation that it worked, since the token field
+   * visibly fills in.
+   */
+  const handleLinked = useCallback(() => {
+    void getConfig()
+      .then((cfg) => {
+        // Only the token. Linking changed nothing else, and replacing the whole
+        // form would throw away edits the user has in progress in other fields.
+        const token = cfg.spelunkyFyiApiToken ?? "";
+        setInitial((prev) => ({ ...prev, spelunkyFyiApiToken: token }));
+        setForm((prev) => ({ ...prev, spelunkyFyiApiToken: token }));
+        setTestResult({
+          ok: true,
+          message: "Connected.",
+        });
+      })
+      .catch(() => {
+        // The token is stored either way; this only refreshes the view of it.
+        // Say so rather than claiming a failure that did not happen.
+        setTestResult({
+          ok: true,
+          message: "Connected. Reopen Settings to see the token.",
+        });
+      });
+  }, []);
+
+  const handleTestToken = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      await verifyFyiAccount();
+      setTestResult({
+        ok: true,
+        message: "spelunky.fyi accepted your account.",
+      });
+    } catch (err) {
+      const browseError = asBrowseError(err);
+      setTestResult({
+        ok: false,
+        message:
+          browseError.kind === "needsAccount"
+            ? "No account connected."
+            : browseError.message,
+      });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -359,12 +436,13 @@ export function SettingsModal({
                   ref={tokenRef}
                   type={showToken ? "text" : "password"}
                   value={form.spelunkyFyiApiToken}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setTestResult(null);
                     setForm((f) => ({
                       ...f,
                       spelunkyFyiApiToken: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   placeholder="Optional, required to install mods from spelunky.fyi"
                   spellCheck={false}
                 />
@@ -382,6 +460,39 @@ export function SettingsModal({
                   )}
                 </button>
               </div>
+              <div className="settings-token-actions">
+                {/* A token can be reset on the website at any time and nothing
+                    tells the app, so without this the first sign of a dead one
+                    is a failed install. Tests what is saved rather than what is
+                    typed, because the field is not applied until Save runs. */}
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={testing || dirty}
+                  title={
+                    dirty
+                      ? "Save your changes first, then test them"
+                      : "Check that spelunky.fyi accepts the saved token"
+                  }
+                  onClick={() => void handleTestToken()}
+                >
+                  {testing ? "Testing…" : "Test connection"}
+                </button>
+                <ConnectInline onLinked={handleLinked} />
+              </div>
+              {testResult && (
+                <p
+                  className={`settings-test-result${testResult.ok ? " ok" : " bad"}`}
+                  role="status"
+                >
+                  {testResult.ok ? (
+                    <CircleCheck size={14} aria-hidden="true" />
+                  ) : (
+                    <CircleAlert size={14} aria-hidden="true" />
+                  )}
+                  {testResult.message}
+                </p>
+              )}
             </div>
 
             <label className="settings-field">

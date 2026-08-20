@@ -1,0 +1,58 @@
+{
+  "name": "test status",
+  "slug": "test-status",
+  "self_url": "https://spelunky.fyi/api/mods/test-status/",
+  "web_url": "https://spelunky.fyi/mods/m/test-status/",
+  "submitter": {
+    "username": "somebody"
+  },
+  "collaborators": [],
+  "description": "asfaef",
+  "mod_type": 1,
+  "mod_type_display": "Playable Character",
+  "game": 1,
+  "game_display": "Spelunky 2",
+  "logo": null,
+  "logo_url": "https://spelunky.fyi/spelunkicons/test-status.png",
+  "details": "",
+  "comments_allowed": true,
+  "is_listed": true,
+  "adult_content": false,
+  "downloads": 1,
+  "favorites_count": 0,
+  "favorited": false,
+  "comment_count": 0,
+  "rating_avg": 0.0,
+  "rating_count": 0,
+  "created_at": "2022-10-25T05:49:11.801573Z",
+  "listed_at": "2022-10-25T05:49:11.788334Z",
+  "updated_at": "2022-10-25T05:49:11.788334Z",
+  "mod_files": [
+    {
+      "id": "01GG6V02QC1YVQ34HRGZC06EQP",
+      "created_at": "2022-10-25T05:49:11.834904Z",
+      "filename": "monstersbig06.png",
+      "downloads": 1,
+      "download_url": "https://spelunky.fyi/mods/m/test-status/download/01GG6V02QC1YVQ34HRGZC06EQP/"
+    }
+  ],
+  "latest_file": {
+    "id": "01GG6V02QC1YVQ34HRGZC06EQP",
+    "created_at": "2022-10-25T05:49:11.834904Z",
+    "filename": "monstersbig06.png",
+    "downloads": 1,
+    "download_url": "https://spelunky.fyi/mods/m/test-status/download/01GG6V02QC1YVQ34HRGZC06EQP/"
+  },
+  "preview_images": [
+    {
+      "id": "01M0FZ3FHDS553DX67B37DJ1KR",
+      "created_at": "2026-08-20T16:12:11.693828Z",
+      "image_url": "https://media-somebody2.spelunky.fyi/mods/preview/01GG6V02QHVX9ETH9QHJDRSAVB/fixture-0.jpg"
+    },
+    {
+      "id": "01M0FZ3FJ4ES0DS7436KJA4VFF",
+      "created_at": "2026-08-20T16:12:11.717021Z",
+      "image_url": "https://media-somebody2.spelunky.fyi/mods/preview/01GG6V02QHVX9ETH9QHJDRSAVB/fixture-1.jpg"
+    }
+  ]
+}

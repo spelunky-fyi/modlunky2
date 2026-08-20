@@ -1,0 +1,99 @@
+.shot-lightbox {
+  position: fixed;
+  inset: 0;
+  /* Level with Modal (1000) rather than inventing a tier: this is a
+     modal-class overlay and belongs in that band. Below Toast (2000) on
+     purpose, so an install finishing is still visible over it. */
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem 3.5rem;
+  /* Darker than the modal backdrop on purpose: this one exists so the image is
+     the only thing you are looking at. */
+  background: rgba(var(--scrim-rgb), 0.88);
+}
+
+/* Fills what the window has, minus the room the chrome needs, so it grows on a
+   big display instead of stopping at some arbitrary max-width. */
+.shot-lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
+}
+
+.shot-lightbox-img.is-loaded {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shot-lightbox-img {
+    transition: none;
+  }
+}
+
+.shot-lightbox-close,
+.shot-lightbox-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
+  border-radius: 999px;
+  background: rgba(var(--scrim-rgb), 0.55);
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.shot-lightbox-close:hover,
+.shot-lightbox-nav:hover {
+  background: rgba(var(--scrim-rgb), 0.8);
+  border-color: rgba(var(--overlay-rgb), 0.3);
+}
+
+.shot-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.shot-lightbox-nav {
+  width: 2.8rem;
+  height: 2.8rem;
+}
+
+.shot-lightbox-count {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Below this the arrows would crowd the image more than they help; the
+   keyboard and the thumbnails still move between shots. */
+@media (max-width: 30rem) {
+  .shot-lightbox-nav {
+    display: none;
+  }
+}
+
+/* The pane's screenshot becomes a control, so it needs to look like one
+   without a button's chrome. */
+.mod-detail-shot-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}

@@ -1,0 +1,67 @@
+.connect-inline-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.connect-inline {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 0.75rem;
+}
+
+.connect-inline-waiting {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+}
+
+.connect-inline-spin {
+  color: var(--accent-text);
+  animation: connect-inline-spin 1s linear infinite;
+}
+
+@keyframes connect-inline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A permanent spinner is exactly what this setting exists to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .connect-inline-spin {
+    animation: none;
+  }
+}
+
+.connect-inline-url {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.connect-inline-url input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-muted);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.connect-inline-url .btn {
+  white-space: nowrap;
+}
+
+.connect-inline-note {
+  margin: 0 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+}
