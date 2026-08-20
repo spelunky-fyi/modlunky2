@@ -421,11 +421,21 @@ mod tests {
 
     /// Drives `wait_for_callback` with a callback that never needs the network,
     /// so these cover the decisions made before any exchange is attempted.
-    async fn callback_outcome(callback: Callback, expected_state: &str) -> Result<LinkResult, String> {
+    async fn callback_outcome(
+        callback: Callback,
+        expected_state: &str,
+    ) -> Result<LinkResult, String> {
         let (tx, rx) = oneshot::channel();
         let (_cancel_tx, cancel_rx) = oneshot::channel();
         tx.send(callback).expect("receiver is alive");
-        wait_for_callback(rx, cancel_rx, expected_state, "verifier", "https://example.invalid").await
+        wait_for_callback(
+            rx,
+            cancel_rx,
+            expected_state,
+            "verifier",
+            "https://example.invalid",
+        )
+        .await
     }
 
     #[test]
@@ -448,10 +458,7 @@ mod tests {
 
     #[test]
     fn the_two_themes_actually_differ() {
-        assert_ne!(
-            render_page(&DARK, "H", "D"),
-            render_page(&LIGHT, "H", "D")
-        );
+        assert_ne!(render_page(&DARK, "H", "D"), render_page(&LIGHT, "H", "D"));
     }
 
     #[tokio::test]

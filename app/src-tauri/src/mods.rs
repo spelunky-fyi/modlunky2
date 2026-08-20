@@ -678,8 +678,7 @@ pub async fn install_from_fyi(
     .is_none()
     {
         return Err(ManagerError::UnknownError(
-            "Connect your spelunky.fyi account in Settings to install mods."
-                .to_string(),
+            "Connect your spelunky.fyi account in Settings to install mods.".to_string(),
         ));
     }
 

@@ -56,8 +56,7 @@ impl BrowseError {
     }
 }
 
-const NEEDS_TOKEN: &str =
-    "Connect your spelunky.fyi account in Settings to browse mods.";
+const NEEDS_TOKEN: &str = "Connect your spelunky.fyi account in Settings to browse mods.";
 
 /// Deliberately does not guess which of the several causes applies. The site
 /// answers 401 for a token that was reset, revoked, never valid, or belongs to

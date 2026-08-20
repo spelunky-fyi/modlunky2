@@ -24,7 +24,10 @@ fn a_real_list_response_deserializes() {
     let first = &page.results[0];
     assert_eq!(first.slug, "test-status");
     assert_eq!(first.game_display, "Spelunky 2");
-    assert_eq!(first.mod_type_display.as_deref(), Some("Playable Character"));
+    assert_eq!(
+        first.mod_type_display.as_deref(),
+        Some("Playable Character")
+    );
     assert_eq!(first.submitter.username, "somebody");
     // A mod with no logo really does send null, which is why the field is an
     // Option rather than an empty string.

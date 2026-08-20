@@ -647,8 +647,7 @@ impl HttpApiMods {
     pub async fn browse_options(&self, game: Option<i32>) -> Result<BrowseOptions> {
         let mut url = self.url_from_path("/api/mods/browse-options/")?;
         if let Some(game) = game {
-            url.query_pairs_mut()
-                .append_pair("game", &game.to_string());
+            url.query_pairs_mut().append_pair("game", &game.to_string());
         }
         let res = self.get_authed(url).await?;
         Ok(res.json::<BrowseOptions>().await?)
