@@ -400,10 +400,11 @@ async fn refresh_rolling_release_if_stale(tag: &str) -> Result<(), String> {
 /// set to the version's data dir. Fire and forget on the subprocess side so
 /// the app stays responsive.
 ///
-/// load_order.txt is already kept up to date by set_load_order which the
-/// Mods page calls on every activate, deactivate, and drag reorder, and
-/// playlunky.ini is written by the Options modal, so this command only
-/// handles the launch itself.
+/// playlunky.ini is written by the Options modal, so the only file this
+/// touches on the way out is load_order.txt, which gets reconciled against
+/// the packs actually on disk (see `mods::reconcile_load_order`): the Mods
+/// page writes it on every activate, deactivate, and drag reorder, but that
+/// says nothing about a pack installed since the last such toggle.
 #[tauri::command]
 pub async fn launch_playlunky() -> Result<(), String> {
     spawn_playlunky().await
@@ -454,6 +455,14 @@ pub async fn spawn_playlunky() -> Result<(), String> {
     // to the running Steam client.
     let appid_path = install_dir.join(STEAM_APPID_FILENAME);
     std::fs::write(&appid_path, STEAM_APP_ID).map_err(|e| format!("write steam_appid.txt: {e}"))?;
+
+    // Give every pack on disk a line in load_order.txt before Playlunky reads
+    // it. A pack with no line at all is one Playlunky loads and then records
+    // as enabled, so anything installed since the Mods page last wrote the
+    // file turns up in the game while the page still shows it inactive.
+    // Best-effort: a stale load order is a smaller problem than not being
+    // able to start the game.
+    crate::mods::reconcile_load_order_quietly();
 
     let exe_dir_arg = format!("--exe_dir={}", install_dir.display());
 

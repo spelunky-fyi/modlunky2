@@ -4,7 +4,7 @@
 // as install, pack, extract, etc. commands land.
 
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -157,6 +157,22 @@ pub fn setup<R: Runtime>(
                                 }
                                 _ => {}
                             }
+                        }
+                        // A pack arriving or leaving changes what load_order.txt
+                        // ought to say, and nothing else writes it between Mods
+                        // page toggles. Doing it here rather than in the install
+                        // commands covers every route a pack can take onto disk:
+                        // the install modal, Browse, the website's push-install
+                        // (which runs inside ml2_mods and never touches a Tauri
+                        // command), and anything the cache's own scan notices,
+                        // like a pack the level editor just scaffolded.
+                        if matches!(
+                            change,
+                            Change::Add {
+                                progress: ModProgress::Finished { .. }
+                            } | Change::Remove { .. }
+                        ) {
+                            reconcile_load_order_quietly();
                         }
                         let _ = listener_app.emit(MODS_CHANGED_EVENT, ());
                     }
@@ -513,12 +529,122 @@ pub async fn set_mod_favorite(id: String, favorite: bool) -> Result<(), String> 
     crate::mod_state::set_favorite(&install_dir, &id, favorite)
 }
 
-fn load_order_path() -> Result<PathBuf, String> {
+fn packs_dir() -> Result<PathBuf, String> {
     let install_dir = crate::setup::install_dir()?;
-    Ok(install_dir
-        .join("Mods")
-        .join("Packs")
-        .join("load_order.txt"))
+    Ok(install_dir.join("Mods").join("Packs"))
+}
+
+fn load_order_path() -> Result<PathBuf, String> {
+    Ok(packs_dir()?.join("load_order.txt"))
+}
+
+/// Folder names directly under `Mods/Packs`, sorted. Hidden folders (`.ml`,
+/// `.db`, `.git`) are skipped: they aren't packs.
+///
+/// Disk rather than the ModCache, because this is what Playlunky itself
+/// walks. The cache can be empty or half-populated (its first scan is
+/// asynchronous, and `rebuild_mods` restarts it), and a pack missing from the
+/// list we write is a pack Playlunky will silently enable.
+fn pack_ids_in(packs_dir: &Path) -> Result<Vec<String>, String> {
+    if !packs_dir.exists() {
+        return Ok(Vec::new());
+    }
+    let mut ids = Vec::new();
+    for entry in std::fs::read_dir(packs_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+            continue;
+        }
+        if let Some(name) = entry.file_name().to_str()
+            && !name.starts_with('.')
+        {
+            ids.push(name.to_string());
+        }
+    }
+    ids.sort();
+    Ok(ids)
+}
+
+/// Rewrites `contents` so that every pack in `on_disk` has a line and no line
+/// names a pack that isn't there any more. Lines that survive keep their
+/// order and their enabled/disabled state; packs with no line at all are
+/// appended disabled.
+///
+/// Split out from the file handling so the merge rules are testable.
+fn reconciled_load_order(contents: &str, on_disk: &[String]) -> String {
+    let known: HashSet<&str> = on_disk.iter().map(String::as_str).collect();
+    let mut seen: HashSet<&str> = HashSet::new();
+    let mut out = String::new();
+
+    for raw in contents.lines() {
+        let line = raw.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let id = line.strip_prefix("--").unwrap_or(line);
+        // Dropping ids that are gone keeps a deleted pack from coming back
+        // with its old enabled state if a pack of the same name is installed
+        // again later.
+        if !known.contains(id) || !seen.insert(id) {
+            continue;
+        }
+        out.push_str(line);
+        out.push('\n');
+    }
+
+    for id in on_disk {
+        if seen.contains(id.as_str()) {
+            continue;
+        }
+        out.push_str("--");
+        out.push_str(id);
+        out.push('\n');
+    }
+
+    out
+}
+
+/// Brings `load_order.txt` in line with what's actually in `Mods/Packs`,
+/// leaving every pack it already knew about exactly as it was.
+///
+/// Playlunky only records *disabled* packs explicitly, with a `--` prefix: a
+/// pack folder it finds no line for is one it loads. So a pack that landed on
+/// disk since the file was last written -- installed from Browse or the
+/// install modal, pushed from the website, scaffolded by the level editor --
+/// runs in the game while the Mods page, which reads the same file, shows it
+/// inactive. Playlunky then rewrites the file with that pack listed as
+/// enabled, which is why it turns up in Enabled after a restart.
+///
+/// Called before every launch (as modlunky did before the Tauri port) so the
+/// two agree no matter which path put the pack there, and after the mod
+/// operations that change what's on disk so the file is honest in between.
+pub fn reconcile_load_order() -> Result<(), String> {
+    let packs_dir = packs_dir()?;
+    // No Packs folder means no packs to reconcile, and creating one here
+    // would be inventing state on behalf of an install that isn't set up yet.
+    if !packs_dir.exists() {
+        return Ok(());
+    }
+    let on_disk = pack_ids_in(&packs_dir)?;
+    let path = packs_dir.join("load_order.txt");
+    // A missing file reads as empty, which is the first-run case: every pack
+    // gets a `--` line and the game starts with what the Mods page shows.
+    let contents = std::fs::read_to_string(&path).unwrap_or_default();
+    let out = reconciled_load_order(&contents, &on_disk);
+    if out == contents {
+        return Ok(());
+    }
+    std::fs::write(&path, out).map_err(|e| format!("write load_order.txt: {e}"))
+}
+
+/// As `reconcile_load_order`, but never fails the caller. For the mod
+/// operations where the reconcile is a nicety: the launch path does it again
+/// anyway, so the cost of a failure here is a stale file for a few minutes,
+/// not a mod that loads when it shouldn't.
+pub fn reconcile_load_order_quietly() {
+    if let Err(e) = reconcile_load_order() {
+        tracing::warn!("couldn't reconcile load_order.txt: {e}");
+    }
 }
 
 /// Reads Playlunky's load_order.txt and returns the active mod ids in load
@@ -543,43 +669,41 @@ pub async fn get_load_order() -> Result<Vec<String>, String> {
 }
 
 /// Writes Playlunky's load_order.txt. Active ids are written in the supplied
-/// order (this is the load order), then any installed packs not in the
-/// active list are written with a '--' prefix so Playlunky knows about them
-/// as disabled.
+/// order (this is the load order), then every other pack in `Mods/Packs` is
+/// written with a '--' prefix so Playlunky knows about them as disabled.
+///
+/// The set of packs comes from disk rather than the ModCache. The cache fills
+/// asynchronously and `rebuild_mods` restarts it, so a toggle that landed
+/// while it was still filling used to write a file that simply omitted the
+/// packs it hadn't seen yet -- and a pack with no line is a pack Playlunky
+/// enables.
 #[tauri::command]
-pub async fn set_load_order(
-    state: tauri::State<'_, AppState>,
-    active: Vec<String>,
-) -> Result<(), String> {
-    let path = load_order_path()?;
+pub async fn set_load_order(active: Vec<String>) -> Result<(), String> {
+    let packs_dir = packs_dir()?;
+    let on_disk = pack_ids_in(&packs_dir)?;
+    let known: HashSet<&str> = on_disk.iter().map(String::as_str).collect();
+    let active_set: HashSet<&str> = active.iter().map(String::as_str).collect();
 
-    let handle = state
-        .mods_handle()
-        .ok_or_else(crate::setup::install_dir_message)?;
-    let all = handle.list().await.map_err(|e| e.to_string())?;
-    let all_ids: HashSet<String> = all.into_iter().map(|m| m.id).collect();
-    let active_set: HashSet<String> = active.iter().cloned().collect();
-
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("mkdir: {e}"))?;
-    }
+    std::fs::create_dir_all(&packs_dir).map_err(|e| format!("mkdir: {e}"))?;
 
     let mut out = String::new();
     for id in &active {
-        if all_ids.contains(id) {
+        if known.contains(id.as_str()) {
             out.push_str(id);
             out.push('\n');
         }
     }
-    for id in &all_ids {
-        if !active_set.contains(id) {
+    // `on_disk` is sorted, so the disabled block keeps the same order from one
+    // write to the next instead of reshuffling on every toggle.
+    for id in &on_disk {
+        if !active_set.contains(id.as_str()) {
             out.push_str("--");
             out.push_str(id);
             out.push('\n');
         }
     }
 
-    std::fs::write(&path, out).map_err(|e| format!("write: {e}"))?;
+    std::fs::write(packs_dir.join("load_order.txt"), out).map_err(|e| format!("write: {e}"))?;
     Ok(())
 }
 
@@ -696,25 +820,7 @@ pub async fn install_from_fyi(
 /// aren't user-facing pack destinations.
 #[tauri::command]
 pub fn list_pack_ids() -> Result<Vec<String>, String> {
-    let install_dir = crate::setup::install_dir()?;
-    let packs_dir = install_dir.join("Mods").join("Packs");
-    if !packs_dir.exists() {
-        return Ok(Vec::new());
-    }
-    let mut ids = Vec::new();
-    for entry in std::fs::read_dir(&packs_dir).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-            continue;
-        }
-        if let Some(name) = entry.file_name().to_str()
-            && !name.starts_with('.')
-        {
-            ids.push(name.to_string());
-        }
-    }
-    ids.sort();
-    Ok(ids)
+    pack_ids_in(&packs_dir()?)
 }
 
 /// Force-polls spelunky.fyi for updates to every installed fyi mod. Unlike
@@ -824,5 +930,68 @@ pub async fn install_from_local(
         handle.update(&package).await.map_err(ManagerError::from)
     } else {
         handle.install(&package).await.map_err(ManagerError::from)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reconciled_load_order;
+
+    /// Fixtures write line breaks as `|` so they stay readable on one line.
+    fn lines(s: &str) -> String {
+        s.replace('|', "\n")
+    }
+
+    fn ids(names: &[&str]) -> Vec<String> {
+        names.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// The case this whole path exists for: a pack installed since the file
+    /// was last written has no line, and Playlunky reads "no line" as enabled.
+    #[test]
+    fn appends_new_packs_disabled() {
+        let out = reconciled_load_order(
+            &lines("alpha|--beta|"),
+            &ids(&["alpha", "beta", "fyi.new-mod"]),
+        );
+        assert_eq!(out, lines("alpha|--beta|--fyi.new-mod|"));
+    }
+
+    /// Packs it already knew about come through untouched: same order, same
+    /// enabled state. Reconciling must never change what the game loads.
+    #[test]
+    fn keeps_order_and_enabled_state() {
+        let contents = lines("charlie|alpha|--beta|");
+        let out = reconciled_load_order(&contents, &ids(&["alpha", "beta", "charlie"]));
+        assert_eq!(out, contents);
+    }
+
+    /// Otherwise reinstalling a pack under a name that was once enabled brings
+    /// the old state back with it.
+    #[test]
+    fn drops_packs_that_are_gone() {
+        let out = reconciled_load_order(&lines("alpha|deleted|--beta|"), &ids(&["alpha", "beta"]));
+        assert_eq!(out, lines("alpha|--beta|"));
+    }
+
+    /// Playlunky writes this file too, and hand-edits happen. Blank lines,
+    /// CRLF, stray indentation, and a repeated id all have to survive a
+    /// round trip without producing a second line for the same pack.
+    #[test]
+    fn normalizes_messy_input() {
+        let contents = format!(
+            "alpha{crlf}{crlf}  --beta  {crlf}alpha{crlf}",
+            crlf = "\r\n"
+        );
+        let out = reconciled_load_order(&contents, &ids(&["alpha", "beta"]));
+        assert_eq!(out, lines("alpha|--beta|"));
+    }
+
+    /// First run, or a Packs folder copied in wholesale: everything starts
+    /// disabled, which is what the Mods page is already showing.
+    #[test]
+    fn missing_file_disables_everything() {
+        let out = reconciled_load_order("", &ids(&["alpha", "beta"]));
+        assert_eq!(out, lines("--alpha|--beta|"));
     }
 }

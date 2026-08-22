@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-21
+
+### Fixed
+
+- Newly installed mods loaded in the game without being enabled. A mod that
+  Playlunky finds no entry for in `load_order.txt` gets enabled by default,
+  so anything added since you last enabled or disabled something was enabled
+  without being displayed in the enabled list. Restarting Modlunky then
+  showed it in Enabled, because Playlunky had since added it to load order.
+
 ## [2.2.2] - 2026-08-20
 
 ### Added

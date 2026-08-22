@@ -349,6 +349,11 @@ pub fn create_level_pack(name: String, mode: EditorMode) -> Result<String, Strin
             .map_err(|e| format!("write {}: {e}", config_path.display()))?;
     }
 
+    // A pack folder Playlunky finds with no line in load_order.txt is one it
+    // loads, so give the new pack its disabled line now rather than waiting
+    // for the mod cache's next scan to notice it.
+    crate::mods::reconcile_load_order_quietly();
+
     Ok(sanitized)
 }
 
