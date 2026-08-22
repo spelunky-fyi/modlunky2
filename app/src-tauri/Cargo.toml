@@ -36,7 +36,7 @@ futures-util = "0.3"
 rust-ini = "0.21"
 shell-words = "1"
 rand = "0.10"
-sha2 = "0.10"
+sha2 = "0.11"
 
 ml2_mods = { path = "../../crates/ml2_mods" }
 ml2_net = { path = "../../crates/ml2_net" }
