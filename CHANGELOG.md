@@ -8,7 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.2.2] - 2026-08-21
+## [2.2.4] - 2026-08-24
+
+### Fixed
+
+- Mods installed as symlinks now work correctly.
+
+## [2.2.3] - 2026-08-21
 
 ### Fixed
 

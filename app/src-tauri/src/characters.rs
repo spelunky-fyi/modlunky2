@@ -530,7 +530,7 @@ fn get_characters_sync(
     let mut candidates = Vec::new();
     for entry in fs::read_dir(&packs).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
-        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+        if !crate::mods::is_pack_dir(&entry) {
             continue;
         }
         let pack_id = entry.file_name().to_string_lossy().to_string();

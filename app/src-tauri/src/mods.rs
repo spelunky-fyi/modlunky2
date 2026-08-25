@@ -538,6 +538,18 @@ fn load_order_path() -> Result<PathBuf, String> {
     Ok(packs_dir()?.join("load_order.txt"))
 }
 
+/// Whether a `Mods/Packs` entry is a pack folder, following links.
+///
+/// `DirEntry::file_type` describes the entry itself, so a symlink or junction
+/// to a pack reads as neither file nor directory and drops out of the scan.
+/// Plenty of people keep their mods on another drive and link them in, and a
+/// pack we leave out of `load_order.txt` is a pack Playlunky enables.
+/// `Path::is_dir` resolves the link, matching what Playlunky sees when it
+/// walks the same folder. A link whose target is gone is not a pack.
+pub fn is_pack_dir(entry: &std::fs::DirEntry) -> bool {
+    entry.path().is_dir()
+}
+
 /// Folder names directly under `Mods/Packs`, sorted. Hidden folders (`.ml`,
 /// `.db`, `.git`) are skipped: they aren't packs.
 ///
@@ -545,14 +557,14 @@ fn load_order_path() -> Result<PathBuf, String> {
 /// walks. The cache can be empty or half-populated (its first scan is
 /// asynchronous, and `rebuild_mods` restarts it), and a pack missing from the
 /// list we write is a pack Playlunky will silently enable.
-fn pack_ids_in(packs_dir: &Path) -> Result<Vec<String>, String> {
+pub fn pack_ids_in(packs_dir: &Path) -> Result<Vec<String>, String> {
     if !packs_dir.exists() {
         return Ok(Vec::new());
     }
     let mut ids = Vec::new();
     for entry in std::fs::read_dir(packs_dir).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
-        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+        if !is_pack_dir(&entry) {
             continue;
         }
         if let Some(name) = entry.file_name().to_str()
@@ -993,5 +1005,50 @@ mod tests {
     fn missing_file_disables_everything() {
         let out = reconciled_load_order("", &ids(&["alpha", "beta"]));
         assert_eq!(out, lines("--alpha|--beta|"));
+    }
+
+    /// A linked-in pack is a pack. Missing one drops its line from
+    /// `load_order.txt` entirely, and Playlunky loads what it finds no line
+    /// for, which is how a whole linked mod library turned itself on.
+    #[test]
+    fn counts_linked_packs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let packs = tmp.path().join("Packs");
+        let elsewhere = tmp.path().join("elsewhere");
+        std::fs::create_dir_all(packs.join("real-pack")).unwrap();
+        std::fs::create_dir_all(elsewhere.join("linked-pack")).unwrap();
+        std::fs::create_dir_all(elsewhere.join("gone")).unwrap();
+
+        link_dir(&elsewhere.join("linked-pack"), &packs.join("linked-pack"));
+        // A link whose target has been deleted isn't a pack any more.
+        link_dir(&elsewhere.join("gone"), &packs.join("dangling"));
+        std::fs::remove_dir(elsewhere.join("gone")).unwrap();
+
+        assert_eq!(
+            super::pack_ids_in(&packs).unwrap(),
+            ids(&["linked-pack", "real-pack"])
+        );
+    }
+
+    /// A junction rather than a symlink, because that's what an unelevated
+    /// `mklink /J` and the shell extensions modders use produce, and what a
+    /// test can create without developer mode turned on. Both report
+    /// themselves through `DirEntry::file_type` the same way: a reparse
+    /// point, not a directory.
+    #[cfg(windows)]
+    fn link_dir(target: &std::path::Path, link: &std::path::Path) {
+        let status = std::process::Command::new("cmd")
+            .args(["/c", "mklink", "/J"])
+            .args([link, target])
+            // mklink narrates every link it makes; test output is noisy enough.
+            .stdout(std::process::Stdio::null())
+            .status()
+            .unwrap();
+        assert!(status.success(), "mklink /J {}", link.display());
+    }
+
+    #[cfg(unix)]
+    fn link_dir(target: &std::path::Path, link: &std::path::Path) {
+        std::os::unix::fs::symlink(target, link).unwrap();
     }
 }

@@ -264,18 +264,8 @@ pub fn list_level_packs(_mode: EditorMode) -> Result<Vec<String>, String> {
     if !dir.exists() {
         return Ok(Vec::new());
     }
-    let mut ids = Vec::new();
-    for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-            continue;
-        }
-        if let Some(name) = entry.file_name().to_str()
-            && !name.starts_with('.')
-        {
-            ids.push(name.to_string());
-        }
-    }
+    let mut ids = crate::mods::pack_ids_in(&dir)?;
+    // The Mods page sorts case-insensitively, and this list sits next to it.
     ids.sort_by_key(|a| a.to_lowercase());
     Ok(ids)
 }
