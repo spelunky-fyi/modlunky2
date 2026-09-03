@@ -34,6 +34,31 @@ export const DUAL_GAP_COLS = 2;
 
 export type CanvasLayer = "foreground" | "background";
 
+/** One addressable cell of authored level data: which grid it lives in
+ *  (`key` + `layer`) and where inside that grid (`row`, `col`, always in
+ *  AUTHORED coords, never display coords). Every read and write in the
+ *  paint pipeline is expressed in these terms, which is what lets one
+ *  canvas edit many rooms at once. */
+export interface RoutedCell {
+  key: string;
+  layer: CanvasLayer;
+  row: number;
+  col: number;
+}
+
+/** Translates between canvas coords (what the user clicks) and authored
+ *  cells (what gets stored). Callers supply one when a single canvas shows
+ *  more than the current key's grid -- the whole-level mosaic, where each
+ *  region of the canvas belongs to a different room. */
+export interface CellRouter {
+  /** Authored cell under a canvas coord, or null where nothing is
+   *  editable (spacer columns, gaps between rooms). */
+  toCell: (row: number, col: number) => RoutedCell | null;
+  /** Where an authored cell currently shows on the canvas, or null when
+   *  it isn't on screen at all. Used to push sprite updates. */
+  toCanvas: (cell: RoutedCell) => { row: number; col: number } | null;
+}
+
 export interface PaintEdit {
   row: number;
   col: number;
@@ -43,6 +68,9 @@ export interface PaintEdit {
    *  single drag that crosses the fg/bg boundary (Link-layers on) still
    *  undoes correctly. */
   layer: CanvasLayer;
+  /** Which grid this edit belongs to. Stored per-edit so a stroke that
+   *  crosses room boundaries in the whole-level view undoes correctly. */
+  key: string;
 }
 export type Stroke = PaintEdit[];
 
@@ -63,6 +91,11 @@ export interface UseLevelCanvasParams {
   /** Current palette. Used for erase-tile resolution and paste
    *  sanitization; not stored inside the hook. */
   palette: CustomLevelPaletteEntry[];
+  /** Set when one canvas shows several grids at once (the whole-level
+   *  mosaic). Every paint, marquee op, and undo entry then routes through
+   *  it instead of assuming `currentKey`. Null / omitted for the ordinary
+   *  one-grid-per-canvas case. */
+  cellRouter?: CellRouter | null;
   /** True if the caller stores a settings override for the given key.
    *  Vanilla returns `settingsRef.current.has(key)`; Custom always
    *  returns false. Used only to keep the "edited keys" reconciliation
@@ -189,6 +222,12 @@ export interface UseLevelCanvasReturn {
     gridCol: number,
     newName: string,
   ) => boolean;
+  /** Read/write an arbitrary authored cell, whichever grid it lives in.
+   *  Writes go through the undo stack exactly like a paint does. */
+  readCell: (cell: RoutedCell) => string;
+  writeCell: (cell: RoutedCell, newName: string) => boolean;
+  /** Authored cell under a canvas coord, honouring the active router. */
+  routeCell: (row: number, col: number) => RoutedCell | null;
 
   // ---- Layer routing helpers ----
   canvasToLayer: (
@@ -212,6 +251,7 @@ export function useLevelCanvas(
     currentKey,
     isDual,
     palette,
+    cellRouter = null,
     hasSettingsOverride,
     onEditedKeysChanged,
     toast,
@@ -231,6 +271,11 @@ export function useLevelCanvas(
   const undoStack = useRef<Stroke[]>([]);
   const redoStack = useRef<Stroke[]>([]);
   const strokeBuffer = useRef<PaintEdit[]>([]);
+  /** Keys THIS history scope is responsible for having marked edited. A key
+   *  already flagged before the scope opened (edited in another room, or
+   *  before the last room switch) never lands here, so undoing back to the
+   *  start of the scope can't clear a pip the scope didn't set. */
+  const scopeKeysRef = useRef<Set<string>>(new Set());
   /** The room the undo/redo stacks currently describe, or null when they're
    *  empty. The stacks outlive a room switch by one effect pass -- the caller
    *  resets them from its own `currentKey` effect, which runs after this
@@ -320,6 +365,43 @@ export function useLevelCanvas(
     [effectiveLayerView, showsBothLayers, fgCols, flipGridCol],
   );
 
+  // ---------------------------------------------------------------------
+  // Cell routing
+  //
+  // Canvas coords in, authored cells out. Without a router this is just
+  // "the current key, at the layer this column belongs to"; with one, each
+  // canvas region can belong to a different grid entirely.
+  // ---------------------------------------------------------------------
+  const routeCell = useCallback(
+    (row: number, col: number): RoutedCell | null => {
+      if (cellRouter) return cellRouter.toCell(row, col);
+      if (!currentKey) return null;
+      const hit = canvasToLayer(col);
+      if (!hit) return null;
+      return { key: currentKey, layer: hit.layer, row, col: hit.gridCol };
+    },
+    [cellRouter, currentKey, canvasToLayer],
+  );
+
+  const unrouteCell = useCallback(
+    (cell: RoutedCell): { row: number; col: number } | null => {
+      if (cellRouter) return cellRouter.toCanvas(cell);
+      if (cell.key !== currentKey) return null;
+      const col = layerToCanvasCol(cell.layer, cell.col);
+      return col === null ? null : { row: cell.row, col };
+    },
+    [cellRouter, currentKey, layerToCanvasCol],
+  );
+
+  const otherLayer = (layer: CanvasLayer): CanvasLayer =>
+    layer === "foreground" ? "background" : "foreground";
+
+  /** Link-layers mirrors every write onto the other layer of the same room.
+   *  It's a property of the ONE room the canvas is showing, so it stays off
+   *  in a routed (multi-room) view, where "the other layer" differs
+   *  room-by-room and most slots have no second layer at all. */
+  const linkActive = isDual && linkLayers && !cellRouter;
+
   // Reverse each row of a layer for display. Used to render the mirrored
   // authored grid; writes still go through `flipGridCol` at paint time so
   // the underlying storage stays canonical.
@@ -361,19 +443,19 @@ export function useLevelCanvas(
   }, [showsBothLayers, fgCols]);
 
   const canPaintCell = useCallback(
-    (_row: number, col: number) => canvasToLayer(col) !== null,
-    [canvasToLayer],
+    (row: number, col: number) => routeCell(row, col) !== null,
+    [routeCell],
   );
 
   const formatHover = useCallback(
     (row: number, col: number, name: string): string | null => {
-      const hit = canvasToLayer(col);
-      if (!hit) return null;
-      if (!isDual) return `(${hit.gridCol}, ${row}) ${name}`;
-      const label = hit.layer === "foreground" ? "Foreground" : "Background";
-      return `${label} (${hit.gridCol}, ${row}) ${name}`;
+      const cell = routeCell(row, col);
+      if (!cell) return null;
+      if (!isDual) return `(${cell.col}, ${cell.row}) ${name}`;
+      const label = cell.layer === "foreground" ? "Foreground" : "Background";
+      return `${label} (${cell.col}, ${cell.row}) ${name}`;
     },
-    [canvasToLayer, isDual],
+    [routeCell, isDual],
   );
 
   const mirrorCell = useCallback(() => null, []);
@@ -381,7 +463,7 @@ export function useLevelCanvas(
   // Extra selection rects: reflect the primary selection on the other
   // half when link is on AND both layers are visible.
   const extraSelectionRects = useMemo<Selection[] | undefined>(() => {
-    if (!selection || !isDual || !linkLayers || !showsBothLayers) {
+    if (!selection || !linkActive || !showsBothLayers) {
       return undefined;
     }
     const cLeft = Math.min(selection.col0, selection.col1);
@@ -408,11 +490,79 @@ export function useLevelCanvas(
       ];
     }
     return undefined;
-  }, [selection, isDual, linkLayers, showsBothLayers, fgCols]);
+  }, [selection, linkActive, showsBothLayers, fgCols]);
 
   // ---------------------------------------------------------------------
-  // Cell IO (per-layer, grid-col-space)
+  // Cell IO
   // ---------------------------------------------------------------------
+  const writeCell = useCallback(
+    (cell: RoutedCell, newName: string): boolean => {
+      const map =
+        cell.layer === "foreground" ? gridsRef.current : bgGridsRef.current;
+      const grid = map.get(cell.key);
+      if (!grid || grid[cell.row]?.[cell.col] === undefined) return false;
+      const prev = grid[cell.row][cell.col];
+      if (prev === newName) return false;
+      grid[cell.row][cell.col] = newName;
+      strokeBuffer.current.push({
+        key: cell.key,
+        row: cell.row,
+        col: cell.col,
+        oldName: prev,
+        newName,
+        layer: cell.layer,
+      });
+      if (!editedKeysRef.current.has(cell.key)) {
+        editedKeysRef.current.add(cell.key);
+        // Only a key THIS scope flagged is a key this scope may later
+        // un-flag; see scopeKeysRef.
+        scopeKeysRef.current.add(cell.key);
+        onEditedKeysChanged?.();
+      }
+      if (cell.key === currentKey) currentRoomTouchedRef.current = true;
+      // Every stroke that reaches the undo stack originates here, so this is
+      // the one place that knows which scope the stack belongs to.
+      historyKeyRef.current = currentKey;
+      const at = unrouteCell(cell);
+      if (at) canvasRef.current?.setTile(at.row, at.col, newName);
+      return true;
+    },
+    [currentKey, unrouteCell, onEditedKeysChanged],
+  );
+
+  const readCell = useCallback((cell: RoutedCell): string => {
+    const map =
+      cell.layer === "foreground" ? gridsRef.current : bgGridsRef.current;
+    return map.get(cell.key)?.[cell.row]?.[cell.col] ?? "";
+  }, []);
+
+  // Canvas-space wrappers. Marquee ops work in these terms so a selection
+  // that spans several rooms lands each cell in the right grid.
+  const readCanvasCell = useCallback(
+    (row: number, col: number, useOtherLayer = false): string => {
+      const cell = routeCell(row, col);
+      if (!cell) return "";
+      return readCell(
+        useOtherLayer ? { ...cell, layer: otherLayer(cell.layer) } : cell,
+      );
+    },
+    [routeCell, readCell],
+  );
+
+  const writeCanvasCell = useCallback(
+    (row: number, col: number, name: string, useOtherLayer = false): boolean => {
+      const cell = routeCell(row, col);
+      if (!cell) return false;
+      return writeCell(
+        useOtherLayer ? { ...cell, layer: otherLayer(cell.layer) } : cell,
+        name,
+      );
+    },
+    [routeCell, writeCell],
+  );
+
+  // Current-key-relative IO, kept for callers doing wholesale rewrites of
+  // the open grid (palette delete, save-payload construction).
   const writeLayerCell = useCallback(
     (
       layer: CanvasLayer,
@@ -421,45 +571,17 @@ export function useLevelCanvas(
       newName: string,
     ): boolean => {
       if (!currentKey) return false;
-      const map =
-        layer === "foreground" ? gridsRef.current : bgGridsRef.current;
-      const grid = map.get(currentKey);
-      if (!grid || grid[row]?.[gridCol] === undefined) return false;
-      const prev = grid[row][gridCol];
-      if (prev === newName) return false;
-      grid[row][gridCol] = newName;
-      strokeBuffer.current.push({
-        row,
-        col: gridCol,
-        oldName: prev,
-        newName,
-        layer,
-      });
-      if (!editedKeysRef.current.has(currentKey)) {
-        editedKeysRef.current.add(currentKey);
-        onEditedKeysChanged?.();
-      }
-      currentRoomTouchedRef.current = true;
-      // Every stroke that reaches the undo stack originates here, so this is
-      // the one place that knows which room the stack belongs to.
-      historyKeyRef.current = currentKey;
-      const canvasCol = layerToCanvasCol(layer, gridCol);
-      if (canvasCol !== null) {
-        canvasRef.current?.setTile(row, canvasCol, newName);
-      }
-      return true;
+      return writeCell({ key: currentKey, layer, row, col: gridCol }, newName);
     },
-    [currentKey, layerToCanvasCol, onEditedKeysChanged],
+    [currentKey, writeCell],
   );
 
   const readLayerCell = useCallback(
     (layer: CanvasLayer, row: number, gridCol: number): string => {
       if (!currentKey) return "";
-      const map =
-        layer === "foreground" ? gridsRef.current : bgGridsRef.current;
-      return map.get(currentKey)?.[row]?.[gridCol] ?? "";
+      return readCell({ key: currentKey, layer, row, col: gridCol });
     },
-    [currentKey],
+    [currentKey, readCell],
   );
 
   // ---------------------------------------------------------------------
@@ -467,16 +589,14 @@ export function useLevelCanvas(
   // ---------------------------------------------------------------------
   const handlePaint = useCallback(
     (row: number, combinedCol: number, _oldName: string, newName: string) => {
-      const hit = canvasToLayer(combinedCol);
-      if (!hit) return;
-      writeLayerCell(hit.layer, row, hit.gridCol, newName);
-      if (isDual && linkLayers) {
-        const otherLayer: CanvasLayer =
-          hit.layer === "foreground" ? "background" : "foreground";
-        writeLayerCell(otherLayer, row, hit.gridCol, newName);
+      const cell = routeCell(row, combinedCol);
+      if (!cell) return;
+      writeCell(cell, newName);
+      if (linkActive) {
+        writeCell({ ...cell, layer: otherLayer(cell.layer) }, newName);
       }
     },
-    [canvasToLayer, writeLayerCell, isDual, linkLayers],
+    [routeCell, writeCell, linkActive],
   );
 
   const handleStrokeEnd = useCallback(() => {
@@ -503,29 +623,61 @@ export function useLevelCanvas(
 
   const applyStroke = useCallback(
     (stroke: Stroke, direction: "undo" | "redo") => {
-      if (!currentKey) return;
       const iter = direction === "undo" ? [...stroke].reverse() : stroke;
       for (const edit of iter) {
         const map =
           edit.layer === "foreground"
             ? gridsRef.current
             : bgGridsRef.current;
-        const grid = map.get(currentKey);
+        const grid = map.get(edit.key);
         if (!grid) continue;
         const target = direction === "undo" ? edit.oldName : edit.newName;
         if (grid[edit.row]?.[edit.col] !== undefined) {
           grid[edit.row][edit.col] = target;
         }
-        const canvasCol = layerToCanvasCol(edit.layer, edit.col);
-        if (canvasCol !== null) {
-          canvasRef.current?.setTile(edit.row, canvasCol, target);
-        }
+        const at = unrouteCell(edit);
+        if (at) canvasRef.current?.setTile(at.row, at.col, target);
       }
     },
-    [currentKey, layerToCanvasCol],
+    [unrouteCell],
   );
 
   const reconcileEditedKeys = useCallback(() => {
+    if (cellRouter) {
+      // A routed scope edits many rooms through one undo stack, so "which
+      // rooms are dirty" is exactly "which rooms are touched by the strokes
+      // between the last-saved depth and where the stack sits now". Undoing
+      // back past a room's last stroke drops its pip; redoing brings it back.
+      const live = new Set<string>();
+      const depth = undoStack.current.length;
+      const saved = savedUndoIndexRef.current;
+      for (let i = Math.min(saved, depth); i < depth; i++) {
+        for (const edit of undoStack.current[i]) live.add(edit.key);
+      }
+      // Undone back BELOW the save point counts too: those rooms no longer
+      // match what's on disk either. The strokes in question are the top
+      // `saved - depth` entries of the redo stack.
+      for (let i = 0; i < saved - depth; i++) {
+        const stroke = redoStack.current[redoStack.current.length - 1 - i];
+        if (!stroke) break;
+        for (const edit of stroke) live.add(edit.key);
+      }
+      let changed = false;
+      for (const key of scopeKeysRef.current) {
+        const shouldBePresent =
+          live.has(key) || (hasSettingsOverride?.(key) ?? false);
+        const wasPresent = editedKeysRef.current.has(key);
+        if (shouldBePresent && !wasPresent) {
+          editedKeysRef.current.add(key);
+          changed = true;
+        } else if (!shouldBePresent && wasPresent) {
+          editedKeysRef.current.delete(key);
+          changed = true;
+        }
+      }
+      if (changed) onEditedKeysChanged?.();
+      return;
+    }
     if (!currentKey) return;
     // Only trust the undo depth when the stack actually describes this room.
     // On a room switch this effect re-runs (currentKey is a dep) before the
@@ -548,7 +700,7 @@ export function useLevelCanvas(
       editedKeysRef.current.delete(currentKey);
       onEditedKeysChanged?.();
     }
-  }, [currentKey, hasSettingsOverride, onEditedKeysChanged]);
+  }, [cellRouter, currentKey, hasSettingsOverride, onEditedKeysChanged]);
 
   const undo = useCallback(() => {
     const stroke = undoStack.current.pop();
@@ -583,6 +735,7 @@ export function useLevelCanvas(
     savedUndoIndexRef.current = 0;
     currentRoomTouchedRef.current = false;
     historyKeyRef.current = null;
+    scopeKeysRef.current = new Set();
     setUndoLen(0);
     setRedoLen(0);
   }, []);
@@ -595,6 +748,30 @@ export function useLevelCanvas(
   // ---------------------------------------------------------------------
   // Marquee ops
   // ---------------------------------------------------------------------
+  /** Snapshot a canvas-space rect. `useOtherLayer` reads each cell's
+   *  opposite layer instead, which is how the linked copy grabs the
+   *  background half without assuming the selection sits on the fg side. */
+  const snapshotRect = useCallback(
+    (
+      rTop: number,
+      cLeft: number,
+      rows: number,
+      cols: number,
+      useOtherLayer = false,
+    ): string[][] => {
+      const out: string[][] = [];
+      for (let r = 0; r < rows; r++) {
+        const row: string[] = [];
+        for (let c = 0; c < cols; c++) {
+          row.push(readCanvasCell(rTop + r, cLeft + c, useOtherLayer));
+        }
+        out.push(row);
+      }
+      return out;
+    },
+    [readCanvasCell],
+  );
+
   const serializeSelection = useCallback(
     (sel: Selection): string => {
       const rTop = Math.min(sel.row0, sel.row1);
@@ -603,42 +780,28 @@ export function useLevelCanvas(
       const cRight = Math.max(sel.col0, sel.col1);
       const rows = rBot - rTop + 1;
       const cols = cRight - cLeft + 1;
-      const anchor = canvasToLayer(cLeft);
-      const linked = isDual && linkLayers;
-      const snapshotLayer = (layer: CanvasLayer, gridColLeft: number) => {
-        const out: string[][] = [];
-        for (let r = 0; r < rows; r++) {
-          const row: string[] = [];
-          for (let c = 0; c < cols; c++) {
-            row.push(readLayerCell(layer, rTop + r, gridColLeft + c));
-          }
-          out.push(row);
-        }
-        return out;
-      };
-      const gridColLeft = anchor?.gridCol ?? cLeft;
-      const payload = linked
+      // "fg"/"bg" in the payload mean "the layer the selection was on" and
+      // "the other one" -- a paste re-anchors both against wherever it
+      // lands rather than hard-coding front and back.
+      const payload = linkActive
         ? {
             kind: "modlunky2-region",
             version: 2,
             width: cols,
             height: rows,
-            fg: snapshotLayer("foreground", gridColLeft),
-            bg: snapshotLayer("background", gridColLeft),
+            fg: snapshotRect(rTop, cLeft, rows, cols),
+            bg: snapshotRect(rTop, cLeft, rows, cols, true),
           }
         : {
             kind: "modlunky2-region",
             version: 1,
             width: cols,
             height: rows,
-            cells: snapshotLayer(
-              anchor?.layer ?? "foreground",
-              gridColLeft,
-            ),
+            cells: snapshotRect(rTop, cLeft, rows, cols),
           };
       return JSON.stringify(payload);
     },
-    [readLayerCell, canvasToLayer, isDual, linkLayers],
+    [snapshotRect, linkActive],
   );
 
   const commitMarqueeCopy = useCallback(async () => {
@@ -658,31 +821,15 @@ export function useLevelCanvas(
       const cLeft = Math.min(sel.col0, sel.col1);
       const cRight = Math.max(sel.col0, sel.col1);
       const eraseName = palette.find((p) => p.name === "empty")?.name ?? "";
-      const anchor = canvasToLayer(cLeft);
-      if (!anchor) {
-        callHandleStrokeEnd();
-        return;
-      }
-      const gridColRight = anchor.gridCol + (cRight - cLeft);
-      const layers: CanvasLayer[] =
-        isDual && linkLayers ? ["foreground", "background"] : [anchor.layer];
-      for (const layer of layers) {
-        for (let r = rTop; r <= rBot; r++) {
-          for (let c = anchor.gridCol; c <= gridColRight; c++) {
-            writeLayerCell(layer, r, c, eraseName);
-          }
+      for (let r = rTop; r <= rBot; r++) {
+        for (let c = cLeft; c <= cRight; c++) {
+          writeCanvasCell(r, c, eraseName);
+          if (linkActive) writeCanvasCell(r, c, eraseName, true);
         }
       }
       callHandleStrokeEnd();
     },
-    [
-      palette,
-      canvasToLayer,
-      writeLayerCell,
-      isDual,
-      linkLayers,
-      callHandleStrokeEnd,
-    ],
+    [palette, writeCanvasCell, linkActive, callHandleStrokeEnd],
   );
 
   const commitMarqueeCut = useCallback(async () => {
@@ -725,11 +872,6 @@ export function useLevelCanvas(
           col: Math.min(selection.col0, selection.col1),
         }
       : canvasRef.current?.getHoverCell() ?? { row: 0, col: 0 };
-    const anchorHit = canvasToLayer(anchor.col);
-    if (!anchorHit) {
-      callHandleStrokeEnd();
-      return;
-    }
     const paletteSet = new Set(palette.map((p) => p.name));
     const fallback = paletteSet.has("empty") ? "empty" : "";
     const sanitize = (name: unknown): string => {
@@ -737,30 +879,29 @@ export function useLevelCanvas(
       if (name === "" || paletteSet.has(name)) return name;
       return fallback;
     };
-    const writeLayerGrid = (layer: CanvasLayer, cells: string[][]) => {
+    // Cells land relative to the anchor in CANVAS space, so a paste that
+    // runs off the end of a room (or across a spacer) drops the cells with
+    // nowhere to go instead of folding them into the wrong grid.
+    const writeGrid = (cells: string[][], useOtherLayer = false) => {
       for (let r = 0; r < cells.length; r++) {
         const row = cells[r];
         if (!Array.isArray(row)) continue;
         for (let c = 0; c < row.length; c++) {
-          writeLayerCell(
-            layer,
+          writeCanvasCell(
             anchor.row + r,
-            anchorHit.gridCol + c,
+            anchor.col + c,
             sanitize(row[c]),
+            useOtherLayer,
           );
         }
       }
     };
     if (Array.isArray(payload.fg) || Array.isArray(payload.bg)) {
-      if (Array.isArray(payload.fg)) writeLayerGrid("foreground", payload.fg);
-      if (Array.isArray(payload.bg)) writeLayerGrid("background", payload.bg);
+      if (Array.isArray(payload.fg)) writeGrid(payload.fg);
+      if (Array.isArray(payload.bg)) writeGrid(payload.bg, true);
     } else if (Array.isArray(payload.cells)) {
-      writeLayerGrid(anchorHit.layer, payload.cells);
-      if (isDual && linkLayers) {
-        const other: CanvasLayer =
-          anchorHit.layer === "foreground" ? "background" : "foreground";
-        writeLayerGrid(other, payload.cells);
-      }
+      writeGrid(payload.cells);
+      if (linkActive) writeGrid(payload.cells, true);
     } else {
       toast.error("Clipboard is not a modlunky2 region.");
       return;
@@ -771,10 +912,8 @@ export function useLevelCanvas(
     currentKey,
     selection,
     palette,
-    canvasToLayer,
-    writeLayerCell,
-    isDual,
-    linkLayers,
+    writeCanvasCell,
+    linkActive,
     callHandleStrokeEnd,
     toast,
   ]);
@@ -787,46 +926,29 @@ export function useLevelCanvas(
       const cRight = Math.max(from.col0, from.col1);
       const width = cRight - cLeft + 1;
       const height = rBot - rTop + 1;
-      const dr = targetRow - rTop;
-      const dc = targetCol - cLeft;
-      if (dr === 0 && dc === 0) return;
-      const anchor = canvasToLayer(cLeft);
-      if (!anchor) return;
-      const layers: CanvasLayer[] =
-        isDual && linkLayers ? ["foreground", "background"] : [anchor.layer];
+      if (targetRow === rTop && targetCol === cLeft) return;
       const eraseName = palette.find((p) => p.name === "empty")?.name ?? "";
-      const snapshots = new Map<CanvasLayer, string[][]>();
-      for (const layer of layers) {
-        const snap: string[][] = [];
-        for (let r = 0; r < height; r++) {
-          const row: string[] = [];
-          for (let c = 0; c < width; c++) {
-            row.push(readLayerCell(layer, rTop + r, anchor.gridCol + c));
-          }
-          snap.push(row);
-        }
-        snapshots.set(layer, snap);
-      }
-      for (const layer of layers) {
-        for (let r = 0; r < height; r++) {
-          for (let c = 0; c < width; c++) {
-            writeLayerCell(layer, rTop + r, anchor.gridCol + c, eraseName);
+      // Lift, clear, drop -- in that order, so a move onto overlapping
+      // ground doesn't erase what it just wrote.
+      const passes = linkActive ? [false, true] : [false];
+      const snapshots = passes.map((useOther) =>
+        snapshotRect(rTop, cLeft, height, width, useOther),
+      );
+      for (let r = 0; r < height; r++) {
+        for (let c = 0; c < width; c++) {
+          for (const useOther of passes) {
+            writeCanvasCell(rTop + r, cLeft + c, eraseName, useOther);
           }
         }
       }
-      for (const layer of layers) {
-        const snap = snapshots.get(layer)!;
+      passes.forEach((useOther, i) => {
+        const snap = snapshots[i];
         for (let r = 0; r < height; r++) {
           for (let c = 0; c < width; c++) {
-            writeLayerCell(
-              layer,
-              targetRow + r,
-              anchor.gridCol + dc + c,
-              snap[r][c],
-            );
+            writeCanvasCell(targetRow + r, targetCol + c, snap[r][c], useOther);
           }
         }
-      }
+      });
       callHandleStrokeEnd();
       const next: Selection = {
         row0: targetRow,
@@ -837,15 +959,7 @@ export function useLevelCanvas(
       setSelection(next);
       canvasRef.current?.setSelection(next);
     },
-    [
-      palette,
-      canvasToLayer,
-      readLayerCell,
-      writeLayerCell,
-      isDual,
-      linkLayers,
-      callHandleStrokeEnd,
-    ],
+    [palette, snapshotRect, writeCanvasCell, linkActive, callHandleStrokeEnd],
   );
 
   const onPick = useCallback(
@@ -1001,6 +1115,9 @@ export function useLevelCanvas(
 
     readLayerCell,
     writeLayerCell,
+    readCell,
+    writeCell,
+    routeCell,
     canvasToLayer,
     layerToCanvasCol,
   };

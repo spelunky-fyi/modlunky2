@@ -518,3 +518,17 @@
   color: var(--accent-strong);
   font-weight: 700;
 }
+
+/* The whole-level view draws exactly one room per template, and this is the
+   one. Only ever set while that view is open. */
+.vanilla-rooms-shown {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--accent-text);
+}
+
+.vanilla-rooms-room.shown .vanilla-rooms-room-label {
+  color: var(--fg);
+}
+

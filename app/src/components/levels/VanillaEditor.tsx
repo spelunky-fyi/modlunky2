@@ -1,8 +1,9 @@
 // Vanilla-mode editor: pick a base-game .lvl (optionally already modded in
-// this pack), drill into its templates + rooms, paint one room at a time
-// on the canvas, save back to the pack's Data/Levels/. Preserves everything
-// this UI doesn't touch (settings/chances/monsters/section comments/other
-// templates/alternate rooms not currently open).
+// this pack), drill into its templates + rooms, and paint either one room at
+// a time or the whole level at once, then save back to the pack's
+// Data/Levels/. Preserves everything this UI doesn't touch
+// (settings/chances/monsters/section comments/other templates/alternate rooms
+// not currently open).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -13,6 +14,7 @@ import {
   ChevronDown,
   ChevronsDownUp,
   ChevronsUpDown,
+  Eye,
   FolderOpen,
   Keyboard,
   MessageSquareText,
@@ -65,7 +67,13 @@ import { RulesPanel } from "./RulesPanel";
 import { TileCanvas } from "./TileCanvas";
 import { useEditorPrefs } from "./hooks/useEditorPrefs";
 import { useCloseGuard } from "./hooks/useCloseGuard";
-import { DUAL_GAP_COLS, useLevelCanvas } from "./hooks/useLevelCanvas";
+import {
+  DUAL_GAP_COLS,
+  useLevelCanvas,
+  type CanvasLayer,
+  type CellRouter,
+  type RoutedCell,
+} from "./hooks/useLevelCanvas";
 import { usePaletteEditor } from "./hooks/usePaletteEditor";
 import {
   biomeForLevelFilename,
@@ -89,6 +97,12 @@ interface RoomKey {
   templateName: string;
   roomIndex: number;
 }
+
+/** Grid key standing in for "the whole-level mosaic". The mosaic edits many
+ *  rooms through one canvas, so its undo history belongs to the view rather
+ *  than to any one room -- and it has to be a key no room can collide with,
+ *  which `#` in a template name would be. */
+const LEVEL_VIEW_KEY = "@level";
 
 function keyEq(a: RoomKey | null, b: RoomKey | null) {
   if (!a || !b) return false;
@@ -258,7 +272,8 @@ export function VanillaEditor({ pack }: Props) {
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   // "room" shows a single room; "level" tiles every fixed-grid room (setroom,
   // challenge, or Palace of Pleasure) in its (Y, X) grid position on one
-  // read-only canvas for a whole-level overview.
+  // canvas. Both are full editing surfaces -- the level view routes each
+  // paint back into whichever room owns the cell (see `levelCellRouter`).
   const [viewMode, setViewMode] = useState<"room" | "level">("room");
   const [pendingRestore, setPendingRestore] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
@@ -442,10 +457,34 @@ export function VanillaEditor({ pack }: Props) {
   // primary/secondary, keyboard shortcuts. Everything Vanilla and Custom
   // agree on lives in one hook so both editors share the same paint
   // pipeline and behave consistently.
+  // What the canvas is currently editing. In Room view that's one room; in
+  // Level view it's the mosaic as a whole, which is also the undo scope.
+  const canvasKey =
+    viewMode === "level"
+      ? LEVEL_VIEW_KEY
+      : selectedRoom
+        ? roomKey(selectedRoom)
+        : null;
+
+  // Stable indirection so the hook can route through a mosaic that isn't
+  // built yet: it owns the grid refs the mosaic reads, so it has to be
+  // constructed first. Pointed at the real router further down.
+  const levelRouterRef = useRef<CellRouter | null>(null);
+  const levelRouterProxy = useMemo<CellRouter>(
+    () => ({
+      toCell: (row, col) => levelRouterRef.current?.toCell(row, col) ?? null,
+      toCanvas: (cell) => levelRouterRef.current?.toCanvas(cell) ?? null,
+    }),
+    [],
+  );
+
   const canvas = useLevelCanvas({
-    currentKey: selectedRoom ? roomKey(selectedRoom) : null,
-    isDual,
-    mirrored: currentMirrorState,
+    currentKey: canvasKey,
+    // Dual / mirror are properties of the one room in Room view. The mosaic
+    // bakes both into its own layout, so it opts out of them here.
+    isDual: viewMode === "level" ? false : isDual,
+    mirrored: viewMode === "level" ? false : currentMirrorState,
+    cellRouter: viewMode === "level" ? levelRouterProxy : null,
     palette,
     // Vanilla stores per-room template-flag overrides in settingsRef; the
     // hook consults this so the dirty pip reconciliation doesn't clear a
@@ -791,13 +830,15 @@ export function VanillaEditor({ pack }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pack, selectedFile, toast, resetHistory, reloadTick]);
 
-  // When the user switches rooms, drop the per-room undo history so
-  // undo doesn't accidentally paint over the wrong room. Cross-room
-  // undo is a follow-up. The hook takes care of clearing selection and
-  // resetting layerView on the same currentKey change.
+  // Drop the undo history whenever the canvas changes what it's editing: a
+  // different room, or in or out of the whole-level view. Strokes recorded
+  // against one scope have nowhere sensible to land in another. Selecting a
+  // room while the mosaic is open does NOT reset it -- the scope is the
+  // mosaic, and picking a variant there shouldn't cost you your history.
+  // The hook clears the selection and resets layerView on the same change.
   useEffect(() => {
     resetHistory();
-  }, [selectedRoom, resetHistory]);
+  }, [canvasKey, resetHistory]);
 
   // Retint the atlas when the effective biome changes AFTER load -- e.g. the
   // user picks a different theme in the Theme modal. The load effect owns the
@@ -844,7 +885,10 @@ export function VanillaEditor({ pack }: Props) {
   }, [currentBiome]);
 
   const recomputeDirty = useCallback(() => {
-    if (selectedRoom) {
+    // Only Room view reconciles the selected room from the undo depth. In
+    // Level view the stack spans rooms, so the hook owns that reconciliation
+    // and this would wrongly clear the pip on a room the mosaic just edited.
+    if (viewMode === "room" && selectedRoom) {
       const key = roomKey(selectedRoom);
       // Undo depth only counts when the history belongs to this room; the
       // stacks outlive a room switch until resetHistory runs.
@@ -880,6 +924,7 @@ export function VanillaEditor({ pack }: Props) {
   }, [
     rulesEdits,
     themeOverride,
+    viewMode,
     selectedRoom,
     undoLen,
     editedKeysRef,
@@ -916,12 +961,38 @@ export function VanillaEditor({ pack }: Props) {
   });
   const { setSwatchOverrides } = pal;
 
+  // Which room variant each fixed-grid template shows in the whole-level
+  // view, keyed by template name. Absent means "whichever one the game would
+  // pick" (the first that isn't `!ignore`); an entry is an explicit override
+  // the user chose from the slot's variant badge or the rooms tree.
+  const [levelVariants, setLevelVariants] = useState<Map<string, number>>(
+    () => new Map(),
+  );
+
+  // Drop overrides that no longer point at a real room. Template deletes,
+  // renames, and room deletes all rebuild `level`, and a stale index would
+  // otherwise silently show a different room than the badge claims.
+  useEffect(() => {
+    setLevelVariants((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Map<string, number>();
+      for (const [name, idx] of prev) {
+        const tpl = level?.templates.find((t) => t.name === name);
+        if (tpl && idx >= 0 && idx < tpl.rooms.length) next.set(name, idx);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+  }, [level]);
+
   const levelViewData = useMemo(() => {
     if (viewMode !== "level" || !level) return null;
     // Read live grid contents from gridsRef when present so unsaved edits
     // show up in the mosaic; fall back to the on-disk foreground otherwise.
     // gridsVersion invalidates when grid content is rewritten in place.
     void gridsVersion;
+    // settingsTick invalidates when a template flag is toggled: `!ignore`
+    // picks the slot's room, and `!dual` / `!onlyflip` change how it draws.
+    void settingsTick;
     // Fixed-grid template families that place a room at `<family><y>-<x>`:
     // vanilla setrooms plus the challenge and Palace of Pleasure grids. All
     // three share the same 8-row x 10-col room geometry, so one mosaic covers
@@ -930,8 +1001,20 @@ export function VanillaEditor({ pack }: Props) {
     type Placement = {
       templateName: string;
       roomIndex: number;
+      /** `gridsRef` key of the room this slot is showing. */
+      key: string;
+      /** How many rooms the template has to choose between. */
+      variantCount: number;
       row: number;
       col: number;
+      rows: number;
+      cols: number;
+      /** Slot draws mirrored (`!onlyflip`), so display col N is authored
+       *  col cols-1-N. */
+      onlyflip: boolean;
+      /** Slot draws its layers swapped, so the front half of the mosaic is
+       *  the room's background grid and vice versa. */
+      layersReversed: boolean;
       fg: string[][];
       bg: string[][] | null;
     };
@@ -946,13 +1029,21 @@ export function VanillaEditor({ pack }: Props) {
       // The game skips room variants flagged `!ignore` and uses the next one.
       // Mirror that here: pick the first non-ignored room, or drop the slot
       // entirely if every variant is ignored.
-      const roomIdx = tpl.rooms.findIndex((room, i) => {
+      const defaultIndex = tpl.rooms.findIndex((room, i) => {
         const s =
           settingsRef.current.get(
             roomKey({ templateName: tpl.name, roomIndex: i }),
           ) ?? room.settings;
         return !s.includes("ignore");
       });
+      // An explicit pick wins over the game's, including a pick of an
+      // `!ignore` room: seeing (and editing) the variant you asked for is
+      // the whole point of the override.
+      const chosen = levelVariants.get(tpl.name);
+      const roomIdx =
+        chosen != null && chosen >= 0 && chosen < tpl.rooms.length
+          ? chosen
+          : defaultIndex;
       if (roomIdx === -1) continue;
       const original = tpl.rooms[roomIdx];
       if (!original) continue;
@@ -991,8 +1082,14 @@ export function VanillaEditor({ pack }: Props) {
       placements.push({
         templateName: tpl.name,
         roomIndex: roomIdx,
+        key,
+        variantCount: tpl.rooms.length,
         row: rowStart,
         col: colStart,
+        rows,
+        cols,
+        onlyflip: isOnlyFlipRoom,
+        layersReversed,
         fg,
         bg,
       });
@@ -1008,26 +1105,51 @@ export function VanillaEditor({ pack }: Props) {
     const bgMosaic: string[][] = Array.from({ length: maxRowExcl }, () =>
       new Array<string>(maxColExcl).fill(""),
     );
-    // Maps a cell in the fg mosaic back to the template it belongs to so a
-    // click can jump straight to the source room.
-    const lookup: (string | null)[][] = Array.from({ length: maxRowExcl }, () =>
-      new Array<string | null>(maxColExcl).fill(null),
-    );
+    // Maps each half of the mosaic back to the authored cell it draws, so a
+    // paint lands in the right room's grid at the right (un-mirrored,
+    // un-swapped) coordinate. `null` where nothing is placed.
+    const blankOwners = () =>
+      Array.from({ length: maxRowExcl }, () =>
+        new Array<RoutedCell | null>(maxColExcl).fill(null),
+      );
+    const ownerFg = blankOwners();
+    const ownerBg = blankOwners();
+    // Slot lookup for the hover HUD and the variant badges.
+    const byKey = new Map<string, Placement>();
     let anyBg = false;
     for (const p of placements) {
-      const rows = p.fg.length;
-      const cols = p.fg[0]?.length ?? 0;
-      for (let r = 0; r < rows; r++) {
+      byKey.set(p.key, p);
+      const frontLayer: CanvasLayer = p.layersReversed
+        ? "background"
+        : "foreground";
+      const backLayer: CanvasLayer = p.layersReversed
+        ? "foreground"
+        : "background";
+      for (let r = 0; r < p.rows; r++) {
         const dstRow = p.row + r;
         if (dstRow >= maxRowExcl) continue;
         const bgRow = p.bg?.[r];
-        for (let c = 0; c < cols; c++) {
+        for (let c = 0; c < p.cols; c++) {
           const dstCol = p.col + c;
           if (dstCol >= maxColExcl) continue;
+          const authoredCol = p.onlyflip ? p.cols - 1 - c : c;
           fgMosaic[dstRow][dstCol] = p.fg[r][c];
-          lookup[dstRow][dstCol] = p.templateName;
+          ownerFg[dstRow][dstCol] = {
+            key: p.key,
+            layer: frontLayer,
+            row: r,
+            col: authoredCol,
+          };
           if (bgRow) {
             bgMosaic[dstRow][dstCol] = bgRow[c] ?? "";
+            if (bgRow[c] !== undefined) {
+              ownerBg[dstRow][dstCol] = {
+                key: p.key,
+                layer: backLayer,
+                row: r,
+                col: authoredCol,
+              };
+            }
             if (bgRow[c]) anyBg = true;
           }
         }
@@ -1045,44 +1167,113 @@ export function VanillaEditor({ pack }: Props) {
     // In the dual view, rooms without a `!dual` layer contribute nothing to
     // the background half. Badge each one so an empty region reads as
     // "intentionally single-layer" rather than a missing/broken room.
-    const badges = anyBg
+    const noDualBadges = anyBg
       ? placements
           .filter((p) => p.bg === null)
           .map((p) => ({
             row: p.row,
             col: maxColExcl + DUAL_GAP_COLS + p.col,
-            width: p.fg[0]?.length ?? 0,
-            height: p.fg.length,
+            width: p.cols,
+            height: p.rows,
             text: "No dual layer",
           }))
       : [];
     return {
       combined,
-      lookup,
+      placements,
+      byKey,
+      ownerFg,
+      ownerBg,
       fgCols: maxColExcl,
       hasBg: anyBg,
-      badges,
+      noDualBadges,
     };
-  }, [viewMode, level, gridsVersion, gridsRef, bgGridsRef]);
+  }, [
+    viewMode,
+    level,
+    levelVariants,
+    gridsVersion,
+    settingsTick,
+    gridsRef,
+    bgGridsRef,
+  ]);
 
-  const handleLevelCellClick = useCallback(
-    (row: number, col: number) => {
-      if (!levelViewData) return;
-      // In dual level-view the combined grid is [fg | gap | bg]. Both
-      // halves are the same shape and lookup is keyed on fg coords, so
-      // translate a bg-side click back to its fg column before probing.
-      let fgCol = col;
-      if (levelViewData.hasBg) {
-        if (col < levelViewData.fgCols) fgCol = col;
-        else if (col < levelViewData.fgCols + DUAL_GAP_COLS) return;
-        else fgCol = col - levelViewData.fgCols - DUAL_GAP_COLS;
-      }
-      const templateName = levelViewData.lookup[row]?.[fgCol];
-      if (!templateName) return;
-      setSelectedRoom({ templateName, roomIndex: 0 });
-      setViewMode("room");
+  // Canvas coords <-> authored cells for the whole-level mosaic. This is what
+  // turns the level view from a read-only picture into a real editing
+  // surface: every paint, fill, and marquee op routes through it and lands in
+  // whichever room owns the cell under the cursor.
+  const levelCellRouter = useMemo<CellRouter | null>(() => {
+    if (!levelViewData) return null;
+    const { ownerFg, ownerBg, byKey, fgCols, hasBg } = levelViewData;
+    return {
+      toCell: (row, col) => {
+        if (!hasBg || col < fgCols) return ownerFg[row]?.[col] ?? null;
+        if (col < fgCols + DUAL_GAP_COLS) return null;
+        return ownerBg[row]?.[col - fgCols - DUAL_GAP_COLS] ?? null;
+      },
+      toCanvas: (cell) => {
+        const p = byKey.get(cell.key);
+        if (!p) return null;
+        // Which half of the mosaic draws this authored layer depends on
+        // whether the slot has its layers swapped.
+        const onFront = p.layersReversed
+          ? cell.layer === "background"
+          : cell.layer === "foreground";
+        if (!onFront && (!hasBg || p.bg === null)) return null;
+        if (cell.row < 0 || cell.row >= p.rows) return null;
+        const displayCol = p.onlyflip ? p.cols - 1 - cell.col : cell.col;
+        if (displayCol < 0 || displayCol >= p.cols) return null;
+        return {
+          row: p.row + cell.row,
+          col:
+            p.col + displayCol + (onFront ? 0 : fgCols + DUAL_GAP_COLS),
+        };
+      },
+    };
+  }, [levelViewData]);
+
+  // The hook is constructed before `levelViewData` exists (it owns the grid
+  // refs the mosaic reads), so it gets a stable delegating router and we
+  // point that at the live one from here.
+  levelRouterRef.current = viewMode === "level" ? levelCellRouter : null;
+
+  // Hover HUD for the mosaic: which slot, which variant, and the coordinate
+  // inside that room rather than a meaningless level-wide one.
+  const formatLevelHover = useCallback(
+    (row: number, col: number, name: string): string | null => {
+      const cell = levelCellRouter?.toCell(row, col);
+      if (!cell || !levelViewData) return null;
+      const p = levelViewData.byKey.get(cell.key);
+      if (!p) return null;
+      const variant = p.variantCount > 1 ? ` room ${p.roomIndex}` : "";
+      const layer = levelViewData.hasBg
+        ? cell.layer === "foreground"
+          ? "fg "
+          : "bg "
+        : "";
+      return `${p.templateName}${variant} ${layer}(${cell.col}, ${cell.row}) ${name}`;
     },
-    [levelViewData],
+    [levelCellRouter, levelViewData],
+  );
+
+  // Rooms the mosaic is currently showing, so the tree can mark them.
+  const levelActiveKeys = useMemo(() => {
+    if (!levelViewData) return null;
+    return new Set(levelViewData.placements.map((p) => p.key));
+  }, [levelViewData]);
+
+  /** Show a different room in a slot. Also selects it, so the window title
+   *  and the room view follow the variant you picked. */
+  const selectLevelVariant = useCallback(
+    (templateName: string, roomIndex: number) => {
+      setLevelVariants((prev) => {
+        const next = new Map(prev);
+        next.set(templateName, roomIndex);
+        return next;
+      });
+      setSelectedRoom({ templateName, roomIndex });
+    },
+    [],
   );
 
   const handleToggleSetting = useCallback(
@@ -2425,6 +2616,13 @@ export function VanillaEditor({ pack }: Props) {
   );
 
   const trySelectRoom = (next: RoomKey) => {
+    // While the mosaic is open, picking a room in the tree is how you say
+    // "show me this variant of that slot". The tree is the only place that
+    // happens: the mosaic itself stays all tiles, nothing overlaid.
+    if (viewMode === "level") {
+      selectLevelVariant(next.templateName, next.roomIndex);
+      return;
+    }
     if (keyEq(selectedRoom, next)) return;
     setSelectedRoom(next);
   };
@@ -2516,7 +2714,7 @@ export function VanillaEditor({ pack }: Props) {
               className={`editor-viewmode-btn${viewMode === "level" ? " active" : ""}`}
               onClick={() => setViewMode("level")}
               onMouseDown={(e) => e.preventDefault()}
-              title="Whole-level view (Tab). Shows setroom, challenge, and Palace of Pleasure grids."
+              title="Whole-level view (Tab). Edit setrooms, challenges, or Palace of Pleasure rooms in place."
               aria-pressed={viewMode === "level"}
             >
               Level
@@ -2598,6 +2796,7 @@ export function VanillaEditor({ pack }: Props) {
           <VanillaRoomsTree
             templates={level?.templates ?? []}
             selected={selectedRoom}
+            shownKeys={levelActiveKeys}
             editedKeys={editedKeysRef.current}
             settingsOverrides={settingsRef.current}
             onSelect={trySelectRoom}
@@ -2666,10 +2865,21 @@ export function VanillaEditor({ pack }: Props) {
                     initialZoom={initialZoom}
                     showTileGrid={prefs.showTileGrid}
                     showRoomGrid={prefs.showRoomGrid}
-                    readOnly
-                    onCellClick={handleLevelCellClick}
+                    primary={primary}
+                    secondary={secondary}
+                    onPaint={handlePaint}
+                    onStrokeEnd={handleStrokeEnd}
+                    canPaintCell={canPaintCell}
+                    formatHover={formatLevelHover}
+                    tool={tool}
+                    eraseName={
+                      palette.find((p) => p.name === "empty")?.name ?? ""
+                    }
+                    onPick={canvasOnPick}
+                    onSelectionChange={setSelection}
+                    onMoveSelection={commitMarqueeMove}
                     renderMode={renderMode}
-                    badges={levelViewData.badges}
+                    badges={levelViewData.noDualBadges}
                     sections={
                       levelViewData.hasBg
                         ? [
@@ -2693,6 +2903,7 @@ export function VanillaEditor({ pack }: Props) {
                 </div>
                 <EditorBottomBar
                   zoom={zoom}
+                  // No one room to show flags for: the mosaic is many.
                   roomOpen={false}
                   roomSettingsEdited={false}
                   roomSettings={[]}
@@ -4037,6 +4248,7 @@ function FilePickerGroup({
 function VanillaRoomsTree({
   templates,
   selected,
+  shownKeys,
   editedKeys,
   settingsOverrides,
   onSelect,
@@ -4046,6 +4258,10 @@ function VanillaRoomsTree({
 }: {
   templates: VanillaLevelData["templates"];
   selected: RoomKey | null;
+  /** Rooms the whole-level view is currently drawing, or null when it isn't
+   *  open. A template with several rooms only shows one of them, and this is
+   *  what marks which. */
+  shownKeys: Set<string> | null;
   editedKeys: Set<string>;
   settingsOverrides: Map<string, string[]>;
   onSelect: (next: RoomKey) => void;
@@ -4318,6 +4534,7 @@ function VanillaRoomsTree({
                         roomIndex: idx,
                       });
                       const isEdited = editedKeys.has(key);
+                      const isShown = shownKeys?.has(key) ?? false;
                       // Badge from the live (unsaved) settings override when
                       // present so toggling a flag updates the list immediately.
                       const override = settingsOverrides.get(key);
@@ -4331,7 +4548,7 @@ function VanillaRoomsTree({
                         <li key={idx}>
                           <button
                             type="button"
-                            className={`vanilla-rooms-room${isSelected ? " selected" : ""}${isEdited ? " edited" : ""}`}
+                            className={`vanilla-rooms-room${isSelected ? " selected" : ""}${isEdited ? " edited" : ""}${isShown ? " shown" : ""}`}
                             data-template={tpl.name}
                             data-room-index={idx}
                             onClick={() =>
@@ -4374,6 +4591,14 @@ function VanillaRoomsTree({
                                 {tag}
                               </span>
                             ))}
+                            {isShown && (
+                              <span
+                                className="vanilla-rooms-shown"
+                                title="Showing in the whole-level view"
+                              >
+                                <Eye size={11} aria-hidden="true" />
+                              </span>
+                            )}
                             {isEdited && (
                               <span className="vanilla-rooms-edited">•</span>
                             )}

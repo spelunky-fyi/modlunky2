@@ -120,7 +120,8 @@ interface Props {
   /** Which paint tool is active. Defaults to brush (per-cell drag). */
   tool?: Tool;
   /** When true, paint is disabled and clicks fire `onCellClick` instead.
-   *  Used by the whole-level view to browse rooms without editing them. */
+   *  Used by the standalone room preview window, which shows a room without
+   *  offering to change it. */
   readOnly?: boolean;
   /** Fires on left-click when readOnly is set. row/col are grid coords. */
   onCellClick?: (row: number, col: number) => void;

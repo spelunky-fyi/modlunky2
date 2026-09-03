@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Level view is now an editing view rather than clicking sending you to the room
+- While in level view the side bar will have an eye to show which room is represented
+  and you can click a different room to swap it into the view
+
 ## [2.3.0] - 2026-09-03
 
 ### Added
