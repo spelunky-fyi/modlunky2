@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - While in level view the side bar will have an eye to show which room is represented
   and you can click a different room to swap it into the view
 
+### Fixed
+
+- Dragging the brush or eraser quickly left gaps in the stroke. Painting now
+  fills in the cells between one mouse position and the next, so a fast drag
+  draws a continuous line.
+
 ## [2.3.0] - 2026-09-03
 
 ### Added

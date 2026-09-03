@@ -27,6 +27,7 @@ import {
   TilingSprite,
 } from "pixi.js";
 import type { EditorAtlas } from "../../lib/commands";
+import { forEachStrokeCell } from "./strokeLine";
 import "./TileCanvas.css";
 
 interface Props {
@@ -1238,6 +1239,11 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       tool: Tool;
       startRow: number;
       startCol: number;
+      /** Last cell this stroke painted. A mousemove reports where the
+       *  pointer IS, not the path it took, so brush strokes interpolate
+       *  from here to the new sample. */
+      lastRow: number;
+      lastCol: number;
     } | null = null;
     let dragStart = { x: 0, y: 0 };
     let offsetStart = { x: 0, y: 0 };
@@ -1421,6 +1427,19 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       const col = Math.floor(worldX / local.tileDisplaySize);
       const row = Math.floor(worldY / local.tileDisplaySize);
       return { row, col };
+    };
+
+    // Paint the cells between two pointer samples so a fast drag draws a
+    // stroke rather than a dotted trail. Cells outside the grid are dropped
+    // by paintAt, so a line starting off-canvas still paints its inside part.
+    const paintLine = (
+      r0: number,
+      c0: number,
+      r1: number,
+      c1: number,
+      kind: "primary" | "secondary",
+    ) => {
+      forEachStrokeCell(r0, c0, r1, c1, (r, c) => paintAt(r, c, kind));
     };
 
     // Bucket fill: replace the 4-connected region of the same tile at (r0,c0)
@@ -1624,7 +1643,14 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       e.preventDefault();
       const { row, col } = pointerToTile(e.clientX, e.clientY);
       const activeTool = toolRef.current;
-      painting = { kind, tool: activeTool, startRow: row, startCol: col };
+      painting = {
+        kind,
+        tool: activeTool,
+        startRow: row,
+        startCol: col,
+        lastRow: row,
+        lastCol: col,
+      };
       if (activeTool === "brush" || activeTool === "eraser") {
         paintAt(row, col, kind);
       } else if (activeTool === "bucket") {
@@ -1651,7 +1677,17 @@ export const TileCanvas = forwardRef<TileCanvasHandle, Props>(function TileCanva
       const { row, col } = pointerToTile(e.clientX, e.clientY);
       if (painting) {
         if (painting.tool === "brush" || painting.tool === "eraser") {
-          paintAt(row, col, painting.kind);
+          if (row !== painting.lastRow || col !== painting.lastCol) {
+            paintLine(
+              painting.lastRow,
+              painting.lastCol,
+              row,
+              col,
+              painting.kind,
+            );
+            painting.lastRow = row;
+            painting.lastCol = col;
+          }
         } else if (painting.tool === "rect") {
           drawRectPreview(painting.startRow, painting.startCol, row, col);
         }
