@@ -1,0 +1,882 @@
+.saves-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.saves-loading {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+/* --- Panel sub-navigation -------------------------------------------- */
+
+.saves-panels {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.saves-panel-tab {
+  padding: 6px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saves-panel-tab:hover {
+  color: var(--fg);
+}
+
+.saves-panel-tab.active {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+}
+
+/* --- Manage layout ---------------------------------------------------- */
+
+.manage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.manage-columns {
+  display: grid;
+  /* minmax(0, 1fr) rather than 1fr: a bare `1fr` keeps `auto` as its
+   * minimum, so one long unbroken save name would widen its own column
+   * and squeeze the other one. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Below this the two lists stop being readable side by side, so they
+ * stack and split the height instead. */
+@media (max-width: 1000px) {
+  .manage-columns {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
+/* --- Cards ------------------------------------------------------------ */
+
+.saves-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.saves-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.saves-card-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border-color: rgba(var(--warning-rgb), 0.4);
+  background: rgba(var(--warning-rgb), 0.07);
+  color: var(--warning);
+}
+
+.saves-card-warning p {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.saves-current {
+  flex-shrink: 0;
+}
+
+.saves-current-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.saves-current-copy {
+  min-width: 0;
+}
+
+.saves-meta {
+  margin: 2px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Stat strip ------------------------------------------------------- */
+
+.saves-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px 12px;
+  margin: 12px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.saves-stats div {
+  min-width: 0;
+}
+
+.saves-stats dt {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1px;
+}
+
+.saves-stats dd {
+  margin: 0;
+  color: var(--fg);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saves-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0 0;
+  color: var(--danger-fg);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+/* Something the user should read before continuing, but which is not
+ * stopping them. Warmer than .saves-error, which reports a failure. */
+.saves-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 12px 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(var(--warning-rgb), 0.4);
+  border-radius: 6px;
+  background: rgba(var(--warning-rgb), 0.1);
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.saves-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--warning);
+}
+
+/* A file path, which is long and not the point. */
+.saves-path {
+  overflow-wrap: anywhere;
+  margin: 0 0 12px 0;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+/* The list of files an import is about to copy. Bounded, because
+ * picking a folder of saves is exactly the case this exists for. */
+.import-list {
+  list-style: none;
+  overflow-y: auto;
+  max-height: 42vh;
+  margin: 0 0 12px 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.import-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 10px;
+}
+
+.import-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.import-list li.bad {
+  opacity: 0.6;
+}
+
+.import-list label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.import-list input {
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.import-name {
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-detail {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.import-detail em {
+  color: var(--warning);
+  font-style: normal;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.import-actions .ed-toolbar-count {
+  margin-right: auto;
+}
+
+/* --- List cards ------------------------------------------------------- */
+
+.saves-list-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 10px;
+}
+
+.saves-list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.saves-count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+
+.saves-search:focus-within {
+  border-color: var(--accent);
+}
+
+.saves-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.saves-search input:focus {
+  outline: none;
+}
+
+.saves-search-count {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* The scroll that matters: inside the card, not down the page. */
+.saves-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* --- Date groups ------------------------------------------------------ */
+
+.saves-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 4px 4px 4px;
+  /* Opaque, so rows scrolling underneath stay hidden. */
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.saves-group-head span {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.saves-list {
+  list-style: none;
+  margin: 0 0 2px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.saves-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: var(--bg-inset);
+}
+
+.saves-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.saves-row-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* The truncation happens here rather than on the row above, so the tags
+ * beside it keep their full width and only the name gives way. */
+.saves-row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saves-row-title em {
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.saves-tag {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.saves-tag-quiet {
+  background: rgba(var(--overlay-rgb), 0.09);
+  color: var(--fg-muted);
+}
+
+.saves-row-meta {
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saves-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* The two icon actions stay out of the way until the row is under the
+ * pointer, so a long list reads as data rather than as a wall of buttons.
+ * Keyboard focus brings them back, or they would be unreachable. */
+.saves-row-actions .saves-icon-btn {
+  opacity: 0;
+}
+
+.saves-row:hover .saves-icon-btn,
+.saves-row:focus-within .saves-icon-btn {
+  opacity: 1;
+}
+
+/* --- Snapshotter controls -------------------------------------------- */
+
+.saves-controls {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-inset);
+}
+
+.saves-controls-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.saves-controls-hint {
+  margin: 7px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.saves-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.saves-inline-field select,
+.saves-inline-field input {
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.saves-inline-field input[type="number"] {
+  width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-inline-field select:disabled,
+.saves-inline-field input:disabled {
+  opacity: 0.5;
+}
+
+/* --- Buttons --------------------------------------------------------- */
+
+.saves-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.saves-btn:hover:not(:disabled) {
+  border-color: var(--fg-muted);
+}
+
+.saves-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.saves-btn-primary {
+  border-color: transparent;
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
+}
+
+.saves-btn-primary:hover:not(:disabled) {
+  background: var(--accent-fill-2);
+  border-color: transparent;
+}
+
+.saves-btn-danger {
+  border-color: transparent;
+  background: var(--danger-solid);
+  color: var(--on-solid);
+}
+
+.saves-btn-danger:hover:not(:disabled) {
+  background: var(--danger-solid-hover);
+  border-color: transparent;
+}
+
+.saves-btn-quiet {
+  padding: 4px 8px;
+  font-size: 11.5px;
+  background: transparent;
+}
+
+.saves-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.saves-icon-btn:hover:not(:disabled) {
+  border-color: var(--border);
+  color: var(--fg);
+}
+
+.saves-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.saves-icon-danger:hover:not(:disabled) {
+  border-color: rgba(var(--danger-rgb), 0.5);
+  color: var(--danger);
+}
+
+/* --- Modal contents -------------------------------------------------- */
+
+.saves-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.saves-field span {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.saves-field input {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.saves-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.saves-hint {
+  margin: 7px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.saves-modal-copy {
+  margin: 0 0 14px 0;
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.saves-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px 0;
+  padding: 9px 11px;
+  border-radius: 5px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+.saves-warn {
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid rgba(var(--danger-rgb), 0.4);
+  border-radius: 6px;
+  background: rgba(var(--danger-rgb), 0.07);
+}
+
+.saves-warn h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 6px 0;
+  color: var(--danger-fg);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.saves-warn p {
+  margin: 0 0 9px 0;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+
+.saves-details {
+  margin-bottom: 14px;
+}
+
+.saves-details summary {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.saves-details summary:hover {
+  color: var(--fg);
+}
+
+.saves-details .saves-delta {
+  margin-top: 9px;
+}
+
+.saves-delta {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.saves-delta th {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.saves-delta td {
+  padding: 4px 8px 4px 0;
+  color: var(--fg);
+}
+
+.saves-delta td:first-child {
+  color: var(--fg-muted);
+}
+
+.saves-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.saves-checkbox input {
+  accent-color: var(--accent);
+}
+
+/* The title bar carries the list's own controls: the heading and count,
+ * then whatever the list needs (the snapshotter's on/off switch), then
+ * the icon actions pinned right. */
+.saves-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* --- Skeletons -------------------------------------------------------- */
+
+/* Placeholders while a request is in flight. Shaped like the content they
+ * stand in for, so the layout does not jump when data lands.
+ *
+ * The shimmer is a slow, low-contrast sweep rather than a pulse: it says
+ * "working" without competing with the data that is already on screen,
+ * and it stops entirely for anyone who asked for reduced motion. */
+.skeleton-bar,
+.skeleton-head,
+.skeleton-chart,
+.skeleton-constellation {
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--overlay-rgb), 0.06) 25%,
+    rgba(var(--overlay-rgb), 0.12) 37%,
+    rgba(var(--overlay-rgb), 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar,
+  .skeleton-head,
+  .skeleton-chart,
+  .skeleton-constellation {
+    animation: none;
+  }
+}
+
+.skeleton-bar {
+  height: 9px;
+}
+
+.skeleton-bar-sub {
+  height: 7px;
+  opacity: 0.7;
+}
+
+/* Stands in for a date heading. */
+.skeleton-head {
+  width: 84px;
+  height: 9px;
+  margin: 6px 4px 8px 4px;
+}
+
+.skeleton-row {
+  /* The real row's actions are absent, so match its height explicitly
+   * rather than letting it collapse. */
+  min-height: 34px;
+}
+
+.skeleton-row .saves-row-main {
+  flex: 1;
+  gap: 5px;
+}
+
+.saves-count-loading {
+  width: 22px;
+  height: 15px;
+  background: rgba(var(--overlay-rgb), 0.08);
+}
+
+/* The current-save card doubles as the page header, so it carries the
+ * page-level actions alongside its own. */
+.saves-current-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* A row's text is a button, so a save can be opened from the keyboard and
+ * the actions beside it stay separately clickable. Styled back down to
+ * look like the text it replaced. */
+.saves-row-open {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saves-row-open:hover .saves-row-title,
+.saves-row-open:focus-visible .saves-row-title {
+  color: var(--accent-text);
+}
+
+.saves-row-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

@@ -1,0 +1,807 @@
+/* The save editor.
+ *
+ * A rail on the left, one section on the right, and the section scrolls
+ * rather than the modal: the journal is 210 rows and the Cosmic Ocean is
+ * 99, so a page that grew to fit would push the Save button off the
+ * bottom of the screen. `min-height: 0` on the grid is what actually lets
+ * the panel scroll - without it a grid item takes its content's height as
+ * its minimum and the overflow never happens.
+ */
+
+.ed-layout {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 16px;
+  min-height: 0;
+  height: 60vh;
+}
+
+.ed-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  padding-right: 4px;
+  border-right: 1px solid var(--border);
+}
+
+.ed-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg-muted);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-rail-item:hover {
+  background: rgba(var(--accent-rgb), 0.07);
+  color: var(--fg);
+}
+
+.ed-rail-item.on {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* A changed section is marked, so nothing edited three panels ago gets
+ * lost track of before the save. */
+.ed-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.ed-panel {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* --- section furniture ------------------------------------------------- */
+
+.ed-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 12px 0;
+}
+
+.ed-section-head:not(:first-child) {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.ed-section-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ed-section-head p {
+  margin: 3px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.ed-head-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-note {
+  margin: 0 0 12px 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ed-error {
+  margin: 0;
+  color: var(--danger-fg);
+}
+
+.ed-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+}
+
+/* --- fields ------------------------------------------------------------ */
+
+/* `auto-fit` rather than `auto-fill`: a row of two fields should stretch
+ * to the width available, not sit in the first two of five tracks with
+ * their labels truncated and empty space to the right. */
+.ed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.ed-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ed-field.wide {
+  grid-column: 1 / -1;
+}
+
+.ed-field > label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ed-hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ed-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ed-input.tiny {
+  width: 76px;
+  padding: 4px 6px;
+  text-align: right;
+}
+
+/* Changed since the file was read. A left edge rather than a fill: these
+ * sit in dense grids and a filled background at this density reads as an
+ * error state. */
+.ed-input.dirty {
+  border-left: 3px solid var(--accent);
+}
+
+.ed-input.invalid {
+  border-color: var(--danger-fg);
+}
+
+/* A labelled group of fields.
+ *
+ * The label sits to the left rather than above, so a tab of five groups
+ * reads as five things at a glance. Below the breakpoint it stacks, since
+ * a 110px label column plus two inputs does not fit a narrow window. */
+.ed-row {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ed-row:last-of-type {
+  border-bottom: none;
+}
+
+.ed-row-label h4 {
+  margin: 4px 0 0 0;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ed-row-label p {
+  margin: 4px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ed-row-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .ed-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+/* --- checkboxes -------------------------------------------------------- */
+
+.ed-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 4px 12px;
+  margin-bottom: 16px;
+}
+
+.ed-check {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ed-check:hover {
+  background: rgba(var(--accent-rgb), 0.07);
+}
+
+.ed-check.disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.ed-check input {
+  margin: 2px 0 0 0;
+  accent-color: var(--accent);
+}
+
+.ed-check-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ed-check-label {
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-check-hint {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.ed-check.dirty .ed-check-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- tabs and toolbar -------------------------------------------------- */
+
+.ed-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.ed-tab {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.ed-tab:hover {
+  background: rgba(var(--accent-rgb), 0.07);
+  color: var(--fg);
+}
+
+.ed-tab.on {
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.ed-tab span {
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ed-search {
+  display: flex;
+  flex: 1 1 180px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+
+.ed-search input {
+  width: 100%;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.ed-toolbar-count {
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- the journal and character lists ----------------------------------- */
+
+.ed-journal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Categories with no counters give the name the whole row; the two that
+ * keep kill counts add a column each. */
+.ed-journal li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ed-journal li.with-kills {
+  grid-template-columns: minmax(0, 1fr) 76px 76px;
+}
+
+.ed-journal.characters li {
+  grid-template-columns: minmax(0, 1fr) 76px;
+}
+
+.ed-journal-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 76px;
+  gap: 8px;
+  padding: 0 6px 4px 6px;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.ed-journal-head.one {
+  grid-template-columns: minmax(0, 1fr) 76px;
+}
+
+/* --- stickers ---------------------------------------------------------- */
+
+.ed-stickers {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px 0;
+  padding: 0;
+}
+
+.ed-stickers li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ed-sticker-name {
+  flex: 1;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-sticker-name em {
+  color: var(--fg-muted);
+  font-style: normal;
+}
+
+.ed-icon-btn {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.ed-icon-btn:hover {
+  border-color: var(--danger-fg);
+  color: var(--danger-fg);
+}
+
+/* --- deaths grid ------------------------------------------------------- */
+
+.ed-world {
+  margin-bottom: 18px;
+}
+
+.ed-world h4 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ed-world h4 span {
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+/* The column gap has to be much larger than the gap inside a cell, or a
+ * label sits equally close to its own box and to the next one along and
+ * the pairing reads either way. Proximity is the only thing grouping
+ * these; there is no room at this density for a border or a fill. */
+.ed-levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 5px 22px;
+}
+
+.ed-level {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Right-aligned so the label is snug against the box it belongs to
+ * whether it reads "8-5" or "8-98". */
+.ed-level span {
+  width: 34px;
+  flex: none;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ed-level .ed-input {
+  min-width: 0;
+  flex: 1;
+}
+
+/* --- constellation editor ---------------------------------------------- */
+
+/* Canvas on the left, inspector on the right. A star's color and size
+ * are judged by looking at the star, so the controls cannot be somewhere
+ * that scrolls the star out of view. Under the breakpoint it stacks,
+ * which is worse but still workable. */
+.ed-const {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Wide enough for two columns: the panel stops scrolling as a whole and
+ * each column takes its own overflow. `min-height: 0` on every link of
+ * the chain is what actually lets that happen - without it each box takes
+ * its content's height as its minimum and nothing ever overflows. */
+@media (min-width: 881px) {
+  .ed-panel-split {
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  .ed-panel-split .ed-const {
+    flex: 1;
+  }
+
+  .ed-panel-split .ed-const-main,
+  .ed-panel-split .ed-const-side {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Room for the scrollbar, so it never sits on top of a slider. */
+  .ed-panel-split .ed-const-side {
+    padding-right: 6px;
+  }
+}
+
+/* Stacked, there is no second column to scroll independently, so the
+ * panel goes back to scrolling as one. */
+@media (max-width: 880px) {
+  .ed-const {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ed-const-main {
+  min-width: 0;
+}
+
+.ed-const-side {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ed-side-head {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ed-side-empty {
+  margin: 4px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.ed-segmented {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.ed-segmented button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ed-segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.ed-segmented button:hover {
+  background: rgba(var(--accent-rgb), 0.07);
+  color: var(--fg);
+}
+
+.ed-segmented button.on {
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.ed-canvas-frame {
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* The scene paints its own sky, so the canvas needs no background of its
+ * own; the height cap keeps a 16:9 box from filling the panel. */
+.ed-canvas {
+  display: block;
+  width: 100%;
+  max-height: 40vh;
+  aspect-ratio: 16 / 9;
+  touch-action: none;
+}
+
+/* The cursor says what the active tool will do, which is the only
+ * feedback available before the click happens. */
+.ed-canvas.tool-move {
+  cursor: default;
+}
+
+.ed-canvas.tool-add {
+  cursor: crosshair;
+}
+
+.ed-canvas.tool-join,
+.ed-canvas.tool-erase {
+  cursor: pointer;
+}
+
+.ed-canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.ed-canvas.tool-move .ed-star {
+  cursor: grab;
+}
+
+.ed-star-hit {
+  fill: transparent;
+}
+
+/* Joins are only clickable under the eraser; the rest of the time the
+ * pointer should reach the sky behind them.
+ *
+ * `non-scaling-stroke` keeps every overlay stroke a constant width on
+ * screen. Without it a stroke width in view units gets thinner as the
+ * frame grows, so the handles would quietly change weight whenever the
+ * chart's scale did. */
+.ed-join-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.ed-canvas.tool-erase .ed-join-hit {
+  pointer-events: stroke;
+}
+
+.ed-canvas.tool-erase .ed-join-hit:hover {
+  stroke: rgb(255 90 90 / 55%);
+}
+
+/* A star with a size of zero draws nothing in game. This is not the
+ * star - it is a marker saying one is here, so it can be found and
+ * selected. Dashed and dim, so it is never mistaken for a mark. */
+.ed-star-ghost {
+  fill: none;
+  stroke: rgb(255 255 255 / 35%);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.ed-star-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A half-made join is dashed, so an armed first star cannot be mistaken
+ * for a plain selection. */
+.ed-star-ring.joining {
+  stroke-dasharray: 4 3;
+}
+
+.ed-star-label {
+  fill: rgb(255 255 255 / 40%);
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+.ed-star.on .ed-star-label {
+  fill: var(--accent);
+}
+
+.ed-spacer {
+  flex: 1;
+}
+
+.ed-slider,
+.ed-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-slider input[type="range"],
+.ed-color input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.ed-slider span,
+.ed-color span {
+  width: 38px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ed-color input[type="color"] {
+  width: 30px;
+  height: 24px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.ed-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.ed-inspector header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ed-inspector h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- footer ------------------------------------------------------------ */
+
+.ed-footer-note {
+  display: flex;
+  overflow: hidden;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-warn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--warning);
+}

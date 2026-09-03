@@ -46,8 +46,8 @@
 }
 
 /* On: the track fills with the accent and the knob slides right and flips to
-   the contrast colour, so state is carried by position *and* colour rather
-   than colour alone. */
+   the contrast color, so state is carried by position *and* color rather
+   than color alone. */
 .switch.on .switch-track {
   background: var(--accent);
   border-color: var(--accent);
@@ -58,7 +58,7 @@
   background: var(--accent-contrast);
 }
 
-/* Colour only. The weight deliberately doesn't change: bold text is wider, so
+/* Color only. The weight deliberately doesn't change: bold text is wider, so
    toggling would resize the label and shift everything after it along the row.
    State is already carried by the track fill and the knob's position, which
    cost no layout. */
@@ -78,4 +78,24 @@
 .switch.disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+/* Keeps a label as the accessible name while taking it out of the layout,
+   for a switch whose meaning is already carried by nearby text. Clipped
+   rather than display:none, which would remove it from the accessibility
+   tree along with the pixels. */
+.switch-label.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.switch:has(.switch-label.visually-hidden) {
+  gap: 0;
 }

@@ -1383,9 +1383,9 @@ export type TrackerPayload =
   | { type: "Detached" }
   | { type: "Category"; data: { text: string; final_death: boolean } }
   | {
-      type: "Pacifist";
-      data: { text: string; broken: boolean; kills_total: number };
-    }
+    type: "Pacifist";
+    data: { text: string; broken: boolean; kills_total: number };
+  }
   | { type: "Timer"; data: { text: string } }
   | { type: "Gem"; data: { text: string } }
   | { type: "PacinoGolf"; data: { text: string } }
@@ -1590,4 +1590,727 @@ export interface ConsumerSnapshot {
 
 export async function getTrackerDiagnostics(): Promise<ConsumerSnapshot[]> {
   return invoke<ConsumerSnapshot[]>("get_tracker_diagnostics");
+}
+
+// --- Saves -----------------------------------------------------------------
+
+/** One journal category's completion, from a save's summary. */
+export interface JournalProgress {
+  category: string;
+  discovered: number;
+  total: number;
+}
+
+/** Deaths in one world, with the per-level breakdown behind the total. */
+export interface WorldDeaths {
+  /** 1..8. */
+  world: number;
+  /** Display name, e.g. "Jungle / Volcana". */
+  name: string;
+  /** Deaths per level, starting at level 1. */
+  levels: number[];
+  total: number;
+}
+
+/** How the last run ended. */
+export interface LastRun {
+  world: number;
+  level: number;
+  theme: number;
+  themeName: string;
+  score: number;
+  timeFrames: number;
+  timeMillis: number;
+}
+
+/** Everything the app knows about a save without holding the save itself.
+ *  Produced by `ml2_save::SaveSummary`; also stored alongside every
+ *  archived save so lists and charts never reparse the `.sav` files. */
+export interface SaveSummary {
+  /** Save-format version from the file header (25, 26 and 30 seen so far). */
+  version: number;
+  /** Whether the stored checksum matched when this was taken. */
+  checksumValid: boolean;
+  /** Sum of the death histogram. Should equal `deaths`. */
+  deathcountTotal: number;
+
+  plays: number;
+  deaths: number;
+  winsNormal: number;
+  winsHard: number;
+  winsSpecial: number;
+  scoreTotal: number;
+  scoreTop: number;
+  timeTotalFrames: number;
+  timeTotalMillis: number;
+  /** 0 when there is no recorded best time. */
+  timeBestFrames: number;
+  timeBestMillis: number;
+
+  deepestArea: number;
+  deepestLevel: number;
+  charactersUnlocked: number;
+  shortcuts: number;
+  shortcutsLabel: string;
+  completedNormal: boolean;
+  completedIronman: boolean;
+  completedHard: boolean;
+  seededUnlocked: boolean;
+  /** Rescue counts for Monty, Percy and Poochi. */
+  petsRescued: [number, number, number];
+  /** Star count, or null when this save version's constellation block
+   *  could not be located. `0` means there is no constellation yet. */
+  constellationStars: number | null;
+  /** The constellation itself, absent when there isn't one. Stored in
+   *  snapshot sidecars only once the save is pruned, so an old chart
+   *  outlives the save it came from. */
+  constellation?: Constellation;
+
+  journal: JournalProgress[];
+  journalDiscovered: number;
+  journalTotal: number;
+  worldDeaths: WorldDeaths[];
+  characterDeaths: number[];
+  lastRun: LastRun;
+}
+
+/** The live `savegame.sav` in the install directory. */
+export interface SaveStatus {
+  path: string | null;
+  exists: boolean;
+  modifiedAtMs: number | null;
+  fileSize: number | null;
+  /** Null when the save is missing or could not be read. */
+  summary: SaveSummary | null;
+  /** Why it could not be read. A corrupt save is the case the Saves tab
+   *  exists for, so the reason is shown rather than swallowed. */
+  error: string | null;
+}
+
+/** Which of the two on-disk libraries an archived save is filed under.
+ *  `managed` is what the user made and is never pruned; `snapshots` is
+ *  automatic history, which a retention policy may thin by generation -
+ *  keeping so many hourly, daily, weekly, monthly and yearly - rather
+ *  than simply oldest-first. Pruning drops the save file and keeps the
+ *  record, so the stats and the constellation survive. */
+export type SaveLibrary = "managed" | "snapshots";
+
+/** Why a save was archived. */
+export type SaveKind =
+  | "manual"
+  | "automatic"
+  | "preRestore"
+  | "preEdit"
+  | "imported";
+
+/** How many snapshots each rotation tier keeps.
+ *
+ *  The same generational scheme as `rotate-backups`: each tier keeps the
+ *  newest snapshot from each of its most recent N buckets, and a snapshot
+ *  survives if any tier wants it. Zero switches a tier off. */
+export interface RetentionPolicy {
+  hourly: number;
+  daily: number;
+  weekly: number;
+  monthly: number;
+  yearly: number;
+}
+
+/** Which automatic snapshots keep a restorable `.sav`.
+ *
+ *  Pruning never deletes a record: it drops the `.sav` and keeps the
+ *  sidecar, with the summary and any constellation baked in. A pruned
+ *  snapshot stops being restorable but stays a point on the stats charts. */
+export interface RetentionSettings {
+  /** Default. Nothing is ever pruned and `policy` is ignored. */
+  keepAll: boolean;
+  policy: RetentionPolicy;
+}
+
+/** What a policy would do to the snapshots already archived. */
+export interface RetentionPreview {
+  /** Snapshots that currently have a save. */
+  restorable: number;
+  /** How many would still have one afterwards. */
+  kept: number;
+  /** How many would lose their save on the next pass. */
+  pruned: number;
+  /** Records already reduced to history. Unaffected either way. */
+  historyOnly: number;
+}
+
+/** An archived save, from either library. */
+export interface StoredSave {
+  id: string;
+  /** Capture time, epoch milliseconds. */
+  takenAtMs: number;
+  description: string;
+  kind: SaveKind;
+  sourcePath: string;
+  fileSize: number;
+  sha256: string;
+  /** Stats as of when it was archived. */
+  summary: SaveSummary;
+  library: SaveLibrary;
+  /** Empty once the `.sav` has been pruned away. */
+  path: string;
+  /** False for a history-only record: its summary is kept for the stats
+   *  charts, but there is no save left to restore. */
+  restorable: boolean;
+  /** Whether pruning has removed this record's `.sav`. */
+  savePruned: boolean;
+}
+
+/** One stat that differs between two saves. */
+export interface StatDelta {
+  label: string;
+  from: number;
+  to: number;
+}
+
+/** What restoring an archived save would do to the live one. */
+export interface RestorePreview {
+  stored: StoredSave;
+  comparison: {
+    /** Stats that would go backwards. */
+    regressions: StatDelta[];
+    /** Stats that would go forwards. */
+    advances: StatDelta[];
+  };
+  losesProgress: boolean;
+  identical: boolean;
+  /** False when there is no readable save to compare against, which makes
+   *  the restore unconditionally safe. */
+  hasCurrentSave: boolean;
+}
+
+/** Automatic snapshotter settings. Off by default, and keeps everything
+ *  when on. */
+export interface SnapshotSettings {
+  enabled: boolean;
+  intervalHours: number;
+  retention: RetentionSettings;
+}
+
+export async function getSaveStatus(): Promise<SaveStatus> {
+  return invoke<SaveStatus>("get_save_status");
+}
+
+export async function listManagedSaves(): Promise<StoredSave[]> {
+  return invoke<StoredSave[]>("list_managed_saves");
+}
+
+export async function listSaveSnapshots(): Promise<StoredSave[]> {
+  return invoke<StoredSave[]>("list_save_snapshots");
+}
+
+/** Archives the live save into the managed library. */
+export async function createManagedSave(
+  description: string,
+): Promise<StoredSave> {
+  return invoke<StoredSave>("create_managed_save", { description });
+}
+
+export async function renameStoredSave(
+  id: string,
+  description: string,
+): Promise<StoredSave> {
+  return invoke<StoredSave>("rename_stored_save", { id, description });
+}
+
+export async function deleteStoredSave(id: string): Promise<void> {
+  return invoke("delete_stored_save", { id });
+}
+
+/** Reports what restoring would change, without changing anything. */
+export async function previewSaveRestore(
+  id: string,
+): Promise<RestorePreview> {
+  return invoke<RestorePreview>("preview_save_restore", { id });
+}
+
+/** Restores an archived save over the live one. Returns the pre-restore
+ *  backup when one was taken, so the restore itself can be undone. */
+export async function restoreStoredSave(
+  id: string,
+  backupFirst: boolean,
+): Promise<StoredSave | null> {
+  return invoke<StoredSave | null>("restore_stored_save", { id, backupFirst });
+}
+
+export async function openSavesFolder(library: SaveLibrary): Promise<void> {
+  return invoke("open_saves_folder", { library });
+}
+
+export async function getSnapshotSettings(): Promise<SnapshotSettings> {
+  return invoke<SnapshotSettings>("get_snapshot_settings");
+}
+
+export async function setSnapshotSettings(
+  settings: SnapshotSettings,
+): Promise<SnapshotSettings> {
+  return invoke<SnapshotSettings>("set_snapshot_settings", { settings });
+}
+
+/** One journal entry, with whatever counters the game keeps for it. */
+export interface EntryStat {
+  /** Position in its category, from zero. The journal shows these from one. */
+  index: number;
+  name: string;
+  discovered: boolean;
+  /** Null for categories the game keeps no kill counters for (places,
+   *  items, traps), as opposed to a zero that would look like data. */
+  killed: number | null;
+  killedBy: number | null;
+}
+
+/** One journal category and everything in it. */
+export interface CategoryStats {
+  /** Identifier: "places" | "bestiary" | "people" | "items" | "traps". */
+  category: string;
+  label: string;
+  discovered: number;
+  total: number;
+  entries: EntryStat[];
+}
+
+export interface CharacterStat {
+  index: number;
+  name: string;
+  unlocked: boolean;
+  deaths: number;
+}
+
+export interface ThemeStat {
+  /** The game's own 1-based theme id. */
+  id: number;
+  name: string;
+  completed: boolean;
+}
+
+/** One sticker from the last run: the character played, or something
+ *  they were carrying at the end. */
+export interface Sticker {
+  entityType: number;
+  name: string;
+  isCharacter: boolean;
+}
+
+/** The full per-entry view of a save. Much larger than `SaveSummary`, and
+ *  built on demand rather than stored, which is what keeps the snapshot
+ *  sidecars small enough to keep forever. */
+export interface SaveStats {
+  summary: SaveSummary;
+  journal: CategoryStats[];
+  characters: CharacterStat[];
+  /** Every theme and whether it has been completed - recorded separately
+   *  from the three ending flags. Not shown in the stats view: it
+   *  duplicates the journal's places for the themes it is right about,
+   *  and is silently wrong for the three it is not. Kept for the editor,
+   *  which has to be able to set the flags whatever they mean. */
+  themes: ThemeStat[];
+  /** The characters in the four player slots, as last chosen. */
+  players: string[];
+  /** Camp tutorial progress, 0..=4. */
+  tutorialState: number;
+  timeTutorialMillis: number;
+  /** Date of the last daily challenge played, `YYYYMMDD`. */
+  lastDaily: string | null;
+  /** The last run's stickers, named. */
+  stickers: Sticker[];
+}
+
+/** One point on the stats history.
+ *
+ *  Deliberately not a whole `SaveSummary`: the charts plot a handful of
+ *  scalars, and a summary is ~4 KB apiece, which at 500 snapshots was a
+ *  2 MB payload to draw six lines from. */
+export interface HistoryPoint {
+  id: string;
+  takenAtMs: number;
+  description: string;
+  library: SaveLibrary;
+  /** False for a pruned snapshot. It still counts as a data point. */
+  restorable: boolean;
+
+  plays: number;
+  deaths: number;
+  /** Normal, hard and Cosmic Ocean wins added together. */
+  wins: number;
+  journalDiscovered: number;
+  scoreTotal: number;
+  timeTotalMillis: number;
+  charactersUnlocked: number;
+  deepestArea: number;
+  deepestLevel: number;
+}
+
+/** Full per-entry stats for the live save. */
+export async function getSaveStats(): Promise<SaveStats> {
+  return invoke<SaveStats>("get_save_stats");
+}
+
+/** Full per-entry stats for one archived save. Fails for a pruned
+ *  snapshot, which has only its summary left. */
+export async function getStoredSaveStats(id: string): Promise<SaveStats> {
+  return invoke<SaveStats>("get_stored_save_stats", { id });
+}
+
+/** Everything the Stats panel needs from the archive, in one pass.
+ *
+ *  Both halves come from walking every archived save, and walking one
+ *  means parsing it, so they share a single listing rather than each
+ *  paying for their own. */
+export interface StatsOverview {
+  /** Oldest first, which is the order a time axis wants. */
+  history: HistoryPoint[];
+  gallery: GalleryEntry[];
+}
+
+export async function getStatsOverview(): Promise<StatsOverview> {
+  return invoke<StatsOverview>("get_stats_overview");
+}
+
+/** One star in a Cosmic Ocean constellation.
+ *
+ *  Positions are in the game's own space: x grows to the *left*, y grows
+ *  downward, both spanning roughly -1.35 to 1.35. Color channels are
+ *  0..1. Confirmed against a real save rendered beside a screenshot of
+ *  the same chart in game. */
+export interface ConstellationStar {
+  kind: number;
+  x: number;
+  y: number;
+  size: number;
+  red: number;
+  green: number;
+  blue: number;
+  alpha: number;
+  /** The game's own charts use a green halo, around (0.12, 0.42, 0). */
+  haloRed: number;
+  haloGreen: number;
+  haloBlue: number;
+  haloAlpha: number;
+  /** Orange ring, for Canis. */
+  canisRing: boolean;
+  /** Red ring, for Fidelis. */
+  fidelisRing: boolean;
+  unknown: number;
+}
+
+/** A line joining two stars, by index. */
+export interface ConstellationLine {
+  from: number;
+  to: number;
+}
+
+export interface Constellation {
+  stars: ConstellationStar[];
+  lines: ConstellationLine[];
+  scale: number;
+  /** 0 draws the joins near-white; the game raises this toward 1 as NPC
+   *  kills climb, taking them pink and then deep red. */
+  lineRedIntensity: number;
+}
+
+/** One constellation in the gallery.
+ *
+ *  A save holds exactly one, and generating a new one overwrites it, so
+ *  old charts only survive in whatever was archived while they were
+ *  current. Identical charts across many snapshots are collapsed. */
+export interface GalleryEntry {
+  /** Shape signature, used to group duplicates. Also a stable key. */
+  signature: string;
+  constellation: Constellation;
+  firstSeenMs: number;
+  lastSeenMs: number;
+  /** How many archived saves hold this same chart. */
+  occurrences: number;
+  sourceId: string | null;
+  description: string;
+  /** Whether the live save has this one right now. */
+  isCurrent: boolean;
+}
+
+
+
+/** What a retention policy would do to the snapshots already archived.
+ *  Writes nothing; this only reports, so the settings UI can show the
+ *  effect before it is applied. */
+export async function previewRetention(
+  settings: RetentionSettings,
+): Promise<RetentionPreview> {
+  return invoke<RetentionPreview>("preview_retention", { settings });
+}
+
+/** Applies the saved retention policy to the snapshot library now, rather
+ *  than waiting for the snapshotter's next capture. Returns how many
+ *  snapshots lost their save file. */
+export async function applyRetentionNow(): Promise<number> {
+  return invoke<number>("apply_retention_now");
+}
+
+
+// --- The save editor -------------------------------------------------------
+
+/** Which save the editor is pointed at. */
+export type SaveRef = { kind: "live" } | { kind: "stored"; id: string };
+
+/** The lifetime counters behind the game's profile screen. */
+export interface ProfileEdit {
+  plays: number;
+  deaths: number;
+  winsNormal: number;
+  winsHard: number;
+  winsSpecial: number;
+  /** Lifetime money. A string because it is 64-bit in the file and a JSON
+   *  number stops being exact past 2^53 - which is well inside what
+   *  someone editing this field will try to type. */
+  scoreTotal: string;
+  scoreTop: number;
+  /** Total frames played, a string for the same reason. */
+  timeTotal: string;
+  timeBest: number;
+  timeTutorial: number;
+  deepestArea: number;
+  deepestLevel: number;
+}
+
+export interface UnlocksEdit {
+  completedNormal: boolean;
+  completedIronman: boolean;
+  completedHard: boolean;
+  profileSeen: boolean;
+  seededUnlocked: boolean;
+  /** Terra's quest, 0..=10. */
+  shortcuts: number;
+  /** Camp tutorial progress, 0..=4. */
+  tutorialState: number;
+}
+
+export interface LastRunEdit {
+  world: number;
+  level: number;
+  theme: number;
+  score: number;
+  /** Length of the run in frames. */
+  time: number;
+  /** Entity types of the run's stickers, empty slots dropped. */
+  stickers: number[];
+}
+
+export interface CampEdit {
+  /** Character index per player slot. */
+  players: [number, number, number, number];
+  /** Monty, Percy, Poochi. */
+  petsRescued: [number, number, number];
+  /** `YYYYMMDD`, or null for a save that has never played a daily. */
+  lastDaily: string | null;
+}
+
+export interface JournalEntryEdit {
+  name: string;
+  discovered: boolean;
+  /** Null for places, items and traps, which keep no kill counts. */
+  killed: number | null;
+  killedBy: number | null;
+}
+
+export interface JournalSectionEdit {
+  key: string;
+  label: string;
+  hasKills: boolean;
+  entries: JournalEntryEdit[];
+}
+
+export interface CharacterEdit {
+  name: string;
+  unlocked: boolean;
+  deaths: number;
+}
+
+export interface WorldDeathsEdit {
+  /** 1-based world number, as a player would say it. */
+  world: number;
+  name: string;
+  /** Level number that `levels[0]` refers to.
+   *
+   *  Not always 1. The Cosmic Ocean is entered from 7-4, so its levels
+   *  start at 5, and its last playable level is 98 - 99 is the closing
+   *  cutscene, which you arrive at rather than survive. */
+  firstLevel: number;
+  /** Deaths at `firstLevel`, `firstLevel + 1`, and so on. */
+  levels: number[];
+}
+
+/** The death counts for one world, on the way back.
+ *
+ *  Carries `firstLevel` rather than letting the backend re-derive it:
+ *  the derivation depends on what the save holds, so zeroing a count
+ *  could shift the range and land every edit a row off. */
+export interface WorldDeathValues {
+  world: number;
+  firstLevel: number;
+  levels: number[];
+}
+
+export interface ThemeEdit {
+  id: number;
+  name: string;
+  completed: boolean;
+}
+
+/** Everything the editor can change, plus the labels it draws with. */
+export interface EditableSave {
+  path: string;
+  version: number;
+  /** False for a save whose checksum did not verify. Still editable -
+   *  that is the save someone most needs an editor for. */
+  checksumValid: boolean;
+  profile: ProfileEdit;
+  unlocks: UnlocksEdit;
+  lastRun: LastRunEdit;
+  camp: CampEdit;
+  journal: JournalSectionEdit[];
+  characters: CharacterEdit[];
+  deaths: WorldDeathsEdit[];
+  themes: ThemeEdit[];
+  constellation: Constellation | null;
+  /** False when this build cannot locate the constellation in this save's
+   *  version, in which case it must not be written. */
+  constellationEditable: boolean;
+  /** The game's own labels for Terra's eleven states. */
+  shortcutStates: string[];
+  /** Names for the entity ids this save's stickers hold, keyed by id.
+   *
+   *  Stickers are raw entity types and the table that names them is far
+   *  too large to send, so only the ids actually present are named. That
+   *  covers reading and removing; an id typed by hand stays a number
+   *  until it is saved. Playable characters are resolved from the
+   *  character roster instead, via `firstCharacterEntity`. */
+  stickerNames: Record<string, string>;
+  /** Entity id of the first playable character, so a character sticker
+   *  can be named from the roster already in this payload. */
+  firstCharacterEntity: number;
+}
+
+export interface JournalSectionValues {
+  key: string;
+  discovered: boolean[];
+  killed: number[];
+  killedBy: number[];
+}
+
+export interface CharacterValues {
+  unlocked: boolean;
+  deaths: number;
+}
+
+/** The values to write back: the same shape as `EditableSave` without the
+ *  labels, which are ours rather than the save's. */
+export interface SaveEdits {
+  profile: ProfileEdit;
+  unlocks: UnlocksEdit;
+  lastRun: LastRunEdit;
+  camp: CampEdit;
+  journal: JournalSectionValues[];
+  characters: CharacterValues[];
+  /** Deaths per world, each carrying the level its first entry means. */
+  deaths: WorldDeathValues[];
+  /** Completion flag per theme, 1-based ids in order. */
+  themes: boolean[];
+  /** Null leaves whatever chart the save has alone. */
+  constellation: Constellation | null;
+}
+
+export interface EditResult {
+  /** How many bytes of the file actually changed. Zero means the edits
+   *  matched what was already there. */
+  changedBytes: number;
+  /** The archived copy of what was overwritten, when one was made. */
+  backup: StoredSave | null;
+  /** The save as it now stands, to rebase the editor on. */
+  save: EditableSave;
+}
+
+/** Reads a save into the form the editor works on. */
+export async function getEditableSave(source: SaveRef): Promise<EditableSave> {
+  return invoke<EditableSave>("get_editable_save", { source });
+}
+
+/** Writes edits back to a save.
+ *
+ *  `backup` archives the file first, into the managed library where
+ *  pruning cannot reach it. It is the only way back from a bad edit, so
+ *  leave it on unless the user has said otherwise. */
+export async function applySaveEdits(
+  source: SaveRef,
+  edits: SaveEdits,
+  backup: boolean,
+  description: string,
+): Promise<EditResult> {
+  return invoke<EditResult>("apply_save_edits", {
+    source,
+    edits,
+    backup,
+    description,
+  });
+}
+
+/** An existing record already holding the exact bytes being imported. */
+export interface DuplicateRecord {
+  id: string;
+  description: string;
+  takenAtMs: number;
+  kind: SaveKind;
+}
+
+/** A save file the user has pointed at, before anything is copied. */
+export interface ImportPreview {
+  path: string;
+  fileName: string;
+  fileSize: number;
+  /** When the file was last written, epoch milliseconds. */
+  modifiedAtMs: number | null;
+  summary: SaveSummary | null;
+  /** Why this file cannot be imported, if it cannot. A batch keeps going
+   *  past one bad file rather than failing all of them. */
+  error: string | null;
+  /** False for a file whose checksum does not verify. Still importable -
+   *  a copy of a damaged save is exactly what an archive is for. */
+  checksumValid: boolean;
+  /** The record already holding these exact bytes, if any. */
+  duplicate: DuplicateRecord | null;
+}
+
+/** One file to copy in, with the name to file it under. */
+export interface ImportItem {
+  path: string;
+  description: string;
+}
+
+export interface ImportFailure {
+  path: string;
+  error: string;
+}
+
+export interface ImportOutcome {
+  imported: StoredSave[];
+  /** One bad file does not stop the rest, so both halves come back. */
+  failed: ImportFailure[];
+}
+
+/** Reads the save files the user picked. Copies nothing. */
+export async function previewSaveImports(
+  paths: string[],
+): Promise<ImportPreview[]> {
+  return invoke<ImportPreview[]>("preview_save_imports", { paths });
+}
+
+/** Copies save files into your saves. The originals are left where they
+ *  are, and each is filed under the date it was last written. */
+export async function importSaves(
+  items: ImportItem[],
+): Promise<ImportOutcome> {
+  return invoke<ImportOutcome>("import_saves", { items });
 }

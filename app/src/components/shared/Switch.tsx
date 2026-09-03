@@ -1,6 +1,6 @@
 // A labelled on/off switch.
 //
-// The app already had two ways to render a boolean: a bare accent-coloured
+// The app already had two ways to render a boolean: a bare accent-colored
 // checkbox (the options modals) and, briefly, pill-shaped chips invented for
 // the launch dock. Neither works for a control that is the most important
 // choice on the screen. A checkbox is too quiet to carry it, and the pills
@@ -20,6 +20,11 @@ interface SwitchProps {
   disabled?: boolean;
   /** Tooltip, for when the label alone doesn't explain the consequence. */
   title?: string;
+  /** Keeps `label` as the accessible name but hides it visually, for a
+   *  switch sitting somewhere the surrounding text already says what it
+   *  does (a card heading, a toolbar). Never drop the label instead:
+   *  a bare unlabelled checkbox is unusable with a screen reader. */
+  hideLabel?: boolean;
 }
 
 export function Switch({
@@ -28,6 +33,7 @@ export function Switch({
   onChange,
   disabled,
   title,
+  hideLabel,
 }: SwitchProps) {
   return (
     <label
@@ -43,7 +49,9 @@ export function Switch({
       <span className="switch-track" aria-hidden="true">
         <span className="switch-knob" />
       </span>
-      <span className="switch-label">{label}</span>
+      <span className={`switch-label${hideLabel ? " visually-hidden" : ""}`}>
+        {label}
+      </span>
     </label>
   );
 }

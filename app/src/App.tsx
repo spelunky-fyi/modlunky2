@@ -8,6 +8,7 @@ import { BrowsePage } from "./components/browse/BrowsePage";
 import { ExtractPage } from "./components/extract/ExtractPage";
 import { OverlunkyPage } from "./components/overlunky/OverlunkyPage";
 import { TrackersPage } from "./components/trackers/TrackersPage";
+import { SavesPage } from "./components/saves/SavesPage";
 import { LevelsPage } from "./components/levels/LevelsPage";
 import { EditorWindow } from "./components/levels/EditorWindow";
 import { RoomPreviewWindow } from "./components/levels/RoomPreviewWindow";
@@ -126,7 +127,14 @@ function readRoute(): WindowRoute | null {
   return null;
 }
 
-type Tab = "mods" | "browse" | "overlunky" | "extract" | "levels" | "trackers";
+type Tab =
+  | "mods"
+  | "browse"
+  | "overlunky"
+  | "extract"
+  | "levels"
+  | "saves"
+  | "trackers";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "mods", label: "Mods" },
@@ -134,6 +142,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "overlunky", label: "Overlunky" },
   { id: "extract", label: "Extract Assets" },
   { id: "levels", label: "Level Editor" },
+  { id: "saves", label: "Saves" },
   { id: "trackers", label: "Trackers" },
 ];
 
@@ -183,6 +192,7 @@ const TAB_REQUIREMENTS: Record<Tab, SetupRequirement[]> = {
   overlunky: ["installDir"],
   extract: ["installDir"],
   levels: ["installDir", "assets"],
+  saves: ["installDir"],
   trackers: [],
 };
 
@@ -193,6 +203,7 @@ function isTab(value: string | null | undefined): value is Tab {
     value === "overlunky" ||
     value === "extract" ||
     value === "levels" ||
+    value === "saves" ||
     value === "trackers"
   );
 }
@@ -522,6 +533,11 @@ function AppShell() {
         {activeTab === "levels" && (
           <SetupGate requires={TAB_REQUIREMENTS.levels}>
             <LevelsPage />
+          </SetupGate>
+        )}
+        {activeTab === "saves" && (
+          <SetupGate requires={TAB_REQUIREMENTS.saves}>
+            <SavesPage />
           </SetupGate>
         )}
         {activeTab === "trackers" && <TrackersPage />}

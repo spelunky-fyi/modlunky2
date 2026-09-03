@@ -25,17 +25,27 @@ tokio-graceful-shutdown = "0.20"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
+thiserror = "2"
 directories = "6"
 base64 = "0.23"
 image = "0.25"
 ab_glyph = "0.2"
-fontdb = { version = "0.24", default-features = false, features = ["fs", "std", "memmap"] }
+fontdb = { version = "0.24", default-features = false, features = [
+    "fs",
+    "std",
+    "memmap",
+] }
 reqwest = { version = "0.13", features = ["json", "stream"] }
 zip = "8"
 futures-util = "0.3"
 rust-ini = "0.21"
 shell-words = "1"
 rand = "0.10"
+# Watches savegame.sav so the snapshotter can react to the game writing a
+# save rather than polling for it.
+notify = { version = "8", default-features = false, features = [
+    "macos_fsevent",
+] }
 sha2 = "0.10"
 
 ml2_mods = { path = "../../crates/ml2_mods" }
@@ -45,6 +55,8 @@ ml2_sprites = { path = "../../crates/ml2_sprites" }
 ml2_levels = { path = "../../crates/ml2_levels" }
 ml2_mem = { path = "../../crates/ml2_mem" }
 ml2_trackers = { path = "../../crates/ml2_trackers" }
+ml2_save = { path = "../../crates/ml2_save" }
+ml2_entity_data = { path = "../../crates/ml2_entity_data" }
 
 # Trackers server + OBS WebSocket.
 axum = { version = "0.8", features = ["ws"] }
@@ -54,6 +66,9 @@ url = "2"
 
 [dev-dependencies]
 tempfile = "3"
+# Building a valid save fixture in the store tests means computing the
+# checksum the parser will verify.
+crc32fast = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Only for prctl(PR_SET_CHILD_SUBREAPER) in launch.rs, which keeps launched

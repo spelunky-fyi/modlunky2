@@ -62,6 +62,10 @@ pub const KEY_RECENT_CUSTOM_PACKS: &str = "level-editor-custom-recents";
 /// toggle, grid visibility). Stored as one JSON object so the settings modal
 /// round-trips the whole thing; see `EditorPrefs` in `level_editor.rs`.
 pub const KEY_EDITOR_PREFS: &str = "level-editor-prefs";
+/// Automatic save-snapshotter settings, stored as one JSON object so the
+/// Saves tab round-trips the whole thing at once. See `SnapshotSettings`
+/// in `saves/mod.rs`.
+pub const KEY_SAVES_SETTINGS: &str = "save-snapshot-settings";
 /// Port the tracker HTTP + WS server binds on. Key name pre-dates the
 /// tracker-specific naming and is kept for round-trip compatibility.
 const KEY_TRACKER_PORT: &str = "api-port";
@@ -551,6 +555,24 @@ pub fn get_config() -> SharedConfig {
 #[tauri::command]
 pub fn set_config(patch: ConfigPatch) -> Result<(), String> {
     apply_patch(patch)
+}
+
+/// Reads the automatic save-snapshotter settings.
+///
+/// Missing or malformed config yields the defaults rather than an error:
+/// the snapshotter is off by default, so the safe fallback is also the
+/// quiet one.
+pub fn get_saves_settings() -> crate::saves::SnapshotSettings {
+    load_raw()
+        .get(KEY_SAVES_SETTINGS)
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default()
+}
+
+/// Persists the automatic save-snapshotter settings.
+pub fn set_saves_settings(settings: &crate::saves::SnapshotSettings) -> Result<(), String> {
+    let value = serde_json::to_value(settings).map_err(|e| e.to_string())?;
+    apply_json_field(KEY_SAVES_SETTINGS, Some(value))
 }
 
 #[cfg(test)]

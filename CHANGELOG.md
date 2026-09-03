@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A new Saves tab for managing save files.** You can archive and restore
+  saves. A snapshotter backs your saves up automatically on a schedule. A viewer
+  exposes stats you can't normally see in your profile. An editor lets you
+  change them, including a constellation editor. And the Over time view crawls
+  every save you've backed up to chart your stats as they changed, alongside a
+  gallery of past constellations.
+
 ## [2.2.4] - 2026-08-24
 
 ### Fixed

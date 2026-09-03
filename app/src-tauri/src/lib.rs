@@ -18,6 +18,7 @@ mod playlunky;
 /// Windows executable, and only there does it need a compatibility layer.
 #[cfg(target_os = "linux")]
 mod proton;
+mod saves;
 mod setup;
 mod state;
 mod toast_buffer;
@@ -115,6 +116,12 @@ pub fn run() {
                     }
                 });
             }
+
+            // Watches savegame.sav and archives it on a schedule. Starts
+            // unconditionally: the task is idle until the user turns
+            // snapshotting on, and it re-reads config each time round, so
+            // enabling it in the UI takes effect without a restart.
+            saves::start(app.handle().clone());
 
             // Keep the Playlunky release cache fresh on long sessions so
             // the version modal doesn't serve month-old data if the user
@@ -251,6 +258,26 @@ pub fn run() {
             trackers::open_tracker_window,
             trackers::get_window_config,
             trackers::set_window_config,
+            saves::get_save_status,
+            saves::get_save_stats,
+            saves::get_stored_save_stats,
+            saves::get_stats_overview,
+            saves::list_managed_saves,
+            saves::list_save_snapshots,
+            saves::create_managed_save,
+            saves::preview_save_imports,
+            saves::import_saves,
+            saves::rename_stored_save,
+            saves::delete_stored_save,
+            saves::preview_save_restore,
+            saves::restore_stored_save,
+            saves::open_saves_folder,
+            saves::get_snapshot_settings,
+            saves::set_snapshot_settings,
+            saves::preview_retention,
+            saves::apply_retention_now,
+            saves::editor::get_editable_save,
+            saves::editor::apply_save_edits,
             fonts::list_system_fonts,
             trackers::get_tracker_always_on_top,
             trackers::set_tracker_always_on_top,

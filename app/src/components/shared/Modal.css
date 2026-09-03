@@ -52,6 +52,12 @@
   color: var(--fg);
   font-size: 15px;
   font-weight: 600;
+  /* Titles can come from user-entered text, so they have to give way
+     rather than push the close button off the edge. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .modal-close {

@@ -51,7 +51,7 @@ main window -- spawns --> editor windows      (Vanilla / Custom .lvl editors)
 - `App.tsx` - routes to the tabbed `AppShell` (the main window) or a dedicated
   window shell (editor / characters / logs).
 - `components/` - one folder per feature: `mods`, `levels`, `trackers`,
-  `characters`, `extract`, `overlunky`, `settings`, `shared`.
+  `characters`, `extract`, `overlunky`, `saves`, `settings`, `shared`.
 - `lib/commands.ts` - **the IPC boundary.** Every backend call is a typed
   wrapper around `invoke("...")` here; treat it as the single source of truth
   for what the backend exposes.
@@ -66,8 +66,9 @@ main window -- spawns --> editor windows      (Vanilla / Custom .lvl editors)
   trackers subsystem, extract status, and the spelunky.fyi websocket slot.
 - Command modules map to frontend features: `mods`, `level_editor`,
   `characters`, `trackers/`, `extract`, `playlunky`, `overlunky`, `config`,
-  `fonts`, `updater`, `fyi_ws` (live install-from-web link), `log_buffer` /
-  `toast_buffer` (in-memory capture surfaced to the UI / logs window).
+  `fonts`, `updater`, `saves/` (save manager + background snapshotter),
+  `fyi_ws` (live install-from-web link), `log_buffer` / `toast_buffer`
+  (in-memory capture surfaced to the UI / logs window).
 
 ## Shared crates (`crates/`)
 
@@ -86,6 +87,7 @@ Game/format logic lives here so it's testable without the app.
 | `ml2_chacha`        | ChaCha-derived cipher for decrypting Spelunky 2 assets.                                                                         |
 | `ml2_vorbis_header` | Reconstruct OGG/Vorbis headers for extracted audio.                                                                             |
 | `ml2_mods`          | Mod management: local disk (install / update / delete) + the spelunky.fyi remote API (ModManager + ModCache).                   |
+| `ml2_save`          | `savegame.sav` reader/writer. Version-aware offsets, CRC, and a `SaveSummary` for stats and restore comparisons.                |
 | `ml2_net`           | Shared networking helpers (retry/backoff) for the fyi client.                                                                   |
 
 ## Key data flows
@@ -139,6 +141,9 @@ then merges the textures into the per-entity sheets the level editor renders.
 - `config.json` at `%LOCALAPPDATA%\spelunky.fyi\modlunky2\config.json`. Keys are
   kebab-case on disk, camelCase over the IPC wire.
 - Modlunky-local per-pack state under `Mods/.ml/pack-metadata/<id>/`.
+- Archived saves beside `config.json`: `saves/` (user-made) and
+  `save-snapshots/` (automatic). Each entry is a `.sav` plus a `.json`
+  with its description and a `SaveSummary`.
 - Extracted assets live under the configured install dir.
 
 ## Where to start reading

@@ -1,0 +1,293 @@
+/* Chart chrome for the Saves tab.
+ *
+ * Color: every chart here is one series answering "which of these is
+ * biggest", so there is a single mark hue rather than a categorical
+ * palette. The two values below were picked for contrast against the card
+ * surface they sit on, and checked rather than eyeballed: #f0a55a is
+ * 3.4:1 on the dark card (#23232a) and #c07022 is 3.6:1 on the light one
+ * (#ffffff). The app's own accent is too light to clear 3:1 on white,
+ * which is why light mode gets its own step instead of reusing it.
+ *
+ * Everything that is not data is recessive: hairline solid gridlines one
+ * step off the surface, muted axis text, no borders drawn around marks. */
+
+.charts {
+  --chart-mark: #f0a55a;
+  --chart-grid: var(--border);
+}
+
+:root[data-theme="light"] .charts {
+  --chart-mark: #c07022;
+}
+
+.chart {
+  min-width: 0;
+}
+
+.chart-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chart-title {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.chart-subtitle {
+  margin: 2px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.chart-toggle:hover {
+  color: var(--fg);
+  border-color: var(--fg-muted);
+}
+
+/* A control that changes what the chart plots, sitting in the header
+   beside the table toggle. Sized to match it so the header reads as one
+   row of controls rather than a heading with a widget stuck on. */
+.chart-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chart-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+.chart-select select {
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11.5px;
+}
+
+.chart-empty {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* --- Bars ------------------------------------------------------------ */
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* The 2px surface gap that separates adjacent bars. No borders. */
+  gap: 2px;
+}
+
+/* Long lists scroll inside themselves rather than stretching the card.
+ * The negative margin lets the scrollbar sit outside the bars so it does
+ * not eat into the plot width. */
+.bars-scroll {
+  overflow-y: auto;
+  margin-right: -6px;
+  padding-right: 6px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 30%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+}
+
+.bar-label {
+  color: var(--fg-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  position: relative;
+  height: 14px;
+  min-width: 0;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--chart-mark);
+  /* Square where it meets the baseline, rounded at the data end. */
+  border-radius: 0 3px 3px 0;
+}
+
+.bar-value {
+  color: var(--fg);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- Table view ------------------------------------------------------ */
+
+.chart-table-wrap {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table th,
+.chart-table td {
+  padding: 4px 8px 4px 0;
+  text-align: left;
+}
+
+.chart-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chart-table tbody th {
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.chart-table tbody td {
+  color: var(--fg);
+}
+
+/* --- Trend ----------------------------------------------------------- */
+
+.trend-wrap {
+  min-width: 0;
+}
+
+.trend {
+  display: block;
+  width: 100%;
+  height: 150px;
+  touch-action: none;
+}
+
+.trend-grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-tick {
+  fill: var(--fg-muted);
+  font-size: 9px;
+  text-anchor: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-area {
+  fill: var(--chart-mark);
+  opacity: 0.1;
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--chart-mark);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-crosshair {
+  stroke: var(--fg-muted);
+  stroke-width: 1;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-dot {
+  fill: var(--chart-mark);
+  /* The 2px surface ring that keeps a marker legible where it crosses
+   * the line or another marker. */
+  stroke: var(--bg-elevated);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.trend-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 18px;
+  padding-left: 46px;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+.trend-readout strong {
+  color: var(--fg);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Constellation --------------------------------------------------- */
+
+.constellation {
+  border-radius: 6px;
+  overflow: hidden;
+  background: #04060c;
+}
+
+.constellation svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

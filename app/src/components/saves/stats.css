@@ -1,0 +1,556 @@
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Unlike Manage, this one is a document: it reads top to bottom, so it
+   * scrolls as a whole rather than in boxes. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.stats-loading {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.stats-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.stats-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stats-note {
+  margin: 0 0 14px 0;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  max-width: 70ch;
+}
+
+.stats-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-color: rgba(var(--danger-rgb), 0.4);
+  background: rgba(var(--danger-rgb), 0.07);
+  color: var(--danger);
+}
+
+.stats-error h2 {
+  margin: 0 0 4px 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.stats-error p {
+  margin: 0 0 4px 0;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* --- Profile tiles ---------------------------------------------------- */
+
+.stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+  margin: 0 0 14px 0;
+}
+
+.stats-tiles div {
+  min-width: 0;
+}
+
+.stats-tiles dt {
+  margin-bottom: 2px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.stats-tiles dd {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  /* Proportional figures: these are standalone values, not a column, and
+   * tabular-nums makes a number like 121 look loose at this size. */
+  font-size: 17px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-flags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  padding: 0;
+}
+
+.stats-flag {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.stats-flag.on {
+  border-color: rgba(var(--success-rgb), 0.5);
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-fg);
+}
+
+/* --- Layout ----------------------------------------------------------- */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stats-grid:last-child {
+  margin-bottom: 0;
+}
+
+.stats-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stats-filter label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.stats-filter select {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+/* --- Journal ---------------------------------------------------------- */
+
+.stats-meters {
+  list-style: none;
+  margin: 0 0 16px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stats-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  color: var(--fg);
+  font-size: 12.5px;
+}
+
+.stats-meter-value {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-meter-track {
+  height: 6px;
+  border-radius: 3px;
+  /* A lighter step of the mark's own ramp, so the state reads across the
+   * whole bar rather than against a neutral gutter. */
+  background: rgba(var(--accent-rgb), 0.16);
+  overflow: hidden;
+}
+
+.stats-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--chart-mark);
+}
+
+.stats-complete {
+  margin: 0;
+  color: var(--success-fg);
+  font-size: 12.5px;
+}
+
+.stats-missing {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px 12px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.stats-missing li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.stats-missing-index {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* --- Constellation gallery -------------------------------------------- */
+
+.stats-gallery {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.stats-gallery-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 7px;
+}
+
+.stats-gallery-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stats-gallery-tag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-text);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.stats-gallery-meta {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+}
+
+/* Skeletons for the two cards built from the archive, which is the slow
+ * half of this panel. Sized like what they replace so the page does not
+ * reflow when the real thing lands. */
+.skeleton-chart {
+  height: 168px;
+}
+
+.skeleton-constellation {
+  height: 220px;
+  border-radius: 6px;
+}
+
+.stats-tiles .skeleton-bar {
+  margin-bottom: 3px;
+}
+
+/* --- Inside a modal --------------------------------------------------- */
+
+/* The modal body already scrolls, so the stats stack plainly inside it
+ * rather than claiming a height of their own. */
+.stats-modal {
+  overflow: visible;
+  padding-right: 0;
+  flex: none;
+}
+
+.stats-subtitle {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats-note-last {
+  margin-bottom: 0;
+}
+
+/* One save's own constellation, rather than the gallery's grid of them. */
+.stats-single-constellation {
+  max-width: 420px;
+  margin-bottom: 12px;
+}
+
+/* --- Shortcuts and pets ---------------------------------------------- */
+
+.stats-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.stats-block {
+  min-width: 0;
+}
+
+.stats-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.stats-block-head span {
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-block-note {
+  margin: 9px 0 0 0;
+  color: var(--fg-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* Nine deliveries in three groups of three, each group opening one
+ * shortcut. The rail between groups is what makes them read as a
+ * sequence rather than as nine unrelated dots. */
+.shortcut-track {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.shortcut-stage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shortcut-rail {
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+.shortcut-rail.done {
+  background: rgba(var(--accent-rgb), 0.55);
+}
+
+.shortcut-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.shortcut-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.shortcut-dot.done {
+  border-color: transparent;
+  background: var(--chart-mark);
+}
+
+.shortcut-opens {
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.shortcut-opens.done {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* --- Pets ------------------------------------------------------------- */
+
+.pets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pet {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.pet-name {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.pet-track {
+  height: 8px;
+  border-radius: 4px;
+  /* A lighter step of the mark's own ramp, so an empty bar still reads
+   * as part of the same scale. */
+  background: rgba(var(--accent-rgb), 0.14);
+  overflow: hidden;
+}
+
+.pet-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--chart-mark);
+}
+
+.pet-count {
+  color: var(--fg);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Last run stickers ------------------------------------------------ */
+
+.stats-stickers {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.stats-stickers p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px 0;
+}
+
+.stats-stickers p:last-child {
+  margin-bottom: 0;
+}
+
+.stats-stickers-label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-right: 2px;
+}
+
+.sticker {
+  padding: 2px 8px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--fg);
+  font-size: 12px;
+}
+
+/* The four player slots, as last chosen.
+ *
+ * A row rather than a tile in the grid above: four character names are
+ * far too wide for a 132px cell, and a tile truncates them with no way
+ * to read the rest. Here they wrap, and the seat numbers add what a
+ * comma-separated list left out - which one was player one. */
+.party {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.party-label {
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.party-slots {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.party-slot {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.party-seat {
+  color: var(--fg-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-tiles-small {
+  margin-bottom: 0;
+}
+
+.stats-tiles-small dd {
+  font-size: 13.5px;
+}

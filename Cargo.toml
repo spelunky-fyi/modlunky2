@@ -2,6 +2,7 @@
 members = [
     "app/src-tauri",
     "crates/ml2_mods",
+    "crates/ml2_save",
     "crates/ml2_net",
     "crates/ml2_assets",
     "crates/ml2_chacha",
