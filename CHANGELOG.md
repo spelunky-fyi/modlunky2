@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-09-03
+
 ### Changed
 
 - Level view is now an editing view rather than clicking sending you to the room
