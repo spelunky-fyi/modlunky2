@@ -1,5 +1,6 @@
 use std::io::Write;
 
+use encoding_rs::WINDOWS_1252;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -433,6 +434,47 @@ pub fn percent_delim() -> &'static Regex {
 
 const VALUE_PADDING: usize = 4;
 
+/// Encode one `char` to its single cp1252 byte, or `None` if cp1252 can't
+/// represent it in one byte.
+fn cp1252_byte(ch: char) -> Option<u8> {
+    let mut buf = [0u8; 4];
+    let (encoded, _, had_errors) = WINDOWS_1252.encode(ch.encode_utf8(&mut buf));
+    match encoded.as_ref() {
+        [b] if !had_errors => Some(*b),
+        _ => None,
+    }
+}
+
+/// Undo a tile-code value that was written as UTF-8 into a cp1252 file.
+///
+/// A `.lvl` is cp1252, so a tile-code value is a single byte on disk. Modlunky
+/// 2 up to 2.3.1 serialized non-ASCII values as their multi-byte UTF-8
+/// sequence instead, so reading such a file back as cp1252 yields mojibake
+/// (`€` written as `E2 82 AC` reads as `â‚¬`). Those files are also broken in
+/// game, since Spelunky 2 reads `.lvl` as cp1252 too.
+///
+/// Recover the intended value by re-encoding each char to the cp1252 byte it
+/// came from, then decoding those bytes as UTF-8. Returns `None` unless that
+/// yields exactly one character that cp1252 can write back out, so a genuinely
+/// malformed value (`00`, `abc`) still errors rather than being silently
+/// rewritten.
+fn repair_utf8_in_cp1252(value: &str) -> Option<String> {
+    // Mojibake always contains a byte >= 0x80; an all-ASCII multi-char value
+    // is just a bad tile code.
+    if value.is_ascii() {
+        return None;
+    }
+    let bytes: Option<Vec<u8>> = value.chars().map(cp1252_byte).collect();
+    let repaired = std::str::from_utf8(&bytes?).ok()?.to_string();
+    let mut chars = repaired.chars();
+    let ch = chars.next()?;
+    if chars.next().is_some() {
+        return None;
+    }
+    cp1252_byte(ch)?;
+    Some(repaired)
+}
+
 #[derive(Debug, Clone)]
 pub struct TileCode {
     pub name: String,
@@ -465,17 +507,20 @@ impl TileCode {
         }
 
         // Tile-code value must be exactly one cp1252 character (i.e. one
-        // Unicode scalar value after decode).
-        if value_str.chars().count() != 1 {
-            return Err(LevelError::BadTileCodeLen {
+        // Unicode scalar value after decode). A longer value gets one chance
+        // to be recognized as UTF-8 mistakenly written into a cp1252 file.
+        let value = if value_str.chars().count() == 1 {
+            value_str.to_string()
+        } else {
+            repair_utf8_in_cp1252(value_str).ok_or_else(|| LevelError::BadTileCodeLen {
                 name: name.to_string(),
                 value: value_str.to_string(),
-            });
-        }
+            })?
+        };
 
         Ok(Self {
             name: name.to_string(),
-            value: value_str.to_string(),
+            value,
             comment,
         })
     }
@@ -592,6 +637,47 @@ mod tests {
     fn parse_accepts_y_diaeresis_value() {
         let t = TileCode::parse("\\?styled_floor              ÿ").unwrap();
         assert_eq!(t.value, "ÿ");
+    }
+
+    #[test]
+    fn parse_repairs_utf8_written_into_cp1252() {
+        // What a file saved by Modlunky 2 <= 2.3.1 looks like once read back
+        // as cp1252: `€`'s UTF-8 bytes `E2 82 AC` decode to three chars.
+        let t = TileCode::parse("\\?treasure_vaultchest%50%crate  â‚¬").unwrap();
+        assert_eq!(t.name, "treasure_vaultchest%50%crate");
+        assert_eq!(t.value, "€");
+
+        // Two-byte sequences too: `ÿ` is `C3 BF` -> `Ã¿`.
+        assert_eq!(TileCode::parse("\\?styled_floor Ã¿").unwrap().value, "ÿ");
+        assert_eq!(TileCode::parse("\\?styled_floor Ã§").unwrap().value, "ç");
+    }
+
+    #[test]
+    fn parse_repair_leaves_genuinely_bad_values_alone() {
+        // All-ASCII multi-char values are real errors, not mojibake.
+        for bad in ["00", "abc", "12"] {
+            let err = TileCode::parse(&format!("\\?empty {bad}"));
+            assert!(
+                matches!(err, Err(LevelError::BadTileCodeLen { .. })),
+                "{bad:?} should not be repaired, got {err:?}"
+            );
+        }
+        // Non-ASCII that isn't a valid UTF-8 sequence stays an error.
+        let err = TileCode::parse("\\?empty ÿÿ");
+        assert!(
+            matches!(err, Err(LevelError::BadTileCodeLen { .. })),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn repair_rejects_chars_cp1252_cannot_write() {
+        // `€ˆ` is `80 88` in cp1252, which isn't valid UTF-8 -> no repair.
+        assert_eq!(repair_utf8_in_cp1252("€ˆ"), None);
+        // Every cp1252-only char is a valid single-byte round trip.
+        for ch in usable_short_codes() {
+            assert!(cp1252_byte(ch).is_some(), "{ch:?} must encode to one byte");
+        }
     }
 
     #[test]

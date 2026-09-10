@@ -135,13 +135,17 @@ impl LevelFile {
         Ok(())
     }
 
+    /// Serialize to a Rust (UTF-8) string.
+    ///
+    /// Note this is *not* the on-disk form: a `.lvl` is cp1252, and tile-code
+    /// values may be non-ASCII (`€`, `ç`, `ÿ` ...). Use [`Self::to_bytes`] to
+    /// get bytes to write to a file.
     pub fn to_string(&self) -> Result<String> {
         let mut buf = Vec::new();
         self.write(&mut buf)?;
-        // Everything emitted is ASCII-safe, but decode as cp1252 just
-        // to be safe.
-        let (decoded, _, _) = WINDOWS_1252.decode(&buf);
-        Ok(decoded.into_owned())
+        // `write` only ever emits bytes that came from Rust `String`s, so the
+        // buffer is UTF-8 by construction.
+        Ok(String::from_utf8(buf).expect("writer emits UTF-8"))
     }
 
     /// Serialize to a cp1252-encoded byte buffer.

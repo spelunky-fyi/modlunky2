@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-09-09
+
+### Fixed
+
+- Tile codes using a non-ASCII character (€, ç, ÿ, etc) were written
+  to the `.lvl` as UTF-8 instead of cp1252. The saved file then failed to
+  reload with "value ... must be exactly one character". Such files are
+  now repaired when loaded, and saving one writes it back out correctly.
+
 ## [2.3.1] - 2026-09-03
 
 ### Changed

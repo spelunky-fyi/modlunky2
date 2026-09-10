@@ -107,3 +107,66 @@ fn parse_mutate_write_matches_out2_byte_for_byte() {
         );
     }
 }
+
+/// The three non-ASCII tile codes carried by the `nonascii`/`mojibake`
+/// fixtures, as (name, expected value, expected cp1252 byte).
+const NON_ASCII_CODES: &[(&str, &str, u8)] = &[
+    ("vault_wall", "\u{ff}", 0xFF),
+    ("styled_floor", "\u{e7}", 0xE7),
+    ("treasure_vaultchest%50%crate", "\u{20ac}", 0x80),
+];
+
+fn assert_non_ascii_codes(level: &LevelFile) {
+    for (name, expected, _) in NON_ASCII_CODES {
+        let tc = level
+            .tile_codes
+            .get(name)
+            .unwrap_or_else(|| panic!("{name} tile code present"));
+        assert_eq!(
+            tc.value, *expected,
+            "{name} should decode to one char, got {:?}",
+            tc.value
+        );
+        assert_eq!(tc.value.chars().count(), 1);
+    }
+}
+
+#[test]
+fn non_ascii_tile_codes_survive_a_write_cycle() {
+    let bytes = std::fs::read(fixture("test-level-nonascii.lvl")).expect("fixture read");
+    let level = LevelFile::from_bytes(&bytes).expect("parse");
+    assert_non_ascii_codes(&level);
+
+    // Each value must go back out as its single cp1252 byte, not as a
+    // multi-byte UTF-8 sequence. Writing UTF-8 into a cp1252 `.lvl` produced
+    // files that failed to reload ("value \u{e2}\u{201a}\u{ac} must be exactly
+    // one character") and that Spelunky 2 itself couldn't read.
+    let written = level.to_bytes().expect("serialize");
+    assert_eq!(
+        written, bytes,
+        "write cycle must be byte-for-byte identical"
+    );
+    for (_, _, byte) in NON_ASCII_CODES {
+        assert!(
+            written.contains(byte),
+            "expected cp1252 byte {byte:#04X} in output"
+        );
+    }
+    assert!(
+        !written.windows(3).any(|w| w == [0xE2, 0x82, 0xAC]),
+        "output must not contain the UTF-8 encoding of \u{20ac}"
+    );
+}
+
+#[test]
+fn utf8_written_into_a_cp1252_file_is_repaired_on_load() {
+    // A file saved by an affected Modlunky build: high bytes stored as their
+    // UTF-8 sequences. It must load rather than erroring out...
+    let level = LevelFile::from_path(fixture("test-level-mojibake.lvl")).expect("parse");
+    assert_non_ascii_codes(&level);
+
+    // ...and saving it must heal the file back to correct cp1252 bytes.
+    let repaired = level.to_bytes().expect("serialize");
+    let expected = std::fs::read(fixture("test-level-nonascii.lvl")).expect("fixture read");
+    assert_eq!(repaired, expected, "resaving must repair the file on disk");
+}
