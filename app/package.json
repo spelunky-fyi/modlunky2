@@ -26,13 +26,13 @@
     "@tauri-apps/plugin-os": "^2.3.2",
     "lucide-react": "^1.23.0",
     "pixi.js": "^8.19.0",
-    "react": "^19.2.4",
+    "react": "^19.3.0",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^26.1.0",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "typescript": "^6.0.3",
