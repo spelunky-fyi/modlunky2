@@ -3,23 +3,33 @@ updates:
   - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       tauri:
         patterns:
           - "tauri"
-          - "tauri-build"
+          - "tauri-*"
+      cargo-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: npm
     directory: "/app/"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
-      unocss:
-        patterns:
-          - "@unocss/*"
-          - "unocss"
       tauri:
         patterns:
           - "@tauri-apps/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
