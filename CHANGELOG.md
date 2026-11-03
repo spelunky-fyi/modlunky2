@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed location of `level_configuration.ls` for custom levels using the Sequence Editor.
+
 ## [2.3.3] - 2026-09-11
 
 ### Changed

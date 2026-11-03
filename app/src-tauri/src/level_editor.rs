@@ -332,7 +332,7 @@ pub fn create_level_pack(name: String, mode: EditorMode) -> Result<String, Strin
         std::fs::write(&main_lua_path, main_lua)
             .map_err(|e| format!("write {}: {e}", main_lua_path.display()))?;
 
-        let config_path = levels.join(LEVEL_CONFIGURATION_FILE_NAME);
+        let config_path = target.join(LEVEL_CONFIGURATION_FILE_NAME);
         let empty_config = serde_json::to_string_pretty(&LevelConfigurations::default())
             .map_err(|e| e.to_string())?;
         std::fs::write(&config_path, empty_config)
@@ -1380,23 +1380,39 @@ pub fn list_custom_levels(pack: String) -> Result<Vec<String>, String> {
     Ok(out)
 }
 
-fn resolve_level_config_path(pack: &str) -> Result<PathBuf, String> {
+fn resolve_pack_dir(pack: &str) -> Result<PathBuf, String> {
     let sanitized = validate_pack_name(pack)?;
-    Ok(packs_dir()?
-        .join(&sanitized)
-        .join("Data")
-        .join("Levels")
-        .join(LEVEL_CONFIGURATION_FILE_NAME))
+    Ok(packs_dir()?.join(&sanitized))
 }
 
-/// Reads the pack's `level_configuration.ls`. A missing file returns
+/// Moves a config stranded in `Data/Levels/`, where the editor used to wrongly
+/// keep it, to the pack root where LevelSequence reads it. Runs on load rather
+/// than save because an affected pack may have no edits to save. If the root
+/// already has a config, that's what the game reads, so the stray copy is left
+/// alone and ignored.
+fn adopt_legacy_level_config(pack_dir: &Path) -> Result<(), String> {
+    let path = pack_dir.join(LEVEL_CONFIGURATION_FILE_NAME);
+    let legacy = pack_dir
+        .join("Data")
+        .join("Levels")
+        .join(LEVEL_CONFIGURATION_FILE_NAME);
+    if path.exists() || !legacy.exists() {
+        return Ok(());
+    }
+    std::fs::rename(&legacy, &path).map_err(|e| format!("rename {}: {e}", legacy.display()))
+}
+
+/// Reads the pack's `level_configuration.ls`, first moving it out of the
+/// legacy location if that's the only copy. A missing file returns
 /// the default empty struct so brand-new packs and the Sequence panel
 /// don't have to special-case first-time-open. A malformed file
 /// returns the default too, so a stray parse error doesn't block the
 /// UI.
 #[tauri::command]
 pub fn load_custom_config(pack: String) -> Result<LevelConfigurations, String> {
-    let path = resolve_level_config_path(&pack)?;
+    let pack_dir = resolve_pack_dir(&pack)?;
+    adopt_legacy_level_config(&pack_dir)?;
+    let path = pack_dir.join(LEVEL_CONFIGURATION_FILE_NAME);
     if !path.exists() {
         return Ok(LevelConfigurations::default());
     }
@@ -1407,11 +1423,11 @@ pub fn load_custom_config(pack: String) -> Result<LevelConfigurations, String> {
 
 /// Writes the pack's `level_configuration.ls`. Uses a `.tmp` sibling + rename
 /// so a partial write can't corrupt the previous file. Creates the parent
-/// `Data/Levels/` directory if it's somehow missing (belt + suspenders with
+/// directory if it's somehow missing (belt + suspenders with
 /// `create_level_pack`).
 #[tauri::command]
 pub fn save_custom_config(pack: String, config: LevelConfigurations) -> Result<(), String> {
-    let path = resolve_level_config_path(&pack)?;
+    let path = resolve_pack_dir(&pack)?.join(LEVEL_CONFIGURATION_FILE_NAME);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("mkdir {}: {e}", parent.display()))?;
     }
@@ -4717,6 +4733,54 @@ mod theme_marker_tests {
         let after = upsert_theme_marker(Some(before), Some(6), None).unwrap();
         assert!(after.contains("My cool pack"));
         assert_eq!(parse_theme_marker(Some(&after)), (Some(6), None));
+    }
+}
+
+#[cfg(test)]
+mod adopt_legacy_level_config_tests {
+    use super::*;
+
+    /// A pack with `Data/Levels/`, plus its root and legacy config paths.
+    fn pack() -> (tempfile::TempDir, PathBuf, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let levels = dir.path().join("Data").join("Levels");
+        std::fs::create_dir_all(&levels).unwrap();
+        let root = dir.path().join(LEVEL_CONFIGURATION_FILE_NAME);
+        let legacy = levels.join(LEVEL_CONFIGURATION_FILE_NAME);
+        (dir, root, legacy)
+    }
+
+    #[test]
+    fn a_lone_legacy_config_moves_to_the_root() {
+        let (dir, root, legacy) = pack();
+        std::fs::write(&legacy, "legacy").unwrap();
+
+        adopt_legacy_level_config(dir.path()).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&root).unwrap(), "legacy");
+        assert!(!legacy.exists());
+    }
+
+    #[test]
+    fn a_root_config_wins_and_the_legacy_copy_is_left_alone() {
+        let (dir, root, legacy) = pack();
+        std::fs::write(&legacy, "legacy").unwrap();
+        std::fs::write(&root, "root").unwrap();
+
+        adopt_legacy_level_config(dir.path()).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&root).unwrap(), "root");
+        assert_eq!(std::fs::read_to_string(&legacy).unwrap(), "legacy");
+    }
+
+    #[test]
+    fn a_pack_with_no_config_is_left_alone() {
+        let (dir, root, legacy) = pack();
+
+        adopt_legacy_level_config(dir.path()).unwrap();
+
+        assert!(!root.exists());
+        assert!(!legacy.exists());
     }
 }
 
