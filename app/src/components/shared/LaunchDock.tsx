@@ -18,7 +18,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSetup } from "./SetupContext";
 import { HelpCircle, Package, Play, Settings, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useToast } from "./Toast";
 import {
   getConfig,
@@ -187,74 +186,6 @@ export function LaunchDock() {
       setLaunching(false);
     }
   };
-
-  // Gamepad-friendly shortcuts for the Steam Deck, where Steam Input maps
-  // A to Enter and B to Escape: Enter launches, Escape closes the app.
-  // Both stand down whenever the key already means something else: a dialog,
-  // menu or listbox is open (Escape belongs to it), a control has focus
-  // (Enter activates that control), or a field is being edited.
-  const launchRef = useRef<() => void>(() => {});
-  launchRef.current = () => {
-    if (canLoad) void handleLaunch();
-  };
-  useEffect(() => {
-    // Shared by the keyboard and gamepad paths. `typingOrFocused` is checked
-    // here so both inputs obey the same rules.
-    const act = (key: "Enter" | "Escape"): boolean => {
-      if (
-        document.querySelector(
-          '[role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"]',
-        )
-      ) {
-        return false;
-      }
-      const el = document.activeElement as HTMLElement | null;
-      const typing =
-        el?.closest("input, textarea, select, [contenteditable]") != null;
-      if (typing) return false;
-      if (key === "Escape") {
-        void getCurrentWindow().close();
-        return true;
-      }
-      // Enter on a focused button/link/etc. must keep doing its own thing.
-      if (el?.closest("button, a, summary, [role='button']")) return false;
-      launchRef.current();
-      return true;
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.repeat) return;
-      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
-      if (e.key !== "Enter" && e.key !== "Escape") return;
-      if (act(e.key)) e.preventDefault();
-    };
-    window.addEventListener("keydown", onKey);
-
-    // Steam Deck Gaming mode: a non-Steam shortcut gets Steam Input's default
-    // gamepad layout, so A and B arrive as gamepad buttons, not as Enter and
-    // Escape. Poll the Gamepad API for rising edges on the standard-mapping
-    // A (0) and B (1) buttons.
-    const was: Record<string, [boolean, boolean]> = {};
-    let raf = 0;
-    const poll = () => {
-      for (const pad of navigator.getGamepads?.() ?? []) {
-        if (!pad) continue;
-        const a = !!pad.buttons[0]?.pressed;
-        const b = !!pad.buttons[1]?.pressed;
-        const prev = was[pad.index] ?? [a, b];
-        if (a && !prev[0]) act("Enter");
-        else if (b && !prev[1]) act("Escape");
-        was[pad.index] = [a, b];
-      }
-      raf = requestAnimationFrame(poll);
-    };
-    raf = requestAnimationFrame(poll);
-
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
 
   // The dock sits outside every tab gate, so it is the one place that could
   // otherwise offer to launch a game there is no path to. It speaks only for

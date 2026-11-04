@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { Copy, Eraser, Search, X } from "lucide-react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { Copy, Eraser, Search } from "lucide-react";
 import {
   clearLogs,
   getRecentLogs,
@@ -223,17 +222,6 @@ export function LogsWindow() {
           >
             <Eraser size={13} aria-hidden="true" />
             Clear
-          </button>
-          {/* No window decorations in Steam Deck gaming mode,
-              so giving the mouse and touchscreen a way out too. */}
-          <button
-            type="button"
-            className="btn btn-ghost logs-toolbar-btn"
-            onClick={() => void getCurrentWindow().close()}
-            title="Close this window"
-          >
-            <X size={13} aria-hidden="true" />
-            Close
           </button>
         </div>
       </header>
