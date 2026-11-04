@@ -14,7 +14,7 @@
 // controls appear and disappear on the left, so the thing you're aiming at
 // stays put whatever the state.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSetup } from "./SetupContext";
 import { HelpCircle, Package, Play, Settings, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -39,9 +39,6 @@ const NIGHTLY_TAG = "nightly";
 /// What the version control shows before anything is installed: launching
 /// fetches nightly, so say that rather than leaving the control blank.
 const PENDING_VERSION = `${NIGHTLY_TAG}`;
-
-/// Shortest time the Launch button stays disabled after a click.
-const MIN_LAUNCH_DISABLED_MS = 3000;
 
 const PLAYLUNKY_WIKI_URL = "https://github.com/spelunky-fyi/Playlunky/wiki";
 
@@ -152,15 +149,8 @@ export function LaunchDock() {
     }
   };
 
-  // Synchronous guard. `launching` is state, so two clicks (or a click and an
-  // Enter) landing before React re-renders would both see it as false.
-  const launchingRef = useRef(false);
-
   const handleLaunch = async () => {
-    if (launchingRef.current) return;
-    launchingRef.current = true;
     setLaunching(true);
-    const startedAt = Date.now();
     // A first launch has to fetch Playlunky before it can start anything, so
     // say so rather than leaving the button spinning with no explanation.
     if (withPlaylunky && installed.length === 0) {
@@ -175,14 +165,6 @@ export function LaunchDock() {
     } catch (err) {
       toast.error(`Launch failed: ${extractMessage(err)}`);
     } finally {
-      // The backend only spawns the process and returns, which can take a few
-      // milliseconds: the button would flip back before anyone saw it
-      // disabled, and the game window takes seconds to appear. Hold the
-      // disabled state for a minimum time so it reads as confirmation and
-      // covers the gap.
-      const remaining = MIN_LAUNCH_DISABLED_MS - (Date.now() - startedAt);
-      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
-      launchingRef.current = false;
       setLaunching(false);
     }
   };
