@@ -19,6 +19,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # Rust (stable, like CI). Toolchain lives in /opt so a mounted $HOME can't hide it.
 ENV RUSTUP_HOME=/opt/rustup CARGO_HOME=/opt/cargo PATH=/opt/cargo/bin:$PATH
 RUN curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable \
+    && rustup component add rustfmt clippy \
     && chmod -R a+rwX /opt/rustup /opt/cargo
 
 # AppImage tooling is itself an AppImage and there's no FUSE in a container.
