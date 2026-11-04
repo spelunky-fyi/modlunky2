@@ -3396,7 +3396,7 @@ version = "0.1.0"
 
 [[package]]
 name = "modlunky2-app"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "ab_glyph",
  "anyhow",
