@@ -11,8 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed Steam Deck launching the game "invisible" when running Modlunky2
-  as a non-Steam app in Gaming mode by allowing Steam Deck to assign the
-  game window to Modlunky2 process
+  as a non-Steam app in Gaming mode
 
 ### Added
 
@@ -21,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a timeout to disable Launch button after click as a visual
   confirmation for the user
 - Added "Close" button to LogsWindow as it doesn't have window decorations
-  in Gaming mode
+  in Steam Deck Gaming mode
 - Added `Dockerfile` and `docker-build.sh` script to easily set up
   dev environment and build AppImage on Linux
 
