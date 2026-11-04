@@ -14,10 +14,11 @@
 // controls appear and disappear on the left, so the thing you're aiming at
 // stays put whatever the state.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSetup } from "./SetupContext";
 import { HelpCircle, Package, Play, Settings, Settings2 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useToast } from "./Toast";
 import {
   getConfig,
@@ -39,6 +40,9 @@ const NIGHTLY_TAG = "nightly";
 /// What the version control shows before anything is installed: launching
 /// fetches nightly, so say that rather than leaving the control blank.
 const PENDING_VERSION = `${NIGHTLY_TAG}`;
+
+/// Shortest time the Launch button stays disabled after a click.
+const MIN_LAUNCH_DISABLED_MS = 3000;
 
 const PLAYLUNKY_WIKI_URL = "https://github.com/spelunky-fyi/Playlunky/wiki";
 
@@ -149,8 +153,15 @@ export function LaunchDock() {
     }
   };
 
+  // Synchronous guard. `launching` is state, so two clicks (or a click and an
+  // Enter) landing before React re-renders would both see it as false.
+  const launchingRef = useRef(false);
+
   const handleLaunch = async () => {
+    if (launchingRef.current) return;
+    launchingRef.current = true;
     setLaunching(true);
+    const startedAt = Date.now();
     // A first launch has to fetch Playlunky before it can start anything, so
     // say so rather than leaving the button spinning with no explanation.
     if (withPlaylunky && installed.length === 0) {
@@ -165,9 +176,85 @@ export function LaunchDock() {
     } catch (err) {
       toast.error(`Launch failed: ${extractMessage(err)}`);
     } finally {
+      // The backend only spawns the process and returns, which can take a few
+      // milliseconds: the button would flip back before anyone saw it
+      // disabled, and the game window takes seconds to appear. Hold the
+      // disabled state for a minimum time so it reads as confirmation and
+      // covers the gap.
+      const remaining = MIN_LAUNCH_DISABLED_MS - (Date.now() - startedAt);
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
+      launchingRef.current = false;
       setLaunching(false);
     }
   };
+
+  // Gamepad-friendly shortcuts for the Steam Deck, where Steam Input maps
+  // A to Enter and B to Escape: Enter launches, Escape closes the app.
+  // Both stand down whenever the key already means something else: a dialog,
+  // menu or listbox is open (Escape belongs to it), a control has focus
+  // (Enter activates that control), or a field is being edited.
+  const launchRef = useRef<() => void>(() => {});
+  launchRef.current = () => {
+    if (canLoad) void handleLaunch();
+  };
+  useEffect(() => {
+    // Shared by the keyboard and gamepad paths. `typingOrFocused` is checked
+    // here so both inputs obey the same rules.
+    const act = (key: "Enter" | "Escape"): boolean => {
+      if (
+        document.querySelector(
+          '[role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"]',
+        )
+      ) {
+        return false;
+      }
+      const el = document.activeElement as HTMLElement | null;
+      const typing =
+        el?.closest("input, textarea, select, [contenteditable]") != null;
+      if (typing) return false;
+      if (key === "Escape") {
+        void getCurrentWindow().close();
+        return true;
+      }
+      // Enter on a focused button/link/etc. must keep doing its own thing.
+      if (el?.closest("button, a, summary, [role='button']")) return false;
+      launchRef.current();
+      return true;
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat) return;
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (e.key !== "Enter" && e.key !== "Escape") return;
+      if (act(e.key)) e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+
+    // Steam Deck Gaming mode: a non-Steam shortcut gets Steam Input's default
+    // gamepad layout, so A and B arrive as gamepad buttons, not as Enter and
+    // Escape. Poll the Gamepad API for rising edges on the standard-mapping
+    // A (0) and B (1) buttons.
+    const was: Record<string, [boolean, boolean]> = {};
+    let raf = 0;
+    const poll = () => {
+      for (const pad of navigator.getGamepads?.() ?? []) {
+        if (!pad) continue;
+        const a = !!pad.buttons[0]?.pressed;
+        const b = !!pad.buttons[1]?.pressed;
+        const prev = was[pad.index] ?? [a, b];
+        if (a && !prev[0]) act("Enter");
+        else if (b && !prev[1]) act("Escape");
+        was[pad.index] = [a, b];
+      }
+      raf = requestAnimationFrame(poll);
+    };
+    raf = requestAnimationFrame(poll);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // The dock sits outside every tab gate, so it is the one place that could
   // otherwise offer to launch a game there is no path to. It speaks only for
