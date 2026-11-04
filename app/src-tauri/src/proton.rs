@@ -155,8 +155,18 @@ impl ProtonEnv {
             .env("STEAM_COMPAT_DATA_PATH", &self.compat_data)
             .env("STEAM_COMPAT_CLIENT_INSTALL_PATH", &self.steam_root)
             .env("SteamAppId", SPELUNKY2_APPID)
-            .env("SteamGameId", SPELUNKY2_APPID)
             .env("STEAM_COMPAT_APP_ID", SPELUNKY2_APPID);
+        // SteamGameId is what the Steam overlay layer stamps on windows as
+        // STEAM_GAME, and what gamescope (Steam Deck Gaming mode) uses to tie
+        // a window to a running Steam app. If modlunky2 was itself started by
+        // Steam (e.g. as a non-Steam shortcut), keep the id Steam gave us so
+        // the game window belongs to that app and can be switched to.
+        // Overriding it with Spelunky 2's id attributes the window to an app
+        // Steam isn't running, so it never shows up. Only fall back to our
+        // own when we weren't launched from Steam.
+        if std::env::var_os("SteamGameId").is_none_or(|v| v.is_empty()) {
+            cmd.env("SteamGameId", SPELUNKY2_APPID);
+        }
         cmd
     }
 
